@@ -10,9 +10,6 @@ abstract class PersonalizedFeedState with _$PersonalizedFeedState {
     required bool isFetchingMore,
     required int page,
     required List<String> seenKeys,
-    required int sourcePrism,
-    required int sourceWallhaven,
-    required int sourcePexels,
     Failure? failure,
   }) = _PersonalizedFeedState;
 
@@ -24,8 +21,5 @@ abstract class PersonalizedFeedState with _$PersonalizedFeedState {
     isFetchingMore: false,
     page: 0,
     seenKeys: <String>[],
-    sourcePrism: 0,
-    sourceWallhaven: 0,
-    sourcePexels: 0,
   );
 }

@@ -32,45 +32,36 @@ class PersonalizedFeedScreen extends StatefulWidget {
 class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with AutomaticKeepAliveClientMixin {
   static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
-  late final PersonalizedFeedBloc _bloc;
   final ScrollController _scrollController = ScrollController();
 
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    _bloc = getIt<PersonalizedFeedBloc>();
-    _bloc.add(const PersonalizedFeedEvent.started());
-  }
-
-  @override
   void dispose() {
     _scrollController.dispose();
-    _bloc.close();
     super.dispose();
   }
 
-  void _maybeFetchMore(ScrollMetrics metrics) {
+  void _maybeFetchMore(PersonalizedFeedBloc bloc, ScrollMetrics metrics) {
     if (metrics.maxScrollExtent <= 0) {
       return;
     }
-    final state = _bloc.state;
+    final state = bloc.state;
     if (state.isFetchingMore || !state.hasMore || state.status == LoadStatus.loading) {
       return;
     }
 
     if (metrics.pixels >= metrics.maxScrollExtent - PrismFeedLayout.prefetchThreshold) {
-      _bloc.add(const PersonalizedFeedEvent.fetchMoreRequested());
+      bloc.add(const PersonalizedFeedEvent.fetchMoreRequested());
     }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return BlocProvider.value(
-      value: _bloc,
+    return BlocProvider(
+      create: (_) => getIt<PersonalizedFeedBloc>()..add(const PersonalizedFeedEvent.started()),
       child: BlocBuilder<PersonalizedFeedBloc, PersonalizedFeedState>(
         buildWhen: (prev, curr) =>
             prev.status != curr.status ||
@@ -78,22 +69,14 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
             prev.isFetchingMore != curr.isFetchingMore ||
             prev.hasMore != curr.hasMore,
         builder: (context, state) {
-          final theme = Theme.of(context);
-          final visibleItems = _gridItemsWithoutCarouselPreview(state);
-          final previewWalls = state.items
-              .whereType<PrismFeedItem>()
-              .take(_carouselPreviewCount)
-              .toList(growable: false);
-          final crossAxisCount = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
-          final tileMemCacheHeight = ((MediaQuery.sizeOf(context).width / crossAxisCount) * 1.5 * 2).toInt();
-
+          final bloc = context.read<PersonalizedFeedBloc>();
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
             return const Center(child: CircularProgressIndicator.adaptive());
           }
 
           if (state.status == LoadStatus.failure && state.items.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
+              onRefresh: () async => bloc.add(const PersonalizedFeedEvent.refreshRequested()),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: PrismFeedLayout.errorStatePadding,
@@ -101,19 +84,26 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                   PersonalizedFeedEditorialNote(
                     title: "Couldn't load your feed",
                     detail: 'Check your connection, then pull down to try again.',
-                    accentColor: theme.colorScheme.error,
+                    accentColor: Theme.of(context).colorScheme.error,
                   ),
                 ],
               ),
             );
           }
 
+          final prismItems = state.items.whereType<PrismFeedItem>();
+          final previewWalls = prismItems.take(_carouselPreviewCount).toList(growable: false);
+          final previewSet = prismItems.take(_carouselPreviewCount).toSet();
+          final visibleItems = state.items.where((item) => !previewSet.contains(item)).toList(growable: false);
+          final crossAxisCount = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+          final tileMemCacheHeight = ((MediaQuery.sizeOf(context).width / crossAxisCount) * 1.5 * 2).toInt();
+
           return RefreshIndicator(
-            onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
+            onRefresh: () async => bloc.add(const PersonalizedFeedEvent.refreshRequested()),
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
                 if (notification.depth == 0) {
-                  _maybeFetchMore(notification.metrics);
+                  _maybeFetchMore(bloc, notification.metrics);
                 }
                 return false;
               },
@@ -121,7 +111,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                 slivers: [
-                  // Carousel: WallOfTheDay + banner + 4 wallpaper previews
+                  // Carousel: WallOfTheDay + banner + wallpaper previews
                   SliverToBoxAdapter(child: _FeedCarousel(previewWalls: previewWalls)),
                   SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -178,19 +168,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       ),
     );
   }
-
-  List<FeedItemEntity> _gridItemsWithoutCarouselPreview(PersonalizedFeedState state) {
-    var skippedPrismCount = 0;
-    return state.items
-        .where((item) {
-          if (item is PrismFeedItem && skippedPrismCount < _carouselPreviewCount) {
-            skippedPrismCount += 1;
-            return false;
-          }
-          return true;
-        })
-        .toList(growable: false);
-  }
 }
 
 class _FeedCarousel extends StatefulWidget {
@@ -204,7 +181,6 @@ class _FeedCarousel extends StatefulWidget {
 
 class _FeedCarouselState extends State<_FeedCarousel> {
   int _current = 0;
-  final CarouselSliderController _carouselController = CarouselSliderController();
 
   @override
   Widget build(BuildContext context) {
@@ -216,8 +192,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
         alignment: AlignmentDirectional.bottomEnd,
         children: [
           CarouselSlider.builder(
-            carouselController: _carouselController,
-            itemCount: 6,
+            itemCount: 2 + previewWalls.length,
             options: CarouselOptions(
               height: height,
               viewportFraction: 1.0,
@@ -276,15 +251,12 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                 );
               }
               final int feedIndex = i - 2;
-              final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < previewWalls.length
-                  ? previewWalls[feedIndex]
-                  : null;
+              final PrismFeedItem wall = previewWalls[feedIndex];
               return Semantics(
-                button: wall != null,
-                label: wall?.semanticLabel,
+                button: true,
+                label: wall.semanticLabel,
                 child: GestureDetector(
                   onTap: () {
-                    if (wall == null) return;
                     unawaited(
                       analytics.track(
                         SurfaceActionTappedEvent(
@@ -299,40 +271,38 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                     );
                     context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
                   },
-                  child: wall == null
-                      ? ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest)
-                      : PremiumBanner(
-                          comparator: !app_state.isPremiumWall(
-                            app_state.premiumCollections,
-                            wall.wallpaper.collections ?? const <String>[],
-                          ),
-                          top: 160,
-                          left: MediaQuery.of(context).size.width * 0.8 - 50,
-                          right: null,
-                          bottom: null,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            bottomRight: Radius.circular(20),
-                          ),
-                          iconSize: 24,
-                          iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                          fit: StackFit.loose,
-                          clipBehavior: Clip.hardEdge,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
+                  child: PremiumBanner(
+                    comparator: !app_state.isPremiumWall(
+                      app_state.premiumCollections,
+                      wall.wallpaper.collections ?? const <String>[],
+                    ),
+                    top: 160,
+                    left: MediaQuery.of(context).size.width * 0.8 - 50,
+                    right: null,
+                    bottom: null,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                    iconSize: 24,
+                    iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                    fit: StackFit.loose,
+                    clipBehavior: Clip.hardEdge,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        image: DecorationImage(
+                          image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
+                          fit: BoxFit.cover,
                         ),
+                      ),
+                    ),
+                  ),
                 ),
               );
             },
           ),
-          CarouselDots(current: _current),
+          CarouselDots(current: _current, count: 2 + previewWalls.length),
         ],
       ),
     );

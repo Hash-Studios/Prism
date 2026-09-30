@@ -16,6 +16,12 @@ class FetchPersonalizedFeedRequest {
   final List<FeedItemEntity> existingItems;
 }
 
+const int _seenKeyWindow = 300;
+
+/// Keeps the newest 300 seen keys.
+List<String> trimSeenKeys(List<String> seen) =>
+    seen.length <= _seenKeyWindow ? seen : seen.sublist(seen.length - _seenKeyWindow);
+
 abstract class PersonalizedFeedRepository {
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request);
 

@@ -55,13 +55,14 @@ extension PersonalizedFeedEventPatterns on PersonalizedFeedEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that);case _:
   return orElse();
 
 }
@@ -79,13 +80,14 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,required TResult Function( _BlockedCreatorsChanged value)  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _RefreshRequested():
 return refreshRequested(_that);case _FetchMoreRequested():
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _BlockedCreatorsChanged():
+return blockedCreatorsChanged(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -102,13 +104,14 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult? Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that);case _:
   return null;
 
 }
@@ -125,12 +128,13 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,TResult Function( Set<String> blocked)?  blockedCreatorsChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that.blocked);case _:
   return orElse();
 
 }
@@ -148,12 +152,13 @@ return fetchMoreRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,required TResult Function( Set<String> blocked)  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _RefreshRequested():
 return refreshRequested();case _FetchMoreRequested():
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _BlockedCreatorsChanged():
+return blockedCreatorsChanged(_that.blocked);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -170,12 +175,13 @@ return fetchMoreRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,TResult? Function( Set<String> blocked)?  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that.blocked);case _:
   return null;
 
 }
@@ -280,9 +286,81 @@ String toString() {
 
 
 /// @nodoc
+
+
+class _BlockedCreatorsChanged implements PersonalizedFeedEvent {
+  const _BlockedCreatorsChanged({required final  Set<String> blocked}): _blocked = blocked;
+  
+
+ final  Set<String> _blocked;
+ Set<String> get blocked {
+  if (_blocked is EqualUnmodifiableSetView) return _blocked;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableSetView(_blocked);
+}
+
+
+/// Create a copy of PersonalizedFeedEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$BlockedCreatorsChangedCopyWith<_BlockedCreatorsChanged> get copyWith => __$BlockedCreatorsChangedCopyWithImpl<_BlockedCreatorsChanged>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BlockedCreatorsChanged&&const DeepCollectionEquality().equals(other._blocked, _blocked));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_blocked));
+
+@override
+String toString() {
+  return 'PersonalizedFeedEvent.blockedCreatorsChanged(blocked: $blocked)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$BlockedCreatorsChangedCopyWith<$Res> implements $PersonalizedFeedEventCopyWith<$Res> {
+  factory _$BlockedCreatorsChangedCopyWith(_BlockedCreatorsChanged value, $Res Function(_BlockedCreatorsChanged) _then) = __$BlockedCreatorsChangedCopyWithImpl;
+@useResult
+$Res call({
+ Set<String> blocked
+});
+
+
+
+
+}
+/// @nodoc
+class __$BlockedCreatorsChangedCopyWithImpl<$Res>
+    implements _$BlockedCreatorsChangedCopyWith<$Res> {
+  __$BlockedCreatorsChangedCopyWithImpl(this._self, this._then);
+
+  final _BlockedCreatorsChanged _self;
+  final $Res Function(_BlockedCreatorsChanged) _then;
+
+/// Create a copy of PersonalizedFeedEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? blocked = null,}) {
+  return _then(_BlockedCreatorsChanged(
+blocked: null == blocked ? _self._blocked : blocked // ignore: cast_nullable_to_non_nullable
+as Set<String>,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$PersonalizedFeedState {
 
- LoadStatus get status; ActionStatus get actionStatus; List<FeedItemEntity> get items; bool get hasMore; bool get isFetchingMore; int get page; List<String> get seenKeys; int get sourcePrism; int get sourceWallhaven; int get sourcePexels; Failure? get failure;
+ LoadStatus get status; ActionStatus get actionStatus; List<FeedItemEntity> get items; bool get hasMore; bool get isFetchingMore; int get page; List<String> get seenKeys; Failure? get failure;
 /// Create a copy of PersonalizedFeedState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -293,16 +371,16 @@ $PersonalizedFeedStateCopyWith<PersonalizedFeedState> get copyWith => _$Personal
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PersonalizedFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.page, page) || other.page == page)&&const DeepCollectionEquality().equals(other.seenKeys, seenKeys)&&(identical(other.sourcePrism, sourcePrism) || other.sourcePrism == sourcePrism)&&(identical(other.sourceWallhaven, sourceWallhaven) || other.sourceWallhaven == sourceWallhaven)&&(identical(other.sourcePexels, sourcePexels) || other.sourcePexels == sourcePexels)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PersonalizedFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.page, page) || other.page == page)&&const DeepCollectionEquality().equals(other.seenKeys, seenKeys)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(items),hasMore,isFetchingMore,page,const DeepCollectionEquality().hash(seenKeys),sourcePrism,sourceWallhaven,sourcePexels,failure);
+int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(items),hasMore,isFetchingMore,page,const DeepCollectionEquality().hash(seenKeys),failure);
 
 @override
 String toString() {
-  return 'PersonalizedFeedState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, page: $page, seenKeys: $seenKeys, sourcePrism: $sourcePrism, sourceWallhaven: $sourceWallhaven, sourcePexels: $sourcePexels, failure: $failure)';
+  return 'PersonalizedFeedState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, page: $page, seenKeys: $seenKeys, failure: $failure)';
 }
 
 
@@ -313,7 +391,7 @@ abstract mixin class $PersonalizedFeedStateCopyWith<$Res>  {
   factory $PersonalizedFeedStateCopyWith(PersonalizedFeedState value, $Res Function(PersonalizedFeedState) _then) = _$PersonalizedFeedStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, int page, List<String> seenKeys, int sourcePrism, int sourceWallhaven, int sourcePexels, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, int page, List<String> seenKeys, Failure? failure
 });
 
 
@@ -330,7 +408,7 @@ class _$PersonalizedFeedStateCopyWithImpl<$Res>
 
 /// Create a copy of PersonalizedFeedState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? page = null,Object? seenKeys = null,Object? sourcePrism = null,Object? sourceWallhaven = null,Object? sourcePexels = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? page = null,Object? seenKeys = null,Object? failure = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
@@ -339,10 +417,7 @@ as List<FeedItemEntity>,hasMore: null == hasMore ? _self.hasMore : hasMore // ig
 as bool,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
 as bool,page: null == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
 as int,seenKeys: null == seenKeys ? _self.seenKeys : seenKeys // ignore: cast_nullable_to_non_nullable
-as List<String>,sourcePrism: null == sourcePrism ? _self.sourcePrism : sourcePrism // ignore: cast_nullable_to_non_nullable
-as int,sourceWallhaven: null == sourceWallhaven ? _self.sourceWallhaven : sourceWallhaven // ignore: cast_nullable_to_non_nullable
-as int,sourcePexels: null == sourcePexels ? _self.sourcePexels : sourcePexels // ignore: cast_nullable_to_non_nullable
-as int,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as List<String>,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
 }
@@ -428,10 +503,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  int sourcePrism,  int sourceWallhaven,  int sourcePexels,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PersonalizedFeedState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.sourcePrism,_that.sourceWallhaven,_that.sourcePexels,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.failure);case _:
   return orElse();
 
 }
@@ -449,10 +524,10 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  int sourcePrism,  int sourceWallhaven,  int sourcePexels,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  Failure? failure)  $default,) {final _that = this;
 switch (_that) {
 case _PersonalizedFeedState():
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.sourcePrism,_that.sourceWallhaven,_that.sourcePexels,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.failure);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -469,10 +544,10 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  int sourcePrism,  int sourceWallhaven,  int sourcePexels,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  Failure? failure)?  $default,) {final _that = this;
 switch (_that) {
 case _PersonalizedFeedState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.sourcePrism,_that.sourceWallhaven,_that.sourcePexels,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.failure);case _:
   return null;
 
 }
@@ -484,7 +559,7 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 
 
 class _PersonalizedFeedState implements PersonalizedFeedState {
-  const _PersonalizedFeedState({required this.status, required this.actionStatus, required final  List<FeedItemEntity> items, required this.hasMore, required this.isFetchingMore, required this.page, required final  List<String> seenKeys, required this.sourcePrism, required this.sourceWallhaven, required this.sourcePexels, this.failure}): _items = items,_seenKeys = seenKeys;
+  const _PersonalizedFeedState({required this.status, required this.actionStatus, required final  List<FeedItemEntity> items, required this.hasMore, required this.isFetchingMore, required this.page, required final  List<String> seenKeys, this.failure}): _items = items,_seenKeys = seenKeys;
   
 
 @override final  LoadStatus status;
@@ -506,9 +581,6 @@ class _PersonalizedFeedState implements PersonalizedFeedState {
   return EqualUnmodifiableListView(_seenKeys);
 }
 
-@override final  int sourcePrism;
-@override final  int sourceWallhaven;
-@override final  int sourcePexels;
 @override final  Failure? failure;
 
 /// Create a copy of PersonalizedFeedState
@@ -521,16 +593,16 @@ _$PersonalizedFeedStateCopyWith<_PersonalizedFeedState> get copyWith => __$Perso
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PersonalizedFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.page, page) || other.page == page)&&const DeepCollectionEquality().equals(other._seenKeys, _seenKeys)&&(identical(other.sourcePrism, sourcePrism) || other.sourcePrism == sourcePrism)&&(identical(other.sourceWallhaven, sourceWallhaven) || other.sourceWallhaven == sourceWallhaven)&&(identical(other.sourcePexels, sourcePexels) || other.sourcePexels == sourcePexels)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PersonalizedFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.page, page) || other.page == page)&&const DeepCollectionEquality().equals(other._seenKeys, _seenKeys)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(_items),hasMore,isFetchingMore,page,const DeepCollectionEquality().hash(_seenKeys),sourcePrism,sourceWallhaven,sourcePexels,failure);
+int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(_items),hasMore,isFetchingMore,page,const DeepCollectionEquality().hash(_seenKeys),failure);
 
 @override
 String toString() {
-  return 'PersonalizedFeedState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, page: $page, seenKeys: $seenKeys, sourcePrism: $sourcePrism, sourceWallhaven: $sourceWallhaven, sourcePexels: $sourcePexels, failure: $failure)';
+  return 'PersonalizedFeedState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, page: $page, seenKeys: $seenKeys, failure: $failure)';
 }
 
 
@@ -541,7 +613,7 @@ abstract mixin class _$PersonalizedFeedStateCopyWith<$Res> implements $Personali
   factory _$PersonalizedFeedStateCopyWith(_PersonalizedFeedState value, $Res Function(_PersonalizedFeedState) _then) = __$PersonalizedFeedStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, int page, List<String> seenKeys, int sourcePrism, int sourceWallhaven, int sourcePexels, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, int page, List<String> seenKeys, Failure? failure
 });
 
 
@@ -558,7 +630,7 @@ class __$PersonalizedFeedStateCopyWithImpl<$Res>
 
 /// Create a copy of PersonalizedFeedState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? page = null,Object? seenKeys = null,Object? sourcePrism = null,Object? sourceWallhaven = null,Object? sourcePexels = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? page = null,Object? seenKeys = null,Object? failure = freezed,}) {
   return _then(_PersonalizedFeedState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
@@ -567,10 +639,7 @@ as List<FeedItemEntity>,hasMore: null == hasMore ? _self.hasMore : hasMore // ig
 as bool,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
 as bool,page: null == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
 as int,seenKeys: null == seenKeys ? _self._seenKeys : seenKeys // ignore: cast_nullable_to_non_nullable
-as List<String>,sourcePrism: null == sourcePrism ? _self.sourcePrism : sourcePrism // ignore: cast_nullable_to_non_nullable
-as int,sourceWallhaven: null == sourceWallhaven ? _self.sourceWallhaven : sourceWallhaven // ignore: cast_nullable_to_non_nullable
-as int,sourcePexels: null == sourcePexels ? _self.sourcePexels : sourcePexels // ignore: cast_nullable_to_non_nullable
-as int,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as List<String>,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
 }
