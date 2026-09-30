@@ -108,7 +108,6 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       case OnboardingV2NavRequest.openPaywall:
         if (!context.mounted) return;
         final paywallResult = await PaywallOrchestrator.instance.present(
-          context,
           placement: OnboardingV2Config.paywallPlacement,
           source: OnboardingV2Config.paywallSource,
         );

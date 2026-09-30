@@ -282,7 +282,6 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       case _PremiumPreviewAction.upgrade:
         if (mounted) {
           await PaywallOrchestrator.instance.present(
-            context,
             placement: PaywallPlacement.lowBalance,
             source: 'premium_preview_upgrade',
           );
@@ -359,10 +358,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         return;
       }
       if (mounted) {
-        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
-          context,
-          source: 'premium_preview_watch_ad',
-        );
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'premium_preview_watch_ad');
       }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(

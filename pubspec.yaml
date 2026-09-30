@@ -56,7 +56,6 @@ dependencies:
   image: ^3.0.2
   image_editor: ^1.6.0
   image_picker: ^1.2.1
-  in_app_update: ^4.2.5
   injectable: ^2.5.1
   internet_connection_checker: ^3.0.1
   intl: ^0.17.0

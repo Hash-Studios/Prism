@@ -217,10 +217,7 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
           return;
         }
         if (mounted) {
-          await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
-            context,
-            source: 'coin_hub_rewarded_ad',
-          );
+          await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'coin_hub_rewarded_ad');
         }
         toasts.codeSend('+${CoinPolicy.rewardedAd} coins');
         return;

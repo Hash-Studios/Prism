@@ -20,7 +20,6 @@ class PaywallPlacement {
   static const String afterAdWatch3 = 'after_ad_watch_3';
   static const String blockedSetupCreate = 'blocked_setup_create';
   static const String uploadLimitReached = 'upload_limit_reached';
-  static const String onboardingCompletion = 'onboarding_completion';
 }
 
 class PaywallOrchestrator {
@@ -35,7 +34,7 @@ class PaywallOrchestrator {
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
-  Future<PaywallResultValue> present(BuildContext context, {required String placement, required String source}) async {
+  Future<PaywallResultValue> present({required String placement, required String source}) async {
     final String normalizedPlacement = placement.trim().isEmpty ? PaywallPlacement.mainUpsell : placement.trim();
     _logPlacementTriggerContext(placement: normalizedPlacement, source: source);
     analytics.track(
@@ -60,15 +59,15 @@ class PaywallOrchestrator {
   /// there always see the sign-in prompt.
   Future<void> presentOrRequireSignIn(BuildContext context, {required String placement, required String source}) async {
     if (app_state.prismUser.loggedIn || Platform.isIOS) {
-      await present(context, placement: placement, source: source);
+      await present(placement: placement, source: source);
       return;
     }
     googleSignInPopUp(context, () {
-      present(context, placement: placement, source: source);
+      present(placement: placement, source: source);
     });
   }
 
-  Future<void> recordRewardedAdWatchAndMaybeUpsell(BuildContext context, {required String source}) async {
+  Future<void> recordRewardedAdWatchAndMaybeUpsell({required String source}) async {
     if (app_state.prismUser.premium) {
       _resetAdWatchCounter();
       return;
@@ -81,7 +80,7 @@ class PaywallOrchestrator {
       return;
     }
     _settings.set(_adWatchPromptedKey, true);
-    await present(context, placement: PaywallPlacement.afterAdWatch3, source: source);
+    await present(placement: PaywallPlacement.afterAdWatch3, source: source);
   }
 
   void _resetAdWatchCounter() {

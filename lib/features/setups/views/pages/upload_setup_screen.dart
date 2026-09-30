@@ -119,7 +119,6 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         await PaywallOrchestrator.instance.present(
-          context,
           placement: PaywallPlacement.blockedSetupCreate,
           source: 'upload_setup_blocked_create',
         );
