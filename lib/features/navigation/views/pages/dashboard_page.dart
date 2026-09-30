@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
@@ -67,6 +68,19 @@ class _DashboardPageState extends State<DashboardPage> {
         value: overlayStyle,
         child: AutoTabsRouter(
           routes: const [HomeTabRoute(), SearchTabRoute(), StreakTabRoute(), CollectionTabRoute()],
+          duration: PrismDurations.fast,
+          transitionBuilder: (context, child, animation) {
+            if (context.reduceMotion) return child;
+            final Animation<double> t = CurvedAnimation(parent: animation, curve: PrismCurves.enter);
+            return FadeTransition(
+              opacity: t,
+              child: AnimatedBuilder(
+                animation: t,
+                builder: (context, child) => Transform.translate(offset: Offset(0, 6 * (1 - t.value)), child: child),
+                child: child,
+              ),
+            );
+          },
           builder: (context, child) {
             final tabsRouter = AutoTabsRouter.of(context);
             return PopScope(

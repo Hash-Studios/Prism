@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -60,6 +61,7 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_scr
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 part 'app_router.gr.dart';
 
@@ -69,6 +71,28 @@ class AppRouter extends RootStackRouter {
 
   final SignedInGuard _signedInGuard = const SignedInGuard();
   final AdminGuard _adminGuard = const AdminGuard();
+
+  /// iOS keeps the Cupertino slide so the edge back-swipe works (a custom route has no back gesture). Android fades
+  /// in and slides 24px from the right.
+  @override
+  RouteType get defaultRouteType => defaultTargetPlatform == TargetPlatform.iOS
+      ? const RouteType.adaptive()
+      : RouteType.custom(
+          duration: PrismDurations.base,
+          reverseDuration: const Duration(milliseconds: 200),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            if (context.reduceMotion) return child;
+            final Animation<double> t = CurvedAnimation(parent: animation, curve: PrismCurves.enter);
+            return FadeTransition(
+              opacity: t,
+              child: AnimatedBuilder(
+                animation: t,
+                builder: (context, child) => Transform.translate(offset: Offset(24 * (1 - t.value), 0), child: child),
+                child: child,
+              ),
+            );
+          },
+        );
 
   @override
   List<AutoRoute> get routes => [
