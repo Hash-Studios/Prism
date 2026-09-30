@@ -7,7 +7,7 @@ import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
-import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -23,7 +23,7 @@ import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
-import 'package:Prism/features/palette/palette.dart';
+import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -191,12 +191,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return inset + _chromePad;
   }
 
-  String _colorHexForClipboard(Color color) {
-    final argb = color.toARGB32();
-    final rgb = argb & 0xFFFFFF;
-    return '#${rgb.toRadixString(16).padLeft(6, '0').toUpperCase()}';
-  }
-
   FavouriteWallEntity _toFavouriteWall(WallpaperDetailEntity entity) {
     return entity.when(
       prism: (wallpaper) => PrismFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
@@ -207,24 +201,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
-          listener: (context, state) {
-            if (state is WallpaperDetailLoaded && state.colors != null && state.accent != null) {
-              _setStatusBarIconBrightness(state.accent!);
-            }
-          },
-        ),
-        BlocListener<PaletteBloc, PaletteState>(
-          listener: (context, paletteState) {
-            if (paletteState.status == LoadStatus.success && paletteState.palette.paletteColorValues.isNotEmpty) {
-              final paletteColors = paletteState.palette.paletteColorValues.map((c) => Color(c)).toList();
-              context.read<WallpaperDetailBloc>().add(UpdateColorsFromPalette(colors: paletteColors));
-            }
-          },
-        ),
-      ],
+    return BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
+      listener: (context, state) {
+        if (state is WallpaperDetailLoaded && state.colors != null && state.accent != null) {
+          _setStatusBarIconBrightness(state.accent!);
+        }
+      },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
           return switch (state) {
@@ -313,10 +295,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildLoadedState(BuildContext context, WallpaperDetailLoaded state) {
-    final paletteLoading = context.select<PaletteBloc, bool>((bloc) {
-      final status = bloc.state.status;
-      return status == LoadStatus.loading || status == LoadStatus.initial;
-    });
+    final paletteLoading = state.paletteLoading;
 
     return Scaffold(
       backgroundColor: paletteLoading ? Theme.of(context).primaryColor : state.accent,
@@ -432,7 +411,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildColorBar(BuildContext context, WallpaperDetailLoaded state) {
     final colors = state.colors;
     final thumbnailUrl = state.entity.thumbnailUrl.trim();
-    final colorCount = colors?.length ?? 0;
 
     // Build the default (no-filter) swatch + one swatch per palette color.
     final swatches = <Widget>[
@@ -447,23 +425,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         },
         onLongPress: null,
       ),
-      ...List.generate(colorCount, (index) {
-        final color = colors![index];
-        final isSelected = state.colorChanged && color == state.accent;
-        return _buildColorSwatch(
+      for (final color in colors ?? const <Color>[])
+        _buildColorSwatch(
           context: context,
           thumbnailUrl: thumbnailUrl,
           color: color,
-          isSelected: isSelected,
-          onTap: color != null ? () => _handleColorSelected(context, state, color) : null,
-          onLongPress: color != null
-              ? () {
-                  HapticFeedback.vibrate();
-                  Clipboard.setData(ClipboardData(text: _colorHexForClipboard(color))).then((_) => toasts.color(color));
-                }
-              : null,
-        );
-      }),
+          isSelected: state.colorChanged && color == state.accent,
+          onTap: () => _handleColorSelected(context, state, color),
+          onLongPress: () {
+            HapticFeedback.vibrate();
+            Clipboard.setData(ClipboardData(text: '#${color.rgbHex.toUpperCase()}')).then((_) => toasts.color(color));
+          },
+        ),
     ];
 
     return Container(

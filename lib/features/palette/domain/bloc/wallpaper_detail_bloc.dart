@@ -1,9 +1,11 @@
+import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
-import 'package:Prism/features/palette/palette.dart';
+import 'package:Prism/features/palette/domain/repositories/palette_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
@@ -19,7 +21,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     this._wallhavenRepository,
     this._pexelsRepository,
     this._recordPrismWallpaperViewsUsecase,
-    this._paletteBloc,
+    this._paletteRepository,
   ) : super(const WallpaperDetailInitial()) {
     on<LoadFromEntity>(_onLoadFromEntity);
     on<LoadFromId>(_onLoadFromId);
@@ -31,34 +33,34 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     on<OnPanelClosed>(_onPanelClosed);
     on<OnPanelScrollStart>(_onPanelScrollStart);
     on<OnPanelScrollEnd>(_onPanelScrollEnd);
-    on<UpdateColorsFromPalette>(_onUpdateColorsFromPalette);
   }
 
   final PrismWallpaperRepository _prismRepository;
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
   final RecordPrismWallpaperViewsUsecase _recordPrismWallpaperViewsUsecase;
-  final PaletteBloc _paletteBloc;
+  final PaletteRepository _paletteRepository;
 
   Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
     emit(WallpaperDetailLoaded(entity: event.entity));
-    _requestPalette(event.entity.thumbnailUrl);
     _fetchAndUpdateViews(event.entity);
-    await _enrichWallhavenFromFeedIfNeeded(event.entity, emit);
+    await Future.wait([_loadPalette(event.entity, emit), _enrichWallhavenFromFeedIfNeeded(event.entity, emit)]);
   }
 
   Future<void> _onLoadFromId(LoadFromId event, Emitter<WallpaperDetailState> emit) async {
     emit(WallpaperDetailLoading(thumbnailUrl: event.thumbnailUrl));
 
-    try {
-      final result = await _fetchWallpaper(wallId: event.wallId, source: event.source);
-
-      emit(WallpaperDetailLoaded(entity: result));
-      _requestPalette(result.thumbnailUrl);
-      _fetchAndUpdateViews(result);
-    } catch (e) {
-      emit(WallpaperDetailError(message: e.toString()));
+    final result = await _fetchWallpaper(wallId: event.wallId, source: event.source);
+    final failure = result.failure;
+    if (failure != null) {
+      emit(WallpaperDetailError(message: failure.message));
+      return;
     }
+
+    final entity = result.data!;
+    emit(WallpaperDetailLoaded(entity: entity));
+    _fetchAndUpdateViews(entity);
+    await _loadPalette(entity, emit);
   }
 
   Future<void> _onFetchViews(FetchViews event, Emitter<WallpaperDetailState> emit) async {
@@ -102,7 +104,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     final accent = currentState.accent;
 
     if (colors == null || colors.isEmpty) return;
-    if (!colors.contains(accent)) return;
+    if (accent == null || !colors.contains(accent)) return;
 
     final nextColor = colors[(colors.indexOf(accent) + 1) % colors.length];
 
@@ -144,15 +146,27 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     emit(currentState.copyWith(panelScrollInProgress: false));
   }
 
-  void _onUpdateColorsFromPalette(UpdateColorsFromPalette event, Emitter<WallpaperDetailState> emit) {
-    final currentState = state;
-    if (currentState is! WallpaperDetailLoaded) return;
+  Future<void> _loadPalette(WallpaperDetailEntity entity, Emitter<WallpaperDetailState> emit) async {
+    final imageUrl = entity.thumbnailUrl;
+    if (imageUrl.trim().isEmpty) return;
 
-    final deduped = _deduplicateColors(event.colors.whereType<Color>().toList());
-    final limitedColors = deduped.length > 5 ? deduped.sublist(0, 5) : deduped;
-    final newAccent = limitedColors.isNotEmpty ? limitedColors[0] : currentState.accent;
+    final result = await _paletteRepository.generatePalette(imageUrl);
+    final latest = state;
+    if (latest is! WallpaperDetailLoaded || latest.entity.thumbnailUrl != imageUrl) return;
 
-    emit(currentState.copyWith(colors: limitedColors, accent: newAccent));
+    result.fold(
+      onFailure: (_) => emit(latest.copyWith(paletteLoading: false)),
+      onSuccess: (palette) {
+        final colors = _deduplicateColors(palette.paletteColorValues.map(Color.new).toList()).take(5).toList();
+        emit(
+          latest.copyWith(
+            paletteLoading: false,
+            colors: colors,
+            accent: colors.isNotEmpty ? colors.first : latest.accent,
+          ),
+        );
+      },
+    );
   }
 
   /// Removes perceptually similar colors, keeping the first occurrence.
@@ -176,47 +190,34 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     return unique;
   }
 
-  Future<WallpaperDetailEntity> _fetchWallpaper({required String wallId, required WallpaperSource source}) async {
-    switch (source) {
-      case WallpaperSource.prism:
-        final result = await _prismRepository.fetchById(wallId);
-        return result.fold(
-          onFailure: (failure) => throw Exception(failure.message),
-          onSuccess: (wallpaper) {
-            if (wallpaper == null) throw Exception('Wallpaper not found');
-            return PrismDetailEntity(wallpaper: wallpaper) as WallpaperDetailEntity;
-          },
-        );
-
-      case WallpaperSource.wallhaven:
-        final result = await _wallhavenRepository.fetchById(wallId);
-        return result.fold(
-          onFailure: (failure) => throw Exception(failure.message),
-          onSuccess: (wallpaper) {
-            if (wallpaper == null) throw Exception('Wallpaper not found');
-            return WallhavenDetailEntity(wallpaper: wallpaper);
-          },
-        );
-
-      case WallpaperSource.pexels:
-        final result = await _pexelsRepository.fetchById(wallId);
-        return result.fold(
-          onFailure: (failure) => throw Exception(failure.message),
-          onSuccess: (wallpaper) {
-            if (wallpaper == null) throw Exception('Wallpaper not found');
-            return PexelsDetailEntity(wallpaper: wallpaper);
-          },
-        );
-
-      default:
-        throw Exception('Unsupported source: $source');
+  Future<Result<WallpaperDetailEntity>> _fetchWallpaper({
+    required String wallId,
+    required WallpaperSource source,
+  }) async {
+    Result<WallpaperDetailEntity> wrap<W>(Result<W?> result, WallpaperDetailEntity Function(W wallpaper) toEntity) {
+      return result.fold(
+        onFailure: Result.error,
+        onSuccess: (wallpaper) => wallpaper == null
+            ? Result.error(const UnknownFailure('Wallpaper not found'))
+            : Result.success(toEntity(wallpaper)),
+      );
     }
-  }
 
-  void _requestPalette(String imageUrl) {
-    if (imageUrl.trim().isEmpty) return;
-    _paletteBloc.add(const PaletteEvent.paletteCleared());
-    _paletteBloc.add(PaletteEvent.paletteRequested(imageUrl: imageUrl));
+    return switch (source) {
+      WallpaperSource.prism => wrap(
+        await _prismRepository.fetchById(wallId),
+        (wallpaper) => PrismDetailEntity(wallpaper: wallpaper),
+      ),
+      WallpaperSource.wallhaven => wrap(
+        await _wallhavenRepository.fetchById(wallId),
+        (wallpaper) => WallhavenDetailEntity(wallpaper: wallpaper),
+      ),
+      WallpaperSource.pexels => wrap(
+        await _pexelsRepository.fetchById(wallId),
+        (wallpaper) => PexelsDetailEntity(wallpaper: wallpaper),
+      ),
+      _ => Result.error(ValidationFailure('Unsupported source: $source')),
+    };
   }
 
   void _fetchAndUpdateViews(WallpaperDetailEntity entity) {

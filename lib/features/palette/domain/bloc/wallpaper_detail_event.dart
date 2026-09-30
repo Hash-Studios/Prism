@@ -66,12 +66,3 @@ final class OnPanelScrollStart extends WallpaperDetailEvent {
 final class OnPanelScrollEnd extends WallpaperDetailEvent {
   const OnPanelScrollEnd();
 }
-
-final class UpdateColorsFromPalette extends WallpaperDetailEvent {
-  const UpdateColorsFromPalette({required this.colors});
-
-  final List<Color?> colors;
-
-  @override
-  List<Object?> get props => [colors];
-}
