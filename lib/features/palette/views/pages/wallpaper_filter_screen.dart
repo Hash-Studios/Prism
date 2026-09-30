@@ -506,7 +506,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         ),
         backgroundColor: theme.primaryColor,
         actions: <Widget>[
-          if (_isEdited) IconButton(tooltip: 'Reset', icon: const Icon(JamIcons.refresh), onPressed: _reset),
+          IconButton(tooltip: 'Reset', icon: const Icon(JamIcons.refresh), onPressed: _isEdited ? _reset : null),
           if (_busy)
             Center(
               child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: theme.colorScheme.error)),
@@ -628,7 +628,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     return DefaultTabController(
       length: 2,
       child: SizedBox(
-        height: 190 + MediaQuery.paddingOf(context).bottom,
+        height: 244 + MediaQuery.paddingOf(context).bottom,
         child: Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
           child: Column(
@@ -688,10 +688,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       ],
     ];
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       scrollDirection: Axis.horizontal,
       itemCount: tiles.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 10),
+      separatorBuilder: (_, _) => const SizedBox(width: 4),
       itemBuilder: (_, index) => tiles[index],
     );
   }
@@ -711,11 +711,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       button: true,
       selected: selected,
       label: name,
+      excludeSemantics: true,
       child: GestureDetector(
         onTap: onTap,
         child: SizedBox(
-          width: 72,
+          width: 84,
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Stack(
                 children: [
