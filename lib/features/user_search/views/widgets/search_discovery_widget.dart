@@ -363,7 +363,7 @@ class _ColorSection extends StatelessWidget {
               button: true,
               label: swatch.name,
               child: GestureDetector(
-                onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex)),
+                onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex, name: swatch.name)),
                 child: Container(decoration: BoxDecoration(color: swatch.color)),
               ),
             );
