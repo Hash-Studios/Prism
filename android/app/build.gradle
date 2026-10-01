@@ -36,6 +36,26 @@ android {
         testInstrumentationRunner 'com.hash.prism.PrismNativeInstrumentation'
         versionCode flutter.versionCode
         versionName flutter.versionName
+
+        def targetPlatforms = project.findProperty('target-platform')?.toString()
+        def splitPerAbi = project.findProperty('split-per-abi')?.toString()?.toBoolean() ?: false
+        if (targetPlatforms != null && !splitPerAbi) {
+            def platformAbis = [
+                    'android-arm': 'armeabi-v7a',
+                    'android-arm64': 'arm64-v8a',
+                    'android-x64': 'x86_64'
+            ]
+            ndk {
+                abiFilters.clear()
+                abiFilters.addAll(targetPlatforms.split(',').collect { platform ->
+                    def abi = platformAbis[platform]
+                    if (abi == null) {
+                        throw new GradleException("Unsupported Flutter target platform: $platform")
+                    }
+                    abi
+                })
+            }
+        }
     }
 
     signingConfigs {

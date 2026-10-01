@@ -7,9 +7,9 @@ import com.google.firebase.functions.FirebaseFunctions
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
 
-class FirebaseFunctionsStreamHandler(
+internal class FirebaseFunctionsStreamHandler(
   private val functions: FirebaseFunctions,
-  private val onCancelled: () -> Unit = {}
+  private val onCancelled: (FirebaseFunctionsStreamHandler) -> Unit = {}
 ) : EventChannel.StreamHandler {
   private var subscriber: StreamResponseSubscriber? = null
 
@@ -31,7 +31,7 @@ class FirebaseFunctionsStreamHandler(
 
   override fun onCancel(arguments: Any?) {
     cancel()
-    onCancelled()
+    onCancelled(this)
   }
 
   internal fun cancel() {

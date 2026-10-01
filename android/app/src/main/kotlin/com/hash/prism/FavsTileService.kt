@@ -4,7 +4,7 @@ import android.content.SharedPreferences
 import org.json.JSONArray
 import kotlin.random.Random
 
-class FavsTileService : WallpaperTileService() {
+internal class FavsTileService : WallpaperTileService() {
     internal override fun wallpaper(prefs: SharedPreferences): Wallpaper {
         val raw = prefs.getString("flutter.quick_tile.favs.wall_urls", null)
             ?: throw IllegalStateException("Open Prism and save some favourite wallpapers first")

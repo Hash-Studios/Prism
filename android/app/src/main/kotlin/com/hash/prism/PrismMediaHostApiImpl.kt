@@ -23,13 +23,14 @@ import com.hash.prism.pigeon.SaveMediaKind
 import com.hash.prism.pigeon.SaveMediaRequest
 import java.io.File
 import java.io.IOException
+import java.io.OutputStream
 import java.util.UUID
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
-class PrismMediaHostApiImpl(
+internal class PrismMediaHostApiImpl(
     context: Context,
     requestStoragePermission: ((Boolean) -> Unit) -> Unit,
 ) : PrismMediaHostApi, AutoCloseable {
@@ -72,7 +73,7 @@ class PrismMediaHostApiImpl(
 
     private fun withWritePermission(callback: (Result<OperationResult>) -> Unit, task: () -> Unit) {
         if (closed) {
-            callback(Result.success(OperationResult(success = false, errorCode = "ENGINE_DETACHED", message = "App engine detached")))
+            callback(Result.success(OperationResult(success = false, errorCode = "ENGINE_DETACHED", message = ENGINE_DETACHED_MESSAGE)))
             return
         }
         if (hasStorageAccess()) task() else requestStoragePermission?.invoke { granted ->
@@ -101,8 +102,7 @@ class PrismMediaHostApiImpl(
         try {
             if (!isLocal) PrismImageTransfer.download(link, file)
             else if (staged) {
-                val input = context.contentResolver.openInputStream(uri) ?: throw IOException("Could not open local image")
-                input.use { source -> file.outputStream().use { PrismImageTransfer.copy(source, it) } }
+                copyFromUri(context, uri, file)
             }
             val mime = PrismImageValidation.mime(file)
             val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: throw IOException("Unsupported image type")
@@ -113,7 +113,7 @@ class PrismMediaHostApiImpl(
     }
 
     private fun publish(image: Image, folder: String, basename: String) {
-        check(!closed) { "App engine detached" }
+        check(!closed) { ENGINE_DETACHED_MESSAGE }
         val filename = "$basename.${image.extension}"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val resolver = context.contentResolver
@@ -126,7 +126,7 @@ class PrismMediaHostApiImpl(
             val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: throw IOException("Could not create image")
             try {
                 val output = resolver.openOutputStream(uri) ?: throw IOException("Could not open image")
-                output.use { image.file.inputStream().use { source -> PrismImageTransfer.copy(source, it) } }
+                output.use { copyImage(image.file, it) }
                 if (resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null) != 1) {
                     throw IOException("Could not publish image")
                 }
@@ -141,7 +141,7 @@ class PrismMediaHostApiImpl(
             var suffix = 1
             while (target.exists()) target = File(directory, "$basename (${suffix++}).${image.extension}")
             try {
-                target.outputStream().use { image.file.inputStream().use { source -> PrismImageTransfer.copy(source, it) } }
+                target.outputStream().use { copyImage(image.file, it) }
                 MediaScannerConnection.scanFile(context, arrayOf(target.absolutePath), arrayOf(image.mime), null)
             } catch (error: Exception) {
                 if (!target.delete() && target.exists()) Log.w(TAG, "Could not remove incomplete image")
@@ -152,7 +152,7 @@ class PrismMediaHostApiImpl(
 
     override fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit) {
         runInBackground(callback, {
-            DownloadItemsResult(success = false, items = emptyList(), errorCode = "LIST_FAILED", message = it.message)
+            DownloadItemsResult(success = false, items = emptyList(), errorCode = mediaFailureCode("LIST_FAILED", it), message = mediaFailureMessage(it))
         }) {
             check(hasStorageAccess()) { "Storage access is required to read legacy downloads" }
             val items = mutableListOf<String>()
@@ -215,35 +215,29 @@ class PrismMediaHostApiImpl(
         val temporary = File.createTempFile("image-", ".part", directory)
         try {
             val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-            val input = context.contentResolver.openInputStream(uri) ?: throw IOException("Could not read download")
-            input.use { source -> temporary.outputStream().use { PrismImageTransfer.copy(source, it) } }
+            copyFromUri(context, uri, temporary)
             if (!temporary.renameTo(file)) throw IOException("Could not cache download")
             return file
         } finally { temporary.delete() }
     }
 
-    private fun legacyDownloadDirectories() = listOf(
-        File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), DOWNLOAD_FOLDER),
-        File(Environment.getExternalStorageDirectory(), DOWNLOAD_FOLDER),
-    )
-
-    private fun isImageName(name: String) =
-        name.substringAfterLast('.', "").lowercase() in setOf("jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "avif")
-
     private fun <T> runInBackground(callback: (Result<T>) -> Unit, onError: (Exception) -> T, task: () -> T) {
         try {
             executor.execute {
                 val result = try {
-                    check(!closed) { "App engine detached" }
+                    check(!closed) { ENGINE_DETACHED_MESSAGE }
                     // ponytail: a process-wide lock serializes engine reattachments; split by storage scope if throughput matters.
                     synchronized(storageLock) {
-                        check(!closed) { "App engine detached" }
+                        check(!closed) { ENGINE_DETACHED_MESSAGE }
                         task()
                     }
                 } catch (error: Exception) { onError(error) }
                 mainHandler.post { callback(Result.success(result)) }
             }
-        } catch (error: RejectedExecutionException) { callback(Result.success(onError(error))) }
+        } catch (error: RejectedExecutionException) {
+            val failure = if (closed) IllegalStateException(ENGINE_DETACHED_MESSAGE) else error
+            callback(Result.success(onError(failure)))
+        }
     }
 
     override fun close() {
@@ -252,14 +246,40 @@ class PrismMediaHostApiImpl(
         executor.shutdownNow().forEach { it.run() }
     }
 
-    private fun operationError(code: String, error: Exception) = OperationResult(success = false, errorCode = code, message = error.message)
-
     private companion object {
         const val TAG = "PrismMedia"
-        const val DOWNLOAD_FOLDER = "Prism/Downloads"
         const val DOWNLOAD_CACHE_DIRECTORY = "prism_downloads"
         val storageLock = Any()
         const val DOWNLOAD_SELECTION = "(${MediaStore.Images.Media.RELATIVE_PATH}=? OR ${MediaStore.Images.Media.RELATIVE_PATH}=?)"
         val downloadSelectionArgs = arrayOf("Pictures/$DOWNLOAD_FOLDER/", "$DOWNLOAD_FOLDER/")
     }
 }
+
+private const val DOWNLOAD_FOLDER = "Prism/Downloads"
+private const val ENGINE_DETACHED_MESSAGE = "App engine detached"
+
+private fun legacyDownloadDirectories() = listOf(
+    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), DOWNLOAD_FOLDER),
+    File(Environment.getExternalStorageDirectory(), DOWNLOAD_FOLDER),
+)
+
+private fun isImageName(name: String) =
+    name.substringAfterLast('.', "").lowercase() in setOf("jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "avif")
+
+private fun copyImage(file: File, output: OutputStream) {
+    file.inputStream().use { PrismImageTransfer.copy(it, output) }
+}
+
+private fun copyFromUri(context: Context, uri: Uri, file: File) {
+    val input = context.contentResolver.openInputStream(uri) ?: throw IOException("Could not read image")
+    input.use { source -> file.outputStream().use { PrismImageTransfer.copy(source, it) } }
+}
+
+internal fun mediaFailureCode(fallback: String, error: Exception): String =
+    if (error is RejectedExecutionException) "MEDIA_BUSY" else fallback
+
+internal fun mediaFailureMessage(error: Exception): String? =
+    if (error is RejectedExecutionException) "Another media operation is in progress. Please try again." else error.message
+
+private fun operationError(code: String, error: Exception) =
+    OperationResult(success = false, errorCode = mediaFailureCode(code, error), message = mediaFailureMessage(error))

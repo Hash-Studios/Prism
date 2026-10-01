@@ -25,7 +25,7 @@ internal enum class TileWallpaperTarget(val flags: Int) {
     }
 }
 
-abstract class WallpaperTileService : TileService() {
+internal abstract class WallpaperTileService : TileService() {
     internal data class Wallpaper(val url: String, val target: TileWallpaperTarget)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val executor = Executors.newSingleThreadExecutor()

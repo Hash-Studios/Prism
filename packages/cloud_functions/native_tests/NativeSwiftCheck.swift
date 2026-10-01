@@ -7,17 +7,24 @@ func functionsArgumentError(_ message: String) -> ArgumentError { ArgumentError(
 @main
 enum NativeSwiftCheck {
   static func main() throws {
+    try checkCodec()
+    try checkArguments()
+    print("Native Swift codec and boundary checks passed")
+  }
+
+  private static func checkCodec() throws {
     let encoder = JSONEncoder()
     encoder.outputFormatting = .sortedKeys
     let values: [String: Any] = [
       "zero": NSNumber(value: 0), "one": NSNumber(value: 1),
       "boolean": true, "false": false, "fraction": 1.5,
       "large": Int64.max,
-      "array": [NSNull(), "hello", 1, true],
+      "array": [NSNull(), "hello", 1, true]
     ]
     let data = try encoder.encode(AnyEncodable(values))
-    let expected = #"{"array":[null,"hello",1,true],"boolean":true,"false":false,"fraction":1.5,"large":9223372036854775807,"one":1,"zero":0}"#
-    precondition(String(decoding: data, as: UTF8.self) == expected)
+    let expected = #"{"array":[null,"hello",1,true],"boolean":true,"false":false,"fraction":1.5,"# +
+      #""large":9223372036854775807,"one":1,"zero":0}"#
+    precondition(String(data: data, encoding: .utf8) == expected)
     let decoded = try JSONDecoder().decode(AnyDecodable.self, from: data)
     let roundTrip = try encoder.encode(AnyEncodable(decoded.value))
     precondition(roundTrip == data)
@@ -33,9 +40,12 @@ enum NativeSwiftCheck {
       _ = try encoder.encode(AnyEncodable(Date()))
       preconditionFailure("Unsupported callable parameter must fail")
     } catch is EncodingError {}
+  }
+
+  private static func checkArguments() throws {
     let valid: [String: Any?] = [
       "functionName": "wall", "functionUri": nil, "origin": NSNull(),
-      "timeout": Int64(5_000_000_000), "parameters": NSNull(), "limitedUseAppCheckToken": false,
+      "timeout": Int64(5_000_000_000), "parameters": NSNull(), "limitedUseAppCheckToken": false
     ]
     let parsed = try CallableArguments(valid)
     precondition(parsed.timeout == 5_000_000)
@@ -58,6 +68,5 @@ enum NativeSwiftCheck {
         preconditionFailure("Invalid origin must fail")
       } catch is ArgumentError {}
     }
-    print("Native Swift codec and boundary checks passed")
   }
 }

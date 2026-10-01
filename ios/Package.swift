@@ -11,6 +11,6 @@ let package = Package(
       dependencies: ["PrismMediaStorage"],
       path: "RunnerTests",
       exclude: ["RunnerTests.swift"]
-    ),
+    )
   ]
 )

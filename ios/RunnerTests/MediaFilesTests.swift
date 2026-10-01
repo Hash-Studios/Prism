@@ -8,12 +8,17 @@ import Testing
 #endif
 
 struct MediaFilesTests {
-  @Test(arguments: ["", " ", ".", "..", "../escape", "/escape", "a/b", "a\\b", "a\n", "a\0", String(repeating: "é", count: 101)])
+  @Test(arguments: [
+    "", " ", ".", "..", "../escape", "/escape", "a/b", "a\\b", "a\n", "a\0", String(repeating: "é", count: 101)
+  ])
   func invalidFilenames(_ filename: String) {
     #expect(throws: PrismMediaError.self) { try PrismMediaFiles.validateFilename(filename) }
   }
 
-  @Test(arguments: ["https:///", "https://user:secret@example.com/image", "https://user@example.com/image", "file:///image.png", "content://image", "/tmp/image", "javascript:alert(1)"])
+  @Test(arguments: [
+    "https:///", "https://user:secret@example.com/image", "https://user@example.com/image",
+    "file:///image.png", "content://image", "/tmp/image", "javascript:alert(1)"
+  ])
   func invalidNetworkSources(_ link: String) {
     #expect(throws: PrismMediaError.self) { try PrismMediaFiles.networkURL(link) }
   }
@@ -31,13 +36,19 @@ struct MediaFilesTests {
     let fixture = try MediaFixture()
     let files = PrismMediaFiles(downloadsDirectory: fixture.downloads)
     try Data("<html>not an image</html>".utf8).write(to: fixture.source)
-    await #expect(throws: PrismMediaError.self) { try await files.resolve(link: fixture.source.path, isLocalFile: true) }
+    await #expect(throws: PrismMediaError.self) {
+      try await files.resolve(link: fixture.source.path, isLocalFile: true)
+    }
     try Data().write(to: fixture.source)
-    await #expect(throws: PrismMediaError.self) { try await files.resolve(link: fixture.source.path, isLocalFile: true) }
+    await #expect(throws: PrismMediaError.self) {
+      try await files.resolve(link: fixture.source.path, isLocalFile: true)
+    }
     let handle = try FileHandle(forWritingTo: fixture.source)
     try handle.truncate(atOffset: UInt64(PrismMediaFiles.maximumImageBytes + 1))
     try handle.close()
-    await #expect(throws: PrismMediaError.self) { try await files.resolve(link: fixture.source.path, isLocalFile: true) }
+    await #expect(throws: PrismMediaError.self) {
+      try await files.resolve(link: fixture.source.path, isLocalFile: true)
+    }
   }
 
   @Test func mislabelledLocalImageUsesTemporaryTypedCopyAndPreservesOriginal() async throws {
@@ -59,9 +70,25 @@ struct MediaFilesTests {
   @Test func httpErrorsDiscardNetworkFiles() async throws {
     let fixture = try MediaFixture()
     let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader(status: 404))
-    await #expect(throws: PrismMediaError.self) { try await files.resolve(link: "https://example.com/wall", isLocalFile: false) }
+    await #expect(throws: PrismMediaError.self) {
+      try await files.resolve(link: "https://example.com/wall", isLocalFile: false)
+    }
     let contents = try FileManager.default.contentsOfDirectory(atPath: fixture.root.path)
     #expect(contents == [fixture.source.lastPathComponent])
+  }
+
+  @Test(arguments: [
+    ("https://example.com/wall%20paper.jpg?token=private", "wall paper.png"),
+    ("https://example.com/", "Prism.png")
+  ])
+  func networkPhotosUseURLFilenameAndDetectedImageExtension(_ testCase: (link: String, filename: String)) async throws {
+    let fixture = try MediaFixture()
+    let files = PrismMediaFiles(download: fixture.downloader())
+    let image = try await files.resolve(link: testCase.link, isLocalFile: false)
+    #expect(image.originalFilename == testCase.filename)
+    #expect(try Data(contentsOf: image.url) == Data(contentsOf: fixture.source))
+    await files.removeTemporarySource(image)
+    #expect(!FileManager.default.fileExists(atPath: image.url.path))
   }
 
   @Test func stagedDownloadIsHiddenAndDuplicateNamesPreservePreviousFile() async throws {
@@ -69,7 +96,8 @@ struct MediaFilesTests {
     let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader())
     let image = try await files.resolve(link: "https://example.com/wall.jpg", isLocalFile: false)
     #expect(image.url.pathExtension == "png")
-    #expect(try FileManager.default.contentsOfDirectory(atPath: fixture.root.path) == [fixture.source.lastPathComponent])
+    let remainingSourceFiles = try FileManager.default.contentsOfDirectory(atPath: fixture.root.path)
+    #expect(remainingSourceFiles == [fixture.source.lastPathComponent])
     let stage = try await files.stage(image: image, filename: "wall")
     await files.removeTemporarySource(image)
     #expect(!FileManager.default.fileExists(atPath: image.url.path))

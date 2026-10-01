@@ -12,7 +12,7 @@ import org.reactivestreams.Subscription
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-class StreamResponseSubscriber(
+internal class StreamResponseSubscriber(
   private val eventSink: EventSink,
   private val dispatch: (() -> Unit) -> Unit = Handler(Looper.getMainLooper()).let { handler ->
     { action -> handler.post(action); Unit }

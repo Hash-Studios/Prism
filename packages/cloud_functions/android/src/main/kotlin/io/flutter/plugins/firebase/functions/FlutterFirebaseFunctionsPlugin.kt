@@ -13,6 +13,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugins.firebase.core.FlutterFirebasePlugin
 
+/** Connects Firebase callable and streaming requests to Flutter's host API. */
 class FlutterFirebaseFunctionsPlugin : FlutterPlugin, FlutterFirebasePlugin, CloudFunctionsHostApi {
   private var messenger: BinaryMessenger? = null
   private val streams = mutableMapOf<String, Pair<EventChannel, FirebaseFunctionsStreamHandler>>()
@@ -68,8 +69,12 @@ class FlutterFirebaseFunctionsPlugin : FlutterPlugin, FlutterFirebasePlugin, Clo
         channel.setStreamHandler(null)
       }
       val channel = EventChannel(binaryMessenger, "$METHOD_CHANNEL_NAME/$eventId")
-      val handler = FirebaseFunctionsStreamHandler(functions) {
-        streams.remove(eventId)?.first?.setStreamHandler(null)
+      val handler = FirebaseFunctionsStreamHandler(functions) { cancelled ->
+        val current = streams[eventId]
+        if (current?.second === cancelled) {
+          streams.remove(eventId)
+          current.first.setStreamHandler(null)
+        }
       }
       streams[eventId] = channel to handler
       channel.setStreamHandler(handler)
