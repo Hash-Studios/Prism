@@ -112,9 +112,11 @@ struct RunnerTests {
   #if targetEnvironment(simulator)
   @Test func realPhotoLibraryAcceptsMislabelledPngAndCompletesBeforeReply() async throws {
     try #require(PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized)
+    let started = Date().addingTimeInterval(-1)
     let fixture = try MediaFixture()
-    let filename = "PrismPhotosTest-\(UUID().uuidString).tmp"
-    let source = fixture.root.appendingPathComponent(filename)
+    let stem = "PrismPhotosTest-\(UUID().uuidString)"
+    let filename = "\(stem).png"
+    let source = fixture.root.appendingPathComponent("\(stem).tmp")
     try FileManager.default.copyItem(at: fixture.source, to: source)
     let api = PrismMediaHostApiImpl()
     var callbacks = 0
@@ -125,7 +127,11 @@ struct RunnerTests {
         continuation.resume(returning: $0)
       }
     }
-    let assets = PHAsset.fetchAssets(with: .image, options: nil)
+    let result = try outcome.get()
+    try #require(result.success, "Save failed: \(result.message ?? "unknown")")
+    let options = PHFetchOptions()
+    options.predicate = NSPredicate(format: "creationDate >= %@", started as NSDate)
+    let assets = PHAsset.fetchAssets(with: .image, options: options)
     let identifiers = (0..<assets.count).compactMap { index -> String? in
       let asset = assets.object(at: index)
       return PHAssetResource.assetResources(for: asset).contains { $0.originalFilename == filename }
@@ -133,12 +139,11 @@ struct RunnerTests {
     }
     #expect(identifiers.count == 1)
     if !identifiers.isEmpty {
-      try await PHPhotoLibrary.shared().performChanges {
+      try await PHPhotoLibrary.shared().performChanges { @Sendable in
         PHAssetChangeRequest.deleteAssets(PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil))
       }
     }
     #expect(PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil).count == 0)
-    #expect(try outcome.get().success)
     #expect(callbacks == 1)
     #expect(FileManager.default.fileExists(atPath: source.path))
   }

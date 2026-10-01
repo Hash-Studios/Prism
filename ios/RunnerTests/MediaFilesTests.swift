@@ -40,6 +40,22 @@ struct MediaFilesTests {
     await #expect(throws: PrismMediaError.self) { try await files.resolve(link: fixture.source.path, isLocalFile: true) }
   }
 
+  @Test func mislabelledLocalImageUsesTemporaryTypedCopyAndPreservesOriginal() async throws {
+    let fixture = try MediaFixture()
+    let source = fixture.root.appendingPathComponent("mislabelled.tmp")
+    let bytes = try Data(contentsOf: fixture.source)
+    try bytes.write(to: source)
+    let files = PrismMediaFiles()
+    let image = try await files.resolve(link: source.path, isLocalFile: true)
+    #expect(image.url.pathExtension == "png")
+    #expect(image.originalFilename == "mislabelled.png")
+    #expect(image.isTemporary)
+    #expect(try Data(contentsOf: image.url) == bytes)
+    await files.removeTemporarySource(image)
+    #expect(!FileManager.default.fileExists(atPath: image.url.path))
+    #expect(try Data(contentsOf: source) == bytes)
+  }
+
   @Test func httpErrorsDiscardNetworkFiles() async throws {
     let fixture = try MediaFixture()
     let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader(status: 404))
@@ -52,6 +68,8 @@ struct MediaFilesTests {
     let fixture = try MediaFixture()
     let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader())
     let image = try await files.resolve(link: "https://example.com/wall.jpg", isLocalFile: false)
+    #expect(image.url.pathExtension == "png")
+    #expect(try FileManager.default.contentsOfDirectory(atPath: fixture.root.path) == [fixture.source.lastPathComponent])
     let stage = try await files.stage(image: image, filename: "wall")
     await files.removeTemporarySource(image)
     #expect(!FileManager.default.fileExists(atPath: image.url.path))

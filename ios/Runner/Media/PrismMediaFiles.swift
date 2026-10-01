@@ -6,6 +6,7 @@ struct PrismImageFile: Sendable {
   let url: URL
   let fileExtension: String
   let uniformTypeIdentifier: String
+  let originalFilename: String
   let isTemporary: Bool
 }
 
@@ -86,8 +87,28 @@ actor PrismMediaFiles {
           kCGImageSourceShouldCache: false,
         ] as CFDictionary) != nil
       else { throw PrismMediaError.invalidImage }
+      let originalFilename = "\(url.deletingPathExtension().lastPathComponent).\(fileExtension)"
+      if UTType(filenameExtension: url.pathExtension) != type {
+        let normalized = FileManager.default.temporaryDirectory
+          .appendingPathComponent("PrismImage-\(UUID().uuidString).\(fileExtension)")
+        do {
+          if temporary {
+            try FileManager.default.moveItem(at: url, to: normalized)
+          } else {
+            try FileManager.default.copyItem(at: url, to: normalized)
+          }
+        } catch {
+          try? FileManager.default.removeItem(at: normalized)
+          throw error
+        }
+        return PrismImageFile(
+          url: normalized, fileExtension: fileExtension, uniformTypeIdentifier: type.identifier,
+          originalFilename: originalFilename, isTemporary: true
+        )
+      }
       return PrismImageFile(
-        url: url, fileExtension: fileExtension, uniformTypeIdentifier: type.identifier, isTemporary: temporary
+        url: url, fileExtension: fileExtension, uniformTypeIdentifier: type.identifier,
+        originalFilename: originalFilename, isTemporary: temporary
       )
     } catch {
       if temporary { try? FileManager.default.removeItem(at: url) }
