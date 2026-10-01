@@ -14,6 +14,7 @@ const Map<String, String> _actionLabels = <String, String>{
   'premiumFilter': 'Premium filter',
   'premiumPreview24h': 'Collection preview, 24 h',
   'streakFreeze': 'Streak freeze',
+  'badgeReward': 'Badge reward',
 };
 
 /// Short, user-facing name for a coin transaction. Never returns a raw id or slug.
