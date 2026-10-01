@@ -36,23 +36,26 @@ class _BadgesBody extends StatelessWidget {
               const SizedBox(height: 4),
               Text('$count of ${badgeCatalog.length} earned', style: PrismTextStyles.caption(context)),
               const SizedBox(height: 12),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  const double gap = 12;
-                  final double width = (constraints.maxWidth - gap) / 2;
-                  return Wrap(
-                    spacing: gap,
-                    runSpacing: gap,
+              for (int i = 0; i < badgeCatalog.length; i += 2) ...<Widget>[
+                if (i > 0) const SizedBox(height: 12),
+                // Both tiles in a row take the taller one's height.
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      for (final BadgeInfo info in badgeCatalog)
-                        SizedBox(
-                          width: width,
-                          child: _BadgeTile(info: info, earned: earned.contains(info.id)),
-                        ),
+                      Expanded(
+                        child: _BadgeTile(info: badgeCatalog[i], earned: earned.contains(badgeCatalog[i].id)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: i + 1 < badgeCatalog.length
+                            ? _BadgeTile(info: badgeCatalog[i + 1], earned: earned.contains(badgeCatalog[i + 1].id))
+                            : const SizedBox.shrink(),
+                      ),
                     ],
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ],
           ),
         );
