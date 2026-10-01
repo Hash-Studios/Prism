@@ -78,9 +78,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     return result!;
   }
 
-  Future<void> _uploadImage(File file, {required String field}) async {
-    final Uint8List compressed = await compressFile(file);
+  Future<bool> _uploadImage(File file, {required String field}) async {
     try {
+      final Uint8List compressed = await compressFile(file);
       final value = await GitHubContentApi().putFile(
         repo: Env.normalize(Env.ghRepoWalls),
         message: path.basename(file.path),
@@ -95,9 +95,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       }
       app_state.persistPrismUser();
       await _updateCurrentUser(<String, dynamic>{field: url}, 'profile.edit.$field');
+      return true;
     } catch (e) {
       logger.d(e.toString());
       toasts.error('Some uploading issue, please try again.');
+      return false;
     }
   }
 
@@ -194,10 +196,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       await _updateCurrentUser(<String, dynamic>{"username": usernameController.text}, 'profile.edit.username');
     }
     if (_pfp != null && pfpEdit) {
-      await _uploadImage(_pfp!, field: 'profilePhoto');
+      if (!await _uploadImage(_pfp!, field: 'profilePhoto')) {
+        if (mounted) setState(() => isLoading = false);
+        return;
+      }
     }
     if (_cover != null && coverEdit) {
-      await _uploadImage(_cover!, field: 'coverPhoto');
+      if (!await _uploadImage(_cover!, field: 'coverPhoto')) {
+        if (mounted) setState(() => isLoading = false);
+        return;
+      }
     }
     if (bioEdit && bioController.text.isNotEmpty) {
       app_state.prismUser.bio = bioController.text;

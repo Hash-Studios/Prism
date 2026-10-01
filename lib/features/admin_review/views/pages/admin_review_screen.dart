@@ -122,7 +122,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           },
           reject: (String reason) async {
             await _repository.rejectWall(wall, reason: reason);
-            toasts.error('Wallpaper rejected');
+            toasts.success('Wallpaper rejected');
           },
         );
       },
@@ -568,7 +568,7 @@ class _WallContentReportCardState extends State<_WallContentReportCard> {
                             if (removed) {
                               toasts.success('Wallpaper removed');
                             } else {
-                              toasts.error('Wallpaper was already gone; report closed');
+                              toasts.success('Wallpaper was already gone; report closed');
                             }
                           }
                         },

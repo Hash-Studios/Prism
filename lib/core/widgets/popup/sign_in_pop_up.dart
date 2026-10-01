@@ -47,7 +47,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           }
           closeLoaderIfVisible();
           if (outcome == SignInOutcome.cancelled) {
-            toasts.success('Sign in cancelled.');
+            toasts.success('Sign in cancelled.', haptic: false);
             return;
           }
           toasts.success('Login Successful!');

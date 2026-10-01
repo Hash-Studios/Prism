@@ -332,7 +332,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return (generatedRatio - targetRatio).abs() > 0.08;
   }
 
-  Future<void> _loadHistory() async {
+  Future<void> _loadHistory({bool userInitiated = false}) async {
     final String userId = app_state.prismUser.id;
     if (_historyUserId != userId) {
       _historyUserId = userId;
@@ -355,7 +355,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final bool online = await _hasNetworkOrUnknown();
       if (!online) {
         if (mounted) {
-          toasts.error("You're offline. History will refresh when you're connected.");
+          toasts.error("You're offline. History will refresh when you're connected.", haptic: userInitiated);
         }
         return;
       }
@@ -370,7 +370,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     } catch (error, stackTrace) {
       logger.w('AI history fetch failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       if (mounted) {
-        toasts.error(_toastForHistoryFailure(error));
+        toasts.error(_toastForHistoryFailure(error), haptic: userInitiated);
       }
     } finally {
       if (mounted) {
@@ -413,6 +413,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Description is too long (max $_maxPromptChars characters).');
       return;
     }
+    PrismHaptics.tap();
     final AiStylePreset style = _selectedStyle;
     final AiQualityTier qualityTier = _selectedQualityTier;
     final String targetSize = aiTargetSize(
@@ -434,7 +435,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           AiGenerateSuccessEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
       onSuccess: (AiGenerationRecord generated) {
         if (_isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
-          toasts.error('Crop may differ slightly on your device.');
+          toasts.error('Crop may differ slightly on your device.', haptic: false);
         }
       },
     );
@@ -457,6 +458,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Refinements are not available right now.');
       return;
     }
+    PrismHaptics.tap();
     final AiStylePreset style = _selectedStyle;
     final AiQualityTier qualityTier = _selectedQualityTier;
     await _runGeneration(
@@ -974,7 +976,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       onPressed: !app_state.aiVariationsEnabled || _latest == null || _loadingGeneration
                           ? null
                           : () {
-                              PrismHaptics.tap();
                               Navigator.of(ctx).pop();
                               _generateVariation();
                             },
@@ -1441,7 +1442,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       };
     } else {
       onPressed = () {
-        PrismHaptics.tap();
         _generate();
       };
     }
@@ -1613,7 +1613,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         child: RefreshIndicator(
           onRefresh: () {
             PrismHaptics.impact();
-            return _loadHistory();
+            return _loadHistory(userInitiated: true);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

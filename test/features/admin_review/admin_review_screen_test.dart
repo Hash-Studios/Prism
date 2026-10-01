@@ -10,6 +10,7 @@ import 'package:Prism/features/admin_review/data/admin_moderation_repository.dar
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
@@ -30,6 +31,7 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   Stream<List<FirestoreDocument>>? wallsStream;
   Future<void> Function()? approveAction;
   Future<void> Function()? rejectAction;
+  bool wallWasRemoved = true;
 
   @override
   Stream<List<FirestoreDocument>> watchPendingWalls() {
@@ -56,6 +58,12 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
     rejections++;
     await rejectAction?.call();
   }
+
+  @override
+  Future<bool> rejectWallByFirestoreDocumentId(String wallDocId, {required String reason}) async => wallWasRemoved;
+
+  @override
+  Future<void> markContentReportReviewed(String reportDocId, {String? resolution}) async {}
 }
 
 class _RecordingFirestoreClient extends FakeFirestoreClient {
@@ -76,6 +84,8 @@ class _RecordingFirestoreClient extends FakeFirestoreClient {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+  final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   late PrismUsersV2 originalUser;
   late _RecordingFirestoreClient firestore;
 
@@ -310,6 +320,75 @@ void main() {
     expect(repository.rejections, 2);
     expect(find.byType(AlertDialog), findsNothing);
   });
+
+  testWidgets('a successful wallpaper rejection uses success outcome feedback', (WidgetTester tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      messenger.setMockMethodCallHandler(toastChannel, null);
+    });
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await pumpReviewScreen(tester, repository);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Reject'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Copied artwork');
+    await tester.tap(find.widgetWithText(FilledButton, 'Reject'));
+    await tester.pumpAndSettle();
+
+    expect(repository.rejections, 1);
+    expect(hapticTypes, contains('HapticFeedbackType.successNotification'));
+    expect(hapticTypes, isNot(contains('HapticFeedbackType.errorNotification')));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('closing a report for an already-missing wall uses success outcome feedback', (
+    WidgetTester tester,
+  ) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      messenger.setMockMethodCallHandler(toastChannel, null);
+    });
+    final StreamController<List<FirestoreDocument>> reports = StreamController<List<FirestoreDocument>>.broadcast();
+    addTearDown(reports.close);
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..reportsStream = reports.stream
+      ..wallWasRemoved = false;
+    await tester.pumpWidget(MaterialApp(home: AdminReviewScreen(repository: repository)));
+    await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
+    await tester.pump(const Duration(milliseconds: 600));
+    reports.add(const <FirestoreDocument>[
+      FirestoreDocument('report-a', <String, dynamic>{
+        'contentType': 'wall',
+        'reason': 'Copied work',
+        'targetFirestoreDocId': 'wall-a',
+      }),
+    ]);
+    // CachedNetworkImage may keep an indeterminate progress indicator animating.
+    await tester.pump();
+    final Finder removeButton = find.text('Remove wallpaper');
+    await tester.ensureVisible(removeButton);
+    await tester.pump();
+    await tester.tap(removeButton);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.enterText(find.byType(TextField), 'Already removed');
+    await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(hapticTypes, contains('HapticFeedbackType.successNotification'));
+    expect(hapticTypes, isNot(contains('HapticFeedbackType.errorNotification')));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('rejection dialog remains usable with a short viewport and keyboard insets', (WidgetTester tester) async {
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();

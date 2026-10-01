@@ -110,7 +110,7 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   }) => variation!.call();
 }
 
-AiGenerationRecord _record({String id = 'generation-1'}) => AiGenerationRecord(
+AiGenerationRecord _record({String id = 'generation-1', int width = 720, int height = 1280}) => AiGenerationRecord(
   id: id,
   userId: 'user-1',
   createdAt: DateTime.utc(2026),
@@ -120,8 +120,8 @@ AiGenerationRecord _record({String id = 'generation-1'}) => AiGenerationRecord(
   provider: 'test',
   model: 'test',
   seed: 1,
-  width: 720,
-  height: 1280,
+  width: width,
+  height: height,
   imageUrl: '',
   watermarkedImageUrl: '',
   chargeMode: AiChargeMode.freeTrial,
@@ -146,6 +146,7 @@ void main() {
     Future<dynamic> Function(String, dynamic) onCall, {
     _FakeAiGenerationRepository? repository,
     ConnectivityService? connectivity,
+    List<MethodCall>? toastCalls,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -155,7 +156,10 @@ void main() {
     getIt.registerSingleton<ConnectivityService>(connectivity ?? _FakeConnectivityService());
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
     functions.onCall = onCall;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      toastCalls?.add(call);
+      return true;
+    });
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-1'
       ..coins = 100
@@ -176,6 +180,110 @@ void main() {
   tearDownAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
   });
+
+  testWidgets('initial history failures do not play an error haptic', (tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    final List<MethodCall> toastCalls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{},
+      connectivity: _FakeConnectivityService(check: () async => false),
+      toastCalls: toastCalls,
+    );
+
+    expect(hapticTypes, isEmpty);
+    expect(
+      toastCalls.any(
+        (call) =>
+            (call.arguments as Map<Object?, Object?>)['msg'] ==
+            "You're offline. History will refresh when you're connected.",
+      ),
+      isTrue,
+    );
+
+    hapticTypes.clear();
+    toastCalls.clear();
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 400));
+    await tester.pumpAndSettle();
+
+    expect(hapticTypes, <Object?>['HapticFeedbackType.mediumImpact', 'HapticFeedbackType.errorNotification']);
+    expect(toastCalls, hasLength(1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('invalid generation uses the error haptic without also playing a tap haptic', (tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await setUpPage(tester, (name, parameters) async => <String, Object>{});
+
+    await tester.enterText(find.byType(TextField).first, '');
+    final Finder generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pump();
+
+    expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('invalid refinement uses the error haptic without also playing a tap haptic', (tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await setUpPage(tester, (name, parameters) async => <String, Object>{});
+
+    await tester.tap(find.text('Refine'));
+    await tester.pumpAndSettle();
+    hapticTypes.clear();
+    await tester.enterText(find.byType(TextField).last, '');
+    await tester.tap(find.text('Generate refinement'));
+    await tester.pump();
+
+    expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('a crop warning after successful generation does not add an error haptic', (tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: _FakeAiGenerationRepository(
+        _record(),
+        generation: () async => _record(id: 'generated-wide', width: 1600, height: 900),
+      ),
+    );
+
+    final Finder generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    // Reserving coins starts a short-lived local-balance timer; let the fake clock drain it.
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(hapticTypes, <Object?>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.successNotification']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('concurrent connectivity checks reserve and generate only once', (tester) async {
     final connection = Completer<bool>();

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/env/env.dart';
@@ -243,7 +244,11 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onLongPress: () => copyToClipboard(context, value, label: 'Copied: $value'),
+      enableFeedback: false,
+      onLongPress: () {
+        PrismHaptics.impact();
+        copyToClipboard(context, value, label: 'Copied: $value');
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(

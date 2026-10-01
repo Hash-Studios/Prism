@@ -21,6 +21,11 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    void handleLogoTap() {
+      PrismHaptics.tap();
+      onLogoTap();
+    }
+
     return ColoredBox(
       color: Theme.of(context).primaryColor,
       child: SafeArea(
@@ -41,12 +46,9 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
                       button: true,
                       label: 'Feed settings',
                       excludeSemantics: true,
-                      onTap: onLogoTap,
+                      onTap: handleLogoTap,
                       child: GestureDetector(
-                        onTap: () {
-                          PrismHaptics.tap();
-                          onLogoTap();
-                        },
+                        onTap: handleLogoTap,
                         behavior: HitTestBehavior.opaque,
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,

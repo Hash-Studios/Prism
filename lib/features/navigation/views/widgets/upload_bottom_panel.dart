@@ -36,7 +36,6 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   }
 
   Future<void> _onWallpaperTap() async {
-    PrismHaptics.tap();
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadWallpaperSelected,
@@ -44,7 +43,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       ),
     );
     if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
-      toasts.success('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+      toasts.error('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
       if (mounted) {
         Navigator.of(context).pop();
         await PaywallOrchestrator.instance.present(
@@ -54,6 +53,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       }
       return;
     }
+    PrismHaptics.tap();
     await _pickWallpaperImage();
   }
 

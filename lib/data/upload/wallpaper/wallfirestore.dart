@@ -93,7 +93,7 @@ Future<WallSubmissionResult> createRecord(
   );
 
   if (result == WallSubmissionResult.quotaExceeded) {
-    toasts.success('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+    toasts.error('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
     return result;
   }
   toasts.success('Your wall is submitted and is under review.');

@@ -51,8 +51,12 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
     super.dispose();
   }
 
-  void _bounce() {
-    PrismHaptics.tap();
+  void _bounce({bool longPress = false}) {
+    if (longPress) {
+      PrismHaptics.impact();
+    } else {
+      PrismHaptics.tap();
+    }
     _shake.shake();
   }
 
@@ -68,7 +72,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
             distance: 48,
             builder: (buildContext, value, _) {
               return GestureDetector(
-                onLongPress: _bounce,
+                onLongPress: () => _bounce(longPress: true),
                 onTap: _bounce,
                 child: Container(
                   margin: EdgeInsets.symmetric(vertical: value * 1.25, horizontal: value / 2),

@@ -16,6 +16,7 @@ Future<void> buyStreakFreezeFlow(BuildContext context, {required VoidCallback on
     toasts.error('You already hold ${CoinPolicy.maxStreakFreezes} freezes.');
     return;
   }
+  PrismHaptics.tap();
   final _FreezeSheetResult? result = await showPrismSheet<_FreezeSheetResult>(
     context: context,
     useSafeArea: true,
@@ -89,12 +90,7 @@ class FreezeCard extends StatelessWidget {
                         ],
                       ),
                       FilledButton.tonal(
-                        onPressed: full
-                            ? null
-                            : () {
-                                PrismHaptics.tap();
-                                buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins);
-                              },
+                        onPressed: full ? null : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins),
                         style: FilledButton.styleFrom(
                           backgroundColor: cs.onSurface.withValues(alpha: 0.08),
                           disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.05),

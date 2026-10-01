@@ -272,6 +272,7 @@ class _ProfileChildState extends State<_ProfileChild> {
   }
 
   void _toggleFollow({required bool following}) {
+    PrismHaptics.tap();
     _trackAction(
       following ? AnalyticsActionValue.unfollowTapped : AnalyticsActionValue.followTapped,
       sourceContext: 'profile_screen_follow_action',
@@ -286,9 +287,9 @@ class _ProfileChildState extends State<_ProfileChild> {
       ),
     );
     if (following) {
-      toasts.error('Unfollowed ${_profile.name}!');
+      toasts.success('Unfollowed ${_profile.name}!', haptic: false);
     } else {
-      toasts.success('Followed ${_profile.name}!');
+      toasts.success('Followed ${_profile.name}!', haptic: false);
     }
   }
 

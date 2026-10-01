@@ -674,7 +674,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       case SetupLinkIntent():
         // Setups were removed; old shared setup links open Home.
         _appRouter.navigate(const HomeTabRoute());
-        toasts.error('Home screen setups are no longer available.');
+        toasts.error('Home screen setups are no longer available.', haptic: false);
         unawaited(
           analytics.track(
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
@@ -697,7 +697,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         if (app_state.prismUser.loggedIn) {
           unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: action.inviterId));
         } else {
-          toasts.success('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.');
+          toasts.success('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.', haptic: false);
         }
         unawaited(
           analytics.track(
