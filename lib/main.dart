@@ -878,6 +878,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // The app can stay alive across days, so pick up a new Wall of the Day.
+      context.read<WotdBloc>().add(const WotdEvent.started());
       final now = DateTime.now();
       if (_lastCoinSyncResume == null || now.difference(_lastCoinSyncResume!) >= _coinSyncResumeThrottle) {
         _lastCoinSyncResume = now;

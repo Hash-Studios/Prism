@@ -13,6 +13,34 @@ import '../../../../support/fake_user_block_repository.dart';
 
 class _MockPrismWallpaperRepository extends Mock implements PrismWallpaperRepository {}
 
+/// Serves a stale pointer from the "cache" when a caller asks for cache-first.
+class _StaleCacheFirestoreClient extends FakeFirestoreClient {
+  _StaleCacheFirestoreClient({super.docs});
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    if (preferCacheFirst) {
+      return map(<String, dynamic>{'wallId': 'stale-wall-doc', 'date': DateTime.utc(2025)}, id);
+    }
+    return super.getById(collection, id, map, sourceTag: sourceTag);
+  }
+}
+
+PrismWallpaper _wall(String id) => PrismWallpaper(
+  core: WallpaperCore(
+    id: id,
+    source: WallpaperSource.prism,
+    fullUrl: 'https://example.com/$id.jpg',
+    thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+  ),
+);
+
 void main() {
   late FakeFirestoreClient firestoreClient;
   late _MockPrismWallpaperRepository prismRepository;
@@ -55,5 +83,25 @@ void main() {
 
     expect(secondFetch.data, isNull, reason: 'the cached pick must disappear once its creator is blocked');
     verify(() => prismRepository.fetchByDocumentId('wall-doc-1')).called(1);
+  });
+
+  test('reads the pointer from the server so a new daily pick shows', () async {
+    final client = _StaleCacheFirestoreClient(docs: firestoreClient.docs);
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('wall-1')));
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-2'),
+    ).thenAnswer((_) async => Result.success(_wall('wall-2')));
+    final blockRepo = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    final repo = WallOfTheDayRepositoryImpl(client, prismRepository, blockRepo);
+
+    expect((await repo.fetchToday()).data?.wallId, 'wall-1');
+
+    client.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-2',
+      'date': DateTime.utc(2026, 1, 2),
+    };
+    expect((await repo.fetchToday()).data?.wallId, 'wall-2');
   });
 }
