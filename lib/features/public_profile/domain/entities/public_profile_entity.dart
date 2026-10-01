@@ -10,6 +10,7 @@ class PublicProfileEntity {
     required this.following,
     required this.links,
     required this.coverPhoto,
+    this.badges = const <String>[],
   });
 
   final String id;
@@ -22,4 +23,7 @@ class PublicProfileEntity {
   final List<String> following;
   final Map<String, String> links;
   final String coverPhoto;
+
+  /// Earned badge ids.
+  final List<String> badges;
 }

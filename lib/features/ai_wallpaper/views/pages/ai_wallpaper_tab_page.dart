@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -65,7 +66,7 @@ List<AiGenerationRecord> mergeAiSubmissionHistory(
 
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareCard = shareWallpaperCard});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareCard});
 
   final AiGenerationRepositoryImpl? repository;
   final Future<ShareCardResult> Function(
@@ -73,7 +74,7 @@ class AiWallpaperTabPage extends StatefulWidget {
     required String imageUrl,
     required String link,
     String? contextLine,
-  })
+  })?
   shareCard;
   final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
 
@@ -331,7 +332,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return (generatedRatio - targetRatio).abs() > 0.08;
   }
 
-  Future<void> _loadHistory() async {
+  Future<void> _loadHistory({bool userInitiated = false}) async {
     final String userId = app_state.prismUser.id;
     if (_historyUserId != userId) {
       _historyUserId = userId;
@@ -354,7 +355,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final bool online = await _hasNetworkOrUnknown();
       if (!online) {
         if (mounted) {
-          toasts.error("You're offline. History will refresh when you're connected.");
+          toasts.error("You're offline. History will refresh when you're connected.", haptic: userInitiated);
         }
         return;
       }
@@ -369,7 +370,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     } catch (error, stackTrace) {
       logger.w('AI history fetch failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       if (mounted) {
-        toasts.error(_toastForHistoryFailure(error));
+        toasts.error(_toastForHistoryFailure(error), haptic: userInitiated);
       }
     } finally {
       if (mounted) {
@@ -412,6 +413,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Description is too long (max $_maxPromptChars characters).');
       return;
     }
+    PrismHaptics.tap();
     final AiStylePreset style = _selectedStyle;
     final AiQualityTier qualityTier = _selectedQualityTier;
     final String targetSize = aiTargetSize(
@@ -433,7 +435,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           AiGenerateSuccessEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
       onSuccess: (AiGenerationRecord generated) {
         if (_isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
-          toasts.error('Crop may differ slightly on your device.');
+          toasts.error('Crop may differ slightly on your device.', haptic: false);
         }
       },
     );
@@ -456,6 +458,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Refinements are not available right now.');
       return;
     }
+    PrismHaptics.tap();
     final AiStylePreset style = _selectedStyle;
     final AiQualityTier qualityTier = _selectedQualityTier;
     await _runGeneration(
@@ -533,7 +536,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
 
       if (mounted && _motionAllowed(context)) {
-        HapticFeedback.lightImpact();
+        PrismHaptics.success();
       }
 
       analytics.track(successEvent(generated, reservation.mode, reservation.coinsSpent));
@@ -599,7 +602,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     setState(() => _sharing = true);
     _trackShareEvent(const InviteShareTappedEvent(sourceContext: 'ai_wallpaper'));
     try {
-      final ShareCardResult shared = await widget.shareCard(
+      final ShareCardResult shared = await (widget.shareCard ?? shareWallpaperCard)(
         context,
         imageUrl: record.displayUrl(isPremium: app_state.prismUser.premium),
         link: 'https://prismwalls.com',
@@ -742,9 +745,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           error: error,
           stackTrace: stackTrace,
         );
-      }
-      if (mounted && _motionAllowed(context)) {
-        HapticFeedback.selectionClick();
       }
       if (mounted && app_state.prismUser.id == record.userId) {
         showGlintToast(context);
@@ -890,6 +890,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                   icon: const Icon(Icons.upload_outlined, size: 18),
                   label: const Text('Submit for review'),
                   onPressed: () {
+                    PrismHaptics.tap();
                     final prompt = _promptController.text.trim();
                     final autoTags = <String>[
                       ...prompt
@@ -1016,7 +1017,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () => setState(() => _selectedQualityTier = tier),
+                        onTap: () {
+                          PrismHaptics.selection();
+                          setState(() => _selectedQualityTier = tier);
+                        },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 220),
                           curve: Curves.easeOutCubic,
@@ -1117,7 +1121,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                               clipBehavior: Clip.antiAlias,
                               child: InkWell(
                                 customBorder: const CircleBorder(),
-                                onTap: () => _submitToCommunity(current),
+                                onTap: () {
+                                  PrismHaptics.tap();
+                                  _submitToCommunity(current);
+                                },
                                 child: Padding(
                                   padding: const EdgeInsets.all(14),
                                   child: Icon(Icons.upload_outlined, color: scheme.onInverseSurface, size: 20),
@@ -1147,7 +1154,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed: () => context.router.push(const ReviewRoute()),
+                                    onPressed: () {
+                                      PrismHaptics.tap();
+                                      context.router.push(const ReviewRoute());
+                                    },
                                     child: Text('Check status', style: TextStyle(color: scheme.onInverseSurface)),
                                   ),
                                 ],
@@ -1289,6 +1299,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             label: 'Style: ${style.label}',
             child: GestureDetector(
               onTap: () {
+                PrismHaptics.selection();
                 setState(() => _selectedStyle = style);
                 _shufflePrompt();
               },
@@ -1354,6 +1365,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               onPressed: loading
                   ? null
                   : () => setState(() {
+                      PrismHaptics.selection();
                       _promptController.text = '$scene, vertical phone wallpaper, no text';
                       _promptController.selection = TextSelection.fromPosition(
                         TextPosition(offset: _promptController.text.length),
@@ -1392,7 +1404,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             const SizedBox(width: 8),
             IconButton(
               tooltip: 'Shuffle a new example description',
-              onPressed: loading ? null : _shufflePrompt,
+              onPressed: loading
+                  ? null
+                  : () {
+                      PrismHaptics.selection();
+                      _shufflePrompt();
+                    },
               icon: const Icon(Icons.refresh_rounded),
             ),
           ],
@@ -1419,9 +1436,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     if (!canPress) {
       onPressed = null;
     } else if (!hasCoins) {
-      onPressed = () => context.router.push(RewardsRoute());
+      onPressed = () {
+        PrismHaptics.tap();
+        context.router.push(RewardsRoute());
+      };
     } else {
-      onPressed = () => _generate();
+      onPressed = () {
+        _generate();
+      };
     }
 
     final bool showAccent = canPress;
@@ -1528,7 +1550,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     selected: isSelected,
                     label: isSelected ? 'Selected generation' : 'Past generation',
                     child: GestureDetector(
-                      onTap: () => setState(() => _latest = item),
+                      onTap: () {
+                        PrismHaptics.selection();
+                        setState(() => _latest = item);
+                      },
                       child: AnimatedOpacity(
                         duration: Duration(milliseconds: motion ? 200 : 0),
                         curve: Curves.easeOutCubic,
@@ -1586,7 +1611,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       body: SafeArea(
         top: false,
         child: RefreshIndicator(
-          onRefresh: _loadHistory,
+          onRefresh: () {
+            PrismHaptics.impact();
+            return _loadHistory(userInitiated: true);
+          },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, _AiGenSpace.sm, 16, 100),
@@ -1676,7 +1704,12 @@ class _ActionButton extends StatelessWidget {
         color: isPrimary ? scheme.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: isLoading ? null : onTap,
+          onTap: isLoading
+              ? null
+              : () {
+                  PrismHaptics.tap();
+                  onTap();
+                },
           borderRadius: BorderRadius.circular(12),
           child: Container(
             constraints: const BoxConstraints(minWidth: 64, minHeight: 48),

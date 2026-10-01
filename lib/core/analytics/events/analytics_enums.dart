@@ -66,7 +66,8 @@ enum SubscriptionEntitlementRefreshResultValue {
 enum SettingValue {
   animeWallpapers,
   sketchyWallpapers,
-  recommendationsNotifications;
+  recommendationsNotifications,
+  haptics;
 
   String get wireValue => _snakeCase(name);
 }

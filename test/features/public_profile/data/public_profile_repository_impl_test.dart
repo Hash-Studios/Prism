@@ -75,6 +75,32 @@ void main() {
 
       expect(profiles, <String>['id_a@x.com']);
     });
+
+    test('maps server badge objects and accepts profiles from before badges existed', () async {
+      final badgeIds = <List<String>>[];
+      final sub = repo.watchProfile('a@x.com').listen((profile) => badgeIds.add(profile!.badges));
+      client.rows.add(<FakeDocRow>[
+        (
+          id: 'u1',
+          data: <String, dynamic>{
+            'badges': <Object?>[
+              <String, Object?>{'id': 'creator', 'name': 'Creator', 'awardedAt': '2026-01-01'},
+              <String, Object?>{'id': 'future_badge'},
+              <String, Object?>{'name': 'Malformed'},
+              null,
+            ],
+          },
+        ),
+      ]);
+      client.rows.add(<FakeDocRow>[_user('a@x.com')]);
+      await Future<void>.delayed(Duration.zero);
+      await sub.cancel();
+
+      expect(badgeIds, <List<String>>[
+        <String>['creator', 'future_badge'],
+        <String>[],
+      ]);
+    });
   });
 
   group('follow', () {

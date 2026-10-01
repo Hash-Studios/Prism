@@ -82,7 +82,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
     } catch (e, stackTrace) {
       logger.e('Failed to save quick tile settings', error: e, stackTrace: stackTrace);
       if (!mounted) return;
-      toasts.success('Failed to save settings');
+      toasts.error('Failed to save settings');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

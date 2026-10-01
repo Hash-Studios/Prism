@@ -1,5 +1,6 @@
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
@@ -16,7 +17,6 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 const Duration _kTileMotion = Duration(milliseconds: 150);
 const Duration _kSectionMotion = Duration(milliseconds: 200);
@@ -122,7 +122,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   bool get _canSave => !_saving && _selectedInterests.length >= OnboardingV2Config.minInterests;
 
   void _toggleInterest(String name) {
-    HapticFeedback.selectionClick();
+    PrismHaptics.selection();
     setState(() {
       if (!_selectedInterests.remove(name)) {
         _selectedInterests.add(name);
@@ -131,6 +131,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   }
 
   void _resetToDefaults() {
+    PrismHaptics.tap();
     setState(() {
       _selectedInterests = PersonalizedInterestsCatalog.defaultSelection(widget.catalog).toSet();
       _feedMix = FeedMix.balanced;
@@ -138,6 +139,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   }
 
   Future<void> _clearLearned() async {
+    PrismHaptics.tap();
     try {
       await _tasteSignals.clear();
     } catch (_) {
@@ -153,6 +155,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
 
   Future<void> _save() async {
     if (!_canSave) return;
+    PrismHaptics.tap();
     setState(() => _saving = true);
     try {
       final bool saved = await widget.onSave(_selectedInterests.toList(growable: false), _feedMix);
@@ -330,7 +333,10 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
         selected: <FeedMix>{_feedMix},
         showSelectedIcon: false,
         expandedInsets: EdgeInsets.zero,
-        onSelectionChanged: (Set<FeedMix> value) => setState(() => _feedMix = value.first),
+        onSelectionChanged: (Set<FeedMix> value) {
+          PrismHaptics.selection();
+          setState(() => _feedMix = value.first);
+        },
         style: SegmentedButton.styleFrom(
           selectedBackgroundColor: cs.primary,
           selectedForegroundColor: cs.onPrimary,

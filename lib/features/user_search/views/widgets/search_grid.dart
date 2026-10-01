@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
@@ -16,7 +17,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 String? _authorName(FeedItemEntity wallpaper) => wallpaper.when(
   prism: (_, wall) => wall.core.authorName,
@@ -150,7 +150,7 @@ class _SearchGridState extends State<SearchGrid> {
 
   void _shareWallpaper(FeedItemEntity wallpaper, int index) {
     _shake.shake(index);
-    HapticFeedback.vibrate();
+    PrismHaptics.impact();
     createDynamicLink(wallpaper.id, wallpaper.source, wallpaper.fullUrl, wallpaper.thumbnailUrl);
   }
 
@@ -159,7 +159,10 @@ class _SearchGridState extends State<SearchGrid> {
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshHomeKey,
-      onRefresh: refreshList,
+      onRefresh: () {
+        PrismHaptics.impact();
+        return refreshList();
+      },
       child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
@@ -196,7 +199,11 @@ class _SearchGridState extends State<SearchGrid> {
                         child: InkWell(
                           splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                           highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                          onTap: () => _openWallpaper(wallpaper, index),
+                          enableFeedback: false,
+                          onTap: () {
+                            PrismHaptics.tap();
+                            _openWallpaper(wallpaper, index);
+                          },
                           onLongPress: () => _shareWallpaper(wallpaper, index),
                         ),
                       ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
@@ -59,7 +60,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                 kind: GlintStateKind.error,
                 title: 'Could not load blocked accounts.',
                 actionLabel: 'Retry',
-                onAction: _refresh,
+                onAction: () {
+                  PrismHaptics.tap();
+                  _refresh();
+                },
               ),
             );
           }
@@ -71,7 +75,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
             );
           }
           return RefreshIndicator(
-            onRefresh: _refresh,
+            onRefresh: () {
+              PrismHaptics.impact();
+              return _refresh();
+            },
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: rows.length,
@@ -93,6 +100,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                   ),
                   trailing: TextButton(
                     onPressed: () async {
+                      PrismHaptics.tap();
                       if (await unblockUserWithFeedback(context, row.blockedUid)) {
                         await _refresh();
                       }
@@ -118,7 +126,10 @@ class _Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: () {
+        PrismHaptics.impact();
+        return onRefresh();
+      },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: <Widget>[

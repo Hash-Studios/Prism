@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -126,6 +127,7 @@ class _ThemeViewState extends State<ThemeView> {
                   builder: (context) => _PreferencePanel(
                     selected: themeMode,
                     onSelected: (mode) {
+                      PrismHaptics.selection();
                       Navigator.pop(context);
                       _selectThemeMode(mode);
                     },
@@ -258,7 +260,10 @@ class _ThemeChipRow extends StatelessWidget {
               child: MaterialButton(
                 color: Theme.of(context).hintColor,
                 padding: EdgeInsets.zero,
-                onPressed: () => onSelect(option),
+                onPressed: () {
+                  PrismHaptics.selection();
+                  onSelect(option);
+                },
                 child: Stack(
                   children: [
                     Container(
@@ -331,7 +336,10 @@ class _AccentRow extends StatelessWidget {
             selected: selected == color,
             label: 'Accent colour ${index + 1} of ${_accentColors.length}',
             child: GestureDetector(
-              onTap: () => onSelect(color),
+              onTap: () {
+                PrismHaptics.selection();
+                onSelect(color);
+              },
               child: Stack(
                 children: [
                   Container(

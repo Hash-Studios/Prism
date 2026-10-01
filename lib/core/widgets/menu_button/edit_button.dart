@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -45,10 +46,11 @@ class _EditButtonState extends State<EditButton> {
       toasts.error('No wallpaper URL available');
       return;
     }
+    PrismHaptics.tap();
     setState(() {
       isLoading = true;
     });
-    toasts.success('Loading Wallpaper');
+    toasts.success('Loading Wallpaper', haptic: false);
     Directory? sessionDirectory;
     try {
       final response = await http.get(Uri.parse(url));
