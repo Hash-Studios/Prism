@@ -12,9 +12,9 @@ import FirebaseFunctions
 final class FunctionsStreamHandler: NSObject, FlutterStreamHandler {
   private let functions: Functions
   private var streamTask: Task<Void, Never>?
-  private let onCancelled: () -> Void
+  private let onCancelled: (FunctionsStreamHandler) -> Void
 
-  init(functions: Functions, onCancelled: @escaping () -> Void = {}) {
+  init(functions: Functions, onCancelled: @escaping (FunctionsStreamHandler) -> Void = { _ in }) {
     self.functions = functions
     self.onCancelled = onCancelled
     super.init()
@@ -45,7 +45,7 @@ final class FunctionsStreamHandler: NSObject, FlutterStreamHandler {
 
   func onCancel(withArguments arguments: Any?) -> FlutterError? {
     cancel()
-    onCancelled()
+    onCancelled(self)
     return nil
   }
 
@@ -65,12 +65,7 @@ final class FunctionsStreamHandler: NSObject, FlutterStreamHandler {
         requireLimitedUseAppCheckTokens: arguments.limitedUseAppCheckToken
       )
       if #available(iOS 15.0, macOS 12.0, *) {
-        var function: Callable<AnyEncodable, StreamResponse<AnyDecodable, AnyDecodable>>
-        switch arguments.target {
-        case let .name(name): function = functions.httpsCallable(name, options: options)
-        case let .url(url): function = functions.httpsCallable(url, options: options)
-        }
-        if let timeout = arguments.timeout { function.timeoutInterval = timeout }
+        let function = streamingCallable(functions: functions, arguments: arguments, options: options)
         try Task.checkCancellation()
         let stream = try function.stream(AnyEncodable(arguments.parameters))
         for try await response in stream {
@@ -90,5 +85,18 @@ final class FunctionsStreamHandler: NSObject, FlutterStreamHandler {
       events(error as? FlutterError ?? functionsFlutterError(error))
       events(FlutterEndOfEventStream)
     }
+  }
+
+  @available(iOS 15.0, macOS 12.0, *)
+  private static func streamingCallable(functions: Functions, arguments: CallableArguments,
+                                        options: HTTPSCallableOptions)
+    -> Callable<AnyEncodable, StreamResponse<AnyDecodable, AnyDecodable>> {
+    var function: Callable<AnyEncodable, StreamResponse<AnyDecodable, AnyDecodable>>
+    switch arguments.target {
+    case let .name(name): function = functions.httpsCallable(name, options: options)
+    case let .url(url): function = functions.httpsCallable(url, options: options)
+    }
+    if let timeout = arguments.timeout { function.timeoutInterval = timeout }
+    return function
   }
 }

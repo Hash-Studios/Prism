@@ -20,18 +20,17 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.UUID
 
-/** Platform runner, deliberately no dependency on an instrumentation framework. */
-class PrismNativeInstrumentation : Instrumentation() {
+internal class PrismNativeInstrumentation : Instrumentation() {
     override fun onCreate(arguments: Bundle?) { super.onCreate(arguments); start() }
 
     override fun onStart() {
         val result = Bundle()
         try {
             verifyMediaContract()
-            result.putString("stream", "Prism native media checks passed\n")
+            result.putString(OUTPUT_STREAM, "Prism native media checks passed\n")
             finish(Activity.RESULT_OK, result)
         } catch (error: Throwable) {
-            result.putString("stream", error.stackTraceToString())
+            result.putString(OUTPUT_STREAM, error.stackTraceToString())
             finish(Activity.RESULT_CANCELED, result)
         }
     }
@@ -48,8 +47,7 @@ class PrismNativeInstrumentation : Instrumentation() {
         val bytes = ByteArrayOutputStream().also { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }.toByteArray()
         bitmap.recycle()
         fixture.writeBytes(bytes)
-        var failure: Throwable? = null
-        try {
+        val outcome = runCatching {
             val baseline = await<DownloadItemsResult> { api.listDownloads(it) }
             check(baseline.success) { "Could not read baseline downloads" }
             val saved = await<OperationResult> { api.saveMedia(SaveMediaRequest(fixture.absolutePath, true, SaveMediaKind.WALLPAPER), it) }
@@ -61,13 +59,7 @@ class PrismNativeInstrumentation : Instrumentation() {
             createdIds.addAll(savedIds)
             check(savedIds.size == 1) { "Saved fixture was not published" }
 
-            val invalid = await<OperationResult> { api.saveMedia(SaveMediaRequest("relative/path", true, SaveMediaKind.WALLPAPER), it) }
-            check(!invalid.success) { "Relative local path accepted" }
-            val remoteFile = await<OperationResult> { api.saveMedia(SaveMediaRequest("file://remotehost${fixture.absolutePath}", true, SaveMediaKind.WALLPAPER), it) }
-            check(!remoteFile.success) { "Remote file URI authority accepted as a local file" }
-            val traversal = await<OperationResult> { api.enqueueDownload(DownloadRequest("https://unused.invalid", "../wall"), it) }
-            check(!traversal.success && traversal.errorCode == "INVALID_FILENAME") { "Unsafe filename accepted" }
-            check(PrismHapticType.fromWire("invalid") == null) { "Unknown haptic type accepted" }
+            verifyRejectedSources(api, fixture)
 
             repeat(2) {
                 withResponse(bytes) { url ->
@@ -83,45 +75,58 @@ class PrismNativeInstrumentation : Instrumentation() {
             }
             added.forEach { check(File(it).readBytes().contentEquals(bytes)) { "Image bytes changed" } }
             createdIds.addAll(downloadIds(basename, assertMime = true))
-            val count = imageIds().size
-            withResponse("not an image".toByteArray()) { url ->
-                check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-invalid-image"), it) }.success)
-            }
-            withResponse(bytes.copyOf(20), bytes.size) { url ->
-                check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-truncated-image"), it) }.success)
-            }
-            withResponse(bytes.copyOf(33)) { url ->
-                check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-corrupt-body"), it) }.success)
-            }
-            fixture.writeBytes(bytes.copyOf(33))
-            check(!await<OperationResult> { api.saveMedia(SaveMediaRequest(fixture.absolutePath, true, SaveMediaKind.WALLPAPER), it) }.success) {
-                "PNG header with corrupt body was accepted"
-            }
-            fixture.writeBytes(bytes)
-            check(imageIds().size == count) { "Failed transfer leaked a MediaStore row" }
-            check(context.cacheDir.listFiles()?.none { it.name.startsWith("prism-image-") } != false) { "Staging file leaked" }
+            verifyCorruptImages(api, fixture, bytes, basename)
 
             // Never clear a user's pre-existing emulator media.
             val beforeClear = await<DownloadItemsResult> { api.listDownloads(it) }
             if (baseline.items.isEmpty() && beforeClear.items.all { File(it).name.startsWith(basename) }) {
                 check(await<OperationResult> { api.clearDownloads(it) }.success) { "Could not clear downloads" }
                 check(await<DownloadItemsResult> { api.listDownloads(it) }.items.isEmpty()) { "Downloads remained after clear" }
-            } else sendStatus(0, Bundle().apply { putString("stream", "Skipped clearDownloads: device had pre-existing downloads\n") })
-        } catch (error: Throwable) {
-            failure = error
-            throw error
-        } finally {
-            try {
-                api.close()
-                fixture.delete()
-                createdIds.addAll(downloadIds(basename, assertMime = false))
-                for (id in createdIds.intersect(imageIds())) {
-                    context.contentResolver.delete(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id), null, null)
-                }
-            } catch (cleanup: Throwable) {
-                failure?.addSuppressed(cleanup) ?: throw cleanup
+            } else sendStatus(0, Bundle().apply { putString(OUTPUT_STREAM, "Skipped clearDownloads: device had pre-existing downloads\n") })
+        }
+        val cleanup = runCatching {
+            api.close()
+            fixture.delete()
+            createdIds.addAll(downloadIds(basename, assertMime = false))
+            for (id in createdIds.intersect(imageIds())) {
+                context.contentResolver.delete(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id), null, null)
             }
         }
+        outcome.exceptionOrNull()?.let { failure ->
+            cleanup.exceptionOrNull()?.let(failure::addSuppressed)
+            throw failure
+        }
+        cleanup.getOrThrow()
+    }
+
+    private fun verifyRejectedSources(api: PrismMediaHostApiImpl, fixture: File) {
+        val invalid = await<OperationResult> { api.saveMedia(SaveMediaRequest("relative/path", true, SaveMediaKind.WALLPAPER), it) }
+        check(!invalid.success) { "Relative local path accepted" }
+        val remoteFile = await<OperationResult> { api.saveMedia(SaveMediaRequest("file://remotehost${fixture.absolutePath}", true, SaveMediaKind.WALLPAPER), it) }
+        check(!remoteFile.success) { "Remote file URI authority accepted as a local file" }
+        val traversal = await<OperationResult> { api.enqueueDownload(DownloadRequest("https://unused.invalid", "../wall"), it) }
+        check(!traversal.success && traversal.errorCode == "INVALID_FILENAME") { "Unsafe filename accepted" }
+        check(PrismHapticType.fromWire("invalid") == null) { "Unknown haptic type accepted" }
+    }
+
+    private fun verifyCorruptImages(api: PrismMediaHostApiImpl, fixture: File, bytes: ByteArray, basename: String) {
+        val count = imageIds().size
+        withResponse("not an image".toByteArray()) { url ->
+            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-invalid-image"), it) }.success)
+        }
+        withResponse(bytes.copyOf(20), bytes.size) { url ->
+            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-truncated-image"), it) }.success)
+        }
+        withResponse(bytes.copyOf(33)) { url ->
+            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-corrupt-body"), it) }.success)
+        }
+        fixture.writeBytes(bytes.copyOf(33))
+        check(!await<OperationResult> { api.saveMedia(SaveMediaRequest(fixture.absolutePath, true, SaveMediaKind.WALLPAPER), it) }.success) {
+            "PNG header with corrupt body was accepted"
+        }
+        fixture.writeBytes(bytes)
+        check(imageIds().size == count) { "Failed transfer leaked a MediaStore row" }
+        check(targetContext.cacheDir.listFiles()?.none { it.name.startsWith("prism-image-") } != false) { "Staging file leaked" }
     }
 
     private fun imageIds(): Set<Long> {
@@ -159,7 +164,8 @@ class PrismNativeInstrumentation : Instrumentation() {
             try {
                 server.accept().use { socket ->
                     val reader = socket.getInputStream().bufferedReader()
-                    while (!reader.readLine().isNullOrEmpty()) { }
+                    var header = reader.readLine()
+                    while (!header.isNullOrEmpty()) { header = reader.readLine() }
                     socket.getOutputStream().use { output ->
                         output.write("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: $declaredSize\r\nConnection: close\r\n\r\n".toByteArray())
                         output.write(bytes)
@@ -169,5 +175,9 @@ class PrismNativeInstrumentation : Instrumentation() {
         }
         thread.start()
         try { block("http://127.0.0.1:${server.localPort}/image") } finally { server.close(); thread.join(1000) }
+    }
+
+    private companion object {
+        const val OUTPUT_STREAM = "stream"
     }
 }

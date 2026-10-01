@@ -20,7 +20,9 @@ final class MediaFixture {
     context.setFillColor(red: .random(in: 0...1), green: .random(in: 0...1), blue: .random(in: 0...1), alpha: 1)
     context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
     let image = try #require(context.makeImage())
-    let destination = try #require(CGImageDestinationCreateWithURL(source as CFURL, UTType.png.identifier as CFString, 1, nil))
+    let destination = try #require(CGImageDestinationCreateWithURL(
+      source as CFURL, UTType.png.identifier as CFString, 1, nil
+    ))
     CGImageDestinationAddImage(destination, image, nil)
     try #require(CGImageDestinationFinalize(destination))
   }

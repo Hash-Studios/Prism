@@ -15,7 +15,7 @@ actor PrismMediaFiles {
   private static let downloadSession: URLSession = {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.timeoutIntervalForRequest = 30
-    configuration.timeoutIntervalForResource = 30
+    configuration.timeoutIntervalForResource = 600
     return URLSession(configuration: configuration)
   }()
   private let downloadsDirectory: URL?
@@ -40,80 +40,93 @@ actor PrismMediaFiles {
   }
 
   func resolve(link: String, isLocalFile: Bool) async throws -> PrismImageFile {
-    let url: URL
-    let temporary: Bool
-    if isLocalFile {
-      if link.hasPrefix("file:") {
-        guard let fileURL = URL(string: link), fileURL.isFileURL,
-          fileURL.host == nil || fileURL.host == "" || fileURL.host == "localhost"
-        else { throw PrismMediaError.invalidURL }
-        url = fileURL
-      } else {
-        guard link.hasPrefix("/") else { throw PrismMediaError.invalidURL }
-        url = URL(fileURLWithPath: link)
-      }
-      guard FileManager.default.fileExists(atPath: url.path) else { throw PrismMediaError.localFileMissing }
-      temporary = false
-    } else {
-      let remoteURL = try Self.networkURL(link)
-      var request = URLRequest(url: remoteURL)
-      request.timeoutInterval = 30
-      let response: URLResponse
-      do {
-        (url, response) = try await download(request)
-      } catch {
-        throw PrismMediaError.networkFailed(error.localizedDescription)
-      }
-      guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-        try? FileManager.default.removeItem(at: url)
-        throw PrismMediaError.httpStatus((response as? HTTPURLResponse)?.statusCode ?? 0)
-      }
-      temporary = true
-    }
-
+    let source = isLocalFile ? try Self.localURL(link) : try Self.networkURL(link)
+    let url = isLocalFile ? source : try await downloadedURL(source)
     do {
-      let size = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
-      guard size.isRegularFile == true else { throw PrismMediaError.invalidImage }
-      guard (size.fileSize ?? 0) > 0 else { throw PrismMediaError.emptyPayload }
-      guard (size.fileSize ?? 0) <= Self.maximumImageBytes else { throw PrismMediaError.imageTooLarge }
-      guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-        CGImageSourceGetStatus(source) == .statusComplete,
-        let identifier = CGImageSourceGetType(source),
-        let type = UTType(identifier as String), type.conforms(to: .image),
-        let fileExtension = type.preferredFilenameExtension,
-        CGImageSourceCreateThumbnailAtIndex(source, 0, [
-          kCGImageSourceCreateThumbnailFromImageAlways: true,
-          kCGImageSourceThumbnailMaxPixelSize: 1,
-          kCGImageSourceShouldCache: false,
-        ] as CFDictionary) != nil
-      else { throw PrismMediaError.invalidImage }
-      let originalFilename = "\(url.deletingPathExtension().lastPathComponent).\(fileExtension)"
-      if UTType(filenameExtension: url.pathExtension) != type {
-        let normalized = FileManager.default.temporaryDirectory
-          .appendingPathComponent("PrismImage-\(UUID().uuidString).\(fileExtension)")
-        do {
-          if temporary {
-            try FileManager.default.moveItem(at: url, to: normalized)
-          } else {
-            try FileManager.default.copyItem(at: url, to: normalized)
-          }
-        } catch {
-          try? FileManager.default.removeItem(at: normalized)
-          throw error
-        }
-        return PrismImageFile(
-          url: normalized, fileExtension: fileExtension, uniformTypeIdentifier: type.identifier,
-          originalFilename: originalFilename, isTemporary: true
-        )
-      }
-      return PrismImageFile(
-        url: url, fileExtension: fileExtension, uniformTypeIdentifier: type.identifier,
-        originalFilename: originalFilename, isTemporary: temporary
-      )
+      return try normalizedImage(at: url, nameSource: source, isTemporary: !isLocalFile)
     } catch {
-      if temporary { try? FileManager.default.removeItem(at: url) }
+      if !isLocalFile { try? FileManager.default.removeItem(at: url) }
       throw error
     }
+  }
+
+  private nonisolated static func localURL(_ link: String) throws -> URL {
+    let url: URL
+    if link.hasPrefix("file:") {
+      guard let fileURL = URL(string: link), fileURL.isFileURL,
+        fileURL.host == nil || fileURL.host == "" || fileURL.host == "localhost"
+      else { throw PrismMediaError.invalidURL }
+      url = fileURL
+    } else {
+      guard link.hasPrefix("/") else { throw PrismMediaError.invalidURL }
+      url = URL(fileURLWithPath: link)
+    }
+    guard FileManager.default.fileExists(atPath: url.path) else { throw PrismMediaError.localFileMissing }
+    return url
+  }
+
+  private func downloadedURL(_ source: URL) async throws -> URL {
+    var request = URLRequest(url: source)
+    request.timeoutInterval = 30
+    let url: URL
+    let response: URLResponse
+    do {
+      (url, response) = try await download(request)
+    } catch {
+      throw PrismMediaError.networkFailed(error.localizedDescription)
+    }
+    guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+      try? FileManager.default.removeItem(at: url)
+      throw PrismMediaError.httpStatus((response as? HTTPURLResponse)?.statusCode ?? 0)
+    }
+    return url
+  }
+
+  private func imageType(at url: URL) throws -> UTType {
+    let size = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+    guard size.isRegularFile == true else { throw PrismMediaError.invalidImage }
+    guard (size.fileSize ?? 0) > 0 else { throw PrismMediaError.emptyPayload }
+    guard (size.fileSize ?? 0) <= Self.maximumImageBytes else { throw PrismMediaError.imageTooLarge }
+    guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+      CGImageSourceGetStatus(source) == .statusComplete,
+      let identifier = CGImageSourceGetType(source),
+      let type = UTType(identifier as String), type.conforms(to: .image),
+      CGImageSourceCreateThumbnailAtIndex(source, 0, [
+        kCGImageSourceCreateThumbnailFromImageAlways: true,
+        kCGImageSourceThumbnailMaxPixelSize: 1,
+        kCGImageSourceShouldCache: false
+      ] as CFDictionary) != nil
+    else { throw PrismMediaError.invalidImage }
+    return type
+  }
+
+  private func normalizedImage(at url: URL, nameSource: URL, isTemporary: Bool) throws -> PrismImageFile {
+    let type = try imageType(at: url)
+    guard let fileExtension = type.preferredFilenameExtension else { throw PrismMediaError.invalidImage }
+    let stem = nameSource.deletingPathExtension().lastPathComponent
+    let originalFilename = "\(stem.isEmpty || stem == "/" ? "Prism" : stem).\(fileExtension)"
+    if UTType(filenameExtension: url.pathExtension) != type {
+      let normalized = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PrismImage-\(UUID().uuidString).\(fileExtension)")
+      do {
+        if isTemporary {
+          try FileManager.default.moveItem(at: url, to: normalized)
+        } else {
+          try FileManager.default.copyItem(at: url, to: normalized)
+        }
+      } catch {
+        try? FileManager.default.removeItem(at: normalized)
+        throw error
+      }
+      return PrismImageFile(
+        url: normalized, fileExtension: fileExtension, uniformTypeIdentifier: type.identifier,
+        originalFilename: originalFilename, isTemporary: true
+      )
+    }
+    return PrismImageFile(
+      url: url, fileExtension: fileExtension, uniformTypeIdentifier: type.identifier,
+      originalFilename: originalFilename, isTemporary: isTemporary
+    )
   }
 
   nonisolated static func networkURL(_ link: String) throws -> URL {

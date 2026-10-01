@@ -8,22 +8,12 @@ import PackageDescription
 
 let packageDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
 let pluginDirectory = packageDirectory.deletingLastPathComponent().deletingLastPathComponent()
-let pubspec = try String(
-  contentsOf: pluginDirectory.appendingPathComponent("pubspec.yaml"), encoding: .utf8
-)
-guard let coreLine = pubspec.split(separator: "\n").first(where: {
-  $0.trimmingCharacters(in: .whitespaces).hasPrefix("firebase_core:")
-}), let coreValue = coreLine.split(separator: ":", maxSplits: 1).last else {
-  fatalError("Missing firebase_core dependency in pubspec.yaml")
-}
-let coreVersion = coreValue.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "^", with: "")
 let sdkVersion = try String(
   contentsOf: pluginDirectory.appendingPathComponent("ios/generated_firebase_sdk_version.txt"),
   encoding: .utf8
 ).trimmingCharacters(in: .whitespacesAndNewlines)
-guard let firebaseVersion = Version(sdkVersion),
-      let sharedVersion = Version("\(coreVersion)-firebase-core-swift") else {
-  fatalError("Invalid Firebase SDK or firebase_core version")
+guard let firebaseVersion = Version(sdkVersion) else {
+  fatalError("Invalid Firebase SDK version")
 }
 
 let package = Package(
@@ -31,13 +21,15 @@ let package = Package(
   platforms: [.macOS("10.15")],
   products: [.library(name: "cloud-functions", targets: ["cloud_functions"])],
   dependencies: [
-    .package(url: "https://github.com/firebase/firebase-ios-sdk", from: firebaseVersion),
-    .package(url: "https://github.com/firebase/flutterfire", exact: sharedVersion),
+    .package(url: "https://github.com/firebase/firebase-ios-sdk", exact: firebaseVersion),
+    .package(name: "firebase_core", path: "../firebase_core"),
+    .package(name: "FlutterFramework", path: "../FlutterFramework")
   ],
   targets: [
     .target(name: "cloud_functions", dependencies: [
       .product(name: "FirebaseFunctions", package: "firebase-ios-sdk"),
-      .product(name: "firebase-core-shared", package: "flutterfire"),
-    ]),
+      .product(name: "firebase-core", package: "firebase_core"),
+      .product(name: "FlutterFramework", package: "FlutterFramework")
+    ])
   ]
 )

@@ -1,6 +1,7 @@
 package io.flutter.plugins.firebase.functions
 
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.FirebaseApp
 import com.google.firebase.functions.FirebaseFunctionsException
 import com.google.firebase.functions.HttpsCallableOptions
 import com.google.firebase.functions.HttpsCallableReference
@@ -8,6 +9,9 @@ import android.util.SparseArray
 import android.text.TextUtils
 import com.google.firebase.functions.StreamResponse
 import io.flutter.plugin.common.EventChannel.EventSink
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.After
@@ -18,7 +22,15 @@ import java.net.URL
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-class FunctionsNativeTest {
+private fun <T : Any> eq(value: T): T = Mockito.eq(value) ?: value
+private fun anyOptions(): HttpsCallableOptions =
+  Mockito.any(HttpsCallableOptions::class.java) ?: HttpsCallableOptions.Builder().build()
+
+private const val ERROR_DOMAIN = "firebase_functions"
+private const val MESSAGE_KEY = "message"
+private const val LIMITED_USE_TOKEN_KEY = "limitedUseAppCheckToken"
+
+internal class FunctionsNativeTest {
   private val sparseArrays = Mockito.mockConstruction(SparseArray::class.java)
   private val textUtils = Mockito.mockStatic(TextUtils::class.java).apply {
     `when`<Boolean> { TextUtils.isEmpty(Mockito.any()) }.thenAnswer {
@@ -26,14 +38,11 @@ class FunctionsNativeTest {
     }
   }
 
-  @After fun closeAndroidMocks() {
+  @After internal fun closeAndroidMocks() {
     textUtils.close()
     sparseArrays.close()
   }
 
-  private fun <T : Any> eq(value: T): T = Mockito.eq(value) ?: value
-  private fun anyOptions(): HttpsCallableOptions =
-    Mockito.any(HttpsCallableOptions::class.java) ?: HttpsCallableOptions.Builder().build()
   private class Sink : EventSink {
     val values = mutableListOf<Any?>()
     var errorCode: String? = null
@@ -47,16 +56,16 @@ class FunctionsNativeTest {
     override fun endOfStream() { endings++ }
   }
 
-  @Test fun firebaseErrorsKeepCodeAndDetailsAcrossLocales() {
+  @Test internal fun firebaseErrorsKeepCodeAndDetailsAcrossLocales() {
     val previous = Locale.getDefault()
     try {
       Locale.setDefault(Locale.forLanguageTag("tr-TR"))
       val exception = FirebaseFunctionsTestValues.error(
         "Denied", FirebaseFunctionsException.Code.PERMISSION_DENIED, mapOf("reason" to "premium"))
       val error = functionsError(exception)
-      assertEquals("firebase_functions", error.code)
+      assertEquals(ERROR_DOMAIN, error.code)
       assertEquals(mapOf(
-        "code" to "permission-denied", "message" to "Denied",
+        "code" to "permission-denied", MESSAGE_KEY to "Denied",
         "additionalData" to mapOf("reason" to "premium")
       ), error.details)
     } finally {
@@ -64,19 +73,19 @@ class FunctionsNativeTest {
     }
   }
 
-  @Test fun streamFailuresAreErrorsAndCloseExactlyOnce() {
+  @Test internal fun streamFailuresAreErrorsAndCloseExactlyOnce() {
     val sink = Sink()
     val subscriber = StreamResponseSubscriber(sink) { it() }
     val exception = FirebaseFunctionsTestValues.error(
       "Sign in", FirebaseFunctionsException.Code.UNAUTHENTICATED, null)
     subscriber.onError(exception)
     subscriber.onComplete()
-    assertEquals("firebase_functions", sink.errorCode)
-    assertEquals(mapOf("code" to "unauthenticated", "message" to "Sign in"), sink.errorDetails)
+    assertEquals(ERROR_DOMAIN, sink.errorCode)
+    assertEquals(mapOf("code" to "unauthenticated", MESSAGE_KEY to "Sign in"), sink.errorDetails)
     assertEquals(1, sink.endings)
   }
 
-  @Test fun successfulStreamsPreserveMessageResultAndCompletionOrder() {
+  @Test internal fun successfulStreamsPreserveMessageResultAndCompletionOrder() {
     val sink = Sink()
     val pending = mutableListOf<() -> Unit>()
     val subscriber = StreamResponseSubscriber(sink) { pending += it }
@@ -86,12 +95,12 @@ class FunctionsNativeTest {
     subscriber.onNext(StreamResponse.Result(result))
     subscriber.onComplete()
     pending.forEach { it() }
-    assertEquals(listOf(mapOf("message" to mapOf("text" to "hello")), mapOf("result" to null)), sink.values)
+    assertEquals(listOf(mapOf(MESSAGE_KEY to mapOf("text" to "hello")), mapOf("result" to null)), sink.values)
     assertEquals(1, sink.endings)
     assertNull(sink.errorCode)
   }
 
-  @Test fun cancellationDropsQueuedEventsAndCancelsLateSubscriptions() {
+  @Test internal fun cancellationDropsQueuedEventsAndCancelsLateSubscriptions() {
     val sink = Sink()
     val pending = mutableListOf<() -> Unit>()
     val subscriber = StreamResponseSubscriber(sink) { pending += it }
@@ -106,7 +115,7 @@ class FunctionsNativeTest {
     assertEquals(0, sink.endings)
   }
 
-  @Test fun urlStreamsKeepParametersAndConfigureTimeoutBeforeStarting() {
+  @Test internal fun urlStreamsKeepParametersAndConfigureTimeoutBeforeStarting() {
     val functions = Mockito.mock(FirebaseFunctions::class.java)
     val reference = Mockito.mock(HttpsCallableReference::class.java)
     Mockito.`when`(functions.getHttpsCallableFromUrl(
@@ -119,7 +128,7 @@ class FunctionsNativeTest {
       val handler = FirebaseFunctionsStreamHandler(functions)
       handler.onListen(mapOf(
         "functionUri" to "https://example.com/call",
-        "limitedUseAppCheckToken" to false, "timeout" to 5_000_000_000L,
+        LIMITED_USE_TOKEN_KEY to false, "timeout" to 5_000_000_000L,
         "parameters" to parameters
       ), Sink())
       val ordered = Mockito.inOrder(reference)
@@ -132,7 +141,7 @@ class FunctionsNativeTest {
     }
   }
 
-  @Test fun malformedTimeoutAndOptionsFailBeforeCallingFirebase() {
+  @Test internal fun malformedTimeoutAndOptionsFailBeforeCallingFirebase() {
     val functions = Mockito.mock(FirebaseFunctions::class.java)
     val reference = Mockito.mock(HttpsCallableReference::class.java)
     Mockito.`when`(functions.getHttpsCallable(eq("wall"), anyOptions()))
@@ -140,22 +149,22 @@ class FunctionsNativeTest {
     for (timeout in listOf<Any>(true, 1.5, Double.NaN, -1L, 0)) {
       assertThrows(IllegalArgumentException::class.java) {
         functions.callable(mapOf(
-          "functionName" to "wall", "limitedUseAppCheckToken" to false, "timeout" to timeout
+          "functionName" to "wall", LIMITED_USE_TOKEN_KEY to false, "timeout" to timeout
         ))
       }
     }
     assertThrows(IllegalArgumentException::class.java) {
-      functions.callable(mapOf("functionName" to "wall", "limitedUseAppCheckToken" to 1))
+      functions.callable(mapOf("functionName" to "wall", LIMITED_USE_TOKEN_KEY to 1))
     }
     Mockito.verify(reference, Mockito.never()).stream(Mockito.any())
   }
 
-  @Test fun malformedUrlsReturnInvalidArgumentWithoutCallingFirebase() {
+  @Test internal fun malformedUrlsReturnInvalidArgumentWithoutCallingFirebase() {
     val functions = Mockito.mock(FirebaseFunctions::class.java)
     for (url in listOf("not-a-url", "ftp://example.com/file", "https://user:pass@example.com/call",
       "http://example.com:0/call")) {
       val error = assertThrows(IllegalArgumentException::class.java) {
-        functions.callable(mapOf("functionUri" to url, "limitedUseAppCheckToken" to false))
+        functions.callable(mapOf("functionUri" to url, LIMITED_USE_TOKEN_KEY to false))
       }
       val details = functionsError(error).details as Map<*, *>
       assertEquals("invalid-argument", details["code"])
@@ -163,15 +172,44 @@ class FunctionsNativeTest {
     Mockito.verifyNoInteractions(functions)
   }
 
-  @Test fun invalidStreamArgumentsReachTheErrorSinkAndClose() {
+  @Test internal fun invalidStreamArgumentsReachTheErrorSinkAndClose() {
     val functions = Mockito.mock(FirebaseFunctions::class.java)
     val sink = Sink()
     val handler = FirebaseFunctionsStreamHandler(functions)
     handler.onListen(null, sink)
-    assertEquals("firebase_functions", sink.errorCode)
-    assertEquals(mapOf("code" to "invalid-argument", "message" to "Stream arguments must be a map"), sink.errorDetails)
+    assertEquals(ERROR_DOMAIN, sink.errorCode)
+    assertEquals(mapOf("code" to "invalid-argument", MESSAGE_KEY to "Stream arguments must be a map"), sink.errorDetails)
     assertEquals(1, sink.endings)
     handler.onCancel(null)
     Mockito.verifyNoInteractions(functions)
+  }
+
+  @Test internal fun cancellingReplacedStreamKeepsTheCurrentChannel() {
+    val functions = Mockito.mock(FirebaseFunctions::class.java)
+    val app = Mockito.mock(FirebaseApp::class.java)
+    FirebaseFunctionsTestValues.install(app, functions)
+    val binding = Mockito.mock(FlutterPluginBinding::class.java)
+    Mockito.`when`(binding.binaryMessenger).thenReturn(Mockito.mock(BinaryMessenger::class.java))
+    Mockito.mockStatic(FirebaseApp::class.java).use { apps ->
+      apps.`when`<FirebaseApp> { FirebaseApp.getInstance("app") }.thenReturn(app)
+      Mockito.mockConstruction(EventChannel::class.java).use { channels ->
+        val plugin = FlutterFirebaseFunctionsPlugin()
+        plugin.onAttachedToEngine(binding)
+        val arguments = mapOf("eventChannelId" to "same", "appName" to "app", "region" to "region")
+        plugin.registerEventChannel(arguments) { assertTrue(it.isSuccess) }
+        plugin.registerEventChannel(arguments) { assertTrue(it.isSuccess) }
+        val previous = channels.constructed()[0]
+        val current = channels.constructed()[1]
+        val previousHandler = Mockito.mockingDetails(previous).invocations
+          .first { it.method.name == "setStreamHandler" }.arguments[0] as FirebaseFunctionsStreamHandler
+        val currentHandler = Mockito.mockingDetails(current).invocations
+          .first { it.method.name == "setStreamHandler" }.arguments[0] as FirebaseFunctionsStreamHandler
+        previousHandler.onCancel(null)
+        Mockito.verify(current, Mockito.never()).setStreamHandler(null)
+        currentHandler.onCancel(null)
+        Mockito.verify(current).setStreamHandler(null)
+        plugin.onDetachedFromEngine(binding)
+      }
+    }
   }
 }

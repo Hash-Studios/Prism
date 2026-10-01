@@ -10,7 +10,8 @@ internal object PrismImageValidation {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.path, bounds)
         val mime = bounds.outMimeType
-        if (mime == null || !mime.startsWith("image/") || bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+        val hasDimensions = bounds.outWidth > 0 && bounds.outHeight > 0
+        if (mime?.startsWith("image/") != true || !hasDimensions) {
             throw IOException("Invalid image")
         }
         // Bounds alone accept a valid header with a corrupt body. Decode at most about one megapixel.

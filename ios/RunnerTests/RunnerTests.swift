@@ -40,7 +40,8 @@ struct RunnerTests {
       savePhoto: { _ in photosCalled = true }
     )
     let result = try await withCheckedThrowingContinuation { continuation in
-      api.enqueueDownload(request: DownloadRequest(link: "https://example.com/image", filenameWithoutExtension: "../escape")) {
+      let request = DownloadRequest(link: "https://example.com/image", filenameWithoutExtension: "../escape")
+      api.enqueueDownload(request: request) {
         continuation.resume(with: $0)
       }
     }
@@ -59,7 +60,8 @@ struct RunnerTests {
       photosCalled = true
     })
     let result = try await withCheckedThrowingContinuation { continuation in
-      api.saveMedia(request: SaveMediaRequest(link: fixture.source.absoluteString, isLocalFile: true, kind: .wallpaper)) {
+      let request = SaveMediaRequest(link: fixture.source.absoluteString, isLocalFile: true, kind: .wallpaper)
+      api.saveMedia(request: request) {
         #expect(Thread.isMainThread)
         continuation.resume(with: $0)
       }
@@ -153,7 +155,8 @@ struct RunnerTests {
     _ api: PrismMediaHostApiImpl, onComplete: @escaping @MainActor () -> Void = {}
   ) async throws -> OperationResult {
     try await withCheckedThrowingContinuation { continuation in
-      api.enqueueDownload(request: DownloadRequest(link: "https://example.com/image.jpg", filenameWithoutExtension: "prism-test")) {
+      let request = DownloadRequest(link: "https://example.com/image.jpg", filenameWithoutExtension: "prism-test")
+      api.enqueueDownload(request: request) {
         #expect(Thread.isMainThread)
         onComplete()
         continuation.resume(with: $0)

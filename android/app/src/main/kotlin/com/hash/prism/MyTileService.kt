@@ -5,17 +5,17 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import kotlin.random.Random
 
-class MyTileService : WallpaperTileService() {
+internal class MyTileService : WallpaperTileService() {
     internal override fun wallpaper(prefs: SharedPreferences): Wallpaper {
         val category = prefs.getString("flutter.quick_tile.category.name", null)?.trim()
         check(!category.isNullOrEmpty()) { "Open Prism and configure the Quick Tile first" }
         val target = TileWallpaperTarget.parse(prefs.getString("flutter.quick_tile.category.target", null))
         val query = URLEncoder.encode(category, "UTF-8")
-        val source = prefs.getString("flutter.quick_tile.category.source", "pexels")?.trim()
+        val source = prefs.getString("flutter.quick_tile.category.source", PEXELS_SOURCE)?.trim()
         val link: String
         val headers: Map<String, String>
         when (source) {
-            "pexels" -> {
+            PEXELS_SOURCE -> {
                 val key = prefs.getString("flutter.quick_tile.pexels.api_key", null)?.trim().orEmpty()
                 check(key.isNotEmpty()) { "Open Prism to configure the wallpaper provider" }
                 link = "https://api.pexels.com/v1/search?query=$query&per_page=30&orientation=portrait"
@@ -33,10 +33,12 @@ class MyTileService : WallpaperTileService() {
             connection.inputStream.use { PrismImageTransfer.copy(it, bytes, 2L * 1024 * 1024) }
             JSONObject(bytes.toString("UTF-8"))
         } finally { connection.disconnect() }
-        val list = json.getJSONArray(if (source == "pexels") "photos" else "data")
+        val list = json.getJSONArray(if (source == PEXELS_SOURCE) "photos" else "data")
         check(list.length() > 0) { "No wallpaper found in this category" }
         val item = list.getJSONObject(Random.nextInt(list.length()))
-        val url = if (source == "pexels") item.getJSONObject("src").getString("original") else item.getString("path")
+        val url = if (source == PEXELS_SOURCE) item.getJSONObject("src").getString("original") else item.getString("path")
         return Wallpaper(url, target)
     }
+
+    private companion object { const val PEXELS_SOURCE = "pexels" }
 }

@@ -46,8 +46,10 @@ public final class FirebaseFunctionsPlugin: NSObject, FLTFirebasePluginProtocol,
     let eventChannel = FlutterEventChannel(name: eventChannelName, binaryMessenger: binaryMessenger)
     streams[eventChannelId]?.1.cancel()
     streams[eventChannelId]?.0.setStreamHandler(nil)
-    let streamHandler = FunctionsStreamHandler(functions: functions) { [weak self] in
-      self?.streams.removeValue(forKey: eventChannelId)?.0.setStreamHandler(nil)
+    let streamHandler = FunctionsStreamHandler(functions: functions) { [weak self] cancelled in
+      guard let current = self?.streams[eventChannelId], current.1 === cancelled else { return }
+      self?.streams.removeValue(forKey: eventChannelId)
+      current.0.setStreamHandler(nil)
     }
     streams[eventChannelId] = (eventChannel, streamHandler)
     eventChannel.setStreamHandler(streamHandler)
