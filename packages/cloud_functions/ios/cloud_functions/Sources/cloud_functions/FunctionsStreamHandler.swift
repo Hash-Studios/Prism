@@ -45,7 +45,7 @@ final class FunctionsStreamHandler: NSObject, FlutterStreamHandler {
 
   func onCancel(withArguments arguments: Any?) -> FlutterError? {
     cancel()
-    onCancelled(self)
+    if arguments != nil { onCancelled(self) }
     return nil
   }
 

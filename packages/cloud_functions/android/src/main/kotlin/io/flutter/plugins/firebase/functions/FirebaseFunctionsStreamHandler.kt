@@ -31,7 +31,7 @@ internal class FirebaseFunctionsStreamHandler(
 
   override fun onCancel(arguments: Any?) {
     cancel()
-    onCancelled(this)
+    if (arguments != null) onCancelled(this)
   }
 
   internal fun cancel() {

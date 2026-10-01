@@ -11,6 +11,8 @@ import com.google.firebase.functions.StreamResponse
 import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.StandardMethodCodec
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import org.junit.Assert.*
 import org.junit.Test
@@ -204,10 +206,62 @@ internal class FunctionsNativeTest {
           .first { it.method.name == "setStreamHandler" }.arguments[0] as FirebaseFunctionsStreamHandler
         val currentHandler = Mockito.mockingDetails(current).invocations
           .first { it.method.name == "setStreamHandler" }.arguments[0] as FirebaseFunctionsStreamHandler
-        previousHandler.onCancel(null)
+        previousHandler.onCancel(arguments)
         Mockito.verify(current, Mockito.never()).setStreamHandler(null)
-        currentHandler.onCancel(null)
+        currentHandler.onCancel(arguments)
         Mockito.verify(current).setStreamHandler(null)
+        plugin.onDetachedFromEngine(binding)
+      }
+    }
+  }
+
+  @Test internal fun dispatcherRestartPreservesChannelUntilExplicitCancellation() {
+    val functions = Mockito.mock(FirebaseFunctions::class.java)
+    val reference = Mockito.mock(HttpsCallableReference::class.java)
+    Mockito.`when`(functions.getHttpsCallable(eq("wall"), anyOptions())).thenReturn(reference)
+    Mockito.`when`(reference.stream(Mockito.any())).thenReturn(Publisher<StreamResponse> { })
+    val app = Mockito.mock(FirebaseApp::class.java)
+    FirebaseFunctionsTestValues.install(app, functions)
+    val messenger = Mockito.mock(BinaryMessenger::class.java)
+    val handlers = mutableMapOf<String, BinaryMessenger.BinaryMessageHandler>()
+    Mockito.doAnswer {
+      val name = it.getArgument<String>(0)
+      val handler = it.getArgument<BinaryMessenger.BinaryMessageHandler?>(1)
+      if (handler == null) handlers.remove(name) else handlers[name] = handler
+      null
+    }.`when`(messenger).setMessageHandler(Mockito.anyString(), Mockito.any())
+    val binding = Mockito.mock(FlutterPluginBinding::class.java)
+    Mockito.`when`(binding.binaryMessenger).thenReturn(messenger)
+    val channelName = "plugins.flutter.io/firebase_functions/restart"
+    val arguments = mapOf("functionName" to "wall", LIMITED_USE_TOKEN_KEY to false)
+    fun send(method: String) {
+      val message = StandardMethodCodec.INSTANCE.encodeMethodCall(MethodCall(method, arguments))
+      message.flip()
+      var replied = false
+      checkNotNull(handlers[channelName]).onMessage(message) { reply ->
+        checkNotNull(reply).flip()
+        assertNull(StandardMethodCodec.INSTANCE.decodeEnvelope(reply))
+        replied = true
+      }
+      assertTrue(replied)
+    }
+    Mockito.mockStatic(FirebaseApp::class.java).use { apps ->
+      apps.`when`<FirebaseApp> { FirebaseApp.getInstance("app") }.thenReturn(app)
+      Mockito.mockConstruction(StreamResponseSubscriber::class.java).use { subscribers ->
+        val plugin = FlutterFirebaseFunctionsPlugin()
+        plugin.onAttachedToEngine(binding)
+        plugin.registerEventChannel(mapOf(
+          "eventChannelId" to "restart", "appName" to "app", "region" to "region"
+        )) { assertTrue(it.isSuccess) }
+        send("listen")
+        send("listen")
+        assertEquals(2, subscribers.constructed().size)
+        Mockito.verify(subscribers.constructed()[0]).cancel()
+        Mockito.verify(subscribers.constructed()[1], Mockito.never()).cancel()
+        assertNotNull(handlers[channelName])
+        send("cancel")
+        Mockito.verify(subscribers.constructed()[1]).cancel()
+        assertNull(handlers[channelName])
         plugin.onDetachedFromEngine(binding)
       }
     }
