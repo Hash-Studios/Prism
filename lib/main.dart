@@ -52,7 +52,6 @@ import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
-import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/firebase_options.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
@@ -254,7 +253,6 @@ Future<void> main() async {
               child: MultiBlocProvider(
                 providers: [
                   BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-                  BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
                   BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
                   BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
                   BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
