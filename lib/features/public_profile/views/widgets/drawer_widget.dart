@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -188,6 +189,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Share your Profile',
               context: context,
               onTap: () {
+                PrismHaptics.tap();
                 _trackDrawerAction(
                   AnalyticsActionValue.drawerSharePrismTapped,
                   sourceContext: 'profile_drawer_share_profile',

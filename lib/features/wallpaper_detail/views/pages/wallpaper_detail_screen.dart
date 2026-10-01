@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' show min;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -30,6 +32,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -47,7 +50,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
-class WallpaperDetailScreen extends StatefulWidget {
+class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   const WallpaperDetailScreen({
     super.key,
     this.entity,
@@ -56,6 +59,7 @@ class WallpaperDetailScreen extends StatefulWidget {
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
+    this.localFile,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -66,6 +70,17 @@ class WallpaperDetailScreen extends StatefulWidget {
 
   /// Set when opened from a grid tile, so the tile image flies into this screen.
   final String? heroTag;
+
+  /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
+  final File? localFile;
+
+  // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
+  @override
+  Widget wrappedRoute(BuildContext context) => BlocProvider<WallpaperDetailBloc>(
+    key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
+    create: (_) => getIt<WallpaperDetailBloc>(),
+    child: this,
+  );
 
   @override
   State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
@@ -129,12 +144,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
     if (colors == null || colors.isEmpty || !colors.contains(accent)) return;
 
+    PrismHaptics.selection();
     context.read<WallpaperDetailBloc>().add(const CycleAccentColor());
-    _setStatusBarIconBrightness(state.accent ?? Colors.white);
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
     if (!_accentToastShown) {
-      toasts.success('Long press to reset');
+      toasts.success('Long press to reset', haptic: false);
       _accentToastShown = true;
     }
   }
@@ -142,19 +157,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   void _handleAccentLongPress(BuildContext context, WallpaperDetailLoaded state) {
     context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
     _trackAction(state, AnalyticsActionValue.paletteResetLongPressed);
-    HapticFeedback.vibrate();
+    PrismHaptics.impact();
     _shake.shake();
   }
 
-  void _handleColorSelected(BuildContext context, WallpaperDetailLoaded state, Color color) {
+  void _handleColorSelected(BuildContext context, Color color) {
     context.read<WallpaperDetailBloc>().add(SelectAccentColor(color: color));
-    _setStatusBarIconBrightness(color);
-  }
-
-  void _setStatusBarIconBrightness(Color color) {
-    applyEdgeToEdgeOverlayStyle(
-      statusBarIconBrightness: onColor(color) == Colors.black ? Brightness.dark : Brightness.light,
-    );
   }
 
   @override
@@ -173,9 +181,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final bloc = context.read<WallpaperDetailBloc>();
     final entity = widget.entity;
     if (entity != null) {
-      bloc.add(LoadFromEntity(entity: entity));
+      bloc.add(LoadFromEntity(entity: entity, localFilePath: widget.localFile?.path));
     } else {
-      bloc.add(LoadFromId(wallId: widget.wallId!, source: widget.source!, thumbnailUrl: widget.thumbnailUrl));
+      bloc.add(
+        LoadFromId(
+          wallId: widget.wallId!,
+          source: widget.source!,
+          thumbnailUrl: widget.thumbnailUrl,
+          localFilePath: widget.localFile?.path,
+        ),
+      );
     }
   }
 
@@ -188,17 +203,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget build(BuildContext context) {
     return BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
       listener: (context, state) {
+        if (state is WallpaperDetailError &&
+            widget.localFile?.existsSync() == true &&
+            ModalRoute.of(context)?.isCurrent == true) {
+          context.router.replace(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: widget.localFile!));
+          return;
+        }
         if (state is WallpaperDetailLoaded && !_openRecorded) {
           _openRecorded = true;
           _recordTaste(TasteAction.open, state.entity);
         }
-        if (state is WallpaperDetailLoaded && state.colors != null && state.accent != null) {
-          _setStatusBarIconBrightness(state.accent!);
-        }
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
+          final entity = widget.entity;
           return switch (state) {
+            // Build the entity on the first frame too, so the hero flight shows the tapped wallpaper.
+            WallpaperDetailInitial() when entity != null => _buildLoadedState(
+              context,
+              WallpaperDetailLoaded(entity: entity),
+            ),
             WallpaperDetailInitial() || WallpaperDetailLoading() => _buildLoadingState(state),
             WallpaperDetailLoaded() => _buildLoadedState(context, state),
             WallpaperDetailError() => _buildErrorState(state),
@@ -209,6 +233,32 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Widget _buildLoadingState(WallpaperDetailState state) {
+    final File? localFile = widget.localFile;
+    if (localFile != null) {
+      return Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.file(
+              localFile,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) =>
+                  const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(JamIcons.chevron_left),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     final String thumbnailUrl = normalizeWallpaperThumbnailUrl(
       (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? '',
     );
@@ -265,26 +315,34 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildLoadedState(BuildContext context, WallpaperDetailLoaded state) {
     final paletteLoading = state.paletteLoading;
+    final backgroundColor = paletteLoading
+        ? Theme.of(context).primaryColor
+        : state.accent ?? Theme.of(context).scaffoldBackgroundColor;
 
-    return Scaffold(
-      backgroundColor: paletteLoading ? Theme.of(context).primaryColor : state.accent,
-      body: SlidingUpPanel(
-        onPanelOpened: () => _handlePanelOpened(context, state),
-        onPanelClosed: () => _handlePanelClosed(context, state),
-        // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(_panelTopRadius),
-          topRight: Radius.circular(_panelTopRadius),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: edgeToEdgeOverlayStyle(
+        statusBarIconBrightness: onColor(backgroundColor) == Colors.black ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: SlidingUpPanel(
+          onPanelOpened: () => _handlePanelOpened(context, state),
+          onPanelClosed: () => _handlePanelClosed(context, state),
+          // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(_panelTopRadius),
+            topRight: Radius.circular(_panelTopRadius),
+          ),
+          boxShadow: const [],
+          minHeight: MediaQuery.of(context).size.height / 20,
+          parallaxEnabled: true,
+          parallaxOffset: 0,
+          color: Colors.transparent,
+          maxHeight: MediaQuery.of(context).size.height * 0.43,
+          controller: panelController,
+          panel: _buildInfoPanel(context, state),
+          body: _buildImageBody(context, paletteLoading, state),
         ),
-        boxShadow: const [],
-        minHeight: MediaQuery.of(context).size.height / 20,
-        parallaxEnabled: true,
-        parallaxOffset: 0,
-        color: Colors.transparent,
-        maxHeight: MediaQuery.of(context).size.height * 0.43,
-        controller: panelController,
-        panel: _buildInfoPanel(context, state),
-        body: _buildImageBody(context, paletteLoading, state),
       ),
     );
   }
@@ -386,11 +444,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       _buildColorSwatch(
         context: context,
         thumbnailUrl: thumbnailUrl,
+        localFile: widget.localFile,
         color: null,
         isSelected: !state.colorChanged,
         onTap: () {
           context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
-          _setStatusBarIconBrightness(state.accent ?? Colors.white);
         },
         onLongPress: null,
       ),
@@ -398,11 +456,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         _buildColorSwatch(
           context: context,
           thumbnailUrl: thumbnailUrl,
+          localFile: widget.localFile,
           color: color,
           isSelected: state.colorChanged && color == state.accent,
-          onTap: () => _handleColorSelected(context, state, color),
+          onTap: () => _handleColorSelected(context, color),
           onLongPress: () {
-            HapticFeedback.vibrate();
+            PrismHaptics.impact();
             Clipboard.setData(ClipboardData(text: '#${color.rgbHex.toUpperCase()}')).then((_) => toasts.color(color));
           },
         ),
@@ -421,6 +480,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget _buildColorSwatch({
     required BuildContext context,
     required String thumbnailUrl,
+    required File? localFile,
     required Color? color,
     required bool isSelected,
     required VoidCallback? onTap,
@@ -440,7 +500,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (thumbnailUrl.isNotEmpty)
+            if (localFile != null)
+              Image.file(
+                localFile,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                color: color,
+                colorBlendMode: color == null ? null : BlendMode.hue,
+                errorBuilder: (_, _, _) =>
+                    Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+              )
+            else if (thumbnailUrl.isNotEmpty)
               CachedNetworkImage(
                 imageUrl: thumbnailUrl,
                 width: double.infinity,
@@ -690,7 +761,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         : Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => context.router.push(ProfileRoute(profileIdentifier: profileIdentifier)),
+              onTap: () {
+                PrismHaptics.tap();
+                context.router.push(ProfileRoute(profileIdentifier: profileIdentifier));
+              },
               borderRadius: BorderRadius.circular(8),
               child: child,
             ),
@@ -739,7 +813,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     onTap: () async {
                       final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
                       if (!ok && context.mounted) {
-                        toasts.success('Could not open profile');
+                        toasts.error('Could not open profile');
                       }
                     },
                     child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: label),
@@ -789,13 +863,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         child: DownloadButton(
           link: url,
           sourceContext: _getSourceContext(state),
-          onDownloaded: () => _recordTaste(TasteAction.download, entity),
+          onDownloaded: () {
+            _recordTaste(TasteAction.download, entity);
+            unawaited(getIt<DownloadedWallIndex>().remember(link: url, id: entity.id, source: entity.source));
+          },
         ),
       ),
       if (!hideSetWallpaperUi)
         PressScale(
           child: SetWallpaperButton(
-            url: url,
+            url: widget.localFile?.path ?? url,
             promptNotificationPermissionOnSuccess: true,
             onSet: () => _recordTaste(TasteAction.set, entity),
           ),
@@ -829,12 +906,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           child: CircularMenuButton(
             label: 'Report',
             isLoading: false,
-            onTap: () => showContentReportSheet(
-              context,
-              contentType: 'wall',
-              targetFirestoreDocId: reportWallDocId,
-              subtitle: entity.id,
-            ),
+            onTap: () {
+              showContentReportSheet(
+                context,
+                contentType: 'wall',
+                targetFirestoreDocId: reportWallDocId,
+                subtitle: entity.id,
+              );
+            },
             child: Icon(JamIcons.flag, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
         ),
@@ -866,7 +945,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 },
                 onLongPress: () => _handleAccentLongPress(context, state),
                 onTap: () {
-                  HapticFeedback.vibrate();
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },
@@ -922,8 +1000,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         child: ClockOverlay(
                           colorChanged: state.colorChanged,
                           accent: state.accent,
-                          link: entity.fullUrl,
-                          file: false,
+                          link: widget.localFile?.path ?? entity.fullUrl,
+                          file: widget.localFile != null,
                         ),
                       );
                     },
@@ -953,7 +1031,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final bool useProgressive = thumb.isNotEmpty && full.isNotEmpty && full != thumb;
 
     Widget imageLayer;
-    if (useProgressive) {
+    final File? localFile = widget.localFile;
+    if (localFile != null) {
+      imageLayer = Image.file(
+        localFile,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) =>
+            const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
+      );
+    } else if (useProgressive) {
       imageLayer = Stack(
         fit: StackFit.expand,
         children: [

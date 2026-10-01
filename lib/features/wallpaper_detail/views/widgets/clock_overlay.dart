@@ -54,8 +54,8 @@ class ClockOverlay extends StatelessWidget {
               width: MediaQuery.of(context).size.width,
               child: Image.file(
                 File(link),
-                color: accent,
-                colorBlendMode: colorChanged ? BlendMode.color : null,
+                color: colorChanged ? accent : null,
+                colorBlendMode: colorChanged ? BlendMode.hue : null,
                 fit: BoxFit.cover,
               ),
             ),

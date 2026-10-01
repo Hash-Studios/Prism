@@ -3,6 +3,7 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/badges/views/widgets/rewards_badges_section.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
@@ -75,6 +76,7 @@ class _RewardsPageState extends State<RewardsPage> {
                     ),
                   ),
                   KeyedSubtree(key: _earnKey, child: const RewardsEarnSection()),
+                  const RewardsBadgesSection(),
                   const RewardsCollectionSection(),
                   const RewardsActivitySection(),
                   // Clear the floating bottom nav.

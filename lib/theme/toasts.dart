@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -11,9 +12,15 @@ void _show(String msg, Color background, {ToastGravity gravity = ToastGravity.BO
   );
 }
 
-void success(String msg) => _show(msg, Colors.green[400]!);
+void success(String msg, {bool haptic = true}) {
+  if (haptic) PrismHaptics.success();
+  _show(msg, Colors.green[400]!);
+}
 
-void error(String msg) => _show(msg, Colors.red[400]!);
+void error(String msg, {bool haptic = true}) {
+  if (haptic) PrismHaptics.error();
+  _show(msg, Colors.red[400]!);
+}
 
 void color(Color color) => _show(
   'Color code copied to clipboard',

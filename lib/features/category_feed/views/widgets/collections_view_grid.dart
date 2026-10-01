@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -17,7 +18,6 @@ import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class CollectionViewGrid extends StatefulWidget {
   const CollectionViewGrid();
@@ -167,7 +167,9 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                         child: InkWell(
                           splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                           highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                          enableFeedback: false,
                           onTap: () {
+                            PrismHaptics.tap();
                             unawaited(
                               analytics.track(
                                 SurfaceActionTappedEvent(
@@ -192,7 +194,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                           },
                           onLongPress: () {
                             _shake.shake(index);
-                            HapticFeedback.vibrate();
+                            PrismHaptics.impact();
                             createDynamicLink(wallId, wallSource, wallpaperUrl, wallpaperThumb);
                           },
                         ),

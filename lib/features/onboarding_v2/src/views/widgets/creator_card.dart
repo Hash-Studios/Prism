@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -5,7 +6,6 @@ import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_star
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class CreatorCard extends StatelessWidget {
   const CreatorCard({super.key, required this.creator, required this.isSelected, required this.onToggle});
@@ -34,7 +34,7 @@ class CreatorCard extends StatelessWidget {
           borderRadius: cardRadius,
           child: InkWell(
             onTap: () {
-              HapticFeedback.lightImpact();
+              PrismHaptics.selection();
               onToggle();
             },
             borderRadius: cardRadius,

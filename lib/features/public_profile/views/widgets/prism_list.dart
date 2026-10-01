@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -10,7 +11,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 typedef _ApiLink = ({IconData icon, String name, String url, LinkDestinationValue destination, String sourceContext});
@@ -100,6 +100,7 @@ class PrismList extends StatelessWidget {
           title: 'Share Prism!',
           subtitle: 'Quick link to pass on to your friends and enemies',
           onTap: () async {
+            PrismHaptics.tap();
             _trackAction(AnalyticsActionValue.drawerSharePrismTapped, sourceContext: 'profile_prism_list_share');
             await ShareService.shareText(text: _shareText, context: context);
           },
@@ -142,7 +143,7 @@ class PrismList extends StatelessWidget {
                             leading: Icon(link.icon, color: Theme.of(context).colorScheme.secondary),
                             title: Text(link.name, style: Theme.of(context).textTheme.headlineMedium),
                             onTap: () {
-                              HapticFeedback.vibrate();
+                              PrismHaptics.tap();
                               Navigator.of(context).pop();
                               unawaited(_openApiLink(link));
                             },

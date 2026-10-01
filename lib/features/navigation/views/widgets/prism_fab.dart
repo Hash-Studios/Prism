@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
@@ -58,6 +59,7 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
   }
 
   void _onPressed() {
+    PrismHaptics.tap();
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadSheetOpened,

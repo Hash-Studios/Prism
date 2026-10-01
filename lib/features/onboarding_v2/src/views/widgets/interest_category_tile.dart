@@ -1,6 +1,6 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class InterestCategoryTile extends StatelessWidget {
   const InterestCategoryTile({
@@ -35,7 +35,7 @@ class InterestCategoryTile extends StatelessWidget {
         child: InkWell(
           borderRadius: tileRadius,
           onTap: () {
-            HapticFeedback.lightImpact();
+            PrismHaptics.selection();
             onTap();
           },
           child: ClipRRect(

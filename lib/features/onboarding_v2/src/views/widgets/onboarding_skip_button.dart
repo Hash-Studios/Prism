@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -19,7 +20,10 @@ class OnboardingSkipButton extends StatelessWidget {
           right: (OnboardingLayout.designWidth - OnboardingLayout.skipX - 32) * sx,
         ),
         child: GestureDetector(
-          onTap: onTap,
+          onTap: () {
+            PrismHaptics.tap();
+            onTap();
+          },
           child: Text('skip', style: OnboardingTypography.skip.copyWith(color: color)),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -50,7 +51,10 @@ class BalanceCard extends StatelessWidget {
               scale: 0.98,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: onSeeUses,
+                onTap: () {
+                  PrismHaptics.tap();
+                  onSeeUses();
+                },
                 child: Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Row(
@@ -75,11 +79,14 @@ class BalanceCard extends StatelessWidget {
                 Text('With Pro, downloads and filters are free. ', style: PrismTextStyles.caption(context)),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => PaywallOrchestrator.instance.presentOrRequireSignIn(
-                    context,
-                    placement: PaywallPlacement.mainUpsell,
-                    source: 'rewards_balance_card',
-                  ),
+                  onTap: () {
+                    PrismHaptics.tap();
+                    PaywallOrchestrator.instance.presentOrRequireSignIn(
+                      context,
+                      placement: PaywallPlacement.mainUpsell,
+                      source: 'rewards_balance_card',
+                    );
+                  },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(

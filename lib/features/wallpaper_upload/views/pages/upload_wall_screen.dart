@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
@@ -266,6 +267,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<void> _retryUpload() async {
+    PrismHaptics.tap();
     if (_stage == _UploadStage.failedProcessing) {
       await _prepareImage();
     }
@@ -278,6 +280,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _leaving) {
       return;
     }
+    PrismHaptics.tap();
     setState(() {
       _stage = _UploadStage.uploading;
       _errorMessage = null;
@@ -343,7 +346,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         content: const Text('Uploaded files will be removed. Your selected image will stay on your device.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Keep editing')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Discard upload')),
+          FilledButton(
+            onPressed: () {
+              PrismHaptics.tap();
+              Navigator.pop(dialogContext, true);
+            },
+            child: const Text('Discard upload'),
+          ),
         ],
       ),
     );

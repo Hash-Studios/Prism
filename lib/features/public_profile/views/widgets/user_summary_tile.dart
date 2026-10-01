@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -25,7 +26,10 @@ class UserSummaryTile extends StatelessWidget {
     final bool isOwnAccount = user.email.toLowerCase() == app_state.prismUser.email.toLowerCase();
 
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        PrismHaptics.tap();
+        onTap();
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
@@ -176,6 +180,7 @@ class _FollowButton extends StatelessWidget {
   }
 
   void _onPressed(BuildContext context) {
+    PrismHaptics.tap();
     context.read<PublicProfileBloc>().add(
       PublicProfileEvent.followChangeRequested(
         follow: !user.isFollowedByCurrentUser,
