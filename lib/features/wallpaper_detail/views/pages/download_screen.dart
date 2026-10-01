@@ -4,12 +4,14 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -132,8 +134,17 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                     ),
                                   ),
                                 );
+                                final File file = files[index];
+                                final DownloadedWallRef? wall = getIt<DownloadedWallIndex>().resolve(file.path);
                                 context.router.push(
-                                  DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: files[index]),
+                                  wall == null
+                                      ? DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: file)
+                                      : WallpaperDetailRoute(
+                                          wallId: wall.id,
+                                          source: wall.source,
+                                          localFile: file,
+                                          analyticsSurface: AnalyticsSurfaceValue.downloadWallpaperScreen,
+                                        ),
                                 );
                               },
                             ),

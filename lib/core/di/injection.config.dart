@@ -151,6 +151,8 @@ import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_re
     as _i604;
 import '../../features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart'
     as _i618;
+import '../../features/wallpaper_detail/data/downloaded_wall_index.dart'
+    as _i567;
 import '../../features/wallpaper_detail/data/repositories/palette_repository_impl.dart'
     as _i446;
 import '../../features/wallpaper_detail/domain/repositories/palette_repository.dart'
@@ -320,6 +322,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i535.FeedImpressionStore>(
     () => _i535.FeedImpressionStore(gh<_i1073.SettingsLocalDataSource>()),
+  );
+  gh.lazySingleton<_i567.DownloadedWallIndex>(
+    () => _i567.DownloadedWallIndex(gh<_i1073.SettingsLocalDataSource>()),
   );
   gh.lazySingleton<_i738.SessionRepository>(
     () => _i1021.SessionRepositoryImpl(gh<_i704.SessionLocalDataSource>()),
