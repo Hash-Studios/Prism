@@ -10,6 +10,7 @@ function debitFixture(overrides: Record<string, unknown> = {}): Record<string, u
   return {
     userId: "user-1",
     type: "debit",
+    action: "wallpaperDownload",
     status: "completed",
     delta: -15,
     createdAt: {toMillis: () => NOW - 60_000},
@@ -38,12 +39,12 @@ test("refundableDelta: rejects an already-refunded debit", () => {
 });
 
 test("refundableDelta: rejects a debit older than the refund window", () => {
-  const old = debitFixture({createdAt: {toMillis: () => NOW - 3_600_001}});
+  const old = debitFixture({createdAt: {toMillis: () => NOW - 600_001}});
   assert.throws(() => refundableDelta(old, "user-1", NOW), {code: "failed-precondition"});
 });
 
 test("refundableDelta: allows a debit right at the edge of the refund window", () => {
-  const edge = debitFixture({createdAt: {toMillis: () => NOW - 3_600_000}});
+  const edge = debitFixture({createdAt: {toMillis: () => NOW - 600_000}});
   assert.equal(refundableDelta(edge, "user-1", NOW), 15);
 });
 
@@ -138,6 +139,15 @@ for (const retry of ["duplicate", "cap", "balance"] as const) {
     assert.deepEqual(committedWrites, []);
   });
 }
+
+test("refundableDelta: only the download and AI generation debits are refundable", () => {
+  for (const action of ["premiumFilter", "premiumPreview24h", "rewardedAd", undefined]) {
+    assert.throws(() => refundableDelta(debitFixture({action}), "user-1", NOW), {code: "failed-precondition"});
+  }
+  for (const action of ["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration"]) {
+    assert.equal(refundableDelta(debitFixture({action}), "user-1", NOW), 15);
+  }
+});
 
 test("refundableDelta: a streak freeze purchase is never refundable", () => {
   const freeze = debitFixture({action: "streakFreeze", delta: -50});

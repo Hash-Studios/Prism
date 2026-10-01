@@ -1,10 +1,14 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {coinTransactionDoc, db, REGION, utcDateString} from "./common";
+import {coinTransactionDoc, db, readDailyCount, REGION, str, utcDateString} from "./common";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
 const AD_RATE_DAILY = "coinAdRateDaily";
+const REFUND_DAILY = "coinRefundDaily";
+const REFERRAL_STATS = "referralStats";
+const WALLS = "walls";
+const UPLOADS = "githubUploads";
 
 const AWARDS: Record<string, number> = {
   rewardedAd: 10,
@@ -25,7 +29,18 @@ export const MAX_STREAK_FREEZES = 2;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 
 const AI_GENERATION_AMOUNTS = new Set([10, 75, 100]);
-const REFUND_WINDOW_MS = 3_600_000;
+const REFUND_WINDOW_MS = 600_000;
+const REFUND_MAX_PER_DAY = 5;
+// Only the debits the app refunds today: a failed download and a failed AI generation.
+const REFUNDABLE_ACTIONS = new Set(["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration"]);
+const PREVIEW_ACCESS_MS = 86_400_000;
+const REFERRAL_NEW_ACCOUNT_MS = 14 * 86_400_000;
+const REFERRAL_MAX_PER_DAY = 10;
+const REFERRAL_MAX_LIFETIME = 100;
+// Mirrors defaultProfilePhotoUrl in lib/core/constants/app_constants.dart.
+const DEFAULT_PROFILE_PHOTO =
+  "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4";
+const CALLABLE_OPTIONS = {region: REGION, cors: true, maxInstances: 10};
 const AD_RATE_MAX_PER_DAY = 20;
 const AD_RATE_MIN_GAP_MS = 20_000;
 
@@ -34,6 +49,14 @@ function requiredText(value: unknown, field: string): string {
     throw new HttpsError("invalid-argument", `${field} is required.`);
   }
   return value.trim();
+}
+
+function requiredDocumentId(value: unknown, field: string): string {
+  const id = requiredText(value, field);
+  if (id.includes("/") || id === "." || id === "..") {
+    throw new HttpsError("invalid-argument", `${field} must be a document ID.`);
+  }
+  return id;
 }
 
 function uid(request: CallableRequest<unknown>): string {
@@ -51,8 +74,10 @@ function transactionId(action: string): string {
 }
 
 function awardAmount(action: string): number {
-  const amount = AWARDS[action];
-  if (amount == null || amount <= 0) throw new HttpsError("invalid-argument", "Unsupported award action.");
+  const amount = Object.prototype.hasOwnProperty.call(AWARDS, action) ? AWARDS[action] : undefined;
+  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+    throw new HttpsError("invalid-argument", "Unsupported award action.");
+  }
   return amount;
 }
 
@@ -66,7 +91,7 @@ export function refundableDelta(debit: admin.firestore.DocumentData | undefined,
   if (debit.userId !== callerUid) throw notRefundable();
   if (debit.type !== "debit") throw notRefundable();
   if (debit.status !== "completed") throw notRefundable();
-  if (debit.action === "streakFreeze") throw notRefundable();
+  if (typeof debit.action !== "string" || !REFUNDABLE_ACTIONS.has(debit.action)) throw notRefundable();
   const createdAtMs = (debit.createdAt as admin.firestore.Timestamp | undefined)?.toMillis?.();
   if (typeof createdAtMs !== "number") throw notRefundable();
   if (nowMs - createdAtMs > REFUND_WINDOW_MS) throw notRefundable();
@@ -87,6 +112,86 @@ export function rewardedAdAllowed(state: AdRateState, nowMs: number): boolean {
   return true;
 }
 
+/** Epoch ms from a Firestore Timestamp, Date, ISO string or number; null when missing or unreadable. */
+export function parseCreatedAtMs(raw: unknown): number | null {
+  if (raw == null) return null;
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
+  if (raw instanceof Date) return Number.isNaN(raw.getTime()) ? null : raw.getTime();
+  if (typeof raw === "string") {
+    const ms = Date.parse(raw);
+    return Number.isNaN(ms) ? null : ms;
+  }
+  const toMillis = (raw as {toMillis?: () => number}).toMillis;
+  return typeof toMillis === "function" ? toMillis.call(raw) : null;
+}
+
+interface ReferralStats {
+  day?: string;
+  count?: number;
+  total?: number;
+}
+
+/** Why a referral must pay nobody, or null when it is allowed. */
+export function referralSkipReason(
+  callerCreatedAt: unknown,
+  inviterCreatedAt: unknown,
+  stats: ReferralStats,
+  today: string,
+  nowMs: number,
+): string | null {
+  const callerMs = parseCreatedAtMs(callerCreatedAt);
+  if (callerMs == null || nowMs - callerMs > REFERRAL_NEW_ACCOUNT_MS) return "referral_caller_not_new";
+  const inviterMs = parseCreatedAtMs(inviterCreatedAt);
+  if (inviterMs == null || inviterMs >= callerMs) return "referral_inviter_not_older";
+  const daily = stats.day === today && typeof stats.count === "number" ? stats.count : 0;
+  if ((typeof stats.total === "number" ? stats.total : 0) >= REFERRAL_MAX_LIFETIME) return "referral_inviter_lifetime_limit";
+  if (daily >= REFERRAL_MAX_PER_DAY) return "referral_inviter_daily_limit";
+  return null;
+}
+
+/** Mirrors ProfileCompletenessEvaluator in lib/core/profile: photo, username, bio and one social link. */
+export function isProfileComplete(user: admin.firestore.DocumentData): boolean {
+  const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const photo = text(user.profilePhoto);
+  const links = user.links && typeof user.links === "object" ? Object.values(user.links as Record<string, unknown>) : [];
+  return photo !== "" && photo !== DEFAULT_PROFILE_PHOTO && text(user.username) !== "" && text(user.bio) !== "" &&
+    links.some((v) => text(v) !== "");
+}
+
+function thumbnailUploadPath(rawUrl: unknown, owner: string, repo: string): string | null {
+  if (typeof rawUrl !== "string") return null;
+  try {
+    const url = new URL(rawUrl);
+    const parts = url.pathname.split("/").filter(Boolean).map(decodeURIComponent);
+    if (url.protocol !== "https:" || url.hostname !== "raw.githubusercontent.com" || parts[0] !== owner ||
+      parts[1] !== repo || parts.length < 4) return null;
+    const path = parts.slice(3).join("/");
+    return path.startsWith("thumb_") ? path : null;
+  } catch {
+    return null;
+  }
+}
+
+async function hasSubmittedWall(callerUid: string, emails: string[]): Promise<boolean> {
+  const owner = str(process.env.GH_USERNAME);
+  const repo = str(process.env.GH_REPO_WALLS);
+  for (const email of emails) {
+    const walls = await db.collection(WALLS).where("email", "==", email).get();
+    for (const wall of walls.docs) {
+      const data = wall.data();
+      if (data.review === true) return true;
+      const path = owner !== "" && repo !== "" ? thumbnailUploadPath(data.wallpaper_thumb, owner, repo) : null;
+      if (path === null) continue;
+      const uploads = await db.collection(UPLOADS).where("path", "==", path).get();
+      if (uploads.docs.some((upload) => {
+        const evidence = upload.data();
+        return evidence.uid === callerUid && evidence.repo === repo;
+      })) return true;
+    }
+  }
+  return false;
+}
+
 function spendAmount(action: string, requested: unknown): number {
   if (action === "aiGeneration") {
     const amount = typeof requested === "number" ? Math.trunc(requested) : 0;
@@ -95,8 +200,10 @@ function spendAmount(action: string, requested: unknown): number {
     }
     return amount;
   }
-  const amount = SPENDS[action];
-  if (amount == null || amount <= 0) throw new HttpsError("invalid-argument", "Unsupported spend action.");
+  const amount = Object.prototype.hasOwnProperty.call(SPENDS, action) ? SPENDS[action] : undefined;
+  if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+    throw new HttpsError("invalid-argument", "Unsupported spend action.");
+  }
   return amount;
 }
 
@@ -119,17 +226,24 @@ function writeTx(
   return id;
 }
 
-export const awardCoins = onCall({region: REGION, cors: true}, async (request: CallableRequest<Record<string, unknown>>) => {
+export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<Record<string, unknown>>) => {
   const callerUid = uid(request);
   const action = requiredText(request.data?.action, "action");
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
   const reason = typeof request.data?.reason === "string" ? request.data.reason.trim() : action;
-  const refundTxId = action === "refund" ? requiredText(request.data?.transactionId, "transactionId") : "";
+  const refundTxId = action === "refund" ? requiredDocumentId(request.data?.transactionId, "transactionId") : "";
   const userRef = db.collection(USERS).doc(callerUid);
   const nowMs = Date.now();
   const today = utcDateString(new Date(nowMs));
   const adRateRef = db.collection(AD_RATE_DAILY).doc(`${callerUid}_${today}`);
   const debitRef = action === "refund" ? db.collection(TRANSACTIONS).doc(refundTxId) : null;
+  const refundDailyRef = db.collection(REFUND_DAILY).doc(`${callerUid}_${today}`);
+  // Evidence for the one-time upload award: the caller has at least one wall submission.
+  let hasWall = false;
+  if (action === "firstWallpaperUpload") {
+    const email = str(request.auth?.token?.email);
+    hasWall = email !== "" && await hasSubmittedWall(callerUid, [...new Set([email, email.toLowerCase()])]);
+  }
   let response = {
     success: false,
     changed: false,
@@ -138,12 +252,15 @@ export const awardCoins = onCall({region: REGION, cors: true}, async (request: C
     delta: 0,
     reason,
   };
+  const initialResponse = {...response};
 
   await db.runTransaction(async (tx) => {
+    response = {...initialResponse};
     const snap = await tx.get(userRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
     const adRateSnap = action === "rewardedAd" ? await tx.get(adRateRef) : null;
     const debitSnap = debitRef ? await tx.get(debitRef) : null;
+    const refundDailySnap = debitRef ? await tx.get(refundDailyRef) : null;
 
     const data = snap.data() ?? {};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
@@ -156,8 +273,21 @@ export const awardCoins = onCall({region: REGION, cors: true}, async (request: C
       skip("first_upload_reward_already_claimed");
       return;
     }
+    if (action === "firstWallpaperUpload" && !hasWall) {
+      skip("first_upload_no_wall");
+      return;
+    }
     if (action === "profileCompletion" && state.profileCompletionRewarded === true) {
       skip("profile_reward_already_claimed");
+      return;
+    }
+    if (action === "profileCompletion" && !isProfileComplete(data)) {
+      skip("profile_incomplete");
+      return;
+    }
+    const refundsToday = refundDailySnap ? readDailyCount(refundDailySnap, today) : 0;
+    if (action === "refund" && refundsToday >= REFUND_MAX_PER_DAY) {
+      skip("refund_daily_limit");
       return;
     }
     if (action === "proDailyBonus" && data.premium !== true) {
@@ -178,6 +308,7 @@ export const awardCoins = onCall({region: REGION, cors: true}, async (request: C
 
     if (action === "refund" && debitRef) {
       tx.update(debitRef, {status: "refunded", updatedAt: admin.firestore.Timestamp.now()});
+      tx.set(refundDailyRef, {day: today, count: refundsToday + 1});
     }
     if (action === "firstWallpaperUpload") state.firstWallpaperUploadRewarded = true;
     if (action === "profileCompletion") state.profileCompletionRewarded = true;
@@ -196,7 +327,7 @@ export const awardCoins = onCall({region: REGION, cors: true}, async (request: C
   return response;
 });
 
-export const spendCoins = onCall({region: REGION, cors: true}, async (request: CallableRequest<Record<string, unknown>>) => {
+export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<Record<string, unknown>>) => {
   const callerUid = uid(request);
   const action = requiredText(request.data?.action, "action");
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
@@ -215,8 +346,10 @@ export const spendCoins = onCall({region: REGION, cors: true}, async (request: C
     reason,
     transactionId: "",
   };
+  const initialResponse = {...response};
 
   await db.runTransaction(async (tx) => {
+    response = {...initialResponse};
     const snap = await tx.get(userRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
     const data = snap.data() ?? {};
@@ -258,13 +391,29 @@ export const spendCoins = onCall({region: REGION, cors: true}, async (request: C
   return response;
 });
 
-export const processReferral = onCall({region: REGION, cors: true}, async (request: CallableRequest<{inviterUserId?: unknown}>) => {
+export const processReferral = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<{inviterUserId?: unknown}>) => {
   const callerUid = uid(request);
-  const inviterUid = requiredText(request.data?.inviterUserId, "inviterUserId");
+  const inviterUid = requiredDocumentId(request.data?.inviterUserId, "inviterUserId");
   if (callerUid === inviterUid) throw new HttpsError("invalid-argument", "You cannot refer yourself.");
+  let callerAuth: admin.auth.UserRecord;
+  let inviterAuth: admin.auth.UserRecord;
+  try {
+    [callerAuth, inviterAuth] = await Promise.all([
+      admin.auth().getUser(callerUid),
+      admin.auth().getUser(inviterUid),
+    ]);
+  } catch (error) {
+    if ((error as {code?: string}).code === "auth/user-not-found") {
+      throw new HttpsError("not-found", "Referral user was not found.");
+    }
+    throw error;
+  }
   const reward = 100;
   const callerRef = db.collection(USERS).doc(callerUid);
   const inviterRef = db.collection(USERS).doc(inviterUid);
+  const statsRef = db.collection(REFERRAL_STATS).doc(inviterUid);
+  const nowMs = Date.now();
+  const today = utcDateString(new Date(nowMs));
   let result = {
     success: false,
     changed: false,
@@ -273,9 +422,12 @@ export const processReferral = onCall({region: REGION, cors: true}, async (reque
     delta: 0,
     reason: "referral_already_processed",
   };
+  const initialResult = {...result};
   await db.runTransaction(async (tx) => {
+    result = {...initialResult};
     const callerSnap = await tx.get(callerRef);
     const inviterSnap = await tx.get(inviterRef);
+    const statsSnap = await tx.get(statsRef);
     if (!callerSnap.exists || !inviterSnap.exists) throw new HttpsError("not-found", "Referral user was not found.");
     const callerData = callerSnap.data() ?? {};
     const state = coinState(callerData.coinState);
@@ -285,6 +437,38 @@ export const processReferral = onCall({region: REGION, cors: true}, async (reque
       return;
     }
     const inviterData = inviterSnap.data() ?? {};
+    let stats = statsSnap.data() ?? {};
+    if (!statsSnap.exists) {
+      const history = await tx.get(db.collection(TRANSACTIONS)
+        .where("userId", "==", inviterUid)
+        .where("action", "==", "referral")
+        .where("reason", "==", "inviter_reward")
+        .limit(REFERRAL_MAX_LIFETIME));
+      stats = {
+        day: today,
+        count: history.docs.filter((entry) => {
+          const createdAtMs = parseCreatedAtMs(entry.data().createdAt);
+          return createdAtMs != null && utcDateString(new Date(createdAtMs)) === today;
+        }).length,
+        total: history.size,
+      };
+    }
+    const skipReason = referralSkipReason(callerAuth.metadata.creationTime, inviterAuth.metadata.creationTime, stats, today, nowMs);
+    if (skipReason) {
+      // Permanent skips mark the referral processed so old clients stop retrying it on every launch.
+      if (!statsSnap.exists) tx.set(statsRef, stats);
+      if (skipReason !== "referral_inviter_daily_limit") {
+        state.referralRewarded = true;
+        tx.update(callerRef, {coinState: state});
+      }
+      result = {...result, previousBalance: previous, currentBalance: previous, reason: skipReason};
+      return;
+    }
+    tx.set(statsRef, {
+      day: today,
+      count: (stats.day === today && typeof stats.count === "number" ? stats.count : 0) + 1,
+      total: (typeof stats.total === "number" ? stats.total : 0) + 1,
+    });
     const inviterPrevious = typeof inviterData.coins === "number" ? Math.trunc(inviterData.coins) : 0;
     state.referredByUserId = inviterUid;
     state.referralRewarded = true;
@@ -304,6 +488,80 @@ export const processReferral = onCall({region: REGION, cors: true}, async (reque
   return result;
 });
 
+export const unlockPremiumPreview = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<{collectionKey?: unknown}>) => {
+  const callerUid = uid(request);
+  const key = requiredText(request.data?.collectionKey, "collectionKey").toLowerCase();
+  if (/^__.*__$/.test(key)) throw new HttpsError("invalid-argument", "Invalid collection key.");
+  const cost = SPENDS.premiumPreview24h;
+  const userRef = db.collection(USERS).doc(callerUid);
+  const nowMs = Date.now();
+  const empty = {
+    success: false,
+    changed: false,
+    previousBalance: 0,
+    currentBalance: 0,
+    delta: 0,
+    bypassed: false,
+    insufficientBalance: false,
+    reason: "premium_preview_unlock_24h",
+    transactionId: "",
+    expiresAt: 0,
+  };
+  let response = empty;
+
+  await db.runTransaction(async (tx) => {
+    response = {...empty};
+    const snap = await tx.get(userRef);
+    if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
+    const data = snap.data() ?? {};
+    const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
+    const state = coinState(data.coinState);
+    const unlocks = Object.create(null) as Record<string, number>;
+    const rawUnlocks = state.premiumPreviewUnlocks;
+    if (rawUnlocks && typeof rawUnlocks === "object") {
+      for (const [k, v] of Object.entries(rawUnlocks as Record<string, unknown>)) {
+        if (typeof v === "number" && v > nowMs) unlocks[k.trim().toLowerCase()] = v;
+      }
+    }
+    const current = {previousBalance: previous, currentBalance: previous};
+    if (Object.prototype.hasOwnProperty.call(unlocks, key)) {
+      response = {...response, ...current, success: true, reason: "premium_preview_already_unlocked", expiresAt: unlocks[key]};
+      return;
+    }
+    const bypassed = data.premium === true;
+    if (!bypassed && previous < cost) {
+      response = {...response, ...current, insufficientBalance: true, reason: "premiumPreview24h_insufficient_balance"};
+      return;
+    }
+    unlocks[key] = nowMs + PREVIEW_ACCESS_MS;
+    if (bypassed) {
+      tx.update(userRef, {"coinState.premiumPreviewUnlocks": unlocks});
+      response = {...response, ...current, success: true, bypassed: true, reason: "premiumPreview24h_premium_bypass", expiresAt: unlocks[key]};
+      return;
+    }
+    const txId = writeTx(tx, {
+      userId: callerUid,
+      delta: -cost,
+      previous,
+      action: "premiumPreview24h",
+      sourceTag: "coins.preview.unlock.callable",
+      reason: "premium_preview_unlock_24h",
+    });
+    tx.update(userRef, {"coins": previous - cost, "coinState.premiumPreviewUnlocks": unlocks});
+    response = {
+      ...response,
+      success: true,
+      changed: true,
+      previousBalance: previous,
+      currentBalance: previous - cost,
+      delta: -cost,
+      transactionId: txId,
+      expiresAt: unlocks[key],
+    };
+  });
+  return response;
+});
+
 export function isValidRequestId(value: unknown): value is string {
   return typeof value === "string" && REQUEST_ID_PATTERN.test(value);
 }
@@ -320,7 +578,7 @@ export function planFreezePurchase(balance: number, freezes: number): FreezePurc
   return {current: balance - STREAK_FREEZE_COST, freezes: freezes + 1};
 }
 
-export const buyStreakFreeze = onCall({region: REGION, cors: true}, async (request: CallableRequest<{requestId?: unknown}>) => {
+export const buyStreakFreeze = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<{requestId?: unknown}>) => {
   const callerUid = uid(request);
   const requestId = request.data?.requestId;
   if (!isValidRequestId(requestId)) throw new HttpsError("invalid-argument", "requestId is invalid.");

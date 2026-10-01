@@ -253,7 +253,6 @@ class CoinsService {
   static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
   static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
-  static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
@@ -680,34 +679,31 @@ class CoinsService {
         reason: 'premium_preview_already_unlocked',
       );
     }
-    final CoinMutationResult result = await _callCoinMutation(
-      callableName: 'spendCoins',
-      amount: CoinPolicy.premiumPreview24h,
-      action: CoinSpendAction.premiumPreview24h.name,
-      sourceTag: sourceTag,
-      reason: 'premium_preview_unlock_24h',
-      allowPremiumBypass: true,
-    );
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed || result.bypassed) {
-      final String userId = app_state.prismUser.id;
-      final Map<String, dynamic>? data = await firestoreClient.getById<Map<String, dynamic>>(
-        FirebaseCollections.usersV2,
-        userId,
-        (value, _) => value,
-        sourceTag: '$sourceTag.read_state',
+    // The server charges and writes the unlock in one transaction; the client never writes coinState.
+    const String reason = 'premium_preview_unlock_24h';
+    final CoinMutationResult result;
+    try {
+      final HttpsCallableResult<dynamic> response = await appFunctions.httpsCallable('unlockPremiumPreview').call(
+        <String, dynamic>{'collectionKey': normalizedKey, 'sourceTag': sourceTag},
       );
-      if (data == null) {
-        return result;
-      }
-      final Map<String, int> previewUnlocks = _previewUnlocksFromState(toJsonMap(data[_coinStateField]));
-      previewUnlocks[normalizedKey] =
-          DateTime.now().millisecondsSinceEpoch + _premiumPreviewAccessDuration.inMilliseconds;
-      // Rules only allow the client to write this nested leaf, never the whole coinState map.
-      await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-        '$_coinStateField.premiumPreviewUnlocks': previewUnlocks,
-      }, sourceTag: sourceTag);
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
+      final Map<String, dynamic> data = toJsonMap(response.data);
+      result = CoinMutationResult(
+        success: data['success'] == true,
+        changed: data['changed'] == true,
+        bypassed: data['bypassed'] == true,
+        insufficientBalance: data['insufficientBalance'] == true,
+        previousBalance: parseIntOr(data['previousBalance']),
+        currentBalance: parseIntOr(data['currentBalance']),
+        delta: parseIntOr(data['delta']),
+        reason: data['reason']?.toString() ?? reason,
+        transactionId: data['transactionId']?.toString() ?? '',
+      );
+    } on FirebaseFunctionsException catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: error.code);
     }
+    _applyLocalBalance(result.currentBalance, delta: result.delta);
     return result;
   }
 
@@ -948,7 +944,13 @@ class CoinsService {
       callableName: 'processReferral',
       inviterUserId: pendingInviter,
     );
-    if (result.changed || result.reason == 'referral_already_processed') {
+    if (result.changed ||
+        const <String>{
+          'referral_already_processed',
+          'referral_caller_not_new',
+          'referral_inviter_not_older',
+          'referral_inviter_lifetime_limit',
+        }.contains(result.reason)) {
       await clearPendingReferralInviterId();
     }
     return result;
