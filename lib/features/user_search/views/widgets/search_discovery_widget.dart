@@ -374,7 +374,7 @@ class _ColorSection extends StatelessWidget {
               child: GestureDetector(
                 onTap: () {
                   PrismHaptics.tap();
-                  context.router.push(ColorRoute(hexColor: swatch.color.rgbHex));
+                  context.router.push(ColorRoute(hexColor: swatch.color.rgbHex, name: swatch.name));
                 },
                 child: Container(decoration: BoxDecoration(color: swatch.color)),
               ),

@@ -1185,6 +1185,14 @@ events:
       - name: total_elapsed_ms
         key: total_elapsed_ms
         type: int
+  - id: badge_earned
+    fields:
+      - name: badge_id
+        key: badge_id
+        type: string
+      - name: coins
+        key: coins
+        type: int
   - id: app_crash_fatal
   - id: app_error
     fields:

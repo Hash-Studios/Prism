@@ -70,6 +70,18 @@ void main() {
     expect(service.streakNotifier.value.active, isFalse);
   });
 
+  test('server balance sync repairs a stale notifier without emitting a coin delta', () {
+    app_state.prismUser.coins = 100;
+    service.balanceNotifier.value = 40;
+    service.deltaNotifier.value = 0;
+
+    service.applyServerBalance(100);
+
+    expect(app_state.prismUser.coins, 100);
+    expect(service.balanceNotifier.value, 100);
+    expect(service.deltaNotifier.value, 0);
+  });
+
   test('claim response is rejected when the captured user object changes account in place', () async {
     final response = Completer<dynamic>();
     backend.onCall = (_, _) => response.future;
