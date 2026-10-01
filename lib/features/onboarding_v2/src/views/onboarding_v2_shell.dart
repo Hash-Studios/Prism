@@ -132,7 +132,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       final result = await signIn();
       if (!mounted) return;
       if (result == SignInOutcome.cancelled) {
-        toasts.error('Sign in cancelled.');
+        toasts.error('Sign in cancelled.', haptic: false);
         _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
       } else {
         app_state.prismUser.loggedIn = true;

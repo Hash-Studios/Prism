@@ -165,10 +165,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                           value: sat,
                           min: 0,
                           max: 2,
-                          onChanged: (value) {
-                            PrismHaptics.selection();
-                            setState(() => sat = value);
-                          },
+                          onChanged: (value) => setState(() => sat = value),
                         ),
                         const Spacer(),
                         _buildSlider(
@@ -176,10 +173,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                           value: bright,
                           min: -1,
                           max: 1,
-                          onChanged: (value) {
-                            PrismHaptics.selection();
-                            setState(() => bright = value);
-                          },
+                          onChanged: (value) => setState(() => bright = value),
                         ),
                         const Spacer(),
                         _buildSlider(
@@ -187,10 +181,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
                           value: con,
                           min: 0,
                           max: 4,
-                          onChanged: (value) {
-                            PrismHaptics.selection();
-                            setState(() => con = value);
-                          },
+                          onChanged: (value) => setState(() => con = value),
                         ),
                         const Spacer(flex: 3),
                       ],
@@ -361,6 +352,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
         inactiveColor: Theme.of(context).hintColor,
         label: '$label ${value.toStringAsFixed(2)}',
         onChanged: onChanged,
+        onChangeEnd: (_) => PrismHaptics.selection(),
         divisions: 50,
         value: value,
         min: min,

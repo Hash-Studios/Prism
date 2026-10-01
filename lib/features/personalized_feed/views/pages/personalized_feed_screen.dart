@@ -172,10 +172,12 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                         children: [
                           Expanded(child: Text('For you', style: PrismTextStyles.editorialTitle(context))),
                           IconButton(
-                            onPressed: () {
-                              PrismHaptics.tap();
-                              widget.onTuneTap?.call();
-                            },
+                            onPressed: widget.onTuneTap == null
+                                ? null
+                                : () {
+                                    PrismHaptics.tap();
+                                    widget.onTuneTap!();
+                                  },
                             tooltip: 'Tune your feed',
                             visualDensity: VisualDensity.compact,
                             icon: const Icon(Icons.tune_rounded),

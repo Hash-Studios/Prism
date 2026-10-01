@@ -295,7 +295,7 @@ Future<void> _reviewDeleteDoc({
     toasts.success(successToast);
   } on FirestoreError catch (e, st) {
     logger.e('review delete failed ($sourceTag)', error: e, stackTrace: st);
-    toasts.success(
+    toasts.error(
       e.code == 'permission-denied'
           ? "Couldn't delete: permission denied. Check you're signed in with the same account you used to upload."
           : "Couldn't delete. Please try again.",

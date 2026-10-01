@@ -29,7 +29,7 @@ class _ObservedHttpClient extends Mock implements HttpClient {
   }
 }
 
-Widget _host(StackRouter router, String url) => MaterialApp(
+Widget _host(StackRouter router, String? url) => MaterialApp(
   home: StackRouterScope(
     controller: router,
     stateHash: 0,
@@ -62,6 +62,12 @@ void main() {
     final Directory editDirectory = Directory('${directory.path}/prism_edit')..createSync();
     final File activeSource = File('${editDirectory.path}/source_active.img')..writeAsBytesSync(<int>[9, 8, 7]);
     final _MockStackRouter router = _MockStackRouter();
+    final List<Object?> hapticTypes = <Object?>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
     final Completer<WallpaperFilterRoute> pushed = Completer<WallpaperFilterRoute>();
     final Completer<Object?> routeResult = Completer<Object?>();
     when(() => router.push(any())).thenAnswer((invocation) {
@@ -91,6 +97,7 @@ void main() {
     final WallpaperFilterRoute route = await pushed.future;
     final File source = File(route.args!.filePath);
     expect(activeSource.readAsBytesSync(), <int>[9, 8, 7]);
+    expect(hapticTypes.where((type) => type == 'HapticFeedbackType.lightImpact'), hasLength(1));
     expect(source.readAsBytesSync(), <int>[1, 2, 3]);
     expect(source.parent.path, isNot(editDirectory.path));
 
@@ -104,7 +111,25 @@ void main() {
     expect(source.parent.existsSync(), isFalse);
     expect(activeSource.readAsBytesSync(), <int>[9, 8, 7]);
     expect(tester.takeException(), isNull);
-  });
+    expect(hapticTypes, <Object?>['HapticFeedbackType.lightImpact']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('missing wallpaper URL only plays the error haptic', (tester) async {
+    final _MockStackRouter router = _MockStackRouter();
+    final List<Object?> hapticTypes = <Object?>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+    await tester.pumpWidget(_host(router, null));
+    await tester.tap(find.byType(EditButton));
+    await tester.pump();
+
+    expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+    expect(hapticTypes.where((type) => type == 'HapticFeedbackType.lightImpact'), isEmpty);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('does not create a source or route after disposal while the download is pending', (tester) async {
     final _MockStackRouter router = _MockStackRouter();

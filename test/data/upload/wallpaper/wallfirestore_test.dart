@@ -1,13 +1,76 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
+import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallfirestore;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../support/in_memory_local_store.dart';
 
 class _MockFirestoreClient extends Mock implements FirestoreClient {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+
+  test('quota-exceeded wall submission reports an error haptic', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final List<Object?> hapticTypes = <Object?>[];
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      messenger.setMockMethodCallHandler(toastChannel, null);
+    });
+    await getIt.reset();
+    addTearDown(getIt.reset);
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    final _MockFirestoreClient firestoreClient = _MockFirestoreClient();
+    getIt.registerSingleton<FirestoreClient>(firestoreClient);
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'quota-test-user';
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final DateTime now = DateTime(2026, 10);
+    final DateTime local = now.toLocal();
+    final DateTime weekStart = DateTime(
+      local.year,
+      local.month,
+      local.day,
+    ).subtract(Duration(days: local.weekday - DateTime.monday));
+    await settings.set('uploadsWeekStart', weekStart.toIso8601String());
+    await settings.set('uploadsThisWeek', 3);
+
+    final WallSubmissionResult result = await wallfirestore.createRecord(
+      'wall-id',
+      'Pexels',
+      'thumb',
+      'wallpaper',
+      '1080x1920',
+      'large',
+      'Title',
+      'Nature',
+      'Description',
+      true,
+      now: () => now,
+    );
+
+    expect(result, WallSubmissionResult.quotaExceeded);
+    expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+    verifyNever(() => firestoreClient.addDoc(any(), any(), sourceTag: any(named: 'sourceTag')));
+  });
+
   test('quota exhaustion returns quotaExceeded without saving or consuming quota', () async {
     var consumedQuota = false;
     var awardedUpload = false;

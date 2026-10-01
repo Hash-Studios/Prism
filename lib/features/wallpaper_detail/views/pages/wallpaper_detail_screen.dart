@@ -130,12 +130,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
     if (colors == null || colors.isEmpty || !colors.contains(accent)) return;
 
+    PrismHaptics.selection();
     context.read<WallpaperDetailBloc>().add(const CycleAccentColor());
     _setStatusBarIconBrightness(state.accent ?? Colors.white);
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
     if (!_accentToastShown) {
-      toasts.success('Long press to reset');
+      toasts.success('Long press to reset', haptic: false);
       _accentToastShown = true;
     }
   }
@@ -743,7 +744,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     onTap: () async {
                       final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
                       if (!ok && context.mounted) {
-                        toasts.success('Could not open profile');
+                        toasts.error('Could not open profile');
                       }
                     },
                     child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: label),
@@ -834,7 +835,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             label: 'Report',
             isLoading: false,
             onTap: () {
-              PrismHaptics.tap();
               showContentReportSheet(
                 context,
                 contentType: 'wall',
@@ -873,7 +873,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 },
                 onLongPress: () => _handleAccentLongPress(context, state),
                 onTap: () {
-                  PrismHaptics.selection();
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },

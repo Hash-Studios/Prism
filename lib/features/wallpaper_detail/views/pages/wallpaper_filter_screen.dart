@@ -207,7 +207,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
 
     if (!app_state.prismUser.loggedIn) {
-      toasts.success('Sign in to use premium filters with coins.');
+      toasts.error('Sign in to use premium filters with coins.', haptic: false);
       googleSignInPopUp(context, () {
         unawaited(_startActionWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
       });
@@ -289,7 +289,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<bool> _handleDownloadAction() async {
     File? imageFile;
     try {
-      toasts.success("Processing Wallpaper");
+      toasts.success("Processing Wallpaper", haptic: false);
       imageFile = await saveFilteredImage();
       if (!mounted) {
         return false;
@@ -326,7 +326,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<bool> _handleSetAction() async {
     File? imageFile;
     try {
-      toasts.success("Processing Wallpaper");
+      toasts.success("Processing Wallpaper", haptic: false);
       imageFile = await saveFilteredImage();
     } catch (e) {
       logger.e('Unexpected filter render failure', error: e);

@@ -36,6 +36,7 @@ Future<void> showContentReportSheet(
     return;
   }
 
+  PrismHaptics.tap();
   await showPrismSheet<void>(
     context: context,
     isScrollControlled: true,

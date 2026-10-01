@@ -33,7 +33,6 @@ class _EditButtonState extends State<EditButton> {
       label: 'Edit',
       onTap: () {
         if (!isLoading) {
-          PrismHaptics.tap();
           onEdit(widget.url);
         }
       },
@@ -47,10 +46,11 @@ class _EditButtonState extends State<EditButton> {
       toasts.error('No wallpaper URL available');
       return;
     }
+    PrismHaptics.tap();
     setState(() {
       isLoading = true;
     });
-    toasts.success('Loading Wallpaper');
+    toasts.success('Loading Wallpaper', haptic: false);
     Directory? sessionDirectory;
     try {
       final response = await http.get(Uri.parse(url));

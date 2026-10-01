@@ -509,7 +509,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               : () async {
                   _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
                   setState(() => _restoring = true);
-                  toasts.success('Restoring purchases…');
+                  toasts.success('Restoring purchases…', haptic: false);
                   try {
                     final bool premium = await PurchasesService.instance.restore();
                     premium
@@ -565,10 +565,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showClearFavWallsDialog() {
-    _showYesNoDialog('Do you want to remove all your favourite wallpapers?', () {
+    _showYesNoDialog('Do you want to remove all your favourite wallpapers?', () async {
       _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsConfirmed);
-      toasts.error('Cleared all favourite wallpapers!');
-      context.favouriteWallsAdapter(listen: false).deleteData();
+      final cleared = await context.favouriteWallsAdapter(listen: false).deleteData();
+      if (!mounted) return;
+      if (cleared) {
+        toasts.success('Cleared all favourite wallpapers!');
+      } else {
+        toasts.error('Could not clear favourite wallpapers. Please try again.');
+      }
     });
   }
 
