@@ -192,6 +192,27 @@ void main() {
     });
   });
 
+  testWidgets('renderEditedPng applies HSL lightness through the production pipeline', (tester) async {
+    await tester.runAsync(() async {
+      expect(await loadKernelEffects(), isTrue);
+      final ui.Image image = await solidImage(5, 5, const Color(0xFFFF0000));
+      try {
+        final List<int> lighter = await centrePixel(
+          await renderEditedPng(image, const [], const WallpaperAdjustments(lightness: 0.25)),
+        );
+        final List<int> darker = await centrePixel(
+          await renderEditedPng(image, const [], const WallpaperAdjustments(lightness: -0.25)),
+        );
+        for (int channel = 0; channel < 3; channel++) {
+          expect(lighter[channel], closeTo([255, 128, 128][channel], 1));
+          expect(darker[channel], closeTo([128, 0, 0][channel], 1));
+        }
+      } finally {
+        image.dispose();
+      }
+    });
+  }, skip: !ui.ImageFilter.isShaderFilterSupported);
+
   testWidgets('renderEditedPng with no edit keeps red', (tester) async {
     await tester.runAsync(() async {
       final ui.Image image = await solidImage(4, 4, const Color(0xFFFF0000));
