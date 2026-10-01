@@ -15,7 +15,7 @@ class _FakeMessaging implements FirebaseMessaging {
   bool failSubscribe = false;
 
   @override
-  Future<String?> getToken({String? vapidKey}) async {
+  Future<String?> getToken({String? vapidKey, String? serviceWorkerScriptPath}) async {
     if (tokenError != null) throw tokenError!;
     return token;
   }
