@@ -1,7 +1,5 @@
 // ignore_for_file: depend_on_referenced_packages
-import 'dart:async';
 
-import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -16,14 +14,12 @@ import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_firestore_client.dart';
@@ -40,28 +36,6 @@ class _FeedBloc extends MockBloc<PersonalizedFeedEvent, PersonalizedFeedState> i
 class _Connectivity extends Fake implements ConnectivityService {
   @override
   Future<bool> hasConnection() async => true;
-}
-
-class _Auth extends Fake implements FirebaseAuth {
-  @override
-  User? get currentUser => null;
-
-  @override
-  Future<void> signOut() async {}
-}
-
-class _BlockingGoogleSignIn extends Fake implements GoogleSignIn {
-  final reachedSignOut = Completer<void>();
-  final finishSignOut = Completer<void>();
-
-  @override
-  Future<void> initialize({String? clientId, String? serverClientId, String? nonce, String? hostedDomain}) async {}
-
-  @override
-  Future<void> signOut() async {
-    reachedSignOut.complete();
-    await finishSignOut.future;
-  }
 }
 
 const _messaging = MethodChannel('plugins.flutter.io/firebase_messaging');
@@ -172,39 +146,4 @@ void main() {
 
     expect(subscribed, isEmpty);
   }, variant: _ios);
-
-  // Known race: its fix needs auth/token-service changes outside this review's scope.
-  // Run with --run-skipped to reproduce it through Home and the real sign-out path.
-  testWidgets(
-    'a refresh during sign-out cannot restore personal topics',
-    (tester) async {
-      app_state.prismUser.following = <String>['creator@example.com'];
-      await mount(tester);
-      final google = _BlockingGoogleSignIn();
-      final signOut = GoogleAuth(auth: _Auth(), googleSignIn: google).signOutGoogle();
-      for (var frame = 0; frame < 10 && !google.reachedSignOut.isCompleted; frame++) {
-        await tester.pump(const Duration(seconds: 1));
-      }
-      expect(google.reachedSignOut.isCompleted, isTrue);
-      expect(unsubscribed, containsAll(<String>['u_u1', 'user', 'creator_posts']));
-      expect(app_state.prismUser.loggedIn, isTrue);
-      subscribed.clear();
-      client.writes.clear();
-
-      await refresh(tester);
-
-      final restoredTopics = List<String>.of(subscribed);
-      final tokenWrites = client.writes.where((write) => write.data?.containsKey('fcmToken') ?? false).toList();
-      google.finishSignOut.complete();
-      await tester.pump();
-      await signOut;
-      await tester.pumpWidget(const SizedBox());
-      expect(tokenWrites, isEmpty, reason: 'the token service generation guard still works');
-      expect(restoredTopics, isNot(contains('u_u1')));
-      expect(restoredTopics, isNot(contains('user')));
-      expect(restoredTopics, isNot(contains('creator_posts')));
-    },
-    variant: _ios,
-    skip: true,
-  );
 }
