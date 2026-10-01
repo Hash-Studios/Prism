@@ -60,6 +60,8 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
           ),
         },
         modifier: payload.modifier,
+        // onNotificationCreated pushes entries without this flag.
+        pushHandled: true,
         createdAt: admin.firestore.Timestamp.now(),
       });
     } catch (err) {
