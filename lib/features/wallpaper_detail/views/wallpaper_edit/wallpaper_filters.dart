@@ -80,7 +80,13 @@ const List<KernelEffect> kernelEffects = <KernelEffect>[
 
 /// Slider values. Every field at 0 leaves the image unchanged.
 class WallpaperAdjustments {
-  const WallpaperAdjustments({this.blur = 0, this.hue = 0, this.saturation = 0, this.brightness = 0});
+  const WallpaperAdjustments({
+    this.blur = 0,
+    this.hue = 0,
+    this.saturation = 0,
+    this.lightness = 0,
+    this.brightness = 0,
+  });
 
   /// 0..1 of the maximum blur.
   final double blur;
@@ -91,12 +97,15 @@ class WallpaperAdjustments {
   /// -1 (grey) .. 1 (double colour).
   final double saturation;
 
+  /// -1..1 added to HSL lightness, preserving hue and saturation.
+  final double lightness;
+
   /// -1 (black) .. 1 (double light).
   final double brightness;
 
   static const WallpaperAdjustments none = WallpaperAdjustments();
 
-  bool get isNone => blur == 0 && hue == 0 && saturation == 0 && brightness == 0;
+  bool get isNone => blur == 0 && hue == 0 && saturation == 0 && lightness == 0 && brightness == 0;
 
   ColorMatrix get matrix => chainMatrices([
     if (hue != 0) hueMatrix(hue),
@@ -104,11 +113,17 @@ class WallpaperAdjustments {
     if (brightness != 0) exposureMatrix(1 + brightness),
   ]);
 
-  WallpaperAdjustments copyWith({double? blur, double? hue, double? saturation, double? brightness}) =>
-      WallpaperAdjustments(
-        blur: blur ?? this.blur,
-        hue: hue ?? this.hue,
-        saturation: saturation ?? this.saturation,
-        brightness: brightness ?? this.brightness,
-      );
+  WallpaperAdjustments copyWith({
+    double? blur,
+    double? hue,
+    double? saturation,
+    double? lightness,
+    double? brightness,
+  }) => WallpaperAdjustments(
+    blur: blur ?? this.blur,
+    hue: hue ?? this.hue,
+    saturation: saturation ?? this.saturation,
+    lightness: lightness ?? this.lightness,
+    brightness: brightness ?? this.brightness,
+  );
 }
