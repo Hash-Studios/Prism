@@ -48,6 +48,24 @@ class FirestoreStringListConverter implements JsonConverter<List<String>, Object
   Object? toJson(List<String> object) => object;
 }
 
+/// Badge ids from the `badges` array of `{id, name, ...}` maps.
+class FirestoreBadgeIdsConverter implements JsonConverter<List<String>, Object?> {
+  const FirestoreBadgeIdsConverter();
+
+  @override
+  List<String> fromJson(Object? json) {
+    if (json is! List) return const <String>[];
+    return json
+        .whereType<Map>()
+        .map((Map badge) => badge['id']?.toString() ?? '')
+        .where((String id) => id.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  @override
+  Object? toJson(List<String> object) => object.map((String id) => <String, String>{'id': id}).toList();
+}
+
 class FirestoreStringMapConverter implements JsonConverter<Map<String, String>, Object?> {
   const FirestoreStringMapConverter();
 

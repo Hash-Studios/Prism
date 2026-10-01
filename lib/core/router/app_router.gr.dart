@@ -82,6 +82,13 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
     Key? key,
     AiGenerationRepositoryImpl? repository,
     Future<WallSubmissionResult> Function()? submitForTesting,
+    Future<({bool dismissed, ShareFormatValue format})> Function(
+      BuildContext, {
+      required String imageUrl,
+      required String link,
+      String? contextLine,
+    })?
+    shareCard,
     List<PageRouteInfo>? children,
   }) : super(
          AiTabRoute.name,
@@ -89,6 +96,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
            key: key,
            repository: repository,
            submitForTesting: submitForTesting,
+           shareCard: shareCard,
          ),
          initialChildren: children,
        );
@@ -105,13 +113,19 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
         key: args.key,
         repository: args.repository,
         submitForTesting: args.submitForTesting,
+        shareCard: args.shareCard,
       );
     },
   );
 }
 
 class AiTabRouteArgs {
-  const AiTabRouteArgs({this.key, this.repository, this.submitForTesting});
+  const AiTabRouteArgs({
+    this.key,
+    this.repository,
+    this.submitForTesting,
+    this.shareCard,
+  });
 
   final Key? key;
 
@@ -119,9 +133,17 @@ class AiTabRouteArgs {
 
   final Future<WallSubmissionResult> Function()? submitForTesting;
 
+  final Future<({bool dismissed, ShareFormatValue format})> Function(
+    BuildContext, {
+    required String imageUrl,
+    required String link,
+    String? contextLine,
+  })?
+  shareCard;
+
   @override
   String toString() {
-    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting}';
+    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting, shareCard: $shareCard}';
   }
 
   @override
@@ -242,10 +264,11 @@ class ColorRoute extends PageRouteInfo<ColorRouteArgs> {
   ColorRoute({
     Key? key,
     required String hexColor,
+    required String name,
     List<PageRouteInfo>? children,
   }) : super(
          ColorRoute.name,
-         args: ColorRouteArgs(key: key, hexColor: hexColor),
+         args: ColorRouteArgs(key: key, hexColor: hexColor, name: name),
          initialChildren: children,
        );
 
@@ -255,32 +278,38 @@ class ColorRoute extends PageRouteInfo<ColorRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<ColorRouteArgs>();
-      return ColorScreen(key: args.key, hexColor: args.hexColor);
+      return ColorScreen(
+        key: args.key,
+        hexColor: args.hexColor,
+        name: args.name,
+      );
     },
   );
 }
 
 class ColorRouteArgs {
-  const ColorRouteArgs({this.key, required this.hexColor});
+  const ColorRouteArgs({this.key, required this.hexColor, required this.name});
 
   final Key? key;
 
   final String hexColor;
 
+  final String name;
+
   @override
   String toString() {
-    return 'ColorRouteArgs{key: $key, hexColor: $hexColor}';
+    return 'ColorRouteArgs{key: $key, hexColor: $hexColor, name: $name}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ColorRouteArgs) return false;
-    return key == other.key && hexColor == other.hexColor;
+    return key == other.key && hexColor == other.hexColor && name == other.name;
   }
 
   @override
-  int get hashCode => key.hashCode ^ hexColor.hashCode;
+  int get hashCode => key.hashCode ^ hexColor.hashCode ^ name.hashCode;
 }
 
 /// generated route for
@@ -1017,6 +1046,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     AnalyticsSurfaceValue analyticsSurface =
         AnalyticsSurfaceValue.wallpaperScreen,
     String? heroTag,
+    File? localFile,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -1028,6 +1058,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            thumbnailUrl: thumbnailUrl,
            analyticsSurface: analyticsSurface,
            heroTag: heroTag,
+           localFile: localFile,
          ),
          initialChildren: children,
        );
@@ -1040,14 +1071,17 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
       final args = data.argsAs<WallpaperDetailRouteArgs>(
         orElse: () => const WallpaperDetailRouteArgs(),
       );
-      return WallpaperDetailScreen(
-        key: args.key,
-        entity: args.entity,
-        wallId: args.wallId,
-        source: args.source,
-        thumbnailUrl: args.thumbnailUrl,
-        analyticsSurface: args.analyticsSurface,
-        heroTag: args.heroTag,
+      return WrappedRoute(
+        child: WallpaperDetailScreen(
+          key: args.key,
+          entity: args.entity,
+          wallId: args.wallId,
+          source: args.source,
+          thumbnailUrl: args.thumbnailUrl,
+          analyticsSurface: args.analyticsSurface,
+          heroTag: args.heroTag,
+          localFile: args.localFile,
+        ),
       );
     },
   );
@@ -1062,6 +1096,7 @@ class WallpaperDetailRouteArgs {
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
+    this.localFile,
   });
 
   final Key? key;
@@ -1078,9 +1113,11 @@ class WallpaperDetailRouteArgs {
 
   final String? heroTag;
 
+  final File? localFile;
+
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile}';
   }
 
   @override
@@ -1093,7 +1130,8 @@ class WallpaperDetailRouteArgs {
         source == other.source &&
         thumbnailUrl == other.thumbnailUrl &&
         analyticsSurface == other.analyticsSurface &&
-        heroTag == other.heroTag;
+        heroTag == other.heroTag &&
+        localFile == other.localFile;
   }
 
   @override
@@ -1104,7 +1142,8 @@ class WallpaperDetailRouteArgs {
       source.hashCode ^
       thumbnailUrl.hashCode ^
       analyticsSurface.hashCode ^
-      heroTag.hashCode;
+      heroTag.hashCode ^
+      localFile.hashCode;
 }
 
 /// generated route for

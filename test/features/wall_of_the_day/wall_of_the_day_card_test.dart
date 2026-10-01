@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
@@ -12,6 +14,8 @@ import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
 
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
+
+const _wall = WallOfTheDayEntity(wallId: 'card-old', url: '', thumbnailUrl: '', photographer: 'Ana');
 
 void main() {
   testWidgets('wotd_viewed fires once per wall even when the carousel rebuilds the card', (tester) async {
@@ -40,5 +44,42 @@ void main() {
     }
 
     expect(analytics.events.where((e) => e.eventName == 'wotd_viewed'), hasLength(1));
+  });
+
+  testWidgets('keeps the old card through refresh and failure, then renders the new or empty result', (tester) async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+
+    final bloc = _MockWotdBloc();
+    final initial = WotdState.initial().copyWith(status: LoadStatus.success, entity: _wall);
+    final states = StreamController<WotdState>.broadcast(sync: true);
+    addTearDown(states.close);
+    whenListen(bloc, states.stream, initialState: initial);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<WotdBloc>.value(value: bloc, child: const WallOfTheDayCard()),
+      ),
+    );
+    expect(find.text('by Ana'), findsOneWidget);
+
+    states.add(initial.copyWith(status: LoadStatus.loading));
+    await tester.pump();
+    expect(find.text('by Ana'), findsOneWidget);
+
+    const newWall = WallOfTheDayEntity(wallId: 'card-new', url: '', thumbnailUrl: '', photographer: 'Bea');
+    states.add(initial.copyWith(status: LoadStatus.success, entity: newWall));
+    await tester.pump();
+    expect(find.text('by Bea'), findsOneWidget);
+    expect(find.text('by Ana'), findsNothing);
+
+    states.add(initial.copyWith(status: LoadStatus.failure, entity: newWall));
+    await tester.pump();
+    expect(find.text('by Bea'), findsOneWidget);
+
+    states.add(initial.copyWith(status: LoadStatus.success, entity: null));
+    await tester.pump();
+    expect(find.text('wall of the day'), findsNothing);
   });
 }
