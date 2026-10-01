@@ -82,6 +82,13 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
     Key? key,
     AiGenerationRepositoryImpl? repository,
     Future<WallSubmissionResult> Function()? submitForTesting,
+    Future<({bool dismissed, ShareFormatValue format})> Function(
+      BuildContext, {
+      required String imageUrl,
+      required String link,
+      String? contextLine,
+    })?
+    shareCard,
     List<PageRouteInfo>? children,
   }) : super(
          AiTabRoute.name,
@@ -89,6 +96,7 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
            key: key,
            repository: repository,
            submitForTesting: submitForTesting,
+           shareCard: shareCard,
          ),
          initialChildren: children,
        );
@@ -105,13 +113,19 @@ class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
         key: args.key,
         repository: args.repository,
         submitForTesting: args.submitForTesting,
+        shareCard: args.shareCard,
       );
     },
   );
 }
 
 class AiTabRouteArgs {
-  const AiTabRouteArgs({this.key, this.repository, this.submitForTesting});
+  const AiTabRouteArgs({
+    this.key,
+    this.repository,
+    this.submitForTesting,
+    this.shareCard,
+  });
 
   final Key? key;
 
@@ -119,9 +133,17 @@ class AiTabRouteArgs {
 
   final Future<WallSubmissionResult> Function()? submitForTesting;
 
+  final Future<({bool dismissed, ShareFormatValue format})> Function(
+    BuildContext, {
+    required String imageUrl,
+    required String link,
+    String? contextLine,
+  })?
+  shareCard;
+
   @override
   String toString() {
-    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting}';
+    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting, shareCard: $shareCard}';
   }
 
   @override
