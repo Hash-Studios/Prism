@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 
 @RoutePage()
 class ColorScreen extends StatelessWidget {
-  const ColorScreen({super.key, required this.hexColor});
+  const ColorScreen({super.key, required this.hexColor, required this.name});
 
   final String hexColor;
+  final String name;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,7 @@ class ColorScreen extends StatelessWidget {
         preferredSize: Size(double.infinity, 55),
         child: HeadingChipBar(current: "Colors"),
       ),
-      body: ColorGrid(hexColor: hexColor),
+      body: ColorGrid(hexColor: hexColor, name: name),
     );
   }
 }

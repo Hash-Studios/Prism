@@ -40,18 +40,28 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final PexelsWallpaperRepository _pexelsRepository;
   final RecordPrismWallpaperViewsUsecase _recordPrismWallpaperViewsUsecase;
   final PaletteRepository _paletteRepository;
+  bool _closing = false;
+
+  @override
+  Future<void> close() {
+    _closing = true;
+    return super.close();
+  }
 
   Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
     emit(WallpaperDetailLoaded(entity: event.entity));
     _fetchAndUpdateViews(event.entity);
-    await Future.wait([_loadPalette(event.entity, emit), _enrichWallhavenFromFeedIfNeeded(event.entity, emit)]);
+    await Future.wait([
+      _loadPalette(event.entity, emit, event.localFilePath),
+      _enrichWallhavenFromFeedIfNeeded(event.entity, emit),
+    ]);
   }
 
   Future<void> _onLoadFromId(LoadFromId event, Emitter<WallpaperDetailState> emit) async {
     emit(WallpaperDetailLoading(thumbnailUrl: event.thumbnailUrl));
 
     final result = await _fetchWallpaper(wallId: event.wallId, source: event.source);
-    if (emit.isDone) return;
+    if (_closing) return;
     final failure = result.failure;
     if (failure != null) {
       emit(WallpaperDetailError(message: failure.message));
@@ -61,7 +71,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     final entity = result.data!;
     emit(WallpaperDetailLoaded(entity: entity));
     _fetchAndUpdateViews(entity);
-    await _loadPalette(entity, emit);
+    await _loadPalette(entity, emit, event.localFilePath);
   }
 
   Future<void> _onFetchViews(FetchViews event, Emitter<WallpaperDetailState> emit) async {
@@ -147,23 +157,33 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     emit(currentState.copyWith(panelScrollInProgress: false));
   }
 
-  Future<void> _loadPalette(FeedItemEntity entity, Emitter<WallpaperDetailState> emit) async {
-    final imageUrl = entity.thumbnailUrl;
-    if (imageUrl.trim().isEmpty) return;
+  Future<void> _loadPalette(FeedItemEntity entity, Emitter<WallpaperDetailState> emit, String? localFilePath) async {
+    final imageUrl = localFilePath?.trim().isNotEmpty == true ? localFilePath! : entity.thumbnailUrl;
+    final latest = state;
+    if (latest is! WallpaperDetailLoaded || latest.entity.id != entity.id || latest.entity.source != entity.source) {
+      return;
+    }
+    if (imageUrl.trim().isEmpty) {
+      emit(latest.copyWith(paletteLoading: false));
+      return;
+    }
 
     final result = await _paletteRepository.generatePalette(imageUrl);
-    final latest = state;
-    if (latest is! WallpaperDetailLoaded || latest.entity.thumbnailUrl != imageUrl) return;
+    if (emit.isDone) return;
+    final current = state;
+    if (current is! WallpaperDetailLoaded || current.entity.id != entity.id || current.entity.source != entity.source) {
+      return;
+    }
 
     result.fold(
-      onFailure: (_) => emit(latest.copyWith(paletteLoading: false)),
+      onFailure: (_) => emit(current.copyWith(paletteLoading: false)),
       onSuccess: (palette) {
         final colors = _deduplicateColors(palette.paletteColorValues.map(Color.new).toList()).take(5).toList();
         emit(
-          latest.copyWith(
+          current.copyWith(
             paletteLoading: false,
             colors: colors,
-            accent: colors.isNotEmpty ? colors.first : latest.accent,
+            accent: colors.isNotEmpty ? colors.first : current.accent,
           ),
         );
       },
@@ -219,7 +239,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   }
 
   void _fetchAndUpdateViews(FeedItemEntity entity) {
-    if (entity.source == WallpaperSource.prism) add(const FetchViews());
+    if (!_closing && entity.source == WallpaperSource.prism) add(const FetchViews());
   }
 
   /// Search/list responses often omit `uploader`; single-wall API includes it.

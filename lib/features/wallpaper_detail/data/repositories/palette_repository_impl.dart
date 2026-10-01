@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/url_utils.dart';
@@ -7,18 +9,24 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:path/path.dart' as p;
 
 @LazySingleton(as: PaletteRepository)
 class PaletteRepositoryImpl implements PaletteRepository {
   @override
   Future<Result<PaletteEntity>> generatePalette(String imageUrl) async {
-    if (!isValidNetworkUrl(imageUrl)) {
+    final isLocalFile = p.isAbsolute(imageUrl);
+    if (!isValidNetworkUrl(imageUrl) && !isLocalFile) {
       return Result.error(const ValidationFailure('Image url is not a valid network URI'));
     }
 
     try {
       final generator = await PaletteGenerator.fromImageProvider(
-        ResizeImage(CachedNetworkImageProvider(imageUrl), height: 10, width: 10),
+        ResizeImage(
+          isLocalFile ? FileImage(File(imageUrl)) : CachedNetworkImageProvider(imageUrl),
+          height: 10,
+          width: 10,
+        ),
       );
 
       final dominant = generator.dominantColor?.color.toARGB32() ?? 0xffe57697;

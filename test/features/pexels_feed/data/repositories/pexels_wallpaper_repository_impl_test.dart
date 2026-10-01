@@ -60,6 +60,63 @@ void main() {
     expect(repository.hasMoreForCategory('Nature', paginationKey: 'personalized:Nature'), isFalse);
   });
 
+  test('color searches normalize cache keys and keep paging isolated across colors', () async {
+    final List<Uri> requests = <Uri>[];
+    final http.Client client = MockClient((http.Request request) async {
+      requests.add(request.url);
+      final int page = int.parse(request.url.queryParameters['page']!);
+      final bool red = request.url.queryParameters['query'] == 'red wallpaper';
+      final int id = (red ? 100 : 200) + page;
+      return http.Response(
+        jsonEncode(<String, Object>{
+          'page': page,
+          'per_page': 1,
+          'total_results': 3,
+          'photos': <Object>[
+            <String, Object>{
+              'id': id,
+              'url': 'https://example.com/$id',
+              'src': <String, Object>{'original': 'https://example.com/$id'},
+            },
+          ],
+        }),
+        200,
+      );
+    });
+    final cache = _NoFeedCache();
+    final repository = PexelsWallpaperRepositoryImpl(cache);
+
+    final results = await http.runWithClient(() async {
+      final redFirst = await repository.fetchColorFeed(hex: 'B71C1C', name: ' Red ', refresh: true);
+      final blueFirst = await repository.fetchColorFeed(hex: '#0000FF', name: 'Blue', refresh: true);
+      final redNext = await repository.fetchColorFeed(hex: '#b71c1c', name: 'RED', refresh: false);
+      final blueNext = await repository.fetchColorFeed(hex: '0000ff', name: ' BLUE ', refresh: false);
+      final redRefresh = await repository.fetchColorFeed(hex: '#B71C1C', name: 'red', refresh: true);
+      return <String>[
+        redFirst.data!.single.id,
+        blueFirst.data!.single.id,
+        redNext.data!.single.id,
+        blueNext.data!.single.id,
+        redRefresh.data!.single.id,
+      ];
+    }, () => client);
+
+    expect(results, <String>['101', '201', '102', '202', '101']);
+    expect(
+      requests.map(
+        (uri) => <String?>[uri.queryParameters['query'], uri.queryParameters['color'], uri.queryParameters['page']],
+      ),
+      <List<String?>>[
+        <String?>['red wallpaper', '#b71c1c', '1'],
+        <String?>['blue wallpaper', '#0000ff', '1'],
+        <String?>['red wallpaper', '#b71c1c', '2'],
+        <String?>['blue wallpaper', '#0000ff', '2'],
+        <String?>['red wallpaper', '#b71c1c', '1'],
+      ],
+    );
+    expect(cache.snapshots.keys.toSet(), <String>{'pexels:color_b71c1c', 'pexels:color_0000ff'});
+  });
+
   test('offline category fallback keeps its cached page and candidate pool', () async {
     final List<int> pages = <int>[];
     final cache = _NoFeedCache();

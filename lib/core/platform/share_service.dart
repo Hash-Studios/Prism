@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -16,6 +18,22 @@ class ShareService {
         subject: subject,
         title: title,
         sharePositionOrigin: sharePositionOrigin ?? _resolveSharePositionOrigin(context),
+      ),
+    );
+  }
+
+  static Future<ShareResult> shareFile({
+    required File file,
+    required String text,
+    String? title,
+    BuildContext? context,
+  }) {
+    return SharePlus.instance.share(
+      ShareParams(
+        text: text,
+        title: title,
+        files: <XFile>[XFile(file.path, mimeType: 'image/png')],
+        sharePositionOrigin: _resolveSharePositionOrigin(context),
       ),
     );
   }

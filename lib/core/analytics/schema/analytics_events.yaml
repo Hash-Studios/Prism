@@ -163,6 +163,11 @@ enums:
     values:
       - share_sheet
       - link
+  - name: share_format
+    dart_type: ShareFormatValue
+    values:
+      - card
+      - text
   - name: dismiss_mode
     dart_type: DismissModeValue
     values:
@@ -1007,6 +1012,11 @@ events:
         key: source_context
         type: string
         required: false
+      - name: format
+        key: format
+        type: enum
+        enum: ShareFormatValue
+        required: false
   - id: dynamic_link_create_result
     fields:
       - name: share_type
@@ -1174,6 +1184,14 @@ events:
         type: bool
       - name: total_elapsed_ms
         key: total_elapsed_ms
+        type: int
+  - id: badge_earned
+    fields:
+      - name: badge_id
+        key: badge_id
+        type: string
+      - name: coins
+        key: coins
         type: int
   - id: app_crash_fatal
   - id: app_error
