@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/premium_wall_utils.dart';
@@ -25,7 +26,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PersonalizedFeedScreen extends StatefulWidget {
@@ -83,7 +83,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   }
 
   Future<void> _showTileActions(FeedItemEntity item) async {
-    HapticFeedback.mediumImpact();
+    PrismHaptics.impact();
     final bool? lessLikeThis = await showPrismSheet<bool>(
       context: context,
       showDragHandle: true,
@@ -122,7 +122,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
           if (state.status == LoadStatus.failure && state.items.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () async => bloc.add(const PersonalizedFeedEvent.refreshRequested()),
+              onRefresh: () async {
+                PrismHaptics.impact();
+                bloc.add(const PersonalizedFeedEvent.refreshRequested());
+              },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: PrismFeedLayout.errorStatePadding,
@@ -145,7 +148,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
           final tileMemCacheHeight = ((MediaQuery.sizeOf(context).width / crossAxisCount) * 1.5 * 2).toInt();
 
           return RefreshIndicator(
-            onRefresh: () async => bloc.add(const PersonalizedFeedEvent.refreshRequested()),
+            onRefresh: () async {
+              PrismHaptics.impact();
+              bloc.add(const PersonalizedFeedEvent.refreshRequested());
+            },
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
                 if (notification.depth == 0) {
@@ -166,7 +172,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                         children: [
                           Expanded(child: Text('For you', style: PrismTextStyles.editorialTitle(context))),
                           IconButton(
-                            onPressed: widget.onTuneTap,
+                            onPressed: () {
+                              PrismHaptics.tap();
+                              widget.onTuneTap?.call();
+                            },
                             tooltip: 'Tune your feed',
                             visualDensity: VisualDensity.compact,
                             icon: const Icon(Icons.tune_rounded),
@@ -287,6 +296,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
               if (i == 1) {
                 return GestureDetector(
                   onTap: () {
+                    PrismHaptics.tap();
                     unawaited(
                       analytics.track(
                         const SurfaceActionTappedEvent(
@@ -332,6 +342,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                 label: wall.semanticLabel,
                 child: GestureDetector(
                   onTap: () {
+                    PrismHaptics.tap();
                     unawaited(
                       analytics.track(
                         SurfaceActionTappedEvent(

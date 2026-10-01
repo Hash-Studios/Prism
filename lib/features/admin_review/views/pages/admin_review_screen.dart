@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
@@ -52,6 +53,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   }
 
   void _retryStreams() {
+    PrismHaptics.tap();
     setState(_subscribeStreams);
   }
 
@@ -241,6 +243,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
                 isThreeLine: true,
                 trailing: TextButton(
                   onPressed: () async {
+                    PrismHaptics.tap();
                     try {
                       await _repository.markContentReportReviewed(r.id);
                       toasts.success('Marked reviewed');
@@ -325,6 +328,7 @@ class _RejectReasonDialogState extends State<_RejectReasonDialog> {
       setState(() => _errorMessage = 'Enter a reason before rejecting this item.');
       return;
     }
+    PrismHaptics.tap();
     setState(() {
       _isSaving = true;
       _errorMessage = null;
@@ -529,6 +533,7 @@ class _WallContentReportCardState extends State<_WallContentReportCard> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () async {
+                      PrismHaptics.tap();
                       try {
                         await widget.repository.markContentReportReviewed(widget.report.id, resolution: 'dismissed');
                         if (context.mounted) {
@@ -547,25 +552,28 @@ class _WallContentReportCardState extends State<_WallContentReportCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: FilledButton(
-                    onPressed: () => widget.onConfirmRemoveWithReason(
-                      onSubmit: (String reason) async {
-                        final bool removed = await widget.repository.rejectWallByFirestoreDocumentId(
-                          widget.targetDocId,
-                          reason: reason,
-                        );
-                        await widget.repository.markContentReportReviewed(
-                          widget.report.id,
-                          resolution: 'content_removed',
-                        );
-                        if (context.mounted) {
-                          if (removed) {
-                            toasts.success('Wallpaper removed');
-                          } else {
-                            toasts.error('Wallpaper was already gone; report closed');
+                    onPressed: () {
+                      PrismHaptics.tap();
+                      widget.onConfirmRemoveWithReason(
+                        onSubmit: (String reason) async {
+                          final bool removed = await widget.repository.rejectWallByFirestoreDocumentId(
+                            widget.targetDocId,
+                            reason: reason,
+                          );
+                          await widget.repository.markContentReportReviewed(
+                            widget.report.id,
+                            resolution: 'content_removed',
+                          );
+                          if (context.mounted) {
+                            if (removed) {
+                              toasts.success('Wallpaper removed');
+                            } else {
+                              toasts.error('Wallpaper was already gone; report closed');
+                            }
                           }
-                        }
-                      },
-                    ),
+                        },
+                      );
+                    },
                     child: const Text('Remove wallpaper'),
                   ),
                 ),
@@ -604,6 +612,7 @@ class _ModerationCardState extends State<_ModerationCard> {
 
   Future<void> _approve() async {
     if (_isApproving || _isApproved) return;
+    PrismHaptics.tap();
     setState(() {
       _isApproving = true;
       _approvalError = null;
@@ -680,7 +689,12 @@ class _ModerationCardState extends State<_ModerationCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _isApproving || _isApproved ? null : widget.onReject,
+                    onPressed: _isApproving || _isApproved
+                        ? null
+                        : () {
+                            PrismHaptics.tap();
+                            widget.onReject();
+                          },
                     child: const Text('Reject'),
                   ),
                 ),
@@ -826,7 +840,10 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
                     children: <Widget>[Icon(opt.icon, size: 16), const SizedBox(width: 4), Text(opt.label)],
                   ),
                   selected: opt == _audience,
-                  onSelected: (_) => setState(() => _audience = opt),
+                  onSelected: (_) {
+                    PrismHaptics.selection();
+                    setState(() => _audience = opt);
+                  },
                 );
               }).toList(),
             ),
@@ -859,7 +876,10 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
                 return DropdownMenuItem<String>(value: opt.value, child: Text(opt.label));
               }).toList(),
               onChanged: (String? v) {
-                if (v != null) setState(() => _route = v);
+                if (v != null) {
+                  PrismHaptics.selection();
+                  setState(() => _route = v);
+                }
               },
             ),
             const SizedBox(height: 28),
@@ -902,6 +922,7 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
 
   Future<void> _send() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    PrismHaptics.tap();
 
     final String title = _titleController.text.trim();
     final String body = _bodyController.text.trim();

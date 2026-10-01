@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -35,6 +36,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   }
 
   Future<void> _onWallpaperTap() async {
+    PrismHaptics.tap();
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadWallpaperSelected,
@@ -56,6 +58,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   }
 
   void _onAiTap() {
+    PrismHaptics.tap();
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadAiSelected,

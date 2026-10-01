@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,12 @@ class OnboardingPrimaryButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(OnboardingRadius.cta),
             child: InkWell(
               borderRadius: BorderRadius.circular(OnboardingRadius.cta),
-              onTap: isEnabled ? onPressed : null,
+              onTap: isEnabled
+                  ? () {
+                      PrismHaptics.tap();
+                      onPressed?.call();
+                    }
+                  : null,
               child: Center(
                 child: AnimatedSwitcher(
                   duration: OnboardingMotion.short,

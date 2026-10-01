@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/premium_wall_utils.dart';
@@ -32,7 +33,10 @@ class UserProfileGrid extends StatelessWidget {
     final PublicProfileBloc bloc = context.read<PublicProfileBloc>();
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
-      onRefresh: () => _refresh(bloc),
+      onRefresh: () {
+        PrismHaptics.impact();
+        return _refresh(bloc);
+      },
       child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
         builder: (context, state) {
           if (state.status == LoadStatus.initial) {
@@ -124,6 +128,7 @@ class _PhotographerWallTile extends StatelessWidget {
               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
               onTap: () {
+                PrismHaptics.tap();
                 context.router.push(
                   WallpaperDetailRoute(
                     entity: wall.toFeedItem(),

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -32,6 +33,7 @@ class _EditButtonState extends State<EditButton> {
       label: 'Edit',
       onTap: () {
         if (!isLoading) {
+          PrismHaptics.tap();
           onEdit(widget.url);
         }
       },

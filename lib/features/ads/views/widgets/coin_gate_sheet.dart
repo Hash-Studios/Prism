@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -53,11 +54,17 @@ Future<T?> showCoinGateSheet<T>(
                   width: double.infinity,
                   child: option.outlined
                       ? OutlinedButton(
-                          onPressed: () => Navigator.of(sheetContext).pop(option.value),
+                          onPressed: () {
+                            PrismHaptics.tap();
+                            Navigator.of(sheetContext).pop(option.value);
+                          },
                           child: Text(option.label),
                         )
                       : FilledButton(
-                          onPressed: () => Navigator.of(sheetContext).pop(option.value),
+                          onPressed: () {
+                            PrismHaptics.tap();
+                            Navigator.of(sheetContext).pop(option.value);
+                          },
                           child: Text(option.label),
                         ),
                 ),
@@ -66,6 +73,7 @@ Future<T?> showCoinGateSheet<T>(
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () {
+                    PrismHaptics.tap();
                     final StackRouter router = context.router;
                     Navigator.of(sheetContext).pop();
                     router.pushPath('/rewards');

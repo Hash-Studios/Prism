@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/widgets/accent_color.dart';
@@ -122,6 +123,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         color: Theme.of(context).colorScheme.error,
         onPressed: () {
+          PrismHaptics.tap();
           runSignIn(globalGoogleAuth.signInWithGoogle);
         },
         child: const Text('GOOGLE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
@@ -131,6 +133,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
           color: Colors.white,
           onPressed: () {
+            PrismHaptics.tap();
             runSignIn(globalAppleAuth.signInWithApple);
           },
           child: const Row(

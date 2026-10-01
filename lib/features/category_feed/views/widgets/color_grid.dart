@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -21,7 +22,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class ColorGrid extends StatefulWidget {
   const ColorGrid({super.key, required this.hexColor});
@@ -136,7 +136,10 @@ class _ColorGridState extends State<ColorGrid> {
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshHomeKey,
-      onRefresh: refreshList,
+      onRefresh: () {
+        PrismHaptics.impact();
+        return refreshList();
+      },
       child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
           _scrollMilestoneTracker.onScroll(
@@ -205,7 +208,9 @@ class _ColorGridState extends State<ColorGrid> {
                         child: InkWell(
                           splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                           highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                          enableFeedback: false,
                           onTap: () {
+                            PrismHaptics.tap();
                             unawaited(
                               analytics.track(
                                 SurfaceActionTappedEvent(
@@ -228,7 +233,7 @@ class _ColorGridState extends State<ColorGrid> {
                           },
                           onLongPress: () {
                             _shake.shake(index);
-                            HapticFeedback.vibrate();
+                            PrismHaptics.impact();
                             createDynamicLink(
                               wall.id,
                               WallpaperSource.pexels,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
@@ -11,7 +12,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class SetWallpaperButton extends StatefulWidget {
   final String? url;
@@ -76,7 +76,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   }
 
   void _onTargetSelected(WallpaperTarget target) {
-    HapticFeedback.vibrate();
+    PrismHaptics.tap();
     Navigator.of(context).pop();
     setState(() {
       isLoading = true;

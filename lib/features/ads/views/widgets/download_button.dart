@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -69,6 +70,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.error('No download link available.');
       return;
     }
+    PrismHaptics.tap();
 
     if (mounted) {
       setState(() => isLoading = true);
@@ -136,6 +138,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                           shape: const StadiumBorder(),
                           color: Theme.of(context).colorScheme.error,
                           onPressed: () {
+                            PrismHaptics.tap();
                             Navigator.of(dialogContext).pop();
                             PaywallOrchestrator.instance.presentOrRequireSignIn(
                               this.context,
@@ -154,6 +157,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                           onPressed: watchingAd
                               ? null
                               : () async {
+                                  PrismHaptics.tap();
                                   setDialogState(() => watchingAd = true);
                                   final bool watched = await watchRewardedAd(context.read<AdsBloc>());
                                   if (!context.mounted || !mounted) return;

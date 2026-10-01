@@ -16,6 +16,7 @@ import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/flutter_error_handler.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
@@ -214,6 +215,7 @@ Future<void> main() async {
       // DI is not configured yet, so read the settings store directly.
       final settings = SettingsLocalDataSource(PersistenceRuntime.store);
       final themeMode = settings.get<String>('themeMode', defaultValue: 'Dark');
+      PrismHaptics.enabled = settings.get<bool>(PrismHaptics.settingsKey, defaultValue: true);
       final categories = settings.get<int>('WHcategories', defaultValue: 100);
       // App Store review: no sketchy content on iOS, regardless of the stored pref.
       final purity = defaultTargetPlatform == TargetPlatform.iOS

@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -533,7 +534,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
 
       if (mounted && _motionAllowed(context)) {
-        HapticFeedback.lightImpact();
+        PrismHaptics.success();
       }
 
       analytics.track(successEvent(generated, reservation.mode, reservation.coinsSpent));
@@ -743,9 +744,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           stackTrace: stackTrace,
         );
       }
-      if (mounted && _motionAllowed(context)) {
-        HapticFeedback.selectionClick();
-      }
       if (mounted && app_state.prismUser.id == record.userId) {
         showGlintToast(context);
         toasts.success('Submitted for review.');
@@ -890,6 +888,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                   icon: const Icon(Icons.upload_outlined, size: 18),
                   label: const Text('Submit for review'),
                   onPressed: () {
+                    PrismHaptics.tap();
                     final prompt = _promptController.text.trim();
                     final autoTags = <String>[
                       ...prompt
@@ -975,6 +974,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       onPressed: !app_state.aiVariationsEnabled || _latest == null || _loadingGeneration
                           ? null
                           : () {
+                              PrismHaptics.tap();
                               Navigator.of(ctx).pop();
                               _generateVariation();
                             },
@@ -1016,7 +1016,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () => setState(() => _selectedQualityTier = tier),
+                        onTap: () {
+                          PrismHaptics.selection();
+                          setState(() => _selectedQualityTier = tier);
+                        },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 220),
                           curve: Curves.easeOutCubic,
@@ -1117,7 +1120,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                               clipBehavior: Clip.antiAlias,
                               child: InkWell(
                                 customBorder: const CircleBorder(),
-                                onTap: () => _submitToCommunity(current),
+                                onTap: () {
+                                  PrismHaptics.tap();
+                                  _submitToCommunity(current);
+                                },
                                 child: Padding(
                                   padding: const EdgeInsets.all(14),
                                   child: Icon(Icons.upload_outlined, color: scheme.onInverseSurface, size: 20),
@@ -1147,7 +1153,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed: () => context.router.push(const ReviewRoute()),
+                                    onPressed: () {
+                                      PrismHaptics.tap();
+                                      context.router.push(const ReviewRoute());
+                                    },
                                     child: Text('Check status', style: TextStyle(color: scheme.onInverseSurface)),
                                   ),
                                 ],
@@ -1289,6 +1298,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             label: 'Style: ${style.label}',
             child: GestureDetector(
               onTap: () {
+                PrismHaptics.selection();
                 setState(() => _selectedStyle = style);
                 _shufflePrompt();
               },
@@ -1354,6 +1364,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               onPressed: loading
                   ? null
                   : () => setState(() {
+                      PrismHaptics.selection();
                       _promptController.text = '$scene, vertical phone wallpaper, no text';
                       _promptController.selection = TextSelection.fromPosition(
                         TextPosition(offset: _promptController.text.length),
@@ -1392,7 +1403,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             const SizedBox(width: 8),
             IconButton(
               tooltip: 'Shuffle a new example description',
-              onPressed: loading ? null : _shufflePrompt,
+              onPressed: loading
+                  ? null
+                  : () {
+                      PrismHaptics.selection();
+                      _shufflePrompt();
+                    },
               icon: const Icon(Icons.refresh_rounded),
             ),
           ],
@@ -1419,9 +1435,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     if (!canPress) {
       onPressed = null;
     } else if (!hasCoins) {
-      onPressed = () => context.router.push(RewardsRoute());
+      onPressed = () {
+        PrismHaptics.tap();
+        context.router.push(RewardsRoute());
+      };
     } else {
-      onPressed = () => _generate();
+      onPressed = () {
+        PrismHaptics.tap();
+        _generate();
+      };
     }
 
     final bool showAccent = canPress;
@@ -1528,7 +1550,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     selected: isSelected,
                     label: isSelected ? 'Selected generation' : 'Past generation',
                     child: GestureDetector(
-                      onTap: () => setState(() => _latest = item),
+                      onTap: () {
+                        PrismHaptics.selection();
+                        setState(() => _latest = item);
+                      },
                       child: AnimatedOpacity(
                         duration: Duration(milliseconds: motion ? 200 : 0),
                         curve: Curves.easeOutCubic,
@@ -1586,7 +1611,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       body: SafeArea(
         top: false,
         child: RefreshIndicator(
-          onRefresh: _loadHistory,
+          onRefresh: () {
+            PrismHaptics.impact();
+            return _loadHistory();
+          },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, _AiGenSpace.sm, 16, 100),
@@ -1676,7 +1704,12 @@ class _ActionButton extends StatelessWidget {
         color: isPrimary ? scheme.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: isLoading ? null : onTap,
+          onTap: isLoading
+              ? null
+              : () {
+                  PrismHaptics.tap();
+                  onTap();
+                },
           borderRadius: BorderRadius.circular(12),
           child: Container(
             constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
