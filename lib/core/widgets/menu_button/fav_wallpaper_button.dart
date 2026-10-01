@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -42,6 +43,11 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       child: FavoriteIcon(
         tapTargetExtent: 53,
         valueChanged: () {
+          if (isFavorite) {
+            PrismHaptics.tap();
+          } else {
+            PrismHaptics.impact();
+          }
           if (!app_state.prismUser.loggedIn) {
             googleSignInPopUp(context, () {
               onFav(widget.wall);

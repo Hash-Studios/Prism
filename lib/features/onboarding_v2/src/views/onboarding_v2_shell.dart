@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
@@ -131,7 +132,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       final result = await signIn();
       if (!mounted) return;
       if (result == SignInOutcome.cancelled) {
-        toasts.error('Sign in cancelled.');
+        toasts.error('Sign in cancelled.', haptic: false);
         _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
       } else {
         app_state.prismUser.loggedIn = true;
@@ -583,7 +584,12 @@ class _CtaButton extends StatelessWidget {
                     height: browseRowHeight * sy,
                     child: Center(
                       child: TextButton(
-                        onPressed: termsAccepted ? onBrowseTap : null,
+                        onPressed: termsAccepted
+                            ? () {
+                                PrismHaptics.tap();
+                                onBrowseTap();
+                              }
+                            : null,
                         child: Text(
                           'Browse without an account',
                           style: OnboardingTypography.helper.copyWith(
@@ -622,7 +628,10 @@ class _TermsCheckboxRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => onChanged(!accepted),
+      onTap: () {
+        PrismHaptics.selection();
+        onChanged(!accepted);
+      },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -631,7 +640,10 @@ class _TermsCheckboxRow extends StatelessWidget {
             height: 22,
             child: Checkbox(
               value: accepted,
-              onChanged: (value) => onChanged(value ?? false),
+              onChanged: (value) {
+                PrismHaptics.selection();
+                onChanged(value ?? false);
+              },
               fillColor: WidgetStateProperty.resolveWith(
                 (states) => states.contains(WidgetState.selected)
                     ? OnboardingColors.buttonBackground

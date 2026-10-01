@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -42,7 +43,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       ),
     );
     if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
-      toasts.success('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+      toasts.error('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
       if (mounted) {
         Navigator.of(context).pop();
         await PaywallOrchestrator.instance.present(
@@ -52,10 +53,12 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       }
       return;
     }
+    PrismHaptics.tap();
     await _pickWallpaperImage();
   }
 
   void _onAiTap() {
+    PrismHaptics.tap();
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadAiSelected,

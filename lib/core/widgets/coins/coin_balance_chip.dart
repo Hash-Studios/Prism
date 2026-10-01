@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -28,6 +29,7 @@ class CoinBalanceChip extends StatelessWidget {
             final bool isEarn = delta > 0;
             final bool isSpend = delta < 0;
             void openCoins() {
+              PrismHaptics.tap();
               if (isLow) {
                 CoinsService.instance.logLowBalanceNudge(
                   sourceTag: sourceTag,

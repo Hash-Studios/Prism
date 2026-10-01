@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 
 /// Shows the sheet for one new badge. [onSeeRewards] runs after the sheet closes with "See badges".
 Future<void> showBadgeCelebrateSheet(BuildContext context, EarnedBadge badge, {VoidCallback? onSeeRewards}) async {
+  PrismHaptics.success();
   final bool? seeRewards = await showPrismSheet<bool>(
     context: context,
     useSafeArea: true,
@@ -74,7 +76,10 @@ class BadgeCelebrateSheet extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () {
+                PrismHaptics.tap();
+                Navigator.of(context).pop(true);
+              },
               child: Text('See badges', style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary)),
             ),
           ],

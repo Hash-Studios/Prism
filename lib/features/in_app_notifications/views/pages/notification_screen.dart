@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
@@ -120,6 +121,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                         ),
                         TextButton(
                           onPressed: () {
+                            PrismHaptics.tap();
                             context.read<InAppNotificationsBloc>().add(
                               const InAppNotificationsEvent.refreshRequested(),
                             );
@@ -219,6 +221,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                       confirmLabel: 'Clear inbox',
                     );
                     if (!confirmed || !context.mounted) return;
+                    PrismHaptics.tap();
                     analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
                     context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
                   },
@@ -298,6 +301,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         confirmLabel: 'Remove',
       ),
       onDismissed: (_) {
+        PrismHaptics.impact();
         analytics.track(
           NotificationItemDismissedEvent(type: _notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
         );
@@ -333,6 +337,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         confirmLabel: 'Remove',
       ),
       onDismissed: (_) {
+        PrismHaptics.impact();
         context.read<InAppNotificationsBloc>().add(
           InAppNotificationsEvent.deleteManyRequested(
             ids: group.items.map((InAppNotificationEntity e) => e.id).toList(),
@@ -355,6 +360,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
               color: theme.primaryColor,
               child: InkWell(
                 onTap: () {
+                  PrismHaptics.tap();
                   setState(() {
                     if (expanded) {
                       _expandedNotificationGroups.remove(group.key);
@@ -483,6 +489,7 @@ class _NotificationCard extends StatelessWidget {
   static bool _hasValidImageUrl(String? url) => Uri.tryParse(url?.trim() ?? '')?.host.isNotEmpty ?? false;
 
   Future<void> _onTap(BuildContext context) async {
+    PrismHaptics.tap();
     onMarkRead?.call();
     analytics.track(
       NotificationItemOpenedEvent(

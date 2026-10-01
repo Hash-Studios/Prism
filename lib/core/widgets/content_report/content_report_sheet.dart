@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -35,6 +36,7 @@ Future<void> showContentReportSheet(
     return;
   }
 
+  PrismHaptics.tap();
   await showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -86,6 +88,7 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
       toasts.error('Choose a reason');
       return;
     }
+    PrismHaptics.tap();
     setState(() => _submitting = true);
     String appVersion = '';
     try {
@@ -157,6 +160,7 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
               if (_submitting) {
                 return;
               }
+              PrismHaptics.selection();
               setState(() => _selectedWire = v);
             },
             child: Column(

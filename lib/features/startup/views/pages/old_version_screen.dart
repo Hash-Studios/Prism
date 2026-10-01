@@ -1,4 +1,5 @@
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:flutter/foundation.dart';
@@ -36,6 +37,7 @@ class OldVersion extends StatelessWidget {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
+              PrismHaptics.tap();
               openPrismLink(context, _storeLink);
             },
             style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),

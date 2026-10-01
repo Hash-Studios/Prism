@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -49,6 +50,7 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     if (fromIndex == toIndex) {
       return;
     }
+    PrismHaptics.selection();
     _trackTabSelection(fromIndex: fromIndex, toIndex: toIndex);
     _tabsRouter!.setActiveIndex(toIndex);
   }

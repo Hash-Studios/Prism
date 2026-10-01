@@ -41,7 +41,7 @@ class DeepLinkNavigation {
       case UserLinkIntent():
         return ProfileRoute(profileIdentifier: action.profileIdentifier);
       case SetupLinkIntent():
-        toasts.error('Home screen setups are no longer available.');
+        toasts.error('Home screen setups are no longer available.', haptic: false);
         return const HomeTabRoute();
       case ReferLinkIntent():
         return null;

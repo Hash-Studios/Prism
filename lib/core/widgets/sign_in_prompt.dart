@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
@@ -29,7 +30,10 @@ class SignInPrompt extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () => googleSignInPopUp(context, () => main.RestartWidget.restartApp(context)),
+              onPressed: () {
+                PrismHaptics.tap();
+                googleSignInPopUp(context, () => main.RestartWidget.restartApp(context));
+              },
               child: const Text('Sign in'),
             ),
           ],

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -13,7 +14,6 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 @RoutePage()
 class DownloadWallpaperScreen extends StatefulWidget {
@@ -51,8 +51,12 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
     super.dispose();
   }
 
-  void _bounce() {
-    HapticFeedback.vibrate();
+  void _bounce({bool longPress = false}) {
+    if (longPress) {
+      PrismHaptics.impact();
+    } else {
+      PrismHaptics.tap();
+    }
     _shake.shake();
   }
 
@@ -68,7 +72,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
             distance: 48,
             builder: (buildContext, value, _) {
               return GestureDetector(
-                onLongPress: _bounce,
+                onLongPress: () => _bounce(longPress: true),
                 onTap: _bounce,
                 child: Container(
                   margin: EdgeInsets.symmetric(vertical: value * 1.25, horizontal: value / 2),

@@ -7,6 +7,7 @@ import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
@@ -65,6 +66,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> _pickImage(ValueSetter<File> onPicked) async {
+    PrismHaptics.tap();
     final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() => onPicked(File(pickedFile.path)));
@@ -76,9 +78,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     return result!;
   }
 
-  Future<void> _uploadImage(File file, {required String field}) async {
-    final Uint8List compressed = await compressFile(file);
+  Future<bool> _uploadImage(File file, {required String field}) async {
     try {
+      final Uint8List compressed = await compressFile(file);
       final value = await GitHubContentApi().putFile(
         repo: Env.normalize(Env.ghRepoWalls),
         message: path.basename(file.path),
@@ -93,9 +95,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       }
       app_state.persistPrismUser();
       await _updateCurrentUser(<String, dynamic>{field: url}, 'profile.edit.$field');
+      return true;
     } catch (e) {
       logger.d(e.toString());
       toasts.error('Some uploading issue, please try again.');
+      return false;
     }
   }
 
@@ -142,6 +146,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PrismProfile.dialogButtonRadius)),
               ),
               onPressed: () async {
+                PrismHaptics.tap();
                 Navigator.of(dialogContext, rootNavigator: true).pop();
                 if (!mounted) return;
                 await remove();
@@ -182,6 +187,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       (!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) || (usernameEdit && enabled);
 
   Future<void> _saveProfile() async {
+    PrismHaptics.tap();
     setState(() => isLoading = true);
 
     if (usernameEdit && usernameController.text.isNotEmpty && usernameController.text.length >= 8) {
@@ -190,10 +196,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       await _updateCurrentUser(<String, dynamic>{"username": usernameController.text}, 'profile.edit.username');
     }
     if (_pfp != null && pfpEdit) {
-      await _uploadImage(_pfp!, field: 'profilePhoto');
+      if (!await _uploadImage(_pfp!, field: 'profilePhoto')) {
+        if (mounted) setState(() => isLoading = false);
+        return;
+      }
     }
     if (_cover != null && coverEdit) {
-      await _uploadImage(_cover!, field: 'coverPhoto');
+      if (!await _uploadImage(_cover!, field: 'coverPhoto')) {
+        if (mounted) setState(() => isLoading = false);
+        return;
+      }
     }
     if (bioEdit && bioController.text.isNotEmpty) {
       app_state.prismUser.bio = bioController.text;

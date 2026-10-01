@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -61,7 +62,10 @@ class BlockedUserProfileShell extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               FilledButton(
-                onPressed: () => unawaited(unblockUserWithFeedback(context, targetUserId)),
+                onPressed: () {
+                  PrismHaptics.tap();
+                  unawaited(unblockUserWithFeedback(context, targetUserId));
+                },
                 child: const Text('Unblock'),
               ),
             ],

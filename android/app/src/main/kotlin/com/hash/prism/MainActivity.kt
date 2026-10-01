@@ -5,6 +5,7 @@ import androidx.activity.enableEdgeToEdge
 import com.hash.prism.pigeon.PrismMediaHostApi
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
 
@@ -19,5 +20,14 @@ class MainActivity : FlutterFragmentActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             PrismMediaHostApiImpl(this),
         )
+        val haptics = PrismHaptics(applicationContext)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/haptics").setMethodCallHandler { call, result ->
+            if (call.method == "play") {
+                haptics.play(call.arguments as? String ?: "tap")
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
+        }
     }
 }

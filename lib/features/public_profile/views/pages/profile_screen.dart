@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -280,6 +281,7 @@ class _ProfileChildState extends State<_ProfileChild> {
   }
 
   void _toggleFollow({required bool following}) {
+    PrismHaptics.tap();
     _trackAction(
       following ? AnalyticsActionValue.unfollowTapped : AnalyticsActionValue.followTapped,
       sourceContext: 'profile_screen_follow_action',
@@ -294,9 +296,9 @@ class _ProfileChildState extends State<_ProfileChild> {
       ),
     );
     if (following) {
-      toasts.error('Unfollowed ${_profile.name}!');
+      toasts.success('Unfollowed ${_profile.name}!', haptic: false);
     } else {
-      toasts.success('Followed ${_profile.name}!');
+      toasts.success('Followed ${_profile.name}!', haptic: false);
     }
   }
 
@@ -339,6 +341,7 @@ class _ProfileChildState extends State<_ProfileChild> {
         tooltip: 'Edit profile',
         icon: JamIcons.pencil,
         onPressed: () {
+          PrismHaptics.tap();
           unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
         },
       ),
@@ -523,9 +526,12 @@ class _ProfileChildState extends State<_ProfileChild> {
                                           // Following count is tappable on own profile only.
                                           GestureDetector(
                                             onTap: ownProfile
-                                                ? () => context.router.push(
-                                                    FollowingListRoute(following: _profile.following),
-                                                  )
+                                                ? () {
+                                                    PrismHaptics.tap();
+                                                    context.router.push(
+                                                      FollowingListRoute(following: _profile.following),
+                                                    );
+                                                  }
                                                 : null,
                                             child: _StatPill(count: _profile.following.length, label: 'Following'),
                                           ),
@@ -537,8 +543,10 @@ class _ProfileChildState extends State<_ProfileChild> {
                                           ),
                                           // Followers count is tappable on both own and other profiles.
                                           GestureDetector(
-                                            onTap: () =>
-                                                context.router.push(FollowersRoute(followers: _profile.followers)),
+                                            onTap: () {
+                                              PrismHaptics.tap();
+                                              context.router.push(FollowersRoute(followers: _profile.followers));
+                                            },
                                             child: _StatPill(count: _profile.followers.length, label: 'Followers'),
                                           ),
                                         ],
@@ -729,7 +737,10 @@ class _LinkButton extends StatelessWidget {
         ),
         child: Icon(icon, size: 18, color: secondary.withValues(alpha: 0.85)),
       ),
-      onPressed: onPressed,
+      onPressed: () {
+        PrismHaptics.tap();
+        onPressed();
+      },
     );
   }
 }

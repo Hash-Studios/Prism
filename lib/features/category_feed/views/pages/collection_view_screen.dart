@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -93,7 +94,10 @@ class _CategoryFeedContent extends StatelessWidget {
         }
         if (state.status == LoadStatus.failure) {
           return RefreshIndicator(
-            onRefresh: () async => context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested()),
+            onRefresh: () async {
+              PrismHaptics.impact();
+              context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested());
+            },
             child: const Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -81,6 +82,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             tooltip: 'Reset adjustments',
             icon: Icon(JamIcons.history, color: Theme.of(context).colorScheme.secondary),
             onPressed: () {
+              PrismHaptics.tap();
               setState(() {
                 sat = 1;
                 bright = 0;
@@ -92,6 +94,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             tooltip: 'Done',
             icon: Icon(Icons.check, color: Theme.of(context).colorScheme.secondary),
             onPressed: () async {
+              PrismHaptics.tap();
               await crop();
             },
           ),
@@ -270,6 +273,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
         ),
       ],
       onTap: (int index) {
+        PrismHaptics.tap();
         switch (index) {
           case 0:
             flip();
@@ -348,6 +352,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
         inactiveColor: Theme.of(context).hintColor,
         label: '$label ${value.toStringAsFixed(2)}',
         onChanged: onChanged,
+        onChangeEnd: (_) => PrismHaptics.selection(),
         divisions: 50,
         value: value,
         min: min,
