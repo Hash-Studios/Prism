@@ -41,7 +41,12 @@ Future<ui.Image> gradientImage({required int width, required int height, int alp
   return rasterizePicture(recorder.endRecording(), width, height);
 }
 
-Future<List<int>> renderKernelPixel(ui.Image source, KernelEffect effect, {required double scale}) async {
+Future<List<int>> renderKernelPixel(
+  ui.Image source,
+  KernelEffect effect, {
+  required double scale,
+  double lightness = 0,
+}) async {
   final ui.FragmentProgram program = await ui.FragmentProgram.fromAsset('shaders/convolve3x3.frag');
   final ui.FragmentShader shader = program.fragmentShader();
   shader.setFloat(0, source.width.toDouble());
@@ -51,6 +56,7 @@ Future<List<int>> renderKernelPixel(ui.Image source, KernelEffect effect, {requi
   }
   shader.setFloat(11, effect.bias / 255);
   shader.setFloat(12, scale);
+  if (lightness != 0) shader.setFloat(13, lightness);
   shader.setImageSampler(0, source);
 
   final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -109,6 +115,43 @@ void main() {
     expect(kernelScaleForExport(4000, 4000), 1);
   });
 
+  testWidgets('lightness preserves HSL hue and saturation, including transparent pixels', (tester) async {
+    await tester.runAsync(() async {
+      const identity = KernelEffect('Lightness', [0, 0, 0, 0, 1, 0, 0, 0, 0]);
+      const colors = [
+        Color(0xFFFF0000),
+        Color(0xFF26A853),
+        Color(0xFFCC99BB),
+        Color(0xFF808080),
+        Color(0xFF000000),
+        Color(0xFFFFFFFF),
+        Color(0x80FF0000),
+        Color(0x00FF0000),
+      ];
+      for (final color in colors) {
+        final source = await solidImage(33, 33, color);
+        try {
+          for (final adjustment in [-1.0, -0.25, 0.25, 1.0]) {
+            final pixel = await renderKernelPixel(source, identity, scale: 1, lightness: adjustment);
+            final hsl = HSLColor.fromColor(color);
+            final expected = hsl.withLightness((hsl.lightness + adjustment).clamp(0, 1)).toColor();
+            final channels = [expected.r, expected.g, expected.b];
+            for (var channel = 0; channel < 3; channel++) {
+              expect(
+                pixel[channel],
+                closeTo(channels[channel] * expected.a * 255, 1.5),
+                reason: '$color, lightness $adjustment, channel $channel',
+              );
+            }
+            expect(pixel[3], (color.a * 255).round());
+          }
+        } finally {
+          source.dispose();
+        }
+      }
+    });
+  });
+
   testWidgets('Emboss kernel scale changes directional RGB while preserving alpha', (tester) async {
     await tester.runAsync(() async {
       final ui.Image source = await gradientImage(width: 33, height: 33, alpha: 128);
@@ -148,6 +191,27 @@ void main() {
       }
     });
   });
+
+  testWidgets('renderEditedPng applies HSL lightness through the production pipeline', (tester) async {
+    await tester.runAsync(() async {
+      expect(await loadKernelEffects(), isTrue);
+      final ui.Image image = await solidImage(5, 5, const Color(0xFFFF0000));
+      try {
+        final List<int> lighter = await centrePixel(
+          await renderEditedPng(image, const [], const WallpaperAdjustments(lightness: 0.25)),
+        );
+        final List<int> darker = await centrePixel(
+          await renderEditedPng(image, const [], const WallpaperAdjustments(lightness: -0.25)),
+        );
+        for (int channel = 0; channel < 3; channel++) {
+          expect(lighter[channel], closeTo([255, 128, 128][channel], 1));
+          expect(darker[channel], closeTo([128, 0, 0][channel], 1));
+        }
+      } finally {
+        image.dispose();
+      }
+    });
+  }, skip: !ui.ImageFilter.isShaderFilterSupported);
 
   testWidgets('renderEditedPng with no edit keeps red', (tester) async {
     await tester.runAsync(() async {
