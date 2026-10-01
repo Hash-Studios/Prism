@@ -65,7 +65,7 @@ List<AiGenerationRecord> mergeAiSubmissionHistory(
 
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareCard = shareWallpaperCard});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareCard});
 
   final AiGenerationRepositoryImpl? repository;
   final Future<ShareCardResult> Function(
@@ -73,7 +73,7 @@ class AiWallpaperTabPage extends StatefulWidget {
     required String imageUrl,
     required String link,
     String? contextLine,
-  })
+  })?
   shareCard;
   final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
 
@@ -599,7 +599,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     setState(() => _sharing = true);
     _trackShareEvent(const InviteShareTappedEvent(sourceContext: 'ai_wallpaper'));
     try {
-      final ShareCardResult shared = await widget.shareCard(
+      final ShareCardResult shared = await (widget.shareCard ?? shareWallpaperCard)(
         context,
         imageUrl: record.displayUrl(isPremium: app_state.prismUser.premium),
         link: 'https://prismwalls.com',

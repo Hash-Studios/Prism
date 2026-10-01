@@ -66,6 +66,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
             following: doc.following,
             links: doc.links,
             coverPhoto: doc.coverPhoto,
+            badges: doc.badges,
           );
         });
   }

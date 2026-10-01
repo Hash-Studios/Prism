@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
@@ -18,6 +19,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+
+class _MockBadgesBloc extends MockBloc<BadgesEvent, BadgesState> implements BadgesBloc {}
 
 class _MockShopBloc extends MockBloc<StreakShopEvent, StreakShopState> implements StreakShopBloc {}
 
@@ -140,6 +143,9 @@ void main() {
         initialState: StreakShopState(status: StreakShopStatus.success, items: <PrismWallpaper>[_shopWallpaper()]),
       );
       getIt.registerFactory<StreakShopBloc>(() => shop);
+      final _MockBadgesBloc badges = _MockBadgesBloc();
+      whenListen(badges, const Stream<BadgesState>.empty(), initialState: const BadgesState());
+      getIt.registerFactory<BadgesBloc>(() => badges);
       final CoinsTestFirestore firestore = CoinsTestFirestore()
         ..transactions = <Map<String, dynamic>>[
           for (int i = 0; i < 9; i++)
