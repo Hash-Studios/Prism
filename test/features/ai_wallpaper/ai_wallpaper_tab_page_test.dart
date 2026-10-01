@@ -219,6 +219,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(shareCalls, 2);
     expect(analytics.events.whereType<InviteShareResultEvent>(), hasLength(2));
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('AI share dismissed by the user is tracked as cancelled without an error toast', (tester) async {
@@ -644,6 +645,7 @@ void main() {
     expect(find.textContaining('Submission status is unconfirmed'), findsOneWidget);
     expect(submissions, 2);
     expect(toastCalls, isNotEmpty);
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('does not apply a completed submission to a newly active account', (tester) async {

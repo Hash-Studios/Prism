@@ -4,24 +4,6 @@ plugins {
     id 'dev.flutter.flutter-gradle-plugin'
 }
 
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
-}
-
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-if (flutterVersionCode == null) {
-    flutterVersionCode = '1'
-}
-
-def flutterVersionName = localProperties.getProperty('flutter.versionName')
-if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
-}
-
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
@@ -30,17 +12,13 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "com.hash.prism"
-    compileSdkVersion 36
+    compileSdkVersion 37
     ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
         coreLibraryDesugaringEnabled true
-    }
-
-    kotlinOptions {
-        jvmTarget = '17'
     }
 
     buildFeatures {
@@ -52,15 +30,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.hash.prism"
         minSdkVersion 24
         targetSdkVersion 36
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
-        ndk {
-            abiFilters "arm64-v8a", "armeabi-v7a"
-        }
+        testInstrumentationRunner 'com.hash.prism.PrismNativeInstrumentation'
+        versionCode flutter.versionCode
+        versionName flutter.versionName
     }
 
     signingConfigs {
@@ -74,7 +49,6 @@ android {
 
     buildTypes {
         release {
-            // signingConfig signingConfigs.debug
             signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
@@ -91,8 +65,15 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
 dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 flutter {

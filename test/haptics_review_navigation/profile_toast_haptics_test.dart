@@ -93,6 +93,7 @@ void main() {
     await tester.pump();
 
     expect(haptics, <String>['tap']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('follow request emits one tap haptic, not a success outcome', (tester) async {
@@ -101,5 +102,6 @@ void main() {
     await tester.pump();
 
     expect(haptics, <String>['tap']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

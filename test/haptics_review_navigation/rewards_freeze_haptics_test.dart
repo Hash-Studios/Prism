@@ -57,6 +57,7 @@ void main() {
     await tester.pump();
 
     expect(haptics, <String>['error']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('available freeze action emits one tap haptic while opening the sheet', (tester) async {

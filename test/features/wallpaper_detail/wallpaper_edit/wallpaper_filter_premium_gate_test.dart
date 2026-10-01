@@ -180,6 +180,7 @@ void main() {
     await tester.pump();
     expect(spendCalls, 1);
     expect(saveCalls, 1);
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('does not save an edited image when the screen is disposed during the spend', (tester) async {
@@ -583,6 +584,7 @@ void main() {
     expect(Directory(editedFile.parent.path).existsSync(), isFalse);
     expect(tester.widget<IconButton>(resetButton).onPressed, isNotNull);
     expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 1));
   });
 }
 

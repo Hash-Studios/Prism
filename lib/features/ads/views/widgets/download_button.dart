@@ -264,7 +264,8 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
 
     try {
-      if (link.contains('com.hash.prism')) {
+      final Uri? source = Uri.tryParse(link);
+      if (link.startsWith('/') || source?.scheme == 'file') {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {

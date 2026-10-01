@@ -13,7 +13,7 @@ class _SignedOutFirebaseAuthPlatform extends FirebaseAuthPlatform {
   FirebaseAuthPlatform delegateFor({required FirebaseApp app}) => this;
 
   @override
-  FirebaseAuthPlatform setInitialValues({PigeonUserDetails? currentUser, String? languageCode}) => this;
+  FirebaseAuthPlatform setInitialValues({InternalUserDetails? currentUser, String? languageCode}) => this;
 
   @override
   UserPlatform? get currentUser => null;
@@ -71,5 +71,6 @@ void main() {
       toastCalls.any((call) => (call.arguments as Map<Object?, Object?>)['msg'] == 'Sign in to report content'),
       isTrue,
     );
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

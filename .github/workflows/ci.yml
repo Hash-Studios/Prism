@@ -59,6 +59,8 @@ jobs:
       functions: ${{ steps.filter.outputs.functions }}
       web: ${{ steps.filter.outputs.web }}
       rules: ${{ steps.filter.outputs.rules }}
+      android: ${{ steps.filter.outputs.android }}
+      ios: ${{ steps.filter.outputs.ios }}
       app_size: ${{ steps.filter.outputs.app_size }}
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
@@ -91,6 +93,22 @@ jobs:
               - 'firestore.rules'
               - 'firebase.json'
               - 'tool/firestore_rules_smoke.mjs'
+            android:
+              - 'android/**'
+              - 'packages/**'
+              - 'pigeons/**'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
+              - '.fvmrc'
+              - 'Makefile'
+            ios:
+              - 'ios/**'
+              - 'packages/**'
+              - 'pigeons/**'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
+              - '.fvmrc'
+              - 'Makefile'
             app_size:
               # The inputs of tool/build_size_apk.sh --key, plus the compare script.
               - 'lib/**'
@@ -141,6 +159,51 @@ jobs:
 
       - name: Run local CI gate
         run: make ci CI=true
+
+  android:
+    name: Android native verify
+    needs: changes
+    if: needs.changes.outputs.android == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Read Flutter version
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+      - uses: gradle/actions/setup-gradle@v4
+      - run: tool/write_firebase_options_stub.sh
+      - run: make native-android-check CI=true
+
+  ios:
+    name: iOS native verify
+    needs: changes
+    if: needs.changes.outputs.ios == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 26.6
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+      - name: Read Flutter version
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+      - run: tool/write_firebase_options_stub.sh
+      - run: make native-ios-check CI=true
 
   functions:
     name: Functions verify
@@ -412,7 +475,7 @@ jobs:
 
   ci:
     name: ci
-    needs: [changes, flutter, functions, web, rules]
+    needs: [changes, flutter, android, ios, functions, web, rules]
     # `always()` so a cancelled or failed job reports red. A skipped required
     # check counts as passed, so `ci` must never skip on a non-draft PR.
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
@@ -421,9 +484,9 @@ jobs:
     steps:
       - name: Aggregate results
         env:
-          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }}
+          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }}
         run: |
-          echo "changes flutter functions web rules: $RESULTS"
+          echo "changes flutter android ios functions web rules: $RESULTS"
           [ "${{ needs.changes.result }}" = success ] || { echo 'Detect changes failed.'; exit 1; }
           for r in $RESULTS; do
             case "$r" in

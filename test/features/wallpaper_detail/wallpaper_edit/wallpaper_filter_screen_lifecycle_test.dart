@@ -141,5 +141,6 @@ void main() {
 
     expect(File(request.link).existsSync(), isFalse);
     expect(Directory(File(request.link).parent.path).existsSync(), isFalse);
+    await tester.pump(const Duration(seconds: 1));
   });
 }

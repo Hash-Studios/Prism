@@ -1,57 +1,182 @@
-import XCTest
+import Foundation
+import Photos
+import Testing
 
 @testable import Runner
 
-class RunnerTests: XCTestCase {
-
-  func testDownloadSavesWallpaperToPhotos() throws {
-    let image = Data([0x89, 0x50, 0x4E, 0x47])
-    let source = FileManager.default.temporaryDirectory.appendingPathComponent("prism-test-wall.png")
-    try image.write(to: source)
+@MainActor
+struct RunnerTests {
+  @Test func downloadSavesRealImageAndReadableCacheAfterPhotosCompletes() async throws {
+    let fixture = try MediaFixture()
+    let imageBytes = try Data(contentsOf: fixture.source)
     var saved: [Data] = []
-    let api = PrismMediaHostApiImpl(savePhoto: { saved.append($0) })
+    let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader())
+    let api = PrismMediaHostApiImpl(files: files, savePhoto: { saved.append(try Data(contentsOf: $0.url)) })
 
-    let result = try download(api, link: source.path)
-
-    XCTAssertTrue(result.success)
-    XCTAssertEqual(saved, [image])
+    let result = try await download(api)
+    #expect(result.success)
+    #expect(saved == [imageBytes])
+    let path = try #require(result.message)
+    #expect(try Data(contentsOf: URL(fileURLWithPath: path)) == imageBytes)
+    #expect(URL(fileURLWithPath: path).lastPathComponent == "prism-test.png")
   }
 
-  func testDownloadFailsWhenPhotosRefuses() throws {
-    let source = FileManager.default.temporaryDirectory.appendingPathComponent("prism-test-denied.png")
-    try Data([0x1]).write(to: source)
-    struct PhotosDenied: Error {}
-    let api = PrismMediaHostApiImpl(savePhoto: { _ in throw PhotosDenied() })
+  @Test func photosDenialLeavesNoCachedDownload() async throws {
+    let fixture = try MediaFixture()
+    let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader())
+    let api = PrismMediaHostApiImpl(files: files, savePhoto: { _ in throw PrismMediaError.photoPermissionDenied })
 
-    let result = try download(api, link: source.path)
-
-    XCTAssertFalse(result.success)
+    let result = try await download(api)
+    #expect(!result.success)
+    #expect(result.errorCode == "PHOTO_PERMISSION_DENIED")
+    #expect(try FileManager.default.contentsOfDirectory(atPath: fixture.downloads.path).isEmpty)
   }
 
-  func testDownloadDoesNotBlockTheCallingThread() throws {
-    let source = FileManager.default.temporaryDirectory.appendingPathComponent("prism-test-slow.png")
-    try Data([0x1]).write(to: source)
-    let api = PrismMediaHostApiImpl(savePhoto: { _ in Thread.sleep(forTimeInterval: 1) })
-    let done = expectation(description: "download finished")
-
-    let started = Date()
-    api.enqueueDownload(request: DownloadRequest(link: source.path, filenameWithoutExtension: "prism-test-slow")) { _ in
-      XCTAssertTrue(Thread.isMainThread)
-      done.fulfill()
+  @Test func malformedFilenameFailsBeforePhotos() async throws {
+    let fixture = try MediaFixture()
+    var photosCalled = false
+    let api = PrismMediaHostApiImpl(
+      files: PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader()),
+      savePhoto: { _ in photosCalled = true }
+    )
+    let result = try await withCheckedThrowingContinuation { continuation in
+      api.enqueueDownload(request: DownloadRequest(link: "https://example.com/image", filenameWithoutExtension: "../escape")) {
+        continuation.resume(with: $0)
+      }
     }
-
-    XCTAssertLessThan(Date().timeIntervalSince(started), 0.5)
-    wait(for: [done], timeout: 5)
+    #expect(!result.success)
+    #expect(result.errorCode == "INVALID_FILENAME")
+    #expect(!photosCalled)
+    #expect(!FileManager.default.fileExists(atPath: fixture.downloads.path))
   }
 
-  private func download(_ api: PrismMediaHostApiImpl, link: String) throws -> OperationResult {
-    let done = expectation(description: "download finished")
-    var outcome: Result<OperationResult, Error>?
-    api.enqueueDownload(request: DownloadRequest(link: link, filenameWithoutExtension: "prism-test")) {
-      outcome = $0
-      done.fulfill()
+  @Test func localSourceStillExistsWhenSaveMediaCompletes() async throws {
+    let fixture = try MediaFixture()
+    var photosCalled = false
+    let api = PrismMediaHostApiImpl(savePhoto: { image in
+      #expect(FileManager.default.fileExists(atPath: image.url.path))
+      #expect(image.uniformTypeIdentifier == "public.png")
+      photosCalled = true
+    })
+    let result = try await withCheckedThrowingContinuation { continuation in
+      api.saveMedia(request: SaveMediaRequest(link: fixture.source.absoluteString, isLocalFile: true, kind: .wallpaper)) {
+        #expect(Thread.isMainThread)
+        continuation.resume(with: $0)
+      }
     }
-    wait(for: [done], timeout: 5)
-    return try XCTUnwrap(outcome).get()
+    #expect(result.success)
+    #expect(photosCalled)
+    #expect(FileManager.default.fileExists(atPath: fixture.source.path))
+  }
+
+  @Test func clearWaitsForPendingPhotoSaveThenRemovesItsDownload() async throws {
+    let fixture = try MediaFixture()
+    let photos = PausedPhotos()
+    let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader())
+    let api = PrismMediaHostApiImpl(files: files, savePhoto: photos.save)
+    var callbacks: [String] = []
+
+    let downloadTask = Task { try await download(api, onComplete: { callbacks.append("download") }) }
+    await photos.waitUntilStarted()
+    let clearTask = Task {
+      try await withCheckedThrowingContinuation { continuation in
+        api.clearDownloads {
+          #expect(Thread.isMainThread)
+          callbacks.append("clear")
+          continuation.resume(with: $0)
+        }
+      }
+    }
+    await Task.yield()
+    #expect(callbacks.isEmpty)
+    photos.finish()
+    #expect(try await downloadTask.value.success)
+    #expect(try await clearTask.value.success)
+    #expect(callbacks == ["download", "clear"])
+    #expect(try await files.list().isEmpty)
+  }
+
+  @Test func completedDownloadQueueReleasesItsOwner() async throws {
+    let fixture = try MediaFixture()
+    var api: PrismMediaHostApiImpl? = PrismMediaHostApiImpl(
+      files: PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader()),
+      savePhoto: { _ in }
+    )
+    weak let owner = api
+    #expect(try await download(#require(api)).success)
+    api = nil
+    await Task.yield()
+    #expect(owner == nil)
+  }
+
+  #if targetEnvironment(simulator)
+  @Test func realPhotoLibraryAcceptsMislabelledPngAndCompletesBeforeReply() async throws {
+    try #require(PHPhotoLibrary.authorizationStatus(for: .readWrite) == .authorized)
+    let fixture = try MediaFixture()
+    let filename = "PrismPhotosTest-\(UUID().uuidString).tmp"
+    let source = fixture.root.appendingPathComponent(filename)
+    try FileManager.default.copyItem(at: fixture.source, to: source)
+    let api = PrismMediaHostApiImpl()
+    var callbacks = 0
+    let outcome: Result<OperationResult, Error> = await withCheckedContinuation { continuation in
+      api.saveMedia(request: SaveMediaRequest(link: source.path, isLocalFile: true, kind: .wallpaper)) {
+        #expect(Thread.isMainThread)
+        callbacks += 1
+        continuation.resume(returning: $0)
+      }
+    }
+    let assets = PHAsset.fetchAssets(with: .image, options: nil)
+    let identifiers = (0..<assets.count).compactMap { index -> String? in
+      let asset = assets.object(at: index)
+      return PHAssetResource.assetResources(for: asset).contains { $0.originalFilename == filename }
+        ? asset.localIdentifier : nil
+    }
+    #expect(identifiers.count == 1)
+    if !identifiers.isEmpty {
+      try await PHPhotoLibrary.shared().performChanges {
+        PHAssetChangeRequest.deleteAssets(PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil))
+      }
+    }
+    #expect(PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil).count == 0)
+    #expect(try outcome.get().success)
+    #expect(callbacks == 1)
+    #expect(FileManager.default.fileExists(atPath: source.path))
+  }
+  #endif
+
+  private func download(
+    _ api: PrismMediaHostApiImpl, onComplete: @escaping @MainActor () -> Void = {}
+  ) async throws -> OperationResult {
+    try await withCheckedThrowingContinuation { continuation in
+      api.enqueueDownload(request: DownloadRequest(link: "https://example.com/image.jpg", filenameWithoutExtension: "prism-test")) {
+        #expect(Thread.isMainThread)
+        onComplete()
+        continuation.resume(with: $0)
+      }
+    }
+  }
+}
+
+@MainActor
+private final class PausedPhotos {
+  private var started = false
+  private var startedContinuation: CheckedContinuation<Void, Never>?
+  private var finishContinuation: CheckedContinuation<Void, Never>?
+
+  func save(_ image: PrismImageFile) async throws {
+    #expect(FileManager.default.fileExists(atPath: image.url.path))
+    started = true
+    startedContinuation?.resume()
+    startedContinuation = nil
+    await withCheckedContinuation { finishContinuation = $0 }
+  }
+
+  func waitUntilStarted() async {
+    if !started { await withCheckedContinuation { startedContinuation = $0 } }
+  }
+
+  func finish() {
+    finishContinuation?.resume()
+    finishContinuation = nil
   }
 }

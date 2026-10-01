@@ -129,6 +129,7 @@ void main() {
 
     expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
     expect(hapticTypes.where((type) => type == 'HapticFeedbackType.lightImpact'), isEmpty);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('does not create a source or route after disposal while the download is pending', (tester) async {

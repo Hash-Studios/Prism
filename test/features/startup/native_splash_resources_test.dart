@@ -9,15 +9,52 @@ void main() {
 
   String readResource(String path) => File('$resources/$path').readAsStringSync();
 
-  test('native launch background is black in day and night', () {
-    for (final String qualifier in <String>['drawable', 'drawable-v21', 'drawable-night', 'drawable-night-v21']) {
-      expect(readResource('$qualifier/launch_background.xml'), contains('@android:color/black'));
+  String? styleAttribute(String style, String attribute, List<String> qualifiers) {
+    for (final qualifier in qualifiers.reversed) {
+      final path = File('$resources/$qualifier/styles.xml');
+      if (!path.existsSync()) continue;
+      final declaration = RegExp(
+        '<style name="$style" parent="([^"]+)"(?:\\s*/>|>(.*?)</style>)',
+        dotAll: true,
+      ).firstMatch(path.readAsStringSync());
+      if (declaration == null) continue;
+      final value = RegExp('<item name="$attribute">(.*?)</item>').firstMatch(declaration.group(2) ?? '')?.group(1);
+      if (value != null) return value;
+      final parent = declaration.group(1)!;
+      return parent.startsWith('@android:') ? null : styleAttribute(parent, attribute, qualifiers);
     }
-    for (final String qualifier in <String>['values-v31', 'values-night-v31']) {
-      expect(
-        readResource('$qualifier/styles.xml'),
-        contains('<item name="android:windowSplashScreenBackground">#000000</item>'),
-      );
+    return null;
+  }
+
+  test('native launch background is black in day and night', () {
+    expect(readResource('drawable/launch_background.xml'), contains('@android:color/black'));
+    for (final sdk in <int>[24, 27, 29, 31, 37]) {
+      for (final night in <bool>[false, true]) {
+        final qualifiers = <String>[
+          'values',
+          if (sdk >= 27) 'values-v27',
+          if (sdk >= 29) 'values-v29',
+          if (sdk >= 31) 'values-v31',
+          if (night) 'values-night',
+        ];
+        expect(styleAttribute('LaunchTheme', 'android:windowBackground', qualifiers), '@drawable/launch_background');
+        expect(
+          styleAttribute('LaunchTheme', 'android:windowSplashScreenBackground', qualifiers),
+          sdk >= 31 ? '#000000' : null,
+        );
+        expect(
+          styleAttribute('LaunchTheme', 'android:windowLayoutInDisplayCutoutMode', qualifiers),
+          sdk >= 27 ? 'shortEdges' : null,
+        );
+        expect(
+          styleAttribute('LaunchTheme', 'android:enforceNavigationBarContrast', qualifiers),
+          sdk >= 29 ? 'false' : null,
+        );
+        expect(
+          styleAttribute('NormalTheme', 'android:windowBackground', qualifiers),
+          night ? '?android:colorBackground' : '@android:color/white',
+        );
+      }
     }
   });
 

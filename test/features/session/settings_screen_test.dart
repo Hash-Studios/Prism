@@ -127,6 +127,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(messages.last, 'Could not restore purchases. Please try again.');
     expect(haptics, <String>['HapticFeedbackType.errorNotification']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   for (final succeeds in <bool>[true, false]) {
@@ -168,6 +169,7 @@ void main() {
       expect(haptics, <String>[
         if (succeeds) 'HapticFeedbackType.successNotification' else 'HapticFeedbackType.errorNotification',
       ]);
+      await tester.pump(const Duration(seconds: 1));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   }
 
