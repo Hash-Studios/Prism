@@ -135,6 +135,32 @@ void main() {
     expect(service.pendingClaimForCurrentUser, isNull);
   });
 
+  test('permanent referral skips clear the queued inviter without retrying', () async {
+    backend.onCall = (_, _) async => <String, Object>{
+      'success': false,
+      'changed': false,
+      'reason': 'referral_caller_not_new',
+    };
+
+    final result = await service.processPendingReferralIfEligible(inviterUserId: 'inviter');
+
+    expect(result.reason, 'referral_caller_not_new');
+    expect(service.pendingReferralInviterId, isNull);
+  });
+
+  test('daily referral cap keeps the queued inviter for a later retry', () async {
+    backend.onCall = (_, _) async => <String, Object>{
+      'success': false,
+      'changed': false,
+      'reason': 'referral_inviter_daily_limit',
+    };
+
+    final result = await service.processPendingReferralIfEligible(inviterUserId: 'inviter');
+
+    expect(result.reason, 'referral_inviter_daily_limit');
+    expect(service.pendingReferralInviterId, 'inviter');
+  });
+
   test('claim sheet dedupe is retained per user and day when accounts alternate', () async {
     backend.onCall = (_, _) async => <String, Object>{
       'claimed': true,
@@ -619,6 +645,36 @@ void main() {
     await unlock;
     expect(callableCount, 0);
     expect(app_state.prismUser.coins, 9);
+  });
+
+  test('premium preview unlock calls the server callable and never writes coinState', () async {
+    // CoinsTestFirestore has no write methods, so any client write would throw.
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    firestore.userData = <String, dynamic>{'coins': 100, 'coinState': <String, Object>{}};
+    final calls = <String>[];
+    Map<String, dynamic>? sent;
+    backend.onCall = (name, args) async {
+      calls.add(name);
+      sent = args;
+      return <String, Object>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 100,
+        'currentBalance': 90,
+        'delta': -10,
+        'reason': 'premium_preview_unlock_24h',
+      };
+    };
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = backend.userId
+      ..loggedIn = true
+      ..coins = 100;
+    final result = await service.unlockPremiumPreview24hForCollection(collectionKey: 'Featured');
+    expect(calls, <String>['unlockPremiumPreview']);
+    expect(sent?['collectionKey'], 'featured');
+    expect(result.success, isTrue);
+    expect(app_state.prismUser.coins, 90);
   });
 
   test('premium preview unlock continues after a same-account profile replacement', () async {
