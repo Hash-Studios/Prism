@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' show min;
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -30,6 +31,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -56,6 +58,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
+    this.localFile,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -66,6 +69,9 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 
   /// Set when opened from a grid tile, so the tile image flies into this screen.
   final String? heroTag;
+
+  /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
+  final File? localFile;
 
   // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
   @override
@@ -173,9 +179,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final bloc = context.read<WallpaperDetailBloc>();
     final entity = widget.entity;
     if (entity != null) {
-      bloc.add(LoadFromEntity(entity: entity));
+      bloc.add(LoadFromEntity(entity: entity, localFilePath: widget.localFile?.path));
     } else {
-      bloc.add(LoadFromId(wallId: widget.wallId!, source: widget.source!, thumbnailUrl: widget.thumbnailUrl));
+      bloc.add(
+        LoadFromId(
+          wallId: widget.wallId!,
+          source: widget.source!,
+          thumbnailUrl: widget.thumbnailUrl,
+          localFilePath: widget.localFile?.path,
+        ),
+      );
     }
   }
 
@@ -188,6 +201,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget build(BuildContext context) {
     return BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
       listener: (context, state) {
+        if (state is WallpaperDetailError &&
+            widget.localFile?.existsSync() == true &&
+            ModalRoute.of(context)?.isCurrent == true) {
+          context.router.replace(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: widget.localFile!));
+          return;
+        }
         if (state is WallpaperDetailLoaded && !_openRecorded) {
           _openRecorded = true;
           _recordTaste(TasteAction.open, state.entity);
@@ -212,6 +231,32 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Widget _buildLoadingState(WallpaperDetailState state) {
+    final File? localFile = widget.localFile;
+    if (localFile != null) {
+      return Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.file(
+              localFile,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) =>
+                  const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(JamIcons.chevron_left),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     final String thumbnailUrl = normalizeWallpaperThumbnailUrl(
       (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? '',
     );
@@ -397,6 +442,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       _buildColorSwatch(
         context: context,
         thumbnailUrl: thumbnailUrl,
+        localFile: widget.localFile,
         color: null,
         isSelected: !state.colorChanged,
         onTap: () {
@@ -408,6 +454,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         _buildColorSwatch(
           context: context,
           thumbnailUrl: thumbnailUrl,
+          localFile: widget.localFile,
           color: color,
           isSelected: state.colorChanged && color == state.accent,
           onTap: () => _handleColorSelected(context, color),
@@ -431,6 +478,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget _buildColorSwatch({
     required BuildContext context,
     required String thumbnailUrl,
+    required File? localFile,
     required Color? color,
     required bool isSelected,
     required VoidCallback? onTap,
@@ -450,7 +498,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (thumbnailUrl.isNotEmpty)
+            if (localFile != null)
+              Image.file(
+                localFile,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                color: color,
+                colorBlendMode: color == null ? null : BlendMode.hue,
+                errorBuilder: (_, _, _) =>
+                    Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+              )
+            else if (thumbnailUrl.isNotEmpty)
               CachedNetworkImage(
                 imageUrl: thumbnailUrl,
                 width: double.infinity,
@@ -786,6 +845,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return Row(mainAxisSize: MainAxisSize.min, children: [iconWidget, spacer, textWidget]);
   }
 
+  String? _shareContextLine(FeedItemEntity entity) {
+    final String? name = entity.wallpaperCore.authorName?.trim();
+    return name == null || name.isEmpty ? null : 'by $name';
+  }
+
   Widget _buildActionButtons(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final url = entity.fullUrl;
@@ -794,13 +858,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         child: DownloadButton(
           link: url,
           sourceContext: _getSourceContext(state),
-          onDownloaded: () => _recordTaste(TasteAction.download, entity),
+          onDownloaded: () {
+            _recordTaste(TasteAction.download, entity);
+            unawaited(getIt<DownloadedWallIndex>().remember(link: url, id: entity.id, source: entity.source));
+          },
         ),
       ),
       if (!hideSetWallpaperUi)
         PressScale(
           child: SetWallpaperButton(
-            url: url,
+            url: widget.localFile?.path ?? url,
             promptNotificationPermissionOnSuccess: true,
             onSet: () => _recordTaste(TasteAction.set, entity),
           ),
@@ -813,7 +880,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
       ),
       PressScale(
-        child: ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
+        child: ShareButton(
+          id: entity.id,
+          source: entity.source,
+          url: entity.fullUrl,
+          thumbUrl: entity.thumbnailUrl,
+          contextLine: _shareContextLine(entity),
+        ),
       ),
       PressScale(child: EditButton(url: entity.fullUrl)),
     ];
@@ -921,8 +994,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         child: ClockOverlay(
                           colorChanged: state.colorChanged,
                           accent: state.accent,
-                          link: entity.fullUrl,
-                          file: false,
+                          link: widget.localFile?.path ?? entity.fullUrl,
+                          file: widget.localFile != null,
                         ),
                       );
                     },
@@ -952,7 +1025,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final bool useProgressive = thumb.isNotEmpty && full.isNotEmpty && full != thumb;
 
     Widget imageLayer;
-    if (useProgressive) {
+    final File? localFile = widget.localFile;
+    if (localFile != null) {
+      imageLayer = Image.file(
+        localFile,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) =>
+            const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
+      );
+    } else if (useProgressive) {
       imageLayer = Stack(
         fit: StackFit.expand,
         children: [
