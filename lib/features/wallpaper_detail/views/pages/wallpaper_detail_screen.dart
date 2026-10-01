@@ -67,6 +67,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   /// Set when opened from a grid tile, so the tile image flies into this screen.
   final String? heroTag;
 
+  // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
   @override
   Widget wrappedRoute(BuildContext context) => BlocProvider<WallpaperDetailBloc>(
     key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
@@ -196,6 +197,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         builder: (context, state) {
           final entity = widget.entity;
           return switch (state) {
+            // Build the entity on the first frame too, so the hero flight shows the tapped wallpaper.
             WallpaperDetailInitial() when entity != null => _buildLoadedState(
               context,
               WallpaperDetailLoaded(entity: entity),
