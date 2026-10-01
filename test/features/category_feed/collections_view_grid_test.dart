@@ -179,5 +179,6 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.getSize(inkWellFinder), restingSize);
+    await tester.pump(const Duration(seconds: 1));
   });
 }

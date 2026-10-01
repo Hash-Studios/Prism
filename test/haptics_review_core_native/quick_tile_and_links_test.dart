@@ -19,6 +19,13 @@ class _FailingPreferences extends InMemorySharedPreferencesStore {
       throw PlatformException(code: 'write_failed');
 }
 
+class _RejectedPreferences extends InMemorySharedPreferencesStore {
+  _RejectedPreferences() : super.empty();
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async => false;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -69,6 +76,7 @@ void main() {
 
     expect(messages, <String>['Failed to save settings']);
     expect(haptics, <String>['HapticFeedbackType.errorNotification']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('successful quick tile save plays success once', (tester) async {
@@ -79,5 +87,18 @@ void main() {
 
     expect(messages, <String>['Quick tile settings saved!']);
     expect(haptics, <String>['HapticFeedbackType.successNotification']);
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('rejected quick tile writes report failure without a success haptic', (tester) async {
+    SharedPreferencesStorePlatform.instance = _RejectedPreferences();
+    await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(messages, <String>['Failed to save settings']);
+    expect(haptics, <String>['HapticFeedbackType.errorNotification']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

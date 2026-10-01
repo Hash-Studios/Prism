@@ -25,7 +25,7 @@ SENTRY_DART_DEFINES = $(strip \
 	$(if $(SENTRY_RELEASE),--dart-define=SENTRY_RELEASE=$(SENTRY_RELEASE),) \
 	$(if $(SENTRY_DIST),--dart-define=SENTRY_DIST=$(SENTRY_DIST),) \
 	$(if $(SENTRY_ENABLED),--dart-define=SENTRY_ENABLED=$(SENTRY_ENABLED),))
-ANDROID_JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null)
+ANDROID_JAVA_HOME ?= $(or $(JAVA_HOME),$(shell /usr/libexec/java_home -v 21 2>/dev/null),$(shell [ ! -d '/Applications/Android Studio.app/Contents/jbr/Contents/Home' ] || printf '%s' '/Applications/Android Studio.app/Contents/jbr/Contents/Home'))
 ifeq ($(OS),Windows_NT)
   GRADLE_USER_HOME_DIR ?= $(HOME)/.gradle-prism
 else
@@ -295,6 +295,27 @@ update-flutter: ensure-fvm
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
 ci: get format-check env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check test
+
+.PHONY: native-android-check native-ios-check
+native-android-check: get
+	@tool/write_firebase_options_stub.sh
+	@JAVA_HOME="$(ANDROID_JAVA_HOME)" $(FLUTTER) build apk --debug --dart-define=SKIP_FIREBASE_INIT=true
+	@cd android && JAVA_HOME="$(ANDROID_JAVA_HOME)" ./gradlew :app:testDebugUnitTest :cloud_functions:testDebugUnitTest :app:lintDebug $(GRADLE_COMMON_OPTS)
+
+native-ios-check: get
+	@tool/write_firebase_options_stub.sh
+	@test -f ios/Runner/GoogleService-Info.plist || cp ios/Runner/GoogleService-Info.plist.stub ios/Runner/GoogleService-Info.plist
+	@swift test --package-path ios
+	@check_dir=$$(mktemp -d); \
+	xcrun swiftc -swift-version 6 -parse-as-library \
+		packages/cloud_functions/ios/cloud_functions/Sources/cloud_functions/CodecUtility.swift \
+		packages/cloud_functions/ios/cloud_functions/Sources/cloud_functions/FunctionsArguments.swift \
+		packages/cloud_functions/native_tests/NativeSwiftCheck.swift \
+		-o "$$check_dir/cloud-functions-check" && "$$check_dir/cloud-functions-check"
+	@$(FLUTTER) build ios --debug --no-codesign --dart-define=SKIP_FIREBASE_INIT=true
+	@xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Debug \
+		-sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+		-derivedDataPath build/ios/native-tests build-for-testing CODE_SIGNING_ALLOWED=NO FLUTTER_BUILD_MODE=debug
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \

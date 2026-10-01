@@ -51,5 +51,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['error']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

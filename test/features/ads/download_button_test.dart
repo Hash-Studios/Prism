@@ -21,6 +21,60 @@ class _ThrowingSettings extends SettingsLocalDataSource {
 }
 
 void main() {
+  for (final source in <String, bool>{
+    '/tmp/filtered wall.png': true,
+    'file:///tmp/filtered%20wall.png': true,
+    '/data/user/0/com.hash.prism/cache/wall.png': true,
+    'https://example.com/com.hash.prism/wall.jpg': false,
+  }.entries) {
+    testWidgets('downloads ${source.key} with the correct native source kind', (tester) async {
+      getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
+      app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+      final requests = <Object?>[];
+      final channels = <BasicMessageChannel<Object?>>[
+        for (final method in <String>['saveMedia', 'enqueueDownload'])
+          BasicMessageChannel<Object?>(
+            'dev.flutter.pigeon.Prism.PrismMediaHostApi.$method',
+            PrismMediaHostApi.pigeonChannelCodec,
+          ),
+      ];
+      for (final channel in channels) {
+        tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, (message) async {
+          requests.add((message! as List<Object?>).single);
+          return <Object?>[OperationResult(success: true)];
+        });
+      }
+      addTearDown(() async {
+        for (final channel in channels) {
+          tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null);
+        }
+        app_state.prismUser = app_constants.createGuestPrismUser();
+        await getIt.reset();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: DownloadButton(link: source.key)),
+        ),
+      );
+      await tester.tap(find.byType(CircularMenuButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(requests, hasLength(1));
+      if (source.value) {
+        final request = requests.single! as SaveMediaRequest;
+        expect(request.link, source.key);
+        expect(request.isLocalFile, isTrue);
+        expect(request.kind, SaveMediaKind.wallpaper);
+      } else {
+        final request = requests.single! as DownloadRequest;
+        expect(request.link, source.key);
+        expect(request.filenameWithoutExtension, 'wall');
+      }
+    });
+  }
+
   testWidgets('successful download records callback when permission prompt fails', (tester) async {
     getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
     app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
@@ -90,5 +144,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(toastMessages, contains('Wall downloaded in Pictures/Prism!'));
+    await tester.pump(const Duration(seconds: 1));
   });
 }
