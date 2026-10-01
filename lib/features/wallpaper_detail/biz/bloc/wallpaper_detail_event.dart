@@ -11,23 +11,25 @@ sealed class WallpaperDetailEvent extends Equatable {
 }
 
 final class LoadFromEntity extends WallpaperDetailEvent {
-  const LoadFromEntity({required this.entity});
+  const LoadFromEntity({required this.entity, this.localFilePath});
 
   final FeedItemEntity entity;
+  final String? localFilePath;
 
   @override
-  List<Object?> get props => [entity];
+  List<Object?> get props => [entity, localFilePath];
 }
 
 final class LoadFromId extends WallpaperDetailEvent {
-  const LoadFromId({required this.wallId, required this.source, this.thumbnailUrl});
+  const LoadFromId({required this.wallId, required this.source, this.thumbnailUrl, this.localFilePath});
 
   final String wallId;
   final WallpaperSource source;
   final String? thumbnailUrl;
+  final String? localFilePath;
 
   @override
-  List<Object?> get props => [wallId, source, thumbnailUrl];
+  List<Object?> get props => [wallId, source, thumbnailUrl, localFilePath];
 }
 
 final class FetchViews extends WallpaperDetailEvent {
