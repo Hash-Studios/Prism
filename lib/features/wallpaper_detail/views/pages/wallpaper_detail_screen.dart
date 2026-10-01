@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' show min;
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -30,6 +31,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -56,6 +58,7 @@ class WallpaperDetailScreen extends StatefulWidget {
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
+    this.localFile,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -66,6 +69,9 @@ class WallpaperDetailScreen extends StatefulWidget {
 
   /// Set when opened from a grid tile, so the tile image flies into this screen.
   final String? heroTag;
+
+  /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
+  final File? localFile;
 
   @override
   State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
@@ -188,6 +194,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget build(BuildContext context) {
     return BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
       listener: (context, state) {
+        if (state is WallpaperDetailError && widget.localFile != null) {
+          context.router.replace(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: widget.localFile!));
+          return;
+        }
         if (state is WallpaperDetailLoaded && !_openRecorded) {
           _openRecorded = true;
           _recordTaste(TasteAction.open, state.entity);
@@ -209,6 +219,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Widget _buildLoadingState(WallpaperDetailState state) {
+    final File? localFile = widget.localFile;
+    if (localFile != null) {
+      return Scaffold(
+        body: Image.file(localFile, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+      );
+    }
     final String thumbnailUrl = normalizeWallpaperThumbnailUrl(
       (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? '',
     );
@@ -784,7 +800,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         child: DownloadButton(
           link: url,
           sourceContext: _getSourceContext(state),
-          onDownloaded: () => _recordTaste(TasteAction.download, entity),
+          onDownloaded: () {
+            _recordTaste(TasteAction.download, entity);
+            unawaited(getIt<DownloadedWallIndex>().remember(link: url, id: entity.id, source: entity.source));
+          },
         ),
       ),
       if (!hideSetWallpaperUi)
@@ -942,7 +961,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final bool useProgressive = thumb.isNotEmpty && full.isNotEmpty && full != thumb;
 
     Widget imageLayer;
-    if (useProgressive) {
+    final File? localFile = widget.localFile;
+    if (localFile != null) {
+      imageLayer = Image.file(localFile, fit: BoxFit.cover);
+    } else if (useProgressive) {
       imageLayer = Stack(
         fit: StackFit.expand,
         children: [
