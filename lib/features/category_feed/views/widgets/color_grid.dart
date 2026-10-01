@@ -24,10 +24,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class ColorGrid extends StatefulWidget {
-  const ColorGrid({super.key, required this.hexColor});
+  const ColorGrid({super.key, required this.hexColor, required this.name});
 
   /// Six hex digits, without `#`.
   final String hexColor;
+
+  /// Colour name used in the search query, for example `Red`.
+  final String name;
 
   @override
   State<ColorGrid> createState() => _ColorGridState();
@@ -59,7 +62,7 @@ class _ColorGridState extends State<ColorGrid> {
   }
 
   Future<List<PexelsWallpaper>> _fetch({required bool refresh}) async {
-    final result = await _repository.fetchColorFeed(hex: widget.hexColor, refresh: refresh);
+    final result = await _repository.fetchColorFeed(hex: widget.hexColor, name: widget.name, refresh: refresh);
     return result.fold(
       onSuccess: (walls) => walls,
       onFailure: (failure) {
