@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +12,12 @@ Future<void> _openPreview(WidgetTester tester) async {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute<void>(
-              builder: (_) => const ClockOverlay(link: 'missing.png', file: true, accent: null, colorChanged: false),
+              builder: (_) => ClockOverlay(
+                link: File('assets/images/prism.webp').path,
+                file: true,
+                accent: null,
+                colorChanged: false,
+              ),
             ),
           ),
           child: const Text('open'),
@@ -62,5 +69,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ClockOverlay), findsNothing);
+  });
+
+  testWidgets('a downloaded file is not tinted until the user changes its accent', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ClockOverlay(
+          link: File('assets/images/prism.webp').path,
+          file: true,
+          accent: Colors.red,
+          colorChanged: false,
+        ),
+      ),
+    );
+
+    final image = tester.widget<Image>(find.byType(Image).first);
+    expect(image.color, isNull);
+    expect(image.colorBlendMode, isNull);
+  });
+
+  testWidgets('a user-selected accent tints the downloaded file preview', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ClockOverlay(
+          link: File('assets/images/prism.webp').path,
+          file: true,
+          accent: Colors.red,
+          colorChanged: true,
+        ),
+      ),
+    );
+
+    final image = tester.widget<Image>(find.byType(Image).first);
+    expect(image.color, Colors.red);
+    expect(image.colorBlendMode, BlendMode.hue);
   });
 }

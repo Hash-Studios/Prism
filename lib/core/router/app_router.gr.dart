@@ -1046,6 +1046,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     AnalyticsSurfaceValue analyticsSurface =
         AnalyticsSurfaceValue.wallpaperScreen,
     String? heroTag,
+    File? localFile,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -1057,6 +1058,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            thumbnailUrl: thumbnailUrl,
            analyticsSurface: analyticsSurface,
            heroTag: heroTag,
+           localFile: localFile,
          ),
          initialChildren: children,
        );
@@ -1069,14 +1071,17 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
       final args = data.argsAs<WallpaperDetailRouteArgs>(
         orElse: () => const WallpaperDetailRouteArgs(),
       );
-      return WallpaperDetailScreen(
-        key: args.key,
-        entity: args.entity,
-        wallId: args.wallId,
-        source: args.source,
-        thumbnailUrl: args.thumbnailUrl,
-        analyticsSurface: args.analyticsSurface,
-        heroTag: args.heroTag,
+      return WrappedRoute(
+        child: WallpaperDetailScreen(
+          key: args.key,
+          entity: args.entity,
+          wallId: args.wallId,
+          source: args.source,
+          thumbnailUrl: args.thumbnailUrl,
+          analyticsSurface: args.analyticsSurface,
+          heroTag: args.heroTag,
+          localFile: args.localFile,
+        ),
       );
     },
   );
@@ -1091,6 +1096,7 @@ class WallpaperDetailRouteArgs {
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
+    this.localFile,
   });
 
   final Key? key;
@@ -1107,9 +1113,11 @@ class WallpaperDetailRouteArgs {
 
   final String? heroTag;
 
+  final File? localFile;
+
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile}';
   }
 
   @override
@@ -1122,7 +1130,8 @@ class WallpaperDetailRouteArgs {
         source == other.source &&
         thumbnailUrl == other.thumbnailUrl &&
         analyticsSurface == other.analyticsSurface &&
-        heroTag == other.heroTag;
+        heroTag == other.heroTag &&
+        localFile == other.localFile;
   }
 
   @override
@@ -1133,7 +1142,8 @@ class WallpaperDetailRouteArgs {
       source.hashCode ^
       thumbnailUrl.hashCode ^
       analyticsSurface.hashCode ^
-      heroTag.hashCode;
+      heroTag.hashCode ^
+      localFile.hashCode;
 }
 
 /// generated route for
