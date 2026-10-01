@@ -12,6 +12,7 @@ import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/url_utils.dart';
@@ -64,9 +65,16 @@ List<AiGenerationRecord> mergeAiSubmissionHistory(
 
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareCard = shareWallpaperCard});
 
   final AiGenerationRepositoryImpl? repository;
+  final Future<ShareCardResult> Function(
+    BuildContext context, {
+    required String imageUrl,
+    required String link,
+    String? contextLine,
+  })
+  shareCard;
   final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
 
   @override
@@ -90,6 +98,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _loadingHistory = false;
   bool _loadingGeneration = false;
   bool _saving = false;
+  bool _sharing = false;
   bool _submitting = false;
   final Set<String> _unconfirmedSubmissionIds = <String>{};
 
@@ -582,6 +591,55 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error(_toastForDownloadFailure(error));
     } finally {
       _saving = false;
+    }
+  }
+
+  Future<void> _share(AiGenerationRecord record) async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    _trackShareEvent(const InviteShareTappedEvent(sourceContext: 'ai_wallpaper'));
+    try {
+      final ShareCardResult shared = await widget.shareCard(
+        context,
+        imageUrl: record.displayUrl(isPremium: app_state.prismUser.premium),
+        link: 'https://prismwalls.com',
+        contextLine: 'Made with Prism AI',
+      );
+      if (!mounted) return;
+      _trackShareEvent(
+        InviteShareResultEvent(
+          channel: ShareChannelValue.shareSheet,
+          result: shared.dismissed ? EventResultValue.cancelled : EventResultValue.success,
+          reason: shared.dismissed ? AnalyticsReasonValue.userCancelled : null,
+          sourceContext: 'ai_wallpaper',
+          format: shared.format,
+        ),
+      );
+    } catch (error, stackTrace) {
+      logger.w('AI share failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      _trackShareEvent(
+        const InviteShareResultEvent(
+          channel: ShareChannelValue.shareSheet,
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.error,
+          sourceContext: 'ai_wallpaper',
+        ),
+      );
+      if (mounted) toasts.error('Could not share. Please try again.');
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  void _trackShareEvent(AnalyticsEvent event) {
+    try {
+      unawaited(
+        analytics.track(event).catchError((Object error, StackTrace stackTrace) {
+          logger.w('AI share analytics failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+        }),
+      );
+    } catch (error, stackTrace) {
+      logger.w('AI share analytics failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -1176,8 +1234,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         color: Theme.of(context).primaryColor.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Wrap(
+        alignment: WrapAlignment.spaceEvenly,
+        runAlignment: WrapAlignment.center,
         children: <Widget>[
           if (!hideSetWallpaperUi)
             _ActionButton(
@@ -1192,6 +1251,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             label: 'Save',
             semanticLabel: 'Save image to your device',
             onTap: () => _save(current),
+          ),
+          _ActionButton(
+            icon: Icons.ios_share_outlined,
+            label: 'Share',
+            semanticLabel: 'Share this wallpaper',
+            onTap: () => _share(current),
+            isLoading: _sharing,
           ),
           if (canVary)
             _ActionButton(
@@ -1588,6 +1654,7 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.isPrimary = false,
+    this.isLoading = false,
     this.semanticLabel,
   });
 
@@ -1595,6 +1662,7 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final bool isPrimary;
+  final bool isLoading;
   final String? semanticLabel;
 
   @override
@@ -1602,12 +1670,13 @@ class _ActionButton extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
-      label: semanticLabel ?? label,
+      label: isLoading ? 'Preparing share' : semanticLabel ?? label,
+      liveRegion: isLoading,
       child: Material(
         color: isPrimary ? scheme.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: onTap,
+          onTap: isLoading ? null : onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
@@ -1615,7 +1684,14 @@ class _ActionButton extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(icon, size: 22, color: isPrimary ? scheme.onPrimary : scheme.onSurface),
+                if (isLoading)
+                  SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onSurface),
+                  )
+                else
+                  Icon(icon, size: 22, color: isPrimary ? scheme.onPrimary : scheme.onSurface),
                 const SizedBox(height: 4),
                 Text(
                   label,
