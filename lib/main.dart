@@ -45,6 +45,7 @@ import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
+import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
@@ -53,6 +54,7 @@ import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
+import 'package:Prism/features/wall_of_the_day/views/widgets/wotd_quick_tile_listener.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/firebase_options.dart';
 import 'package:Prism/logger/logger.dart';
@@ -553,6 +555,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
       await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
+      await getIt<BadgeRepository>().check();
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: 'coins.main.$sourceTag', error: error, stackTrace: stackTrace);
     } finally {
@@ -880,6 +883,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // The app can stay alive across days, so pick up a new Wall of the Day.
+      context.read<WotdBloc>().add(const WotdEvent.started());
       final now = DateTime.now();
       if (_lastCoinSyncResume == null || now.difference(_lastCoinSyncResume!) >= _coinSyncResumeThrottle) {
         _lastCoinSyncResume = now;
@@ -939,16 +944,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             });
           },
         ),
-        // Cache WOTD URL for the Wall of the Day quick tile.
-        BlocListener<WotdBloc, WotdState>(
-          listenWhen: (previous, current) => previous.entity?.url != current.entity?.url && current.entity != null,
-          listener: (context, state) {
-            final url = state.entity?.url;
-            if (url != null && url.isNotEmpty) {
-              unawaited(QuickTileConfigService.pushWotdUrl(url));
-            }
-          },
-        ),
+        const WotdQuickTileListener(),
         // Cache favourite wall URLs for the Random Favourite quick tile.
         BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
           listenWhen: (previous, current) => previous.status != current.status && current.status == LoadStatus.success,
