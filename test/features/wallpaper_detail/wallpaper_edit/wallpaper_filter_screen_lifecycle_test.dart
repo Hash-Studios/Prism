@@ -92,6 +92,67 @@ void main() {
     expect(tester.getSemantics(sliderFinder).label, contains('Lightness'));
   }, skip: ui.ImageFilter.isShaderFilterSupported);
 
+  testWidgets('adjustment callbacks keep edits from the same build', (tester) async {
+    final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_test_');
+    final File source = File('${directory.path}/source.png');
+    source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+    addTearDown(() => directory.deleteSync(recursive: true));
+
+    await tester.pumpWidget(_screenHost(source.path));
+    await _waitForReady(tester);
+    await tester.tap(find.text('Adjust'));
+    await tester.pumpAndSettle();
+
+    Finder sliderFor(String label) {
+      final Finder row = find.ancestor(of: find.text(label), matching: find.byType(Row)).last;
+      return find.descendant(of: row, matching: find.byType(Slider));
+    }
+
+    final Slider blur = tester.widget<Slider>(sliderFor('Blur'));
+    final Slider hue = tester.widget<Slider>(sliderFor('Hue'));
+    blur.onChanged!(50);
+    hue.onChanged!(90);
+    await tester.pump();
+
+    expect(tester.widget<Slider>(sliderFor('Blur')).value, 50);
+    expect(tester.widget<Slider>(sliderFor('Hue')).value, 90);
+
+    final Slider saturation = tester.widget<Slider>(sliderFor('Saturation'));
+    final Finder hueRow = find.ancestor(of: find.text('Hue'), matching: find.byType(Row)).last;
+    final GestureDetector hueReset = tester.widget<GestureDetector>(
+      find.descendant(of: hueRow, matching: find.byType(GestureDetector)).first,
+    );
+    saturation.onChanged!(25);
+    hueReset.onDoubleTap!();
+    await tester.pump();
+
+    expect(tester.widget<Slider>(sliderFor('Saturation')).value, 25);
+    expect(tester.widget<Slider>(sliderFor('Hue')).value, 0);
+
+    await tester.scrollUntilVisible(
+      find.text('Brightness'),
+      100,
+      scrollable: find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first,
+    );
+    final Slider brightness = tester.widget<Slider>(sliderFor('Brightness'));
+    final Finder resetButton = find.ancestor(of: find.byTooltip('Reset'), matching: find.byType(IconButton));
+    final IconButton reset = tester.widget<IconButton>(resetButton);
+    reset.onPressed!();
+    brightness.onChanged!(40);
+    await tester.pump();
+
+    expect(tester.widget<Slider>(sliderFor('Brightness')).value, 40);
+    final Finder adjustmentsScrollable = find
+        .descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable))
+        .first;
+    tester.state<ScrollableState>(adjustmentsScrollable).position.jumpTo(0);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Slider>(sliderFor('Blur')).value, 0);
+    expect(tester.widget<Slider>(sliderFor('Hue')).value, 0);
+    expect(tester.widget<Slider>(sliderFor('Saturation')).value, 0);
+  });
+
   testWidgets('locks edits through export and removes its temp file after native save completes', (tester) async {
     final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_test_');
     final File source = File('${directory.path}/source.png');
