@@ -62,24 +62,14 @@ class AdminModerationRepository {
     return true;
   }
 
+  /// onWallApproved writes the artist's inbox entry and push, so approval adds none here.
   Future<void> approveWall(FirestoreDocument wall) {
-    final Map<String, dynamic>? notification = _notification(
-      email: wall.email,
-      title: 'Wallpaper Approved',
-      body: 'Your wallpaper "${wall.payload['title'] ?? ''}" is now live!',
-      imageUrl: wall.wallpaperThumb,
-    );
     final List<String> collections = wall.collections;
-    return _client.runBatch((FirestoreBatch batch) async {
-      batch.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
-        'review': true,
-        'collections': collections.isEmpty ? <String>['community'] : collections,
-        'reviewedAt': DateTime.now().toUtc(),
-        'createdAt': DateTime.now().toUtc(),
-      });
-      if (notification != null) {
-        batch.addDoc(FirebaseCollections.notifications, notification);
-      }
+    return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
+      'review': true,
+      'collections': collections.isEmpty ? <String>['community'] : collections,
+      'reviewedAt': DateTime.now().toUtc(),
+      'createdAt': DateTime.now().toUtc(),
     }, sourceTag: 'admin_review.approve_wall');
   }
 
