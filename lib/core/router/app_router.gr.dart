@@ -1040,14 +1040,16 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
       final args = data.argsAs<WallpaperDetailRouteArgs>(
         orElse: () => const WallpaperDetailRouteArgs(),
       );
-      return WallpaperDetailScreen(
-        key: args.key,
-        entity: args.entity,
-        wallId: args.wallId,
-        source: args.source,
-        thumbnailUrl: args.thumbnailUrl,
-        analyticsSurface: args.analyticsSurface,
-        heroTag: args.heroTag,
+      return WrappedRoute(
+        child: WallpaperDetailScreen(
+          key: args.key,
+          entity: args.entity,
+          wallId: args.wallId,
+          source: args.source,
+          thumbnailUrl: args.thumbnailUrl,
+          analyticsSurface: args.analyticsSurface,
+          heroTag: args.heroTag,
+        ),
       );
     },
   );

@@ -47,7 +47,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
-class WallpaperDetailScreen extends StatefulWidget {
+class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   const WallpaperDetailScreen({
     super.key,
     this.entity,
@@ -66,6 +66,11 @@ class WallpaperDetailScreen extends StatefulWidget {
 
   /// Set when opened from a grid tile, so the tile image flies into this screen.
   final String? heroTag;
+
+  // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
+  @override
+  Widget wrappedRoute(BuildContext context) =>
+      BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>(), child: this);
 
   @override
   State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
@@ -198,7 +203,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
+          final entity = widget.entity;
           return switch (state) {
+            // Build the entity on the first frame too, so the hero flight shows the tapped wallpaper.
+            WallpaperDetailInitial() when entity != null => _buildLoadedState(
+              context,
+              WallpaperDetailLoaded(entity: entity),
+            ),
             WallpaperDetailInitial() || WallpaperDetailLoading() => _buildLoadingState(state),
             WallpaperDetailLoaded() => _buildLoadedState(context, state),
             WallpaperDetailError() => _buildErrorState(state),
