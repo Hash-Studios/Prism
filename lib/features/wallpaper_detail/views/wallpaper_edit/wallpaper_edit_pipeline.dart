@@ -24,13 +24,14 @@ Future<bool> loadKernelEffects() async {
   }
 }
 
-ui.ImageFilter kernelImageFilter(KernelEffect effect, {double kernelScale = 1}) {
+ui.ImageFilter kernelImageFilter(KernelEffect effect, {double kernelScale = 1, double lightness = 0}) {
   final ui.FragmentShader shader = _convolveProgram!.fragmentShader();
   for (int i = 0; i < 9; i++) {
     shader.setFloat(2 + i, effect.kernel[i]);
   }
   shader.setFloat(11, effect.bias / 255);
   shader.setFloat(12, kernelScale);
+  shader.setFloat(13, lightness);
   return ui.ImageFilter.shader(shader);
 }
 
@@ -74,6 +75,11 @@ ui.ImageFilter? buildEditFilter(
   }
   pending = pending == null ? adjustments.matrix : composeMatrices(pending!, adjustments.matrix);
   flush();
+  if (adjustments.lightness != 0) {
+    then(
+      kernelImageFilter(const KernelEffect('Lightness', [0, 0, 0, 0, 1, 0, 0, 0, 0]), lightness: adjustments.lightness),
+    );
+  }
   if (adjustments.blur > 0) {
     final double sigma = adjustments.blur * _maxBlurFraction * shortSide;
     then(ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.mirror));
