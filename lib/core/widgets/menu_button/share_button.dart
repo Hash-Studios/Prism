@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
@@ -51,6 +52,7 @@ class _ShareButtonState extends State<ShareButton> {
     return CircularMenuButton(
       label: 'Share',
       onTap: () {
+        PrismHaptics.tap();
         logger.d('Share');
         onShare();
       },

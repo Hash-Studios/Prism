@@ -6,6 +6,7 @@ import 'package:Prism/auth/google_auth.dart' show WrongAccountException;
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -65,6 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late bool _showSketchy;
   late bool _notifWotd;
   late bool _notifPromo;
+  bool _haptics = PrismHaptics.enabled;
   bool _restoring = false;
   late _DownloadQuality _downloadQuality;
 
@@ -159,6 +161,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.push(const ThemeViewRoute()),
         ),
+        SwitchListTile(
+          activeThumbColor: _accentColor,
+          secondary: const Icon(Icons.vibration_rounded),
+          value: _haptics,
+          title: Text('Haptic Feedback', style: _titleStyle),
+          subtitle: const Text('Vibrate on taps and actions', style: _subtitleStyle),
+          onChanged: (value) {
+            setState(() => _haptics = value);
+            PrismHaptics.enabled = value;
+            PrismHaptics.selection();
+            _settingsLocal.set(PrismHaptics.settingsKey, value);
+            _trackSettingsToggle(SettingValue.haptics, value);
+          },
+        ),
       ],
     );
   }
@@ -177,6 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: _subtitleStyle,
           ),
           onChanged: (value) {
+            PrismHaptics.selection();
             setState(() => _showAnime = value);
             _settingsLocal.set('WHcategories', value ? 111 : 100);
             _trackSettingsToggle(SettingValue.animeWallpapers, value);
@@ -194,6 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: _subtitleStyle,
             ),
             onChanged: (value) {
+              PrismHaptics.selection();
               setState(() => _showSketchy = value);
               _settingsLocal.set('WHpurity', value ? 110 : 100);
               _trackSettingsToggle(SettingValue.sketchyWallpapers, value);
@@ -229,6 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           groupValue: _downloadQuality,
           onChanged: (quality) {
             if (quality == null) return;
+            PrismHaptics.selection();
             setState(() => _downloadQuality = quality);
             _settingsLocal.set(PersistenceKeys.downloadQuality, quality.name);
             Navigator.pop(ctx);
@@ -271,6 +290,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: Text('Wall of the Day', style: _titleStyle),
           subtitle: const Text('Daily wallpaper recommendation alert', style: _subtitleStyle),
           onChanged: (value) {
+            PrismHaptics.selection();
             setState(() => _notifWotd = value);
             _settingsLocal.set(PersistenceKeys.notifWotd, value);
             _setTopic('wall_of_the_day', value);
@@ -283,6 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: Text('Promotional Alerts', style: _titleStyle),
           subtitle: const Text('New features, events & announcements', style: _subtitleStyle),
           onChanged: (value) {
+            PrismHaptics.selection();
             setState(() => _notifPromo = value);
             _settingsLocal.set(NotificationPrefKeys.recommendations, value);
             _trackSettingsToggle(SettingValue.recommendationsNotifications, value);

@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -236,7 +237,13 @@ class _EarnRow extends StatelessWidget {
         child: tappable
             ? PressScale(
                 scale: 0.98,
-                child: InkWell(onTap: onTap, child: content),
+                child: InkWell(
+                  onTap: () {
+                    PrismHaptics.tap();
+                    onTap?.call();
+                  },
+                  child: content,
+                ),
               )
             : content,
       ),

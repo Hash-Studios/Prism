@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -31,6 +32,7 @@ void showDeleteConfirm(BuildContext context, {required String title, required Fu
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         color: theme.hintColor,
         onPressed: () async {
+          PrismHaptics.tap();
           Navigator.pop(context);
           await onConfirm();
         },

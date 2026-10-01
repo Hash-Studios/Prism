@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
@@ -42,7 +43,10 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
                       excludeSemantics: true,
                       onTap: onLogoTap,
                       child: GestureDetector(
-                        onTap: onLogoTap,
+                        onTap: () {
+                          PrismHaptics.tap();
+                          onLogoTap();
+                        },
                         behavior: HitTestBehavior.opaque,
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
@@ -101,7 +105,10 @@ class _NotificationButton extends StatelessWidget {
         type: MaterialType.transparency,
         child: InkWell(
           customBorder: const CircleBorder(),
-          onTap: () => context.router.push(const NotificationRoute()),
+          onTap: () {
+            PrismHaptics.tap();
+            context.router.push(const NotificationRoute());
+          },
           child: SizedBox(
             width: PrismAppBarSizes.iconButtonTouchTarget,
             height: PrismAppBarSizes.iconButtonTouchTarget,
@@ -152,7 +159,11 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String photoUrl = app_state.prismUser.profilePhoto;
-    void openProfile() => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email));
+    void openProfile() {
+      PrismHaptics.tap();
+      context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email));
+    }
+
     return Semantics(
       button: true,
       label: 'Your profile',

@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -16,7 +17,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:github/github.dart';
 
 @RoutePage()
@@ -46,7 +46,7 @@ class _AboutScreenState extends State<AboutScreen> {
     if (_versionTapCount >= 5) {
       _versionTapCount = 0;
       if (!app_state.isAdminUser()) return;
-      HapticFeedback.mediumImpact();
+      PrismHaptics.impact();
       context.router.pushPath('/debug-panel');
     }
   }
@@ -225,6 +225,7 @@ class _AboutScreenState extends State<AboutScreen> {
                           ),
                         ),
                         onTap: () {
+                          PrismHaptics.tap();
                           _trackAction(
                             AnalyticsActionValue.contributorProfileTapped,
                             sourceContext: 'about_screen_other_contributor',
@@ -277,6 +278,7 @@ class _ContributorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        PrismHaptics.tap();
         unawaited(
           analytics.track(
             SurfaceActionTappedEvent(
@@ -369,6 +371,7 @@ class ActionButton extends StatelessWidget {
           ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
         ),
         onPressed: () async {
+          PrismHaptics.tap();
           unawaited(
             analytics.track(
               SurfaceActionTappedEvent(

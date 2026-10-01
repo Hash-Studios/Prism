@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
@@ -230,6 +231,7 @@ class _CreatorCard extends StatelessWidget {
         ],
       ),
       onTap: () {
+        PrismHaptics.tap();
         analytics.track(
           UserSearchResultOpenedEvent(
             resultUserId: user.id.trim().isNotEmpty ? user.id : user.email,

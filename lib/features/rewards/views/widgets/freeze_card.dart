@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -88,7 +89,12 @@ class FreezeCard extends StatelessWidget {
                         ],
                       ),
                       FilledButton.tonal(
-                        onPressed: full ? null : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins),
+                        onPressed: full
+                            ? null
+                            : () {
+                                PrismHaptics.tap();
+                                buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins);
+                              },
                         style: FilledButton.styleFrom(
                           backgroundColor: cs.onSurface.withValues(alpha: 0.08),
                           disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.05),
@@ -181,6 +187,7 @@ class _FreezeSheetState extends State<_FreezeSheet> {
   }
 
   Future<void> _buy() async {
+    PrismHaptics.tap();
     setState(() => _busy = true);
     final StreakFreezePurchase purchase = await CoinsService.instance.buyStreakFreeze();
     if (!mounted) return;
@@ -189,6 +196,7 @@ class _FreezeSheetState extends State<_FreezeSheet> {
         Navigator.of(context).pop(_FreezeSheetResult.bought);
         return;
       case StreakFreezeOutcome.insufficientBalance:
+        PrismHaptics.warning();
         setState(() {
           _busy = false;
           _short = true;
@@ -223,7 +231,10 @@ class _FreezeSheetState extends State<_FreezeSheet> {
               Text('You have $balance.', textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
               const SizedBox(height: 20),
               FilledButton(
-                onPressed: () => Navigator.of(context).pop(_FreezeSheetResult.earn),
+                onPressed: () {
+                  PrismHaptics.tap();
+                  Navigator.of(context).pop(_FreezeSheetResult.earn);
+                },
                 child: const Text('Earn coins'),
               ),
             ] else ...<Widget>[

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -81,6 +82,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             tooltip: 'Reset adjustments',
             icon: Icon(JamIcons.history, color: Theme.of(context).colorScheme.secondary),
             onPressed: () {
+              PrismHaptics.tap();
               setState(() {
                 sat = 1;
                 bright = 0;
@@ -92,6 +94,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             tooltip: 'Done',
             icon: Icon(Icons.check, color: Theme.of(context).colorScheme.secondary),
             onPressed: () async {
+              PrismHaptics.tap();
               await crop();
             },
           ),
@@ -162,7 +165,10 @@ class _EditWallScreenState extends State<EditWallScreen> {
                           value: sat,
                           min: 0,
                           max: 2,
-                          onChanged: (value) => setState(() => sat = value),
+                          onChanged: (value) {
+                            PrismHaptics.selection();
+                            setState(() => sat = value);
+                          },
                         ),
                         const Spacer(),
                         _buildSlider(
@@ -170,7 +176,10 @@ class _EditWallScreenState extends State<EditWallScreen> {
                           value: bright,
                           min: -1,
                           max: 1,
-                          onChanged: (value) => setState(() => bright = value),
+                          onChanged: (value) {
+                            PrismHaptics.selection();
+                            setState(() => bright = value);
+                          },
                         ),
                         const Spacer(),
                         _buildSlider(
@@ -178,7 +187,10 @@ class _EditWallScreenState extends State<EditWallScreen> {
                           value: con,
                           min: 0,
                           max: 4,
-                          onChanged: (value) => setState(() => con = value),
+                          onChanged: (value) {
+                            PrismHaptics.selection();
+                            setState(() => con = value);
+                          },
                         ),
                         const Spacer(flex: 3),
                       ],
@@ -270,6 +282,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
         ),
       ],
       onTap: (int index) {
+        PrismHaptics.tap();
         switch (index) {
           case 0:
             flip();

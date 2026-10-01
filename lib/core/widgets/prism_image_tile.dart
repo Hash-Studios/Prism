@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/logger/logger.dart';
@@ -36,6 +37,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
   bool _retrying = false;
 
   Future<void> _retry() async {
+    PrismHaptics.tap();
     setState(() => _retrying = true);
     try {
       for (final url in {widget.url, widget.fallbackUrl}.whereType<String>().where((url) => url.isNotEmpty)) {

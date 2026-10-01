@@ -7,6 +7,7 @@ import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
@@ -65,6 +66,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> _pickImage(ValueSetter<File> onPicked) async {
+    PrismHaptics.tap();
     final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() => onPicked(File(pickedFile.path)));
@@ -142,6 +144,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PrismProfile.dialogButtonRadius)),
               ),
               onPressed: () async {
+                PrismHaptics.tap();
                 Navigator.of(dialogContext, rootNavigator: true).pop();
                 if (!mounted) return;
                 await remove();
@@ -182,6 +185,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       (!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) || (usernameEdit && enabled);
 
   Future<void> _saveProfile() async {
+    PrismHaptics.tap();
     setState(() => isLoading = true);
 
     if (usernameEdit && usernameController.text.isNotEmpty && usernameController.text.length >= 8) {

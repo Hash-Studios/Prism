@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -158,7 +159,13 @@ class _StartupFailure extends StatelessWidget {
               const SizedBox(height: 8),
               Text('Check your connection and try again.', style: textTheme.bodyMedium, textAlign: TextAlign.center),
               const SizedBox(height: 24),
-              FilledButton(onPressed: onRetry, child: const Text('Retry')),
+              FilledButton(
+                onPressed: () {
+                  PrismHaptics.tap();
+                  onRetry();
+                },
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),

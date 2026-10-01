@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
@@ -87,7 +88,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
         child: RefreshIndicator(
           backgroundColor: Theme.of(context).primaryColor,
           key: refreshDownloadKey,
-          onRefresh: refreshList,
+          onRefresh: () {
+            PrismHaptics.impact();
+            return refreshList();
+          },
           child: files.isNotEmpty
               ? GridView.builder(
                   shrinkWrap: true,
@@ -117,6 +121,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                               onTap: () {
+                                PrismHaptics.tap();
                                 unawaited(
                                   analytics.track(
                                     SurfaceActionTappedEvent(

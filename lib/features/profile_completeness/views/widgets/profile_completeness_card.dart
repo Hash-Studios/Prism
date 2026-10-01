@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -42,6 +43,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
 
   Future<void> _handleComplete() async {
     if (_isLoading) return;
+    PrismHaptics.tap();
     setState(() => _isLoading = true);
     SemanticsService.sendAnnouncement(View.of(context), 'Opening profile editor', TextDirection.ltr);
     try {

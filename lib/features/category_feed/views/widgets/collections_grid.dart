@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -308,6 +309,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           : (data.kind == _DiscoverTileKind.category ? 'Category' : 'Collection');
 
       void onTapTile() {
+        PrismHaptics.tap();
         if (data.kind == _DiscoverTileKind.collection) {
           unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: data.name));
           return;
@@ -373,7 +375,10 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     }
 
     return RefreshIndicator(
-      onRefresh: refreshList,
+      onRefresh: () {
+        PrismHaptics.impact();
+        return refreshList();
+      },
       color: theme.colorScheme.primary,
       backgroundColor: theme.primaryColor,
       edgeOffset: MediaQuery.paddingOf(context).top,

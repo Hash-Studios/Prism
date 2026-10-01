@@ -4,6 +4,7 @@ import 'dart:math' show min;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -142,7 +143,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   void _handleAccentLongPress(BuildContext context, WallpaperDetailLoaded state) {
     context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
     _trackAction(state, AnalyticsActionValue.paletteResetLongPressed);
-    HapticFeedback.vibrate();
+    PrismHaptics.impact();
     _shake.shake();
   }
 
@@ -402,7 +403,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           isSelected: state.colorChanged && color == state.accent,
           onTap: () => _handleColorSelected(context, state, color),
           onLongPress: () {
-            HapticFeedback.vibrate();
+            PrismHaptics.impact();
             Clipboard.setData(ClipboardData(text: '#${color.rgbHex.toUpperCase()}')).then((_) => toasts.color(color));
           },
         ),
@@ -690,7 +691,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         : Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => context.router.push(ProfileRoute(profileIdentifier: profileIdentifier)),
+              onTap: () {
+                PrismHaptics.tap();
+                context.router.push(ProfileRoute(profileIdentifier: profileIdentifier));
+              },
               borderRadius: BorderRadius.circular(8),
               child: child,
             ),
@@ -829,12 +833,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           child: CircularMenuButton(
             label: 'Report',
             isLoading: false,
-            onTap: () => showContentReportSheet(
-              context,
-              contentType: 'wall',
-              targetFirestoreDocId: reportWallDocId,
-              subtitle: entity.id,
-            ),
+            onTap: () {
+              PrismHaptics.tap();
+              showContentReportSheet(
+                context,
+                contentType: 'wall',
+                targetFirestoreDocId: reportWallDocId,
+                subtitle: entity.id,
+              );
+            },
             child: Icon(JamIcons.flag, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
         ),
@@ -866,7 +873,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 },
                 onLongPress: () => _handleAccentLongPress(context, state),
                 onTap: () {
-                  HapticFeedback.vibrate();
+                  PrismHaptics.selection();
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },

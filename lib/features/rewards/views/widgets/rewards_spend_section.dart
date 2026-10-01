@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -107,6 +108,7 @@ class RewardsSpendSection extends StatelessWidget {
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () {
+                  PrismHaptics.tap();
                   Navigator.of(sheetContext).pop();
                   PaywallOrchestrator.instance.presentOrRequireSignIn(
                     context,
@@ -150,7 +152,12 @@ class _SpendTile extends StatelessWidget {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: onTap,
+            onTap: onTap == null
+                ? null
+                : () {
+                    PrismHaptics.tap();
+                    onTap!();
+                  },
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 104),
               child: Padding(

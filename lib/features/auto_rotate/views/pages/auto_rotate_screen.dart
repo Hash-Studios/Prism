@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -323,7 +324,10 @@ class _Controls extends StatelessWidget {
                 fontFamily: _fontFamily,
                 fontWeight: entry.key == selected ? FontWeight.bold : FontWeight.normal,
               ),
-              onSelected: (_) => onSelected(entry.key),
+              onSelected: (_) {
+                PrismHaptics.selection();
+                onSelected(entry.key);
+              },
             ),
         ],
       ),
@@ -339,7 +343,10 @@ class _Controls extends StatelessWidget {
             value: config.enabled,
             title: Text('Auto-rotate wallpapers', style: titleStyle),
             subtitle: Text('${state.favouriteCount} favourites in the mix', style: subtitleStyle),
-            onChanged: (value) => bloc.add(AutoRotateEvent.toggled(value)),
+            onChanged: (value) {
+              PrismHaptics.selection();
+              bloc.add(AutoRotateEvent.toggled(value));
+            },
           ),
         ]),
         card('CHANGE', [
@@ -353,7 +360,10 @@ class _Controls extends StatelessWidget {
             value: config.shuffle,
             title: Text('Shuffle', style: titleStyle),
             subtitle: const Text('Random order instead of one after another', style: subtitleStyle),
-            onChanged: (value) => bloc.add(AutoRotateEvent.shuffleChanged(value)),
+            onChanged: (value) {
+              PrismHaptics.selection();
+              bloc.add(AutoRotateEvent.shuffleChanged(value));
+            },
           ),
         ]),
         card('STATUS', [
@@ -361,7 +371,12 @@ class _Controls extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: OutlinedButton.icon(
-              onPressed: config.enabled ? () => bloc.add(const AutoRotateEvent.rotateNowPressed()) : null,
+              onPressed: config.enabled
+                  ? () {
+                      PrismHaptics.tap();
+                      bloc.add(const AutoRotateEvent.rotateNowPressed());
+                    }
+                  : null,
               icon: const Icon(Icons.skip_next_rounded),
               label: const Text('Change now'),
             ),
