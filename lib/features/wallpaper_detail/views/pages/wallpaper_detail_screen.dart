@@ -776,6 +776,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return Row(mainAxisSize: MainAxisSize.min, children: [iconWidget, spacer, textWidget]);
   }
 
+  String? _shareContextLine(FeedItemEntity entity) {
+    final String? name = entity.wallpaperCore.authorName?.trim();
+    return name == null || name.isEmpty ? null : 'by $name';
+  }
+
   Widget _buildActionButtons(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final url = entity.fullUrl;
@@ -803,7 +808,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
       ),
       PressScale(
-        child: ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
+        child: ShareButton(
+          id: entity.id,
+          source: entity.source,
+          url: entity.fullUrl,
+          thumbUrl: entity.thumbnailUrl,
+          contextLine: _shareContextLine(entity),
+        ),
       ),
       PressScale(child: EditButton(url: entity.fullUrl)),
     ];
