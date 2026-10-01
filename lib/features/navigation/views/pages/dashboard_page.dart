@@ -4,6 +4,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
+import 'package:Prism/features/badges/views/widgets/badge_celebrate_host.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
@@ -93,7 +94,10 @@ class _DashboardPageState extends State<DashboardPage> {
               },
               child: DailyClaimSheetHost(
                 onSeeRewards: () => tabsRouter.setActiveIndex(2),
-                child: BottomBar(child: child),
+                child: BadgeCelebrateHost(
+                  onSeeRewards: () => tabsRouter.setActiveIndex(2),
+                  child: BottomBar(child: child),
+                ),
               ),
             );
           },

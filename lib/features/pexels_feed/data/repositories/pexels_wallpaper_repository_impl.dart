@@ -47,7 +47,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   }
 
   @override
-  Future<Result<List<PexelsWallpaper>>> fetchColorFeed({required String hex, required bool refresh}) {
+  Future<Result<List<PexelsWallpaper>>> fetchColorFeed({
+    required String hex,
+    required String name,
+    required bool refresh,
+  }) {
     final String color = hex.trim().replaceFirst('#', '').toLowerCase();
     if (!RegExp(r'^[0-9a-f]{6}$').hasMatch(color)) {
       return Future<Result<List<PexelsWallpaper>>>.value(Result.error(ValidationFailure('Invalid color: $hex')));
@@ -55,7 +59,8 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     return _fetchPage(
       'color: $color',
       refresh: refresh,
-      buildUri: (page) => _searchUri(query: 'wallpaper', page: page, color: '#$color'),
+      buildUri: (page) =>
+          _searchUri(query: '${name.trim().toLowerCase()} wallpaper'.trim(), page: page, color: '#$color'),
     );
   }
 

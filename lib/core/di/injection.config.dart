@@ -35,6 +35,11 @@ import '../../features/auto_rotate/data/repositories/auto_rotate_repository_impl
     as _i948;
 import '../../features/auto_rotate/domain/repositories/auto_rotate_repository.dart'
     as _i563;
+import '../../features/badges/biz/bloc/badges_bloc.dart' as _i219;
+import '../../features/badges/data/repositories/badge_repository_impl.dart'
+    as _i700;
+import '../../features/badges/domain/repositories/badge_repository.dart'
+    as _i360;
 import '../../features/category_feed/biz/bloc/category_feed_bloc.j.dart'
     as _i195;
 import '../../features/category_feed/data/repositories/category_feed_repository_impl.dart'
@@ -220,6 +225,7 @@ _i174.GetIt initGetIt(
       gh<_i954.FeedCacheLocalDataSource>(),
     ),
   );
+  gh.lazySingleton<_i360.BadgeRepository>(() => _i700.BadgeRepositoryImpl());
   gh.lazySingleton<_i1055.AdsRepository>(() => _i418.AdsRepositoryImpl());
   gh.lazySingleton<_i652.PaletteRepository>(
     () => _i446.PaletteRepositoryImpl(),
@@ -271,6 +277,9 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i408.AutoRotateBloc>(
     () => _i408.AutoRotateBloc(gh<_i563.AutoRotateRepository>()),
+  );
+  gh.factory<_i219.BadgesBloc>(
+    () => _i219.BadgesBloc(gh<_i360.BadgeRepository>()),
   );
   gh.lazySingleton<_i321.CreateRewardedAdUseCase>(
     () => _i321.CreateRewardedAdUseCase(gh<_i1055.AdsRepository>()),

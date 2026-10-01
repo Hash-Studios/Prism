@@ -182,6 +182,13 @@ enum ShareChannelValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum ShareFormatValue {
+  card,
+  text;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum DismissModeValue {
   swipe;
 
