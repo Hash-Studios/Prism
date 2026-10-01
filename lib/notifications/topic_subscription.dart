@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -53,6 +54,50 @@ Future<void> setCreatorPostsTopics(
 String? userTopicFromId(String uid) {
   final String sanitized = uid.trim().replaceAll(_invalidFcmTopicCharacters, '');
   return sanitized.isEmpty ? null : 'u_$sanitized';
+}
+
+const String _pushTopicsSyncedKey = 'pushTopicsSyncedFor';
+
+/// Subscribes this device to every topic the server sends to, once per FCM token, user and tier.
+/// Topics belong to the token. iOS builds without the push entitlement never had one, so
+/// every earlier subscribe was skipped. This catches up those installs and fresh tokens.
+Future<void> syncPushTopics(
+  FirebaseMessaging messaging,
+  SettingsLocalDataSource settings, {
+  required String userId,
+  required String email,
+  required bool premium,
+  required Iterable<String> following,
+}) async {
+  final String? token;
+  try {
+    token = await messaging.getToken();
+  } catch (error, stackTrace) {
+    logger.w('Topic sync skipped: no FCM token yet.', tag: 'Push', error: error, stackTrace: stackTrace);
+    return;
+  }
+  if (token == null || token.isEmpty) return;
+  final String tier = premium ? 'premium' : 'free';
+  final String syncKey = '$token|$userId|$tier';
+  if (settings.get<String>(_pushTopicsSyncedKey, defaultValue: '') == syncKey) return;
+
+  const String sourceTag = 'push_topics.sync';
+  Future<bool> subscribe(String? topic) =>
+      topic == null ? Future<bool>.value(true) : subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
+  final List<bool> results = await Future.wait(<Future<bool>>[
+    if (settings.get<bool>(NotificationPrefKeys.recommendations, defaultValue: true)) subscribe('recommendations'),
+    if (settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true)) subscribe('wall_of_the_day'),
+    // onCampaignNotificationRequested sends "premium" and "free" campaigns to these topics.
+    subscribe(tier),
+    _changeTopic(messaging, premium ? 'free' : 'premium', subscribe: false, sourceTag: sourceTag),
+    if (userId.isNotEmpty) ...<Future<bool>>[
+      subscribe(userTopicFromId(userId)),
+      subscribe(followersTopicFromEmail(email)),
+    ],
+    if (userId.isNotEmpty && settings.get<bool>(NotificationPrefKeys.posts, defaultValue: true))
+      ...following.map((String creator) => subscribe(_creatorPostsTopicFromEmail(creator))),
+  ]);
+  if (results.every((bool ok) => ok)) await settings.set(_pushTopicsSyncedKey, syncKey);
 }
 
 Future<bool> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) {

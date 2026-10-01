@@ -16,6 +16,7 @@ import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
+import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -36,20 +37,18 @@ class _HomeTabPageState extends State<HomeTabPage> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
+  StreamSubscription<String>? _fcmTokenSubscription;
 
-  Future<void> _ensureDefaultTopicSubscriptions() async {
-    if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
-      final messaging = FirebaseMessaging.instance;
-      final bool recommendationsSubscribed = await subscribeToTopicSafely(
-        messaging,
-        'recommendations',
-        sourceTag: 'home_tab.init.recommendations',
-      );
-      final bool postsSubscribed = await subscribeToTopicSafely(messaging, 'posts', sourceTag: 'home_tab.init.posts');
-      if (recommendationsSubscribed && postsSubscribed) {
-        _settingsLocal.set('subscribedToRecommendations', true);
-      }
-    }
+  Future<void> _ensureDefaultTopicSubscriptions() {
+    final user = app_state.prismUser;
+    return syncPushTopics(
+      FirebaseMessaging.instance,
+      _settingsLocal,
+      userId: user.loggedIn ? user.id : '',
+      email: user.email,
+      premium: user.premium,
+      following: user.following,
+    );
   }
 
   void _showChangelogCheck() {
@@ -129,6 +128,22 @@ class _HomeTabPageState extends State<HomeTabPage> {
     unawaited(saveFavToLocal());
     unawaited(checkConnection());
     unawaited(_ensureDefaultTopicSubscriptions());
+    // On iOS the FCM token can arrive after launch, once APNs answers. Sync again then.
+    _fcmTokenSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
+      (_) => unawaited(_ensureDefaultTopicSubscriptions()),
+    );
+    // post_sign_in stores the token only at sign-in. Keep it current for users who stay signed in.
+    final user = app_state.prismUser;
+    if (user.loggedIn) {
+      unawaited(FcmTokenService.instance.syncToken(userId: user.id));
+      FcmTokenService.instance.listenForTokenRefresh(userId: user.id);
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_fcmTokenSubscription?.cancel());
+    super.dispose();
   }
 
   void _openFeedSettings() {
