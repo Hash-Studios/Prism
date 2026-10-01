@@ -109,4 +109,15 @@ void main() {
     expect(client.writes.single.collection, FirebaseCollections.notifications);
     expect((client.writes.single.data!['notification'] as Map<String, dynamic>)['body'], 'Wrong aspect ratio');
   });
+
+  test('approval updates the wall and leaves the inbox entry to onWallApproved', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{'email': 'creator@example.com', 'review': false});
+
+    await repository.approveWall(wall);
+
+    final write = client.writes.single;
+    expect((write.op, write.collection, write.id), ('update', FirebaseCollections.walls, 'wall-1'));
+    expect(write.data!['review'], isTrue);
+    expect(write.data!['collections'], <String>['community']);
+  });
 }

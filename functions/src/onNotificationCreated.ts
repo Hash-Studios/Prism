@@ -1,5 +1,5 @@
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
-import {REGION, str} from "./common";
+import {db, REGION, str} from "./common";
 import {emailToTopic, sendNotification} from "./notificationHelper";
 
 /** Topic the audience of an inbox entry subscribes to, or undefined when none does. */
@@ -22,8 +22,9 @@ export const onNotificationCreated = onDocumentCreated(
     region: REGION,
   },
   async (event) => {
-    const doc = event.data?.data();
-    if (!doc || doc.pushHandled === true) return;
+    const snapshot = event.data;
+    const doc = snapshot?.data();
+    if (!snapshot || !doc || doc.pushHandled === true) return;
     const modifier = str(doc.modifier);
     const topic = topicForModifier(modifier);
     const title = str(doc.notification?.title);
@@ -34,6 +35,16 @@ export const onNotificationCreated = onDocumentCreated(
     for (const [key, value] of Object.entries(doc.data ?? {})) {
       if (typeof value === "string" && value) data[key] = value;
     }
+    // ponytail: one attempt, like sendNotification; a crash after claiming can lose
+    // the push. Guaranteed delivery would need durable delivery tracking.
+    const claimed = await db.runTransaction(async (transaction) => {
+      const current = await transaction.get(snapshot.ref);
+      if (!current.exists || current.data()?.pushHandled === true) return false;
+      transaction.update(snapshot.ref, {pushHandled: true});
+      return true;
+    });
+    if (!claimed) return;
+
     await sendNotification({
       title,
       body,

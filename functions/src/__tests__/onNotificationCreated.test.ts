@@ -8,11 +8,14 @@ import {onNotificationCreated, topicForModifier} from "../onNotificationCreated"
 
 type Sent = {topic?: string; notification?: {title?: string}; data?: Record<string, string>};
 
-async function run(doc: Record<string, unknown>, t: test.TestContext): Promise<Sent[]> {
+async function run(
+  doc: Record<string, unknown>, t: test.TestContext,
+  {deliveries = 1, loggedIn = true, retryClaim = false} = {},
+): Promise<Sent[]> {
   const users = {
     where: () => users,
     limit: () => users,
-    get: async () => ({empty: false, docs: [{id: "u1", data: () => ({loggedIn: true})}]}),
+    get: async () => ({empty: false, docs: [{id: "u1", data: () => ({loggedIn})}]}),
   };
   const inbox: unknown[] = [];
   t.mock.method(db, "collection", (name: string) => name === "usersv2" ? users : ({add: async (d: unknown) => inbox.push(d)}));
@@ -21,10 +24,41 @@ async function run(doc: Record<string, unknown>, t: test.TestContext): Promise<S
     sent.push(message);
     return "id";
   });
-  await onNotificationCreated.run({
+  const ref = db.doc("notifications/n1");
+  let stored = {...doc};
+  let transactions = Promise.resolve();
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<boolean>) => {
+    const result = transactions.then(async () => {
+      let update: Record<string, unknown> = {};
+      const tx = {
+        get: async (target: unknown) => {
+          assert.equal(target, ref);
+          return {exists: true, data: () => stored};
+        },
+        update: (target: unknown, data: Record<string, unknown>) => {
+          assert.equal(target, ref);
+          update = data;
+        },
+      } as unknown as admin.firestore.Transaction;
+      if (retryClaim) {
+        await callback(tx);
+        // A competing invocation committed while this transaction was retried.
+        stored = {...stored, pushHandled: true};
+        update = {};
+      }
+      const claimed = await callback(tx);
+      stored = {...stored, ...update};
+      return claimed;
+    });
+    transactions = result.then(() => undefined);
+    return result;
+  });
+  const event = {
     params: {notificationId: "n1"},
-    data: {data: () => doc},
-  } as unknown as Parameters<typeof onNotificationCreated.run>[0]);
+    data: {data: () => doc, ref},
+  } as unknown as Parameters<typeof onNotificationCreated.run>[0];
+  await Promise.all(Array.from({length: deliveries}, () => onNotificationCreated.run(event)));
+  if (deliveries > 1) await onNotificationCreated.run(event);
   assert.equal(inbox.length, 0, "a push for an existing entry must not add another inbox entry");
   return sent;
 }
@@ -56,6 +90,30 @@ test("entries written by sendNotification are not pushed twice", async (t) => {
     data: {route: "announcement"},
     pushHandled: true,
   }, t);
+  assert.equal(sent.length, 0);
+});
+
+test("concurrent and redelivered create events attempt only one push", async (t) => {
+  const sent = await run({
+    modifier: "all",
+    notification: {title: "t", body: "b"},
+  }, t, {deliveries: 2});
+  assert.equal(sent.length, 1);
+});
+
+test("a transaction retried after another invocation claims the entry does not push", async (t) => {
+  const sent = await run({
+    modifier: "all",
+    notification: {title: "t", body: "b"},
+  }, t, {retryClaim: true});
+  assert.equal(sent.length, 0);
+});
+
+test("a direct inbox entry does not push to a logged-out artist", async (t) => {
+  const sent = await run({
+    modifier: "artist@example.com",
+    notification: {title: "Wallpaper Rejected", body: "Low quality"},
+  }, t, {loggedIn: false});
   assert.equal(sent.length, 0);
 });
 
