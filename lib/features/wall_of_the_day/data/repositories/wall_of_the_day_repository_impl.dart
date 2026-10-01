@@ -34,8 +34,8 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         FirebaseCollections.wallOfTheDay,
         'current',
         (data, _) => WallOfTheDayFirestorePointer.fromMap(data),
+        // Refresh the pointer while retaining Firestore's offline cache fallback.
         sourceTag: 'wotd.fetchToday.pointer',
-        preferCacheFirst: true,
       );
 
       if (pointer == null || pointer.wallDocumentId.isEmpty) {
