@@ -13,7 +13,7 @@ import android.os.VibratorManager
  *
  * Flutter maps its haptics to weak View constants (VIRTUAL_KEY, CLOCK_TICK) that many phones
  * play softly or not at all. This uses the crispest effect each device supports:
- * composition primitives (API 30+), then predefined effects (API 29), then short one-shots.
+ * composition primitives (API 31+), then predefined effects (API 29-30), then short one-shots.
  */
 class PrismHaptics(context: Context) {
 
@@ -24,7 +24,8 @@ class PrismHaptics(context: Context) {
         context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
     }
 
-    private val hasPrimitives: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+    // API 30 reports composition support, not support for each primitive, so start at API 31.
+    private val hasPrimitives: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
         vibrator?.areAllPrimitivesSupported(
             VibrationEffect.Composition.PRIMITIVE_CLICK,
             VibrationEffect.Composition.PRIMITIVE_TICK,
