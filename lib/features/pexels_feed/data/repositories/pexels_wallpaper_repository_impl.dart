@@ -59,7 +59,8 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     return _fetchPage(
       'color: $color',
       refresh: refresh,
-      buildUri: (page) => _searchUri(query: '${name.trim().toLowerCase()} wallpaper', page: page, color: '#$color'),
+      buildUri: (page) =>
+          _searchUri(query: '${name.trim().toLowerCase()} wallpaper'.trim(), page: page, color: '#$color'),
     );
   }
 

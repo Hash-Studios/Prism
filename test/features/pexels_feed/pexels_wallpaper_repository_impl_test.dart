@@ -30,4 +30,22 @@ void main() {
     expect(requested.single.queryParameters['query'], 'red wallpaper');
     expect(requested.single.queryParameters['color'], '#b71c1c');
   });
+
+  test('fetchColorFeed uses the existing wallpaper query when the colour name is blank', () async {
+    final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
+    final List<Uri> requested = <Uri>[];
+    final client = MockClient((request) async {
+      requested.add(request.url);
+      return http.Response('{"page":1,"per_page":80,"total_results":0,"photos":[]}', 200);
+    });
+
+    await http.runWithClient(() async {
+      for (final name in <String>['', '  ']) {
+        await repository.fetchColorFeed(hex: '#B71C1C', name: name, refresh: true);
+      }
+    }, () => client);
+
+    expect(requested.map((uri) => uri.queryParameters['query']), <String>['wallpaper', 'wallpaper']);
+    expect(requested.map((uri) => uri.queryParameters['color']), <String>['#b71c1c', '#b71c1c']);
+  });
 }
