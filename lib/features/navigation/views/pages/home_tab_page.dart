@@ -37,19 +37,16 @@ class _HomeTabPageState extends State<HomeTabPage> {
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
 
-  Future<void> _ensureDefaultTopicSubscriptions() async {
-    if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
-      final messaging = FirebaseMessaging.instance;
-      final bool recommendationsSubscribed = await subscribeToTopicSafely(
-        messaging,
-        'recommendations',
-        sourceTag: 'home_tab.init.recommendations',
-      );
-      final bool postsSubscribed = await subscribeToTopicSafely(messaging, 'posts', sourceTag: 'home_tab.init.posts');
-      if (recommendationsSubscribed && postsSubscribed) {
-        _settingsLocal.set('subscribedToRecommendations', true);
-      }
-    }
+  Future<void> _ensureDefaultTopicSubscriptions() {
+    final user = app_state.prismUser;
+    return syncPushTopics(
+      FirebaseMessaging.instance,
+      _settingsLocal,
+      userId: user.loggedIn ? user.id : '',
+      email: user.email,
+      premium: user.premium,
+      following: user.following,
+    );
   }
 
   void _showChangelogCheck() {

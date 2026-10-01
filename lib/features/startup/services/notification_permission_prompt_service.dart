@@ -15,28 +15,38 @@ class NotificationPermissionPromptService {
 
   static final NotificationPermissionPromptService instance = NotificationPermissionPromptService._();
 
-  static const String _promptedPrefKey = 'notificationPermissionPromptedV1';
+  static const String _legacyPromptedPrefKey = 'notificationPermissionPromptedV1';
+  static const String _promptedPrefKey = 'notificationPermissionPromptedV2';
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   /// Android reports denied until POST_NOTIFICATIONS is granted, even before the first ask.
+  /// iOS provisional access delivers quietly with no banner, so it can still ask for full access.
   @visibleForTesting
   static bool canAsk(AuthorizationStatus status, TargetPlatform platform) =>
       status == AuthorizationStatus.notDetermined ||
-      (status == AuthorizationStatus.denied && platform == TargetPlatform.android);
+      (status == AuthorizationStatus.denied && platform == TargetPlatform.android) ||
+      (status == AuthorizationStatus.provisional && platform == TargetPlatform.iOS);
+
+  /// V1 asked iOS only for provisional access. iOS checks again once to ask for full access.
+  @visibleForTesting
+  static bool alreadyPrompted({required bool v1, required bool v2, required TargetPlatform platform}) =>
+      v2 || (v1 && platform != TargetPlatform.iOS);
 
   Future<void> maybePromptAfterValueAction(BuildContext context, {required String sourceTag}) async {
     if (!_settings.isOpen || !context.mounted) {
       return;
     }
-    final bool alreadyPrompted = _settings.get<bool>(_promptedPrefKey, defaultValue: false);
-    if (alreadyPrompted) {
+    if (alreadyPrompted(
+      v1: _settings.get<bool>(_legacyPromptedPrefKey, defaultValue: false),
+      v2: _settings.get<bool>(_promptedPrefKey, defaultValue: false),
+      platform: defaultTargetPlatform,
+    )) {
       return;
     }
 
     final FirebaseMessaging messaging = FirebaseMessaging.instance;
     final NotificationSettings current = await messaging.getNotificationSettings();
-    if (current.authorizationStatus == AuthorizationStatus.authorized ||
-        current.authorizationStatus == AuthorizationStatus.provisional) {
+    if (current.authorizationStatus == AuthorizationStatus.authorized) {
       await _settings.set(_promptedPrefKey, true);
       final bool subscribedToWotd = await _subscribeAfterPermissionGrant(
         messaging,
@@ -60,7 +70,7 @@ class NotificationPermissionPromptService {
       return;
     }
 
-    final NotificationSettings requested = await messaging.requestPermission(provisional: true);
+    final NotificationSettings requested = await messaging.requestPermission();
     await _settings.set(_promptedPrefKey, true);
 
     final AuthorizationStatus status = requested.authorizationStatus;
