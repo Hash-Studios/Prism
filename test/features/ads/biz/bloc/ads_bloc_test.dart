@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -55,6 +57,29 @@ void main() {
     expect(await watchRewardedAd(bloc), isFalse);
   });
 
+  test('concurrent watches on one bloc show one ad and release the guard afterward', () async {
+    final Completer<Result<AdsEntity>> firstShow = Completer<Result<AdsEntity>>();
+    var showCalls = 0;
+    when(() => showUseCase(const NoParams())).thenAnswer((_) {
+      showCalls++;
+      return showCalls == 1 ? firstShow.future : Future.value(Result.success(earned));
+    });
+
+    final Future<bool> firstWatch = watchRewardedAd(bloc);
+    await pumpEventQueue();
+
+    expect(showCalls, 1);
+    expect(await watchRewardedAd(bloc), isFalse);
+    expect(showCalls, 1);
+
+    firstShow.complete(Result.success(earned));
+    expect(await firstWatch, isTrue);
+    await pumpEventQueue();
+
+    expect(await watchRewardedAd(bloc), isTrue);
+    expect(showCalls, 2);
+  });
+
   test('a failed load skips the show', () async {
     when(() => createUseCase(const NoParams())).thenAnswer(
       (_) async =>
@@ -63,5 +88,49 @@ void main() {
 
     expect(await watchRewardedAd(bloc), isFalse);
     verifyNever(() => showUseCase(const NoParams()));
+  });
+
+  test('a failed load releases the watch guard for a later attempt', () async {
+    var loadCalls = 0;
+    when(() => createUseCase(const NoParams())).thenAnswer((_) async {
+      loadCalls++;
+      return loadCalls == 1
+          ? Result.error(const ValidationFailure('Rewarded ad failed to load'))
+          : Result.success(loaded);
+    });
+    stubShow([Result.success(earned)]);
+
+    expect(await watchRewardedAd(bloc), isFalse);
+    expect(await watchRewardedAd(bloc), isTrue);
+    expect(loadCalls, 2);
+  });
+
+  test('a stale ad failure does not finish the next load before it completes', () async {
+    final Completer<Result<AdsEntity>> retryLoad = Completer<Result<AdsEntity>>();
+    var loadCalls = 0;
+    when(() => createUseCase(const NoParams())).thenAnswer((_) {
+      loadCalls++;
+      return loadCalls == 1
+          ? Future.value(
+              Result.success(const AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: false, adFailed: true)),
+            )
+          : retryLoad.future;
+    });
+    var showCalls = 0;
+    when(() => showUseCase(const NoParams())).thenAnswer((_) async {
+      showCalls++;
+      return Result.success(earned);
+    });
+
+    expect(await watchRewardedAd(bloc), isFalse);
+    final Future<bool> retry = watchRewardedAd(bloc);
+    await pumpEventQueue();
+
+    expect(loadCalls, 2);
+    expect(showCalls, 0);
+
+    retryLoad.complete(Result.success(loaded));
+    expect(await retry, isTrue);
+    expect(showCalls, 1);
   });
 }
