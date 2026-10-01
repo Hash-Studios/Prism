@@ -48,6 +48,7 @@ class PrismNativeInstrumentation : Instrumentation() {
         val bytes = ByteArrayOutputStream().also { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }.toByteArray()
         bitmap.recycle()
         fixture.writeBytes(bytes)
+        var failure: Throwable? = null
         try {
             val baseline = await<DownloadItemsResult> { api.listDownloads(it) }
             check(baseline.success) { "Could not read baseline downloads" }
@@ -106,12 +107,19 @@ class PrismNativeInstrumentation : Instrumentation() {
                 check(await<OperationResult> { api.clearDownloads(it) }.success) { "Could not clear downloads" }
                 check(await<DownloadItemsResult> { api.listDownloads(it) }.items.isEmpty()) { "Downloads remained after clear" }
             } else sendStatus(0, Bundle().apply { putString("stream", "Skipped clearDownloads: device had pre-existing downloads\n") })
+        } catch (error: Throwable) {
+            failure = error
+            throw error
         } finally {
-            api.close()
-            fixture.delete()
-            createdIds.addAll(downloadIds(basename, assertMime = false))
-            for (id in createdIds) {
-                context.contentResolver.delete(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id), null, null)
+            try {
+                api.close()
+                fixture.delete()
+                createdIds.addAll(downloadIds(basename, assertMime = false))
+                for (id in createdIds.intersect(imageIds())) {
+                    context.contentResolver.delete(ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id), null, null)
+                }
+            } catch (cleanup: Throwable) {
+                failure?.addSuppressed(cleanup) ?: throw cleanup
             }
         }
     }

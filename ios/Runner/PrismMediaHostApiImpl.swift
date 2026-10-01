@@ -51,7 +51,8 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
         do {
           try await savePhoto(PrismImageFile(
             url: staged, fileExtension: image.fileExtension,
-            uniformTypeIdentifier: image.uniformTypeIdentifier, isTemporary: false
+            uniformTypeIdentifier: image.uniformTypeIdentifier,
+            originalFilename: "\(request.filenameWithoutExtension).\(image.fileExtension)", isTemporary: false
           ))
           let destination = try await files.commit(staged: staged, filename: request.filenameWithoutExtension)
           completion(.success(OperationResult(success: true, message: destination.path)))
@@ -130,8 +131,9 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
     }
 
     do {
-      try await PHPhotoLibrary.shared().performChanges {
+      try await PHPhotoLibrary.shared().performChanges { @Sendable in
         let options = PHAssetResourceCreationOptions()
+        options.originalFilename = image.originalFilename
         if #available(iOS 26, *) {
           options.contentType = UTType(image.uniformTypeIdentifier)
         } else {
