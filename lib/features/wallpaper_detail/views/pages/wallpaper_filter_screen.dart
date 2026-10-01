@@ -738,6 +738,19 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         ),
         _adjustRow(
           theme,
+          icon: Icons.light_mode_outlined,
+          label: 'Lightness',
+          value: a.lightness * 100,
+          min: -100,
+          max: 100,
+          text: signed(a.lightness * 100),
+          enabled: _effectsAvailable,
+          onChanged: (v) => _adjustments = a.copyWith(lightness: v / 100),
+          onReset: () => _adjustments = a.copyWith(lightness: 0),
+        ),
+        if (!_effectsAvailable) Text('Lightness is unavailable on this device.', style: theme.textTheme.bodySmall),
+        _adjustRow(
+          theme,
           icon: JamIcons.brightness,
           label: 'Brightness',
           value: a.brightness * 100,
@@ -759,6 +772,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     required double min,
     required double max,
     required String text,
+    bool enabled = true,
     required ValueChanged<double> onChanged,
     required VoidCallback onReset,
   }) {
@@ -781,13 +795,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           ),
         ),
         Expanded(
-          child: Slider(
-            value: value.clamp(min, max),
-            min: min,
-            max: max,
-            activeColor: theme.colorScheme.error,
-            inactiveColor: theme.colorScheme.secondary.withValues(alpha: 0.2),
-            onChanged: (v) => setState(() => onChanged(v)),
+          child: Semantics(
+            label: label,
+            child: Slider(
+              value: value.clamp(min, max),
+              min: min,
+              max: max,
+              activeColor: theme.colorScheme.error,
+              inactiveColor: theme.colorScheme.secondary.withValues(alpha: 0.2),
+              semanticFormatterCallback: (v) => '${v.round()}',
+              onChanged: enabled ? (v) => setState(() => onChanged(v)) : null,
+            ),
           ),
         ),
         SizedBox(

@@ -73,6 +73,25 @@ void main() {
     expect(download.onPressed, isNull);
   });
 
+  testWidgets('unsupported renderers explain the disabled lightness control', (tester) async {
+    final directory = Directory.systemTemp.createTempSync('wallpaper_filter_test_');
+    final source = File('${directory.path}/source.png');
+    source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+    addTearDown(() => directory.deleteSync(recursive: true));
+
+    await tester.pumpWidget(_screenHost(source.path));
+    await _waitForReady(tester);
+    await tester.tap(find.text('Adjust'));
+    await tester.pumpAndSettle();
+
+    final row = find.ancestor(of: find.text('Lightness'), matching: find.byType(Row)).last;
+    final sliderFinder = find.descendant(of: row, matching: find.byType(Slider));
+    final slider = tester.widget<Slider>(sliderFinder);
+    expect(slider.onChanged, isNull);
+    expect(find.text('Lightness is unavailable on this device.'), findsOneWidget);
+    expect(tester.getSemantics(sliderFinder).label, contains('Lightness'));
+  }, skip: ui.ImageFilter.isShaderFilterSupported);
+
   testWidgets('locks edits through export and removes its temp file after native save completes', (tester) async {
     final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_test_');
     final File source = File('${directory.path}/source.png');
@@ -114,8 +133,13 @@ void main() {
     expect(tester.widget<IconButton>(downloadButton).onPressed, isNotNull);
     await tester.tap(find.text('Adjust'));
     await tester.pumpAndSettle();
-    final Finder slidersFinder = find.byType(Slider);
-    final Slider brightness = tester.widget<Slider>(slidersFinder.last);
+    await tester.scrollUntilVisible(
+      find.text('Brightness'),
+      100,
+      scrollable: find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first,
+    );
+    final brightnessRow = find.ancestor(of: find.text('Brightness'), matching: find.byType(Row)).last;
+    final Slider brightness = tester.widget<Slider>(find.descendant(of: brightnessRow, matching: find.byType(Slider)));
     brightness.onChanged!(20);
     await tester.pump();
 
