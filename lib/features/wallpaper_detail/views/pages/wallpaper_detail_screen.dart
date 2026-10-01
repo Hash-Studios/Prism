@@ -73,12 +73,16 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
   final File? localFile;
 
+  // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
   @override
-  State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
+  Widget wrappedRoute(BuildContext context) => BlocProvider<WallpaperDetailBloc>(
+    key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
+    create: (_) => getIt<WallpaperDetailBloc>(),
+    child: this,
+  );
 
   @override
-  Widget wrappedRoute(BuildContext context) =>
-      BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>(), child: this);
+  State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
 }
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
@@ -140,7 +144,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     if (colors == null || colors.isEmpty || !colors.contains(accent)) return;
 
     context.read<WallpaperDetailBloc>().add(const CycleAccentColor());
-    _setStatusBarIconBrightness(state.accent ?? Colors.white);
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
     if (!_accentToastShown) {
@@ -156,15 +159,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     _shake.shake();
   }
 
-  void _handleColorSelected(BuildContext context, WallpaperDetailLoaded state, Color color) {
+  void _handleColorSelected(BuildContext context, Color color) {
     context.read<WallpaperDetailBloc>().add(SelectAccentColor(color: color));
-    _setStatusBarIconBrightness(color);
-  }
-
-  void _setStatusBarIconBrightness(Color color) {
-    applyEdgeToEdgeOverlayStyle(
-      statusBarIconBrightness: onColor(color) == Colors.black ? Brightness.dark : Brightness.light,
-    );
   }
 
   @override
@@ -215,13 +211,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           _openRecorded = true;
           _recordTaste(TasteAction.open, state.entity);
         }
-        if (state is WallpaperDetailLoaded && state.colors != null && state.accent != null) {
-          _setStatusBarIconBrightness(state.accent!);
-        }
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
+          final entity = widget.entity;
           return switch (state) {
+            // Build the entity on the first frame too, so the hero flight shows the tapped wallpaper.
+            WallpaperDetailInitial() when entity != null => _buildLoadedState(
+              context,
+              WallpaperDetailLoaded(entity: entity),
+            ),
             WallpaperDetailInitial() || WallpaperDetailLoading() => _buildLoadingState(state),
             WallpaperDetailLoaded() => _buildLoadedState(context, state),
             WallpaperDetailError() => _buildErrorState(state),
@@ -314,26 +313,34 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildLoadedState(BuildContext context, WallpaperDetailLoaded state) {
     final paletteLoading = state.paletteLoading;
+    final backgroundColor = paletteLoading
+        ? Theme.of(context).primaryColor
+        : state.accent ?? Theme.of(context).scaffoldBackgroundColor;
 
-    return Scaffold(
-      backgroundColor: paletteLoading ? Theme.of(context).primaryColor : state.accent,
-      body: SlidingUpPanel(
-        onPanelOpened: () => _handlePanelOpened(context, state),
-        onPanelClosed: () => _handlePanelClosed(context, state),
-        // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(_panelTopRadius),
-          topRight: Radius.circular(_panelTopRadius),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: edgeToEdgeOverlayStyle(
+        statusBarIconBrightness: onColor(backgroundColor) == Colors.black ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: SlidingUpPanel(
+          onPanelOpened: () => _handlePanelOpened(context, state),
+          onPanelClosed: () => _handlePanelClosed(context, state),
+          // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(_panelTopRadius),
+            topRight: Radius.circular(_panelTopRadius),
+          ),
+          boxShadow: const [],
+          minHeight: MediaQuery.of(context).size.height / 20,
+          parallaxEnabled: true,
+          parallaxOffset: 0,
+          color: Colors.transparent,
+          maxHeight: MediaQuery.of(context).size.height * 0.43,
+          controller: panelController,
+          panel: _buildInfoPanel(context, state),
+          body: _buildImageBody(context, paletteLoading, state),
         ),
-        boxShadow: const [],
-        minHeight: MediaQuery.of(context).size.height / 20,
-        parallaxEnabled: true,
-        parallaxOffset: 0,
-        color: Colors.transparent,
-        maxHeight: MediaQuery.of(context).size.height * 0.43,
-        controller: panelController,
-        panel: _buildInfoPanel(context, state),
-        body: _buildImageBody(context, paletteLoading, state),
       ),
     );
   }
@@ -440,7 +447,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         isSelected: !state.colorChanged,
         onTap: () {
           context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
-          _setStatusBarIconBrightness(state.accent ?? Colors.white);
         },
         onLongPress: null,
       ),
@@ -451,7 +457,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           localFile: widget.localFile,
           color: color,
           isSelected: state.colorChanged && color == state.accent,
-          onTap: () => _handleColorSelected(context, state, color),
+          onTap: () => _handleColorSelected(context, color),
           onLongPress: () {
             HapticFeedback.vibrate();
             Clipboard.setData(ClipboardData(text: '#${color.rgbHex.toUpperCase()}')).then((_) => toasts.color(color));
