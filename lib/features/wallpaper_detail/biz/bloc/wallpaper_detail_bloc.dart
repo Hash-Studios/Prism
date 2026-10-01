@@ -51,6 +51,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     emit(WallpaperDetailLoading(thumbnailUrl: event.thumbnailUrl));
 
     final result = await _fetchWallpaper(wallId: event.wallId, source: event.source);
+    if (emit.isDone) return;
     final failure = result.failure;
     if (failure != null) {
       emit(WallpaperDetailError(message: failure.message));

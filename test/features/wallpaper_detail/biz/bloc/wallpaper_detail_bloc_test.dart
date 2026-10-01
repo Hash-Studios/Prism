@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:Prism/core/error/failure.dart';
@@ -40,14 +41,17 @@ const PrismWallpaper _wallpaper = PrismWallpaper(
 void main() {
   late _MockPrismRepository prism;
   late _MockPaletteRepository palette;
+  late _MockWallhavenRepository wallhaven;
+  late _MockRecordViews views;
   late WallpaperDetailBloc bloc;
 
   setUp(() {
     prism = _MockPrismRepository();
     palette = _MockPaletteRepository();
-    final views = _MockRecordViews();
+    wallhaven = _MockWallhavenRepository();
+    views = _MockRecordViews();
     when(() => views(any())).thenAnswer((_) async => Result.success('7'));
-    bloc = WallpaperDetailBloc(prism, _MockWallhavenRepository(), _MockPexelsRepository(), views, palette);
+    bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette);
     addTearDown(bloc.close);
   });
 
@@ -110,5 +114,94 @@ void main() {
     expect(state.paletteLoading, isFalse);
     expect(state.colors, isNull);
     expect(state.accent, isNull);
+  });
+
+  test('a fetch completing after close does not add a views event to the closed bloc', () async {
+    final fetch = Completer<Result<PrismWallpaper?>>();
+    when(() => prism.fetchById('abc')).thenAnswer((_) => fetch.future);
+
+    bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
+    await pumpEventQueue();
+    await bloc.close();
+    fetch.complete(Result.success(_wallpaper));
+    await pumpEventQueue();
+
+    expect(bloc.state, const WallpaperDetailLoading());
+  });
+
+  test('pending palette and views completions are ignored after close', () async {
+    final pendingPalette = Completer<Result<PaletteEntity>>();
+    final pendingViews = Completer<Result<String>>();
+    when(() => palette.generatePalette(any())).thenAnswer((_) => pendingPalette.future);
+    when(() => views(any())).thenAnswer((_) => pendingViews.future);
+
+    bloc.add(
+      const LoadFromEntity(
+        entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+      ),
+    );
+    await pumpEventQueue();
+    await bloc.close();
+    pendingPalette.complete(
+      Result.success(
+        const PaletteEntity(
+          imageUrl: 'https://example.com/abc-thumb.jpg',
+          dominantColorValue: 0xffff0000,
+          paletteColorValues: <int>[0xffff0000],
+        ),
+      ),
+    );
+    pendingViews.complete(Result.success('9'));
+    await pumpEventQueue();
+
+    expect(
+      bloc.state,
+      const WallpaperDetailLoaded(
+        entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+        viewsLoading: true,
+      ),
+    );
+  });
+
+  test('pending wallhaven enrichment is ignored after close', () async {
+    final pendingEnrichment = Completer<Result<WallhavenWallpaper?>>();
+    when(() => wallhaven.fetchById('wallhaven-1')).thenAnswer((_) => pendingEnrichment.future);
+    const wallpaper = WallhavenWallpaper(
+      core: WallpaperCore(
+        id: 'wallhaven-1',
+        source: WallpaperSource.wallhaven,
+        fullUrl: 'https://example.com/wallhaven.jpg',
+        thumbnailUrl: '',
+      ),
+    );
+
+    bloc.add(
+      const LoadFromEntity(
+        entity: WallhavenFeedItem(id: 'wallhaven-1', wallpaper: wallpaper),
+      ),
+    );
+    await pumpEventQueue();
+    await bloc.close();
+    pendingEnrichment.complete(
+      Result.success(
+        const WallhavenWallpaper(
+          core: WallpaperCore(
+            id: 'wallhaven-1',
+            source: WallpaperSource.wallhaven,
+            fullUrl: 'https://example.com/wallhaven.jpg',
+            thumbnailUrl: '',
+            authorName: 'Author',
+          ),
+        ),
+      ),
+    );
+    await pumpEventQueue();
+
+    expect(
+      bloc.state,
+      const WallpaperDetailLoaded(
+        entity: WallhavenFeedItem(id: 'wallhaven-1', wallpaper: wallpaper),
+      ),
+    );
   });
 }
