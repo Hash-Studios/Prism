@@ -16,6 +16,7 @@ import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/flutter_error_handler.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
@@ -215,6 +216,7 @@ Future<void> main() async {
       // DI is not configured yet, so read the settings store directly.
       final settings = SettingsLocalDataSource(PersistenceRuntime.store);
       final themeMode = settings.get<String>('themeMode', defaultValue: 'Dark');
+      PrismHaptics.enabled = settings.get<bool>(PrismHaptics.settingsKey, defaultValue: true);
       final categories = settings.get<int>('WHcategories', defaultValue: 100);
       // App Store review: no sketchy content on iOS, regardless of the stored pref.
       final purity = defaultTargetPlatform == TargetPlatform.iOS
@@ -673,7 +675,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       case SetupLinkIntent():
         // Setups were removed; old shared setup links open Home.
         _appRouter.navigate(const HomeTabRoute());
-        toasts.error('Home screen setups are no longer available.');
+        toasts.error('Home screen setups are no longer available.', haptic: false);
         unawaited(
           analytics.track(
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
@@ -696,7 +698,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         if (app_state.prismUser.loggedIn) {
           unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: action.inviterId));
         } else {
-          toasts.success('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.');
+          toasts.success('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.', haptic: false);
         }
         unawaited(
           analytics.track(

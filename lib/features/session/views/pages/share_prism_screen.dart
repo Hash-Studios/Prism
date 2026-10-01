@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -115,6 +116,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                       toasts.error("Sign in to generate unique referral link!");
                     }
                   : () async {
+                      PrismHaptics.tap();
                       unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
                       try {
                         await ShareService.shareText(text: link, context: context);

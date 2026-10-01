@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -56,6 +57,7 @@ class RewardsSpendSection extends StatelessWidget {
         label: 'Streak freeze',
         price: '${CoinPolicy.streakFreezeCost}',
         onTap: onStreakFreeze,
+        haptic: false,
       ),
       _SpendTile(
         icon: Icons.download_rounded,
@@ -107,6 +109,7 @@ class RewardsSpendSection extends StatelessWidget {
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () {
+                  PrismHaptics.tap();
                   Navigator.of(sheetContext).pop();
                   PaywallOrchestrator.instance.presentOrRequireSignIn(
                     context,
@@ -126,21 +129,33 @@ class RewardsSpendSection extends StatelessWidget {
 }
 
 class _SpendTile extends StatelessWidget {
-  const _SpendTile({required this.icon, required this.label, required this.price, required this.onTap});
+  const _SpendTile({
+    required this.icon,
+    required this.label,
+    required this.price,
+    required this.onTap,
+    this.haptic = true,
+  });
 
   final IconData icon;
   final String label;
   final String price;
   final VoidCallback? onTap;
+  final bool haptic;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    void handleTap() {
+      if (haptic) PrismHaptics.tap();
+      onTap?.call();
+    }
+
     return Semantics(
       button: onTap != null,
       label: '$label, $price coins',
       excludeSemantics: true,
-      onTap: onTap,
+      onTap: onTap == null ? null : handleTap,
       child: PressScale(
         child: Material(
           color: scheme.surfaceContainerHigh,
@@ -150,7 +165,7 @@ class _SpendTile extends StatelessWidget {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: onTap,
+            onTap: onTap == null ? null : handleTap,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 104),
               child: Padding(

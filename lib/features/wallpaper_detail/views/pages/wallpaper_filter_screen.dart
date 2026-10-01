@@ -6,6 +6,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -97,7 +98,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   bool get _editorReady => !_loadFailed && _previewLoaded && _previewPixelShortSide != null;
 
   void _toggleFilter(WallpaperFilter filter) {
-    HapticFeedback.selectionClick();
+    PrismHaptics.selection();
     setState(() {
       if (!_stack.remove(filter)) {
         _stack.add(filter);
@@ -206,7 +207,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
 
     if (!app_state.prismUser.loggedIn) {
-      toasts.success('Sign in to use premium filters with coins.');
+      toasts.error('Sign in to use premium filters with coins.', haptic: false);
       googleSignInPopUp(context, () {
         unawaited(_startActionWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
       });
@@ -288,7 +289,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<bool> _handleDownloadAction() async {
     File? imageFile;
     try {
-      toasts.success("Processing Wallpaper");
+      toasts.success("Processing Wallpaper", haptic: false);
       imageFile = await saveFilteredImage();
       if (!mounted) {
         return false;
@@ -325,7 +326,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<bool> _handleSetAction() async {
     File? imageFile;
     try {
-      toasts.success("Processing Wallpaper");
+      toasts.success("Processing Wallpaper", haptic: false);
       imageFile = await saveFilteredImage();
     } catch (e) {
       logger.e('Unexpected filter render failure', error: e);
@@ -343,17 +344,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         builder: (context) => SetOptionsPanel(
           onTap1: () {
             if (!mounted) return;
-            HapticFeedback.vibrate();
+            PrismHaptics.tap();
             Navigator.of(context).pop(WallpaperTarget.home);
           },
           onTap2: () {
             if (!mounted) return;
-            HapticFeedback.vibrate();
+            PrismHaptics.tap();
             Navigator.of(context).pop(WallpaperTarget.lock);
           },
           onTap3: () {
             if (!mounted) return;
-            HapticFeedback.vibrate();
+            PrismHaptics.tap();
             Navigator.of(context).pop(WallpaperTarget.both);
           },
         ),
@@ -405,12 +406,15 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                       icon: const Icon(JamIcons.download),
                       onPressed: !_editorReady
                           ? null
-                          : () => unawaited(
-                              _startActionWithPremiumFilterGate(
-                                _handleDownloadAction,
-                                sourceTag: 'coins.filter.download',
-                              ),
-                            ),
+                          : () {
+                              PrismHaptics.tap();
+                              unawaited(
+                                _startActionWithPremiumFilterGate(
+                                  _handleDownloadAction,
+                                  sourceTag: 'coins.filter.download',
+                                ),
+                              );
+                            },
                     ),
             ),
             if (!hideSetWallpaperUi)
@@ -419,8 +423,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                 icon: const Icon(JamIcons.check),
                 onPressed: !_editorReady || _busy
                     ? null
-                    : () =>
-                          unawaited(_startActionWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
+                    : () {
+                        PrismHaptics.tap();
+                        unawaited(_startActionWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set'));
+                      },
               ),
           ],
         ),
@@ -562,6 +568,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           child: Column(
             children: [
               TabBar(
+                onTap: (_) => PrismHaptics.selection(),
                 indicatorColor: accent,
                 labelColor: accent,
                 unselectedLabelColor: muted,
@@ -587,7 +594,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         name: 'None',
         selected: _stack.isEmpty,
         order: 0,
-        onTap: () => setState(_stack.clear),
+        onTap: () {
+          PrismHaptics.selection();
+          setState(_stack.clear);
+        },
         thumb: _thumb(),
       ),
       for (final ColorPreset preset in colorPresets)
@@ -788,6 +798,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
             activeColor: theme.colorScheme.error,
             inactiveColor: theme.colorScheme.secondary.withValues(alpha: 0.2),
             onChanged: (v) => setState(() => onChanged(v)),
+            onChangeEnd: (_) => PrismHaptics.selection(),
           ),
         ),
         SizedBox(

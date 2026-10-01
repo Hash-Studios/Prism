@@ -5,6 +5,7 @@ import 'dart:math' show min;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -143,11 +144,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
     if (colors == null || colors.isEmpty || !colors.contains(accent)) return;
 
+    PrismHaptics.selection();
     context.read<WallpaperDetailBloc>().add(const CycleAccentColor());
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
     if (!_accentToastShown) {
-      toasts.success('Long press to reset');
+      toasts.success('Long press to reset', haptic: false);
       _accentToastShown = true;
     }
   }
@@ -155,7 +157,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   void _handleAccentLongPress(BuildContext context, WallpaperDetailLoaded state) {
     context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
     _trackAction(state, AnalyticsActionValue.paletteResetLongPressed);
-    HapticFeedback.vibrate();
+    PrismHaptics.impact();
     _shake.shake();
   }
 
@@ -459,7 +461,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           isSelected: state.colorChanged && color == state.accent,
           onTap: () => _handleColorSelected(context, color),
           onLongPress: () {
-            HapticFeedback.vibrate();
+            PrismHaptics.impact();
             Clipboard.setData(ClipboardData(text: '#${color.rgbHex.toUpperCase()}')).then((_) => toasts.color(color));
           },
         ),
@@ -759,7 +761,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         : Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => context.router.push(ProfileRoute(profileIdentifier: profileIdentifier)),
+              onTap: () {
+                PrismHaptics.tap();
+                context.router.push(ProfileRoute(profileIdentifier: profileIdentifier));
+              },
               borderRadius: BorderRadius.circular(8),
               child: child,
             ),
@@ -808,7 +813,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     onTap: () async {
                       final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
                       if (!ok && context.mounted) {
-                        toasts.success('Could not open profile');
+                        toasts.error('Could not open profile');
                       }
                     },
                     child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: label),
@@ -901,12 +906,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           child: CircularMenuButton(
             label: 'Report',
             isLoading: false,
-            onTap: () => showContentReportSheet(
-              context,
-              contentType: 'wall',
-              targetFirestoreDocId: reportWallDocId,
-              subtitle: entity.id,
-            ),
+            onTap: () {
+              showContentReportSheet(
+                context,
+                contentType: 'wall',
+                targetFirestoreDocId: reportWallDocId,
+                subtitle: entity.id,
+              );
+            },
             child: Icon(JamIcons.flag, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
         ),
@@ -938,7 +945,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 },
                 onLongPress: () => _handleAccentLongPress(context, state),
                 onTap: () {
-                  HapticFeedback.vibrate();
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },

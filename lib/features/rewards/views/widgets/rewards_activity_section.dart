@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -81,7 +82,13 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
       body = Row(
         children: <Widget>[
           Expanded(child: Text("Couldn't load activity.", style: PrismTextStyles.body(context))),
-          TextButton(onPressed: _load, child: const Text('Try again')),
+          TextButton(
+            onPressed: () {
+              PrismHaptics.tap();
+              _load();
+            },
+            child: const Text('Try again'),
+          ),
         ],
       );
     } else if (_items.isEmpty) {

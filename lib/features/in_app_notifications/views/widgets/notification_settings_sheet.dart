@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/notifications/fcm_token_service.dart';
@@ -46,6 +47,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   /// Runs [change] for a signed-in user; otherwise reports the blocked action.
   Future<void> _whenSignedIn(Future<void> Function() change) async {
     if (app_state.prismUser.loggedIn) {
+      PrismHaptics.selection();
       await change();
       return;
     }
@@ -120,14 +122,20 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               title: 'Prism updates',
               subtitle: 'Giveaways, contests, and news inside the app.',
               value: _inApp,
-              onChanged: _setInApp,
+              onChanged: (bool value) {
+                PrismHaptics.selection();
+                _setInApp(value);
+              },
             ),
             _toggle(
               icon: JamIcons.lightbulb,
               title: 'Recommendations',
               subtitle: 'Tips and wallpaper picks from Prism.',
               value: _recommendations,
-              onChanged: _setRecommendations,
+              onChanged: (bool value) {
+                PrismHaptics.selection();
+                _setRecommendations(value);
+              },
             ),
             _toggle(
               icon: Icons.local_fire_department_rounded,

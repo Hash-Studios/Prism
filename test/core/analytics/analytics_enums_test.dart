@@ -74,7 +74,7 @@ void main() {
         'streak_freeze',
       ],
       'AiChargeMode': <String>['free_trial', 'pro_included', 'coin_spend', 'insufficient'],
-      'SettingValue': <String>['anime_wallpapers', 'sketchy_wallpapers', 'recommendations_notifications'],
+      'SettingValue': <String>['anime_wallpapers', 'sketchy_wallpapers', 'recommendations_notifications', 'haptics'],
       'AnalyticsActionValue': <String>[
         'buy_premium_tapped',
         'clear_cache_tapped',

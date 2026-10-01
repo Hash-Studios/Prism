@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
@@ -82,7 +83,10 @@ class _TagsRow extends StatelessWidget {
                 color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.secondary,
               ),
             ),
-            onPressed: () => onTagPressed(tag),
+            onPressed: () {
+              PrismHaptics.selection();
+              onTagPressed(tag);
+            },
           );
         },
       ),
@@ -98,7 +102,10 @@ class _FindCreatorsRow extends StatelessWidget {
     return Semantics(
       button: true,
       child: InkWell(
-        onTap: () => context.router.push(const UserSearchRoute()),
+        onTap: () {
+          PrismHaptics.tap();
+          context.router.push(const UserSearchRoute());
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
@@ -190,6 +197,7 @@ class _TrendingList extends StatelessWidget {
             label: wallpaperSemanticLabel(wall.core.authorName),
             child: GestureDetector(
               onTap: () {
+                PrismHaptics.tap();
                 context.router.push(
                   WallpaperDetailRoute(
                     entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
@@ -270,6 +278,7 @@ class _CategorySection extends StatelessWidget {
                 button: true,
                 child: GestureDetector(
                   onTap: () {
+                    PrismHaptics.tap();
                     context.router.push(
                       CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(cat.name)}'),
                     );
@@ -363,7 +372,10 @@ class _ColorSection extends StatelessWidget {
               button: true,
               label: swatch.name,
               child: GestureDetector(
-                onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex, name: swatch.name)),
+                onTap: () {
+                  PrismHaptics.tap();
+                  context.router.push(ColorRoute(hexColor: swatch.color.rgbHex, name: swatch.name));
+                },
                 child: Container(decoration: BoxDecoration(color: swatch.color)),
               ),
             );

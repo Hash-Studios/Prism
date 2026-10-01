@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
@@ -107,7 +108,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         return RefreshIndicator(
           backgroundColor: Theme.of(context).primaryColor,
           key: refreshFavKey,
-          onRefresh: refreshList,
+          onRefresh: () {
+            PrismHaptics.impact();
+            return refreshList();
+          },
           child: !loaded
               ? const LoadingCards()
               : walls.isEmpty
@@ -169,7 +173,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                               child: InkWell(
                                 splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                 highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                onTap: () => _openWall(walls, index),
+                                onTap: () {
+                                  PrismHaptics.tap();
+                                  _openWall(walls, index);
+                                },
                               ),
                             ),
                           ],

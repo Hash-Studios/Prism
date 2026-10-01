@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -64,7 +65,10 @@ class _ProfileCompletenessNudgeSheet extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(ProfileCompletenessNudgeAction.completeNow),
+              onPressed: () {
+                PrismHaptics.tap();
+                Navigator.of(context).pop(ProfileCompletenessNudgeAction.completeNow);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: PrismColors.brandPink,
                 foregroundColor: PrismColors.onPrimary,
