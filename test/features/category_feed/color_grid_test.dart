@@ -39,12 +39,14 @@ void main() {
   testWidgets('keeps the last wallpaper and appends See more', (tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     when(
-      () => repository.fetchColorFeed(hex: 'ff0000', refresh: true),
+      () => repository.fetchColorFeed(hex: 'ff0000', name: 'Red', refresh: true),
     ).thenAnswer((_) async => Result.success(<PexelsWallpaper>[_wallpaper('wallpaper-1')]));
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(body: ColorGrid(hexColor: 'ff0000')),
+        home: Scaffold(
+          body: ColorGrid(hexColor: 'ff0000', name: 'Red'),
+        ),
       ),
     );
     await tester.pump();
@@ -56,11 +58,13 @@ void main() {
 
   testWidgets('hides See more after empty results', (tester) async {
     final Completer<Result<List<PexelsWallpaper>>> pending = Completer<Result<List<PexelsWallpaper>>>();
-    when(() => repository.fetchColorFeed(hex: 'ff0000', refresh: true)).thenAnswer((_) => pending.future);
+    when(() => repository.fetchColorFeed(hex: 'ff0000', name: 'Red', refresh: true)).thenAnswer((_) => pending.future);
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(body: ColorGrid(hexColor: 'ff0000')),
+        home: Scaffold(
+          body: ColorGrid(hexColor: 'ff0000', name: 'Red'),
+        ),
       ),
     );
     expect(find.byType(LoadingCards), findsOneWidget);
