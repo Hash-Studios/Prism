@@ -23,6 +23,8 @@
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/
+/packages/cloud_functions/ios/cloud_functions/.build/
+/packages/cloud_functions/macos/cloud_functions/.build/
 .fvm/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -30,6 +32,8 @@
 .pub-cache/
 .pub/
 /build/
+/android/build/
+/android/.kotlin/
 /keys/
 android/key.properties
 keytool.exe

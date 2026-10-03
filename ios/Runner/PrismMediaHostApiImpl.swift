@@ -1,340 +1,148 @@
 import Foundation
 import Photos
+import UniformTypeIdentifiers
 
-final class PrismMediaHostApiImpl: PrismMediaHostApi {
-  private let workerQueue = DispatchQueue(label: "com.hash.prism.media-api", qos: .userInitiated)
-  private let savePhoto: (Data) throws -> Void
+@MainActor
+final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
+  private let files: PrismMediaFiles
+  private let savePhoto: @MainActor (PrismImageFile) async throws -> Void
+  private var downloadsTail: Task<Void, Never>?
+  private var downloadQueueGeneration: UInt64 = 0
 
-  init(savePhoto: ((Data) throws -> Void)? = nil) {
-    self.savePhoto = savePhoto ?? PrismMediaHostApiImpl.saveToPhotoLibrary
+  init(
+    files: PrismMediaFiles = PrismMediaFiles(),
+    savePhoto: @escaping @MainActor (PrismImageFile) async throws -> Void = PrismMediaHostApiImpl.saveToPhotoLibrary
+  ) {
+    self.files = files
+    self.savePhoto = savePhoto
   }
 
   func saveMedia(request: SaveMediaRequest, completion: @escaping (Result<OperationResult, Error>) -> Void) {
-    runInBackground(completion) {
+    Task {
       do {
-        let data = try self.resolveImageData(link: request.link, isLocalFile: request.isLocalFile)
-        try self.savePhoto(data)
-        return OperationResult(success: true, errorCode: nil, message: nil)
-      } catch let error as PrismMediaSaveError {
-        return OperationResult(success: false, errorCode: error.code, message: error.message)
+        let image = try await files.resolve(link: request.link, isLocalFile: request.isLocalFile)
+        do {
+          try await savePhoto(image)
+          await files.removeTemporarySource(image)
+          completion(.success(OperationResult(success: true)))
+        } catch {
+          await files.removeTemporarySource(image)
+          throw error
+        }
       } catch {
-        return OperationResult(success: false, errorCode: "EXCEPTION", message: error.localizedDescription)
+        completion(.success(failure(error)))
       }
     }
   }
 
   func enqueueDownload(request: DownloadRequest, completion: @escaping (Result<OperationResult, Error>) -> Void) {
-    runInBackground(completion) {
+    queueDownloadOperation { [self] in
       do {
-        let data = try self.resolveImageData(link: request.link, isLocalFile: false)
-        try self.savePhoto(data)
-        let ext = URL(string: request.link)?.pathExtension.lowercased() ?? ""
-        let resolvedExt = ["jpg", "jpeg", "png", "webp", "gif"].contains(ext) ? ext : "jpg"
-        let dir = try self.downloadsDirectory()
-        let filename = "\(request.filenameWithoutExtension).\(resolvedExt)"
-        let dest = dir.appendingPathComponent(filename)
-        try data.write(to: dest, options: .atomic)
-        return OperationResult(success: true, errorCode: nil, message: dest.path)
-      } catch let error as PrismMediaSaveError {
-        return OperationResult(success: false, errorCode: error.code, message: error.message)
+        try PrismMediaFiles.validateFilename(request.filenameWithoutExtension)
+        let image = try await files.resolve(link: request.link, isLocalFile: false)
+        let staged: URL
+        do {
+          staged = try await files.stage(image: image, filename: request.filenameWithoutExtension)
+          await files.removeTemporarySource(image)
+        } catch {
+          await files.removeTemporarySource(image)
+          throw error
+        }
+        do {
+          try await savePhoto(PrismImageFile(
+            url: staged, fileExtension: image.fileExtension,
+            uniformTypeIdentifier: image.uniformTypeIdentifier,
+            originalFilename: "\(request.filenameWithoutExtension).\(image.fileExtension)", isTemporary: false
+          ))
+          let destination = try await files.commit(staged: staged, filename: request.filenameWithoutExtension)
+          completion(.success(OperationResult(success: true, message: destination.path)))
+        } catch {
+          await files.discard(staged: staged)
+          throw error
+        }
       } catch {
-        return OperationResult(success: false, errorCode: "EXCEPTION", message: error.localizedDescription)
+        completion(.success(failure(error)))
       }
     }
   }
 
   func listDownloads(completion: @escaping (Result<DownloadItemsResult, Error>) -> Void) {
-    runInBackground(completion) { self.listDownloadsNow() }
-  }
-
-  private func listDownloadsNow() -> DownloadItemsResult {
-    do {
-      let dir = try downloadsDirectory()
-      let contents = try FileManager.default.contentsOfDirectory(
-        at: dir,
-        includingPropertiesForKeys: [.isRegularFileKey],
-        options: .skipsHiddenFiles
-      )
-      let paths = contents
-        .filter { (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true }
-        .map { $0.path }
-      return DownloadItemsResult(success: true, items: paths, errorCode: nil, message: nil)
-    } catch {
-      return DownloadItemsResult(success: false, items: [], errorCode: "LIST_FAILED", message: error.localizedDescription)
+    queueDownloadOperation { [self] in
+      do {
+        let paths = try await files.list().map(\.path)
+        completion(.success(DownloadItemsResult(success: true, items: paths)))
+      } catch {
+        completion(.success(DownloadItemsResult(
+          success: false, items: [], errorCode: "LIST_FAILED", message: error.localizedDescription
+        )))
+      }
     }
   }
 
   func clearDownloads(completion: @escaping (Result<OperationResult, Error>) -> Void) {
-    runInBackground(completion) { self.clearDownloadsNow() }
-  }
-
-  private func clearDownloadsNow() -> OperationResult {
-    do {
-      let dir = try downloadsDirectory()
-      let contents = try FileManager.default.contentsOfDirectory(
-        at: dir,
-        includingPropertiesForKeys: nil,
-        options: .skipsHiddenFiles
-      )
-      guard !contents.isEmpty else {
-        return OperationResult(success: false, errorCode: "NO_DOWNLOADS", message: "No downloads found.")
-      }
-      for file in contents {
-        try FileManager.default.removeItem(at: file)
-      }
-      return OperationResult(success: true, errorCode: nil, message: nil)
-    } catch {
-      return OperationResult(success: false, errorCode: "CLEAR_FAILED", message: error.localizedDescription)
-    }
-  }
-
-  private func downloadsDirectory() throws -> URL {
-    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-    let dir = docs.appendingPathComponent("PrismDownloads", isDirectory: true)
-    if !FileManager.default.fileExists(atPath: dir.path) {
-      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-    }
-    return dir
-  }
-
-  private func runInBackground<T>(
-    _ completion: @escaping (Result<T, Error>) -> Void,
-    _ task: @escaping () -> T
-  ) {
-    workerQueue.async {
-      let result = task()
-      DispatchQueue.main.async { completion(.success(result)) }
-    }
-  }
-
-  private func resolveImageData(link: String, isLocalFile: Bool) throws -> Data {
-    if isLocalFile || isLikelyLocalPath(link) {
-      let normalizedPath = normalizeLocalPath(link)
-      guard FileManager.default.fileExists(atPath: normalizedPath) else {
-        throw PrismMediaSaveError.localFileMissing(path: normalizedPath)
-      }
+    queueDownloadOperation { [self] in
       do {
-        return try Data(contentsOf: URL(fileURLWithPath: normalizedPath))
+        let removed = try await files.clear()
+        completion(.success(removed
+          ? OperationResult(success: true)
+          : OperationResult(success: false, errorCode: "NO_DOWNLOADS", message: "No downloads found.")))
       } catch {
-        throw PrismMediaSaveError.localReadFailed(path: normalizedPath, underlying: error)
+        completion(.success(OperationResult(
+          success: false, errorCode: "CLEAR_FAILED", message: error.localizedDescription
+        )))
       }
     }
-
-    guard let url = URL(string: link), let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else {
-      throw PrismMediaSaveError.invalidUrl(link: link)
-    }
-
-    let config = URLSessionConfiguration.ephemeral
-    config.timeoutIntervalForRequest = 30
-    config.timeoutIntervalForResource = 30
-    let session = URLSession(configuration: config)
-
-    let semaphore = DispatchSemaphore(value: 0)
-    var fetchedData: Data?
-    var fetchError: Error?
-    var statusCode: Int?
-
-    let task = session.dataTask(with: url) { data, response, error in
-      fetchedData = data
-      fetchError = error
-      statusCode = (response as? HTTPURLResponse)?.statusCode
-      semaphore.signal()
-    }
-    task.resume()
-    semaphore.wait()
-    session.invalidateAndCancel()
-
-    if let fetchError = fetchError {
-      throw PrismMediaSaveError.networkFailed(underlying: fetchError)
-    }
-
-    if let statusCode = statusCode, !(200...299).contains(statusCode) {
-      throw PrismMediaSaveError.httpStatus(code: statusCode)
-    }
-
-    guard let data = fetchedData, !data.isEmpty else {
-      throw PrismMediaSaveError.emptyPayload
-    }
-
-    return data
   }
 
-  private static func saveToPhotoLibrary(data: Data) throws {
-    try ensurePhotoPermission()
+  private func queueDownloadOperation(_ operation: @escaping @MainActor () async -> Void) {
+    let previous = downloadsTail
+    downloadQueueGeneration &+= 1
+    let generation = downloadQueueGeneration
+    downloadsTail = Task {
+      await previous?.value
+      await operation()
+      if generation == downloadQueueGeneration { downloadsTail = nil }
+    }
+  }
 
-    let semaphore = DispatchSemaphore(value: 0)
-    var saveError: Error?
-
-    PHPhotoLibrary.shared().performChanges(
-      {
-        let request = PHAssetCreationRequest.forAsset()
-        request.addResource(with: .photo, data: data, options: nil)
-      },
-      completionHandler: { success, error in
-        if !success {
-          saveError = error ?? PrismMediaSaveError.saveFailed
-        }
-        semaphore.signal()
-      }
+  private func failure(_ error: Error) -> OperationResult {
+    let mediaError = error as? PrismMediaError
+    return OperationResult(
+      success: false, errorCode: mediaError?.code ?? "EXCEPTION", message: error.localizedDescription
     )
-
-    semaphore.wait()
-
-    if let saveError = saveError {
-      throw PrismMediaSaveError.photoLibraryWriteFailed(underlying: saveError)
-    }
   }
 
-  private static func ensurePhotoPermission() throws {
-    if #available(iOS 14, *) {
-      let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
-      switch status {
-      case .authorized, .limited:
-        return
-      case .denied:
-        throw PrismMediaSaveError.permissionDenied
-      case .restricted:
-        throw PrismMediaSaveError.permissionRestricted
-      case .notDetermined:
-        let semaphore = DispatchSemaphore(value: 0)
-        var resolvedStatus: PHAuthorizationStatus = .notDetermined
-        PHPhotoLibrary.requestAuthorization(for: .addOnly) { newStatus in
-          resolvedStatus = newStatus
-          semaphore.signal()
+  private static func saveToPhotoLibrary(image: PrismImageFile) async throws {
+    var status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+    if status == .notDetermined {
+      status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+    }
+    switch status {
+    case .authorized, .limited:
+      break
+    case .denied:
+      throw PrismMediaError.photoPermissionDenied
+    case .restricted:
+      throw PrismMediaError.photoPermissionRestricted
+    case .notDetermined:
+      throw PrismMediaError.photoPermissionUnknown
+    @unknown default:
+      throw PrismMediaError.photoPermissionUnknown
+    }
+
+    do {
+      try await PHPhotoLibrary.shared().performChanges { @Sendable in
+        let options = PHAssetResourceCreationOptions()
+        options.originalFilename = image.originalFilename
+        if #available(iOS 26, *) {
+          options.contentType = UTType(image.uniformTypeIdentifier)
+        } else {
+          options.uniformTypeIdentifier = image.uniformTypeIdentifier
         }
-        semaphore.wait()
-        switch resolvedStatus {
-        case .authorized, .limited:
-          return
-        case .denied:
-          throw PrismMediaSaveError.permissionDenied
-        case .restricted:
-          throw PrismMediaSaveError.permissionRestricted
-        case .notDetermined:
-          throw PrismMediaSaveError.permissionUnknown
-        @unknown default:
-          throw PrismMediaSaveError.permissionUnknown
-        }
-      @unknown default:
-        throw PrismMediaSaveError.permissionUnknown
+        PHAssetCreationRequest.forAsset().addResource(with: .photo, fileURL: image.url, options: options)
       }
-    } else {
-      let status = PHPhotoLibrary.authorizationStatus()
-      switch status {
-      case .authorized:
-        return
-      case .denied:
-        throw PrismMediaSaveError.permissionDenied
-      case .restricted:
-        throw PrismMediaSaveError.permissionRestricted
-      case .notDetermined:
-        let semaphore = DispatchSemaphore(value: 0)
-        var resolvedStatus: PHAuthorizationStatus = .notDetermined
-        PHPhotoLibrary.requestAuthorization { newStatus in
-          resolvedStatus = newStatus
-          semaphore.signal()
-        }
-        semaphore.wait()
-        if resolvedStatus == .authorized {
-          return
-        }
-        if resolvedStatus == .denied {
-          throw PrismMediaSaveError.permissionDenied
-        }
-        if resolvedStatus == .restricted {
-          throw PrismMediaSaveError.permissionRestricted
-        }
-        throw PrismMediaSaveError.permissionUnknown
-      case .limited:
-        return
-      @unknown default:
-        throw PrismMediaSaveError.permissionUnknown
-      }
-    }
-  }
-
-  private func isLikelyLocalPath(_ link: String) -> Bool {
-    if link.hasPrefix("/") || link.hasPrefix("file://") {
-      return true
-    }
-    if URL(string: link)?.scheme == nil {
-      return true
-    }
-    return false
-  }
-
-  private func normalizeLocalPath(_ link: String) -> String {
-    if link.hasPrefix("file://"), let url = URL(string: link) {
-      return url.path
-    }
-    return link
-  }
-}
-
-private enum PrismMediaSaveError: Error {
-  case invalidUrl(link: String)
-  case networkFailed(underlying: Error)
-  case httpStatus(code: Int)
-  case emptyPayload
-  case localFileMissing(path: String)
-  case localReadFailed(path: String, underlying: Error)
-  case permissionDenied
-  case permissionRestricted
-  case permissionUnknown
-  case saveFailed
-  case photoLibraryWriteFailed(underlying: Error)
-
-  var code: String {
-    switch self {
-    case .invalidUrl:
-      return "INVALID_URL"
-    case .networkFailed:
-      return "NETWORK_FAILED"
-    case .httpStatus:
-      return "HTTP_STATUS_ERROR"
-    case .emptyPayload:
-      return "EMPTY_PAYLOAD"
-    case .localFileMissing:
-      return "LOCAL_FILE_MISSING"
-    case .localReadFailed:
-      return "LOCAL_READ_FAILED"
-    case .permissionDenied:
-      return "PHOTO_PERMISSION_DENIED"
-    case .permissionRestricted:
-      return "PHOTO_PERMISSION_RESTRICTED"
-    case .permissionUnknown:
-      return "PHOTO_PERMISSION_UNKNOWN"
-    case .saveFailed:
-      return "PHOTO_SAVE_FAILED"
-    case .photoLibraryWriteFailed:
-      return "PHOTO_LIBRARY_WRITE_FAILED"
-    }
-  }
-
-  var message: String {
-    switch self {
-    case .invalidUrl(let link):
-      return "Invalid media URL: \(link)"
-    case .networkFailed(let underlying):
-      return "Network download failed: \(underlying.localizedDescription)"
-    case .httpStatus(let code):
-      return "Download failed with HTTP status \(code)"
-    case .emptyPayload:
-      return "Downloaded file is empty."
-    case .localFileMissing(let path):
-      return "Local file not found at path: \(path)"
-    case .localReadFailed(let path, let underlying):
-      return "Failed reading local file \(path): \(underlying.localizedDescription)"
-    case .permissionDenied:
-      return "Allow Prism to add photos in Settings to save wallpapers."
-    case .permissionRestricted:
-      return "Photo Library permission restricted."
-    case .permissionUnknown:
-      return "Photo Library permission not determined."
-    case .saveFailed:
-      return "Failed to save media to Photos."
-    case .photoLibraryWriteFailed(let underlying):
-      return "Saving to Photos failed: \(underlying.localizedDescription)"
+    } catch {
+      throw PrismMediaError.photoWriteFailed(error.localizedDescription)
     }
   }
 }

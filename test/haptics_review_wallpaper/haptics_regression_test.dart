@@ -53,7 +53,7 @@ class _SignedOutFirebaseAuthPlatform extends FirebaseAuthPlatform {
   FirebaseAuthPlatform delegateFor({required FirebaseApp app}) => this;
 
   @override
-  FirebaseAuthPlatform setInitialValues({PigeonUserDetails? currentUser, String? languageCode}) => this;
+  FirebaseAuthPlatform setInitialValues({InternalUserDetails? currentUser, String? languageCode}) => this;
 
   @override
   UserPlatform? get currentUser => null;
@@ -285,6 +285,7 @@ void main() {
     await tester.pump();
 
     expect(haptics, <String>['error']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: android);
 
   testWidgets('accent tap is silent while its palette is invalid', (tester) async {
@@ -362,6 +363,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['error']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: android);
 
   testWidgets('review download start is quiet and failure emits an error haptic', (tester) async {
@@ -393,6 +395,7 @@ void main() {
     await tester.pump();
 
     expect(haptics, <String>['error']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: android);
 
   testWidgets('review delete failure emits an error haptic', (tester) async {
@@ -411,6 +414,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['tap', 'error']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: android);
 
   testWidgets('filter processing toast does not duplicate the download tap haptic', (tester) async {
@@ -433,6 +437,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['tap', 'error']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: android);
 
   testWidgets('signed-out premium filter notice does not duplicate the tap haptic', (tester) async {
@@ -452,5 +457,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['selection', 'tap']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: android);
 }

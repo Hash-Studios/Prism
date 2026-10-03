@@ -183,6 +183,7 @@ void main() {
           final save = find.ancestor(of: find.text('Update'), matching: find.byType(InkWell));
           expect(tester.widget<InkWell>(save).onTap, isNotNull);
         }
+        await tester.pump(const Duration(seconds: 1));
       }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
     }
   }

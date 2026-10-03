@@ -22,10 +22,13 @@ class QuickTileConfigService {
     required WallpaperSource source,
     required WallpaperTarget target,
   }) async {
+    if (source != WallpaperSource.pexels && source != WallpaperSource.wallhaven) {
+      throw ArgumentError.value(source, 'source', 'Category tiles support Pexels and Wallhaven');
+    }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PersistenceKeys.quickTileCategoryName, categoryName);
-    await prefs.setString(PersistenceKeys.quickTileCategorySource, _sourceToString(source));
-    await prefs.setString(PersistenceKeys.quickTileCategoryTarget, _targetToString(target));
+    await _setString(prefs, PersistenceKeys.quickTileCategoryName, categoryName);
+    await _setString(prefs, PersistenceKeys.quickTileCategorySource, source.name);
+    await _setString(prefs, PersistenceKeys.quickTileCategoryTarget, target.name);
     await persistPexelsApiKey();
   }
 
@@ -35,7 +38,7 @@ class QuickTileConfigService {
       return;
     }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PersistenceKeys.quickTilePexelsApiKey, key);
+    await _setString(prefs, PersistenceKeys.quickTilePexelsApiKey, key);
   }
 
   static Future<QuickTileCategoryConfig?> loadCategoryTileConfig() async {
@@ -44,11 +47,14 @@ class QuickTileConfigService {
     final sourceRaw = prefs.getString(PersistenceKeys.quickTileCategorySource);
     final targetRaw = prefs.getString(PersistenceKeys.quickTileCategoryTarget);
     if (name == null || sourceRaw == null || targetRaw == null) return null;
-    return QuickTileCategoryConfig(
-      categoryName: name,
-      source: _sourceFromString(sourceRaw),
-      target: _targetFromString(targetRaw),
-    );
+    final source = switch (sourceRaw) {
+      'pexels' => WallpaperSource.pexels,
+      'wallhaven' => WallpaperSource.wallhaven,
+      _ => null,
+    };
+    final target = _targetFromString(targetRaw);
+    if (source == null || target == null) return null;
+    return QuickTileCategoryConfig(categoryName: name, source: source, target: target);
   }
 
   // ── WOTD tile ────────────────────────────────────────────────────────────
@@ -56,14 +62,14 @@ class QuickTileConfigService {
   /// Persists the wallpaper target for the "Wall of the Day" quick tile.
   static Future<void> saveWotdTileConfig({required WallpaperTarget target}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PersistenceKeys.quickTileWotdTarget, _targetToString(target));
+    await _setString(prefs, PersistenceKeys.quickTileWotdTarget, target.name);
   }
 
   /// Caches the current WOTD wallpaper URL so the tile can apply it without
   /// a network call.  Call this whenever the WotdBloc emits a success state.
   static Future<void> pushWotdUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PersistenceKeys.quickTileWotdUrl, url);
+    await _setString(prefs, PersistenceKeys.quickTileWotdUrl, url);
     await persistPexelsApiKey();
   }
 
@@ -72,7 +78,9 @@ class QuickTileConfigService {
     final targetRaw = prefs.getString(PersistenceKeys.quickTileWotdTarget);
     final url = prefs.getString(PersistenceKeys.quickTileWotdUrl);
     if (targetRaw == null) return null;
-    return QuickTileWotdConfig(target: _targetFromString(targetRaw), cachedUrl: url);
+    final target = _targetFromString(targetRaw);
+    if (target == null) return null;
+    return QuickTileWotdConfig(target: target, cachedUrl: url);
   }
 
   // ── Favourites tile ──────────────────────────────────────────────────────
@@ -80,14 +88,14 @@ class QuickTileConfigService {
   /// Persists the wallpaper target for the "Random from Favourites" quick tile.
   static Future<void> saveFavsTileConfig({required WallpaperTarget target}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PersistenceKeys.quickTileFavsTarget, _targetToString(target));
+    await _setString(prefs, PersistenceKeys.quickTileFavsTarget, target.name);
   }
 
   /// Caches the full list of favourite wallpaper URLs.  Call this whenever
   /// the FavouriteWallsBloc emits a success state.
   static Future<void> pushFavWallUrls(List<String> urls) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PersistenceKeys.quickTileFavWallUrls, jsonEncode(urls));
+    await _setString(prefs, PersistenceKeys.quickTileFavWallUrls, jsonEncode(urls));
     await persistPexelsApiKey();
   }
 
@@ -96,52 +104,33 @@ class QuickTileConfigService {
     final targetRaw = prefs.getString(PersistenceKeys.quickTileFavsTarget);
     final urlsRaw = prefs.getString(PersistenceKeys.quickTileFavWallUrls);
     if (targetRaw == null) return null;
+    final target = _targetFromString(targetRaw);
+    if (target == null) return null;
     List<String> urls = const <String>[];
     if (urlsRaw != null) {
       try {
-        urls = (jsonDecode(urlsRaw) as List<Object?>).cast<String>();
+        urls = (jsonDecode(urlsRaw) as List<Object?>).cast<String>().toList(growable: false);
       } catch (error, stackTrace) {
         logger.w('Failed to decode favourites tile urls', error: error, stackTrace: stackTrace);
       }
     }
-    return QuickTileFavsConfig(target: _targetFromString(targetRaw), wallUrls: urls);
+    return QuickTileFavsConfig(target: target, wallUrls: urls);
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  static String _sourceToString(WallpaperSource source) {
-    return switch (source) {
-      WallpaperSource.pexels => 'pexels',
-      WallpaperSource.wallhaven => 'wallhaven',
-      WallpaperSource.prism => 'prism',
-      WallpaperSource.downloaded => 'downloaded',
-      WallpaperSource.unknown => 'unknown',
-    };
+  static Future<void> _setString(SharedPreferences prefs, String key, String value) async {
+    if (!await prefs.setString(key, value)) {
+      throw StateError('Quick tile settings could not be persisted');
+    }
   }
 
-  static WallpaperSource _sourceFromString(String raw) {
-    return switch (raw) {
-      'wallhaven' => WallpaperSource.wallhaven,
-      'prism' => WallpaperSource.prism,
-      'wall_of_the_day' => WallpaperSource.prism, // legacy: WOTD was always Prism
-      'downloaded' => WallpaperSource.downloaded,
-      _ => WallpaperSource.pexels,
-    };
-  }
-
-  static String _targetToString(WallpaperTarget target) {
-    return switch (target) {
-      WallpaperTarget.home => 'home',
-      WallpaperTarget.lock => 'lock',
-      WallpaperTarget.both => 'both',
-    };
-  }
-
-  static WallpaperTarget _targetFromString(String raw) {
+  static WallpaperTarget? _targetFromString(String raw) {
     return switch (raw) {
       'home' => WallpaperTarget.home,
       'lock' => WallpaperTarget.lock,
-      _ => WallpaperTarget.both,
+      'both' => WallpaperTarget.both,
+      _ => null,
     };
   }
 }

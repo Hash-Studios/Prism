@@ -214,6 +214,7 @@ void main() {
 
     expect(hapticTypes, <Object?>['HapticFeedbackType.mediumImpact', 'HapticFeedbackType.errorNotification']);
     expect(toastCalls, hasLength(1));
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('invalid generation uses the error haptic without also playing a tap haptic', (tester) async {
@@ -232,6 +233,7 @@ void main() {
     await tester.pump();
 
     expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('invalid refinement uses the error haptic without also playing a tap haptic', (tester) async {
@@ -251,6 +253,7 @@ void main() {
     await tester.pump();
 
     expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('a crop warning after successful generation does not add an error haptic', (tester) async {

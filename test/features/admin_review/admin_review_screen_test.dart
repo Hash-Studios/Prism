@@ -344,6 +344,7 @@ void main() {
     expect(repository.rejections, 1);
     expect(hapticTypes, contains('HapticFeedbackType.successNotification'));
     expect(hapticTypes, isNot(contains('HapticFeedbackType.errorNotification')));
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('closing a report for an already-missing wall uses success outcome feedback', (
@@ -388,6 +389,7 @@ void main() {
 
     expect(hapticTypes, contains('HapticFeedbackType.successNotification'));
     expect(hapticTypes, isNot(contains('HapticFeedbackType.errorNotification')));
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('rejection dialog remains usable with a short viewport and keyboard insets', (WidgetTester tester) async {

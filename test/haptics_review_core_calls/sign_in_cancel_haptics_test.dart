@@ -68,5 +68,6 @@ void main() {
 
     expect(toastCalls.any((call) => (call.arguments as Map<Object?, Object?>)['msg'] == 'Sign in cancelled.'), isTrue);
     expect(hapticTypes, <Object?>['HapticFeedbackType.lightImpact']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }
