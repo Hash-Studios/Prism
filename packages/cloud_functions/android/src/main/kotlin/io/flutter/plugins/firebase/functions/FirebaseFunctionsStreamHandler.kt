@@ -3,70 +3,39 @@
 // found in the LICENSE file.
 package io.flutter.plugins.firebase.functions
 
-import android.net.Uri
 import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.functions.HttpsCallableOptions
-import com.google.firebase.functions.HttpsCallableReference
-import com.google.firebase.functions.StreamResponse
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
-import org.reactivestreams.Publisher
-import java.net.URL
-import java.util.Objects
-import java.util.concurrent.TimeUnit
 
-class FirebaseFunctionsStreamHandler(private val firebaseFunctions: FirebaseFunctions) :
-  EventChannel.StreamHandler {
+internal class FirebaseFunctionsStreamHandler(
+  private val functions: FirebaseFunctions,
+  private val onCancelled: (FirebaseFunctionsStreamHandler) -> Unit = {}
+) : EventChannel.StreamHandler {
   private var subscriber: StreamResponseSubscriber? = null
 
-  override fun onListen(arguments: Any, events: EventSink) {
-    val argumentsMap = arguments as Map<String, Any>
-    httpsStreamCall(argumentsMap, events)
-  }
-
-  override fun onCancel(arguments: Any) {
-    subscriber!!.cancel()
-  }
-
-  private fun httpsStreamCall(arguments: Map<String, Any>, events: EventSink) {
+  override fun onListen(arguments: Any?, events: EventSink) {
+    cancel()
     try {
-      val functionName = arguments["functionName"] as String?
-      val functionUri = arguments["functionUri"] as String?
-      val origin = arguments["origin"] as String?
-      val timeout = arguments["timeout"] as Int?
-      val parameters = arguments["parameters"]
-      val limitedUseAppCheckToken =
-        Objects.requireNonNull(arguments["limitedUseAppCheckToken"]) as Boolean
-
-      if (origin != null) {
-        val originUri = Uri.parse(origin)
-        firebaseFunctions.useEmulator(originUri.host!!, originUri.port)
-      }
-
-      val httpsCallableReference: HttpsCallableReference
-      val options: HttpsCallableOptions =HttpsCallableOptions.Builder()
-          .setLimitedUseAppCheckTokens(limitedUseAppCheckToken)
-          .build()
-
-      val publisher: Publisher<StreamResponse>
-      if (functionName != null) {
-        httpsCallableReference = firebaseFunctions.getHttpsCallable(functionName, options)
-        publisher = httpsCallableReference.stream(parameters)
-      } else if (functionUri != null) {
-        httpsCallableReference =
-          firebaseFunctions.getHttpsCallableFromUrl(URL(functionUri), options)
-        publisher = httpsCallableReference.stream()
-      } else {
-        throw IllegalArgumentException("Either functionName or functionUri must be set")
-      }
-
-      if (timeout != null) {
-        httpsCallableReference.setTimeout(timeout.toLong(), TimeUnit.MILLISECONDS)
-      }
-      subscriber = StreamResponseSubscriber(events)
-      publisher.subscribe(subscriber)
-    } catch (e: Exception) {
-      events.error("firebase_functions", e.message, null)
+      val values = arguments as? Map<*, *>
+        ?: throw IllegalArgumentException("Stream arguments must be a map")
+      val listener = StreamResponseSubscriber(events)
+      subscriber = listener
+      functions.callable(values).stream(values["parameters"]).subscribe(listener)
+    } catch (error: Exception) {
+      cancel()
+      val flutterError = functionsError(error)
+      events.error(flutterError.code, flutterError.message, flutterError.details)
+      events.endOfStream()
     }
+  }
+
+  override fun onCancel(arguments: Any?) {
+    cancel()
+    if (arguments != null) onCancelled(this)
+  }
+
+  internal fun cancel() {
+    subscriber?.cancel()
+    subscriber = null
   }
 }

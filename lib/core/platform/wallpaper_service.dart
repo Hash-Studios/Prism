@@ -20,10 +20,11 @@ class WallpaperService {
   }
 
   static String _normalizeSource(String source) {
-    if (source.startsWith('file://')) {
-      return source.substring(7);
+    final Uri? uri = Uri.tryParse(source);
+    if (uri?.scheme == 'file') {
+      return uri!.toFilePath();
     }
-    if (source.contains('/0/')) {
+    if (source.startsWith('/')) {
       return source.replaceAll('/0//', '/0/');
     }
     return source;

@@ -25,7 +25,6 @@ import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
-import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
@@ -48,6 +47,7 @@ import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_lis
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
@@ -943,37 +943,31 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
           },
         ),
         const WotdQuickTileListener(),
-        // Cache favourite wall URLs for the Random Favourite quick tile.
-        BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
-          listenWhen: (previous, current) => previous.status != current.status && current.status == LoadStatus.success,
-          listener: (context, state) {
-            final urls = state.items.map((item) => item.fullUrl).toList(growable: false);
-            unawaited(QuickTileConfigService.pushFavWallUrls(urls));
-          },
-        ),
       ],
-      child: ListenableBuilder(
-        listenable: DebugFlags.instance,
-        builder: (context, _) => MaterialApp.router(
-          debugShowCheckedModeBanner: false,
-          builder: (context, child) {
-            app_state.notchSize = MediaQuery.paddingOf(context).top;
-            return child ?? const SizedBox.shrink();
-          },
-          routerConfig: _appRouter.config(
-            deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
-            deepLinkBuilder: _routerDeepLinkBuilder,
-            navigatorObservers: () => [
-              ...AnalyticsRuntime.buildNavigatorObservers(),
-              if (MonitoringRuntime.reporter.isEnabled)
-                SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
-            ],
+      child: FavouriteQuickTileListener(
+        child: ListenableBuilder(
+          listenable: DebugFlags.instance,
+          builder: (context, _) => MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            builder: (context, child) {
+              app_state.notchSize = MediaQuery.paddingOf(context).top;
+              return child ?? const SizedBox.shrink();
+            },
+            routerConfig: _appRouter.config(
+              deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
+              deepLinkBuilder: _routerDeepLinkBuilder,
+              navigatorObservers: () => [
+                ...AnalyticsRuntime.buildNavigatorObservers(),
+                if (MonitoringRuntime.reporter.isEnabled)
+                  SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
+              ],
+            ),
+            showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
+            showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
+            theme: context.prismLightTheme(),
+            darkTheme: context.prismDarkTheme(),
+            themeMode: context.prismThemeMode(),
           ),
-          showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
-          showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
-          theme: context.prismLightTheme(),
-          darkTheme: context.prismDarkTheme(),
-          themeMode: context.prismThemeMode(),
         ),
       ),
     );

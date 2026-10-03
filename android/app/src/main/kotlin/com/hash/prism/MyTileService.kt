@@ -1,251 +1,44 @@
 package com.hash.prism
 
-import android.app.WallpaperManager
 import android.content.SharedPreferences
-import android.os.Build
-import android.service.quicksettings.Tile
-import android.service.quicksettings.TileService
-import android.util.Log
-import android.widget.Toast
-import androidx.annotation.RequiresApi
-import org.json.JSONArray
-import org.json.JSONException
-import java.io.IOException
-import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.concurrent.Executors
+import org.json.JSONObject
+import java.net.URLEncoder
+import kotlin.random.Random
 
-/**
- * Quick Settings tile: "Random from Category"
- *
- * Reads the user's configured category + wallpaper source + target from
- * SharedPreferences (written by the Flutter app via [QuickTileConfigService])
- * then fetches a random wallpaper URL from the Pexels or Wallhaven API and
- * applies it asynchronously using [WallpaperManager].
- *
- * All network I/O is off the main thread via a single-threaded executor.
- * Requires API 24+ (Android 7.0) for TileService.
- */
-@RequiresApi(api = Build.VERSION_CODES.N)
-class MyTileService : TileService() {
-
-    companion object {
-        private const val TAG = "Prism::CategoryTile"
-        private const val PREFS_NAME = "FlutterSharedPreferences"
-
-        // SharedPreferences keys — must match PersistenceKeys in Dart
-        private const val KEY_CATEGORY_NAME = "flutter.quick_tile.category.name"
-        private const val KEY_CATEGORY_SOURCE = "flutter.quick_tile.category.source"
-        private const val KEY_CATEGORY_TARGET = "flutter.quick_tile.category.target"
-        private const val KEY_PEXELS_API_KEY = "flutter.quick_tile.pexels.api_key"
-
-        // Wallpaper sources
-        private const val SOURCE_PEXELS = "pexels"
-        private const val SOURCE_WALLHAVEN = "wallhaven"
-
-        // Wallpaper targets
-        private const val TARGET_HOME = "home"
-        private const val TARGET_LOCK = "lock"
-        // anything else → both
-
-        private const val CONNECT_TIMEOUT_MS = 10_000
-        private const val READ_TIMEOUT_MS = 15_000
-    }
-
-    private val executor = Executors.newSingleThreadExecutor()
-
-    override fun onTileAdded() {
-        super.onTileAdded()
-        qsTile?.apply {
-            state = Tile.STATE_INACTIVE
-            updateTile()
-        }
-    }
-
-    override fun onClick() {
-        super.onClick()
-
-        qsTile?.apply {
-            state = Tile.STATE_ACTIVE
-            updateTile()
-        }
-
-        executor.execute {
-            try {
-                applyRandomWallpaper()
-            } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error applying wallpaper", e)
-                showToast("Could not apply wallpaper")
-            } finally {
-                qsTile?.apply {
-                    state = Tile.STATE_INACTIVE
-                    updateTile()
-                }
+internal class MyTileService : WallpaperTileService() {
+    internal override fun wallpaper(prefs: SharedPreferences): Wallpaper {
+        val category = prefs.getString("flutter.quick_tile.category.name", null)?.trim()
+        check(!category.isNullOrEmpty()) { "Open Prism and configure the Quick Tile first" }
+        val target = TileWallpaperTarget.parse(prefs.getString("flutter.quick_tile.category.target", null))
+        val query = URLEncoder.encode(category, "UTF-8")
+        val source = prefs.getString("flutter.quick_tile.category.source", PEXELS_SOURCE)?.trim()
+        val link: String
+        val headers: Map<String, String>
+        when (source) {
+            PEXELS_SOURCE -> {
+                val key = prefs.getString("flutter.quick_tile.pexels.api_key", null)?.trim().orEmpty()
+                check(key.isNotEmpty()) { "Open Prism to configure the wallpaper provider" }
+                link = "https://api.pexels.com/v1/search?query=$query&per_page=30&orientation=portrait"
+                headers = mapOf("Authorization" to key, "Accept" to "application/json")
             }
-        }
-    }
-
-    private fun applyRandomWallpaper() {
-        val prefs: SharedPreferences = applicationContext
-            .getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-
-        val categoryName = prefs.getString(KEY_CATEGORY_NAME, null)?.trim()
-        val source = prefs.getString(KEY_CATEGORY_SOURCE, SOURCE_PEXELS)?.trim() ?: SOURCE_PEXELS
-        val target = prefs.getString(KEY_CATEGORY_TARGET, "both")?.trim() ?: "both"
-
-        if (categoryName.isNullOrEmpty()) {
-            showToast("Open Prism and configure the Quick Tile first")
-            return
-        }
-
-        Log.d(TAG, "Fetching random wallpaper: category=$categoryName source=$source target=$target")
-
-        val wallpaperUrl = when (source) {
-            SOURCE_WALLHAVEN -> fetchRandomWallhavenUrl(categoryName)
-            else -> fetchRandomPexelsUrl(categoryName)
-        }
-
-        if (wallpaperUrl.isNullOrEmpty()) {
-            showToast("No wallpaper found — check your connection")
-            return
-        }
-
-        Log.d(TAG, "Applying wallpaper from URL: $wallpaperUrl")
-        applyWallpaperFromUrl(wallpaperUrl, target)
-    }
-
-    // ── Pexels ────────────────────────────────────────────────────────────────
-
-    private fun fetchRandomPexelsUrl(query: String): String? {
-        val apiKey = applicationContext
-            .getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-            .getString(KEY_PEXELS_API_KEY, null)
-            ?.trim()
-            .orEmpty()
-        if (apiKey.isBlank()) {
-            Log.w(TAG, "Pexels API key is not in SharedPreferences; open Prism once")
-            return null
-        }
-
-        val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
-        val apiUrl = "https://api.pexels.com/v1/search?query=$encodedQuery&per_page=30&orientation=portrait"
-
-        val json = fetchJsonString(apiUrl, mapOf("Authorization" to apiKey)) ?: return null
-
-        return try {
-            val root = org.json.JSONObject(json)
-            val photos = root.getJSONArray("photos")
-            if (photos.length() == 0) return null
-            val idx = (Math.random() * photos.length()).toInt()
-            val photo = photos.getJSONObject(idx)
-            val src = photo.getJSONObject("src")
-            // Use the "original" size for full-resolution wallpaper
-            src.getString("original")
-        } catch (e: JSONException) {
-            Log.e(TAG, "Failed to parse Pexels response", e)
-            null
-        }
-    }
-
-    // ── Wallhaven ─────────────────────────────────────────────────────────────
-
-    private fun fetchRandomWallhavenUrl(query: String): String? {
-        val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
-        // categories=111 (general+anime+people), purity=100 (SFW), sorting=random
-        val apiUrl = "https://wallhaven.cc/api/v1/search?q=$encodedQuery" +
-                "&categories=111&purity=100&sorting=random&per_page=24"
-
-        val json = fetchJsonString(apiUrl, emptyMap()) ?: return null
-
-        return try {
-            val root = org.json.JSONObject(json)
-            val data = root.getJSONArray("data")
-            if (data.length() == 0) return null
-            val idx = (Math.random() * data.length()).toInt()
-            data.getJSONObject(idx).getString("path")
-        } catch (e: JSONException) {
-            Log.e(TAG, "Failed to parse Wallhaven response", e)
-            null
-        }
-    }
-
-    // ── Wallpaper application ─────────────────────────────────────────────────
-
-    private fun applyWallpaperFromUrl(urlString: String, target: String) {
-        var connection: HttpURLConnection? = null
-        var inputStream: InputStream? = null
-        try {
-            val url = URL(urlString)
-            connection = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = CONNECT_TIMEOUT_MS
-                readTimeout = READ_TIMEOUT_MS
-                setRequestProperty("User-Agent", "Prism/1.0 Android")
-                connect()
+            "wallhaven" -> {
+                link = "https://wallhaven.cc/api/v1/search?q=$query&categories=111&purity=100&sorting=random&per_page=24"
+                headers = mapOf("Accept" to "application/json")
             }
-            if (connection.responseCode !in 200..299) {
-                Log.e(TAG, "HTTP ${connection.responseCode} fetching wallpaper image")
-                showToast("Could not download wallpaper")
-                return
-            }
-
-            inputStream = connection.inputStream
-            val wallpaperManager = WallpaperManager.getInstance(applicationContext)
-
-            val flags = when (target) {
-                TARGET_HOME -> WallpaperManager.FLAG_SYSTEM
-                TARGET_LOCK -> WallpaperManager.FLAG_LOCK
-                else -> WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
-            }
-
-            wallpaperManager.setStream(inputStream, null, false, flags)
-            Log.d(TAG, "Wallpaper applied successfully (target=$target)")
-        } catch (e: IOException) {
-            Log.e(TAG, "IO error applying wallpaper", e)
-            showToast("Failed to apply wallpaper")
-        } finally {
-            inputStream?.close()
-            connection?.disconnect()
+            else -> throw IllegalArgumentException("Unsupported wallpaper source")
         }
+        val connection = PrismImageTransfer.openConnection(link, headers)
+        val json = try {
+            val bytes = java.io.ByteArrayOutputStream()
+            connection.inputStream.use { PrismImageTransfer.copy(it, bytes, 2L * 1024 * 1024) }
+            JSONObject(bytes.toString("UTF-8"))
+        } finally { connection.disconnect() }
+        val list = json.getJSONArray(if (source == PEXELS_SOURCE) "photos" else "data")
+        check(list.length() > 0) { "No wallpaper found in this category" }
+        val item = list.getJSONObject(Random.nextInt(list.length()))
+        val url = if (source == PEXELS_SOURCE) item.getJSONObject("src").getString("original") else item.getString("path")
+        return Wallpaper(url, target)
     }
 
-    // ── HTTP helper ───────────────────────────────────────────────────────────
-
-    private fun fetchJsonString(urlString: String, headers: Map<String, String>): String? {
-        var connection: HttpURLConnection? = null
-        return try {
-            val url = URL(urlString)
-            connection = (url.openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                connectTimeout = CONNECT_TIMEOUT_MS
-                readTimeout = READ_TIMEOUT_MS
-                setRequestProperty("Accept", "application/json")
-                headers.forEach { (k, v) -> setRequestProperty(k, v) }
-                connect()
-            }
-            if (connection.responseCode !in 200..299) {
-                Log.e(TAG, "HTTP ${connection.responseCode} for $urlString")
-                return null
-            }
-            connection.inputStream.bufferedReader().use { it.readText() }
-        } catch (e: IOException) {
-            Log.e(TAG, "Network error fetching $urlString", e)
-            null
-        } finally {
-            connection?.disconnect()
-        }
-    }
-
-    // ── Utility ───────────────────────────────────────────────────────────────
-
-    private fun showToast(message: String) {
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
-            Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onDestroy() {
-        executor.shutdownNow()
-        super.onDestroy()
-    }
+    private companion object { const val PEXELS_SOURCE = "pexels" }
 }

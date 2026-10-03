@@ -112,5 +112,6 @@ void main() {
 
     expect(toasts, <String>['Sign in cancelled.']);
     expect(haptics, <String>['tap']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

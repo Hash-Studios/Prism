@@ -7,106 +7,96 @@
 #else
   import Flutter
 #endif
-
 import FirebaseFunctions
 
-class FunctionsStreamHandler: NSObject, FlutterStreamHandler {
-  var functions: Functions
+final class FunctionsStreamHandler: NSObject, FlutterStreamHandler {
+  private let functions: Functions
   private var streamTask: Task<Void, Never>?
+  private let onCancelled: (FunctionsStreamHandler) -> Void
 
-  init(functions: Functions) {
+  init(functions: Functions, onCancelled: @escaping (FunctionsStreamHandler) -> Void = { _ in }) {
     self.functions = functions
+    self.onCancelled = onCancelled
     super.init()
   }
 
   func onListen(withArguments arguments: Any?,
                 eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-    streamTask = Task {
-      await httpsStreamCall(arguments: arguments, events: events)
+    guard let arguments = arguments as? [String: Any] else {
+      events(functionsArgumentError("Stream arguments must be a map"))
+      events(FlutterEndOfEventStream)
+      return nil
+    }
+    let values: CallableArguments
+    do {
+      values = try CallableArguments(arguments)
+    } catch {
+      events(error as? FlutterError ?? functionsFlutterError(error))
+      events(FlutterEndOfEventStream)
+      return nil
+    }
+    streamTask?.cancel()
+    let functions = functions
+    streamTask = Task { @MainActor in
+      await Self.httpsStreamCall(functions: functions, arguments: values, events: events)
     }
     return nil
   }
 
   func onCancel(withArguments arguments: Any?) -> FlutterError? {
-    streamTask?.cancel()
+    cancel()
+    if arguments != nil { onCancelled(self) }
     return nil
   }
 
-  private func httpsStreamCall(arguments: Any?, events: @escaping FlutterEventSink) async {
-    guard let arguments = arguments as? [String: Any] else {
-      await MainActor.run {
-        events(FlutterError(code: "invalid_arguments",
-                            message: "Invalid arguments",
-                            details: nil))
+  func cancel() {
+    streamTask?.cancel()
+    streamTask = nil
+  }
+
+  @MainActor
+  private static func httpsStreamCall(functions: Functions, arguments: CallableArguments,
+                                      events: @escaping FlutterEventSink) async {
+    do {
+      if let origin = arguments.origin, let host = origin.host, let port = origin.port {
+        functions.useEmulator(withHost: host, port: port)
       }
-      return
-    }
-    let functionName = arguments["functionName"] as? String
-    let functionUri = arguments["functionUri"] as? String
-    let origin = arguments["origin"] as? String
-    let parameters = arguments["parameters"]
-    let timeout = arguments["timeout"] as? Double
-    let limitedUseAppCheckToken = arguments["limitedUseAppCheckToken"] as? Bool ?? false
-
-    if let origin,
-       let url = URL(string: origin),
-       let host = url.host,
-       let port = url.port {
-      functions.useEmulator(withHost: host, port: port)
-    }
-
-    let options = HTTPSCallableOptions(requireLimitedUseAppCheckTokens: limitedUseAppCheckToken)
-
-    // Stream handling for iOS 15+
-    if #available(iOS 15.0, macOS 12.0, *) {
-      var function: Callable<AnyEncodable, StreamResponse<AnyDecodable, AnyDecodable>>
-
-      if let functionName {
-        function = functions.httpsCallable(functionName, options: options)
-      } else if let functionUri, let url = URL(string: functionUri) {
-        function = functions.httpsCallable(url, options: options)
-      } else {
-        await MainActor.run {
-          events(FlutterError(code: "IllegalArgumentException",
-                              message: "Either functionName or functionUri must be set",
-                              details: nil))
-        }
-        return
-      }
-
-      if let timeout {
-        function.timeoutInterval = timeout / 1000
-      }
-
-      do {
-        let encodedParameters = AnyEncodable(parameters)
-
-        let stream = try function.stream(encodedParameters)
-
+      let options = HTTPSCallableOptions(
+        requireLimitedUseAppCheckTokens: arguments.limitedUseAppCheckToken
+      )
+      if #available(iOS 15.0, macOS 12.0, *) {
+        let function = streamingCallable(functions: functions, arguments: arguments, options: options)
+        try Task.checkCancellation()
+        let stream = try function.stream(AnyEncodable(arguments.parameters))
         for try await response in stream {
-          await MainActor.run {
-            switch response {
-            case let .message(message):
-              events(["message": message.value])
-            case let .result(result):
-              events(["result": result.value])
-              events(FlutterEndOfEventStream)
-            }
+          try Task.checkCancellation()
+          switch response {
+          case let .message(message): events(["message": message.value ?? NSNull()])
+          case let .result(result): events(["result": result.value ?? NSNull()])
           }
         }
-      } catch {
-        await MainActor.run {
-          events(FlutterError(code: "unknown",
-                              message: error.localizedDescription,
-                              details: ["code": "unknown", "message": error.localizedDescription]))
-        }
+        if !Task.isCancelled { events(FlutterEndOfEventStream) }
+      } else {
+        throw FlutterError(code: "unimplemented", message: "Streaming requires macOS 12+",
+                           details: ["code": "unimplemented", "message": "Streaming requires macOS 12+"])
       }
-    } else {
-      await MainActor.run {
-        events(FlutterError(code: "unknown",
-                            message: "Streaming requires iOS 15+ or macOS 12+",
-                            details: nil))
-      }
+    } catch {
+      guard !Task.isCancelled else { return }
+      events(error as? FlutterError ?? functionsFlutterError(error))
+      events(FlutterEndOfEventStream)
     }
+  }
+
+  @available(iOS 15.0, macOS 12.0, *)
+  private static func streamingCallable(functions: Functions, arguments: CallableArguments,
+                                        options: HTTPSCallableOptions)
+    -> Callable<AnyEncodable, StreamResponse<AnyDecodable, AnyDecodable>> {
+    var function: Callable<AnyEncodable, StreamResponse<AnyDecodable, AnyDecodable>>
+    switch arguments.target {
+    case let .name(name): function = functions.httpsCallable(name, options: options)
+    case let .url(url): function = functions.httpsCallable(url, options: options)
+    }
+    if let timeout = arguments.timeout { function.timeoutInterval = timeout }
+    return function
   }
 }
