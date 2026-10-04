@@ -59,6 +59,8 @@ class _User extends Fake implements User {
   String? get displayName => 'User';
   @override
   String? get photoURL => null;
+  @override
+  bool get isAnonymous => false;
 }
 
 class _Credential extends Fake implements UserCredential {
@@ -175,6 +177,31 @@ void main() {
     firestore.writeGate.complete();
     await signIn;
     expect(completed, isTrue);
+  });
+
+  for (final Object? storedId in <Object?>['', null]) {
+    test('a user doc with id ${storedId == null ? 'missing' : 'blank'} still signs in as the auth uid', () async {
+      final Map<String, dynamic> doc = profileUser().toJson()..['id'] = storedId;
+      if (storedId == null) doc.remove('id');
+      firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{'u1': doc};
+      firestore.writeGate.complete();
+      final GoogleAuth auth = GoogleAuth(auth: _Auth(), googleSignIn: _GoogleSignIn(), messaging: _Messaging());
+
+      await auth.signInWithGoogle();
+
+      expect(app_state.prismUser.id, 'u1');
+      expect(firestore.docs[FirebaseCollections.usersV2]!['u1']!['loggedIn'], isTrue);
+    });
+  }
+
+  test('a Firebase user with a blank stored profile does not count as signed in', () async {
+    final GoogleAuth auth = GoogleAuth(auth: _Auth(), googleSignIn: _GoogleSignIn(), messaging: _Messaging());
+
+    app_state.prismUser = profileUser(id: '', loggedIn: true);
+    expect(await auth.isSignedIn(), isFalse);
+
+    app_state.prismUser = profileUser(id: 'u1', loggedIn: true);
+    expect(await auth.isSignedIn(), isTrue);
   });
 
   test('sign-out waits for a pending purchase bootstrap before clearing auth state', () async {
