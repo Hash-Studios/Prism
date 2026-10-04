@@ -324,6 +324,30 @@ void main() {
     );
 
     blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a signed-in session with no user id marks the session invalid, whatever the error',
+      setUp: () {
+        app_state.prismUser = _user(id: '', loggedIn: true);
+        when(
+          () => saveInterestsUseCase(any()),
+        ).thenAnswer((_) async => Result.error(const ServerFailure('A document path must be a non-empty string')));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+      },
+      verify: (bloc) {
+        expect(bloc.state.actionStatus, ActionStatus.failure);
+        expect(bloc.state.sessionInvalid, isTrue);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
       'ignores duplicate interest submissions while the first save is pending',
       setUp: () {
         app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
