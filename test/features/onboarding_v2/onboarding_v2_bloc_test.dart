@@ -259,6 +259,74 @@ void main() {
     verify: (_) => expect(analytics.events, isEmpty),
   );
 
+  group('save failures', () {
+    Future<void> confirmInterests(OnboardingV2Bloc bloc) async {
+      bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+      bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+      bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const OnboardingV2Event.interestsConfirmed());
+    }
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a network error on interests stays on the step as a retryable failure',
+      setUp: () => when(
+        () => saveInterestsUseCase(any()),
+      ).thenAnswer((_) async => Result.error(const ServerFailure('offline', code: 'unavailable'))),
+      build: buildBloc,
+      act: confirmInterests,
+      verify: (bloc) {
+        expect(bloc.state.actionStatus, ActionStatus.failure);
+        expect(bloc.state.sessionInvalid, isFalse);
+      },
+    );
+
+    for (final code in <String>['permission-denied', 'not-found', 'unauthenticated']) {
+      blocTest<OnboardingV2Bloc, OnboardingV2State>(
+        '$code on interests marks the session invalid',
+        setUp: () => when(
+          () => saveInterestsUseCase(any()),
+        ).thenAnswer((_) async => Result.error(ServerFailure('refused', code: code))),
+        build: buildBloc,
+        act: confirmInterests,
+        verify: (bloc) {
+          expect(bloc.state.actionStatus, ActionStatus.failure);
+          expect(bloc.state.sessionInvalid, isTrue);
+        },
+      );
+    }
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'permission-denied on the starter pack marks the session invalid, and going back clears the failure',
+      setUp: () {
+        when(
+          () => followStarterPackUseCase(any()),
+        ).thenAnswer((_) async => Result.error(const ServerFailure('refused', code: 'permission-denied')));
+        when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+          (_) async =>
+              Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+        );
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+        await confirmInterests(bloc);
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+        final failed = await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.failure);
+        expect(failed.step, OnboardingV2Step.starterPack);
+        expect(failed.sessionInvalid, isTrue);
+        bloc.add(const OnboardingV2Event.stepBack());
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.interests);
+        expect(bloc.state.actionStatus, ActionStatus.idle);
+      },
+    );
+  });
+
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'records starter-pack follows after the follow write succeeds',
     setUp: () {

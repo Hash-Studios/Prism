@@ -30,6 +30,8 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_progress_indicator.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_staggered_fade.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
@@ -40,6 +42,23 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage(name: 'OnboardingV2ShellRoute')
+/// True when the interests or starter pack save failed and the user must act on it.
+bool _saveFailed(OnboardingV2State state) =>
+    state.actionStatus == ActionStatus.failure &&
+    (state.step == OnboardingV2Step.interests || state.step == OnboardingV2Step.starterPack);
+
+String _saveErrorHelper(OnboardingV2State state) => state.sessionInvalid
+    ? 'your session has expired. sign in again to continue'
+    : state.step == OnboardingV2Step.interests
+    ? "couldn't save your picks. check your connection and try again"
+    : "couldn't follow these creators. check your connection and try again";
+
+String _saveErrorToast(OnboardingV2State state) => state.sessionInvalid
+    ? 'Your session has expired. Please sign in again.'
+    : state.step == OnboardingV2Step.interests
+    ? "Couldn't save your picks. Try again."
+    : "Couldn't follow these creators. Try again.";
+
 class OnboardingV2Shell extends StatefulWidget {
   const OnboardingV2Shell({super.key});
 
@@ -53,6 +72,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _imagesPrecached = false;
   bool _termsAccepted = false;
+  bool _signingOut = false;
 
   static final _systemUiStyle = edgeToEdgeOverlayStyle(
     statusBarIconBrightness: Brightness.dark,
@@ -145,6 +165,20 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     }
   }
 
+  /// The account behind this session is gone or locked out, so no save can succeed.
+  /// Sign out the same way Settings does, then restart into a fresh onboarding.
+  Future<void> _signInAgain() async {
+    if (_signingOut) return;
+    setState(() => _signingOut = true);
+    try {
+      await globalGoogleAuth.signOutGoogle();
+    } catch (error, stackTrace) {
+      logger.w('Sign out from onboarding failed.', error: error, stackTrace: stackTrace);
+    }
+    await resetOnboardingLocalState(_settingsLocal);
+    if (mounted) main.RestartWidget.restartApp(context);
+  }
+
   void _setTermsAccepted(bool accepted) {
     setState(() => _termsAccepted = accepted);
     _settingsLocal.set(OnboardingV2Config.termsAcceptedKey, accepted);
@@ -160,6 +194,11 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   }
 
   void _handleCtaTap(OnboardingV2Step step) {
+    final state = _bloc.state;
+    if (_saveFailed(state) && state.sessionInvalid) {
+      _signInAgain();
+      return;
+    }
     switch (step) {
       case OnboardingV2Step.auth:
         _handleGoogleSignIn();
@@ -212,10 +251,12 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               curr.step == OnboardingV2Step.aiGenerate &&
               prev.aiData.status != AiGenerateStatus.success &&
               curr.aiData.status == AiGenerateStatus.success;
-          return navChanged || wallpaperSucceeded || aiGenerationSucceeded;
+          final saveFailed = !_saveFailed(prev) && _saveFailed(curr);
+          return navChanged || wallpaperSucceeded || aiGenerationSucceeded || saveFailed;
         },
         listener: (context, state) {
           if (state.navRequest != null) _handleNavRequest(context, state.navRequest!);
+          if (_saveFailed(state)) toasts.error(_saveErrorToast(state));
           if (state.navRequest == null && state.wallpaperData.status == FirstWallpaperStatus.success) {
             toasts.success(defaultTargetPlatform == TargetPlatform.android ? 'Wallpaper set!' : 'Saved to Photos!');
             _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
@@ -228,6 +269,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
             prev.step != curr.step ||
             prev.isAuthLoading != curr.isAuthLoading ||
             prev.actionStatus != curr.actionStatus ||
+            prev.sessionInvalid != curr.sessionInvalid ||
             prev.interestsData.selected.length != curr.interestsData.selected.length ||
             prev.starterPackData.selectedEmails.length != curr.starterPackData.selectedEmails.length ||
             prev.wallpaperData.status != curr.wallpaperData.status ||
@@ -279,6 +321,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                         termsAccepted: _termsAccepted,
                         onTermsChanged: _setTermsAccepted,
                         onBrowseTap: _handleBrowseWithoutAccount,
+                        signingOut: _signingOut,
                       ),
                     ),
                   ],
@@ -302,6 +345,7 @@ class _SharedOverlay extends StatefulWidget {
     required this.termsAccepted,
     required this.onTermsChanged,
     required this.onBrowseTap,
+    required this.signingOut,
   });
 
   final OnboardingV2State state;
@@ -311,6 +355,7 @@ class _SharedOverlay extends StatefulWidget {
   final bool termsAccepted;
   final ValueChanged<bool> onTermsChanged;
   final VoidCallback onBrowseTap;
+  final bool signingOut;
 
   @override
   State<_SharedOverlay> createState() => _SharedOverlayState();
@@ -371,6 +416,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               onTermsChanged: widget.onTermsChanged,
               legalTap: widget.legalTap,
               onBrowseTap: widget.onBrowseTap,
+              signingOut: widget.signingOut,
             ),
             _BottomText(
               step: step,
@@ -380,6 +426,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               onTermsChanged: widget.onTermsChanged,
               wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
               aiGenerateStatus: widget.state.aiData.status,
+              errorText: _saveFailed(widget.state) ? _saveErrorHelper(widget.state) : null,
             ),
           ],
         );
@@ -494,6 +541,7 @@ class _CtaButton extends StatelessWidget {
     required this.onTermsChanged,
     required this.legalTap,
     required this.onBrowseTap,
+    required this.signingOut,
   });
 
   final OnboardingV2Step step;
@@ -512,11 +560,15 @@ class _CtaButton extends StatelessWidget {
   /// iOS-only guest entry point (Guideline 5.1.1(v)).
   final VoidCallback onBrowseTap;
 
+  /// "sign in again" is running the sign-out.
+  final bool signingOut;
+
   @override
   Widget build(BuildContext context) {
     final isLoading = switch (step) {
       OnboardingV2Step.auth => state.isAuthLoading,
-      OnboardingV2Step.interests || OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress,
+      OnboardingV2Step.interests ||
+      OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress || signingOut,
       OnboardingV2Step.aiGenerate => state.aiData.status == AiGenerateStatus.loading,
       OnboardingV2Step.firstWallpaper => state.wallpaperData.status == FirstWallpaperStatus.loading,
     };
@@ -530,6 +582,7 @@ class _CtaButton extends StatelessWidget {
     };
 
     final label = switch (step) {
+      _ when _saveFailed(state) => state.sessionInvalid ? 'sign in again' : 'try again',
       OnboardingV2Step.auth => 'Continue with Google',
       OnboardingV2Step.interests => () {
         final selected = state.interestsData.selected.length;
@@ -686,6 +739,7 @@ class _BottomText extends StatelessWidget {
     required this.onTermsChanged,
     this.wallpaperCategory,
     this.aiGenerateStatus,
+    this.errorText,
   });
 
   final OnboardingV2Step step;
@@ -695,6 +749,9 @@ class _BottomText extends StatelessWidget {
   final ValueChanged<bool> onTermsChanged;
   final String? wallpaperCategory;
   final AiGenerateStatus? aiGenerateStatus;
+
+  /// Replaces the helper text while a save error needs the user's attention.
+  final String? errorText;
 
   String _helperText() => switch (step) {
     OnboardingV2Step.interests =>
@@ -722,7 +779,7 @@ class _BottomText extends StatelessWidget {
         legalTap: legalTap,
       );
     } else {
-      final text = _helperText();
+      final text = errorText ?? _helperText();
       content = OnboardingHelperText(key: ValueKey(text), text: text);
     }
 

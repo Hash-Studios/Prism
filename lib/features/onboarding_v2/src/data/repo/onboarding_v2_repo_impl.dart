@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -132,7 +133,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
       await _settingsLocal.set(OnboardingV2Keys.selectedInterests, interests.join(','));
       return Result.success(null);
     } catch (error) {
-      return Result.error(ServerFailure('Failed to save interests: $error'));
+      return Result.error(ServerFailure('Failed to save interests: $error', code: mapFirestoreError(error).code));
     }
   }
 
@@ -160,7 +161,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
       await _settingsLocal.set(OnboardingV2Keys.followedCreators, followed);
       return Result.success(null);
     } catch (error) {
-      return Result.error(ServerFailure('Failed to follow creators: $error'));
+      return Result.error(ServerFailure('Failed to follow creators: $error', code: mapFirestoreError(error).code));
     }
   }
 
@@ -196,7 +197,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
       await _settingsLocal.set(OnboardingV2Keys.onboardedNew, true);
       return Result.success(null);
     } catch (error) {
-      return Result.error(ServerFailure('Failed to complete onboarding: $error'));
+      return Result.error(ServerFailure('Failed to complete onboarding: $error', code: mapFirestoreError(error).code));
     }
   }
 }
