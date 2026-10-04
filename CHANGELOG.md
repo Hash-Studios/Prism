@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.3.0
+- Earn badges for what you do in Prism, with coin rewards and a place in Rewards and on your profile
+- Share any wallpaper as a branded image card
+- Haptic feedback across the app, with a switch in Settings
+- A new Lightness slider in the wallpaper editor
+- Search colour wallpapers by colour name
+- Notifications now arrive on iPhone, and every inbox item is delivered
+- Wall of the Day stays fresh and downloads open in the detail screen
+- Security and stability fixes
+
 ### v3.2.0
 - Rewards brings your streak and coins together in one place
 - Your daily streak has no cap, and a streak freeze keeps it safe on days you miss
