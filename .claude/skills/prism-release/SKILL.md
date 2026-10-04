@@ -394,6 +394,22 @@ a rewarded ad, upload a wallpaper, restore purchases, receive a notification, de
 account. Use the **`verify-prism`** skill (owned by another agent in this project) to drive the
 simulator/emulator for this if it is available; otherwise do it manually and say so in the summary.
 
+### 11b. Tag and GitHub release (after the store uploads)
+
+Tag the commit you built (the version bump commit), then publish a GitHub release on that tag.
+Do this before the next build overwrites `app-release.aab`: the release carries that file.
+```sh
+git tag -a 'v<VERSION>+<N>' <bump-sha> -m 'Prism <VERSION> (<N>)'
+git push origin 'refs/tags/v<VERSION>+<N>'
+gh release create 'v<VERSION>+<N>' --repo Hash-Studios/Prism --title 'v<VERSION>+<N>' \
+  --generate-notes --notes-start-tag '<previous release tag>' --latest \
+  build/app/outputs/bundle/release/app-release.aab
+```
+Before you attach the aab, check that it is this build:
+`bundletool dump manifest --bundle=<aab> --xpath=/manifest/@android:versionCode` must print `<N>`.
+Pass `--notes-start-tag` so the notes list only the PRs since the last release. The repo is public, so
+the release reaches an audience: get the human's yes first.
+
 ### 12. Summary
 
 Report only what actually ran:
@@ -410,6 +426,7 @@ Prism release: version <VERSION>, build <N>.
   Sentry symbols:     uploaded (Android) / not uploaded (iOS build-ipa doesn't wire this)
   Smoke test:         <what was verified, or "not run, do this before shipping">
   Version bump commit: <sha, or "not committed, human pushes">
+  GitHub release:     v<VERSION>+<N> with app-release.aab           (or "not created")
 ```
 
 ## Human-only steps (stop and get an explicit yes at the concrete step, not once up front)
@@ -421,6 +438,7 @@ Prism release: version <VERSION>, build <N>.
 - `asc publish testflight` / App Store submission
 - Decrypting `android/android_keys.zip.gpg` (passphrase stays with the human)
 - Pushing the version-bump commit
+- Pushing the release tag and `gh release create`
 
 ## Known gaps
 
