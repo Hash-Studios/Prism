@@ -826,6 +826,61 @@ void main() {
     },
   );
 
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'reloading a short starter pack refreshes Remote Config and preselects the new creators',
+    setUp: () {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      when(
+        () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+      ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+      when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) async => true);
+      var calls = 0;
+      when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+        (_) async => Result.success(
+          List<OnboardingStarterCreatorEntity>.generate(calls++ == 0 ? 1 : OnboardingV2Config.minFollows + 1, _creator),
+        ),
+      );
+    },
+    build: buildBloc,
+    act: (bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      final short = await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+      expect(short.starterPackData.canContinue, isFalse);
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await bloc.stream.firstWhere((s) => s.starterPackData.creators.length > 1);
+    },
+    verify: (bloc) {
+      verify(() => remoteConfig.fetchAndActivate()).called(1);
+      expect(bloc.state.actionStatus, ActionStatus.idle);
+      expect(bloc.state.starterPackData.canContinue, isTrue);
+      expect(bloc.state.starterPackData.selectedEmails, <String>{
+        for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i@example.com',
+      });
+    },
+  );
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'a failed Remote Config fetch still reloads the starter pack',
+    setUp: () {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      when(
+        () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+      ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+      when(() => remoteConfig.fetchAndActivate()).thenThrow(Exception('throttled'));
+    },
+    build: buildBloc,
+    act: (bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.idle);
+    },
+    verify: (bloc) {
+      verify(() => fetchStarterPackUseCase(const NoParams())).called(2);
+      expect(bloc.state.step, OnboardingV2Step.starterPack);
+    },
+  );
+
   group('AI prompt for the interests', () {
     Future<OnboardingV2State> confirmStarterPackWith(OnboardingV2Bloc bloc, List<String> interests) async {
       app_state.prismUser = _user(id: 'resume-user', loggedIn: true);

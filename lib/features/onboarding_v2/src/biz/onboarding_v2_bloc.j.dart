@@ -57,6 +57,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_InterestsConfirmed>(_onInterestsConfirmed);
     on<_CreatorFollowToggled>(_onCreatorFollowToggled);
     on<_StarterPackConfirmed>(_onStarterPackConfirmed);
+    on<_StarterPackReloadRequested>(_onStarterPackReloadRequested);
     on<_FirstWallpaperActionRequested>(_onFirstWallpaperActionRequested);
     on<_FirstWallpaperActionCompleted>(_onFirstWallpaperActionCompleted);
     on<_FirstWallpaperStepContinued>(_onFirstWallpaperStepContinued);
@@ -109,12 +110,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       );
     }
 
-    final starterPackResult = await _fetchStarterPackUseCase(const NoParams());
-    final List<OnboardingStarterCreatorEntity> creators = starterPackResult.fold(
-      onSuccess: (entities) => [...entities]..sort((a, b) => a.rank.compareTo(b.rank)),
-      onFailure: (_) => <OnboardingStarterCreatorEntity>[],
-    );
-    final autoSelectedEmails = creators.take(OnboardingV2Config.minFollows).map((c) => c.email).toSet();
+    final starterPackData = await _fetchStarterPack();
 
     final wallpaperVm = await _firstWallpaperService.recommendForOnboarding(<String>[]);
 
@@ -122,7 +118,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       state.copyWith(
         loadStatus: LoadStatus.success,
         interestsData: state.interestsData.copyWith(available: availableCategories, categoryImages: categoryImages),
-        starterPackData: OnboardingStarterPackData(creators: creators, selectedEmails: autoSelectedEmails),
+        starterPackData: starterPackData,
         wallpaperData: OnboardingWallpaperData(wallpaper: wallpaperVm, status: FirstWallpaperStatus.idle),
       ),
     );
@@ -277,6 +273,33 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       final aiData = _promptForInterests(state.interestsData.selected);
       emit(state.copyWith(actionStatus: ActionStatus.success, step: OnboardingV2Step.aiGenerate, aiData: aiData));
     }
+  }
+
+  /// Loads the starter pack sorted by rank, with the top creators preselected.
+  Future<OnboardingStarterPackData> _fetchStarterPack() async {
+    final result = await _fetchStarterPackUseCase(const NoParams());
+    final List<OnboardingStarterCreatorEntity> creators = result.fold(
+      onSuccess: (entities) => [...entities]..sort((a, b) => a.rank.compareTo(b.rank)),
+      onFailure: (_) => <OnboardingStarterCreatorEntity>[],
+    );
+    final autoSelectedEmails = creators.take(OnboardingV2Config.minFollows).map((c) => c.email).toSet();
+    return OnboardingStarterPackData(creators: creators, selectedEmails: autoSelectedEmails);
+  }
+
+  /// A starter pack with fewer than [OnboardingV2Config.minFollows] creators cannot continue.
+  /// The pack comes from Remote Config, so fetch it again before reloading the creators.
+  Future<void> _onStarterPackReloadRequested(_StarterPackReloadRequested event, Emitter<OnboardingV2State> emit) async {
+    if (state.step != OnboardingV2Step.starterPack || state.actionStatus == ActionStatus.inProgress) return;
+    final attemptId = ++_saveAttemptId;
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
+    try {
+      await _remoteConfig.fetchAndActivate();
+    } catch (error) {
+      logger.w('Starter pack Remote Config fetch failed; using cached values.', tag: 'OnboardingV2Bloc', error: error);
+    }
+    final starterPackData = await _fetchStarterPack();
+    if (attemptId != _saveAttemptId) return;
+    emit(state.copyWith(actionStatus: ActionStatus.idle, starterPackData: starterPackData));
   }
 
   Future<void> _onFirstWallpaperActionRequested(

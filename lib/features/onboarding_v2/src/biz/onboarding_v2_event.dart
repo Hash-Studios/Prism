@@ -9,6 +9,7 @@ abstract class OnboardingV2Event with _$OnboardingV2Event {
   const factory OnboardingV2Event.interestsConfirmed() = _InterestsConfirmed;
   const factory OnboardingV2Event.creatorFollowToggled(String creatorEmail) = _CreatorFollowToggled;
   const factory OnboardingV2Event.starterPackConfirmed() = _StarterPackConfirmed;
+  const factory OnboardingV2Event.starterPackReloadRequested() = _StarterPackReloadRequested;
   const factory OnboardingV2Event.firstWallpaperActionRequested() = _FirstWallpaperActionRequested;
   const factory OnboardingV2Event.firstWallpaperActionCompleted({required bool success, required int elapsedMs}) =
       _FirstWallpaperActionCompleted;

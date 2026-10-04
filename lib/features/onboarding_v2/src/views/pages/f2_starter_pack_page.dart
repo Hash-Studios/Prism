@@ -29,13 +29,9 @@ class F2StarterPackPage extends StatelessWidget {
                   left: OnboardingLayout.creatorsX * sx,
                   right: OnboardingLayout.creatorsX * sx,
                   height: OnboardingLayout.tilesHeight * sy,
+                  // No creators means the pack failed to load: the shell offers a reload, so do not spin forever.
                   child: creators.isEmpty
-                      ? const Center(
-                          child: SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          ),
-                        )
+                      ? const SizedBox.shrink()
                       : OnboardingFadeMask(
                           stops: const [0.0, 0.08, 0.82, 1.0],
                           child: ListView.separated(

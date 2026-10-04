@@ -579,4 +579,24 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
   });
+
+  for (final int count in <int>[0, 2]) {
+    testWidgets('a starter pack with $count creators offers a reload instead of a dead end', (tester) async {
+      final OnboardingV2State short = _starterPack.copyWith(
+        starterPackData: OnboardingStarterPackData(
+          creators: <OnboardingStarterCreatorEntity>[for (var i = 0; i < count; i++) _creator(i)],
+          selectedEmails: <String>{for (var i = 0; i < count; i++) 'creator-$i@example.com'},
+        ),
+      );
+      final bloc = await pumpShell(tester, short, short);
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text("couldn't load creators. check your connection and tap reload"), findsOneWidget);
+      await tester.tap(find.text('reload'));
+      await tester.pump();
+
+      verify(() => bloc.add(const OnboardingV2Event.starterPackReloadRequested())).called(1);
+      verifyNever(() => bloc.add(const OnboardingV2Event.starterPackConfirmed()));
+    });
+  }
 }
