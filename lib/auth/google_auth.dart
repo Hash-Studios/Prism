@@ -356,8 +356,7 @@ class GoogleAuth {
       final User? currentUser = _auth.currentUser;
       final bool signedInWithFirebase =
           currentUser != null && !currentUser.isAnonymous && currentUser.uid.trim().isNotEmpty;
-      // A blank stored profile means sign-in never finished: every write would target an empty doc id.
-      if (signedInWithFirebase && app_state.prismUser.id.trim().isNotEmpty) {
+      if (signedInWithFirebase && app_state.prismUser.id == currentUser.uid) {
         return true;
       }
 

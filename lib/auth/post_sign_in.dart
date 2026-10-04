@@ -46,6 +46,7 @@ Future<void> completeSignIn({
   if (existing != null) {
     app_state.prismUser = PrismUsersV2.fromMapWithUser(existing, user);
     await firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
+      'id': user.uid,
       'lastLoginAt': now,
       'loggedIn': true,
     }, sourceTag: '$sourceTagPrefix.update_last_login');
