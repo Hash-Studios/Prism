@@ -278,8 +278,11 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   /// Loads the starter pack sorted by rank, with the top creators preselected.
   Future<OnboardingStarterPackData> _fetchStarterPack() async {
     final result = await _fetchStarterPackUseCase(const NoParams());
+    final seenEmails = <String>{};
     final List<OnboardingStarterCreatorEntity> creators = result.fold(
-      onSuccess: (entities) => [...entities]..sort((a, b) => a.rank.compareTo(b.rank)),
+      onSuccess: (entities) => [...entities]
+        ..sort((a, b) => a.rank.compareTo(b.rank))
+        ..removeWhere((creator) => !seenEmails.add(creator.email)),
       onFailure: (_) => <OnboardingStarterCreatorEntity>[],
     );
     final autoSelectedEmails = creators.take(OnboardingV2Config.minFollows).map((c) => c.email).toSet();
@@ -293,13 +296,25 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final attemptId = ++_saveAttemptId;
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
     try {
+      final starterPackData = await _reloadStarterPack(attemptId).timeout(const Duration(seconds: 30));
+      if (starterPackData == null || attemptId != _saveAttemptId) return;
+      emit(state.copyWith(actionStatus: ActionStatus.idle, starterPackData: starterPackData));
+    } on TimeoutException catch (error) {
+      logger.w('Starter pack reload timed out; keeping the current creators.', tag: 'OnboardingV2Bloc', error: error);
+      if (attemptId != _saveAttemptId) return;
+      _saveAttemptId++;
+      emit(state.copyWith(actionStatus: ActionStatus.idle));
+    }
+  }
+
+  Future<OnboardingStarterPackData?> _reloadStarterPack(int attemptId) async {
+    try {
       await _remoteConfig.fetchAndActivate();
     } catch (error) {
       logger.w('Starter pack Remote Config fetch failed; using cached values.', tag: 'OnboardingV2Bloc', error: error);
     }
-    final starterPackData = await _fetchStarterPack();
-    if (attemptId != _saveAttemptId) return;
-    emit(state.copyWith(actionStatus: ActionStatus.idle, starterPackData: starterPackData));
+    if (attemptId != _saveAttemptId || isClosed) return null;
+    return _fetchStarterPack();
   }
 
   Future<void> _onFirstWallpaperActionRequested(
