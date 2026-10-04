@@ -62,6 +62,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_FirstWallpaperStepContinued>(_onFirstWallpaperStepContinued);
     on<_PaywallResultReceived>(_onPaywallResultReceived);
     on<_StepBack>(_onStepBack);
+    on<_CompletionRetried>(_onCompletionRetried);
     on<_AiGenerationRequested>(_onAiGenerationRequested);
     on<_AiGenerationCompleted>(_onAiGenerationCompleted);
     on<_AiGenerationStepContinued>(_onAiGenerationStepContinued);
@@ -86,6 +87,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   Stopwatch? _onboardingStopwatch;
   bool _completionInFlight = false;
   bool _completionTracked = false;
+  bool? _pendingCompletionDidPurchase;
+  int _saveAttemptId = 0;
+  int _completionAttemptId = 0;
 
   Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) async {
     _onboardingStopwatch ??= Stopwatch()..start();
@@ -186,6 +190,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   void _onInterestToggled(_InterestToggled event, Emitter<OnboardingV2State> emit) {
+    if (state.actionStatus == ActionStatus.inProgress) return;
     final current = state.interestsData.selected;
     final updated = current.contains(event.categoryName)
         ? current.where((c) => c != event.categoryName).toList()
@@ -194,13 +199,17 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _onInterestsConfirmed(_InterestsConfirmed event, Emitter<OnboardingV2State> emit) async {
-    if (!state.interestsData.canContinue) {
+    if (state.step != OnboardingV2Step.interests ||
+        !state.interestsData.canContinue ||
+        state.actionStatus == ActionStatus.inProgress) {
       return;
     }
+    final attemptId = ++_saveAttemptId;
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
 
     final selectedInterests = state.interestsData.selected;
     final result = await _saveInterestsUseCase(SaveInterestsParams(interests: selectedInterests));
+    if (attemptId != _saveAttemptId) return;
 
     if (result.isFailure) {
       _emitSaveFailure(emit, result.failure!);
@@ -210,6 +219,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     unawaited(analytics.track(OnboardingV2InterestsCompletedEvent(selectedCount: selectedInterests.length)));
 
     final refreshedWallpaper = await _firstWallpaperService.recommendForOnboarding(selectedInterests);
+    if (attemptId != _saveAttemptId) return;
 
     final nextStep = state.skipStarterPack ? OnboardingV2Step.aiGenerate : OnboardingV2Step.starterPack;
     emit(
@@ -225,6 +235,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   void _onCreatorFollowToggled(_CreatorFollowToggled event, Emitter<OnboardingV2State> emit) {
+    if (state.actionStatus == ActionStatus.inProgress || state.completionFailed) return;
     final selected = {...state.starterPackData.selectedEmails};
     if (!selected.remove(event.creatorEmail)) selected.add(event.creatorEmail);
 
@@ -232,9 +243,12 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _onStarterPackConfirmed(_StarterPackConfirmed event, Emitter<OnboardingV2State> emit) async {
-    if (!state.starterPackData.canContinue) {
+    if (state.step != OnboardingV2Step.starterPack ||
+        !state.starterPackData.canContinue ||
+        state.actionStatus == ActionStatus.inProgress) {
       return;
     }
+    final attemptId = ++_saveAttemptId;
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
 
     final selectedCreators = state.starterPackData.creators
@@ -242,6 +256,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         .toList(growable: false);
 
     final result = await _followStarterPackUseCase(FollowStarterPackParams(creators: selectedCreators));
+    if (attemptId != _saveAttemptId) return;
 
     if (result.isFailure) {
       _emitSaveFailure(emit, result.failure!);
@@ -324,38 +339,63 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     await _finishOnboarding(emit, didPurchase: event.didPurchase);
   }
 
+  Future<void> _onCompletionRetried(_CompletionRetried event, Emitter<OnboardingV2State> emit) async {
+    final didPurchase = _pendingCompletionDidPurchase;
+    if (didPurchase == null || !state.completionFailed || state.actionStatus != ActionStatus.failure) return;
+    await _finishOnboarding(emit, didPurchase: didPurchase);
+  }
+
   Future<void> _finishOnboarding(Emitter<OnboardingV2State> emit, {required bool didPurchase}) async {
     if (_completionInFlight || _completionTracked) return;
     _completionInFlight = true;
-    emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
+    _pendingCompletionDidPurchase ??= didPurchase;
+    final attemptId = ++_completionAttemptId;
+    emit(
+      state.copyWith(
+        actionStatus: ActionStatus.inProgress,
+        completionFailed: false,
+        sessionInvalid: false,
+        navRequest: null,
+      ),
+    );
     try {
       final totalMs = _onboardingStopwatch?.elapsedMilliseconds ?? 0;
       final result = await _completeOnboardingUseCase(const NoParams());
+      if (attemptId != _completionAttemptId) return;
       result.fold(
         onSuccess: (_) {
           _completionTracked = true;
+          _pendingCompletionDidPurchase = null;
           unawaited(analytics.track(OnboardingV2CompletedEvent(didPurchase: didPurchase, totalElapsedMs: totalMs)));
           emit(
-            state.copyWith(actionStatus: ActionStatus.success, navRequest: OnboardingV2NavRequest.completeOnboarding),
+            state.copyWith(
+              actionStatus: ActionStatus.success,
+              completionFailed: false,
+              navRequest: OnboardingV2NavRequest.completeOnboarding,
+            ),
           );
         },
-        onFailure: (failure) => _emitSaveFailure(emit, failure),
+        onFailure: (failure) {
+          _pendingCompletionDidPurchase = didPurchase;
+          _emitSaveFailure(emit, failure, completionFailed: true);
+        },
       );
     } finally {
-      _completionInFlight = false;
+      if (attemptId == _completionAttemptId) _completionInFlight = false;
     }
   }
 
   // Firestore codes for a write to the user's own doc that a retry cannot fix.
   static const Set<String> _sessionInvalidCodes = <String>{'permission-denied', 'not-found', 'unauthenticated'};
 
-  void _emitSaveFailure(Emitter<OnboardingV2State> emit, Failure failure) {
+  void _emitSaveFailure(Emitter<OnboardingV2State> emit, Failure failure, {bool completionFailed = false}) {
     logger.w('Onboarding save failed: ${failure.message}', tag: 'OnboardingV2Bloc');
     // ponytail: the follow batch also writes creator docs, so a deleted creator doc reads as an invalid session.
     emit(
       state.copyWith(
         actionStatus: ActionStatus.failure,
         sessionInvalid: _sessionInvalidCodes.contains(failure.code),
+        completionFailed: completionFailed,
         navRequest: null,
       ),
     );
@@ -375,8 +415,22 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
     if (prevStep != null) {
       // A save error belongs to the step that failed, not the one the user goes back to.
-      final actionStatus = state.actionStatus == ActionStatus.failure ? ActionStatus.idle : state.actionStatus;
-      emit(state.copyWith(step: prevStep, actionStatus: actionStatus, navRequest: null));
+      final actionStatus = state.actionStatus == ActionStatus.failure || state.actionStatus == ActionStatus.inProgress
+          ? ActionStatus.idle
+          : state.actionStatus;
+      _pendingCompletionDidPurchase = null;
+      _saveAttemptId++;
+      _completionAttemptId++;
+      _completionInFlight = false;
+      emit(
+        state.copyWith(
+          step: prevStep,
+          actionStatus: actionStatus,
+          sessionInvalid: false,
+          completionFailed: false,
+          navRequest: null,
+        ),
+      );
     }
   }
 

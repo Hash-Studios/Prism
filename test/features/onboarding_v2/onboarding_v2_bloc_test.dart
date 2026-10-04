@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/auth/badge_model.dart';
 import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
@@ -226,6 +228,9 @@ void main() {
     },
     build: buildBloc,
     act: (bloc) async {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
       bloc.add(const OnboardingV2Event.interestToggled('Nature'));
       bloc.add(const OnboardingV2Event.interestToggled('Anime'));
       bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
@@ -250,6 +255,9 @@ void main() {
     },
     build: buildBloc,
     act: (bloc) async {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
       bloc.add(const OnboardingV2Event.interestToggled('Nature'));
       bloc.add(const OnboardingV2Event.interestToggled('Anime'));
       bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
@@ -260,13 +268,47 @@ void main() {
   );
 
   group('save failures', () {
+    late Completer<Result<void>> pendingInterestsResult;
+    late Completer<Result<void>> pendingStarterPackResult;
+    late Completer<OnboardingWallpaperVm?> pendingRecommendation;
+    late Completer<void> recommendationStarted;
+
     Future<void> confirmInterests(OnboardingV2Bloc bloc) async {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
       bloc.add(const OnboardingV2Event.interestToggled('Nature'));
       bloc.add(const OnboardingV2Event.interestToggled('Anime'));
       bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
       await Future<void>.delayed(Duration.zero);
       bloc.add(const OnboardingV2Event.interestsConfirmed());
     }
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'ignores save confirmations that do not match the current step',
+      setUp: () => when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+        (_) async =>
+            Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+      ),
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+        await Future<void>.delayed(Duration.zero);
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.auth);
+        expect(bloc.state.actionStatus, ActionStatus.idle);
+        verifyNever(() => saveInterestsUseCase(any()));
+        verifyNever(() => followStarterPackUseCase(any()));
+      },
+    );
 
     blocTest<OnboardingV2Bloc, OnboardingV2State>(
       'a network error on interests stays on the step as a retryable failure',
@@ -278,6 +320,171 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.actionStatus, ActionStatus.failure);
         expect(bloc.state.sessionInvalid, isFalse);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'ignores duplicate interest submissions while the first save is pending',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        pendingInterestsResult = Completer<Result<void>>();
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) => pendingInterestsResult.future);
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.inProgress);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await Future<void>.delayed(Duration.zero);
+        verify(() => saveInterestsUseCase(any())).called(1);
+        pendingInterestsResult.complete(Result.success(null));
+        await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.success);
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.starterPack);
+        expect(bloc.state.actionStatus, ActionStatus.success);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'keeps interest selection aligned with the pending save snapshot',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        pendingInterestsResult = Completer<Result<void>>();
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) => pendingInterestsResult.future);
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+        await Future<void>.delayed(Duration.zero);
+        final submittedInterests = List<String>.of(bloc.state.interestsData.selected);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.inProgress);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.interestsData.selected, submittedInterests);
+        final saveParams = verify(() => saveInterestsUseCase(captureAny())).captured.single as SaveInterestsParams;
+        expect(saveParams.interests, submittedInterests);
+        pendingInterestsResult.complete(Result.success(null));
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+      },
+      verify: (bloc) {
+        expect(bloc.state.interestsData.selected, <String>['Nature', 'Anime', 'Minimal']);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'ignores duplicate starter-pack submissions while the first save is pending',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        when(
+          () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+        ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+        pendingStarterPackResult = Completer<Result<void>>();
+        when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+          (_) async =>
+              Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+        );
+        when(() => followStarterPackUseCase(any())).thenAnswer((_) => pendingStarterPackResult.future);
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+        await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.inProgress);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+        await Future<void>.delayed(Duration.zero);
+        verify(() => followStarterPackUseCase(any())).called(1);
+        pendingStarterPackResult.complete(Result.success(null));
+        await bloc.stream.firstWhere((s) => s.navRequest == OnboardingV2NavRequest.openPaywall);
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.starterPack);
+        expect(bloc.state.actionStatus, ActionStatus.success);
+        expect(bloc.state.navRequest, OnboardingV2NavRequest.openPaywall);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'backing out and returning while an interests save is pending ignores its stale failure',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        pendingInterestsResult = Completer<Result<void>>();
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) => pendingInterestsResult.future);
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.inProgress);
+        bloc.add(const OnboardingV2Event.stepBack());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.auth);
+        bloc.add(const OnboardingV2Event.authCompleted());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        pendingInterestsResult.complete(Result.error(const ServerFailure('offline')));
+        await Future<void>.delayed(Duration.zero);
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.interests);
+        expect(bloc.state.actionStatus, ActionStatus.idle);
+        expect(bloc.state.sessionInvalid, isFalse);
+      },
+      wait: const Duration(milliseconds: 10),
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'backing out during wallpaper refresh does not advance the step after returning',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        var recommendationCalls = 0;
+        recommendationStarted = Completer<void>();
+        pendingRecommendation = Completer<OnboardingWallpaperVm?>();
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
+        when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer((_) {
+          recommendationCalls++;
+          if (recommendationCalls == 2) {
+            recommendationStarted.complete();
+            return pendingRecommendation.future;
+          }
+          return Future<OnboardingWallpaperVm?>.value();
+        });
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await recommendationStarted.future;
+        bloc.add(const OnboardingV2Event.stepBack());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.auth);
+        bloc.add(const OnboardingV2Event.authCompleted());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        pendingRecommendation.complete(null);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.interests);
+        expect(bloc.state.actionStatus, ActionStatus.idle);
       },
     );
 
@@ -323,6 +530,126 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.step, OnboardingV2Step.interests);
         expect(bloc.state.actionStatus, ActionStatus.idle);
+        expect(bloc.state.sessionInvalid, isFalse);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'retries completion after a successful skipped-interests follow without following twice',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true, premium: true);
+        when(
+          () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+        ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+        when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+          (_) async =>
+              Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+        );
+        when(() => followStarterPackUseCase(any())).thenAnswer((_) async => Result.success(null));
+        when(
+          () => completeOnboardingUseCase(any()),
+        ).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+        final failed = await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.failure);
+        expect(failed.completionFailed, isTrue);
+        final persistedSelection = Set<String>.of(failed.starterPackData.selectedEmails);
+        bloc.add(OnboardingV2Event.creatorFollowToggled(persistedSelection.first));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.starterPackData.selectedEmails, persistedSelection);
+        when(() => completeOnboardingUseCase(any())).thenAnswer((_) async => Result.success(null));
+        bloc.add(const OnboardingV2Event.completionRetried());
+        await bloc.stream.firstWhere((s) => s.navRequest == OnboardingV2NavRequest.completeOnboarding);
+      },
+      verify: (bloc) {
+        final followVerification = verify(() => followStarterPackUseCase(captureAny()));
+        followVerification.called(1);
+        final followed = followVerification.captured.single as FollowStarterPackParams;
+        expect(followed.creators.map((creator) => creator.email).toSet(), bloc.state.starterPackData.selectedEmails);
+        verify(() => completeOnboardingUseCase(any())).called(2);
+        expect(bloc.state.completionFailed, isFalse);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a completion retry preserves the purchase result for analytics',
+      setUp: () {
+        when(
+          () => completeOnboardingUseCase(any()),
+        ).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: true));
+        await bloc.stream.firstWhere((s) => s.completionFailed);
+        when(() => completeOnboardingUseCase(any())).thenAnswer((_) async => Result.success(null));
+        bloc.add(const OnboardingV2Event.completionRetried());
+        await bloc.stream.firstWhere((s) => s.navRequest == OnboardingV2NavRequest.completeOnboarding);
+      },
+      verify: (_) {
+        expect(
+          analytics.events.singleWhere((event) => event.eventName == 'onboarding_v2_completed').toWireParameters(),
+          containsPair('did_purchase', 1),
+        );
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a completion that fails after step-back cannot clear a newer completion in flight',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        when(
+          () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+        ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: false, hasFollows: true)));
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        final oldCompletion = Completer<Result<void>>();
+        final newCompletion = Completer<Result<void>>();
+        var completionCalls = 0;
+        when(() => completeOnboardingUseCase(any())).thenAnswer((_) {
+          completionCalls++;
+          return completionCalls == 1 ? oldCompletion.future : newCompletion.future;
+        });
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+        bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.firstWallpaper);
+        bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: true));
+        await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.inProgress);
+        bloc.add(const OnboardingV2Event.stepBack());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+        bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.firstWallpaper);
+        bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: false));
+        await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.inProgress);
+        oldCompletion.complete(Result.error(const ServerFailure('old request failed')));
+        await Future<void>.delayed(Duration.zero);
+        expect(completionCalls, 2);
+        expect(bloc.state.actionStatus, ActionStatus.inProgress);
+        bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: false));
+        await Future<void>.delayed(Duration.zero);
+        expect(completionCalls, 2);
+        newCompletion.complete(Result.success(null));
+        await bloc.stream.firstWhere((s) => s.navRequest == OnboardingV2NavRequest.completeOnboarding);
+      },
+      verify: (bloc) {
+        expect(bloc.state.actionStatus, ActionStatus.success);
+        expect(
+          analytics.events.singleWhere((event) => event.eventName == 'onboarding_v2_completed').toWireParameters(),
+          containsPair('did_purchase', 0),
+        );
       },
     );
   });
@@ -330,6 +657,10 @@ void main() {
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'records starter-pack follows after the follow write succeeds',
     setUp: () {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      when(
+        () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+      ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
       when(() => followStarterPackUseCase(any())).thenAnswer((_) async => Result.success(null));
       when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
         (_) async =>
@@ -338,8 +669,9 @@ void main() {
     },
     build: buildBloc,
     act: (bloc) async {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
       bloc.add(const OnboardingV2Event.started());
-      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
       bloc.add(const OnboardingV2Event.starterPackConfirmed());
     },
     verify: (_) {
@@ -354,16 +686,21 @@ void main() {
 
   group('AI prompt for the interests', () {
     Future<OnboardingV2State> confirmStarterPackWith(OnboardingV2Bloc bloc, List<String> interests) async {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
       for (final interest in interests) {
         bloc.add(OnboardingV2Event.interestToggled(interest));
       }
-      bloc.add(const OnboardingV2Event.started());
-      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const OnboardingV2Event.interestsConfirmed());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
       bloc.add(const OnboardingV2Event.starterPackConfirmed());
       return bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
     }
 
     setUp(() {
+      when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
       when(() => followStarterPackUseCase(any())).thenAnswer((_) async => Result.success(null));
       when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
         (_) async =>
