@@ -310,18 +310,24 @@ void main() {
       },
     );
 
-    blocTest<OnboardingV2Bloc, OnboardingV2State>(
-      'a network error on interests stays on the step as a retryable failure',
-      setUp: () => when(
-        () => saveInterestsUseCase(any()),
-      ).thenAnswer((_) async => Result.error(const ServerFailure('offline', code: 'unavailable'))),
-      build: buildBloc,
-      act: confirmInterests,
-      verify: (bloc) {
-        expect(bloc.state.actionStatus, ActionStatus.failure);
-        expect(bloc.state.sessionInvalid, isFalse);
-      },
-    );
+    for (final code in <String?>[null, 'unavailable']) {
+      blocTest<OnboardingV2Bloc, OnboardingV2State>(
+        'an interests save failure with a user id remains retryable${code == null ? ' for a generic error' : ' for $code'}',
+        setUp: () => when(
+          () => saveInterestsUseCase(any()),
+        ).thenAnswer((_) async => Result.error(ServerFailure('offline', code: code))),
+        build: buildBloc,
+        act: confirmInterests,
+        verify: (bloc) {
+          expect(bloc.state.step, OnboardingV2Step.interests);
+          expect(bloc.state.actionStatus, ActionStatus.failure);
+          expect(bloc.state.sessionInvalid, isFalse);
+          expect(bloc.state.interestsData.selected, <String>['Nature', 'Anime', 'Minimal']);
+          expect(bloc.state.navRequest, isNull);
+          expect(trackedNames(), isEmpty);
+        },
+      );
+    }
 
     blocTest<OnboardingV2Bloc, OnboardingV2State>(
       'a signed-in session with no user id marks the session invalid, whatever the error',
@@ -344,6 +350,113 @@ void main() {
       verify: (bloc) {
         expect(bloc.state.actionStatus, ActionStatus.failure);
         expect(bloc.state.sessionInvalid, isTrue);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a starter-pack save failure with no user id marks the session invalid',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        when(
+          () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+        ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+        when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+          (_) async =>
+              Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+        );
+        when(
+          () => followStarterPackUseCase(any()),
+        ).thenAnswer((_) async => Result.error(const ServerFailure('A document path must be a non-empty string')));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        app_state.prismUser = _user(id: '', loggedIn: true);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.starterPack);
+        expect(bloc.state.actionStatus, ActionStatus.failure);
+        expect(bloc.state.sessionInvalid, isTrue);
+        expect(bloc.state.completionFailed, isFalse);
+        expect(bloc.state.navRequest, isNull);
+        expect(bloc.state.starterPackData.selectedEmails, <String>{
+          for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i@example.com',
+        });
+        expect(trackedNames(), isNot(contains('onboarding_v2_starter_pack_completed')));
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a generic starter-pack save failure with a user id remains retryable',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        when(
+          () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+        ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+        when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+          (_) async =>
+              Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+        );
+        when(
+          () => followStarterPackUseCase(any()),
+        ).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.starterPack);
+        expect(bloc.state.actionStatus, ActionStatus.failure);
+        expect(bloc.state.sessionInvalid, isFalse);
+        expect(bloc.state.completionFailed, isFalse);
+        expect(bloc.state.navRequest, isNull);
+        expect(bloc.state.starterPackData.selectedEmails, <String>{
+          for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i@example.com',
+        });
+        expect(trackedNames(), isNot(contains('onboarding_v2_starter_pack_completed')));
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a completion failure with no user id marks the session invalid without tracking completion',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        when(
+          () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+        ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: false, hasFollows: true)));
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
+        when(
+          () => completeOnboardingUseCase(any()),
+        ).thenAnswer((_) async => Result.error(const ServerFailure('A document path must be a non-empty string')));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+        bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.firstWallpaper);
+        app_state.prismUser = _user(id: '', loggedIn: true);
+        bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: true));
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.firstWallpaper);
+        expect(bloc.state.actionStatus, ActionStatus.failure);
+        expect(bloc.state.completionFailed, isTrue);
+        expect(bloc.state.sessionInvalid, isTrue);
+        expect(bloc.state.navRequest, isNull);
+        expect(bloc.state.interestsData.selected, <String>['Nature', 'Anime', 'Minimal']);
+        expect(trackedNames(), isNot(contains('onboarding_v2_completed')));
       },
     );
 
@@ -602,6 +715,7 @@ void main() {
     blocTest<OnboardingV2Bloc, OnboardingV2State>(
       'a completion retry preserves the purchase result for analytics',
       setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
         when(
           () => completeOnboardingUseCase(any()),
         ).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
@@ -609,7 +723,11 @@ void main() {
       build: buildBloc,
       act: (bloc) async {
         bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: true));
-        await bloc.stream.firstWhere((s) => s.completionFailed);
+        final failed = await bloc.stream.firstWhere((s) => s.completionFailed);
+        expect(failed.actionStatus, ActionStatus.failure);
+        expect(failed.sessionInvalid, isFalse);
+        expect(failed.navRequest, isNull);
+        expect(trackedNames(), isNot(contains('onboarding_v2_completed')));
         when(() => completeOnboardingUseCase(any())).thenAnswer((_) async => Result.success(null));
         bloc.add(const OnboardingV2Event.completionRetried());
         await bloc.stream.firstWhere((s) => s.navRequest == OnboardingV2NavRequest.completeOnboarding);

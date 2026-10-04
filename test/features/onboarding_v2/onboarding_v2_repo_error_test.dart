@@ -106,6 +106,16 @@ void main() {
     expect(store.data, isEmpty);
   });
 
+  test('saveInterests returns an unmapped failure for an empty user id before writing', () async {
+    when(() => users.doc('')).thenThrow(ArgumentError.value('', 'path', 'must be nonempty'));
+
+    final result = await repository.saveInterests(userId: '', interests: const <String>['Nature']);
+
+    expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', isNull));
+    expect(store.data, isEmpty);
+    verifyNever(() => user.update(any()));
+  });
+
   test('followCreators preserves the Firebase batch commit error code', () async {
     when(
       () => batch.commit(),
@@ -120,6 +130,21 @@ void main() {
     expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', 'unauthenticated'));
     expect(store.data, isEmpty);
     verify(() => batch.commit()).called(1);
+  });
+
+  test('followCreators returns an unmapped failure for an empty user id before batching writes', () async {
+    when(() => users.doc('')).thenThrow(ArgumentError.value('', 'path', 'must be nonempty'));
+
+    final result = await repository.followCreators(
+      currentUserId: '',
+      currentUserEmail: 'user@example.com',
+      creators: <OnboardingStarterCreatorEntity>[_creator()],
+    );
+
+    expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', isNull));
+    expect(store.data, isEmpty);
+    expect(batch.updates, isEmpty);
+    verifyNever(() => batch.commit());
   });
 
   test('a failed batch can be retried and only records local completion after success', () async {
@@ -183,5 +208,32 @@ void main() {
     expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', 'not-found'));
     expect(store.data, isEmpty);
     expect(mapFirestoreError(FirebaseException(plugin: 'cloud_firestore', code: 'not-found')).code, 'not-found');
+  });
+
+  test('completeOnboarding returns an unmapped failure for an empty user id before writing', () async {
+    when(() => users.doc('')).thenThrow(ArgumentError.value('', 'path', 'must be nonempty'));
+
+    final Result<void> result = await repository.completeOnboarding(userId: '');
+
+    expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', isNull));
+    expect(store.data, isEmpty);
+    verifyNever(() => user.update(any()));
+  });
+
+  test('a not-found batch failure includes current user and creator without identifying which failed', () async {
+    when(
+      () => batch.commit(),
+    ).thenThrow(FirebaseException(plugin: 'cloud_firestore', code: 'not-found', message: 'creator-1 does not exist'));
+
+    final result = await repository.followCreators(
+      currentUserId: 'user-1',
+      currentUserEmail: 'user@example.com',
+      creators: <OnboardingStarterCreatorEntity>[_creator()],
+    );
+
+    expect(result.failure, isA<ServerFailure>().having((failure) => failure.code, 'code', 'not-found'));
+    expect(store.data, isEmpty);
+    expect(batch.updates.map((update) => update.$1), <Object>[user, creator]);
+    verify(() => batch.commit()).called(1);
   });
 }
