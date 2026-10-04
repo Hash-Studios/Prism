@@ -177,6 +177,27 @@ make version-guard    # python3 tool/sync_app_version.py --check, must exit 0
 Never hand-edit `lib/core/constants/app_constants.dart`. `version-sync` derives it from
 `pubspec.yaml`.
 
+**In-app changelog.** The What's new popup fetches `CHANGELOG.md` from `master` at runtime
+(`lib/core/widgets/popup/changelog_pop_up.dart`). Add a `### vX.Y.Z` section at the top in the
+same commit, or the popup shows the new version badge over the old notes. Write 5 to 8 short,
+user-facing lines in the style of the earlier sections; end with "Security and stability fixes".
+No rebuild is needed to fix this file later, but the fix must reach `master`.
+
+**Getting the bump onto `master`.** A direct push to `master` is refused: the ruleset needs the
+`ci` check, and rebase merges are off. After the human says go, ship the bump commit (pubspec,
+`app_constants.dart`, `CHANGELOG.md`) as its own small PR and merge it with a merge commit once
+`ci` passes. The merge keeps the bump commit SHA, so the build, the Sentry release and the tag
+all point at the same commit:
+```sh
+git push -u origin HEAD:akshay/release-<VERSION>
+gh pr create --repo Hash-Studios/Prism --base master --head akshay/release-<VERSION> \
+  --title "chore(release): <VERSION>+<N>" --body "<what ships, backend state>"
+gh pr checks <pr> --repo Hash-Studios/Prism          # wait for "ci" pass
+gh pr merge <pr> --repo Hash-Studios/Prism --merge --delete-branch
+git fetch origin && git diff --stat HEAD origin/master   # must be empty: master matches the build
+```
+Builds can start from the bump commit while `ci` runs.
+
 ### 3. Backend first: Cloud Functions and Firestore indexes
 
 Deploy backend changes **before** any client build that calls a new or changed callable. The
@@ -425,7 +446,7 @@ Prism release: version <VERSION>, build <N>.
   App Store:          not submitted this run (human decides)
   Sentry symbols:     uploaded (Android) / not uploaded (iOS build-ipa doesn't wire this)
   Smoke test:         <what was verified, or "not run, do this before shipping">
-  Version bump commit: <sha, or "not committed, human pushes">
+  Version bump commit: <sha, merged to master in PR #<n> (or "not merged, human decides")>
   GitHub release:     v<VERSION>+<N> with app-release.aab           (or "not created")
 ```
 
@@ -437,7 +458,7 @@ Prism release: version <VERSION>, build <N>.
 - `bundle exec fastlane beta` / any Play Console upload, and the track + rollout percentage
 - `asc publish testflight` / App Store submission
 - Decrypting `android/android_keys.zip.gpg` (passphrase stays with the human)
-- Pushing the version-bump commit
+- Pushing the version-bump commit and merging its PR to `master`
 - Pushing the release tag and `gh release create`
 
 ## Known gaps
