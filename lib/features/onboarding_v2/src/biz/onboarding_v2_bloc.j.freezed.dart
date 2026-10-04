@@ -55,7 +55,7 @@ extension OnboardingV2EventPatterns on OnboardingV2Event {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AuthCompleted value)?  authCompleted,TResult Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult Function( _InterestToggled value)?  interestToggled,TResult Function( _InterestsConfirmed value)?  interestsConfirmed,TResult Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult Function( _PaywallResultReceived value)?  paywallResultReceived,TResult Function( _CompletionRetried value)?  completionRetried,TResult Function( _StepBack value)?  stepBack,TResult Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AuthCompleted value)?  authCompleted,TResult Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult Function( _InterestToggled value)?  interestToggled,TResult Function( _InterestsConfirmed value)?  interestsConfirmed,TResult Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult Function( _StarterPackReloadRequested value)?  starterPackReloadRequested,TResult Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult Function( _PaywallResultReceived value)?  paywallResultReceived,TResult Function( _CompletionRetried value)?  completionRetried,TResult Function( _StepBack value)?  stepBack,TResult Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -65,7 +65,8 @@ return authLoadingChanged(_that);case _InterestToggled() when interestToggled !=
 return interestToggled(_that);case _InterestsConfirmed() when interestsConfirmed != null:
 return interestsConfirmed(_that);case _CreatorFollowToggled() when creatorFollowToggled != null:
 return creatorFollowToggled(_that);case _StarterPackConfirmed() when starterPackConfirmed != null:
-return starterPackConfirmed(_that);case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
+return starterPackConfirmed(_that);case _StarterPackReloadRequested() when starterPackReloadRequested != null:
+return starterPackReloadRequested(_that);case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
 return firstWallpaperActionRequested(_that);case _FirstWallpaperActionCompleted() when firstWallpaperActionCompleted != null:
 return firstWallpaperActionCompleted(_that);case _FirstWallpaperStepContinued() when firstWallpaperStepContinued != null:
 return firstWallpaperStepContinued(_that);case _PaywallResultReceived() when paywallResultReceived != null:
@@ -92,7 +93,7 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AuthCompleted value)  authCompleted,required TResult Function( _AuthLoadingChanged value)  authLoadingChanged,required TResult Function( _InterestToggled value)  interestToggled,required TResult Function( _InterestsConfirmed value)  interestsConfirmed,required TResult Function( _CreatorFollowToggled value)  creatorFollowToggled,required TResult Function( _StarterPackConfirmed value)  starterPackConfirmed,required TResult Function( _FirstWallpaperActionRequested value)  firstWallpaperActionRequested,required TResult Function( _FirstWallpaperActionCompleted value)  firstWallpaperActionCompleted,required TResult Function( _FirstWallpaperStepContinued value)  firstWallpaperStepContinued,required TResult Function( _PaywallResultReceived value)  paywallResultReceived,required TResult Function( _CompletionRetried value)  completionRetried,required TResult Function( _StepBack value)  stepBack,required TResult Function( _AiGenerationRequested value)  aiGenerationRequested,required TResult Function( _AiGenerationCompleted value)  aiGenerationCompleted,required TResult Function( _AiGenerationStepContinued value)  aiGenerationStepContinued,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AuthCompleted value)  authCompleted,required TResult Function( _AuthLoadingChanged value)  authLoadingChanged,required TResult Function( _InterestToggled value)  interestToggled,required TResult Function( _InterestsConfirmed value)  interestsConfirmed,required TResult Function( _CreatorFollowToggled value)  creatorFollowToggled,required TResult Function( _StarterPackConfirmed value)  starterPackConfirmed,required TResult Function( _StarterPackReloadRequested value)  starterPackReloadRequested,required TResult Function( _FirstWallpaperActionRequested value)  firstWallpaperActionRequested,required TResult Function( _FirstWallpaperActionCompleted value)  firstWallpaperActionCompleted,required TResult Function( _FirstWallpaperStepContinued value)  firstWallpaperStepContinued,required TResult Function( _PaywallResultReceived value)  paywallResultReceived,required TResult Function( _CompletionRetried value)  completionRetried,required TResult Function( _StepBack value)  stepBack,required TResult Function( _AiGenerationRequested value)  aiGenerationRequested,required TResult Function( _AiGenerationCompleted value)  aiGenerationCompleted,required TResult Function( _AiGenerationStepContinued value)  aiGenerationStepContinued,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -102,7 +103,8 @@ return authLoadingChanged(_that);case _InterestToggled():
 return interestToggled(_that);case _InterestsConfirmed():
 return interestsConfirmed(_that);case _CreatorFollowToggled():
 return creatorFollowToggled(_that);case _StarterPackConfirmed():
-return starterPackConfirmed(_that);case _FirstWallpaperActionRequested():
+return starterPackConfirmed(_that);case _StarterPackReloadRequested():
+return starterPackReloadRequested(_that);case _FirstWallpaperActionRequested():
 return firstWallpaperActionRequested(_that);case _FirstWallpaperActionCompleted():
 return firstWallpaperActionCompleted(_that);case _FirstWallpaperStepContinued():
 return firstWallpaperStepContinued(_that);case _PaywallResultReceived():
@@ -128,7 +130,7 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AuthCompleted value)?  authCompleted,TResult? Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult? Function( _InterestToggled value)?  interestToggled,TResult? Function( _InterestsConfirmed value)?  interestsConfirmed,TResult? Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult? Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult? Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult? Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult? Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult? Function( _PaywallResultReceived value)?  paywallResultReceived,TResult? Function( _CompletionRetried value)?  completionRetried,TResult? Function( _StepBack value)?  stepBack,TResult? Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult? Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult? Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AuthCompleted value)?  authCompleted,TResult? Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult? Function( _InterestToggled value)?  interestToggled,TResult? Function( _InterestsConfirmed value)?  interestsConfirmed,TResult? Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult? Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult? Function( _StarterPackReloadRequested value)?  starterPackReloadRequested,TResult? Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult? Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult? Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult? Function( _PaywallResultReceived value)?  paywallResultReceived,TResult? Function( _CompletionRetried value)?  completionRetried,TResult? Function( _StepBack value)?  stepBack,TResult? Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult? Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult? Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -138,7 +140,8 @@ return authLoadingChanged(_that);case _InterestToggled() when interestToggled !=
 return interestToggled(_that);case _InterestsConfirmed() when interestsConfirmed != null:
 return interestsConfirmed(_that);case _CreatorFollowToggled() when creatorFollowToggled != null:
 return creatorFollowToggled(_that);case _StarterPackConfirmed() when starterPackConfirmed != null:
-return starterPackConfirmed(_that);case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
+return starterPackConfirmed(_that);case _StarterPackReloadRequested() when starterPackReloadRequested != null:
+return starterPackReloadRequested(_that);case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
 return firstWallpaperActionRequested(_that);case _FirstWallpaperActionCompleted() when firstWallpaperActionCompleted != null:
 return firstWallpaperActionCompleted(_that);case _FirstWallpaperStepContinued() when firstWallpaperStepContinued != null:
 return firstWallpaperStepContinued(_that);case _PaywallResultReceived() when paywallResultReceived != null:
@@ -164,7 +167,7 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  authCompleted,TResult Function( bool isLoading)?  authLoadingChanged,TResult Function( String categoryName)?  interestToggled,TResult Function()?  interestsConfirmed,TResult Function( String creatorEmail)?  creatorFollowToggled,TResult Function()?  starterPackConfirmed,TResult Function()?  firstWallpaperActionRequested,TResult Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult Function()?  firstWallpaperStepContinued,TResult Function( bool didPurchase)?  paywallResultReceived,TResult Function()?  completionRetried,TResult Function()?  stepBack,TResult Function( String targetSize)?  aiGenerationRequested,TResult Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult Function()?  aiGenerationStepContinued,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  authCompleted,TResult Function( bool isLoading)?  authLoadingChanged,TResult Function( String categoryName)?  interestToggled,TResult Function()?  interestsConfirmed,TResult Function( String creatorEmail)?  creatorFollowToggled,TResult Function()?  starterPackConfirmed,TResult Function()?  starterPackReloadRequested,TResult Function()?  firstWallpaperActionRequested,TResult Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult Function()?  firstWallpaperStepContinued,TResult Function( bool didPurchase)?  paywallResultReceived,TResult Function()?  completionRetried,TResult Function()?  stepBack,TResult Function( String targetSize)?  aiGenerationRequested,TResult Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult Function()?  aiGenerationStepContinued,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AuthCompleted() when authCompleted != null:
@@ -173,7 +176,8 @@ return authLoadingChanged(_that.isLoading);case _InterestToggled() when interest
 return interestToggled(_that.categoryName);case _InterestsConfirmed() when interestsConfirmed != null:
 return interestsConfirmed();case _CreatorFollowToggled() when creatorFollowToggled != null:
 return creatorFollowToggled(_that.creatorEmail);case _StarterPackConfirmed() when starterPackConfirmed != null:
-return starterPackConfirmed();case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
+return starterPackConfirmed();case _StarterPackReloadRequested() when starterPackReloadRequested != null:
+return starterPackReloadRequested();case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
 return firstWallpaperActionRequested();case _FirstWallpaperActionCompleted() when firstWallpaperActionCompleted != null:
 return firstWallpaperActionCompleted(_that.success,_that.elapsedMs);case _FirstWallpaperStepContinued() when firstWallpaperStepContinued != null:
 return firstWallpaperStepContinued();case _PaywallResultReceived() when paywallResultReceived != null:
@@ -200,7 +204,7 @@ return aiGenerationStepContinued();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  authCompleted,required TResult Function( bool isLoading)  authLoadingChanged,required TResult Function( String categoryName)  interestToggled,required TResult Function()  interestsConfirmed,required TResult Function( String creatorEmail)  creatorFollowToggled,required TResult Function()  starterPackConfirmed,required TResult Function()  firstWallpaperActionRequested,required TResult Function( bool success,  int elapsedMs)  firstWallpaperActionCompleted,required TResult Function()  firstWallpaperStepContinued,required TResult Function( bool didPurchase)  paywallResultReceived,required TResult Function()  completionRetried,required TResult Function()  stepBack,required TResult Function( String targetSize)  aiGenerationRequested,required TResult Function( String? imageUrl,  String? thumbnailUrl)  aiGenerationCompleted,required TResult Function()  aiGenerationStepContinued,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  authCompleted,required TResult Function( bool isLoading)  authLoadingChanged,required TResult Function( String categoryName)  interestToggled,required TResult Function()  interestsConfirmed,required TResult Function( String creatorEmail)  creatorFollowToggled,required TResult Function()  starterPackConfirmed,required TResult Function()  starterPackReloadRequested,required TResult Function()  firstWallpaperActionRequested,required TResult Function( bool success,  int elapsedMs)  firstWallpaperActionCompleted,required TResult Function()  firstWallpaperStepContinued,required TResult Function( bool didPurchase)  paywallResultReceived,required TResult Function()  completionRetried,required TResult Function()  stepBack,required TResult Function( String targetSize)  aiGenerationRequested,required TResult Function( String? imageUrl,  String? thumbnailUrl)  aiGenerationCompleted,required TResult Function()  aiGenerationStepContinued,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _AuthCompleted():
@@ -209,7 +213,8 @@ return authLoadingChanged(_that.isLoading);case _InterestToggled():
 return interestToggled(_that.categoryName);case _InterestsConfirmed():
 return interestsConfirmed();case _CreatorFollowToggled():
 return creatorFollowToggled(_that.creatorEmail);case _StarterPackConfirmed():
-return starterPackConfirmed();case _FirstWallpaperActionRequested():
+return starterPackConfirmed();case _StarterPackReloadRequested():
+return starterPackReloadRequested();case _FirstWallpaperActionRequested():
 return firstWallpaperActionRequested();case _FirstWallpaperActionCompleted():
 return firstWallpaperActionCompleted(_that.success,_that.elapsedMs);case _FirstWallpaperStepContinued():
 return firstWallpaperStepContinued();case _PaywallResultReceived():
@@ -235,7 +240,7 @@ return aiGenerationStepContinued();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  authCompleted,TResult? Function( bool isLoading)?  authLoadingChanged,TResult? Function( String categoryName)?  interestToggled,TResult? Function()?  interestsConfirmed,TResult? Function( String creatorEmail)?  creatorFollowToggled,TResult? Function()?  starterPackConfirmed,TResult? Function()?  firstWallpaperActionRequested,TResult? Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult? Function()?  firstWallpaperStepContinued,TResult? Function( bool didPurchase)?  paywallResultReceived,TResult? Function()?  completionRetried,TResult? Function()?  stepBack,TResult? Function( String targetSize)?  aiGenerationRequested,TResult? Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult? Function()?  aiGenerationStepContinued,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  authCompleted,TResult? Function( bool isLoading)?  authLoadingChanged,TResult? Function( String categoryName)?  interestToggled,TResult? Function()?  interestsConfirmed,TResult? Function( String creatorEmail)?  creatorFollowToggled,TResult? Function()?  starterPackConfirmed,TResult? Function()?  starterPackReloadRequested,TResult? Function()?  firstWallpaperActionRequested,TResult? Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult? Function()?  firstWallpaperStepContinued,TResult? Function( bool didPurchase)?  paywallResultReceived,TResult? Function()?  completionRetried,TResult? Function()?  stepBack,TResult? Function( String targetSize)?  aiGenerationRequested,TResult? Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult? Function()?  aiGenerationStepContinued,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AuthCompleted() when authCompleted != null:
@@ -244,7 +249,8 @@ return authLoadingChanged(_that.isLoading);case _InterestToggled() when interest
 return interestToggled(_that.categoryName);case _InterestsConfirmed() when interestsConfirmed != null:
 return interestsConfirmed();case _CreatorFollowToggled() when creatorFollowToggled != null:
 return creatorFollowToggled(_that.creatorEmail);case _StarterPackConfirmed() when starterPackConfirmed != null:
-return starterPackConfirmed();case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
+return starterPackConfirmed();case _StarterPackReloadRequested() when starterPackReloadRequested != null:
+return starterPackReloadRequested();case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
 return firstWallpaperActionRequested();case _FirstWallpaperActionCompleted() when firstWallpaperActionCompleted != null:
 return firstWallpaperActionCompleted(_that.success,_that.elapsedMs);case _FirstWallpaperStepContinued() when firstWallpaperStepContinued != null:
 return firstWallpaperStepContinued();case _PaywallResultReceived() when paywallResultReceived != null:
@@ -266,7 +272,7 @@ return aiGenerationStepContinued();case _:
 
 class _Started implements OnboardingV2Event {
   const _Started();
-
+  
 
 
 
@@ -590,6 +596,38 @@ String toString() {
 /// @nodoc
 
 
+class _StarterPackReloadRequested implements OnboardingV2Event {
+  const _StarterPackReloadRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StarterPackReloadRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'OnboardingV2Event.starterPackReloadRequested()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
 class _FirstWallpaperActionRequested implements OnboardingV2Event {
   const _FirstWallpaperActionRequested();
   
@@ -790,7 +828,7 @@ as bool,
 
 class _CompletionRetried implements OnboardingV2Event {
   const _CompletionRetried();
-
+  
 
 
 

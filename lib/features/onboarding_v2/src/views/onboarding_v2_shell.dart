@@ -46,6 +46,12 @@ bool _saveFailed(OnboardingV2State state) =>
     state.actionStatus == ActionStatus.failure &&
     (state.completionFailed || state.step == OnboardingV2Step.interests || state.step == OnboardingV2Step.starterPack);
 
+/// The starter pack loaded fewer creators than the user must follow, so "continue" could never enable.
+bool _starterPackShort(OnboardingV2State state) =>
+    state.step == OnboardingV2Step.starterPack &&
+    !_saveFailed(state) &&
+    state.starterPackData.creators.length < OnboardingV2Config.minFollows;
+
 String _saveErrorHelper(OnboardingV2State state) {
   if (state.sessionInvalid) return 'your session has expired. sign in again to continue';
   if (state.completionFailed) return "couldn't finish setup. check your connection and try again";
@@ -222,6 +228,10 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     if (_signingOut || state.actionStatus == ActionStatus.inProgress) return;
     if (_saveFailed(state) && state.sessionInvalid) {
       _signInAgain();
+      return;
+    }
+    if (_starterPackShort(state)) {
+      _bloc.add(const OnboardingV2Event.starterPackReloadRequested());
       return;
     }
     if (_saveFailed(state) && state.completionFailed) {
@@ -469,7 +479,11 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               onTermsChanged: widget.onTermsChanged,
               wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
               aiGenerateStatus: widget.state.aiData.status,
-              errorText: _saveFailed(widget.state) ? _saveErrorHelper(widget.state) : null,
+              errorText: _saveFailed(widget.state)
+                  ? _saveErrorHelper(widget.state)
+                  : _starterPackShort(widget.state)
+                  ? "couldn't load creators. check your connection and tap reload"
+                  : null,
             ),
           ],
         );
@@ -631,13 +645,16 @@ class _CtaButton extends StatelessWidget {
       OnboardingV2Step.interests =>
         ((_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) || state.interestsData.canContinue),
       OnboardingV2Step.starterPack =>
-        ((_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) || state.starterPackData.canContinue),
+        ((_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) ||
+            _starterPackShort(state) ||
+            state.starterPackData.canContinue),
       OnboardingV2Step.aiGenerate => true,
       OnboardingV2Step.firstWallpaper => true,
     };
 
     final label = switch (step) {
       _ when _saveFailed(state) => state.sessionInvalid ? 'sign in again' : 'try again',
+      _ when _starterPackShort(state) => 'reload',
       OnboardingV2Step.auth => 'Continue with Google',
       OnboardingV2Step.interests => () {
         final selected = state.interestsData.selected.length;
