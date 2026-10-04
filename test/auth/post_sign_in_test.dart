@@ -179,8 +179,8 @@ void main() {
     expect(completed, isTrue);
   });
 
-  for (final Object? storedId in <Object?>['', null]) {
-    test('a user doc with id ${storedId == null ? 'missing' : 'blank'} still signs in as the auth uid', () async {
+  for (final Object? storedId in <Object?>['', null, 'another-user', 'u1 ']) {
+    test('a user doc with id ${storedId ?? 'missing'} still signs in as the auth uid', () async {
       final Map<String, dynamic> doc = profileUser().toJson()..['id'] = storedId;
       if (storedId == null) doc.remove('id');
       firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{'u1': doc};
@@ -190,6 +190,7 @@ void main() {
       await auth.signInWithGoogle();
 
       expect(app_state.prismUser.id, 'u1');
+      expect(firestore.docs[FirebaseCollections.usersV2]!['u1']!['id'], 'u1');
       expect(firestore.docs[FirebaseCollections.usersV2]!['u1']!['loggedIn'], isTrue);
     });
   }
@@ -203,6 +204,16 @@ void main() {
     app_state.prismUser = profileUser();
     expect(await auth.isSignedIn(), isTrue);
   });
+
+  for (final String invalidProfileId in <String>['null', 'u1 ', 'another-user']) {
+    test('a Firebase user with profile id "$invalidProfileId" does not count as signed in', () async {
+      final GoogleAuth auth = GoogleAuth(auth: _Auth(), googleSignIn: _GoogleSignIn(), messaging: _Messaging());
+
+      app_state.prismUser = profileUser(id: invalidProfileId);
+
+      expect(await auth.isSignedIn(), isFalse);
+    });
+  }
 
   test('sign-out waits for a pending purchase bootstrap before clearing auth state', () async {
     delayCustomerInfo = true;
