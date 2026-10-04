@@ -172,6 +172,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     }
   }
 
+  /// The account behind this session is gone or locked out, so no save can succeed.
+  /// Sign out the same way Settings does, then restart into a fresh onboarding.
   Future<void> _signInAgain() async {
     if (_signingOut) return;
     setState(() => _signingOut = true);
@@ -601,6 +603,7 @@ class _CtaButton extends StatelessWidget {
   /// iOS-only guest entry point (Guideline 5.1.1(v)).
   final VoidCallback onBrowseTap;
 
+  /// "sign in again" is running the sign-out.
   final bool signingOut;
 
   @override
@@ -802,6 +805,7 @@ class _BottomText extends StatelessWidget {
   final String? wallpaperCategory;
   final AiGenerateStatus? aiGenerateStatus;
 
+  /// Replaces the helper text while a save error needs the user's attention.
   final String? errorText;
 
   String _helperText() => switch (step) {
