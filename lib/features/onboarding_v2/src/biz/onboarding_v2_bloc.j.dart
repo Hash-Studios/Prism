@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -56,11 +57,13 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_InterestsConfirmed>(_onInterestsConfirmed);
     on<_CreatorFollowToggled>(_onCreatorFollowToggled);
     on<_StarterPackConfirmed>(_onStarterPackConfirmed);
+    on<_StarterPackReloadRequested>(_onStarterPackReloadRequested);
     on<_FirstWallpaperActionRequested>(_onFirstWallpaperActionRequested);
     on<_FirstWallpaperActionCompleted>(_onFirstWallpaperActionCompleted);
     on<_FirstWallpaperStepContinued>(_onFirstWallpaperStepContinued);
     on<_PaywallResultReceived>(_onPaywallResultReceived);
     on<_StepBack>(_onStepBack);
+    on<_CompletionRetried>(_onCompletionRetried);
     on<_AiGenerationRequested>(_onAiGenerationRequested);
     on<_AiGenerationCompleted>(_onAiGenerationCompleted);
     on<_AiGenerationStepContinued>(_onAiGenerationStepContinued);
@@ -85,6 +88,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   Stopwatch? _onboardingStopwatch;
   bool _completionInFlight = false;
   bool _completionTracked = false;
+  bool? _pendingCompletionDidPurchase;
+  int _saveAttemptId = 0;
+  int _completionAttemptId = 0;
 
   Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) async {
     _onboardingStopwatch ??= Stopwatch()..start();
@@ -104,12 +110,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       );
     }
 
-    final starterPackResult = await _fetchStarterPackUseCase(const NoParams());
-    final List<OnboardingStarterCreatorEntity> creators = starterPackResult.fold(
-      onSuccess: (entities) => [...entities]..sort((a, b) => a.rank.compareTo(b.rank)),
-      onFailure: (_) => <OnboardingStarterCreatorEntity>[],
-    );
-    final autoSelectedEmails = creators.take(OnboardingV2Config.minFollows).map((c) => c.email).toSet();
+    final starterPackData = await _fetchStarterPack();
 
     final wallpaperVm = await _firstWallpaperService.recommendForOnboarding(<String>[]);
 
@@ -117,7 +118,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       state.copyWith(
         loadStatus: LoadStatus.success,
         interestsData: state.interestsData.copyWith(available: availableCategories, categoryImages: categoryImages),
-        starterPackData: OnboardingStarterPackData(creators: creators, selectedEmails: autoSelectedEmails),
+        starterPackData: starterPackData,
         wallpaperData: OnboardingWallpaperData(wallpaper: wallpaperVm, status: FirstWallpaperStatus.idle),
       ),
     );
@@ -185,6 +186,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   void _onInterestToggled(_InterestToggled event, Emitter<OnboardingV2State> emit) {
+    if (state.actionStatus == ActionStatus.inProgress) return;
     final current = state.interestsData.selected;
     final updated = current.contains(event.categoryName)
         ? current.where((c) => c != event.categoryName).toList()
@@ -193,22 +195,27 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _onInterestsConfirmed(_InterestsConfirmed event, Emitter<OnboardingV2State> emit) async {
-    if (!state.interestsData.canContinue) {
+    if (state.step != OnboardingV2Step.interests ||
+        !state.interestsData.canContinue ||
+        state.actionStatus == ActionStatus.inProgress) {
       return;
     }
+    final attemptId = ++_saveAttemptId;
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
 
     final selectedInterests = state.interestsData.selected;
     final result = await _saveInterestsUseCase(SaveInterestsParams(interests: selectedInterests));
+    if (attemptId != _saveAttemptId) return;
 
     if (result.isFailure) {
-      emit(state.copyWith(actionStatus: ActionStatus.failure));
+      _emitSaveFailure(emit, result.failure!);
       return;
     }
 
     unawaited(analytics.track(OnboardingV2InterestsCompletedEvent(selectedCount: selectedInterests.length)));
 
     final refreshedWallpaper = await _firstWallpaperService.recommendForOnboarding(selectedInterests);
+    if (attemptId != _saveAttemptId) return;
 
     final nextStep = state.skipStarterPack ? OnboardingV2Step.aiGenerate : OnboardingV2Step.starterPack;
     emit(
@@ -224,6 +231,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   void _onCreatorFollowToggled(_CreatorFollowToggled event, Emitter<OnboardingV2State> emit) {
+    if (state.actionStatus == ActionStatus.inProgress || state.completionFailed) return;
     final selected = {...state.starterPackData.selectedEmails};
     if (!selected.remove(event.creatorEmail)) selected.add(event.creatorEmail);
 
@@ -231,9 +239,12 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _onStarterPackConfirmed(_StarterPackConfirmed event, Emitter<OnboardingV2State> emit) async {
-    if (!state.starterPackData.canContinue) {
+    if (state.step != OnboardingV2Step.starterPack ||
+        !state.starterPackData.canContinue ||
+        state.actionStatus == ActionStatus.inProgress) {
       return;
     }
+    final attemptId = ++_saveAttemptId;
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
 
     final selectedCreators = state.starterPackData.creators
@@ -241,9 +252,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         .toList(growable: false);
 
     final result = await _followStarterPackUseCase(FollowStarterPackParams(creators: selectedCreators));
+    if (attemptId != _saveAttemptId) return;
 
     if (result.isFailure) {
-      emit(state.copyWith(actionStatus: ActionStatus.failure));
+      _emitSaveFailure(emit, result.failure!);
       return;
     }
 
@@ -261,6 +273,48 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       final aiData = _promptForInterests(state.interestsData.selected);
       emit(state.copyWith(actionStatus: ActionStatus.success, step: OnboardingV2Step.aiGenerate, aiData: aiData));
     }
+  }
+
+  /// Loads the starter pack sorted by rank, with the top creators preselected.
+  Future<OnboardingStarterPackData> _fetchStarterPack() async {
+    final result = await _fetchStarterPackUseCase(const NoParams());
+    final seenEmails = <String>{};
+    final List<OnboardingStarterCreatorEntity> creators = result.fold(
+      onSuccess: (entities) => [...entities]
+        ..sort((a, b) => a.rank.compareTo(b.rank))
+        ..removeWhere((creator) => !seenEmails.add(creator.email)),
+      onFailure: (_) => <OnboardingStarterCreatorEntity>[],
+    );
+    final autoSelectedEmails = creators.take(OnboardingV2Config.minFollows).map((c) => c.email).toSet();
+    return OnboardingStarterPackData(creators: creators, selectedEmails: autoSelectedEmails);
+  }
+
+  /// A starter pack with fewer than [OnboardingV2Config.minFollows] creators cannot continue.
+  /// The pack comes from Remote Config, so fetch it again before reloading the creators.
+  Future<void> _onStarterPackReloadRequested(_StarterPackReloadRequested event, Emitter<OnboardingV2State> emit) async {
+    if (state.step != OnboardingV2Step.starterPack || state.actionStatus == ActionStatus.inProgress) return;
+    final attemptId = ++_saveAttemptId;
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
+    try {
+      final starterPackData = await _reloadStarterPack(attemptId).timeout(const Duration(seconds: 30));
+      if (starterPackData == null || attemptId != _saveAttemptId) return;
+      emit(state.copyWith(actionStatus: ActionStatus.idle, starterPackData: starterPackData));
+    } on TimeoutException catch (error) {
+      logger.w('Starter pack reload timed out; keeping the current creators.', tag: 'OnboardingV2Bloc', error: error);
+      if (attemptId != _saveAttemptId) return;
+      _saveAttemptId++;
+      emit(state.copyWith(actionStatus: ActionStatus.idle));
+    }
+  }
+
+  Future<OnboardingStarterPackData?> _reloadStarterPack(int attemptId) async {
+    try {
+      await _remoteConfig.fetchAndActivate();
+    } catch (error) {
+      logger.w('Starter pack Remote Config fetch failed; using cached values.', tag: 'OnboardingV2Bloc', error: error);
+    }
+    if (attemptId != _saveAttemptId || isClosed) return null;
+    return _fetchStarterPack();
   }
 
   Future<void> _onFirstWallpaperActionRequested(
@@ -323,26 +377,67 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     await _finishOnboarding(emit, didPurchase: event.didPurchase);
   }
 
+  Future<void> _onCompletionRetried(_CompletionRetried event, Emitter<OnboardingV2State> emit) async {
+    final didPurchase = _pendingCompletionDidPurchase;
+    if (didPurchase == null || !state.completionFailed || state.actionStatus != ActionStatus.failure) return;
+    await _finishOnboarding(emit, didPurchase: didPurchase);
+  }
+
   Future<void> _finishOnboarding(Emitter<OnboardingV2State> emit, {required bool didPurchase}) async {
     if (_completionInFlight || _completionTracked) return;
     _completionInFlight = true;
-    emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
+    _pendingCompletionDidPurchase ??= didPurchase;
+    final attemptId = ++_completionAttemptId;
+    emit(
+      state.copyWith(
+        actionStatus: ActionStatus.inProgress,
+        completionFailed: false,
+        sessionInvalid: false,
+        navRequest: null,
+      ),
+    );
     try {
       final totalMs = _onboardingStopwatch?.elapsedMilliseconds ?? 0;
       final result = await _completeOnboardingUseCase(const NoParams());
+      if (attemptId != _completionAttemptId) return;
       result.fold(
         onSuccess: (_) {
           _completionTracked = true;
+          _pendingCompletionDidPurchase = null;
           unawaited(analytics.track(OnboardingV2CompletedEvent(didPurchase: didPurchase, totalElapsedMs: totalMs)));
           emit(
-            state.copyWith(actionStatus: ActionStatus.success, navRequest: OnboardingV2NavRequest.completeOnboarding),
+            state.copyWith(
+              actionStatus: ActionStatus.success,
+              completionFailed: false,
+              navRequest: OnboardingV2NavRequest.completeOnboarding,
+            ),
           );
         },
-        onFailure: (_) => emit(state.copyWith(actionStatus: ActionStatus.failure)),
+        onFailure: (failure) {
+          _pendingCompletionDidPurchase = didPurchase;
+          _emitSaveFailure(emit, failure, completionFailed: true);
+        },
       );
     } finally {
-      _completionInFlight = false;
+      if (attemptId == _completionAttemptId) _completionInFlight = false;
     }
+  }
+
+  // Firestore codes for a write to the user's own doc that a retry cannot fix.
+  static const Set<String> _sessionInvalidCodes = <String>{'permission-denied', 'not-found', 'unauthenticated'};
+
+  void _emitSaveFailure(Emitter<OnboardingV2State> emit, Failure failure, {bool completionFailed = false}) {
+    logger.w('Onboarding save failed: ${failure.message}', tag: 'OnboardingV2Bloc');
+    // ponytail: the follow batch also writes creator docs, so a deleted creator doc reads as an invalid session.
+    emit(
+      state.copyWith(
+        actionStatus: ActionStatus.failure,
+        // A stored session can say loggedIn with no user id: every write then fails before it reaches Firestore.
+        sessionInvalid: _sessionInvalidCodes.contains(failure.code) || app_state.prismUser.id.isEmpty,
+        completionFailed: completionFailed,
+        navRequest: null,
+      ),
+    );
   }
 
   void _onStepBack(_StepBack event, Emitter<OnboardingV2State> emit) {
@@ -358,7 +453,23 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     };
 
     if (prevStep != null) {
-      emit(state.copyWith(step: prevStep, navRequest: null));
+      // A save error belongs to the step that failed, not the one the user goes back to.
+      final actionStatus = state.actionStatus == ActionStatus.failure || state.actionStatus == ActionStatus.inProgress
+          ? ActionStatus.idle
+          : state.actionStatus;
+      _pendingCompletionDidPurchase = null;
+      _saveAttemptId++;
+      _completionAttemptId++;
+      _completionInFlight = false;
+      emit(
+        state.copyWith(
+          step: prevStep,
+          actionStatus: actionStatus,
+          sessionInvalid: false,
+          completionFailed: false,
+          navRequest: null,
+        ),
+      );
     }
   }
 

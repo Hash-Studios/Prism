@@ -356,7 +356,7 @@ class GoogleAuth {
       final User? currentUser = _auth.currentUser;
       final bool signedInWithFirebase =
           currentUser != null && !currentUser.isAnonymous && currentUser.uid.trim().isNotEmpty;
-      if (signedInWithFirebase) {
+      if (signedInWithFirebase && app_state.prismUser.id == currentUser.uid) {
         return true;
       }
 

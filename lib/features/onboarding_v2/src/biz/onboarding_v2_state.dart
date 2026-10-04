@@ -76,6 +76,10 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     required bool skipInterests,
     required bool skipStarterPack,
     OnboardingV2NavRequest? navRequest,
+
+    /// The last save failed because the session no longer works (account deleted or access denied).
+    @Default(false) bool sessionInvalid,
+    @Default(false) bool completionFailed,
   }) = _OnboardingV2State;
 
   factory OnboardingV2State.initial() => OnboardingV2State(
