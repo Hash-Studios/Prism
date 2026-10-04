@@ -1,400 +1,140 @@
-# <div align="center"><img src="android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" alt="icon" width=30> Prism</div>
+# Prism
 
-<div align="center">Prism is a beautiful open-source wallpapers app for Android and iOS. It is built with Dart on top of Google's Flutter Framework.
+Prism is an open-source wallpaper app for Android and iOS, built with Flutter and Dart by Hash Studios.
 
-
-![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
-![Dart](https://img.shields.io/badge/Dart-Language-blue?logo=dart)
-![Play Store Downloads](https://img.shields.io/badge/Play%20Store%20Downloads-100K+-green.svg)
-![Play Store Rating](https://img.shields.io/badge/Play%20Store%20Rating-4.7-blue.svg)
-![Size](https://img.shields.io/github/repo-size/Hash-Studios/Prism?color=green)
-![Release](https://img.shields.io/github/v/release/Hash-Studios/Prism)
-![License](https://img.shields.io/github/license/Hash-Studios/Prism)
-![Stars](https://img.shields.io/github/stars/Hash-Studios/Prism)
-<a href='https://twitter.com/PrismWallpapers'><img alt='Follow on Twitter' src='https://img.shields.io/twitter/follow/PrismWallpapers?color=green&label=Follow&logo=Twitter&style=flat'/></a>
-<a href='https://t.me/PrismWallpapers'><img alt='Join us on Telegram' src='https://img.shields.io/badge/Telegram-PrismWallpapers-blue?logo=telegram'/></a>
-
-</div>
-<a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
-
-<b>Prism</b> brings you exclusive wallpapers straight to your Android device.
-With unlimited downloads and favourites, you can be sure to never miss the best wallpapers.
-
-Our main goal is to create an unimaginable self-sustainable experience where people can share their walls with the world, and everyone can like, download, and apply them.
-
-<b>➡WALLPAPERS</b>
-- High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
-- Beautiful wallpapers uploaded by verified users
-- Community wallpapers uploaded by users all around the world
-- Favourite, set, and share walls
-- Browse wallpapers from the creators you follow
-- Apply wallpaper from quick tile
-- Download the ones you like
-- Apply filters on wallpapers (Clarendon, Hudson, Mayfair, and 20+ more filters)
-- Edit and upload your wallpapers
-- Each wallpaper comes with 5 variants
-- Generate palette for any wallpaper
-- Search walls by keywords, color, or tags
-- Preview the wallpaper with clock and app icons before applying
-- Set any wallpaper on the home screen, lock screen or both
-
-<b>➡COLLECTIONS</b>
-- Premium wallpaper collections made exclusively by hand!
-- Updated daily!
-- Unique random collection to find hidden gems
-- 30+ exclusive categories from WallHaven and Pexels
-
-<b>➡PROFILE</b>
-- Upload walls!
-- Create your wallpaper resume and get verified!
-- Follow other creators!
-- Promote your social media handles!
-- Share your profile easily with others
-
-<b>➡AND MORE...</b>
-- AMOLED Dark mode built-in
-- Cloud sync your data with Google sign-in
-- Unique in-app notification center for less disturbing notifications
-- Secure data and favourites storage
-- 10+ themes to customise the look and feel of the app
-- Fresh, beautiful design with smooth animations
-- Clear Cache, Downloads, or Favourites with one-tap
-- Low internet usage with excessive caching
-- In-built wallpaper optimisation and sketchy walls filter.
-
-<b>➡AI GENERATION</b>
-- Generate unique wallpapers with AI using text prompts
-- Multiple style presets to guide the generation
-- Share or set generated wallpapers instantly
-
-<b>Introducing Prism Premium -</b>
-Now get access to more premium and exclusive stuff by buying Prism Premium.
-
-- Support development of the app
-- Be a part of exclusive giveaways
-- The ability to use wallpaper filters
-- Get uploads reviewed instantly
-- Earn and spend Prism Coins (watch ads or complete daily streaks to earn; spend on downloads and AI generation)
-- Get PRO badge in front of your profile
-- The ability to view premium collections
-
-Feel free to contact us for any issues, hash.studios.inc@gmail.com
-
-Join beta for the latest experimental builds and help us test the app, [https://play.google.com/apps/testing/com.hash.prism](https://play.google.com/apps/testing/com.hash.prism)
-
-Also, we regularly organize giveaways, share exclusive wallpapers on Twitter, so follow us there [https://twitter.com/PrismWallpapers](https://twitter.com/PrismWallpapers)
-
-You can also report bugs, upload your walls on our telegram channel
-[https://t.me/PrismWallpapers](https://t.me/PrismWallpapers)
-
-## List of Contents
-
-1. [Features](#features)
-2. [Changelog](#changelog)
-3. [Demo](#demo)
-4. [Support](#support)
-5. [Dependencies](#dependencies)
-6. [Development Setup (FVM)](#development-setup-fvm)
-7. [Secrets with Doppler](#secrets-with-doppler)
-8. [Usage](#usage)
-9. [Contributing](#contributing)
-10. [License](#license)
-11. [Privacy Policy](#privacy)
-12. [Contributors](#contributors)
+[Google Play](https://play.google.com/store/apps/details?id=com.hash.prism) · [Releases](https://github.com/Hash-Studios/Prism/releases) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 ## Features
 
-- High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
-- Over 2000+ exclusive wallpapers with 5 color variants each
-- Community wallpapers uploaded by users all around the world
-- Exclusive collections updated daily with 30+ premium categories
-- 20+ wallpaper filters (Clarendon, Hudson, Mayfair, and more)
-- AI wallpaper generation with text prompts and style presets
-- Coins economy — earn coins via ads or daily streaks, spend on downloads and AI generation
-- Wall of the Day with daily rewards and streak system
-- Personalized feed based on your interests
-- Follow creators for the latest content
-- AMOLED Dark Mode supported
-- Optional Sign-in with Google or Apple
-- Each wallpaper/creator has a unique deep link for easy sharing
-- Option to add Twitter/Instagram/links to your profile
-- Low internet usage with aggressive caching
-- Save favourite wallpapers (synced to cloud)
-- Set random wallpaper from downloaded ones via quick tile
-- Secure data storage on Google Firebase
-- Search wallpapers by keyword, color, or tags
-- Preview wallpaper with clock and app icon overlay before applying
-- Set any wallpaper on the home screen, lock screen, or both
-- Extensive settings with modular sections
-- Minimal design with smooth animations
-- Clear Cache, Downloads, or Favourites with one-tap
-- Application size about 12 MB
-- Adaptive UI (changes color based on wallpaper)
+- Browse community wallpapers, Wallhaven, and Pexels, with a personalized home feed.
+- Search by keyword or color, browse categories and collections, and follow creators.
+- Save favourites to your account, download wallpapers, and share wallpaper or profile links.
+- Preview wallpapers with a clock overlay and apply them on supported platforms.
+- Edit wallpapers with stacked filters, blur, hue, saturation, and brightness controls.
+- Upload wallpapers for review and track their approval status.
+- Generate AI wallpapers from text prompts, create variations, and share the results.
+- Earn Prism Coins through rewarded ads and daily rewards, and spend them on supported actions.
+- Customize the app's theme and accent, and manage cached images and downloads.
+- Rotate favourite wallpapers on a timer with Prism Pro on Android.
 
-## Changelog
+Platform capabilities vary. Android supports home-screen and lock-screen wallpaper actions. iOS supports saving images for manual application.
+Premium access and coin costs depend on the action. The app shows the applicable gate before proceeding.
 
-Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
+## Repository layout
 
-- `CHANGELOG.md` is auto-updated on every push to `master` (adds the latest commit under `### Unreleased`).
-- In-app changelog popup fetches the latest `CHANGELOG.md` from GitHub and caches it locally.
-- App version is sourced from `pubspec.yaml` and synced into `lib/core/constants/app_constants.dart` via `python3 tool/sync_app_version.py`.
+| Path | Purpose |
+| --- | --- |
+| [`lib/`](lib/) and [`test/`](test/) | Flutter app and unit/widget tests |
+| [`android/`](android/) and [`ios/`](ios/) | Native platform projects |
+| [`pigeons/`](pigeons/) | Source definitions for platform APIs |
+| [`functions/`](functions/) | Firebase Cloud Functions, written in TypeScript |
+| [`firestore.rules`](firestore.rules) and [`firestore.indexes.json`](firestore.indexes.json) | Firestore access rules and indexes |
+| [`web/`](web/) | Next.js website |
+| [`infra/cloudflare/`](infra/cloudflare/) | Worker for deep links, social previews, and AI requests |
+| [`packages/cloud_functions/`](packages/cloud_functions/) | Local FlutterFire plugin fork |
+| [`tool/`](tool/) and [`Makefile`](Makefile) | Development commands, generation, and repository checks |
 
-### v3.0.3
-- Refactored settings screen with modular sections and state management
-- Fixed personalised feed not fetching all interests + shuffled feed order
-- Fixed auth taking too long on startup
-- Fixed onboarding issue for already logged-in users
-- Fixed black background on splash screen
-- Optimised app size — reduced APK by ~10 MB
-- Improved AI generate UI
-- Fixed create with AI button
-- Minor bug fixes and improvements
+The app uses BLoC, freezed, get_it/injectable, and auto_route. See [architecture guidance](CLAUDE.md#architecture) for feature structure.
+Dependency versions live in [`pubspec.yaml`](pubspec.yaml), [`functions/package.json`](functions/package.json), and [`web/package.json`](web/package.json).
 
-## Demo
+## Development setup (FVM)
 
-**Screens**
+Install [FVM](https://fvm.app/documentation/getting-started/installation), Make, and a POSIX shell.
+Android development needs the Android SDK. iOS development needs macOS, Xcode, and CocoaPods.
 
-| ![](demo/2.jpg) | ![](demo/3.jpg) | ![](demo/4.jpg) | ![](demo/5.jpg) | ![](demo/6.jpg) |
-| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Home     |    Search WallHaven   |    Search Pexels     |     Trending       |     Color Based     |
-
-| ![](demo/7.jpg) | ![](demo/8.jpg) | ![](demo/12.jpg) |
-| :-------------:  | :-------------:  | :-------------:  |
-|    Favourites    |    Downloads     |     Profile     |
-
-| ![](demo/13.jpg) | ![](demo/14.jpg)| ![](demo/16.jpg)       | ![](demo/17.jpg)  | ![](demo/18.jpg) |
-| :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------:  |
-|  Upload Popup    |    Edit Wallpaper       |  Uploading Wallpaper    | Uploader's Profile   |     Scroll to Top Button       |
-
-| ![](demo/19.jpg) | ![](demo/20.jpg) | ![](demo/21.jpg)|
-| :-------------: | :-------------: | :-------------: |
-|     Categories     |     Collections    | Collection (Illustrations)  |
-
-| ![](demo/36.jpg) | ![](demo/38.jpg) | ![](demo/27.jpg)       | ![](demo/30.jpg)  | ![](demo/29.jpg)|
-| :-------------:  | :-------------:  | :-------------:       | :-------------:  | :-------------: |
-|     About Page       |     Premium Page    |  Wallpaper Display    | Clock for testing   | Wallpaper Info  |
-
-| ![](demo/33.jpg) | ![](demo/34.jpg) | ![](demo/35.jpg) | ![](demo/37.jpg) | ![](demo/22.jpg) |
-| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Splash Screen    |    Quick Action Menu    |    Settings     |     Themes      |     Notifications    |
-
-| ![](demo/47.jpg) | ![](demo/45.jpg) | ![](demo/46.jpg) | ![](demo/48.jpg) | ![](demo/51.jpg) |
-| :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|     Followers Feed    |    Theme Preference    |    Notification Settings     |     Onboarding      |     Top Followers    |
-
-**Themes**
-
-| ![](demo/39.jpg) | ![](demo/40.jpg)| ![](demo/41.jpg)| ![](demo/42.jpg) | ![](demo/43.jpg)|
-| :-------------:  | :-------------: | :-------------: | :-------------:  | :-------------: |
-|  Frosty White  |Coffee|  AMOLED    |      Rose   |      Cotton  |
-
-...and 10 more!
-
-## Support
-
-If you like what we do, and would want to help us continue doing it, consider sponsoring this project. We also upload exclusive artworks/wallpapers here.
-
-<a href="https://www.buymeacoffee.com/HashStudios" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height=51 width=217></a>
-
-Prism Wallpapers app is now available on Google Play, so you can support us by giving a rating to the app.
-
-<a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width=200 /></a>
-
-![Prism UI Mockup](demo/Prism_Mockup2.png)
-
-## Dependencies
-
-The following packages are needed for the development of this application.
-
-**State Management & Architecture**
-- `bloc: ^8.1.4` + `flutter_bloc: ^8.1.6` for BLoC state management
-- `provider: ^6.1.5` for additional caching and state
-- `get_it: ^9.2.0` + `injectable: ^2.5.1` for dependency injection
-- `rxdart: ^0.28.0` for reactive streams
-- `freezed_annotation: ^3.1.0` + `json_annotation: ^4.9.0` for immutable data models
-
-**Navigation**
-- `auto_route: ^11.1.0` for type-safe, code-generated routing
-- `app_links: ^6.4.1` for deep link handling (replaces Firebase Dynamic Links)
-
-**Firebase & Backend**
-- `firebase_core: ^3.15.2` for Firebase support
-- `cloud_firestore: ^5.6.12` for storing user data and wallpapers
-- `firebase_auth: ^5.6.0` for user authentication
-- `cloud_functions: ^5.6.0` for server-side logic
-- `firebase_analytics: ^11.5.0` for event analytics
-- `firebase_messaging: ^15.0.0` for push notifications
-- `firebase_remote_config: ^5.4.0` for remote feature flags
-
-**Payments & Monetisation**
-- `purchases_flutter: ^9.12.0` + `purchases_ui_flutter: ^9.12.0` for RevenueCat subscriptions
-- `google_mobile_ads: ^7.0.0` for rewarded ads (used in coins economy)
-
-**Monitoring & Analytics**
-- `sentry_flutter: ^9.14.0` for error monitoring and crash reporting
-- `mixpanel_flutter: ^2.5.0` for type-safe product analytics
-
-**Image & Media**
-- `cached_network_image: ^3.0.0` for caching wallpapers
-- `extended_image: ^10.0.1` for cropping and advanced image display
-- `flutter_image_compress: ^2.4.0` for compressing uploaded images
-- `image: ^3.0.2` for image processing
-- `image_editor: ^1.6.0` for editing wallpapers during upload
-- `image_picker: ^1.2.1` for picking images from the device
-- `palette_generator: ^0.3.0` for generating wallpaper color palettes
-- `photo_view: ^0.15.0` for full-screen image viewing
-- `photofilters: ^3.0.0` for wallpaper filter effects
-- `screenshot: ^3.0.0` for applying wallpapers via screenshot method
-- `async_wallpaper: ^3.0.0` for setting wallpapers natively
-
-**UI & Animations**
-- `animations: ^2.0.0` for dialog/transition animations
-- `carousel_slider: ^5.1.2` for carousel widget
-- `flutter_floating_bottom_bar: ^1.4.0` for the floating bottom navigation bar
-- `flutter_staggered_grid_view: ^0.7.0` for staggered grid layouts
-- `flutter_svg: ^2.2.3` for SVG assets
-- `sliding_up_panel: ^2.0.0+1` for the sliding info panel
-
-**Authentication**
-- `google_sign_in: ^7.2.0` for Google sign-in
-- `sign_in_with_apple: ^7.0.0` for Apple sign-in
-
-**Utilities**
-- `shared_preferences: ^2.3.2` for local key-value storage
-- `path_provider: ^2.0.1` for accessing storage directories
-- `permission_handler: ^12.0.1` for handling device permissions
-- `internet_connection_checker: ^3.0.1` for connectivity monitoring
-- `flutter_displaymode: ^0.7.0` for display refresh rate management
-- `device_info_plus: ^11.5.0` for device metadata
-- `package_info_plus: ^8.3.0` for app version info
-- `github: ^9.25.0` for communicating with the GitHub API (community uploads)
-- `http: ^1.6.0` for HTTP requests
-- `share_plus: ^11.1.0` for sharing wallpaper links
-- `url_launcher: ^6.0.3` for launching external URLs
-- `quick_actions: ^1.1.0` for launcher shortcuts/quick actions
-- `timeago: ^3.0.2` for human-readable relative timestamps
-- `fluttertoast: ^8.2.14` for toast notifications
-- `intl: ^0.17.0` for internationalisation
-- `file_encrypter: ^2.0.2` for local data encryption
-- `logger: ^2.6.2` for structured logging
-- `crypto: ^3.0.6` for hashing utilities
-
-More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
-
-## Development Setup (FVM)
-
-This repository pins Flutter via FVM in [`.fvmrc`](.fvmrc) (`3.47.5`).
-
-Run this single command from the project root:
+From the repository root, run:
 
 ```sh
 make setup
+fvm flutter doctor -v
 ```
 
-This will:
-- install the pinned Flutter SDK with FVM
-- link the project SDK
-- run `pub get` using the pinned SDK
+`make setup` installs and selects the Flutter SDK pinned in [`.fvmrc`](.fvmrc), then resolves app dependencies.
+On macOS, it also prepares iOS pods. Use `fvm flutter` and `fvm dart` for subsequent SDK commands.
+Prism's Flutter app needs a mobile device, emulator, or simulator. The separate Next.js website runs in a browser.
 
-To update the pinned Flutter version later:
+### Local checks without service access
+
+A fresh checkout has no `lib/firebase_options.dart`. Create the ignored stub for local analysis and tests:
 
 ```sh
-make update-flutter VERSION=3.42.0
+tool/write_firebase_options_stub.sh
+make format-check
+fvm flutter analyze --no-pub --no-fatal-infos
+make test
 ```
 
-Then commit the updated [`.fvmrc`](.fvmrc).
+The stub script preserves an existing real Firebase options file. Do not commit Firebase configuration files.
+For a UI-only debug run without Doppler or Firebase access, use:
+
+```sh
+fvm flutter run --dart-define=SKIP_FIREBASE_INIT=true
+```
+
+Firebase-backed feeds, sign-in, notifications, and rewards need real development service configuration.
+A run that skips Firebase does not verify those features.
 
 ## Secrets with Doppler
 
-Prism uses Doppler as the source of truth for runtime secrets. `.env.example` is reference-only and is not used as runtime input by Make targets.
+Runtime secrets come from Doppler, using project `prism` and local configuration `dev`.
+`.env.example` lists key names for reference. Make targets do not load it as a runtime secrets file.
 
-Install Doppler CLI:
+Obtain development service access and Firebase configuration from a maintainer. The app needs matching local files:
 
-- <https://docs.doppler.com/docs/install-cli>
+- `lib/firebase_options.dart`
+- `android/app/google-services.json`
+- `ios/Runner/GoogleService-Info.plist`
 
-Run one-click setup from project root:
+Replace any Firebase stubs before a service-backed run. Install the [Doppler CLI](https://docs.doppler.com/docs/install-cli), then run:
 
 ```sh
+make doppler-login
 make setup-dev
+make run
 ```
 
-This validates access to `prism/dev`, installs dependencies, and prepares local development.
+`make run` injects Dart defines from Doppler. If the Android Google Services file is absent, it skips Firebase initialization, including on iOS.
+See the [Doppler workflow](docs/development/doppler.md) for access checks, secret updates, and troubleshooting.
+The [contribution guide](CONTRIBUTING.md) covers configuration for your own development Firebase project.
 
-Useful commands:
+## Common development commands
 
-```sh
-make doppler-login   # interactive Doppler login/setup
-make secrets-print   # show available keys with masked values
-make run             # run app with Doppler-injected dart-defines
-```
+Run these commands from the repository root:
 
-Release workflows use Doppler Service Tokens (GitHub secret: `DOPPLER_TOKEN_PRODUCTION`).
-See detailed guide: [`docs/development/doppler.md`](docs/development/doppler.md).
+| Command | Purpose |
+| --- | --- |
+| `make get` | Resolve Flutter dependencies with FVM |
+| `make run` | Run the app with development secrets from Doppler |
+| `make format` / `make format-check` | Format Dart source / check formatting |
+| `make test` | Run Flutter unit and widget tests |
+| `fvm flutter analyze --no-pub --no-fatal-infos` | Run static analysis without treating infos as failures |
+| `make file-gen` | Regenerate freezed, JSON, route, and dependency injection code |
+| `make pigeon-gen` | Regenerate native platform APIs |
+| `make analytics-gen` / `make analytics-check` | Generate typed analytics events / check the generated output |
+| `make ci ANALYZE_FLAGS=--no-fatal-infos` | Run the complete local app and worker gate |
 
-## Usage
+The local app gate also needs Node.js 22.6 or newer for worker tests.
+Functions, website, and Firestore rules checks run separately. See [Contributing](CONTRIBUTING.md) for their commands and UI verification requirements.
+[`web/README.md`](web/README.md) covers website development, and [`infra/cloudflare/README.md`](infra/cloudflare/README.md) covers the worker.
 
-The application files for Android devices can be found on [Google Play Store](https://play.google.com/store/apps/details?id=com.hash.prism).
-
-More information about the releases can be found in the [Release](https://github.com/Hash-Studios/Prism/releases) tab.
+GitHub CI runs on pull requests that are ready for review and selects jobs by changed paths. Draft PRs skip the checks.
+The required `ci` check aggregates app, functions, website, and rules results. See the [CI workflow](.github/workflows/ci.yml).
 
 ## Contributing
 
-First off, thank you for considering contributing to Prism. It's people like you that make Prism such a great app.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change. Open a focused PR against `master` with the linked issue and verification results.
+Report bugs through the [issue templates](https://github.com/Hash-Studios/Prism/issues/new/choose).
 
-To start your lovely journey with Prism, first read the [`contributing guidelines`](https://github.com/Hash-Studios/Prism/tree/master/CONTRIBUTING.md) and then fork the repo to start contributing!
+## Support
+
+Contact Hash Studios at hash.studios.inc@gmail.com, join the [Telegram community](https://t.me/PrismWallpapers), or follow [Prism Wallpapers](https://twitter.com/PrismWallpapers).
+You can support development through [Buy Me a Coffee](https://www.buymeacoffee.com/HashStudios).
+See the [contributors](https://github.com/Hash-Studios/Prism/graphs/contributors) who maintain Prism.
 
 ## License
 
-This app is licensed under the [`BSD 3-Clause License`](https://github.com/Hash-Studios/Prism/tree/master/LICENSE.txt).
-Any Usage of the source code must follow the below license.
+Prism uses the [BSD 3-Clause License](LICENSE.txt).
 
-```
-BSD 3-Clause License
-
-Copyright (c) 2020 Hash Studios
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-```
-
-```
-DISCLAIMER: Google Play and the Google Play logo are trademarks of Google LLC.
-```
 ## Privacy
 
-We collect usage analytics, crash logs, and optional account info (name, email, profile photo) when signed in. Third-party services include Firebase, Sentry, Mixpanel, RevenueCat, Google Mobile Ads, Pexels, and WallHaven.
-
-Full privacy policy: [PRIVACY.md](PRIVACY.md)
-
-Contact: hash.studios.inc@gmail.com
-
-## Contributors
-
-<a href="https://github.com/Hash-Studios/Prism/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=Hash-Studios/Prism" />
-</a>
-
-## If you made it here, thanks for your support. You can show more support by forking or starring this repo. See ya!
+Read [PRIVACY.md](PRIVACY.md) for data collection and third-party services.
