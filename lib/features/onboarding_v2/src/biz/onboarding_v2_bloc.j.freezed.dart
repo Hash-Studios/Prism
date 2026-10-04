@@ -2086,7 +2086,8 @@ $OnboardingWallpaperVmCopyWith<$Res>? get wallpaper {
 /// @nodoc
 mixin _$OnboardingV2State {
 
- OnboardingV2Step get step; LoadStatus get loadStatus; ActionStatus get actionStatus; bool get isAuthLoading; OnboardingInterestsData get interestsData; OnboardingStarterPackData get starterPackData; OnboardingWallpaperData get wallpaperData; OnboardingAiData get aiData; bool get skipInterests; bool get skipStarterPack; OnboardingV2NavRequest? get navRequest;
+ OnboardingV2Step get step; LoadStatus get loadStatus; ActionStatus get actionStatus; bool get isAuthLoading; OnboardingInterestsData get interestsData; OnboardingStarterPackData get starterPackData; OnboardingWallpaperData get wallpaperData; OnboardingAiData get aiData; bool get skipInterests; bool get skipStarterPack; OnboardingV2NavRequest? get navRequest;/// The last save failed because the session no longer works (account deleted or access denied).
+ bool get sessionInvalid;
 /// Create a copy of OnboardingV2State
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2097,16 +2098,16 @@ $OnboardingV2StateCopyWith<OnboardingV2State> get copyWith => _$OnboardingV2Stat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingV2State&&(identical(other.step, step) || other.step == step)&&(identical(other.loadStatus, loadStatus) || other.loadStatus == loadStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.isAuthLoading, isAuthLoading) || other.isAuthLoading == isAuthLoading)&&(identical(other.interestsData, interestsData) || other.interestsData == interestsData)&&(identical(other.starterPackData, starterPackData) || other.starterPackData == starterPackData)&&(identical(other.wallpaperData, wallpaperData) || other.wallpaperData == wallpaperData)&&(identical(other.aiData, aiData) || other.aiData == aiData)&&(identical(other.skipInterests, skipInterests) || other.skipInterests == skipInterests)&&(identical(other.skipStarterPack, skipStarterPack) || other.skipStarterPack == skipStarterPack)&&(identical(other.navRequest, navRequest) || other.navRequest == navRequest));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingV2State&&(identical(other.step, step) || other.step == step)&&(identical(other.loadStatus, loadStatus) || other.loadStatus == loadStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.isAuthLoading, isAuthLoading) || other.isAuthLoading == isAuthLoading)&&(identical(other.interestsData, interestsData) || other.interestsData == interestsData)&&(identical(other.starterPackData, starterPackData) || other.starterPackData == starterPackData)&&(identical(other.wallpaperData, wallpaperData) || other.wallpaperData == wallpaperData)&&(identical(other.aiData, aiData) || other.aiData == aiData)&&(identical(other.skipInterests, skipInterests) || other.skipInterests == skipInterests)&&(identical(other.skipStarterPack, skipStarterPack) || other.skipStarterPack == skipStarterPack)&&(identical(other.navRequest, navRequest) || other.navRequest == navRequest)&&(identical(other.sessionInvalid, sessionInvalid) || other.sessionInvalid == sessionInvalid));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,step,loadStatus,actionStatus,isAuthLoading,interestsData,starterPackData,wallpaperData,aiData,skipInterests,skipStarterPack,navRequest);
+int get hashCode => Object.hash(runtimeType,step,loadStatus,actionStatus,isAuthLoading,interestsData,starterPackData,wallpaperData,aiData,skipInterests,skipStarterPack,navRequest,sessionInvalid);
 
 @override
 String toString() {
-  return 'OnboardingV2State(step: $step, loadStatus: $loadStatus, actionStatus: $actionStatus, isAuthLoading: $isAuthLoading, interestsData: $interestsData, starterPackData: $starterPackData, wallpaperData: $wallpaperData, aiData: $aiData, skipInterests: $skipInterests, skipStarterPack: $skipStarterPack, navRequest: $navRequest)';
+  return 'OnboardingV2State(step: $step, loadStatus: $loadStatus, actionStatus: $actionStatus, isAuthLoading: $isAuthLoading, interestsData: $interestsData, starterPackData: $starterPackData, wallpaperData: $wallpaperData, aiData: $aiData, skipInterests: $skipInterests, skipStarterPack: $skipStarterPack, navRequest: $navRequest, sessionInvalid: $sessionInvalid)';
 }
 
 
@@ -2117,7 +2118,7 @@ abstract mixin class $OnboardingV2StateCopyWith<$Res>  {
   factory $OnboardingV2StateCopyWith(OnboardingV2State value, $Res Function(OnboardingV2State) _then) = _$OnboardingV2StateCopyWithImpl;
 @useResult
 $Res call({
- OnboardingV2Step step, LoadStatus loadStatus, ActionStatus actionStatus, bool isAuthLoading, OnboardingInterestsData interestsData, OnboardingStarterPackData starterPackData, OnboardingWallpaperData wallpaperData, OnboardingAiData aiData, bool skipInterests, bool skipStarterPack, OnboardingV2NavRequest? navRequest
+ OnboardingV2Step step, LoadStatus loadStatus, ActionStatus actionStatus, bool isAuthLoading, OnboardingInterestsData interestsData, OnboardingStarterPackData starterPackData, OnboardingWallpaperData wallpaperData, OnboardingAiData aiData, bool skipInterests, bool skipStarterPack, OnboardingV2NavRequest? navRequest, bool sessionInvalid
 });
 
 
@@ -2134,7 +2135,7 @@ class _$OnboardingV2StateCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingV2State
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? loadStatus = null,Object? actionStatus = null,Object? isAuthLoading = null,Object? interestsData = null,Object? starterPackData = null,Object? wallpaperData = null,Object? aiData = null,Object? skipInterests = null,Object? skipStarterPack = null,Object? navRequest = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? loadStatus = null,Object? actionStatus = null,Object? isAuthLoading = null,Object? interestsData = null,Object? starterPackData = null,Object? wallpaperData = null,Object? aiData = null,Object? skipInterests = null,Object? skipStarterPack = null,Object? navRequest = freezed,Object? sessionInvalid = null,}) {
   return _then(_self.copyWith(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as OnboardingV2Step,loadStatus: null == loadStatus ? _self.loadStatus : loadStatus // ignore: cast_nullable_to_non_nullable
@@ -2147,7 +2148,8 @@ as OnboardingWallpaperData,aiData: null == aiData ? _self.aiData : aiData // ign
 as OnboardingAiData,skipInterests: null == skipInterests ? _self.skipInterests : skipInterests // ignore: cast_nullable_to_non_nullable
 as bool,skipStarterPack: null == skipStarterPack ? _self.skipStarterPack : skipStarterPack // ignore: cast_nullable_to_non_nullable
 as bool,navRequest: freezed == navRequest ? _self.navRequest : navRequest // ignore: cast_nullable_to_non_nullable
-as OnboardingV2NavRequest?,
+as OnboardingV2NavRequest?,sessionInvalid: null == sessionInvalid ? _self.sessionInvalid : sessionInvalid // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 /// Create a copy of OnboardingV2State
@@ -2268,10 +2270,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest,  bool sessionInvalid)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OnboardingV2State() when $default != null:
-return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest);case _:
+return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest,_that.sessionInvalid);case _:
   return orElse();
 
 }
@@ -2289,10 +2291,10 @@ return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoadi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest,  bool sessionInvalid)  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingV2State():
-return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest);case _:
+return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest,_that.sessionInvalid);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -2309,10 +2311,10 @@ return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoadi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest,  bool sessionInvalid)?  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingV2State() when $default != null:
-return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest);case _:
+return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest,_that.sessionInvalid);case _:
   return null;
 
 }
@@ -2324,7 +2326,7 @@ return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoadi
 
 
 class _OnboardingV2State implements OnboardingV2State {
-  const _OnboardingV2State({required this.step, required this.loadStatus, required this.actionStatus, required this.isAuthLoading, required this.interestsData, required this.starterPackData, required this.wallpaperData, required this.aiData, required this.skipInterests, required this.skipStarterPack, this.navRequest});
+  const _OnboardingV2State({required this.step, required this.loadStatus, required this.actionStatus, required this.isAuthLoading, required this.interestsData, required this.starterPackData, required this.wallpaperData, required this.aiData, required this.skipInterests, required this.skipStarterPack, this.navRequest, this.sessionInvalid = false});
   
 
 @override final  OnboardingV2Step step;
@@ -2338,6 +2340,8 @@ class _OnboardingV2State implements OnboardingV2State {
 @override final  bool skipInterests;
 @override final  bool skipStarterPack;
 @override final  OnboardingV2NavRequest? navRequest;
+/// The last save failed because the session no longer works (account deleted or access denied).
+@override@JsonKey() final  bool sessionInvalid;
 
 /// Create a copy of OnboardingV2State
 /// with the given fields replaced by the non-null parameter values.
@@ -2349,16 +2353,16 @@ _$OnboardingV2StateCopyWith<_OnboardingV2State> get copyWith => __$OnboardingV2S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingV2State&&(identical(other.step, step) || other.step == step)&&(identical(other.loadStatus, loadStatus) || other.loadStatus == loadStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.isAuthLoading, isAuthLoading) || other.isAuthLoading == isAuthLoading)&&(identical(other.interestsData, interestsData) || other.interestsData == interestsData)&&(identical(other.starterPackData, starterPackData) || other.starterPackData == starterPackData)&&(identical(other.wallpaperData, wallpaperData) || other.wallpaperData == wallpaperData)&&(identical(other.aiData, aiData) || other.aiData == aiData)&&(identical(other.skipInterests, skipInterests) || other.skipInterests == skipInterests)&&(identical(other.skipStarterPack, skipStarterPack) || other.skipStarterPack == skipStarterPack)&&(identical(other.navRequest, navRequest) || other.navRequest == navRequest));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingV2State&&(identical(other.step, step) || other.step == step)&&(identical(other.loadStatus, loadStatus) || other.loadStatus == loadStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.isAuthLoading, isAuthLoading) || other.isAuthLoading == isAuthLoading)&&(identical(other.interestsData, interestsData) || other.interestsData == interestsData)&&(identical(other.starterPackData, starterPackData) || other.starterPackData == starterPackData)&&(identical(other.wallpaperData, wallpaperData) || other.wallpaperData == wallpaperData)&&(identical(other.aiData, aiData) || other.aiData == aiData)&&(identical(other.skipInterests, skipInterests) || other.skipInterests == skipInterests)&&(identical(other.skipStarterPack, skipStarterPack) || other.skipStarterPack == skipStarterPack)&&(identical(other.navRequest, navRequest) || other.navRequest == navRequest)&&(identical(other.sessionInvalid, sessionInvalid) || other.sessionInvalid == sessionInvalid));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,step,loadStatus,actionStatus,isAuthLoading,interestsData,starterPackData,wallpaperData,aiData,skipInterests,skipStarterPack,navRequest);
+int get hashCode => Object.hash(runtimeType,step,loadStatus,actionStatus,isAuthLoading,interestsData,starterPackData,wallpaperData,aiData,skipInterests,skipStarterPack,navRequest,sessionInvalid);
 
 @override
 String toString() {
-  return 'OnboardingV2State(step: $step, loadStatus: $loadStatus, actionStatus: $actionStatus, isAuthLoading: $isAuthLoading, interestsData: $interestsData, starterPackData: $starterPackData, wallpaperData: $wallpaperData, aiData: $aiData, skipInterests: $skipInterests, skipStarterPack: $skipStarterPack, navRequest: $navRequest)';
+  return 'OnboardingV2State(step: $step, loadStatus: $loadStatus, actionStatus: $actionStatus, isAuthLoading: $isAuthLoading, interestsData: $interestsData, starterPackData: $starterPackData, wallpaperData: $wallpaperData, aiData: $aiData, skipInterests: $skipInterests, skipStarterPack: $skipStarterPack, navRequest: $navRequest, sessionInvalid: $sessionInvalid)';
 }
 
 
@@ -2369,7 +2373,7 @@ abstract mixin class _$OnboardingV2StateCopyWith<$Res> implements $OnboardingV2S
   factory _$OnboardingV2StateCopyWith(_OnboardingV2State value, $Res Function(_OnboardingV2State) _then) = __$OnboardingV2StateCopyWithImpl;
 @override @useResult
 $Res call({
- OnboardingV2Step step, LoadStatus loadStatus, ActionStatus actionStatus, bool isAuthLoading, OnboardingInterestsData interestsData, OnboardingStarterPackData starterPackData, OnboardingWallpaperData wallpaperData, OnboardingAiData aiData, bool skipInterests, bool skipStarterPack, OnboardingV2NavRequest? navRequest
+ OnboardingV2Step step, LoadStatus loadStatus, ActionStatus actionStatus, bool isAuthLoading, OnboardingInterestsData interestsData, OnboardingStarterPackData starterPackData, OnboardingWallpaperData wallpaperData, OnboardingAiData aiData, bool skipInterests, bool skipStarterPack, OnboardingV2NavRequest? navRequest, bool sessionInvalid
 });
 
 
@@ -2386,7 +2390,7 @@ class __$OnboardingV2StateCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingV2State
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? loadStatus = null,Object? actionStatus = null,Object? isAuthLoading = null,Object? interestsData = null,Object? starterPackData = null,Object? wallpaperData = null,Object? aiData = null,Object? skipInterests = null,Object? skipStarterPack = null,Object? navRequest = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? loadStatus = null,Object? actionStatus = null,Object? isAuthLoading = null,Object? interestsData = null,Object? starterPackData = null,Object? wallpaperData = null,Object? aiData = null,Object? skipInterests = null,Object? skipStarterPack = null,Object? navRequest = freezed,Object? sessionInvalid = null,}) {
   return _then(_OnboardingV2State(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as OnboardingV2Step,loadStatus: null == loadStatus ? _self.loadStatus : loadStatus // ignore: cast_nullable_to_non_nullable
@@ -2399,7 +2403,8 @@ as OnboardingWallpaperData,aiData: null == aiData ? _self.aiData : aiData // ign
 as OnboardingAiData,skipInterests: null == skipInterests ? _self.skipInterests : skipInterests // ignore: cast_nullable_to_non_nullable
 as bool,skipStarterPack: null == skipStarterPack ? _self.skipStarterPack : skipStarterPack // ignore: cast_nullable_to_non_nullable
 as bool,navRequest: freezed == navRequest ? _self.navRequest : navRequest // ignore: cast_nullable_to_non_nullable
-as OnboardingV2NavRequest?,
+as OnboardingV2NavRequest?,sessionInvalid: null == sessionInvalid ? _self.sessionInvalid : sessionInvalid // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

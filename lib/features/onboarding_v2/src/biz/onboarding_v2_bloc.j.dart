@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -202,7 +203,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final result = await _saveInterestsUseCase(SaveInterestsParams(interests: selectedInterests));
 
     if (result.isFailure) {
-      emit(state.copyWith(actionStatus: ActionStatus.failure));
+      _emitSaveFailure(emit, result.failure!);
       return;
     }
 
@@ -243,7 +244,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final result = await _followStarterPackUseCase(FollowStarterPackParams(creators: selectedCreators));
 
     if (result.isFailure) {
-      emit(state.copyWith(actionStatus: ActionStatus.failure));
+      _emitSaveFailure(emit, result.failure!);
       return;
     }
 
@@ -338,11 +339,26 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
             state.copyWith(actionStatus: ActionStatus.success, navRequest: OnboardingV2NavRequest.completeOnboarding),
           );
         },
-        onFailure: (_) => emit(state.copyWith(actionStatus: ActionStatus.failure)),
+        onFailure: (failure) => _emitSaveFailure(emit, failure),
       );
     } finally {
       _completionInFlight = false;
     }
+  }
+
+  // Firestore codes for a write to the user's own doc that a retry cannot fix.
+  static const Set<String> _sessionInvalidCodes = <String>{'permission-denied', 'not-found', 'unauthenticated'};
+
+  void _emitSaveFailure(Emitter<OnboardingV2State> emit, Failure failure) {
+    logger.w('Onboarding save failed: ${failure.message}', tag: 'OnboardingV2Bloc');
+    // ponytail: the follow batch also writes creator docs, so a deleted creator doc reads as an invalid session.
+    emit(
+      state.copyWith(
+        actionStatus: ActionStatus.failure,
+        sessionInvalid: _sessionInvalidCodes.contains(failure.code),
+        navRequest: null,
+      ),
+    );
   }
 
   void _onStepBack(_StepBack event, Emitter<OnboardingV2State> emit) {
@@ -358,7 +374,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     };
 
     if (prevStep != null) {
-      emit(state.copyWith(step: prevStep, navRequest: null));
+      // A save error belongs to the step that failed, not the one the user goes back to.
+      final actionStatus = state.actionStatus == ActionStatus.failure ? ActionStatus.idle : state.actionStatus;
+      emit(state.copyWith(step: prevStep, actionStatus: actionStatus, navRequest: null));
     }
   }
 
