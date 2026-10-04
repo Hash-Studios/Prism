@@ -599,4 +599,24 @@ void main() {
       verifyNever(() => bloc.add(const OnboardingV2Event.starterPackConfirmed()));
     });
   }
+
+  testWidgets('a completion failure takes priority over reload for a short starter pack', (tester) async {
+    final OnboardingV2State failed = _starterPack.copyWith(
+      actionStatus: ActionStatus.failure,
+      completionFailed: true,
+      starterPackData: const OnboardingStarterPackData(
+        creators: <OnboardingStarterCreatorEntity>[],
+        selectedEmails: <String>{},
+      ),
+    );
+    final bloc = await pumpShell(tester, failed, failed);
+
+    expect(find.text('try again'), findsOneWidget);
+    expect(find.text("couldn't finish setup. check your connection and try again"), findsOneWidget);
+    await tester.tap(find.text('try again'));
+    await tester.pump();
+
+    verify(() => bloc.add(const OnboardingV2Event.completionRetried())).called(1);
+    verifyNever(() => bloc.add(const OnboardingV2Event.starterPackReloadRequested()));
+  });
 }

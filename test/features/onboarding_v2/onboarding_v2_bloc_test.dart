@@ -222,6 +222,43 @@ void main() {
   );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'a short unique creator list can be recovered by reloading the starter pack',
+    setUp: () {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      when(
+        () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+      ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+      var fetchStarterPackUseCaseCalls = 0;
+      when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+        (_) async => Result.success(
+          fetchStarterPackUseCaseCalls++ == 0
+              ? <OnboardingStarterCreatorEntity>[_creator(2), _creator(0), _creator(0)]
+              : <OnboardingStarterCreatorEntity>[_creator(2), _creator(1), _creator(0)],
+        ),
+      );
+      when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) async => true);
+    },
+    build: buildBloc,
+    act: (bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      final short = await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
+      expect(short.starterPackData.creators.length, 2);
+      expect(short.starterPackData.canContinue, isFalse);
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await bloc.stream.firstWhere((state) => state.starterPackData.canContinue);
+    },
+    verify: (bloc) {
+      expect(bloc.state.starterPackData.creators.map((creator) => creator.email), <String>[
+        'creator-0@example.com',
+        'creator-1@example.com',
+        'creator-2@example.com',
+      ]);
+      expect(bloc.state.starterPackData.canContinue, isTrue);
+      expect(bloc.state.starterPackData.selectedEmails.length, OnboardingV2Config.minFollows);
+    },
+  );
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'records selected interests only after saving succeeds',
     setUp: () {
       when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
@@ -866,7 +903,7 @@ void main() {
       when(
         () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
       ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
-      when(() => remoteConfig.fetchAndActivate()).thenThrow(Exception('throttled'));
+      when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) async => throw Exception('throttled'));
     },
     build: buildBloc,
     act: (bloc) async {
@@ -880,6 +917,161 @@ void main() {
       expect(bloc.state.step, OnboardingV2Step.starterPack);
     },
   );
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'double reload requests fetch the starter pack once',
+    setUp: () {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      when(
+        () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+      ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+      when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) async => true);
+    },
+    build: buildBloc,
+    act: (bloc) async {
+      final pendingFetch = Completer<bool>();
+      when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) => pendingFetch.future);
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await bloc.stream.firstWhere((state) => state.actionStatus == ActionStatus.inProgress);
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.actionStatus, ActionStatus.inProgress);
+      pendingFetch.complete(true);
+      await bloc.stream.firstWhere((state) => state.actionStatus == ActionStatus.idle);
+    },
+    verify: (_) {
+      verify(() => remoteConfig.fetchAndActivate()).called(1);
+      verify(() => fetchStarterPackUseCase(const NoParams())).called(2);
+    },
+  );
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'back navigation cancels a pending starter-pack reload result',
+    setUp: () {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      when(
+        () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+      ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+    },
+    build: buildBloc,
+    act: (bloc) async {
+      final pendingFetch = Completer<bool>();
+      when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) => pendingFetch.future);
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
+      final originalPack = bloc.state.starterPackData;
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await bloc.stream.firstWhere((state) => state.actionStatus == ActionStatus.inProgress);
+      bloc.add(const OnboardingV2Event.stepBack());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.auth);
+      pendingFetch.complete(true);
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.starterPackData, originalPack);
+    },
+    verify: (bloc) {
+      expect(bloc.state.actionStatus, ActionStatus.idle);
+      expect(bloc.state.step, OnboardingV2Step.auth);
+    },
+  );
+
+  testWidgets('a starter-pack reload times out and can be retried', (tester) async {
+    app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+    when(
+      () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+    ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+    final pendingFetch = Completer<bool>();
+    var remoteConfigCalls = 0;
+    when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) {
+      remoteConfigCalls++;
+      return remoteConfigCalls == 1 ? pendingFetch.future : Future<bool>.value(true);
+    });
+    var packCalls = 0;
+    when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+      (_) async => Result.success(
+        List<OnboardingStarterCreatorEntity>.generate(packCalls++ == 0 ? 1 : OnboardingV2Config.minFollows, _creator),
+      ),
+    );
+
+    final bloc = buildBloc();
+    try {
+      bloc.add(const OnboardingV2Event.started());
+      await tester.pump();
+      expect(bloc.state.step, OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await tester.pump();
+      expect(bloc.state.actionStatus, ActionStatus.inProgress);
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(bloc.state.actionStatus, ActionStatus.idle);
+      expect(bloc.state.starterPackData.creators, hasLength(1));
+      expect(bloc.state.starterPackData.canContinue, isFalse);
+
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await tester.pump();
+      expect(bloc.state.actionStatus, ActionStatus.idle);
+      expect(bloc.state.starterPackData.canContinue, isTrue);
+      pendingFetch.complete(true);
+      await tester.pump();
+
+      expect(bloc.state.starterPackData.canContinue, isTrue);
+      expect(packCalls, 2);
+    } finally {
+      if (!pendingFetch.isCompleted) pendingFetch.complete(true);
+      await tester.pump();
+      await tester.runAsync(bloc.close);
+    }
+  });
+
+  testWidgets('starter-pack enrichment times out and a late result cannot overwrite a retry', (tester) async {
+    app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+    when(
+      () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
+    ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+    when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) async => true);
+    final pendingPack = Completer<Result<List<OnboardingStarterCreatorEntity>>>();
+    var packCalls = 0;
+    when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer((_) {
+      packCalls++;
+      if (packCalls == 2) return pendingPack.future;
+      return Future.value(
+        Result.success(
+          List<OnboardingStarterCreatorEntity>.generate(packCalls == 1 ? 1 : OnboardingV2Config.minFollows, _creator),
+        ),
+      );
+    });
+
+    final bloc = buildBloc();
+    try {
+      bloc.add(const OnboardingV2Event.started());
+      await tester.pump();
+      expect(bloc.state.step, OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await tester.pump();
+      expect(bloc.state.actionStatus, ActionStatus.inProgress);
+      expect(packCalls, 2);
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(bloc.state.actionStatus, ActionStatus.idle);
+      expect(bloc.state.starterPackData.creators, hasLength(1));
+
+      bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      await tester.pump();
+      expect(bloc.state.actionStatus, ActionStatus.idle);
+      expect(bloc.state.starterPackData.canContinue, isTrue);
+      final recoveredPack = bloc.state.starterPackData;
+      pendingPack.complete(Result.success(<OnboardingStarterCreatorEntity>[_creator(9)]));
+      await tester.pump();
+
+      expect(bloc.state.starterPackData, recoveredPack);
+      expect(packCalls, 3);
+    } finally {
+      if (!pendingPack.isCompleted) pendingPack.complete(Result.success(<OnboardingStarterCreatorEntity>[]));
+      await tester.pump();
+      await tester.runAsync(bloc.close);
+    }
+  });
 
   group('AI prompt for the interests', () {
     Future<OnboardingV2State> confirmStarterPackWith(OnboardingV2Bloc bloc, List<String> interests) async {
