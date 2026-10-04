@@ -394,7 +394,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     emit(
       state.copyWith(
         actionStatus: ActionStatus.failure,
-        sessionInvalid: _sessionInvalidCodes.contains(failure.code),
+        // A stored session can say loggedIn with no user id: every write then fails before it reaches Firestore.
+        sessionInvalid: _sessionInvalidCodes.contains(failure.code) || app_state.prismUser.id.isEmpty,
         completionFailed: completionFailed,
         navRequest: null,
       ),
