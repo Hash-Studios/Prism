@@ -197,10 +197,10 @@ void main() {
   test('a Firebase user with a blank stored profile does not count as signed in', () async {
     final GoogleAuth auth = GoogleAuth(auth: _Auth(), googleSignIn: _GoogleSignIn(), messaging: _Messaging());
 
-    app_state.prismUser = profileUser(id: '', loggedIn: true);
+    app_state.prismUser = profileUser(id: '');
     expect(await auth.isSignedIn(), isFalse);
 
-    app_state.prismUser = profileUser(id: 'u1', loggedIn: true);
+    app_state.prismUser = profileUser();
     expect(await auth.isSignedIn(), isTrue);
   });
 
