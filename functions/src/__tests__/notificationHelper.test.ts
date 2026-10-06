@@ -10,6 +10,7 @@ import {
   pickFcmToken,
   sendNotification,
   sendToUser,
+  sendToUserByEmail,
   userIdToTopic,
 } from "../notificationHelper";
 
@@ -55,25 +56,25 @@ test("signed-out personal pushOnly email fallbacks are skipped", async (t) => {
   assert.equal(send.mock.callCount(), 0);
 });
 
-test("signed-in personal pushOnly email fallbacks still send", async (t) => {
+test("a personal payload is never sent to an email-prefix topic, even for a signed-in user", async (t) => {
   const query = {
     where: () => query,
     limit: () => query,
     get: async () => ({empty: false, docs: [{data: () => ({loggedIn: true})}]}),
   };
   t.mock.method(db, "collection", (name: string) => name === "usersv2" ? query : ({add: async () => undefined}));
-  const topics: string[] = [];
-  t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
-    topics.push(message.topic ?? "");
-    return "id";
-  });
+  const send = t.mock.method(admin.messaging(), "send", async () => "id");
 
   await sendNotification({
     title: "t", body: "b", data: {route: "r"}, modifier: "sam@example.com", channelId: "c",
     fcmTarget: {topic: emailToTopic("sam@example.com")}, pushOnly: true,
   });
+  await sendNotification({
+    title: "t", body: "b", data: {route: "r"}, modifier: "sam@example.com", channelId: "c",
+    fcmTarget: {topic: emailToTopic("sam@example.com")},
+  });
 
-  assert.deepEqual(topics, ["sam"]);
+  assert.equal(send.mock.callCount(), 0);
 });
 
 test("personal topic lookup failure prevents FCM delivery", async (t) => {
@@ -148,12 +149,25 @@ test("a signed-out or muted user keeps the inbox doc and gets no push", async (t
   assert.equal(sent.length, 0);
 });
 
-test("a recipient with no user doc still gets the email-prefix topic", async (t) => {
-  const query = {where: () => query, limit: () => query, get: async () => ({empty: true, docs: []})};
-  const {sent} = personalSetup(t);
-  t.mock.method(db, "collection", (name: string) => name === "usersv2" ? query : ({add: async () => undefined}));
-  await sendToUser(personal, {email: "sam@example.com"});
-  assert.deepEqual(sent.map((m) => m.topic), ["sam"]);
+test("a recipient with no uid gets the inbox doc and no push", async (t) => {
+  const {sent, inbox} = personalSetup(t);
+  const ok = await sendToUser(personal, {email: "sam@example.com"});
+  assert.equal(ok, true);
+  assert.deepEqual(sent, []);
+  assert.equal(inbox.length, 1);
+});
+
+test("a recipient lookup error gives no push and never falls back to the prefix topic", async (t) => {
+  const {sent, inbox} = personalSetup(t);
+  const failing = {where: () => failing, limit: () => failing, get: async () => {
+    throw new Error("lookup failed");
+  }};
+  t.mock.method(db, "collection", (name: string) => name === "usersv2" ?
+    failing :
+    ({add: async (data: Record<string, unknown>) => inbox.push({data})}));
+  await sendToUserByEmail(personal, "sam@example.com");
+  assert.deepEqual(sent, []);
+  assert.equal(inbox.length, 1);
 });
 
 test("sendToUser reports a failed delivery", async (t) => {

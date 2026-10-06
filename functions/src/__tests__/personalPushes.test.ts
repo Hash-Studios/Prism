@@ -58,7 +58,6 @@ test("campaign email target skips signed-out users and keeps inbox", async (t) =
 for (const [email, user, topic, state] of [
   ["in@example.com", {loggedIn: true}, "u_uid-in", "signed-in"],
   ["old@example.com", {}, "u_uid-old", "legacy"],
-  ["missing@example.com", undefined, "missing", "unmatched"],
 ] as const) {
   test(`campaign email target still sends for ${state} user`, async (t) => {
     const {inbox, topics} = setup(t, user ? {[email]: user} : {});
@@ -70,6 +69,16 @@ for (const [email, user, topic, state] of [
     assert.deepEqual(topics, [topic]);
   });
 }
+
+test("campaign email target for an unmatched address keeps the inbox and sends no push", async (t) => {
+  const {inbox, topics} = setup(t, {});
+  await onCampaignNotificationRequested.run({
+    params: {requestId: "r1"},
+    data: {data: () => ({title: "t", body: "b", modifier: "missing@example.com"})},
+  } as unknown as Parameters<typeof onCampaignNotificationRequested.run>[0]);
+  assert.equal(inbox.length, 1);
+  assert.deepEqual(topics, []);
+});
 
 test("campaign email target also pushes to the stored token, once per device", async (t) => {
   const {topics} = setup(t, {"in@example.com": {loggedIn: true, fcmToken: "legacy-token"}});

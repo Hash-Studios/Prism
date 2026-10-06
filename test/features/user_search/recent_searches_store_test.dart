@@ -1,6 +1,6 @@
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
-import 'package:Prism/features/user_search/views/recent_searches_store.dart';
+import 'package:Prism/features/user_search/data/recent_searches_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/in_memory_local_store.dart';

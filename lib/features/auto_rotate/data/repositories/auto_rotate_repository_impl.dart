@@ -24,7 +24,6 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   static Set<aw.WallpaperRotationTrigger> triggersFor(AutoRotateConfig config) {
     final Set<aw.WallpaperRotationTrigger> triggers = <aw.WallpaperRotationTrigger>{
       if (config.chargingOnly) aw.WallpaperRotationTrigger.charging,
-      if (config.activeHoursEnabled) aw.WallpaperRotationTrigger.timeOfDay,
     };
     return triggers.isEmpty ? const <aw.WallpaperRotationTrigger>{aw.WallpaperRotationTrigger.interval} : triggers;
   }
@@ -48,18 +47,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
       shuffle: _settings.get<bool>(PersistenceKeys.autoRotateShuffle, defaultValue: defaults.shuffle),
       source: AutoRotateSource.values.asNameMap()[sourceName] ?? defaults.source,
       chargingOnly: _settings.get<bool>(PersistenceKeys.autoRotateChargingOnly, defaultValue: defaults.chargingOnly),
-      activeHoursEnabled: _settings.get<bool>(
-        PersistenceKeys.autoRotateActiveHoursEnabled,
-        defaultValue: defaults.activeHoursEnabled,
-      ),
-      activeHoursStart: _hour(PersistenceKeys.autoRotateActiveHoursStart, defaults.activeHoursStart),
-      activeHoursEnd: _hour(PersistenceKeys.autoRotateActiveHoursEnd, defaults.activeHoursEnd),
     );
-  }
-
-  int _hour(String key, int fallback) {
-    final int value = _settings.get<int>(key, defaultValue: fallback);
-    return value >= 0 && value <= 23 ? value : fallback;
   }
 
   @override
@@ -70,9 +58,6 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     await _settings.set(PersistenceKeys.autoRotateShuffle, config.shuffle);
     await _settings.set(_sourceKey, config.source.name);
     await _settings.set(PersistenceKeys.autoRotateChargingOnly, config.chargingOnly);
-    await _settings.set(PersistenceKeys.autoRotateActiveHoursEnabled, config.activeHoursEnabled);
-    await _settings.set(PersistenceKeys.autoRotateActiveHoursStart, config.activeHoursStart);
-    await _settings.set(PersistenceKeys.autoRotateActiveHoursEnd, config.activeHoursEnd);
   }
 
   @override
@@ -89,8 +74,6 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         intervalMinutes: config.intervalMinutes,
         order: config.shuffle ? aw.WallpaperRotationOrder.shuffle : aw.WallpaperRotationOrder.sequential,
         triggers: triggersFor(config),
-        activeHoursStart: config.activeHoursStart,
-        activeHoursEnd: config.activeHoursEnd,
       ),
     );
     if (result.isSuccess) await _settings.set(_appliedSourcesKey, jsonEncode(imageUrls));

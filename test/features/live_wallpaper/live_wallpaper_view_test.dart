@@ -91,6 +91,24 @@ void main() {
     expect(find.text("Couldn't set the live wallpaper. Try again."), findsOneWidget);
   });
 
+  testWidgets('a repeated failure shows its message again after the first one is dismissed', (tester) async {
+    repository.outcome = const LiveApplyOutcome.failed("Couldn't set the live wallpaper. Try again.");
+    await pump(tester);
+    await tester.tap(find.text('Set live wallpaper'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text("Couldn't set the live wallpaper. Try again."), findsOneWidget);
+
+    ScaffoldMessenger.of(tester.element(find.byType(LiveWallpaperView))).hideCurrentSnackBar();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text("Couldn't set the live wallpaper. Try again."), findsNothing);
+
+    await tester.tap(find.text('Set live wallpaper'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text("Couldn't set the live wallpaper. Try again."), findsOneWidget);
+  });
+
   testWidgets('video needs a pick before it can be set, and then applies it', (tester) async {
     await pump(tester, pickVideo: () async => '/tmp/loop.mp4');
     await tester.tap(find.text('Video'));

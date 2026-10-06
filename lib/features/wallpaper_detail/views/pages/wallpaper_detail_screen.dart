@@ -342,7 +342,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildPanelStack(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
     final double collapsedHeight = _collapsedPanelHeight(context);
-    return SlidingUpPanel(
+    final Widget panel = SlidingUpPanel(
       onPanelOpened: () => _handlePanelOpened(context, state),
       onPanelClosed: () => _handlePanelClosed(context, state),
       // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
@@ -362,6 +362,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         padding: EdgeInsets.only(bottom: collapsedHeight),
         child: _buildImageBody(context, paletteLoading, state),
       ),
+    );
+    return Stack(
+      children: [
+        Positioned.fill(child: panel),
+        Positioned(left: 0, right: 0, bottom: 0, child: _buildActionBar(context, state)),
+      ],
     );
   }
 
@@ -386,7 +392,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildCollapseHandle(context, state),
-                _buildActionBar(context, state),
                 _buildColorBar(context, state),
                 Expanded(
                   flex: 8,
@@ -410,7 +415,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: _sheetHPad),
+                SizedBox(height: WallpaperActionBar.height + MediaQuery.paddingOf(context).bottom),
               ],
             ),
           ),

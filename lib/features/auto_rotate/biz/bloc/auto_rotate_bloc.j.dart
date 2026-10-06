@@ -30,22 +30,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
         targetChanged: (event) => _onConfigChanged(state.config.copyWith(target: event.target), emit),
         shuffleChanged: (event) => _onConfigChanged(state.config.copyWith(shuffle: event.shuffle), emit),
         sourceChanged: (event) => _onSourceChanged(event, emit),
-        chargingOnlyChanged: (event) => _onConfigChanged(
-          state.config.copyWith(
-            chargingOnly: event.chargingOnly,
-            activeHoursEnabled: !event.chargingOnly && state.config.activeHoursEnabled,
-          ),
-          emit,
-        ),
-        activeHoursEnabledChanged: (event) => _onConfigChanged(
-          state.config.copyWith(
-            activeHoursEnabled: event.enabled,
-            chargingOnly: !event.enabled && state.config.chargingOnly,
-          ),
-          emit,
-        ),
-        activeHoursChanged: (event) =>
-            _onConfigChanged(state.config.copyWith(activeHoursStart: event.start, activeHoursEnd: event.end), emit),
+        chargingOnlyChanged: (event) => _onConfigChanged(state.config.copyWith(chargingOnly: event.chargingOnly), emit),
         rotateNowPressed: (event) => _onRotateNow(event, emit),
         statusRefreshed: (event) => _onStatusRefreshed(emit),
         batteryTipDismissed: (event) async => emit(state.copyWith(showBatteryTip: false)),
@@ -125,10 +110,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       previous.target != next.target ||
       previous.shuffle != next.shuffle ||
       previous.source != next.source ||
-      previous.chargingOnly != next.chargingOnly ||
-      previous.activeHoursEnabled != next.activeHoursEnabled ||
-      (next.activeHoursEnabled &&
-          (previous.activeHoursStart != next.activeHoursStart || previous.activeHoursEnd != next.activeHoursEnd));
+      previous.chargingOnly != next.chargingOnly;
 
   AutoRotateState _snapshot(AutoRotateConfig config, {AutoRotateStatus? status, bool? isPro, bool? loaded}) =>
       state.copyWith(

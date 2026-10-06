@@ -78,6 +78,20 @@ void main() {
     expect(tester.getRect(find.byType(SetWallpaperButton)).bottom, lessThanOrEqualTo(tester.view.physicalSize.height));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('the action bar stays at the bottom when the details panel opens', (tester) async {
+    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    final Rect before = tester.getRect(find.byType(SetWallpaperButton));
+    final double chipTopBefore = tester.getRect(find.widgetWithText(ActionChip, 'space')).top;
+
+    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(tester.getRect(find.byType(SetWallpaperButton)), before);
+    expect(tester.getRect(find.widgetWithText(ActionChip, 'space')).top, lessThan(chipTopBefore));
+    expect(tester.getRect(find.widgetWithText(ActionChip, 'space')).bottom, lessThanOrEqualTo(before.top));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('iOS shows Save as the primary action and no Set action', (tester) async {
     await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
 

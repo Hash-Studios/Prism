@@ -10,6 +10,7 @@ abstract class FavouriteWallsState with _$FavouriteWallsState {
     @Default(FavouriteSort.recentlyAdded) FavouriteSort sort,
     WallpaperSource? sourceFilter,
     @Default('') String query,
+    @Default(0) int completedOperationId,
     Failure? failure,
   }) = _FavouriteWallsState;
 

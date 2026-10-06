@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
@@ -240,6 +241,7 @@ void main() {
 
   test('a deterministic docId writes the wall with setDoc so a retry cannot duplicate it', () async {
     final firestoreClient = _MockFirestoreClient();
+    _stubExistingWall(firestoreClient, null);
     when(
       () => firestoreClient.setDoc(
         any(),
@@ -250,22 +252,94 @@ void main() {
       ),
     ).thenAnswer((_) async {});
 
-    for (var attempt = 0; attempt < 2; attempt++) {
-      final result = await submitWallRecord(
-        isPremium: true,
-        hasFreeQuota: () => true,
-        consumeFreeQuota: () async {},
-        firestoreClient: firestoreClient,
-        record: const <String, dynamic>{'id': 'wall-id'},
-        awardFirstUpload: () async {},
-        docId: 'wall_user_1_pic.jpg',
-      );
-      expect(result, WallSubmissionResult.submitted);
-    }
+    final result = await submitWallRecord(
+      isPremium: true,
+      hasFreeQuota: () => true,
+      consumeFreeQuota: () async {},
+      firestoreClient: firestoreClient,
+      record: const <String, dynamic>{'id': 'wall-id', 'email': 'a@b.c'},
+      awardFirstUpload: () async {},
+      docId: 'wall_user_1_pic.jpg',
+    );
 
+    expect(result, WallSubmissionResult.submitted);
     verify(
       () => firestoreClient.setDoc('walls', 'wall_user_1_pic.jpg', any(), sourceTag: 'upload.createWall'),
-    ).called(2);
+    ).called(1);
     verifyNever(() => firestoreClient.addDoc(any(), any(), sourceTag: any(named: 'sourceTag')));
   });
+
+  test('a retry after a committed first write does not overwrite the reviewed wall', () async {
+    final firestoreClient = _MockFirestoreClient();
+    _stubExistingWall(firestoreClient, <String, dynamic>{'email': 'a@b.c', 'review': true, 'reviewedAt': 'x'});
+    var awarded = false;
+
+    final result = await submitWallRecord(
+      isPremium: true,
+      hasFreeQuota: () => true,
+      consumeFreeQuota: () async {},
+      firestoreClient: firestoreClient,
+      record: const <String, dynamic>{'id': 'wall-id', 'email': 'a@b.c', 'review': false},
+      awardFirstUpload: () async => awarded = true,
+      docId: 'wall_user_1_pic.jpg',
+    );
+
+    expect(result, WallSubmissionResult.submitted);
+    expect(awarded, isTrue);
+    verifyNever(
+      () => firestoreClient.setDoc(
+        any(),
+        any(),
+        any(),
+        merge: any(named: 'merge'),
+        sourceTag: any(named: 'sourceTag'),
+      ),
+    );
+  });
+
+  test('a missing wall reads as permission-denied and is then created', () async {
+    final firestoreClient = _MockFirestoreClient();
+    when(
+      () => firestoreClient.getById<Map<String, dynamic>>(
+        any(),
+        any(),
+        any(),
+        sourceTag: any(named: 'sourceTag'),
+        preferCacheFirst: any(named: 'preferCacheFirst'),
+      ),
+    ).thenThrow(FirestoreError(message: 'denied', code: 'permission-denied'));
+    when(
+      () => firestoreClient.setDoc(
+        any(),
+        any(),
+        any(),
+        merge: any(named: 'merge'),
+        sourceTag: any(named: 'sourceTag'),
+      ),
+    ).thenAnswer((_) async {});
+
+    await submitWallRecord(
+      isPremium: true,
+      hasFreeQuota: () => true,
+      consumeFreeQuota: () async {},
+      firestoreClient: firestoreClient,
+      record: const <String, dynamic>{'id': 'wall-id', 'email': 'a@b.c'},
+      awardFirstUpload: () async {},
+      docId: 'wall_x',
+    );
+
+    verify(() => firestoreClient.setDoc('walls', 'wall_x', any(), sourceTag: 'upload.createWall')).called(1);
+  });
+}
+
+void _stubExistingWall(_MockFirestoreClient client, Map<String, dynamic>? existing) {
+  when(
+    () => client.getById<Map<String, dynamic>>(
+      any(),
+      any(),
+      any(),
+      sourceTag: any(named: 'sourceTag'),
+      preferCacheFirst: any(named: 'preferCacheFirst'),
+    ),
+  ).thenAnswer((_) async => existing);
 }

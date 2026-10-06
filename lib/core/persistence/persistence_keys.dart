@@ -39,9 +39,6 @@ class PersistenceKeys {
   static const String autoRotateTarget = 'autoRotate.target';
   static const String autoRotateShuffle = 'autoRotate.shuffle';
   static const String autoRotateChargingOnly = 'autoRotate.chargingOnly';
-  static const String autoRotateActiveHoursEnabled = 'autoRotate.activeHoursEnabled';
-  static const String autoRotateActiveHoursStart = 'autoRotate.activeHoursStart';
-  static const String autoRotateActiveHoursEnd = 'autoRotate.activeHoursEnd';
   static const String autoRotateBatteryTipShown = 'autoRotate.batteryTipShown';
 
   // Default target when the user taps Set: 'ask' | 'home' | 'lock' | 'both'.
@@ -59,7 +56,7 @@ class PersistenceKeys {
   // Download quality: 'original' | 'compressed'
   static const String downloadQuality = 'downloadQuality';
 
-  // Quick tile configuration — written as raw strings so native TileServices
+  // Quick tile configuration, written as raw strings so native TileServices
   // can read them directly from SharedPreferences without the Flutter codec.
   static const String quickTileCategoryName = 'quick_tile.category.name';
   static const String quickTileCategorySource = 'quick_tile.category.source';

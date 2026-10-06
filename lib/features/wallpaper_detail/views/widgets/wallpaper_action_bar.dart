@@ -10,7 +10,7 @@ class WallpaperBarAction {
 }
 
 /// Compact row of actions: a primary action that carries its own label, then plain icon actions.
-/// It paints no surface of its own. It sits on the details panel, so the two read as one unit.
+/// It paints no surface of its own. It stays pinned above the details panel, which supplies the surface under it.
 class WallpaperActionBar extends StatelessWidget {
   const WallpaperActionBar({required this.primary, required this.actions, super.key});
 

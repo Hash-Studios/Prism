@@ -55,7 +55,7 @@ extension LiveWallpaperEventPatterns on LiveWallpaperEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _ProChanged value)?  proChanged,TResult Function( _MotionSelected value)?  motionSelected,TResult Function( _GradientSelected value)?  gradientSelected,TResult Function( _BatterySaverChanged value)?  batterySaverChanged,TResult Function( _MotionApplied value)?  motionApplied,TResult Function( _GradientApplied value)?  gradientApplied,TResult Function( _VideoPicked value)?  videoPicked,TResult Function( _VideoApplied value)?  videoApplied,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _ProChanged value)?  proChanged,TResult Function( _MotionSelected value)?  motionSelected,TResult Function( _GradientSelected value)?  gradientSelected,TResult Function( _BatterySaverChanged value)?  batterySaverChanged,TResult Function( _MotionApplied value)?  motionApplied,TResult Function( _GradientApplied value)?  gradientApplied,TResult Function( _VideoPicked value)?  videoPicked,TResult Function( _VideoApplied value)?  videoApplied,TResult Function( _OutcomeHandled value)?  outcomeHandled,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -67,7 +67,8 @@ return batterySaverChanged(_that);case _MotionApplied() when motionApplied != nu
 return motionApplied(_that);case _GradientApplied() when gradientApplied != null:
 return gradientApplied(_that);case _VideoPicked() when videoPicked != null:
 return videoPicked(_that);case _VideoApplied() when videoApplied != null:
-return videoApplied(_that);case _:
+return videoApplied(_that);case _OutcomeHandled() when outcomeHandled != null:
+return outcomeHandled(_that);case _:
   return orElse();
 
 }
@@ -85,7 +86,7 @@ return videoApplied(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _ProChanged value)  proChanged,required TResult Function( _MotionSelected value)  motionSelected,required TResult Function( _GradientSelected value)  gradientSelected,required TResult Function( _BatterySaverChanged value)  batterySaverChanged,required TResult Function( _MotionApplied value)  motionApplied,required TResult Function( _GradientApplied value)  gradientApplied,required TResult Function( _VideoPicked value)  videoPicked,required TResult Function( _VideoApplied value)  videoApplied,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _ProChanged value)  proChanged,required TResult Function( _MotionSelected value)  motionSelected,required TResult Function( _GradientSelected value)  gradientSelected,required TResult Function( _BatterySaverChanged value)  batterySaverChanged,required TResult Function( _MotionApplied value)  motionApplied,required TResult Function( _GradientApplied value)  gradientApplied,required TResult Function( _VideoPicked value)  videoPicked,required TResult Function( _VideoApplied value)  videoApplied,required TResult Function( _OutcomeHandled value)  outcomeHandled,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -97,7 +98,8 @@ return batterySaverChanged(_that);case _MotionApplied():
 return motionApplied(_that);case _GradientApplied():
 return gradientApplied(_that);case _VideoPicked():
 return videoPicked(_that);case _VideoApplied():
-return videoApplied(_that);case _:
+return videoApplied(_that);case _OutcomeHandled():
+return outcomeHandled(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -114,7 +116,7 @@ return videoApplied(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _ProChanged value)?  proChanged,TResult? Function( _MotionSelected value)?  motionSelected,TResult? Function( _GradientSelected value)?  gradientSelected,TResult? Function( _BatterySaverChanged value)?  batterySaverChanged,TResult? Function( _MotionApplied value)?  motionApplied,TResult? Function( _GradientApplied value)?  gradientApplied,TResult? Function( _VideoPicked value)?  videoPicked,TResult? Function( _VideoApplied value)?  videoApplied,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _ProChanged value)?  proChanged,TResult? Function( _MotionSelected value)?  motionSelected,TResult? Function( _GradientSelected value)?  gradientSelected,TResult? Function( _BatterySaverChanged value)?  batterySaverChanged,TResult? Function( _MotionApplied value)?  motionApplied,TResult? Function( _GradientApplied value)?  gradientApplied,TResult? Function( _VideoPicked value)?  videoPicked,TResult? Function( _VideoApplied value)?  videoApplied,TResult? Function( _OutcomeHandled value)?  outcomeHandled,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -126,7 +128,8 @@ return batterySaverChanged(_that);case _MotionApplied() when motionApplied != nu
 return motionApplied(_that);case _GradientApplied() when gradientApplied != null:
 return gradientApplied(_that);case _VideoPicked() when videoPicked != null:
 return videoPicked(_that);case _VideoApplied() when videoApplied != null:
-return videoApplied(_that);case _:
+return videoApplied(_that);case _OutcomeHandled() when outcomeHandled != null:
+return outcomeHandled(_that);case _:
   return null;
 
 }
@@ -143,7 +146,7 @@ return videoApplied(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isPro)?  started,TResult Function( bool isPro)?  proChanged,TResult Function( MotionStyle style)?  motionSelected,TResult Function( GradientStyle style)?  gradientSelected,TResult Function( bool enabled)?  batterySaverChanged,TResult Function( LivePalette palette,  double screenAspectRatio)?  motionApplied,TResult Function( LivePalette palette)?  gradientApplied,TResult Function( String path)?  videoPicked,TResult Function()?  videoApplied,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isPro)?  started,TResult Function( bool isPro)?  proChanged,TResult Function( MotionStyle style)?  motionSelected,TResult Function( GradientStyle style)?  gradientSelected,TResult Function( bool enabled)?  batterySaverChanged,TResult Function( LivePalette palette,  double screenAspectRatio)?  motionApplied,TResult Function( LivePalette palette)?  gradientApplied,TResult Function( String path)?  videoPicked,TResult Function()?  videoApplied,TResult Function()?  outcomeHandled,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.isPro);case _ProChanged() when proChanged != null:
@@ -154,7 +157,8 @@ return batterySaverChanged(_that.enabled);case _MotionApplied() when motionAppli
 return motionApplied(_that.palette,_that.screenAspectRatio);case _GradientApplied() when gradientApplied != null:
 return gradientApplied(_that.palette);case _VideoPicked() when videoPicked != null:
 return videoPicked(_that.path);case _VideoApplied() when videoApplied != null:
-return videoApplied();case _:
+return videoApplied();case _OutcomeHandled() when outcomeHandled != null:
+return outcomeHandled();case _:
   return orElse();
 
 }
@@ -172,7 +176,7 @@ return videoApplied();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isPro)  started,required TResult Function( bool isPro)  proChanged,required TResult Function( MotionStyle style)  motionSelected,required TResult Function( GradientStyle style)  gradientSelected,required TResult Function( bool enabled)  batterySaverChanged,required TResult Function( LivePalette palette,  double screenAspectRatio)  motionApplied,required TResult Function( LivePalette palette)  gradientApplied,required TResult Function( String path)  videoPicked,required TResult Function()  videoApplied,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isPro)  started,required TResult Function( bool isPro)  proChanged,required TResult Function( MotionStyle style)  motionSelected,required TResult Function( GradientStyle style)  gradientSelected,required TResult Function( bool enabled)  batterySaverChanged,required TResult Function( LivePalette palette,  double screenAspectRatio)  motionApplied,required TResult Function( LivePalette palette)  gradientApplied,required TResult Function( String path)  videoPicked,required TResult Function()  videoApplied,required TResult Function()  outcomeHandled,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.isPro);case _ProChanged():
@@ -183,7 +187,8 @@ return batterySaverChanged(_that.enabled);case _MotionApplied():
 return motionApplied(_that.palette,_that.screenAspectRatio);case _GradientApplied():
 return gradientApplied(_that.palette);case _VideoPicked():
 return videoPicked(_that.path);case _VideoApplied():
-return videoApplied();case _:
+return videoApplied();case _OutcomeHandled():
+return outcomeHandled();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,7 +205,7 @@ return videoApplied();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isPro)?  started,TResult? Function( bool isPro)?  proChanged,TResult? Function( MotionStyle style)?  motionSelected,TResult? Function( GradientStyle style)?  gradientSelected,TResult? Function( bool enabled)?  batterySaverChanged,TResult? Function( LivePalette palette,  double screenAspectRatio)?  motionApplied,TResult? Function( LivePalette palette)?  gradientApplied,TResult? Function( String path)?  videoPicked,TResult? Function()?  videoApplied,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isPro)?  started,TResult? Function( bool isPro)?  proChanged,TResult? Function( MotionStyle style)?  motionSelected,TResult? Function( GradientStyle style)?  gradientSelected,TResult? Function( bool enabled)?  batterySaverChanged,TResult? Function( LivePalette palette,  double screenAspectRatio)?  motionApplied,TResult? Function( LivePalette palette)?  gradientApplied,TResult? Function( String path)?  videoPicked,TResult? Function()?  videoApplied,TResult? Function()?  outcomeHandled,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.isPro);case _ProChanged() when proChanged != null:
@@ -211,7 +216,8 @@ return batterySaverChanged(_that.enabled);case _MotionApplied() when motionAppli
 return motionApplied(_that.palette,_that.screenAspectRatio);case _GradientApplied() when gradientApplied != null:
 return gradientApplied(_that.palette);case _VideoPicked() when videoPicked != null:
 return videoPicked(_that.path);case _VideoApplied() when videoApplied != null:
-return videoApplied();case _:
+return videoApplied();case _OutcomeHandled() when outcomeHandled != null:
+return outcomeHandled();case _:
   return null;
 
 }
@@ -773,6 +779,38 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'LiveWallpaperEvent.videoApplied()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _OutcomeHandled implements LiveWallpaperEvent {
+  const _OutcomeHandled();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OutcomeHandled);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'LiveWallpaperEvent.outcomeHandled()';
 }
 
 

@@ -12,4 +12,5 @@ abstract class LiveWallpaperEvent with _$LiveWallpaperEvent {
   const factory LiveWallpaperEvent.gradientApplied({required LivePalette palette}) = _GradientApplied;
   const factory LiveWallpaperEvent.videoPicked(String path) = _VideoPicked;
   const factory LiveWallpaperEvent.videoApplied() = _VideoApplied;
+  const factory LiveWallpaperEvent.outcomeHandled() = _OutcomeHandled;
 }

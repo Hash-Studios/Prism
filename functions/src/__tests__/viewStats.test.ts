@@ -22,14 +22,38 @@ type Write = {path: string; data: Record<string, unknown>};
 
 function store(t: TestContext, docs: Record<string, Record<string, unknown>>) {
   const writes: Write[] = [];
+  const versions: Record<string, number> = {};
+  const tick = () => new Promise((resolve) => setImmediate(resolve));
+  const lost = (code: number) => Object.assign(new Error("claim lost"), {code});
   t.mock.method(db, "runTransaction", () => {
     throw new Error("view counting must not use a transaction");
   });
   t.mock.method(db, "collection", (name: string) => ({
-    doc: (id: string) => ({
-      get: async () => ({data: () => docs[`${name}/${id}`]}),
-      set: async (data: Record<string, unknown>) => writes.push({path: `${name}/${id}`, data}),
-    }),
+    doc: (id: string) => {
+      const path = `${name}/${id}`;
+      return {
+        get: async () => {
+          const data = docs[path];
+          const updateTime = data ? {version: versions[path] ?? 0} : undefined;
+          await tick();
+          return {exists: data !== undefined, data: () => data, updateTime};
+        },
+        set: async (data: Record<string, unknown>) => writes.push({path, data}),
+        create: async (data: Record<string, unknown>) => {
+          if (docs[path]) throw lost(6);
+          docs[path] = data;
+          versions[path] = 1;
+          writes.push({path, data});
+        },
+        update: async (data: Record<string, unknown>, precondition: {lastUpdateTime: {version: number}}) => {
+          if (!docs[path]) throw lost(5);
+          if ((versions[path] ?? 0) !== precondition.lastUpdateTime.version) throw lost(9);
+          docs[path] = data;
+          versions[path] = (versions[path] ?? 0) + 1;
+          writes.push({path, data});
+        },
+      };
+    },
   }));
   return writes;
 }
@@ -65,4 +89,23 @@ test("a legacy string counter is rewritten as a number", async (t) => {
   const writes = store(t, {"wallpaper_stats/W1": {views: "9"}});
   assert.equal((await call()).views, 10);
   assert.equal(writes.find((w) => w.path === "wallpaper_stats/W1")?.data.views, 10);
+});
+
+const statsWrites = (writes: Write[]) => writes.filter((w) => w.path === "wallpaper_stats/W1");
+
+test("ten concurrent first views from one user increment once", async (t) => {
+  const writes = store(t, {"wallpaper_stats/W1": {views: 4}});
+  const results = await Promise.all(Array.from({length: 10}, () => call()));
+  assert.equal(statsWrites(writes).length, 1);
+  assert.deepEqual(results.map((r) => r.views).sort(), [4, 4, 4, 4, 4, 4, 4, 4, 4, 5]);
+});
+
+test("ten concurrent views after the cooldown expires increment once", async (t) => {
+  const old = admin.firestore.Timestamp.fromMillis(Date.now() - 2 * 60 * 60 * 1000);
+  const writes = store(t, {
+    "wallpaper_stats/W1": {views: 4},
+    "viewRate/u1_wallpaper_stats_W1": {lastAt: old},
+  });
+  await Promise.all(Array.from({length: 10}, () => call()));
+  assert.equal(statsWrites(writes).length, 1);
 });

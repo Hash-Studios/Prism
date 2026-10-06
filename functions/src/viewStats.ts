@@ -35,6 +35,16 @@ export function parseViews(raw: unknown): number {
   return typeof raw === "number" && Number.isFinite(raw) ? raw : Number.parseInt(String(raw ?? "0"), 10) || 0;
 }
 
+const ALREADY_EXISTS = 6;
+const NOT_FOUND = 5;
+const FAILED_PRECONDITION = 9;
+
+/** Another call claimed the same view first: the create found a doc, or the doc changed since it was read. */
+function isLostClaim(err: unknown): boolean {
+  const code = (err as {code?: unknown}).code;
+  return code === ALREADY_EXISTS || code === NOT_FOUND || code === FAILED_PRECONDITION;
+}
+
 async function incrementAndReadViews(uid: string, collection: string, docId: string): Promise<number> {
   const statsRef = db.collection(collection).doc(docId);
   const rateRef = db.collection("viewRate").doc(`${uid}_${collection}_${docId}`);
@@ -46,10 +56,21 @@ async function incrementAndReadViews(uid: string, collection: string, docId: str
     return views;
   }
   const now = Date.now();
-  await rateRef.set({
+  const claim = {
     lastAt: admin.firestore.Timestamp.fromMillis(now),
     expireAt: admin.firestore.Timestamp.fromMillis(now + RATE_DOC_TTL_MS),
-  }, {merge: true});
+  };
+  // The create, or the update pinned to the doc version that was read, succeeds for one concurrent call only.
+  try {
+    if (rateSnap.exists && rateSnap.updateTime) {
+      await rateRef.update(claim, {lastUpdateTime: rateSnap.updateTime});
+    } else {
+      await rateRef.create(claim);
+    }
+  } catch (err) {
+    if (isLostClaim(err)) return views;
+    throw err;
+  }
   // A legacy doc may hold views as a string, which FieldValue.increment would reset to 1.
   const next = typeof rawViews === "number" ? admin.firestore.FieldValue.increment(1) : views + 1;
   await statsRef.set({views: next}, {merge: true});

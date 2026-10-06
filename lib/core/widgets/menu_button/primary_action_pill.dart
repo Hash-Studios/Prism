@@ -1,3 +1,4 @@
+import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -19,7 +20,7 @@ class PrimaryActionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color background = Theme.of(context).colorScheme.error;
-    final Color foreground = background.computeLuminance() > 0.179 ? Colors.black : Colors.white;
+    final Color foreground = onColor(background);
     return Semantics(
       button: true,
       label: semanticLabel,

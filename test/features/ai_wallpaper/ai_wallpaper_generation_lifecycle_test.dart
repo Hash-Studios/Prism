@@ -728,6 +728,64 @@ void main() {
     );
   });
 
+  testWidgets('a failed generation that charged no coins does not mention a refund', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 100,
+        'delta': 0,
+        'transactionId': 'reservation-1',
+      },
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => throw StateError('provider failed')),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(toastMessages(toastCalls), contains('Something went wrong. Try again.'));
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+  });
+
+  testWidgets('a charge with no reply queues a refund and tells the user', (tester) async {
+    final toastCalls = <MethodCall>[];
+    var generations = 0;
+    await setUpPage(
+      tester,
+      (name, parameters) async {
+        if (name == 'spendCoins') throw FirebaseFunctionsException(code: 'unavailable', message: 'no reply');
+        return coinReply(name);
+      },
+      repository: _FakeAiGenerationRepository(
+        _record(),
+        generation: () async {
+          generations++;
+          return _record();
+        },
+      ),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(generations, 0);
+    expect(toastMessages(toastCalls), contains("Couldn't confirm the charge. Any coins taken will be refunded."));
+    expect(
+      getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''),
+      contains('spend_${app_state.prismUser.id}_'),
+    );
+  });
+
   testWidgets('free users see the watermark note and Pro users do not', (tester) async {
     await setUpPage(tester, (name, parameters) async => <String, Object>{});
     expect(find.text('Free images carry a Prism watermark. Pro removes it.'), findsOneWidget);

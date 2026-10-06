@@ -115,4 +115,42 @@ void main() {
       expect(lightPalette.background.computeLuminance(), greaterThan(0.7));
     });
   });
+
+  group('smoothstep edges', () {
+    final RegExp call = RegExp(r'smoothstep\(\s*([^,]+?)\s*,\s*([^,]+?)\s*,');
+    final RegExp offset = RegExp(r'^(.+?)\s*([+-])\s*(\d+\.?\d*)$');
+
+    bool reversed(String edge0, String edge1) {
+      final double? a = double.tryParse(edge0);
+      final double? b = double.tryParse(edge1);
+      if (a != null && b != null) return a >= b;
+      final RegExpMatch? m0 = offset.firstMatch(edge0);
+      final RegExpMatch? m1 = offset.firstMatch(edge1);
+      if (m0 == null || m1 == null || m0.group(1) != m1.group(1)) return false;
+      final double d0 = double.parse(m0.group(3)!) * (m0.group(2) == '-' ? -1 : 1);
+      final double d1 = double.parse(m1.group(3)!) * (m1.group(2) == '-' ? -1 : 1);
+      return d0 >= d1;
+    }
+
+    final Map<String, String> shaders = <String, String>{
+      for (final GradientStyle style in GradientStyle.values)
+        'gradient ${style.name}': LiveShaderSources.gradient(style, darkPalette),
+      for (final MotionStyle style in MotionStyle.values)
+        'motion ${style.name}': LiveShaderSources.motion(style, darkPalette),
+    };
+
+    shaders.forEach((String name, String shader) {
+      test('$name never passes edge0 >= edge1', () {
+        for (final RegExpMatch match in call.allMatches(shader)) {
+          expect(reversed(match.group(1)!, match.group(2)!), isFalse, reason: match.group(0));
+        }
+      });
+    });
+
+    test('the waves shader fills below the edge with a forward smoothstep', () {
+      final String waves = LiveShaderSources.gradient(GradientStyle.waves, darkPalette);
+      expect(waves, contains('1.0 - smoothstep(edge - 0.012, edge + 0.012, uv.y)'));
+      expect(waves, isNot(contains('smoothstep(edge + 0.012, edge - 0.012')));
+    });
+  });
 }

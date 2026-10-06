@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/logger/logger.dart';
 
 enum WallSubmissionResult { submitted, quotaExceeded }
@@ -34,7 +35,7 @@ Future<WallSubmissionResult> submitWallRecord({
 
     if (docId == null) {
       await firestoreClient.addDoc(FirebaseCollections.walls, record, sourceTag: 'upload.createWall');
-    } else {
+    } else if (!await _alreadySubmittedByOwner(firestoreClient, docId, record['email'])) {
       await firestoreClient.setDoc(FirebaseCollections.walls, docId, record, sourceTag: 'upload.createWall');
     }
 
@@ -65,5 +66,24 @@ Future<WallSubmissionResult> submitWallRecord({
     return WallSubmissionResult.submitted;
   } finally {
     release?.complete();
+  }
+}
+
+/// A retry must never overwrite a wall that already landed: it may have been reviewed since.
+/// Rules refuse reads of a missing wall, so permission-denied means the id is free.
+Future<bool> _alreadySubmittedByOwner(FirestoreClient firestoreClient, String docId, Object? email) async {
+  try {
+    final Map<String, dynamic>? existing = await firestoreClient.getById<Map<String, dynamic>>(
+      FirebaseCollections.walls,
+      docId,
+      (Map<String, dynamic> data, String _) => data,
+      sourceTag: 'upload.createWall.existing',
+    );
+    return existing != null && email is String && email.isNotEmpty && existing['email'] == email;
+  } on FirestoreError catch (error) {
+    if (error.code == 'permission-denied') {
+      return false;
+    }
+    rethrow;
   }
 }

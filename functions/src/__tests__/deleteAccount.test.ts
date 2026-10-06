@@ -4,7 +4,7 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 import {deleteAccount} from "../deleteAccount";
 
-type Options = {email?: string; failDelete?: boolean; authError?: string};
+type Options = {email?: string; failDelete?: boolean; failFirstDelete?: boolean; slowQueries?: boolean; authError?: string};
 
 function fake(t: TestContext, options: Options = {}) {
   const log: string[] = [];
@@ -18,7 +18,13 @@ function fake(t: TestContext, options: Options = {}) {
   };
   const docsFor = (collection: string) => [{ref: {path: `${collection}/d1`}}];
   const query = (collection: string) => {
-    const q = {where: () => q, get: async () => ({docs: docsFor(collection)})};
+    const q = {
+      where: () => q,
+      get: async () => {
+        if (options.slowQueries) await new Promise((resolve) => setTimeout(resolve, 20));
+        return {docs: docsFor(collection)};
+      },
+    };
     return q;
   };
   t.mock.method(db, "collection", (name: string) => name === "usersv2" ?
@@ -27,14 +33,18 @@ function fake(t: TestContext, options: Options = {}) {
   t.mock.method(db, "recursiveDelete", async (ref: {path: string}) => {
     log.push(`recursive:${ref.path}`);
   });
+  let deletes = 0;
   t.mock.method(db, "bulkWriter", () => ({
     delete: (ref: {path: string}) => {
       log.push(`delete:${ref.path}`);
-      return options.failDelete && ref.path.startsWith("aiGenerations") ?
+      deletes += 1;
+      return (options.failDelete && ref.path.startsWith("aiGenerations")) || (options.failFirstDelete && deletes === 1) ?
         Promise.reject(new Error("write failed")) :
         Promise.resolve();
     },
-    close: async () => undefined,
+    close: async () => {
+      log.push("close");
+    },
   }));
   t.mock.method(admin.auth(), "deleteUser", async () => {
     log.push("auth");
@@ -84,4 +94,39 @@ test("other auth errors still fail the call", async (t) => {
   await assert.rejects(async () => {
     await call();
   }, {code: "auth/internal-error"});
+});
+
+test("an early failed delete is handled at once, never as an unhandled rejection", async (t) => {
+  const log = fake(t, {failFirstDelete: true, slowQueries: true});
+  const unhandled: unknown[] = [];
+  const listener = (reason: unknown) => unhandled.push(reason);
+  process.on("unhandledRejection", listener);
+  try {
+    await assert.rejects(async () => {
+      await call();
+    }, {code: "internal"});
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  } finally {
+    process.off("unhandledRejection", listener);
+  }
+  assert.deepEqual(unhandled, []);
+  assert.ok(log.includes("close"));
+  assert.ok(!log.includes("anonymize"));
+});
+
+test("the writer closes even when queueing a delete throws", async (t) => {
+  const log = fake(t);
+  t.mock.method(db, "collection", (name: string) => name === "usersv2" ?
+    {doc: () => ({
+      path: "usersv2/u1",
+      collection: (sub: string) => ({path: `usersv2/u1/${sub}`}),
+      get: async () => ({data: () => ({email: "sam@example.com"})}),
+    })} :
+    {where: () => ({get: async () => {
+      throw new Error("query failed");
+    }})});
+  await assert.rejects(async () => {
+    await call();
+  }, /query failed/);
+  assert.ok(log.includes("close"));
 });

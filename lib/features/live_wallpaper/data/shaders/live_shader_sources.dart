@@ -116,7 +116,7 @@ void main() {
     float edge = 0.72 - fi * 0.15
       + sin(x * (1.8 + fi * 0.6) + t * (0.3 + fi * 0.1) + fi * 2.1) * (0.045 - fi * 0.006)
       + sin(x * (3.7 + fi) - t * 0.2) * 0.012;
-    float fill = smoothstep(edge + 0.012, edge - 0.012, uv.y);
+    float fill = 1.0 - smoothstep(edge - 0.012, edge + 0.012, uv.y);
     vec3 tint = i == 0 ? c0 : (i == 1 ? c1 : (i == 2 ? c2 : c3));
     float shade = 0.55 + 0.45 * (1.0 - uv.y);
     col = mix(col, mix(tint * shade, bg, 0.25 + fi * 0.12), fill * 0.9);
