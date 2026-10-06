@@ -21,12 +21,17 @@ class _MockDeleteNotificationsByIdsUseCase extends Mock implements DeleteNotific
 
 class _MockClearNotificationsUseCase extends Mock implements ClearNotificationsUseCase {}
 
+class _MockMarkAllNotificationsAsReadUseCase extends Mock implements MarkAllNotificationsAsReadUseCase {}
+
+class _MockRestoreNotificationsUseCase extends Mock implements RestoreNotificationsUseCase {}
+
 void main() {
   setUpAll(() {
     registerFallbackValue(const FetchNotificationsParams(syncRemote: true));
     registerFallbackValue(const MarkNotificationAsReadParams(id: 'notif-1'));
     registerFallbackValue(const DeleteNotificationParams(id: 'notif-1'));
     registerFallbackValue(const DeleteNotificationsByIdsParams(ids: <String>['a']));
+    registerFallbackValue(const RestoreNotificationsParams(items: <InAppNotificationEntity>[]));
   });
 
   late _MockFetchNotificationsUseCase fetchUseCase;
@@ -34,6 +39,8 @@ void main() {
   late _MockDeleteNotificationUseCase deleteUseCase;
   late _MockDeleteNotificationsByIdsUseCase deleteManyUseCase;
   late _MockClearNotificationsUseCase clearUseCase;
+  late _MockMarkAllNotificationsAsReadUseCase markAllUseCase;
+  late _MockRestoreNotificationsUseCase restoreUseCase;
 
   final unread = notification('notif-1');
   final second = notification('notif-2', read: true);
@@ -49,8 +56,15 @@ void main() {
   InAppNotificationsState loaded(List<InAppNotificationEntity> items) =>
       seeded.copyWith(items: items, unreadCount: items.where((item) => !item.read).length);
 
-  InAppNotificationsBloc buildBloc() =>
-      InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase);
+  InAppNotificationsBloc buildBloc() => InAppNotificationsBloc(
+    fetchUseCase,
+    markUseCase,
+    deleteUseCase,
+    deleteManyUseCase,
+    clearUseCase,
+    markAllUseCase,
+    restoreUseCase,
+  );
 
   setUp(() {
     fetchUseCase = _MockFetchNotificationsUseCase();
@@ -58,6 +72,8 @@ void main() {
     deleteUseCase = _MockDeleteNotificationUseCase();
     deleteManyUseCase = _MockDeleteNotificationsByIdsUseCase();
     clearUseCase = _MockClearNotificationsUseCase();
+    markAllUseCase = _MockMarkAllNotificationsAsReadUseCase();
+    restoreUseCase = _MockRestoreNotificationsUseCase();
   });
 
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
@@ -184,5 +200,41 @@ void main() {
       seeded.copyWith(actionStatus: ActionStatus.inProgress),
       seeded.copyWith(actionStatus: ActionStatus.failure, failure: failure),
     ],
+  );
+
+  blocTest<InAppNotificationsBloc, InAppNotificationsState>(
+    'markAllReadRequested publishes the list with everything read and a zero unread count',
+    build: () {
+      when(
+        () => markAllUseCase(const NoParams()),
+      ).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[markedRead, second]));
+      return buildBloc();
+    },
+    seed: () => seeded,
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.markAllReadRequested()),
+    expect: () => <InAppNotificationsState>[
+      seeded.copyWith(actionStatus: ActionStatus.inProgress),
+      loaded(<InAppNotificationEntity>[markedRead, second]),
+    ],
+    verify: (bloc) => expect(bloc.state.unreadCount, 0),
+  );
+
+  blocTest<InAppNotificationsBloc, InAppNotificationsState>(
+    'restoreRequested puts removed notifications back',
+    build: () {
+      when(
+        () => restoreUseCase(any()),
+      ).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread, second]));
+      return buildBloc();
+    },
+    seed: () => loaded(<InAppNotificationEntity>[second]),
+    act: (bloc) => bloc.add(InAppNotificationsEvent.restoreRequested(items: <InAppNotificationEntity>[unread])),
+    expect: () => <InAppNotificationsState>[
+      loaded(<InAppNotificationEntity>[second]).copyWith(actionStatus: ActionStatus.inProgress),
+      loaded(<InAppNotificationEntity>[unread, second]),
+    ],
+    verify: (_) => verify(
+      () => restoreUseCase(any(that: isA<RestoreNotificationsParams>().having((p) => p.items, 'items', [unread]))),
+    ).called(1),
   );
 }

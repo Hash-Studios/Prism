@@ -55,13 +55,13 @@ void main() {
     expect(harness.events, isEmpty);
   });
 
-  testWidgets('does not show modal for non-premium users', (tester) async {
+  testWidgets('shows the modal to signed-in users on the free plan', (tester) async {
     app_state.prismUser = profileUser(id: 'free_user', username: 'creator_01');
     final harness = _Harness();
 
     await harness.service.maybeShowNudge(await _pumpContext(tester), sourceContext: 'dashboard_entry');
 
-    expect(harness.launchCount, 0);
+    expect(harness.launchCount, 1);
   });
 
   testWidgets('does not show modal for already complete users', (tester) async {

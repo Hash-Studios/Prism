@@ -13,6 +13,7 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -60,7 +61,24 @@ void main() {
     getIt.registerSingleton<FavoritesLocalDataSource>(favorites);
   });
 
+  final List<MethodCall> toasts = <MethodCall>[];
+
+  setUp(() {
+    toasts.clear();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('PonnamKarthik/fluttertoast'),
+      (call) async {
+        toasts.add(call);
+        return true;
+      },
+    );
+  });
+
   tearDown(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('PonnamKarthik/fluttertoast'),
+      null,
+    );
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
@@ -89,6 +107,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 450));
     await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
   }
 
   testWidgets('does not track favourite status when the save fails', (tester) async {
@@ -148,5 +167,77 @@ void main() {
 
     expect(favorites.isWallFavourite('user_1', 'wall_1'), isTrue);
     expect(callbackCount, 1);
+  });
+
+  Future<void> pumpOnTop(WidgetTester tester, FavouriteWallsBloc bloc, {required bool trash}) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<FavouriteWallsBloc>.value(
+          value: bloc,
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => BlocProvider<FavouriteWallsBloc>.value(
+                      value: bloc,
+                      child: Scaffold(
+                        body: FavouriteWallpaperButton(
+                          wall: const LegacyFavouriteWall(
+                            id: 'wall_1',
+                            source: WallpaperSource.prism,
+                            legacyPayload: <String, Object?>{},
+                          ),
+                          trash: trash,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FavoriteIcon));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+  }
+
+  testWidgets('a failed save shows an error toast', (tester) async {
+    when(() => toggleUseCase(any())).thenAnswer((_) async => Result.error(const ServerFailure('write failed')));
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    addTearDown(bloc.close);
+
+    await tapFavourite(tester, bloc);
+
+    final shown = toasts.where((call) => call.method == 'showToast').map((call) => (call.arguments as Map)['msg']);
+    expect(shown, contains("Couldn't update favourites. Try again."));
+  });
+
+  testWidgets('trash mode keeps the screen open when the removal fails', (tester) async {
+    when(() => toggleUseCase(any())).thenAnswer((_) async => Result.error(const ServerFailure('write failed')));
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    addTearDown(bloc.close);
+
+    await pumpOnTop(tester, bloc, trash: true);
+
+    expect(find.byType(FavouriteWallpaperButton), findsOneWidget);
+  });
+
+  testWidgets('trash mode closes the screen after the removal succeeds', (tester) async {
+    when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(false));
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    addTearDown(bloc.close);
+
+    await pumpOnTop(tester, bloc, trash: true);
+
+    expect(find.byType(FavouriteWallpaperButton), findsNothing);
   });
 }

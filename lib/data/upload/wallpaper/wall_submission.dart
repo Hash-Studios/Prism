@@ -15,6 +15,7 @@ Future<WallSubmissionResult> submitWallRecord({
   required FirestoreClient firestoreClient,
   required Map<String, dynamic> record,
   required Future<void> Function() awardFirstUpload,
+  String? docId,
 }) async {
   Completer<void>? release;
   if (!isPremium) {
@@ -31,7 +32,11 @@ Future<WallSubmissionResult> submitWallRecord({
       return WallSubmissionResult.quotaExceeded;
     }
 
-    await firestoreClient.addDoc(FirebaseCollections.walls, record, sourceTag: 'upload.createWall');
+    if (docId == null) {
+      await firestoreClient.addDoc(FirebaseCollections.walls, record, sourceTag: 'upload.createWall');
+    } else {
+      await firestoreClient.setDoc(FirebaseCollections.walls, docId, record, sourceTag: 'upload.createWall');
+    }
 
     if (!isPremium) {
       try {

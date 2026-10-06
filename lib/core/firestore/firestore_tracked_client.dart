@@ -312,11 +312,13 @@ class FirestoreTrackedClient implements FirestoreClient {
     final Future<_QueryCacheEntry> refresh = _executeNetworkQuery(spec);
     _inflightQueries[key] = refresh;
     unawaited(
-      refresh.whenComplete(() {
-        if (identical(_inflightQueries[key], refresh)) {
-          _inflightQueries.remove(key);
-        }
-      }),
+      refresh
+          .whenComplete(() {
+            if (identical(_inflightQueries[key], refresh)) {
+              _inflightQueries.remove(key);
+            }
+          })
+          .then<void>((_) {}, onError: (Object _) {}),
     );
   }
 

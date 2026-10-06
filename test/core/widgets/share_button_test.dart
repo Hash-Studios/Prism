@@ -252,4 +252,44 @@ void main() {
 
     expect(sharedImageUrl, 'https://img.test/thumb.jpg');
   });
+
+  testWidgets('a link that cannot be created shows an error and does not open the share sheet', (tester) async {
+    final List<String?> toasts = <String?>[];
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      toasts.add((call.arguments as Map)['msg'] as String?);
+      return true;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    var shareCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShareButton(
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            url: 'https://img.test/full.jpg',
+            thumbUrl: 'https://img.test/thumb.jpg',
+            createLink: (id, source, url, thumbUrl) async => null,
+            shareCard: (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
+              shareCalls++;
+              return Future<ShareCardResult>.value((format: ShareFormatValue.card, dismissed: false));
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.bySemanticsLabel('Share'));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(shareCalls, 0);
+    expect(toasts, contains("Couldn't create the share link. Try again."));
+    expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.failure);
+  });
 }

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -260,5 +262,68 @@ void main() {
     expect(bloc.state.page, 2);
     expect(bloc.state.items.map((e) => e.id), <String>['1', '2', '3']);
     expect(bloc.state.hasMore, isFalse);
+  });
+
+  group('refresh', () {
+    PersonalizedFeedPage page(List<String> ids) => PersonalizedFeedPage(
+      items: ids.map((id) => _prismItem(id, authorEmail: '$id@example.com')).toList(),
+      hasMore: true,
+    );
+
+    test('keeps the old items on screen until the new ones arrive', () async {
+      final Completer<Result<PersonalizedFeedPage>> refreshed = Completer<Result<PersonalizedFeedPage>>();
+      int calls = 0;
+      when(
+        () => fetchUseCase(any()),
+      ).thenAnswer((_) => ++calls == 1 ? Future.value(Result.success(page(<String>['1', '2']))) : refreshed.future);
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      addTearDown(bloc.close);
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+
+      bloc.add(const PersonalizedFeedEvent.refreshRequested());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.status, LoadStatus.loading);
+      expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+
+      refreshed.complete(Result.success(page(<String>['3'])));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.status, LoadStatus.success);
+      expect(bloc.state.items.map((e) => e.id), <String>['3']);
+    });
+
+    test('a failed refresh keeps the old items and reports the failure', () async {
+      int calls = 0;
+      when(() => fetchUseCase(any())).thenAnswer(
+        (_) async => ++calls == 1 ? Result.success(page(<String>['1', '2'])) : Result.error(const NetworkFailure('x')),
+      );
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      addTearDown(bloc.close);
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+
+      bloc.add(const PersonalizedFeedEvent.refreshRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+      expect(bloc.state.status, LoadStatus.success);
+      expect(bloc.state.actionStatus, ActionStatus.failure);
+    });
+
+    test('a failed first load with nothing to show is a failure state', () async {
+      when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(const NetworkFailure('x')));
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      addTearDown(bloc.close);
+
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.status, LoadStatus.failure);
+      expect(bloc.state.items, isEmpty);
+    });
   });
 }

@@ -188,6 +188,7 @@ class _FollowButton extends StatelessWidget {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: user.id,
         targetUserEmail: user.email,
+        targetName: user.name,
       ),
     );
   }

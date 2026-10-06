@@ -57,16 +57,22 @@ class OnboardingPrimaryButton extends StatelessWidget {
                           ),
                         )
                       : ExcludeSemantics(
-                          child: icon == null
-                              ? Text(label, style: OnboardingTypography.cta)
-                              : Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(icon, size: 18, color: OnboardingColors.buttonText),
-                                    const SizedBox(width: 8),
-                                    Text(label, style: OnboardingTypography.cta),
-                                  ],
-                                ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: icon == null
+                                  ? Text(label, style: OnboardingTypography.cta)
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(icon, size: 18, color: OnboardingColors.buttonText),
+                                        const SizedBox(width: 8),
+                                        Text(label, style: OnboardingTypography.cta),
+                                      ],
+                                    ),
+                            ),
+                          ),
                         ),
                 ),
               ),

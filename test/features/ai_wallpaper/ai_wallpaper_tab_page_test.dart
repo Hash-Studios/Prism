@@ -25,6 +25,9 @@ import '../../support/fake_app_analytics.dart';
 class _FakeConnectivityService implements ConnectivityService {
   @override
   Future<bool> hasConnection() async => true;
+
+  @override
+  Stream<bool> get onConnectionChange => const Stream<bool>.empty();
 }
 
 class _ThrowingShareTapAnalytics extends FakeAppAnalytics {

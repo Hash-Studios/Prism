@@ -12,12 +12,7 @@ Future<void> _openPreview(WidgetTester tester) async {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute<void>(
-              builder: (_) => ClockOverlay(
-                link: File('assets/images/prism.webp').path,
-                file: true,
-                accent: null,
-                colorChanged: false,
-              ),
+              builder: (_) => ClockOverlay(link: File('assets/images/prism.webp').path, file: true, accent: null),
             ),
           ),
           child: const Text('open'),
@@ -71,37 +66,50 @@ void main() {
     expect(find.byType(ClockOverlay), findsNothing);
   });
 
-  testWidgets('a downloaded file is not tinted until the user changes its accent', (tester) async {
+  testWidgets('the preview never tints the image, even with a user-selected accent', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: ClockOverlay(
-          link: File('assets/images/prism.webp').path,
-          file: true,
-          accent: Colors.red,
-          colorChanged: false,
-        ),
+        home: ClockOverlay(link: File('assets/images/prism.webp').path, file: true, accent: Colors.red),
       ),
     );
 
     final image = tester.widget<Image>(find.byType(Image).first);
     expect(image.color, isNull);
     expect(image.colorBlendMode, isNull);
+    expect(find.byType(ColorFiltered), findsNothing);
   });
 
-  testWidgets('a user-selected accent tints the downloaded file preview', (tester) async {
+  test('the time follows the 12 or 24 hour setting', () {
+    final afternoon = DateTime(2026, 1, 5, 15, 7);
+
+    expect(ClockOverlay.formatTime(afternoon, use24Hour: false), '3:07');
+    expect(ClockOverlay.formatTime(afternoon, use24Hour: true), '15:07');
+  });
+
+  testWidgets('the Android lock view shows the device time style and no dock', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: ClockOverlay(
-          link: File('assets/images/prism.webp').path,
-          file: true,
-          accent: Colors.red,
-          colorChanged: true,
+        home: MediaQuery(
+          data: const MediaQueryData(alwaysUse24HourFormat: true),
+          child: ClockOverlay(link: File('assets/images/prism.webp').path, file: true, accent: null),
         ),
       ),
     );
 
-    final image = tester.widget<Image>(find.byType(Image).first);
-    expect(image.color, Colors.red);
-    expect(image.colorBlendMode, BlendMode.hue);
-  });
+    await tester.tap(find.text('Lock'));
+    await tester.pumpAndSettle();
+
+    expect(find.byWidgetPredicate(_isDockIcon), findsNothing);
+    expect(find.textContaining(RegExp(r'^\d{2}:\d{2}$')), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the Home toggle hides the big clock on iOS', (tester) async {
+    await _openPreview(tester);
+    expect(find.textContaining(RegExp(r'^\d{1,2}:\d{2}$')), findsOneWidget);
+
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining(RegExp(r'^\d{1,2}:\d{2}$')), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/persistence/data_sources/app_icons_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
@@ -17,16 +18,20 @@ class CacheMaintenanceService {
     this._feedCacheLocal,
     this._appIconsLocal, {
     @ignoreParam BaseCacheManager? imageCache,
-  }) : _imageCache = imageCache;
+    @ignoreParam BaseCacheManager? thumbnailCache,
+  }) : _imageCache = imageCache,
+       _thumbnailCache = thumbnailCache;
 
   final NotificationsLocalDataSource _notificationsLocal;
   final FeedCacheLocalDataSource _feedCacheLocal;
   final AppIconsLocalDataSource _appIconsLocal;
   final BaseCacheManager? _imageCache;
+  final BaseCacheManager? _thumbnailCache;
 
   Future<void> clearTransientCache() async {
     final steps = <Future<void> Function()>[
       () => (_imageCache ?? DefaultCacheManager()).emptyCache(),
+      () => (_thumbnailCache ?? PrismImageCache.instance).emptyCache(),
       () async => PaintingBinding.instance.imageCache.clear(),
       _notificationsLocal.clearAll,
       _notificationsLocal.clearLastFetchAtUtc,

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -10,6 +12,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
 import 'package:injectable/injectable.dart';
+
+const int _maxBatchDeletes = 400;
 
 @LazySingleton(as: FavouriteWallsRepository)
 class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
@@ -222,11 +226,17 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   @override
   Future<Result<bool>> clearAll({required String userId, required List<String> wallIds}) async {
     try {
-      for (final String rawId in wallIds) {
-        final String id = rawId.trim();
-        if (id.isEmpty) continue;
-        await _firestoreClient.deleteDoc(_collectionPath(userId), id, sourceTag: 'favourite_walls.clear_all.delete');
-        await _favoritesLocal.setWallFavourite(userId, id, false);
+      final List<String> ids = wallIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toSet().toList();
+      for (int start = 0; start < ids.length; start += _maxBatchDeletes) {
+        final List<String> chunk = ids.sublist(start, math.min(start + _maxBatchDeletes, ids.length));
+        await _firestoreClient.runBatch((batch) async {
+          for (final String id in chunk) {
+            batch.deleteDoc(_collectionPath(userId), id);
+          }
+        }, sourceTag: 'favourite_walls.clear_all.delete');
+        for (final String id in chunk) {
+          await _favoritesLocal.setWallFavourite(userId, id, false);
+        }
       }
       return Result.success(true);
     } catch (error) {

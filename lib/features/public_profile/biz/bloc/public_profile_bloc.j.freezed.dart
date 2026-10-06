@@ -137,7 +137,7 @@ return followChangeRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String email)?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreWallsRequested,TResult Function( UserRelationKind kind,  List<String> allEmails,  int page)?  relationPageRequested,TResult Function( UserRelationKind kind,  String query,  List<String> allEmails)?  relationSearchRequested,TResult Function( UserRelationKind kind)?  relationSearchCleared,TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail)?  followChangeRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String email)?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreWallsRequested,TResult Function( UserRelationKind kind,  List<String> allEmails,  int page)?  relationPageRequested,TResult Function( UserRelationKind kind,  String query,  List<String> allEmails)?  relationSearchRequested,TResult Function( UserRelationKind kind)?  relationSearchCleared,TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.email);case _RefreshRequested() when refreshRequested != null:
@@ -146,7 +146,7 @@ return fetchMoreWallsRequested();case _RelationPageRequested() when relationPage
 return relationPageRequested(_that.kind,_that.allEmails,_that.page);case _RelationSearchRequested() when relationSearchRequested != null:
 return relationSearchRequested(_that.kind,_that.query,_that.allEmails);case _RelationSearchCleared() when relationSearchCleared != null:
 return relationSearchCleared(_that.kind);case _FollowChangeRequested() when followChangeRequested != null:
-return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail);case _:
+return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   return orElse();
 
 }
@@ -164,7 +164,7 @@ return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserE
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String email)  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreWallsRequested,required TResult Function( UserRelationKind kind,  List<String> allEmails,  int page)  relationPageRequested,required TResult Function( UserRelationKind kind,  String query,  List<String> allEmails)  relationSearchRequested,required TResult Function( UserRelationKind kind)  relationSearchCleared,required TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail)  followChangeRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String email)  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreWallsRequested,required TResult Function( UserRelationKind kind,  List<String> allEmails,  int page)  relationPageRequested,required TResult Function( UserRelationKind kind,  String query,  List<String> allEmails)  relationSearchRequested,required TResult Function( UserRelationKind kind)  relationSearchCleared,required TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)  followChangeRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.email);case _RefreshRequested():
@@ -173,7 +173,7 @@ return fetchMoreWallsRequested();case _RelationPageRequested():
 return relationPageRequested(_that.kind,_that.allEmails,_that.page);case _RelationSearchRequested():
 return relationSearchRequested(_that.kind,_that.query,_that.allEmails);case _RelationSearchCleared():
 return relationSearchCleared(_that.kind);case _FollowChangeRequested():
-return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail);case _:
+return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -190,7 +190,7 @@ return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserE
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String email)?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreWallsRequested,TResult? Function( UserRelationKind kind,  List<String> allEmails,  int page)?  relationPageRequested,TResult? Function( UserRelationKind kind,  String query,  List<String> allEmails)?  relationSearchRequested,TResult? Function( UserRelationKind kind)?  relationSearchCleared,TResult? Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail)?  followChangeRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String email)?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreWallsRequested,TResult? Function( UserRelationKind kind,  List<String> allEmails,  int page)?  relationPageRequested,TResult? Function( UserRelationKind kind,  String query,  List<String> allEmails)?  relationSearchRequested,TResult? Function( UserRelationKind kind)?  relationSearchCleared,TResult? Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.email);case _RefreshRequested() when refreshRequested != null:
@@ -199,7 +199,7 @@ return fetchMoreWallsRequested();case _RelationPageRequested() when relationPage
 return relationPageRequested(_that.kind,_that.allEmails,_that.page);case _RelationSearchRequested() when relationSearchRequested != null:
 return relationSearchRequested(_that.kind,_that.query,_that.allEmails);case _RelationSearchCleared() when relationSearchCleared != null:
 return relationSearchCleared(_that.kind);case _FollowChangeRequested() when followChangeRequested != null:
-return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail);case _:
+return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   return null;
 
 }
@@ -559,7 +559,7 @@ as UserRelationKind,
 
 
 class _FollowChangeRequested implements PublicProfileEvent {
-  const _FollowChangeRequested({required this.follow, required this.currentUserId, required this.currentUserEmail, required this.targetUserId, required this.targetUserEmail});
+  const _FollowChangeRequested({required this.follow, required this.currentUserId, required this.currentUserEmail, required this.targetUserId, required this.targetUserEmail, this.targetName = ''});
   
 
  final  bool follow;
@@ -567,6 +567,7 @@ class _FollowChangeRequested implements PublicProfileEvent {
  final  String currentUserEmail;
  final  String targetUserId;
  final  String targetUserEmail;
+@JsonKey() final  String targetName;
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -578,16 +579,16 @@ _$FollowChangeRequestedCopyWith<_FollowChangeRequested> get copyWith => __$Follo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FollowChangeRequested&&(identical(other.follow, follow) || other.follow == follow)&&(identical(other.currentUserId, currentUserId) || other.currentUserId == currentUserId)&&(identical(other.currentUserEmail, currentUserEmail) || other.currentUserEmail == currentUserEmail)&&(identical(other.targetUserId, targetUserId) || other.targetUserId == targetUserId)&&(identical(other.targetUserEmail, targetUserEmail) || other.targetUserEmail == targetUserEmail));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FollowChangeRequested&&(identical(other.follow, follow) || other.follow == follow)&&(identical(other.currentUserId, currentUserId) || other.currentUserId == currentUserId)&&(identical(other.currentUserEmail, currentUserEmail) || other.currentUserEmail == currentUserEmail)&&(identical(other.targetUserId, targetUserId) || other.targetUserId == targetUserId)&&(identical(other.targetUserEmail, targetUserEmail) || other.targetUserEmail == targetUserEmail)&&(identical(other.targetName, targetName) || other.targetName == targetName));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,follow,currentUserId,currentUserEmail,targetUserId,targetUserEmail);
+int get hashCode => Object.hash(runtimeType,follow,currentUserId,currentUserEmail,targetUserId,targetUserEmail,targetName);
 
 @override
 String toString() {
-  return 'PublicProfileEvent.followChangeRequested(follow: $follow, currentUserId: $currentUserId, currentUserEmail: $currentUserEmail, targetUserId: $targetUserId, targetUserEmail: $targetUserEmail)';
+  return 'PublicProfileEvent.followChangeRequested(follow: $follow, currentUserId: $currentUserId, currentUserEmail: $currentUserEmail, targetUserId: $targetUserId, targetUserEmail: $targetUserEmail, targetName: $targetName)';
 }
 
 
@@ -598,7 +599,7 @@ abstract mixin class _$FollowChangeRequestedCopyWith<$Res> implements $PublicPro
   factory _$FollowChangeRequestedCopyWith(_FollowChangeRequested value, $Res Function(_FollowChangeRequested) _then) = __$FollowChangeRequestedCopyWithImpl;
 @useResult
 $Res call({
- bool follow, String currentUserId, String currentUserEmail, String targetUserId, String targetUserEmail
+ bool follow, String currentUserId, String currentUserEmail, String targetUserId, String targetUserEmail, String targetName
 });
 
 
@@ -615,13 +616,14 @@ class __$FollowChangeRequestedCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? follow = null,Object? currentUserId = null,Object? currentUserEmail = null,Object? targetUserId = null,Object? targetUserEmail = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? follow = null,Object? currentUserId = null,Object? currentUserEmail = null,Object? targetUserId = null,Object? targetUserEmail = null,Object? targetName = null,}) {
   return _then(_FollowChangeRequested(
 follow: null == follow ? _self.follow : follow // ignore: cast_nullable_to_non_nullable
 as bool,currentUserId: null == currentUserId ? _self.currentUserId : currentUserId // ignore: cast_nullable_to_non_nullable
 as String,currentUserEmail: null == currentUserEmail ? _self.currentUserEmail : currentUserEmail // ignore: cast_nullable_to_non_nullable
 as String,targetUserId: null == targetUserId ? _self.targetUserId : targetUserId // ignore: cast_nullable_to_non_nullable
 as String,targetUserEmail: null == targetUserEmail ? _self.targetUserEmail : targetUserEmail // ignore: cast_nullable_to_non_nullable
+as String,targetName: null == targetName ? _self.targetName : targetName // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }
@@ -632,7 +634,10 @@ as String,
 /// @nodoc
 mixin _$PublicProfileState {
 
- LoadStatus get status; String get email; List<PublicProfileWallEntity> get walls; bool get hasMoreWalls; bool get isFetchingMoreWalls; RelationList get followers; RelationList get following;
+ LoadStatus get status; String get email; List<PublicProfileWallEntity> get walls; bool get hasMoreWalls; bool get isFetchingMoreWalls; RelationList get followers; RelationList get following;/// Follow state the user asked for, keyed by lowercase email. It wins over the profile stream until the
+/// request fails, so the button flips at once.
+ Map<String, bool> get followOverrides;/// Result of the latest follow request. The UI shows a toast once per [FollowOutcome.id].
+ FollowOutcome? get followOutcome;
 /// Create a copy of PublicProfileState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -643,16 +648,16 @@ $PublicProfileStateCopyWith<PublicProfileState> get copyWith => _$PublicProfileS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicProfileState&&(identical(other.status, status) || other.status == status)&&(identical(other.email, email) || other.email == email)&&const DeepCollectionEquality().equals(other.walls, walls)&&(identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls)&&(identical(other.isFetchingMoreWalls, isFetchingMoreWalls) || other.isFetchingMoreWalls == isFetchingMoreWalls)&&(identical(other.followers, followers) || other.followers == followers)&&(identical(other.following, following) || other.following == following));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicProfileState&&(identical(other.status, status) || other.status == status)&&(identical(other.email, email) || other.email == email)&&const DeepCollectionEquality().equals(other.walls, walls)&&(identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls)&&(identical(other.isFetchingMoreWalls, isFetchingMoreWalls) || other.isFetchingMoreWalls == isFetchingMoreWalls)&&(identical(other.followers, followers) || other.followers == followers)&&(identical(other.following, following) || other.following == following)&&const DeepCollectionEquality().equals(other.followOverrides, followOverrides)&&(identical(other.followOutcome, followOutcome) || other.followOutcome == followOutcome));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,email,const DeepCollectionEquality().hash(walls),hasMoreWalls,isFetchingMoreWalls,followers,following);
+int get hashCode => Object.hash(runtimeType,status,email,const DeepCollectionEquality().hash(walls),hasMoreWalls,isFetchingMoreWalls,followers,following,const DeepCollectionEquality().hash(followOverrides),followOutcome);
 
 @override
 String toString() {
-  return 'PublicProfileState(status: $status, email: $email, walls: $walls, hasMoreWalls: $hasMoreWalls, isFetchingMoreWalls: $isFetchingMoreWalls, followers: $followers, following: $following)';
+  return 'PublicProfileState(status: $status, email: $email, walls: $walls, hasMoreWalls: $hasMoreWalls, isFetchingMoreWalls: $isFetchingMoreWalls, followers: $followers, following: $following, followOverrides: $followOverrides, followOutcome: $followOutcome)';
 }
 
 
@@ -663,11 +668,11 @@ abstract mixin class $PublicProfileStateCopyWith<$Res>  {
   factory $PublicProfileStateCopyWith(PublicProfileState value, $Res Function(PublicProfileState) _then) = _$PublicProfileStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, String email, List<PublicProfileWallEntity> walls, bool hasMoreWalls, bool isFetchingMoreWalls, RelationList followers, RelationList following
+ LoadStatus status, String email, List<PublicProfileWallEntity> walls, bool hasMoreWalls, bool isFetchingMoreWalls, RelationList followers, RelationList following, Map<String, bool> followOverrides, FollowOutcome? followOutcome
 });
 
 
-$RelationListCopyWith<$Res> get followers;$RelationListCopyWith<$Res> get following;
+$RelationListCopyWith<$Res> get followers;$RelationListCopyWith<$Res> get following;$FollowOutcomeCopyWith<$Res>? get followOutcome;
 
 }
 /// @nodoc
@@ -680,7 +685,7 @@ class _$PublicProfileStateCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? email = null,Object? walls = null,Object? hasMoreWalls = null,Object? isFetchingMoreWalls = null,Object? followers = null,Object? following = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? email = null,Object? walls = null,Object? hasMoreWalls = null,Object? isFetchingMoreWalls = null,Object? followers = null,Object? following = null,Object? followOverrides = null,Object? followOutcome = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -689,7 +694,9 @@ as List<PublicProfileWallEntity>,hasMoreWalls: null == hasMoreWalls ? _self.hasM
 as bool,isFetchingMoreWalls: null == isFetchingMoreWalls ? _self.isFetchingMoreWalls : isFetchingMoreWalls // ignore: cast_nullable_to_non_nullable
 as bool,followers: null == followers ? _self.followers : followers // ignore: cast_nullable_to_non_nullable
 as RelationList,following: null == following ? _self.following : following // ignore: cast_nullable_to_non_nullable
-as RelationList,
+as RelationList,followOverrides: null == followOverrides ? _self.followOverrides : followOverrides // ignore: cast_nullable_to_non_nullable
+as Map<String, bool>,followOutcome: freezed == followOutcome ? _self.followOutcome : followOutcome // ignore: cast_nullable_to_non_nullable
+as FollowOutcome?,
   ));
 }
 /// Create a copy of PublicProfileState
@@ -709,6 +716,18 @@ $RelationListCopyWith<$Res> get following {
   
   return $RelationListCopyWith<$Res>(_self.following, (value) {
     return _then(_self.copyWith(following: value));
+  });
+}/// Create a copy of PublicProfileState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$FollowOutcomeCopyWith<$Res>? get followOutcome {
+    if (_self.followOutcome == null) {
+    return null;
+  }
+
+  return $FollowOutcomeCopyWith<$Res>(_self.followOutcome!, (value) {
+    return _then(_self.copyWith(followOutcome: value));
   });
 }
 }
@@ -792,10 +811,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PublicProfileState() when $default != null:
-return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following);case _:
+return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
   return orElse();
 
 }
@@ -813,10 +832,10 @@ return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.is
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)  $default,) {final _that = this;
 switch (_that) {
 case _PublicProfileState():
-return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following);case _:
+return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -833,10 +852,10 @@ return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.is
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  String email,  List<PublicProfileWallEntity> walls,  bool hasMoreWalls,  bool isFetchingMoreWalls,  RelationList followers,  RelationList following,  Map<String, bool> followOverrides,  FollowOutcome? followOutcome)?  $default,) {final _that = this;
 switch (_that) {
 case _PublicProfileState() when $default != null:
-return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following);case _:
+return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.isFetchingMoreWalls,_that.followers,_that.following,_that.followOverrides,_that.followOutcome);case _:
   return null;
 
 }
@@ -848,7 +867,7 @@ return $default(_that.status,_that.email,_that.walls,_that.hasMoreWalls,_that.is
 
 
 class _PublicProfileState extends PublicProfileState {
-  const _PublicProfileState({required this.status, required this.email, required final  List<PublicProfileWallEntity> walls, required this.hasMoreWalls, required this.isFetchingMoreWalls, required this.followers, required this.following}): _walls = walls,super._();
+  const _PublicProfileState({required this.status, required this.email, required final  List<PublicProfileWallEntity> walls, required this.hasMoreWalls, required this.isFetchingMoreWalls, required this.followers, required this.following, final  Map<String, bool> followOverrides = const <String, bool>{}, this.followOutcome}): _walls = walls,_followOverrides = followOverrides,super._();
   
 
 @override final  LoadStatus status;
@@ -864,6 +883,19 @@ class _PublicProfileState extends PublicProfileState {
 @override final  bool isFetchingMoreWalls;
 @override final  RelationList followers;
 @override final  RelationList following;
+/// Follow state the user asked for, keyed by lowercase email. It wins over the profile stream until the
+/// request fails, so the button flips at once.
+ final  Map<String, bool> _followOverrides;
+/// Follow state the user asked for, keyed by lowercase email. It wins over the profile stream until the
+/// request fails, so the button flips at once.
+@override@JsonKey() Map<String, bool> get followOverrides {
+  if (_followOverrides is EqualUnmodifiableMapView) return _followOverrides;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_followOverrides);
+}
+
+/// Result of the latest follow request. The UI shows a toast once per [FollowOutcome.id].
+@override final  FollowOutcome? followOutcome;
 
 /// Create a copy of PublicProfileState
 /// with the given fields replaced by the non-null parameter values.
@@ -875,16 +907,16 @@ _$PublicProfileStateCopyWith<_PublicProfileState> get copyWith => __$PublicProfi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicProfileState&&(identical(other.status, status) || other.status == status)&&(identical(other.email, email) || other.email == email)&&const DeepCollectionEquality().equals(other._walls, _walls)&&(identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls)&&(identical(other.isFetchingMoreWalls, isFetchingMoreWalls) || other.isFetchingMoreWalls == isFetchingMoreWalls)&&(identical(other.followers, followers) || other.followers == followers)&&(identical(other.following, following) || other.following == following));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicProfileState&&(identical(other.status, status) || other.status == status)&&(identical(other.email, email) || other.email == email)&&const DeepCollectionEquality().equals(other._walls, _walls)&&(identical(other.hasMoreWalls, hasMoreWalls) || other.hasMoreWalls == hasMoreWalls)&&(identical(other.isFetchingMoreWalls, isFetchingMoreWalls) || other.isFetchingMoreWalls == isFetchingMoreWalls)&&(identical(other.followers, followers) || other.followers == followers)&&(identical(other.following, following) || other.following == following)&&const DeepCollectionEquality().equals(other._followOverrides, _followOverrides)&&(identical(other.followOutcome, followOutcome) || other.followOutcome == followOutcome));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,email,const DeepCollectionEquality().hash(_walls),hasMoreWalls,isFetchingMoreWalls,followers,following);
+int get hashCode => Object.hash(runtimeType,status,email,const DeepCollectionEquality().hash(_walls),hasMoreWalls,isFetchingMoreWalls,followers,following,const DeepCollectionEquality().hash(_followOverrides),followOutcome);
 
 @override
 String toString() {
-  return 'PublicProfileState(status: $status, email: $email, walls: $walls, hasMoreWalls: $hasMoreWalls, isFetchingMoreWalls: $isFetchingMoreWalls, followers: $followers, following: $following)';
+  return 'PublicProfileState(status: $status, email: $email, walls: $walls, hasMoreWalls: $hasMoreWalls, isFetchingMoreWalls: $isFetchingMoreWalls, followers: $followers, following: $following, followOverrides: $followOverrides, followOutcome: $followOutcome)';
 }
 
 
@@ -895,11 +927,11 @@ abstract mixin class _$PublicProfileStateCopyWith<$Res> implements $PublicProfil
   factory _$PublicProfileStateCopyWith(_PublicProfileState value, $Res Function(_PublicProfileState) _then) = __$PublicProfileStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, String email, List<PublicProfileWallEntity> walls, bool hasMoreWalls, bool isFetchingMoreWalls, RelationList followers, RelationList following
+ LoadStatus status, String email, List<PublicProfileWallEntity> walls, bool hasMoreWalls, bool isFetchingMoreWalls, RelationList followers, RelationList following, Map<String, bool> followOverrides, FollowOutcome? followOutcome
 });
 
 
-@override $RelationListCopyWith<$Res> get followers;@override $RelationListCopyWith<$Res> get following;
+@override $RelationListCopyWith<$Res> get followers;@override $RelationListCopyWith<$Res> get following;@override $FollowOutcomeCopyWith<$Res>? get followOutcome;
 
 }
 /// @nodoc
@@ -912,7 +944,7 @@ class __$PublicProfileStateCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? email = null,Object? walls = null,Object? hasMoreWalls = null,Object? isFetchingMoreWalls = null,Object? followers = null,Object? following = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? email = null,Object? walls = null,Object? hasMoreWalls = null,Object? isFetchingMoreWalls = null,Object? followers = null,Object? following = null,Object? followOverrides = null,Object? followOutcome = freezed,}) {
   return _then(_PublicProfileState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -921,7 +953,9 @@ as List<PublicProfileWallEntity>,hasMoreWalls: null == hasMoreWalls ? _self.hasM
 as bool,isFetchingMoreWalls: null == isFetchingMoreWalls ? _self.isFetchingMoreWalls : isFetchingMoreWalls // ignore: cast_nullable_to_non_nullable
 as bool,followers: null == followers ? _self.followers : followers // ignore: cast_nullable_to_non_nullable
 as RelationList,following: null == following ? _self.following : following // ignore: cast_nullable_to_non_nullable
-as RelationList,
+as RelationList,followOverrides: null == followOverrides ? _self._followOverrides : followOverrides // ignore: cast_nullable_to_non_nullable
+as Map<String, bool>,followOutcome: freezed == followOutcome ? _self.followOutcome : followOutcome // ignore: cast_nullable_to_non_nullable
+as FollowOutcome?,
   ));
 }
 
@@ -942,6 +976,18 @@ $RelationListCopyWith<$Res> get following {
   
   return $RelationListCopyWith<$Res>(_self.following, (value) {
     return _then(_self.copyWith(following: value));
+  });
+}/// Create a copy of PublicProfileState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$FollowOutcomeCopyWith<$Res>? get followOutcome {
+    if (_self.followOutcome == null) {
+    return null;
+  }
+
+  return $FollowOutcomeCopyWith<$Res>(_self.followOutcome!, (value) {
+    return _then(_self.copyWith(followOutcome: value));
   });
 }
 }
@@ -1229,6 +1275,272 @@ as int,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullab
 as bool,searchResults: freezed == searchResults ? _self._searchResults : searchResults // ignore: cast_nullable_to_non_nullable
 as List<UserSummaryEntity>?,isSearching: null == isSearching ? _self.isSearching : isSearching // ignore: cast_nullable_to_non_nullable
 as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$FollowOutcome {
+
+ int get id; bool get follow; bool get success; String get targetName;
+/// Create a copy of FollowOutcome
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$FollowOutcomeCopyWith<FollowOutcome> get copyWith => _$FollowOutcomeCopyWithImpl<FollowOutcome>(this as FollowOutcome, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FollowOutcome&&(identical(other.id, id) || other.id == id)&&(identical(other.follow, follow) || other.follow == follow)&&(identical(other.success, success) || other.success == success)&&(identical(other.targetName, targetName) || other.targetName == targetName));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,follow,success,targetName);
+
+@override
+String toString() {
+  return 'FollowOutcome(id: $id, follow: $follow, success: $success, targetName: $targetName)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $FollowOutcomeCopyWith<$Res>  {
+  factory $FollowOutcomeCopyWith(FollowOutcome value, $Res Function(FollowOutcome) _then) = _$FollowOutcomeCopyWithImpl;
+@useResult
+$Res call({
+ int id, bool follow, bool success, String targetName
+});
+
+
+
+
+}
+/// @nodoc
+class _$FollowOutcomeCopyWithImpl<$Res>
+    implements $FollowOutcomeCopyWith<$Res> {
+  _$FollowOutcomeCopyWithImpl(this._self, this._then);
+
+  final FollowOutcome _self;
+  final $Res Function(FollowOutcome) _then;
+
+/// Create a copy of FollowOutcome
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? follow = null,Object? success = null,Object? targetName = null,}) {
+  return _then(_self.copyWith(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,follow: null == follow ? _self.follow : follow // ignore: cast_nullable_to_non_nullable
+as bool,success: null == success ? _self.success : success // ignore: cast_nullable_to_non_nullable
+as bool,targetName: null == targetName ? _self.targetName : targetName // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [FollowOutcome].
+extension FollowOutcomePatterns on FollowOutcome {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _FollowOutcome value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _FollowOutcome() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _FollowOutcome value)  $default,){
+final _that = this;
+switch (_that) {
+case _FollowOutcome():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _FollowOutcome value)?  $default,){
+final _that = this;
+switch (_that) {
+case _FollowOutcome() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  bool follow,  bool success,  String targetName)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _FollowOutcome() when $default != null:
+return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  bool follow,  bool success,  String targetName)  $default,) {final _that = this;
+switch (_that) {
+case _FollowOutcome():
+return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  bool follow,  bool success,  String targetName)?  $default,) {final _that = this;
+switch (_that) {
+case _FollowOutcome() when $default != null:
+return $default(_that.id,_that.follow,_that.success,_that.targetName);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _FollowOutcome implements FollowOutcome {
+  const _FollowOutcome({required this.id, required this.follow, required this.success, this.targetName = ''});
+  
+
+@override final  int id;
+@override final  bool follow;
+@override final  bool success;
+@override@JsonKey() final  String targetName;
+
+/// Create a copy of FollowOutcome
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$FollowOutcomeCopyWith<_FollowOutcome> get copyWith => __$FollowOutcomeCopyWithImpl<_FollowOutcome>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FollowOutcome&&(identical(other.id, id) || other.id == id)&&(identical(other.follow, follow) || other.follow == follow)&&(identical(other.success, success) || other.success == success)&&(identical(other.targetName, targetName) || other.targetName == targetName));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,follow,success,targetName);
+
+@override
+String toString() {
+  return 'FollowOutcome(id: $id, follow: $follow, success: $success, targetName: $targetName)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$FollowOutcomeCopyWith<$Res> implements $FollowOutcomeCopyWith<$Res> {
+  factory _$FollowOutcomeCopyWith(_FollowOutcome value, $Res Function(_FollowOutcome) _then) = __$FollowOutcomeCopyWithImpl;
+@override @useResult
+$Res call({
+ int id, bool follow, bool success, String targetName
+});
+
+
+
+
+}
+/// @nodoc
+class __$FollowOutcomeCopyWithImpl<$Res>
+    implements _$FollowOutcomeCopyWith<$Res> {
+  __$FollowOutcomeCopyWithImpl(this._self, this._then);
+
+  final _FollowOutcome _self;
+  final $Res Function(_FollowOutcome) _then;
+
+/// Create a copy of FollowOutcome
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? follow = null,Object? success = null,Object? targetName = null,}) {
+  return _then(_FollowOutcome(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,follow: null == follow ? _self.follow : follow // ignore: cast_nullable_to_non_nullable
+as bool,success: null == success ? _self.success : success // ignore: cast_nullable_to_non_nullable
+as bool,targetName: null == targetName ? _self.targetName : targetName // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

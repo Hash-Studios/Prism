@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:Prism/features/ads/domain/repositories/ads_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -78,7 +79,20 @@ class AdsRepositoryImpl implements AdsRepository {
       );
     }
 
-    loadWithRetry();
+    unawaited(
+      AdConsent.instance.ensure().then((bool canRequestAds) {
+        if (!canRequestAds) {
+          logger.d('Ad consent not granted; skipping rewarded ad load.');
+          _state = _state.copyWith(loadingAd: false, adLoaded: false, adFailed: true);
+          if (!completer.isCompleted) {
+            completer.complete(Result.success(_state));
+          }
+          return;
+        }
+        unawaited(MobileAds.instance.initialize());
+        loadWithRetry();
+      }),
+    );
 
     return completer.future.timeout(
       _loadTimeout,

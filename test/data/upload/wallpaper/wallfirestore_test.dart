@@ -237,4 +237,35 @@ void main() {
     expect(savedWalls, 1);
     expect(consumedQuota, 1);
   });
+
+  test('a deterministic docId writes the wall with setDoc so a retry cannot duplicate it', () async {
+    final firestoreClient = _MockFirestoreClient();
+    when(
+      () => firestoreClient.setDoc(
+        any(),
+        any(),
+        any(),
+        merge: any(named: 'merge'),
+        sourceTag: any(named: 'sourceTag'),
+      ),
+    ).thenAnswer((_) async {});
+
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final result = await submitWallRecord(
+        isPremium: true,
+        hasFreeQuota: () => true,
+        consumeFreeQuota: () async {},
+        firestoreClient: firestoreClient,
+        record: const <String, dynamic>{'id': 'wall-id'},
+        awardFirstUpload: () async {},
+        docId: 'wall_user_1_pic.jpg',
+      );
+      expect(result, WallSubmissionResult.submitted);
+    }
+
+    verify(
+      () => firestoreClient.setDoc('walls', 'wall_user_1_pic.jpg', any(), sourceTag: 'upload.createWall'),
+    ).called(2);
+    verifyNever(() => firestoreClient.addDoc(any(), any(), sourceTag: any(named: 'sourceTag')));
+  });
 }

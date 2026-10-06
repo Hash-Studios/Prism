@@ -1,6 +1,7 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
+import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/features/in_app_notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -12,6 +13,12 @@ import '../../in_app_notification_fixture.dart';
 
 void main() {
   group('NotificationsRepositoryImpl', () {
+    late NotificationTombstones tombstones;
+
+    setUp(() {
+      tombstones = NotificationTombstones(InMemoryLocalStore());
+    });
+
     tearDown(() async {
       await getIt.reset();
     });
@@ -24,7 +31,7 @@ void main() {
       ]);
       getIt.registerSingleton<UserBlockRepository>(blocks);
 
-      final repo = NotificationsRepositoryImpl(local);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
       final pending = repo.fetchNotifications(syncRemote: false);
 
       await Future<void>.delayed(Duration.zero);
@@ -44,7 +51,7 @@ void main() {
         notification('new', createdAt: DateTime.utc(2025)),
         notification('mid', createdAt: DateTime.utc(2024, 6)),
       ]);
-      final repo = NotificationsRepositoryImpl(local);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
 
       final result = await repo.markAsRead(id: 'mid');
 
@@ -53,7 +60,10 @@ void main() {
     });
 
     test('rejects a blank notification id', () async {
-      final repo = NotificationsRepositoryImpl(_FakeNotificationsLocalDataSource(const <InAppNotificationEntity>[]));
+      final repo = NotificationsRepositoryImpl(
+        _FakeNotificationsLocalDataSource(const <InAppNotificationEntity>[]),
+        tombstones,
+      );
 
       expect((await repo.markAsRead(id: '  ')).failure, isA<ValidationFailure>());
       expect((await repo.deleteById(id: '')).failure, isA<ValidationFailure>());
@@ -65,7 +75,7 @@ void main() {
         notification('b'),
         notification('c'),
       ]);
-      final repo = NotificationsRepositoryImpl(local);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
 
       final result = await repo.deleteByIds(ids: <String>[' a ', 'a', 'b', '']);
 
@@ -76,12 +86,67 @@ void main() {
 
     test('clearAll empties the inbox', () async {
       final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[notification('a')]);
-      final repo = NotificationsRepositoryImpl(local);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
 
       final result = await repo.clearAll();
 
       expect(result.data, isEmpty);
       expect(await local.readAll(), isEmpty);
+    });
+
+    test('delete and deleteByIds remember the removed ids', () async {
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('a'),
+        notification('b'),
+        notification('c'),
+      ]);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+
+      await repo.deleteById(id: 'a');
+      await repo.deleteByIds(ids: <String>['b']);
+
+      expect(tombstones.deletedIds(), <String>{'a', 'b'});
+    });
+
+    test('clearAll remembers every id and moves the fetch watermark to now instead of resetting it', () async {
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[notification('a'), notification('b')]);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+      final before = DateTime.now().toUtc();
+
+      await repo.clearAll();
+
+      expect(tombstones.deletedIds(), <String>{'a', 'b'});
+      expect(tombstones.clearedAtUtc()!.isBefore(before), isFalse);
+      expect(local.lastFetch, isNotNull);
+      expect(local.lastFetch!.isBefore(before), isFalse);
+    });
+
+    test('markAllAsRead marks every unread notification read', () async {
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('a'),
+        notification('b', read: true),
+        notification('c'),
+      ]);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+
+      final result = await repo.markAllAsRead();
+
+      expect(result.data!.every((item) => item.read), isTrue);
+      expect(result.data, hasLength(3));
+    });
+
+    test('restore brings removed notifications back and forgets their tombstones', () async {
+      final removed = notification('a', read: true);
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[notification('b')]);
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+      await tombstones.addDeleted(<String>['a', 'x']);
+
+      final result = await repo.restore(items: <InAppNotificationEntity>[removed]);
+
+      expect(result.data!.map((item) => item.id), containsAll(<String>['a', 'b']));
+      expect(result.data!.singleWhere((item) => item.id == 'a').read, isTrue);
+      expect(tombstones.deletedIds(), <String>{'x'});
+      expect((await repo.restore(items: const <InAppNotificationEntity>[])).failure, isA<ValidationFailure>());
     });
   });
 }
@@ -94,10 +159,30 @@ class _FakeNotificationsLocalDataSource extends NotificationsLocalDataSource {
   List<InAppNotificationEntity> _items;
   int readCount = 0;
   List<String> deletedIds = <String>[];
+  DateTime? lastFetch;
 
   @override
   Future<void> clearAll() async {
     _items = <InAppNotificationEntity>[];
+  }
+
+  @override
+  Future<void> setLastFetchAtUtc(DateTime value) async {
+    lastFetch = value;
+  }
+
+  @override
+  Future<void> writeAll(List<InAppNotificationEntity> items) async {
+    _items = List<InAppNotificationEntity>.from(items);
+  }
+
+  @override
+  Future<void> upsertAll(List<InAppNotificationEntity> incoming) async {
+    final byId = <String, InAppNotificationEntity>{for (final item in _items) item.id: item};
+    for (final item in incoming) {
+      byId[item.id] = item;
+    }
+    _items = byId.values.toList(growable: false);
   }
 
   @override

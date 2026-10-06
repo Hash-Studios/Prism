@@ -9,5 +9,12 @@ abstract class AutoRotateEvent with _$AutoRotateEvent {
   const factory AutoRotateEvent.intervalChanged(int minutes) = _IntervalChanged;
   const factory AutoRotateEvent.targetChanged(WallpaperTarget target) = _TargetChanged;
   const factory AutoRotateEvent.shuffleChanged(bool shuffle) = _ShuffleChanged;
+  const factory AutoRotateEvent.sourceChanged(AutoRotateSource source) = _SourceChanged;
+  const factory AutoRotateEvent.chargingOnlyChanged(bool chargingOnly) = _ChargingOnlyChanged;
+  const factory AutoRotateEvent.activeHoursEnabledChanged(bool enabled) = _ActiveHoursEnabledChanged;
+  const factory AutoRotateEvent.activeHoursChanged({required int start, required int end}) = _ActiveHoursChanged;
   const factory AutoRotateEvent.rotateNowPressed() = _RotateNowPressed;
+  const factory AutoRotateEvent.favouritesSettled() = _FavouritesSettled;
+  const factory AutoRotateEvent.statusRefreshed() = _StatusRefreshed;
+  const factory AutoRotateEvent.batteryTipDismissed() = _BatteryTipDismissed;
 }

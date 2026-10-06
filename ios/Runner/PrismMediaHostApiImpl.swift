@@ -94,6 +94,21 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
     }
   }
 
+  func deleteDownload(path: String, completion: @escaping (Result<OperationResult, Error>) -> Void) {
+    queueDownloadOperation { [self] in
+      do {
+        let removed = try await files.delete(path: path)
+        completion(.success(removed
+          ? OperationResult(success: true)
+          : OperationResult(success: false, errorCode: "NOT_FOUND", message: "Download not found.")))
+      } catch {
+        completion(.success(OperationResult(
+          success: false, errorCode: "DELETE_FAILED", message: error.localizedDescription
+        )))
+      }
+    }
+  }
+
   private func queueDownloadOperation(_ operation: @escaping @MainActor () async -> Void) {
     let previous = downloadsTail
     downloadQueueGeneration &+= 1

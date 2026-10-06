@@ -19,8 +19,41 @@ sealed class FavouriteWallEntity {
   String get thumbnailUrl;
   String get fullUrl;
   DateTime? get createdAt;
+  String? get authorName;
+  String? get category;
 
   FeedItemEntity toFeedItem();
+}
+
+enum FavouriteSort { recentlyAdded, oldest, source }
+
+/// Applies the Favourites screen's sort, source filter and author or category search to [items].
+List<FavouriteWallEntity> applyFavouritesView(
+  List<FavouriteWallEntity> items, {
+  FavouriteSort sort = FavouriteSort.recentlyAdded,
+  WallpaperSource? source,
+  String query = '',
+}) {
+  final String needle = query.trim().toLowerCase();
+  final List<FavouriteWallEntity> visible = items
+      .where((wall) {
+        if (source != null && wall.source != source) return false;
+        if (needle.isEmpty) return true;
+        return (wall.authorName ?? '').toLowerCase().contains(needle) ||
+            (wall.category ?? '').toLowerCase().contains(needle);
+      })
+      .toList(growable: false);
+  switch (sort) {
+    case FavouriteSort.recentlyAdded:
+      return visible..sort(compareByCreatedAtDesc);
+    case FavouriteSort.oldest:
+      return visible..sort(compareByCreatedAtAsc);
+    case FavouriteSort.source:
+      return visible..sort((a, b) {
+        final int bySource = a.source.index.compareTo(b.source.index);
+        return bySource != 0 ? bySource : compareByCreatedAtDesc(a, b);
+      });
+  }
 }
 
 /// Newest first; entries without a date go last.
@@ -31,6 +64,16 @@ int compareByCreatedAtDesc(FavouriteWallEntity a, FavouriteWallEntity b) {
   if (aDate == null) return 1;
   if (bDate == null) return -1;
   return bDate.compareTo(aDate);
+}
+
+/// Oldest first; entries without a date go last.
+int compareByCreatedAtAsc(FavouriteWallEntity a, FavouriteWallEntity b) {
+  final DateTime? aDate = a.createdAt;
+  final DateTime? bDate = b.createdAt;
+  if (aDate == null && bDate == null) return 0;
+  if (aDate == null) return 1;
+  if (bDate == null) return -1;
+  return aDate.compareTo(bDate);
 }
 
 final class PrismFavouriteWall extends FavouriteWallEntity {
@@ -48,6 +91,12 @@ final class PrismFavouriteWall extends FavouriteWallEntity {
   DateTime? get createdAt => wallpaper.core.createdAt;
 
   @override
+  String? get authorName => wallpaper.core.authorName;
+
+  @override
+  String? get category => wallpaper.core.category;
+
+  @override
   FeedItemEntity toFeedItem() => PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper);
 }
 
@@ -63,7 +112,13 @@ final class WallhavenFavouriteWall extends FavouriteWallEntity {
   String get fullUrl => wallpaper.fullUrl;
 
   @override
-  DateTime? get createdAt => null;
+  DateTime? get createdAt => wallpaper.core.createdAt;
+
+  @override
+  String? get authorName => wallpaper.core.authorName;
+
+  @override
+  String? get category => wallpaper.core.category;
 
   @override
   FeedItemEntity toFeedItem() => WallhavenFeedItem(id: wallpaper.id, wallpaper: wallpaper);
@@ -81,7 +136,13 @@ final class PexelsFavouriteWall extends FavouriteWallEntity {
   String get fullUrl => wallpaper.fullUrl;
 
   @override
-  DateTime? get createdAt => null;
+  DateTime? get createdAt => wallpaper.core.createdAt;
+
+  @override
+  String? get authorName => wallpaper.core.authorName;
+
+  @override
+  String? get category => wallpaper.core.category;
 
   @override
   FeedItemEntity toFeedItem() => PexelsFeedItem(id: wallpaper.id, wallpaper: wallpaper);
@@ -103,6 +164,12 @@ final class LegacyFavouriteWall extends FavouriteWallEntity {
 
   @override
   DateTime? get createdAt => parseDateTime(legacyPayload['createdAt']);
+
+  @override
+  String? get authorName => legacyPayload['photographer']?.toString();
+
+  @override
+  String? get category => legacyPayload['category']?.toString();
 
   @override
   FeedItemEntity toFeedItem() => throw ArgumentError('Cannot open a LegacyFavouriteWall as a feed item');

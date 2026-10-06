@@ -59,10 +59,10 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   }
 
   Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) =>
-      _load(emit, sourceContext: 'personalized_feed_initial');
+      _load(emit, sourceContext: 'personalized_feed_initial', keepItems: false);
 
   Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) =>
-      _load(emit, sourceContext: 'personalized_feed_refresh');
+      _load(emit, sourceContext: 'personalized_feed_refresh', keepItems: true);
 
   Future<void> _onLessLikeThisRequested(_LessLikeThisRequested event, Emitter<PersonalizedFeedState> emit) async {
     final String key = PersonalizedRankingService.canonicalKey(event.item);
@@ -145,19 +145,33 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     );
   }
 
-  Future<void> _load(Emitter<PersonalizedFeedState> emit, {required String sourceContext}) async {
+  /// Loads page one. With [keepItems] the current items stay on screen until the new ones arrive, and stay if the
+  /// load fails.
+  Future<void> _load(
+    Emitter<PersonalizedFeedState> emit, {
+    required String sourceContext,
+    required bool keepItems,
+  }) async {
     final int loadVersion = ++_loadVersion;
+    final bool hadItems = keepItems && state.items.isNotEmpty;
     emit(
-      state.copyWith(
-        status: LoadStatus.loading,
-        actionStatus: ActionStatus.inProgress,
-        page: 1,
-        items: const <FeedItemEntity>[],
-        seenKeys: const <String>[],
-        hasMore: true,
-        isFetchingMore: false,
-        failure: null,
-      ),
+      hadItems
+          ? state.copyWith(
+              status: LoadStatus.loading,
+              actionStatus: ActionStatus.inProgress,
+              isFetchingMore: false,
+              failure: null,
+            )
+          : state.copyWith(
+              status: LoadStatus.loading,
+              actionStatus: ActionStatus.inProgress,
+              page: 1,
+              items: const <FeedItemEntity>[],
+              seenKeys: const <String>[],
+              hasMore: true,
+              isFetchingMore: false,
+              failure: null,
+            ),
     );
 
     final initialStopwatch = Stopwatch()..start();
@@ -198,7 +212,13 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
         );
       },
       onFailure: (failure) {
-        emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure));
+        emit(
+          state.copyWith(
+            status: hadItems ? LoadStatus.success : LoadStatus.failure,
+            actionStatus: ActionStatus.failure,
+            failure: failure,
+          ),
+        );
         analytics.track(
           SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,

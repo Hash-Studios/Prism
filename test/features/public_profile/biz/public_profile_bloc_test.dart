@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -11,6 +12,8 @@ import 'package:Prism/features/public_profile/domain/usecases/public_profile_use
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../support/profile_user_fixture.dart';
 
 class _MockWalls extends Mock implements FetchPublicProfileWallsUseCase {}
 
@@ -94,7 +97,7 @@ void main() {
   );
 
   blocTest<PublicProfileBloc, PublicProfileState>(
-    'a failed wall load still ends loading, with an empty grid',
+    'a failed wall load with nothing to show ends in failure so the page can offer Retry',
     build: () {
       when(() => walls(any())).thenAnswer((_) async => Result.error<_Walls>(const ServerFailure('boom')));
       return buildBloc();
@@ -103,9 +106,23 @@ void main() {
     expect: () => <Matcher>[
       equals(loading),
       isA<PublicProfileState>()
-          .having((s) => s.status, 'status', LoadStatus.success)
+          .having((s) => s.status, 'status', LoadStatus.failure)
           .having((s) => s.walls, 'walls', isEmpty),
     ],
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
+    'a failed refresh keeps the walls already on screen',
+    build: () {
+      when(() => walls(any())).thenAnswer((_) async => Result.error<_Walls>(const ServerFailure('boom')));
+      return buildBloc();
+    },
+    seed: () => loading.copyWith(status: LoadStatus.success, walls: [_wall('w1')]),
+    act: (bloc) => bloc.add(const PublicProfileEvent.refreshRequested()),
+    verify: (bloc) {
+      expect(bloc.state.status, LoadStatus.success);
+      expect(bloc.state.walls.map((w) => w.id), <String>['w1']);
+    },
   );
 
   blocTest<PublicProfileBloc, PublicProfileState>(
@@ -244,25 +261,88 @@ void main() {
     );
   });
 
+  const followEvent = PublicProfileEvent.followChangeRequested(
+    follow: true,
+    currentUserId: 'me',
+    currentUserEmail: 'me@x.com',
+    targetUserId: 'a-id',
+    targetUserEmail: 'A@x.com',
+    targetName: 'Ann',
+  );
+
   blocTest<PublicProfileBloc, PublicProfileState>(
-    'a failed follow leaves the lists as they were',
+    'follow flips the button first, then reports success and records it on the session',
+    setUp: () => app_state.prismUser = profileUser(),
+    build: () {
+      when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
+      return buildBloc();
+    },
+    seed: () => loading.copyWith(followers: loading.followers.copyWith(summaries: [_user('a@x.com')])),
+    act: (bloc) => bloc.add(followEvent),
+    expect: () => <Matcher>[
+      isA<PublicProfileState>()
+          .having((s) => s.followOverrides, 'overrides', <String, bool>{'a@x.com': true})
+          .having((s) => s.followers.summaries.single.isFollowedByCurrentUser, 'row', isTrue)
+          .having((s) => s.followOutcome, 'outcome', isNull),
+      isA<PublicProfileState>().having(
+        (s) => s.followOutcome,
+        'outcome',
+        const FollowOutcome(id: 1, follow: true, success: true, targetName: 'Ann'),
+      ),
+    ],
+    verify: (_) {
+      expect(app_state.prismUser.following, contains('A@x.com'));
+      verify(
+        () => follow(
+          any(
+            that: isA<FollowUserParams>().having((p) => (p.currentUserId, p.targetUserEmail), 'ids', ('me', 'A@x.com')),
+          ),
+        ),
+      ).called(1);
+    },
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
+    'unfollow removes the creator from the session whatever the email case',
+    setUp: () => app_state.prismUser = profileUser()..following = <String>['a@X.com', 'b@x.com'],
+    build: () {
+      when(() => unfollow(any())).thenAnswer((_) async => Result.success<void>(null));
+      return buildBloc();
+    },
+    act: (bloc) => bloc.add(
+      const PublicProfileEvent.followChangeRequested(
+        follow: false,
+        currentUserId: 'me',
+        currentUserEmail: 'me@x.com',
+        targetUserId: 'a-id',
+        targetUserEmail: 'A@x.com',
+      ),
+    ),
+    verify: (bloc) {
+      expect(app_state.prismUser.following, <String>['b@x.com']);
+      expect(bloc.state.followOutcome?.success, isTrue);
+    },
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
+    'a failed follow rolls the button back, keeps the session as it was and reports the failure',
+    setUp: () => app_state.prismUser = profileUser(),
     build: () {
       when(() => follow(any())).thenAnswer((_) async => Result.error<void>(const ServerFailure('offline')));
       return buildBloc();
     },
     seed: () => loading.copyWith(followers: loading.followers.copyWith(summaries: [_user('a@x.com')])),
-    act: (bloc) => bloc.add(
-      const PublicProfileEvent.followChangeRequested(
-        follow: true,
-        currentUserId: 'me',
-        currentUserEmail: 'me@x.com',
-        targetUserId: 'a@x.com',
-        targetUserEmail: 'a@x.com',
-      ),
-    ),
-    expect: () => <PublicProfileState>[],
+    act: (bloc) => bloc.add(followEvent),
+    expect: () => <Matcher>[
+      isA<PublicProfileState>().having((s) => s.followers.summaries.single.isFollowedByCurrentUser, 'row', isTrue),
+      isA<PublicProfileState>()
+          .having((s) => s.followers.summaries.single.isFollowedByCurrentUser, 'row', isFalse)
+          .having((s) => s.followOverrides, 'overrides', isEmpty)
+          .having((s) => s.followOutcome?.success, 'success', isFalse)
+          .having((s) => s.followOutcome?.follow, 'follow', isTrue),
+    ],
     verify: (_) {
-      verify(() => follow(any())).called(1);
+      expect(app_state.prismUser.following, isEmpty);
       verifyNever(() => unfollow(any()));
     },
   );

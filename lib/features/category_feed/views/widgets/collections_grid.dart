@@ -9,9 +9,10 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as c_data;
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
@@ -77,34 +78,6 @@ ImageProvider? _resizeCachedThumb(BuildContext context, String url, double logic
 const double _kCollectionsTitleBlockHeight = 40;
 const double _kCollectionsTitleImageGap = 6;
 const double _kCollectionsGridChildAspectRatio = 0.56;
-
-class _CollectionTileSkeleton extends StatelessWidget {
-  const _CollectionTileSkeleton({required this.cellWidth});
-
-  final double cellWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    return PulsePlaceholder(
-      builder: (BuildContext context, Color _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            SizedBox(
-              height: _kCollectionsTitleBlockHeight,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SizedBox(width: cellWidth * 0.65, height: 13, child: const PulseFill()),
-              ),
-            ),
-            const SizedBox(height: _kCollectionsTitleImageGap),
-            const Expanded(child: PulseFill()),
-          ],
-        );
-      },
-    );
-  }
-}
 
 class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
   // ponytail: one preview operation per grid; per-collection locks if simultaneous unlocks become necessary.
@@ -246,31 +219,36 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> rawCollections = c_data.collections;
-    final bool isLoading = rawCollections.isEmpty;
 
-    final List<_DiscoverTileData> discoverTiles = isLoading
-        ? const <_DiscoverTileData>[]
-        : <_DiscoverTileData>[
-            ...rawCollections.map(
-              (collection) => _DiscoverTileData(
-                kind: _DiscoverTileKind.collection,
-                name: collection['name']?.toString() ?? '',
-                thumb1: collection['thumb1']?.toString() ?? '',
-                thumb2: collection['thumb2']?.toString() ?? '',
-                isPremium: collection['premium'] == true,
-              ),
-            ),
-            ...context.watch<CategoryFeedBloc>().state.categories.map(
-              (category) => _DiscoverTileData(
-                kind: _DiscoverTileKind.category,
-                name: category.name.trim(),
-                thumb1: category.image.trim(),
-                thumb2: category.image2.trim(),
-                isPremium: false,
-              ),
-            ),
-          ];
-    final int itemCount = isLoading ? 8 : discoverTiles.length;
+    final List<_DiscoverTileData> discoverTiles = <_DiscoverTileData>[
+      ...rawCollections.map(
+        (collection) => _DiscoverTileData(
+          kind: _DiscoverTileKind.collection,
+          name: collection['name']?.toString() ?? '',
+          thumb1: collection['thumb1']?.toString() ?? '',
+          thumb2: collection['thumb2']?.toString() ?? '',
+          isPremium: collection['premium'] == true,
+        ),
+      ),
+      ...context.watch<CategoryFeedBloc>().state.categories.map(
+        (category) => _DiscoverTileData(
+          kind: _DiscoverTileKind.category,
+          name: category.name.trim(),
+          thumb1: category.image.trim(),
+          thumb2: category.image2.trim(),
+          isPremium: false,
+        ),
+      ),
+    ];
+    if (discoverTiles.isEmpty) {
+      return RefreshableGlintState(
+        kind: GlintStateKind.empty,
+        title: 'No collections yet',
+        body: 'Pull down to refresh.',
+        onRefresh: refreshList,
+      );
+    }
+    final int itemCount = discoverTiles.length;
     const double gridSpacing = 8;
     const EdgeInsets gridPadding = EdgeInsets.fromLTRB(5, 4, 5, 4);
 
@@ -285,20 +263,10 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       4000.0,
     );
 
-    Widget buildCollectionCard(_DiscoverTileData? tile) {
-      final bool loading = tile == null;
-      final bool isPremium = tile?.isPremium ?? false;
+    Widget buildCollectionCard(_DiscoverTileData data) {
+      final bool isPremium = data.isPremium;
       final ColorScheme scheme = Theme.of(context).colorScheme;
 
-      if (loading) {
-        final Widget tileBody = Material(
-          color: Colors.transparent,
-          child: _CollectionTileSkeleton(cellWidth: cellWidth),
-        );
-        return Semantics(label: 'Loading', enabled: false, excludeSemantics: true, child: tileBody);
-      }
-
-      final _DiscoverTileData data = tile;
       final String rawThumb1 = data.thumb1.trim();
       final String rawThumb2 = data.thumb2.trim();
       final String thumbUrl = rawThumb1.isNotEmpty ? rawThumb1 : rawThumb2;
@@ -393,10 +361,10 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           crossAxisSpacing: gridSpacing,
         ),
         itemBuilder: (BuildContext context, int index) {
-          if (isLoading) {
-            return buildCollectionCard(null);
-          }
-          return buildCollectionCard(discoverTiles[index]);
+          return KeyedSubtree(
+            key: ValueKey<String>('${discoverTiles[index].kind.name}:${discoverTiles[index].name}'),
+            child: buildCollectionCard(discoverTiles[index]),
+          );
         },
       ),
     );

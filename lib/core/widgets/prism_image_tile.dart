@@ -1,3 +1,4 @@
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
@@ -8,6 +9,13 @@ import 'package:flutter/material.dart';
 /// Hero tag for a wallpaper tile. It is unique per grid ([scope]), position and wallpaper, so the same wallpaper
 /// shown twice never shares a tag.
 String prismHeroTag(Object scope, int index, String id) => 'wall-${identityHashCode(scope)}-$index-$id';
+
+/// Decode height, in physical pixels, for a grid tile that spans one of [crossAxisCount] equal columns of the screen
+/// and has the given [aspectRatio] (width / height).
+int gridTileDecodeHeight(BuildContext context, {required int crossAxisCount, double aspectRatio = 0.5}) {
+  final double tileWidth = MediaQuery.sizeOf(context).width / crossAxisCount;
+  return (tileWidth / aspectRatio * MediaQuery.devicePixelRatioOf(context)).round();
+}
 
 /// A grid image that fades in over the [PulseFill] skeleton. Fills its parent.
 class PrismImageTile extends StatefulWidget {
@@ -41,7 +49,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
     setState(() => _retrying = true);
     try {
       for (final url in {widget.url, widget.fallbackUrl}.whereType<String>().where((url) => url.isNotEmpty)) {
-        await CachedNetworkImage.evictFromCache(url);
+        await CachedNetworkImage.evictFromCache(url, cacheManager: PrismImageCache.instance);
       }
     } catch (error, stackTrace) {
       logger.w('Could not clear the wallpaper image cache for retry', error: error, stackTrace: stackTrace);
@@ -58,6 +66,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
   Widget _image(BuildContext context, String url, {String? fallback}) => CachedNetworkImage(
     key: ValueKey((url, _attempt)),
     imageUrl: url,
+    cacheManager: PrismImageCache.instance,
     fit: BoxFit.cover,
     fadeInDuration: context.motion(const Duration(milliseconds: 180)),
     fadeInCurve: Curves.easeOut,

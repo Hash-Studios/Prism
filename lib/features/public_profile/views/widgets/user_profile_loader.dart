@@ -1,4 +1,5 @@
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_grid.dart';
@@ -55,6 +56,14 @@ class _UserProfileLoaderState extends State<UserProfileLoader> with AutomaticKee
         builder: (context, state) {
           if (_showLoading(state)) {
             return const LoadingCards();
+          }
+          if (state.status == LoadStatus.failure && state.walls.isEmpty) {
+            return GlintState(
+              kind: GlintStateKind.error,
+              title: "Couldn't load wallpapers",
+              actionLabel: 'Retry',
+              onAction: () => context.read<PublicProfileBloc>().add(const PublicProfileEvent.refreshRequested()),
+            );
           }
           return const UserProfileGrid();
         },

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// A self-contained key-value store backed by a single JSON file in the app
@@ -16,6 +17,7 @@ class LazyFileCache {
   Map<String, Object?> _data = {};
   bool _loaded = false;
   Completer<void>? _loadCompleter;
+  Future<void> _lastWrite = Future<void>.value();
 
   Future<void> _ensureLoaded() async {
     if (_loaded) return;
@@ -66,7 +68,16 @@ class LazyFileCache {
     unawaited(_persist());
   }
 
-  Future<void> _persist() async {
+  @visibleForTesting
+  Future<void> flush() => _lastWrite;
+
+  Future<void> _persist() {
+    final Future<void> next = _lastWrite.then((_) => _write());
+    _lastWrite = next;
+    return next;
+  }
+
+  Future<void> _write() async {
     try {
       final dir = await getApplicationSupportDirectory();
       final tempPath = '${dir.path}/$_fileName.json.tmp';

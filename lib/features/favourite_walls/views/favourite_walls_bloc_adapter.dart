@@ -43,8 +43,23 @@ class FavouriteWallsAdapter {
     await _ensureLoaded();
     final completion = _bloc.stream.firstWhere((state) => state.actionStatus != ActionStatus.inProgress);
     _bloc.add(const FavouriteWallsEvent.clearRequested());
-    await completion;
-    return _bloc.state.actionStatus == ActionStatus.success;
+    return (await completion).actionStatus == ActionStatus.success;
+  }
+
+  Future<bool> removeWalls(List<String> wallIds) => _runAction(FavouriteWallsEvent.removeRequested(wallIds: wallIds));
+
+  Future<bool> restoreWalls(List<FavouriteWallEntity> walls) =>
+      _runAction(FavouriteWallsEvent.restoreRequested(walls: walls));
+
+  Future<bool> _runAction(FavouriteWallsEvent event) async {
+    if (app_state.prismUser.id.isEmpty) {
+      return false;
+    }
+
+    await _ensureLoaded();
+    final completion = _bloc.stream.firstWhere((state) => state.actionStatus != ActionStatus.inProgress);
+    _bloc.add(event);
+    return (await completion).actionStatus == ActionStatus.success;
   }
 
   Future<void> _ensureLoaded({bool forceRefresh = false}) async {

@@ -88,4 +88,46 @@ void main() {
     await favouriteStates.close();
     await sessionStates.close();
   });
+
+  testWidgets('tile keeps the cached favourites on cold start until they load, and clears on logout', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{PersistenceKeys.quickTileFavsTarget: 'both'});
+    await QuickTileConfigService.pushFavWallUrls(<String>['https://example.com/cached.jpg']);
+    final favourites = _FavouriteBloc();
+    final session = _SessionBloc();
+    final favouriteStates = StreamController<FavouriteWallsState>();
+    final sessionStates = StreamController<SessionState>();
+    whenListen(favourites, favouriteStates.stream, initialState: FavouriteWallsState.initial());
+    whenListen(session, sessionStates.stream, initialState: _session('a'));
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<FavouriteWallsBloc>.value(value: favourites),
+          BlocProvider<SessionBloc>.value(value: session),
+        ],
+        child: const FavouriteQuickTileListener(child: SizedBox.shrink()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect((await QuickTileConfigService.loadFavsTileConfig())?.wallUrls, <String>['https://example.com/cached.jpg']);
+
+    favouriteStates.add(FavouriteWallsState.initial().copyWith(status: LoadStatus.loading, userId: 'a'));
+    await tester.pump();
+    await tester.pump();
+    expect((await QuickTileConfigService.loadFavsTileConfig())?.wallUrls, <String>['https://example.com/cached.jpg']);
+
+    favouriteStates.add(_favourites('a', 'https://example.com/fresh.jpg'));
+    await tester.pump();
+    await tester.pump();
+    expect((await QuickTileConfigService.loadFavsTileConfig())?.wallUrls, <String>['https://example.com/fresh.jpg']);
+
+    sessionStates.add(SessionState.initial());
+    await tester.pump();
+    await tester.pump();
+    expect((await QuickTileConfigService.loadFavsTileConfig())?.wallUrls, isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await favouriteStates.close();
+    await sessionStates.close();
+  });
 }

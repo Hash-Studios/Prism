@@ -201,7 +201,35 @@ class _EmptyWallhaven extends Fake implements WallhavenWallpaperRepository {
     int purity = 100,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
+    String? minResolution,
+    String? sorting,
   }) async => Result.success(<WallhavenWallpaper>[]);
+}
+
+class _HangingWallhaven extends Fake implements WallhavenWallpaperRepository {
+  @override
+  Future<Result<List<WallhavenWallpaper>>> fetchFeed({
+    required String categoryName,
+    required bool refresh,
+    int categories = 100,
+    int purity = 100,
+    int startPage = 1,
+    String? paginationKey,
+    bool portraitOnly = true,
+    String? minResolution,
+    String? sorting,
+  }) => Completer<Result<List<WallhavenWallpaper>>>().future;
+}
+
+class _RecordingFirestore extends _EmptyFirestore {
+  final List<String> sourceTags = <String>[];
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    sourceTags.add(spec.sourceTag);
+    return <T>[];
+  }
 }
 
 class _EmptyPexels extends Fake implements PexelsWallpaperRepository {
@@ -211,6 +239,7 @@ class _EmptyPexels extends Fake implements PexelsWallpaperRepository {
     required bool refresh,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
   }) async => Result.success(<PexelsWallpaper>[]);
 }
 
@@ -225,6 +254,9 @@ class _ToggleWallhaven extends Fake implements WallhavenWallpaperRepository {
     int purity = 100,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
+    String? minResolution,
+    String? sorting,
   }) async => fail ? Result.error(const UnknownFailure('offline')) : Result.success(<WallhavenWallpaper>[]);
 }
 
@@ -237,6 +269,7 @@ class _TogglePexels extends Fake implements PexelsWallpaperRepository {
     required bool refresh,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
   }) async => fail ? Result.error(const UnknownFailure('offline')) : Result.success(<PexelsWallpaper>[]);
 }
 
@@ -249,6 +282,9 @@ class _OfflineWallhaven extends Fake implements WallhavenWallpaperRepository {
     int purity = 100,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
+    String? minResolution,
+    String? sorting,
   }) async => Result.error(const UnknownFailure('offline'));
 }
 
@@ -259,6 +295,7 @@ class _OfflinePexels extends Fake implements PexelsWallpaperRepository {
     required bool refresh,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
   }) async => Result.error(const UnknownFailure('offline'));
 }
 
@@ -316,7 +353,7 @@ class _PendingRecordTasteSignalStore extends TasteSignalStore {
   }
 }
 
-PrismUsersV2 _signedInUser() {
+PrismUsersV2 _signedInUser({List<String> following = const <String>[]}) {
   final String now = DateTime.now().toUtc().toIso8601String();
   return PrismUsersV2(
     username: '',
@@ -327,7 +364,7 @@ PrismUsersV2 _signedInUser() {
     lastLoginAt: now,
     links: const <String, String>{},
     followers: const <String>[],
-    following: const <String>[],
+    following: following,
     profilePhoto: '',
     bio: '',
     loggedIn: true,
@@ -775,6 +812,48 @@ void main() {
     final result = await repository.fetch(_firstPage);
 
     expect(_itemIds(result.data?.items ?? const <FeedItemEntity>[]), <String>['visible-doc', 'wall-doc']);
+  });
+
+  test('a slow source cannot hold the feed past its timeout', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('onboarding_v2_interests', 'Photography');
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _OneWallFirestore(),
+      wallhaven: _HangingWallhaven(),
+      settings: settings,
+      favourites: _CountingFavourites(),
+    );
+
+    final result = await repository.fetch(_firstPage).timeout(const Duration(seconds: 9));
+
+    expect(_itemIds(result.data?.items ?? const <FeedItemEntity>[]), <String>['visible-doc', 'wall-doc']);
+  });
+
+  test('following is read from the session on every fetch, not only on refresh', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final _RecordingFirestore firestore = _RecordingFirestore();
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: firestore,
+      settings: settings,
+      favourites: _CountingFavourites(),
+    );
+
+    await repository.fetch(_firstPage);
+    expect(firestore.sourceTags, isNot(contains('personalized.creator_chunk_1')));
+
+    app_state.prismUser = _signedInUser(following: const <String>['creator@example.com']);
+    await repository.fetch(
+      const FetchPersonalizedFeedRequest(
+        page: 2,
+        refresh: false,
+        seenKeys: <String>[],
+        existingItems: <FeedItemEntity>[],
+      ),
+    );
+
+    expect(firestore.sourceTags, contains('personalized.creator_chunk_1'));
   });
 }
 

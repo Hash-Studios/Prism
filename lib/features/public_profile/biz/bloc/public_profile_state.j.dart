@@ -10,6 +10,13 @@ abstract class PublicProfileState with _$PublicProfileState {
     required bool isFetchingMoreWalls,
     required RelationList followers,
     required RelationList following,
+
+    /// Follow state the user asked for, keyed by lowercase email. It wins over the profile stream until the
+    /// request fails, so the button flips at once.
+    @Default(<String, bool>{}) Map<String, bool> followOverrides,
+
+    /// Result of the latest follow request. The UI shows a toast once per [FollowOutcome.id].
+    FollowOutcome? followOutcome,
   }) = _PublicProfileState;
 
   const PublicProfileState._();
@@ -50,4 +57,14 @@ abstract class RelationList with _$RelationList {
     final List<UserSummaryEntity>? results = searchResults;
     return copyWith(summaries: update(summaries), searchResults: results == null ? null : update(results));
   }
+}
+
+@freezed
+abstract class FollowOutcome with _$FollowOutcome {
+  const factory FollowOutcome({
+    required int id,
+    required bool follow,
+    required bool success,
+    @Default('') String targetName,
+  }) = _FollowOutcome;
 }

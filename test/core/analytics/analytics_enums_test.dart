@@ -125,7 +125,7 @@ void main() {
         'empty_input',
         'unknown',
       ],
-      'SearchProviderValue': <String>['wallhaven', 'pexels'],
+      'SearchProviderValue': <String>['wallhaven', 'pexels', 'prism'],
       'ItemTypeValue': <String>['wallpaper', 'user'],
       'TargetTypeValue': <String>['share', 'user', 'setup', 'refer', 'short_code', 'unknown'],
       'EntryPointValue': <String>['bottom_nav'],

@@ -6,4 +6,9 @@ abstract class FavouriteWallsEvent with _$FavouriteWallsEvent {
   const factory FavouriteWallsEvent.refreshRequested() = _RefreshRequested;
   const factory FavouriteWallsEvent.toggleRequested({required FavouriteWallEntity wall}) = _ToggleRequested;
   const factory FavouriteWallsEvent.clearRequested() = _ClearRequested;
+  const factory FavouriteWallsEvent.sortChanged({required FavouriteSort sort}) = _SortChanged;
+  const factory FavouriteWallsEvent.sourceFilterChanged({WallpaperSource? source}) = _SourceFilterChanged;
+  const factory FavouriteWallsEvent.queryChanged({required String query}) = _QueryChanged;
+  const factory FavouriteWallsEvent.removeRequested({required List<String> wallIds}) = _RemoveRequested;
+  const factory FavouriteWallsEvent.restoreRequested({required List<FavouriteWallEntity> walls}) = _RestoreRequested;
 }

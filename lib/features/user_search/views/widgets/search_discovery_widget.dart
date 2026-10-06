@@ -22,11 +22,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 double _cardWidth(BuildContext context) => min(MediaQuery.sizeOf(context).width / 3.5, 160);
 
 class SearchDiscoveryWidget extends StatelessWidget {
-  const SearchDiscoveryWidget({super.key, required this.tags, required this.selectedTag, required this.onTagPressed});
+  const SearchDiscoveryWidget({
+    super.key,
+    required this.tags,
+    required this.selectedTag,
+    required this.onTagPressed,
+    this.recentSearches = const <String>[],
+    this.onRecentPressed,
+    this.onClearRecents,
+  });
 
   final List<String> tags;
   final String selectedTag;
   final void Function(String tag) onTagPressed;
+  final List<String> recentSearches;
+  final void Function(String query)? onRecentPressed;
+  final VoidCallback? onClearRecents;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +46,10 @@ class SearchDiscoveryWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (recentSearches.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            _RecentSearches(searches: recentSearches, onPressed: onRecentPressed, onClear: onClearRecents),
+          ],
           const SizedBox(height: 12),
           _TagsRow(tags: tags, selectedTag: selectedTag, onTagPressed: onTagPressed),
           const SizedBox(height: 8),
@@ -48,6 +63,53 @@ class SearchDiscoveryWidget extends StatelessWidget {
           const SizedBox(height: 40),
         ],
       ),
+    );
+  }
+}
+
+class _RecentSearches extends StatelessWidget {
+  const _RecentSearches({required this.searches, required this.onPressed, required this.onClear});
+
+  final List<String> searches;
+  final void Function(String query)? onPressed;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: <Widget>[
+              Expanded(child: Text('Recent searches', style: theme.textTheme.labelLarge)),
+              TextButton(onPressed: onClear, child: const Text('Clear')),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: <Widget>[
+              for (final String query in searches)
+                ActionChip(
+                  avatar: const Icon(Icons.history_rounded, size: 16),
+                  label: Text(query),
+                  onPressed: onPressed == null
+                      ? null
+                      : () {
+                          PrismHaptics.selection();
+                          onPressed!(query);
+                        },
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

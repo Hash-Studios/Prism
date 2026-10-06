@@ -30,6 +30,7 @@ Future<WallSubmissionResult> createRecord(
   String? aiOriginalImageUrl,
   String? aiPrompt,
   String? aiStylePreset,
+  String? docId,
   DateTime Function()? now,
 }) async {
   final user = app_state.prismUser;
@@ -86,6 +87,7 @@ Future<WallSubmissionResult> createRecord(
       if (aiPrompt != null && aiPrompt.trim().isNotEmpty) 'aiPrompt': aiPrompt,
       if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
     },
+    docId: docId,
     awardFirstUpload: () {
       if (app_state.prismUser.id != user.id) return Future<void>.value();
       return CoinsService.instance.maybeAwardFirstWallpaperUpload().then((_) {});

@@ -22,6 +22,16 @@ void main() {
     expect((cache.pageFor('nature'), cache.hasMore('nature')), (1, true));
   });
 
+  test('advance moves the cursor without writing a snapshot', () {
+    final local = FakeFeedCacheLocalDataSource();
+    final cache = PagedFeedCache(local, source: 'test');
+
+    cache.advance('nature', nextPage: 5, hasMore: false);
+
+    expect((cache.pageFor('nature'), cache.hasMore('nature')), (5, false));
+    expect(local.snapshots, isEmpty);
+  });
+
   test('read returns the decoded snapshot and restores the cursor saved with it', () async {
     final local = FakeFeedCacheLocalDataSource();
     await PagedFeedCache(local, source: 'test').write(

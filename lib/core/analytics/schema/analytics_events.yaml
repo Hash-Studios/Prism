@@ -135,6 +135,7 @@ enums:
     values:
       - wallhaven
       - pexels
+      - prism
   - name: item_type
     dart_type: ItemTypeValue
     values:
