@@ -38,7 +38,8 @@ class WallpaperSearchService {
   final PrismWallSearch _prismSearch;
 
   /// First page of [query]. When Wallhaven fails the search moves to Pexels so the user still gets results.
-  /// Throws [WallpaperSearchException] when both providers fail.
+  /// When both providers fail but Prism has matches, the page has provider [SearchProviderValue.prism], no
+  /// [WallpaperSearchPage.results] and no external pagination. Throws [WallpaperSearchException] when Prism is empty too.
   Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) async {
     final Future<List<FeedItemEntity>> prism = _prismResults(query, filters);
     try {
@@ -58,6 +59,10 @@ class WallpaperSearchService {
       );
     } catch (error, stackTrace) {
       logger.e('Pexels search failed.', error: error, stackTrace: stackTrace);
+      final List<FeedItemEntity> prismResults = await prism;
+      if (prismResults.isNotEmpty) {
+        return (provider: SearchProviderValue.prism, results: const <FeedItemEntity>[], prismResults: prismResults);
+      }
       throw WallpaperSearchException('Wallhaven and Pexels both failed: $error');
     }
   }

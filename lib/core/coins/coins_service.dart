@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 
@@ -269,6 +270,8 @@ class CoinsService {
   static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
   static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
+  final Queue<Completer<void>> _refundQueueWaiters = Queue<Completer<void>>();
+  bool _refundQueueHeld = false;
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
@@ -565,6 +568,7 @@ class CoinsService {
       );
     }
     final int cost = qualityTier.coinCost;
+    final String reservingUserId = app_state.prismUser.id;
     final CoinMutationResult mutation = await _callCoinMutation(
       callableName: 'spendCoins',
       amount: cost,
@@ -574,7 +578,7 @@ class CoinsService {
     );
     _applyLocalBalance(mutation.currentBalance, delta: mutation.delta);
     if (mutation.unknownOutcomeTransactionId.isNotEmpty) {
-      await _rememberPendingAiRefund(mutation.unknownOutcomeTransactionId);
+      await _rememberPendingAiRefund(mutation.unknownOutcomeTransactionId, userId: reservingUserId);
     }
     final _AiGenerationReservationResult result = _AiGenerationReservationResult(
       mode: mutation.changed ? AiChargeMode.coinSpend : AiChargeMode.insufficient,
@@ -660,16 +664,38 @@ class CoinsService {
     }
   }
 
-  Future<void> _rememberPendingAiRefund(String transactionId) async {
-    if (transactionId.isEmpty || !_canMutateCoins()) return;
-    final List<Map<String, dynamic>> entries = _readPendingAiRefunds();
-    if (entries.any((Map<String, dynamic> e) => e['transactionId'] == transactionId)) return;
-    entries.add(<String, dynamic>{
-      'userId': app_state.prismUser.id,
-      'transactionId': transactionId,
-      'atMs': DateTime.now().millisecondsSinceEpoch,
+  Future<void> _rememberPendingAiRefund(String transactionId, {String? userId}) {
+    final String ownerId = userId ?? app_state.prismUser.id;
+    if (transactionId.isEmpty || ownerId.isEmpty || (userId == null && !_canMutateCoins())) return Future<void>.value();
+    return _withRefundQueueLock(() async {
+      final List<Map<String, dynamic>> entries = _readPendingAiRefunds();
+      if (entries.any((Map<String, dynamic> e) => e['transactionId'] == transactionId)) return;
+      entries.add(<String, dynamic>{
+        'userId': ownerId,
+        'transactionId': transactionId,
+        'atMs': DateTime.now().millisecondsSinceEpoch,
+      });
+      await _writePendingAiRefunds(entries);
     });
-    await _writePendingAiRefunds(entries);
+  }
+
+  Future<void> _withRefundQueueLock(Future<void> Function() action) async {
+    if (_refundQueueHeld) {
+      final Completer<void> turn = Completer<void>();
+      _refundQueueWaiters.add(turn);
+      await turn.future;
+    } else {
+      _refundQueueHeld = true;
+    }
+    try {
+      await action();
+    } finally {
+      if (_refundQueueWaiters.isEmpty) {
+        _refundQueueHeld = false;
+      } else {
+        _refundQueueWaiters.removeFirst().complete();
+      }
+    }
   }
 
   /// Retries AI refunds that could not reach the server. The server only refunds debits younger than 10 minutes.
@@ -677,25 +703,31 @@ class CoinsService {
     if (!_canMutateCoins()) return;
     final String userId = app_state.prismUser.id;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
-    final List<Map<String, dynamic>> kept = <Map<String, dynamic>>[];
-    for (final Map<String, dynamic> entry in _readPendingAiRefunds()) {
+    final List<Map<String, dynamic>> snapshot = <Map<String, dynamic>>[];
+    await _withRefundQueueLock(() async => snapshot.addAll(_readPendingAiRefunds()));
+    final Set<String> resolvedIds = <String>{};
+    for (final Map<String, dynamic> entry in snapshot) {
       final String entryUser = entry['userId']?.toString() ?? '';
       final String transactionId = entry['transactionId']?.toString() ?? '';
       final int atMs = parseIntOr(entry['atMs']);
-      if (transactionId.isEmpty || nowMs - atMs > _refundWindow.inMilliseconds) continue;
-      if (entryUser != userId) {
-        kept.add(entry);
+      if (transactionId.isEmpty || nowMs - atMs > _refundWindow.inMilliseconds) {
+        if (transactionId.isNotEmpty) resolvedIds.add(transactionId);
         continue;
       }
+      if (entryUser != userId) continue;
       final CoinMutationResult refund = await refundSpend(
         CoinSpendAction.aiGeneration,
         sourceTag: 'coins.rollback.ai_generation.retry',
         transactionId: transactionId,
         reason: 'ai_generation_failed_refund',
       );
-      if (!refund.changed && _isRetryableRefundFailure(refund)) kept.add(entry);
+      if (refund.changed || !_isRetryableRefundFailure(refund)) resolvedIds.add(transactionId);
     }
-    await _writePendingAiRefunds(kept);
+    await _withRefundQueueLock(() async {
+      final List<Map<String, dynamic>> latest = _readPendingAiRefunds();
+      latest.removeWhere((Map<String, dynamic> e) => resolvedIds.contains(e['transactionId']?.toString()));
+      await _writePendingAiRefunds(latest);
+    });
   }
 
   void commitAiGenerationReservation({
@@ -1114,6 +1146,7 @@ class CoinsService {
       if (requestId != null) 'requestId': requestId,
     };
     final int attempts = requestId == null ? 1 : 2;
+    bool mayHaveCommitted = false;
     for (int attempt = 1; attempt <= attempts; attempt++) {
       try {
         final HttpsCallable callable = appFunctions.httpsCallable(callableName);
@@ -1135,13 +1168,13 @@ class CoinsService {
       } on FirebaseFunctionsException catch (error, stackTrace) {
         logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
         final bool retryable = error.code == 'deadline-exceeded' || error.code == 'unavailable';
+        mayHaveCommitted = mayHaveCommitted || retryable || error.code == 'internal';
         if (retryable && attempt < attempts) continue;
-        final bool unknownOutcome = retryable || error.code == 'internal';
         return CoinMutationResult.noChange(
           balance: app_state.prismUser.coins,
           success: false,
           reason: error.code,
-          unknownOutcomeTransactionId: requestId != null && unknownOutcome ? 'spend_${userId}_$requestId' : '',
+          unknownOutcomeTransactionId: requestId != null && mayHaveCommitted ? 'spend_${userId}_$requestId' : '',
         );
       }
     }

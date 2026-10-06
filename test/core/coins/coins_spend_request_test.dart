@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -162,6 +164,62 @@ void main() {
     expect(reservation.refundPending, isTrue);
     expect(reservation.mutation.unknownOutcomeTransactionId, expectedId);
     expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), contains(expectedId));
+  });
+
+  test('an uncertain first attempt followed by a definite error still queues the deterministic id', () async {
+    final requestIds = <String>[];
+    backend.onCall = (name, parameters) {
+      requestIds.add(parameters['requestId'] as String);
+      final code = requestIds.length == 1 ? 'unavailable' : 'unauthenticated';
+      return Future<dynamic>.error(FirebaseFunctionsException(code: code, message: 'failed'));
+    };
+
+    final reservation = await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
+
+    final expectedId = 'spend_${app_state.prismUser.id}_${requestIds.first}';
+    expect(requestIds, hasLength(2));
+    expect(reservation.mutation.reason, 'unauthenticated');
+    expect(reservation.mutation.unknownOutcomeTransactionId, expectedId);
+    final stored = getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: '');
+    expect(stored, contains(expectedId));
+    expect(stored, contains(app_state.prismUser.id));
+  });
+
+  test('a refund queued while a retry is in flight survives the retry', () async {
+    final settings = getIt<SettingsLocalDataSource>();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await settings.set(
+      'pendingAiRefunds',
+      '[{"userId":"${app_state.prismUser.id}","transactionId":"tx-a","atMs":$now}]',
+    );
+    final gate = Completer<void>();
+    backend.onCall = (name, parameters) async {
+      if (parameters['transactionId'] == 'tx-b') {
+        throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+      }
+      await gate.future;
+      return <String, Object>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 90,
+        'currentBalance': 100,
+        'delta': 10,
+      };
+    };
+
+    final retry = service.retryPendingAiRefunds();
+    await Future<void>.delayed(Duration.zero);
+    final failedB = await service.rollbackAiGenerationReservation(
+      AiChargeMode.coinSpend,
+      reservationTransactionId: 'tx-b',
+    );
+    expect(failedB.changed, isFalse);
+    gate.complete();
+    await retry;
+
+    final stored = settings.get<String>('pendingAiRefunds', defaultValue: '');
+    expect(stored, contains('tx-b'));
+    expect(stored, isNot(contains('tx-a')));
   });
 
   test('a definite spend failure does not queue a refund', () async {

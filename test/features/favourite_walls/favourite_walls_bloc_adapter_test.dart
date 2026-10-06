@@ -127,4 +127,46 @@ void main() {
     expect(bloc.state.items.map((FavouriteWallEntity wall) => wall.id), contains(walls.first.id));
     verify(() => toggle(any())).called(1);
   });
+
+  testWidgets('a favourite tap queued behind a bulk removal waits for its own write', (tester) async {
+    final Completer<Result<bool>> slowClear = Completer<Result<bool>>();
+    final Completer<Result<bool>> slowToggle = Completer<Result<bool>>();
+    when(() => clear(any())).thenAnswer((_) => slowClear.future);
+    when(() => toggle(any())).thenAnswer((_) => slowToggle.future);
+    await pumpAdapter(tester);
+
+    final Future<bool> removal = adapter.removeWalls(<String>['a']);
+    await tester.pump();
+    bool? tapped;
+    unawaited(adapter.favCheck(legacyFav('x')).then((bool value) => tapped = value));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    slowClear.complete(Result.success(true));
+    expect(await removal, isTrue);
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(tapped, isNull);
+
+    slowToggle.complete(Result.error(const ServerFailure('write failed')));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(tapped, isFalse);
+  });
+
+  testWidgets('a clear queued behind a favourite tap reports its own outcome', (tester) async {
+    final Completer<Result<bool>> slowToggle = Completer<Result<bool>>();
+    when(() => toggle(any())).thenAnswer((_) => slowToggle.future);
+    when(() => clear(any())).thenAnswer((_) async => Result.error(const ServerFailure('clear failed')));
+    await pumpAdapter(tester);
+
+    final Future<bool> tap = adapter.favCheck(legacyFav('x'));
+    await tester.pump();
+    bool? cleared;
+    unawaited(adapter.deleteData().then((bool value) => cleared = value));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(cleared, isNull);
+
+    slowToggle.complete(Result.success(true));
+    expect(await tap, isTrue);
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(cleared, isFalse);
+  });
 }

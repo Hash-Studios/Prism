@@ -297,6 +297,79 @@ void main() {
     );
   });
 
+  test('a retry of a committed submission succeeds with no quota left and charges nothing', () async {
+    final firestoreClient = _MockFirestoreClient();
+    _stubExistingWall(firestoreClient, <String, dynamic>{'email': 'a@b.c'});
+    var consumedQuota = false;
+
+    final result = await submitWallRecord(
+      isPremium: false,
+      hasFreeQuota: () => false,
+      consumeFreeQuota: () async => consumedQuota = true,
+      firestoreClient: firestoreClient,
+      record: const <String, dynamic>{'id': 'wall-id', 'email': 'a@b.c'},
+      awardFirstUpload: () async {},
+      docId: 'wall_user_1_pic.jpg',
+    );
+
+    expect(result, WallSubmissionResult.submitted);
+    expect(consumedQuota, isFalse);
+    verifyNever(
+      () => firestoreClient.setDoc(
+        any(),
+        any(),
+        any(),
+        merge: any(named: 'merge'),
+        sourceTag: any(named: 'sourceTag'),
+      ),
+    );
+  });
+
+  test('a retry of a committed submission does not consume quota again when quota is left', () async {
+    final firestoreClient = _MockFirestoreClient();
+    _stubExistingWall(firestoreClient, <String, dynamic>{'email': 'a@b.c'});
+    var consumedQuota = false;
+
+    final result = await submitWallRecord(
+      isPremium: false,
+      hasFreeQuota: () => true,
+      consumeFreeQuota: () async => consumedQuota = true,
+      firestoreClient: firestoreClient,
+      record: const <String, dynamic>{'id': 'wall-id', 'email': 'a@b.c'},
+      awardFirstUpload: () async {},
+      docId: 'wall_user_1_pic.jpg',
+    );
+
+    expect(result, WallSubmissionResult.submitted);
+    expect(consumedQuota, isFalse);
+  });
+
+  test('a new submission with a docId and no quota is still refused', () async {
+    final firestoreClient = _MockFirestoreClient();
+    _stubExistingWall(firestoreClient, null);
+
+    final result = await submitWallRecord(
+      isPremium: false,
+      hasFreeQuota: () => false,
+      consumeFreeQuota: () async {},
+      firestoreClient: firestoreClient,
+      record: const <String, dynamic>{'id': 'wall-id', 'email': 'a@b.c'},
+      awardFirstUpload: () async {},
+      docId: 'wall_user_1_pic.jpg',
+    );
+
+    expect(result, WallSubmissionResult.quotaExceeded);
+    verifyNever(
+      () => firestoreClient.setDoc(
+        any(),
+        any(),
+        any(),
+        merge: any(named: 'merge'),
+        sourceTag: any(named: 'sourceTag'),
+      ),
+    );
+  });
+
   test('a missing wall reads as permission-denied and is then created', () async {
     final firestoreClient = _MockFirestoreClient();
     when(

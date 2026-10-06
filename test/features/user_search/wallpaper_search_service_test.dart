@@ -151,6 +151,25 @@ void main() {
     await expectLater(service.search('mountain'), throwsA(isA<WallpaperSearchException>()));
   });
 
+  test('search returns a Prism-only page when both providers fail but Prism has matches', () async {
+    final firestore = FakeFirestoreClient(
+      onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+          ? <FakeDocRow>[(id: 'd1', data: _prismDoc('w1'))]
+          : const <FakeDocRow>[],
+    );
+    final service = _service(
+      wallhaven: Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')),
+      pexels: Result.error<List<PexelsWallpaper>>(const ServerFailure('500')),
+      firestore: firestore,
+    );
+
+    final page = await service.search('mountain');
+
+    expect(page.provider, SearchProviderValue.prism);
+    expect(page.results, isEmpty);
+    expect(page.prismResults.map((wall) => wall.id), <String>['w1']);
+  });
+
   test('search returns an empty list when Wallhaven finds nothing', () async {
     final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]));
 

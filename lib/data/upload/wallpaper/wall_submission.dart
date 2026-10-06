@@ -29,26 +29,31 @@ Future<WallSubmissionResult> submitWallRecord({
   }
 
   try {
-    if (!isPremium && !hasFreeQuota()) {
-      return WallSubmissionResult.quotaExceeded;
-    }
+    final bool alreadySubmitted =
+        docId != null && await _alreadySubmittedByOwner(firestoreClient, docId, record['email']);
 
-    if (docId == null) {
-      await firestoreClient.addDoc(FirebaseCollections.walls, record, sourceTag: 'upload.createWall');
-    } else if (!await _alreadySubmittedByOwner(firestoreClient, docId, record['email'])) {
-      await firestoreClient.setDoc(FirebaseCollections.walls, docId, record, sourceTag: 'upload.createWall');
-    }
+    if (!alreadySubmitted) {
+      if (!isPremium && !hasFreeQuota()) {
+        return WallSubmissionResult.quotaExceeded;
+      }
 
-    if (!isPremium) {
-      try {
-        await consumeFreeQuota();
-      } catch (error, stackTrace) {
-        logger.w(
-          'Could not update weekly upload quota after submission',
-          tag: 'Upload',
-          error: error,
-          stackTrace: stackTrace,
-        );
+      if (docId == null) {
+        await firestoreClient.addDoc(FirebaseCollections.walls, record, sourceTag: 'upload.createWall');
+      } else {
+        await firestoreClient.setDoc(FirebaseCollections.walls, docId, record, sourceTag: 'upload.createWall');
+      }
+
+      if (!isPremium) {
+        try {
+          await consumeFreeQuota();
+        } catch (error, stackTrace) {
+          logger.w(
+            'Could not update weekly upload quota after submission',
+            tag: 'Upload',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
       }
     }
 

@@ -108,6 +108,39 @@ void main() {
     });
   });
 
+  group('mediump fallback', () {
+    final RegExp branches = RegExp(r'#ifdef GL_FRAGMENT_PRECISION_HIGH\n(.*?)#else\n(.*?)#endif', dotAll: true);
+
+    String withoutHighp(String shader) => shader.replaceAllMapped(branches, (match) => match.group(2)!);
+
+    final Map<String, String> shaders = <String, String>{
+      for (final GradientStyle style in GradientStyle.values)
+        'gradient ${style.name}': LiveShaderSources.gradient(style, darkPalette),
+      for (final MotionStyle style in MotionStyle.values)
+        'motion ${style.name}': LiveShaderSources.motion(style, darkPalette),
+    };
+
+    shaders.forEach((String name, String shader) {
+      test('$name has a highp branch and a mediump branch for grain', () {
+        expect(shader, contains('highp vec2 p = gl_FragCoord.xy;'));
+        expect(branches.allMatches(shader), isNotEmpty);
+      });
+
+      test('$name never reads gl_FragCoord or a constant over the mediump range without highp', () {
+        final String mediump = withoutHighp(shader);
+        expect(mediump, isNot(contains('gl_FragCoord')));
+        for (final RegExpMatch literal in RegExp(r'\b\d+\.\d+\b').allMatches(mediump)) {
+          expect(double.parse(literal.group(0)!), lessThan(16384), reason: literal.group(0));
+        }
+      });
+
+      test('$name keeps the mediump u_time declaration and wraps it with loopTime', () {
+        expect(shader, contains('uniform mediump float u_time;'));
+        expect(shader, contains('mod(u_time, 62.831853)'));
+      });
+    });
+  });
+
   group('palette', () {
     test('has four colours and a background that follows the theme', () {
       expect(darkPalette.colors, hasLength(4));

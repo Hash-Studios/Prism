@@ -54,9 +54,11 @@ class _SearchGridState extends State<SearchGrid> {
   final ShakeController _shake = ShakeController();
   late List<FeedItemEntity> _results = widget.initialResults;
   bool seeMoreLoader = false;
-  bool _hasMore = true;
+  late bool _hasMore = _hasExternalResults;
   bool _loadMoreFailed = false;
   int _currentPage = 1;
+
+  bool get _hasExternalResults => widget.provider != SearchProviderValue.prism;
 
   int get _queryLength => widget.query.trim().length;
 
@@ -127,6 +129,9 @@ class _SearchGridState extends State<SearchGrid> {
   }
 
   Future<void> refreshList() async {
+    if (!_hasExternalResults) {
+      return;
+    }
     try {
       final fresh = await _search.fetchPage(widget.provider, widget.query, refresh: true, filters: widget.filters);
       if (!mounted) {

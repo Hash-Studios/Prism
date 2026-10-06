@@ -76,20 +76,21 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
         failure: null,
       ),
     );
-    await _fetch(emit);
+    await _fetch(emit, event.operationId);
   }
 
   Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<FavouriteWallsState> emit) {
     emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
-    return _fetch(emit);
+    return _fetch(emit, event.operationId);
   }
 
-  Future<void> _fetch(Emitter<FavouriteWallsState> emit) async {
+  Future<void> _fetch(Emitter<FavouriteWallsState> emit, [int? operationId]) async {
     if (state.userId.isEmpty) {
       emit(
         state.copyWith(
           status: LoadStatus.failure,
           actionStatus: ActionStatus.failure,
+          completedOperationId: operationId ?? state.completedOperationId,
           failure: const ValidationFailure('userId is required'),
         ),
       );
@@ -100,10 +101,22 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
 
     result.fold(
       onSuccess: (items) => emit(
-        state.copyWith(status: LoadStatus.success, actionStatus: ActionStatus.success, items: items, failure: null),
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          items: items,
+          completedOperationId: operationId ?? state.completedOperationId,
+          failure: null,
+        ),
       ),
-      onFailure: (failure) =>
-          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
+      onFailure: (failure) => emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          actionStatus: ActionStatus.failure,
+          completedOperationId: operationId ?? state.completedOperationId,
+          failure: failure,
+        ),
+      ),
     );
   }
 
@@ -120,15 +133,22 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
           status: LoadStatus.success,
           actionStatus: ActionStatus.success,
           items: isNowFavourite ? _upsertWall(event.wall) : _removeWall(event.wall.id),
+          completedOperationId: event.operationId,
           failure: null,
         ),
       ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
+      onFailure: (failure) => emit(
+        state.copyWith(actionStatus: ActionStatus.failure, completedOperationId: event.operationId, failure: failure),
+      ),
     );
   }
 
   Future<void> _onClearRequested(_ClearRequested event, Emitter<FavouriteWallsState> emit) {
-    return _removeAndRefetchOnFailure(state.items.map((item) => item.id).toList(growable: false), emit);
+    return _removeAndRefetchOnFailure(
+      state.items.map((item) => item.id).toList(growable: false),
+      emit,
+      operationId: event.operationId,
+    );
   }
 
   Future<void> _onRemoveRequested(_RemoveRequested event, Emitter<FavouriteWallsState> emit) {
