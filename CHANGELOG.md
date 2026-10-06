@@ -5,7 +5,7 @@
 - Choose Fill or Fit when you set a wallpaper, crop it yourself on Android, and pick a default Home, Lock or Both
 - See clear messages and a Retry button when a wallpaper does not set
 - A new history of the wallpapers you set, so you can set one again
-- Auto-rotate can use your downloads, run only while charging, and stay inside the hours you choose
+- Auto-rotate can use your downloads and can run only while your phone charges
 - A new bar on the wallpaper screen with Set, Download, Favourite, Share and Edit
 - Find more like a wallpaper with tag chips and a More like this row
 - Search shows Prism wallpapers first, with filters, recent searches and a Retry button

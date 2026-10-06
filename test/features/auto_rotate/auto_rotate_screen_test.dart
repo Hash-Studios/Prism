@@ -330,17 +330,12 @@ void main() {
       verify(() => autoRotateBloc.add(const AutoRotateEvent.chargingOnlyChanged(true))).called(1);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-    testWidgets('hides the hour rows while active hours are off', (tester) async {
+    testWidgets('has no active hours control', (tester) async {
       await pumpControls(tester, proState());
 
+      expect(find.text('Active hours'), findsNothing);
       expect(find.text('From'), findsNothing);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-    testWidgets('shows the hour rows when active hours are on', (tester) async {
-      await pumpControls(tester, proState(config: const AutoRotateConfig(enabled: true, activeHoursEnabled: true)));
-
-      expect(find.text('From'), findsOneWidget);
-      expect(find.text('Until'), findsOneWidget);
+      expect(find.text('Until'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('keeps the controls with a notice when the source has too few wallpapers', (tester) async {

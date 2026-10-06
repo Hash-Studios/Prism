@@ -505,6 +505,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
       return;
     }
+    if (reservation.refundPending) {
+      toasts.error("Couldn't confirm the charge. Any coins taken will be refunded.");
+      setState(() => _loadingGeneration = false);
+      return;
+    }
     if (!reservation.success || reservation.mode == AiChargeMode.insufficient) {
       CoinsService.instance.logLowBalanceNudge(
         sourceTag: 'coins.ai_generation.low_balance',
@@ -560,7 +565,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       );
       analytics.track(AiGenerateFailedEvent(error: error.toString(), mode: reservation.mode));
       if (mounted) {
-        toasts.error('${_toastForGenerateFailure(error)} ${refund.changed ? 'Coins refunded.' : 'Refund pending.'}');
+        final String refundNote = reservation.coinsSpent <= 0
+            ? ''
+            : refund.changed
+            ? ' Coins refunded.'
+            : ' Refund pending.';
+        toasts.error('${_toastForGenerateFailure(error)}$refundNote');
       }
     } finally {
       if (mounted) {

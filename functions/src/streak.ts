@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
@@ -398,11 +399,25 @@ async function remindUser(
     return "skipped";
   }
 
-  // The marker goes first so an overlapping run cannot send the same reminder twice.
-  await userDoc.ref.update({
-    "coinState.streakReminderLastSentDate": todayLocalKey,
-    "coinState.streakReminderNextAtUtc": nextReminderTs,
+  // The claim goes first, in a transaction, so an overlapping run cannot send the same reminder twice.
+  const claimId = randomUUID();
+  const claim = await db.runTransaction(async (tx) => {
+    const current = (await tx.get(userDoc.ref)).data()?.coinState as Record<string, unknown> | undefined;
+    const state = normalizeCoinState(current);
+    const nextAt = current?.streakReminderNextAtUtc;
+    const due = nextAt instanceof admin.firestore.Timestamp && nextAt.toMillis() <= nowTs.toMillis();
+    if (!due || !state.streakReminderEnabled || state.streakReminderLastSentDate === todayLocalKey ||
+      state.lastDailyClaimDate === todayLocalKey) {
+      return null;
+    }
+    tx.update(userDoc.ref, {
+      "coinState.streakReminderLastSentDate": todayLocalKey,
+      "coinState.streakReminderNextAtUtc": nextReminderTs,
+      "coinState.streakReminderClaimId": claimId,
+    });
+    return {previousSentDate: state.streakReminderLastSentDate};
   });
+  if (!claim) return "skipped";
   const delivered = await sendNotification({
     title: "Your streak is about to break!",
     body: "Open Prism now to keep your login streak alive 🔥",
@@ -417,9 +432,14 @@ async function remindUser(
     docId: `streak_${userDoc.ref.id}_${todayLocalKey}`,
   });
   if (!delivered) {
-    await userDoc.ref.update({
-      "coinState.streakReminderLastSentDate": lastSentDate,
-      "coinState.streakReminderNextAtUtc": retryAt,
+    await db.runTransaction(async (tx) => {
+      const current = (await tx.get(userDoc.ref)).data()?.coinState as Record<string, unknown> | undefined;
+      if (current?.streakReminderClaimId !== claimId) return;
+      tx.update(userDoc.ref, {
+        "coinState.streakReminderLastSentDate": claim.previousSentDate,
+        "coinState.streakReminderNextAtUtc": retryAt,
+        "coinState.streakReminderClaimId": admin.firestore.FieldValue.delete(),
+      });
     });
     return "failed";
   }

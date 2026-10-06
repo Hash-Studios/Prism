@@ -69,6 +69,24 @@ void main() {
       await bloc.close();
     });
 
+    test('a handled outcome is cleared so the same outcome can be raised again', () async {
+      final LiveWallpaperBloc bloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: false))
+        ..add(const LiveWallpaperEvent.gradientSelected(GradientStyle.starfield))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      await settle();
+      expect(bloc.state.outcome?.status, LiveApplyStatus.proRequired);
+
+      bloc.add(const LiveWallpaperEvent.outcomeHandled());
+      await settle();
+      expect(bloc.state.outcome, isNull);
+
+      bloc.add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      await settle();
+      expect(bloc.state.outcome?.status, LiveApplyStatus.proRequired);
+      await bloc.close();
+    });
+
     test('Pro users can apply every motion style', () async {
       final LiveWallpaperBloc bloc = build()..add(const LiveWallpaperEvent.started(isPro: true));
       for (final MotionStyle style in MotionStyle.values) {

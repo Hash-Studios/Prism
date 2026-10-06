@@ -282,7 +282,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                       // scrolls the page and its overlay together instead of overlapping them.
                       OnboardingScrollableCanvas(
                         children: [
-                          // Layer 1: unique page content — fades between steps.
+                          // Layer 1: unique page content, fades between steps.
                           AnimatedSwitcher(
                             duration: context.motion(const Duration(milliseconds: 300)),
                             switchInCurve: Curves.easeOut,

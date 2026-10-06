@@ -145,6 +145,69 @@ void main() {
     expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
   });
 
+  test('a spend with no reply after both attempts queues a refund for the deterministic transaction id', () async {
+    final requestIds = <String>[];
+    backend.onCall = (name, parameters) async {
+      if (name == 'spendCoins') {
+        requestIds.add(parameters['requestId'] as String);
+        throw FirebaseFunctionsException(code: 'deadline-exceeded', message: 'slow');
+      }
+      return _spent;
+    };
+
+    final reservation = await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
+
+    final expectedId = 'spend_${app_state.prismUser.id}_${requestIds.first}';
+    expect(reservation.success, isFalse);
+    expect(reservation.refundPending, isTrue);
+    expect(reservation.mutation.unknownOutcomeTransactionId, expectedId);
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), contains(expectedId));
+  });
+
+  test('a definite spend failure does not queue a refund', () async {
+    backend.onCall = (name, parameters) async =>
+        throw FirebaseFunctionsException(code: 'permission-denied', message: 'no');
+
+    final reservation = await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
+
+    expect(reservation.refundPending, isFalse);
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+  });
+
+  test('a queued refund for a debit that never committed is dropped on retry', () async {
+    backend.onCall = (name, parameters) {
+      final code = name == 'spendCoins' ? 'unavailable' : 'failed-precondition';
+      return Future<dynamic>.error(FirebaseFunctionsException(code: code, message: 'refused'));
+    };
+    await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isNotEmpty);
+
+    await service.retryPendingAiRefunds();
+
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+  });
+
+  test('a queued refund for a debit that committed is refunded on retry', () async {
+    var refundedId = '';
+    backend.onCall = (name, parameters) async {
+      if (name == 'spendCoins') throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+      refundedId = parameters['transactionId'] as String;
+      return <String, Object>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 90,
+        'currentBalance': 100,
+        'delta': 10,
+      };
+    };
+    await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
+
+    await service.retryPendingAiRefunds();
+
+    expect(refundedId, startsWith('spend_${app_state.prismUser.id}_'));
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+  });
+
   test('a successful rollback reports the balance change and stores nothing', () async {
     backend.onCall = (name, parameters) async => <String, Object>{
       'success': true,

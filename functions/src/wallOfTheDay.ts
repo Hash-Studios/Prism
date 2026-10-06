@@ -67,6 +67,8 @@ function isSameUtcDay(date: unknown, now: Date): boolean {
  *      in past_picks within the last 30 days, is not streak-exclusive and is not in a premium collection.
  *   4. Writes the new wall to wall_of_the_day/current.
  *   5. Sends an FCM topic push to the legacy `wall_of_the_day` topic (clients without a time zone bucket).
+ *   6. Sends the new wall to the bucket whose 09:00 local is in this 15 minute slot, because
+ *      `sendWallOfTheDayBuckets` runs in the same slot and may have seen yesterday's pick.
  *
  * Any failure throws, so Cloud Scheduler retries the run. `sendWallOfTheDayBuckets` sends the 09:00 local push.
  */
@@ -87,6 +89,7 @@ export const wallOfTheDay = onSchedule(
       } else {
         logger.info("Today's wall of the day is already set and announced; skipping.", {wallId: data.wallId});
       }
+      await sendDueBuckets(String(data.wallId ?? ""), Date.now());
       return;
     }
 
@@ -167,7 +170,7 @@ export const wallOfTheDay = onSchedule(
             break;
           }
           logger.info(
-            `Attempt ${attempt + 1}: wall ${doc.id} is excluded or not eligible — retrying.`,
+            `Attempt ${attempt + 1}: wall ${doc.id} is excluded or not eligible, retrying.`,
           );
         }
       }
@@ -213,6 +216,7 @@ export const wallOfTheDay = onSchedule(
       wallId: newWallId,
     });
     await announce(newWallId);
+    await sendDueBuckets(newWallId, Date.now());
   },
 );
 
@@ -258,10 +262,68 @@ async function wotdPushPayload(wallId: string): Promise<{
   };
 }
 
+const BUCKET_DELIVERIES_DOC = "bucket_deliveries";
+
+function bucketDeliveriesRef() {
+  return db.collection("wall_of_the_day").doc(BUCKET_DELIVERIES_DOC);
+}
+
+/**
+ * Records `wallId` as the last wall sent to `topic`, unless it already is. Returns whether this call won the claim
+ * and the wall that was recorded before, so a failed send can restore it.
+ */
+async function claimBucket(topic: string, wallId: string): Promise<{won: boolean; previous?: string}> {
+  const ref = bucketDeliveriesRef();
+  return db.runTransaction(async (tx) => {
+    const buckets = (await tx.get(ref)).data()?.buckets as Record<string, unknown> | undefined;
+    const previous = typeof buckets?.[topic] === "string" ? buckets[topic] as string : undefined;
+    if (previous === wallId) return {won: false};
+    tx.set(ref, {buckets: {[topic]: wallId}}, {merge: true});
+    return {won: true, previous};
+  });
+}
+
+/** Undoes a claim after a failed send, unless a later run has already recorded another wall. */
+async function releaseBucket(topic: string, wallId: string, previous: string | undefined): Promise<void> {
+  const ref = bucketDeliveriesRef();
+  await db.runTransaction(async (tx) => {
+    const buckets = (await tx.get(ref)).data()?.buckets as Record<string, unknown> | undefined;
+    if (buckets?.[topic] !== wallId) return;
+    tx.set(ref, {buckets: {[topic]: previous ?? admin.firestore.FieldValue.delete()}}, {merge: true});
+  });
+}
+
+/**
+ * Sends `wallId` to the buckets whose 09:00 local is in the slot of `nowMs`, once per bucket and wall.
+ * A bucket that already received this wall is skipped, so the picker and the bucket job can both call it.
+ */
+async function sendDueBuckets(wallId: string, nowMs: number): Promise<void> {
+  if (!wallId) return;
+  let payload: Awaited<ReturnType<typeof wotdPushPayload>> | undefined;
+  for (const offset of offsetsAtNineLocal(nowMs)) {
+    const topic = wotdBucketTopic(offset);
+    const claim = await claimBucket(topic, wallId);
+    if (!claim.won) {
+      logger.info("sendDueBuckets: bucket already has this wall; skipping.", {topic, wallId});
+      continue;
+    }
+    let delivered = false;
+    try {
+      payload ??= await wotdPushPayload(wallId);
+      delivered = await sendNotification({...payload, modifier: "all", fcmTarget: {topic}, pushOnly: true});
+    } finally {
+      if (!delivered) await releaseBucket(topic, wallId, claim.previous);
+    }
+    if (!delivered) throw new Error(`Wall of the day bucket push failed for ${topic}.`);
+    logger.info("sendDueBuckets: sent.", {topic, wallId});
+  }
+}
+
 /**
  * Every 15 minutes: sends today's wall to the topic of the UTC offset where it is 09:00 local right now
  * (`wall_of_the_day_utc_p0530`). Offsets come in 15 minute steps, so an hourly job would miss +05:30 and +05:45.
- * Clients subscribe to their bucket and leave the legacy global topic.
+ * Clients subscribe to their bucket and leave the legacy global topic. A durable per-bucket marker keeps one
+ * delivery per wall, so the 03:30 UTC picker and this job can run in the same slot without a stale or double push.
  */
 export const sendWallOfTheDayBuckets = onSchedule(
   {
@@ -277,18 +339,7 @@ export const sendWallOfTheDayBuckets = onSchedule(
       logger.warn("sendWallOfTheDayBuckets: no recent pick; skipping.", {wallId: current?.wallId ?? null});
       return;
     }
-    const payload = await wotdPushPayload(String(current.wallId));
-    for (const offset of offsetsAtNineLocal(nowMs)) {
-      const topic = wotdBucketTopic(offset);
-      const delivered = await sendNotification({
-        ...payload,
-        modifier: "all",
-        fcmTarget: {topic},
-        pushOnly: true,
-      });
-      if (!delivered) throw new Error(`Wall of the day bucket push failed for ${topic}.`);
-      logger.info("sendWallOfTheDayBuckets: sent.", {topic, wallId: current.wallId});
-    }
+    await sendDueBuckets(String(current.wallId), nowMs);
   },
 );
 

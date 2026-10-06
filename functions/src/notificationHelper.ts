@@ -87,8 +87,11 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
 
   try {
     if ("topic" in payload.fcmTarget && payload.modifier.includes("@")) {
-      const personalEmailTopic = payload.fcmTarget.topic === emailToTopic(payload.modifier);
-      if (!payload.pushOnly || personalEmailTopic) {
+      if (payload.fcmTarget.topic === emailToTopic(payload.modifier)) {
+        logger.warn("Refusing to push a personal notification to an email-prefix topic.", {route: payload.data.route});
+        return true;
+      }
+      if (!payload.pushOnly) {
         const user = await findUserByEmail(payload.modifier);
         if (isLoggedOut(user?.data())) return true;
       }
@@ -179,8 +182,8 @@ function personalCollapseKey(payload: PersonalPayload): string {
 
 /**
  * Writes the in-app doc (unless pushOnly), then pushes to the user's uid topic and FCM token. The email-prefix
- * topic is shared by every address with the same prefix, so it is used only when no user doc matches the email.
- * Returns false when every push failed.
+ * topic is shared by every address with the same prefix, so personal payloads never go there: a recipient with
+ * no uid gets the inbox doc and no push. Returns false when every push failed.
  */
 export async function sendToUser(
   payload: PersonalPayload,
@@ -191,10 +194,8 @@ export async function sendToUser(
   if (!pushEnabled || recipient.loggedOut) return true;
 
   if (!recipient.uid) {
-    const emailTopic = emailToTopic(recipient.email);
-    return emailTopic ?
-      sendNotification({...payload, fcmTarget: {topic: emailTopic}, pushOnly: true}) :
-      true;
+    logger.warn("No uid for the recipient, skipping the personal push.", {route: payload.data.route});
+    return true;
   }
   const collapseKey = payload.collapseKey ?? personalCollapseKey(payload);
   const targets = [
@@ -213,7 +214,7 @@ export async function sendToUserByEmail(payload: PersonalPayload, email: string,
   try {
     user = await findUserByEmail(email);
   } catch (err) {
-    logger.warn("Could not resolve the recipient; using the email topic.", {email, err});
+    logger.warn("Could not resolve the recipient; skipping the personal push.", {email, err});
   }
   const data = user?.data();
   return sendToUser(payload, {

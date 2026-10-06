@@ -58,7 +58,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
   }
 
   Future<void> _onOutcome(BuildContext context, LiveApplyOutcome outcome) async {
-    final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>();
+    final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>()..add(const LiveWallpaperEvent.outcomeHandled());
     switch (outcome.status) {
       case LiveApplyStatus.cancelled:
         return;

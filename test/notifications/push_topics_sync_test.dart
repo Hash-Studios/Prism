@@ -13,6 +13,7 @@ class _FakeMessaging implements FirebaseMessaging {
   String? token = 'fcm-token';
   Object? tokenError;
   bool failSubscribe = false;
+  final Set<String> failUnsubscribeFor = <String>{};
 
   @override
   Future<String?> getToken({String? vapidKey, String? serviceWorkerScriptPath}) async {
@@ -30,7 +31,10 @@ class _FakeMessaging implements FirebaseMessaging {
   }
 
   @override
-  Future<void> unsubscribeFromTopic(String topic) async => unsubscribed.add(topic);
+  Future<void> unsubscribeFromTopic(String topic) async {
+    if (failUnsubscribeFor.contains(topic)) throw StateError('network');
+    unsubscribed.add(topic);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -155,6 +159,58 @@ void main() {
       messaging.failSubscribe = false;
       await refreshWotdTopics(messaging, settings, offset: ist);
       expect(messaging.subscribed, <String>['wall_of_the_day_utc_p0530']);
+    });
+
+    test('a failed leave of the old bucket is retried by refresh even when the offset did not change', () async {
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
+      messaging.failUnsubscribeFor.add('wall_of_the_day_utc_p0530');
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: Duration.zero);
+      expect(messaging.unsubscribed, isNot(contains('wall_of_the_day_utc_p0530')));
+
+      messaging
+        ..unsubscribed.clear()
+        ..failUnsubscribeFor.clear();
+      await refreshWotdTopics(messaging, settings, offset: Duration.zero);
+      expect(messaging.unsubscribed, <String>['wall_of_the_day_utc_p0530']);
+
+      messaging.unsubscribed.clear();
+      await refreshWotdTopics(messaging, settings, offset: Duration.zero);
+      expect(messaging.unsubscribed, isEmpty);
+    });
+
+    test('a failed leave of the global topic is retried on the next call', () async {
+      messaging.failUnsubscribeFor.add('wall_of_the_day');
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
+
+      messaging.failUnsubscribeFor.clear();
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
+      expect(messaging.unsubscribed, <String>['wall_of_the_day']);
+    });
+
+    test('turning it off retries earlier failed leaves and never leaves the bucket it just joined', () async {
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
+      messaging.failUnsubscribeFor.add('wall_of_the_day_utc_p0530');
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: Duration.zero);
+      messaging
+        ..unsubscribed.clear()
+        ..failUnsubscribeFor.clear();
+
+      await setWotdTopics(messaging, settings, subscribed: false, sourceTag: 't', offset: Duration.zero);
+      expect(
+        messaging.unsubscribed,
+        unorderedEquals(<String>['wall_of_the_day_utc_p0530', 'wall_of_the_day', 'wall_of_the_day_utc_p0000']),
+      );
+    });
+
+    test('rejoining a bucket drops it from the pending leaves', () async {
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
+      messaging.failUnsubscribeFor.add('wall_of_the_day_utc_p0530');
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: Duration.zero);
+      messaging.failUnsubscribeFor.clear();
+      messaging.unsubscribed.clear();
+
+      await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 't', offset: ist);
+      expect(messaging.unsubscribed, isNot(contains('wall_of_the_day_utc_p0530')));
     });
 
     test('refresh moves the device only when the offset changed and the push is on', () async {

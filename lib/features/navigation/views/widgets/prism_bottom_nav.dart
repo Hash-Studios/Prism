@@ -1,9 +1,6 @@
-import 'dart:async';
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -49,11 +46,6 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     final StackRouter? stack = _tabsRouter!.stackRouterOfIndex(index);
     if (stack != null && stack.canPop()) {
       stack.popUntilRoot();
-      return;
-    }
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
-    if (controller != null && controller.hasClients && controller.offset > 0) {
-      unawaited(controller.animateTo(0, duration: context.motion(PrismDurations.base), curve: PrismCurves.enter));
     }
   }
 

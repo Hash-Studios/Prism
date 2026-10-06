@@ -8,9 +8,9 @@ import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
+import 'package:Prism/features/user_search/data/recent_searches_store.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
-import 'package:Prism/features/user_search/views/recent_searches_store.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_widget.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
@@ -227,6 +227,9 @@ class _SearchScreenState extends State<SearchScreen> {
     return FutureBuilder<WallpaperSearchPage>(
       future: _search,
       builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const LoadingCards();
+        }
         if (snapshot.hasError) {
           return RefreshableGlintState(
             kind: GlintStateKind.error,

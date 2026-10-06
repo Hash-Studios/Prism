@@ -61,7 +61,7 @@ extension AutoRotateEventPatterns on AutoRotateEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _EntitlementChanged value)?  entitlementChanged,TResult Function( _FavouritesChanged value)?  favouritesChanged,TResult Function( _Toggled value)?  toggled,TResult Function( _IntervalChanged value)?  intervalChanged,TResult Function( _TargetChanged value)?  targetChanged,TResult Function( _ShuffleChanged value)?  shuffleChanged,TResult Function( _SourceChanged value)?  sourceChanged,TResult Function( _ChargingOnlyChanged value)?  chargingOnlyChanged,TResult Function( _ActiveHoursEnabledChanged value)?  activeHoursEnabledChanged,TResult Function( _ActiveHoursChanged value)?  activeHoursChanged,TResult Function( _RotateNowPressed value)?  rotateNowPressed,TResult Function( _FavouritesSettled value)?  favouritesSettled,TResult Function( _StatusRefreshed value)?  statusRefreshed,TResult Function( _BatteryTipDismissed value)?  batteryTipDismissed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _EntitlementChanged value)?  entitlementChanged,TResult Function( _FavouritesChanged value)?  favouritesChanged,TResult Function( _Toggled value)?  toggled,TResult Function( _IntervalChanged value)?  intervalChanged,TResult Function( _TargetChanged value)?  targetChanged,TResult Function( _ShuffleChanged value)?  shuffleChanged,TResult Function( _SourceChanged value)?  sourceChanged,TResult Function( _ChargingOnlyChanged value)?  chargingOnlyChanged,TResult Function( _RotateNowPressed value)?  rotateNowPressed,TResult Function( _FavouritesSettled value)?  favouritesSettled,TResult Function( _StatusRefreshed value)?  statusRefreshed,TResult Function( _BatteryTipDismissed value)?  batteryTipDismissed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -73,9 +73,7 @@ return intervalChanged(_that);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that);case _ShuffleChanged() when shuffleChanged != null:
 return shuffleChanged(_that);case _SourceChanged() when sourceChanged != null:
 return sourceChanged(_that);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
-return chargingOnlyChanged(_that);case _ActiveHoursEnabledChanged() when activeHoursEnabledChanged != null:
-return activeHoursEnabledChanged(_that);case _ActiveHoursChanged() when activeHoursChanged != null:
-return activeHoursChanged(_that);case _RotateNowPressed() when rotateNowPressed != null:
+return chargingOnlyChanged(_that);case _RotateNowPressed() when rotateNowPressed != null:
 return rotateNowPressed(_that);case _FavouritesSettled() when favouritesSettled != null:
 return favouritesSettled(_that);case _StatusRefreshed() when statusRefreshed != null:
 return statusRefreshed(_that);case _BatteryTipDismissed() when batteryTipDismissed != null:
@@ -97,7 +95,7 @@ return batteryTipDismissed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _EntitlementChanged value)  entitlementChanged,required TResult Function( _FavouritesChanged value)  favouritesChanged,required TResult Function( _Toggled value)  toggled,required TResult Function( _IntervalChanged value)  intervalChanged,required TResult Function( _TargetChanged value)  targetChanged,required TResult Function( _ShuffleChanged value)  shuffleChanged,required TResult Function( _SourceChanged value)  sourceChanged,required TResult Function( _ChargingOnlyChanged value)  chargingOnlyChanged,required TResult Function( _ActiveHoursEnabledChanged value)  activeHoursEnabledChanged,required TResult Function( _ActiveHoursChanged value)  activeHoursChanged,required TResult Function( _RotateNowPressed value)  rotateNowPressed,required TResult Function( _FavouritesSettled value)  favouritesSettled,required TResult Function( _StatusRefreshed value)  statusRefreshed,required TResult Function( _BatteryTipDismissed value)  batteryTipDismissed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _EntitlementChanged value)  entitlementChanged,required TResult Function( _FavouritesChanged value)  favouritesChanged,required TResult Function( _Toggled value)  toggled,required TResult Function( _IntervalChanged value)  intervalChanged,required TResult Function( _TargetChanged value)  targetChanged,required TResult Function( _ShuffleChanged value)  shuffleChanged,required TResult Function( _SourceChanged value)  sourceChanged,required TResult Function( _ChargingOnlyChanged value)  chargingOnlyChanged,required TResult Function( _RotateNowPressed value)  rotateNowPressed,required TResult Function( _FavouritesSettled value)  favouritesSettled,required TResult Function( _StatusRefreshed value)  statusRefreshed,required TResult Function( _BatteryTipDismissed value)  batteryTipDismissed,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -109,9 +107,7 @@ return intervalChanged(_that);case _TargetChanged():
 return targetChanged(_that);case _ShuffleChanged():
 return shuffleChanged(_that);case _SourceChanged():
 return sourceChanged(_that);case _ChargingOnlyChanged():
-return chargingOnlyChanged(_that);case _ActiveHoursEnabledChanged():
-return activeHoursEnabledChanged(_that);case _ActiveHoursChanged():
-return activeHoursChanged(_that);case _RotateNowPressed():
+return chargingOnlyChanged(_that);case _RotateNowPressed():
 return rotateNowPressed(_that);case _FavouritesSettled():
 return favouritesSettled(_that);case _StatusRefreshed():
 return statusRefreshed(_that);case _BatteryTipDismissed():
@@ -132,7 +128,7 @@ return batteryTipDismissed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _EntitlementChanged value)?  entitlementChanged,TResult? Function( _FavouritesChanged value)?  favouritesChanged,TResult? Function( _Toggled value)?  toggled,TResult? Function( _IntervalChanged value)?  intervalChanged,TResult? Function( _TargetChanged value)?  targetChanged,TResult? Function( _ShuffleChanged value)?  shuffleChanged,TResult? Function( _SourceChanged value)?  sourceChanged,TResult? Function( _ChargingOnlyChanged value)?  chargingOnlyChanged,TResult? Function( _ActiveHoursEnabledChanged value)?  activeHoursEnabledChanged,TResult? Function( _ActiveHoursChanged value)?  activeHoursChanged,TResult? Function( _RotateNowPressed value)?  rotateNowPressed,TResult? Function( _FavouritesSettled value)?  favouritesSettled,TResult? Function( _StatusRefreshed value)?  statusRefreshed,TResult? Function( _BatteryTipDismissed value)?  batteryTipDismissed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _EntitlementChanged value)?  entitlementChanged,TResult? Function( _FavouritesChanged value)?  favouritesChanged,TResult? Function( _Toggled value)?  toggled,TResult? Function( _IntervalChanged value)?  intervalChanged,TResult? Function( _TargetChanged value)?  targetChanged,TResult? Function( _ShuffleChanged value)?  shuffleChanged,TResult? Function( _SourceChanged value)?  sourceChanged,TResult? Function( _ChargingOnlyChanged value)?  chargingOnlyChanged,TResult? Function( _RotateNowPressed value)?  rotateNowPressed,TResult? Function( _FavouritesSettled value)?  favouritesSettled,TResult? Function( _StatusRefreshed value)?  statusRefreshed,TResult? Function( _BatteryTipDismissed value)?  batteryTipDismissed,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -144,9 +140,7 @@ return intervalChanged(_that);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that);case _ShuffleChanged() when shuffleChanged != null:
 return shuffleChanged(_that);case _SourceChanged() when sourceChanged != null:
 return sourceChanged(_that);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
-return chargingOnlyChanged(_that);case _ActiveHoursEnabledChanged() when activeHoursEnabledChanged != null:
-return activeHoursEnabledChanged(_that);case _ActiveHoursChanged() when activeHoursChanged != null:
-return activeHoursChanged(_that);case _RotateNowPressed() when rotateNowPressed != null:
+return chargingOnlyChanged(_that);case _RotateNowPressed() when rotateNowPressed != null:
 return rotateNowPressed(_that);case _FavouritesSettled() when favouritesSettled != null:
 return favouritesSettled(_that);case _StatusRefreshed() when statusRefreshed != null:
 return statusRefreshed(_that);case _BatteryTipDismissed() when batteryTipDismissed != null:
@@ -167,7 +161,7 @@ return batteryTipDismissed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro)?  started,TResult Function( bool isPro,  String userId)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function( AutoRotateSource source)?  sourceChanged,TResult Function( bool chargingOnly)?  chargingOnlyChanged,TResult Function( bool enabled)?  activeHoursEnabledChanged,TResult Function( int start,  int end)?  activeHoursChanged,TResult Function()?  rotateNowPressed,TResult Function()?  favouritesSettled,TResult Function()?  statusRefreshed,TResult Function()?  batteryTipDismissed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro)?  started,TResult Function( bool isPro,  String userId)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function( AutoRotateSource source)?  sourceChanged,TResult Function( bool chargingOnly)?  chargingOnlyChanged,TResult Function()?  rotateNowPressed,TResult Function()?  favouritesSettled,TResult Function()?  statusRefreshed,TResult Function()?  batteryTipDismissed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged() when entitlementChanged != null:
@@ -178,9 +172,7 @@ return intervalChanged(_that.minutes);case _TargetChanged() when targetChanged !
 return targetChanged(_that.target);case _ShuffleChanged() when shuffleChanged != null:
 return shuffleChanged(_that.shuffle);case _SourceChanged() when sourceChanged != null:
 return sourceChanged(_that.source);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
-return chargingOnlyChanged(_that.chargingOnly);case _ActiveHoursEnabledChanged() when activeHoursEnabledChanged != null:
-return activeHoursEnabledChanged(_that.enabled);case _ActiveHoursChanged() when activeHoursChanged != null:
-return activeHoursChanged(_that.start,_that.end);case _RotateNowPressed() when rotateNowPressed != null:
+return chargingOnlyChanged(_that.chargingOnly);case _RotateNowPressed() when rotateNowPressed != null:
 return rotateNowPressed();case _FavouritesSettled() when favouritesSettled != null:
 return favouritesSettled();case _StatusRefreshed() when statusRefreshed != null:
 return statusRefreshed();case _BatteryTipDismissed() when batteryTipDismissed != null:
@@ -202,7 +194,7 @@ return batteryTipDismissed();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro)  started,required TResult Function( bool isPro,  String userId)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function( AutoRotateSource source)  sourceChanged,required TResult Function( bool chargingOnly)  chargingOnlyChanged,required TResult Function( bool enabled)  activeHoursEnabledChanged,required TResult Function( int start,  int end)  activeHoursChanged,required TResult Function()  rotateNowPressed,required TResult Function()  favouritesSettled,required TResult Function()  statusRefreshed,required TResult Function()  batteryTipDismissed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro)  started,required TResult Function( bool isPro,  String userId)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function( AutoRotateSource source)  sourceChanged,required TResult Function( bool chargingOnly)  chargingOnlyChanged,required TResult Function()  rotateNowPressed,required TResult Function()  favouritesSettled,required TResult Function()  statusRefreshed,required TResult Function()  batteryTipDismissed,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged():
@@ -213,9 +205,7 @@ return intervalChanged(_that.minutes);case _TargetChanged():
 return targetChanged(_that.target);case _ShuffleChanged():
 return shuffleChanged(_that.shuffle);case _SourceChanged():
 return sourceChanged(_that.source);case _ChargingOnlyChanged():
-return chargingOnlyChanged(_that.chargingOnly);case _ActiveHoursEnabledChanged():
-return activeHoursEnabledChanged(_that.enabled);case _ActiveHoursChanged():
-return activeHoursChanged(_that.start,_that.end);case _RotateNowPressed():
+return chargingOnlyChanged(_that.chargingOnly);case _RotateNowPressed():
 return rotateNowPressed();case _FavouritesSettled():
 return favouritesSettled();case _StatusRefreshed():
 return statusRefreshed();case _BatteryTipDismissed():
@@ -236,7 +226,7 @@ return batteryTipDismissed();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro)?  started,TResult? Function( bool isPro,  String userId)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function( AutoRotateSource source)?  sourceChanged,TResult? Function( bool chargingOnly)?  chargingOnlyChanged,TResult? Function( bool enabled)?  activeHoursEnabledChanged,TResult? Function( int start,  int end)?  activeHoursChanged,TResult? Function()?  rotateNowPressed,TResult? Function()?  favouritesSettled,TResult? Function()?  statusRefreshed,TResult? Function()?  batteryTipDismissed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro)?  started,TResult? Function( bool isPro,  String userId)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function( AutoRotateSource source)?  sourceChanged,TResult? Function( bool chargingOnly)?  chargingOnlyChanged,TResult? Function()?  rotateNowPressed,TResult? Function()?  favouritesSettled,TResult? Function()?  statusRefreshed,TResult? Function()?  batteryTipDismissed,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged() when entitlementChanged != null:
@@ -247,9 +237,7 @@ return intervalChanged(_that.minutes);case _TargetChanged() when targetChanged !
 return targetChanged(_that.target);case _ShuffleChanged() when shuffleChanged != null:
 return shuffleChanged(_that.shuffle);case _SourceChanged() when sourceChanged != null:
 return sourceChanged(_that.source);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
-return chargingOnlyChanged(_that.chargingOnly);case _ActiveHoursEnabledChanged() when activeHoursEnabledChanged != null:
-return activeHoursEnabledChanged(_that.enabled);case _ActiveHoursChanged() when activeHoursChanged != null:
-return activeHoursChanged(_that.start,_that.end);case _RotateNowPressed() when rotateNowPressed != null:
+return chargingOnlyChanged(_that.chargingOnly);case _RotateNowPressed() when rotateNowPressed != null:
 return rotateNowPressed();case _FavouritesSettled() when favouritesSettled != null:
 return favouritesSettled();case _StatusRefreshed() when statusRefreshed != null:
 return statusRefreshed();case _BatteryTipDismissed() when batteryTipDismissed != null:
@@ -919,152 +907,6 @@ class __$ChargingOnlyChangedCopyWithImpl<$Res>
   return _then(_ChargingOnlyChanged(
 null == chargingOnly ? _self.chargingOnly : chargingOnly // ignore: cast_nullable_to_non_nullable
 as bool,
-  ));
-}
-
-
-}
-
-/// @nodoc
-
-
-class _ActiveHoursEnabledChanged with DiagnosticableTreeMixin implements AutoRotateEvent {
-  const _ActiveHoursEnabledChanged(this.enabled);
-  
-
- final  bool enabled;
-
-/// Create a copy of AutoRotateEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$ActiveHoursEnabledChangedCopyWith<_ActiveHoursEnabledChanged> get copyWith => __$ActiveHoursEnabledChangedCopyWithImpl<_ActiveHoursEnabledChanged>(this, _$identity);
-
-
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
-    ..add(DiagnosticsProperty('type', 'AutoRotateEvent.activeHoursEnabledChanged'))
-    ..add(DiagnosticsProperty('enabled', enabled));
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActiveHoursEnabledChanged&&(identical(other.enabled, enabled) || other.enabled == enabled));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,enabled);
-
-@override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AutoRotateEvent.activeHoursEnabledChanged(enabled: $enabled)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$ActiveHoursEnabledChangedCopyWith<$Res> implements $AutoRotateEventCopyWith<$Res> {
-  factory _$ActiveHoursEnabledChangedCopyWith(_ActiveHoursEnabledChanged value, $Res Function(_ActiveHoursEnabledChanged) _then) = __$ActiveHoursEnabledChangedCopyWithImpl;
-@useResult
-$Res call({
- bool enabled
-});
-
-
-
-
-}
-/// @nodoc
-class __$ActiveHoursEnabledChangedCopyWithImpl<$Res>
-    implements _$ActiveHoursEnabledChangedCopyWith<$Res> {
-  __$ActiveHoursEnabledChangedCopyWithImpl(this._self, this._then);
-
-  final _ActiveHoursEnabledChanged _self;
-  final $Res Function(_ActiveHoursEnabledChanged) _then;
-
-/// Create a copy of AutoRotateEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? enabled = null,}) {
-  return _then(_ActiveHoursEnabledChanged(
-null == enabled ? _self.enabled : enabled // ignore: cast_nullable_to_non_nullable
-as bool,
-  ));
-}
-
-
-}
-
-/// @nodoc
-
-
-class _ActiveHoursChanged with DiagnosticableTreeMixin implements AutoRotateEvent {
-  const _ActiveHoursChanged({required this.start, required this.end});
-  
-
- final  int start;
- final  int end;
-
-/// Create a copy of AutoRotateEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$ActiveHoursChangedCopyWith<_ActiveHoursChanged> get copyWith => __$ActiveHoursChangedCopyWithImpl<_ActiveHoursChanged>(this, _$identity);
-
-
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
-    ..add(DiagnosticsProperty('type', 'AutoRotateEvent.activeHoursChanged'))
-    ..add(DiagnosticsProperty('start', start))..add(DiagnosticsProperty('end', end));
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ActiveHoursChanged&&(identical(other.start, start) || other.start == start)&&(identical(other.end, end) || other.end == end));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,start,end);
-
-@override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AutoRotateEvent.activeHoursChanged(start: $start, end: $end)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$ActiveHoursChangedCopyWith<$Res> implements $AutoRotateEventCopyWith<$Res> {
-  factory _$ActiveHoursChangedCopyWith(_ActiveHoursChanged value, $Res Function(_ActiveHoursChanged) _then) = __$ActiveHoursChangedCopyWithImpl;
-@useResult
-$Res call({
- int start, int end
-});
-
-
-
-
-}
-/// @nodoc
-class __$ActiveHoursChangedCopyWithImpl<$Res>
-    implements _$ActiveHoursChangedCopyWith<$Res> {
-  __$ActiveHoursChangedCopyWithImpl(this._self, this._then);
-
-  final _ActiveHoursChanged _self;
-  final $Res Function(_ActiveHoursChanged) _then;
-
-/// Create a copy of AutoRotateEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? start = null,Object? end = null,}) {
-  return _then(_ActiveHoursChanged(
-start: null == start ? _self.start : start // ignore: cast_nullable_to_non_nullable
-as int,end: null == end ? _self.end : end // ignore: cast_nullable_to_non_nullable
-as int,
   ));
 }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -18,20 +20,35 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     this._toggleFavouriteWallUseCase,
     this._clearFavouriteWallsUseCase,
   ) : super(FavouriteWallsState.initial()) {
-    on<_Started>(_onStarted);
-    on<_RefreshRequested>(_onRefreshRequested);
-    on<_ToggleRequested>(_onToggleRequested);
-    on<_ClearRequested>(_onClearRequested);
+    on<_Started>((event, emit) => _serial(() => _onStarted(event, emit)));
+    on<_RefreshRequested>((event, emit) => _serial(() => _onRefreshRequested(event, emit)));
+    on<_ToggleRequested>((event, emit) => _serial(() => _onToggleRequested(event, emit)));
+    on<_ClearRequested>((event, emit) => _serial(() => _onClearRequested(event, emit)));
     on<_SortChanged>((event, emit) => emit(state.copyWith(sort: event.sort)));
     on<_SourceFilterChanged>((event, emit) => emit(state.copyWith(sourceFilter: event.source)));
     on<_QueryChanged>((event, emit) => emit(state.copyWith(query: event.query)));
-    on<_RemoveRequested>(_onRemoveRequested);
-    on<_RestoreRequested>(_onRestoreRequested);
+    on<_RemoveRequested>((event, emit) => _serial(() => _onRemoveRequested(event, emit)));
+    on<_RestoreRequested>((event, emit) => _serial(() => _onRestoreRequested(event, emit)));
   }
 
   final FetchFavouriteWallsUseCase _fetchFavouriteWallsUseCase;
   final ToggleFavouriteWallUseCase _toggleFavouriteWallUseCase;
   final ClearFavouriteWallsUseCase _clearFavouriteWallsUseCase;
+
+  Future<void> _queueTail = Future<void>.value();
+
+  /// Loads and mutations share one queue, so a refresh cannot interleave with a removal or an undo.
+  Future<void> _serial(Future<void> Function() action) async {
+    final Future<void> previous = _queueTail;
+    final Completer<void> done = Completer<void>();
+    _queueTail = done.future;
+    await previous;
+    try {
+      await action();
+    } finally {
+      done.complete();
+    }
+  }
 
   bool _containsWall(String wallId) {
     return state.items.any((item) => item.id == wallId);
@@ -115,10 +132,14 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   }
 
   Future<void> _onRemoveRequested(_RemoveRequested event, Emitter<FavouriteWallsState> emit) {
-    return _removeAndRefetchOnFailure(event.wallIds, emit);
+    return _removeAndRefetchOnFailure(event.wallIds, emit, operationId: event.operationId);
   }
 
-  Future<void> _removeAndRefetchOnFailure(List<String> wallIds, Emitter<FavouriteWallsState> emit) async {
+  Future<void> _removeAndRefetchOnFailure(
+    List<String> wallIds,
+    Emitter<FavouriteWallsState> emit, {
+    int operationId = 0,
+  }) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final result = await _clearFavouriteWallsUseCase(ClearFavouriteWallsParams(userId: state.userId, wallIds: wallIds));
 
@@ -130,13 +151,14 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
             status: LoadStatus.success,
             actionStatus: ActionStatus.success,
             items: state.items.where((item) => !removedIds.contains(item.id)).toList(growable: false),
+            completedOperationId: operationId,
             failure: null,
           ),
         );
         return true;
       },
       onFailure: (failure) {
-        emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure));
+        emit(state.copyWith(actionStatus: ActionStatus.failure, completedOperationId: operationId, failure: failure));
         return false;
       },
     );
@@ -160,6 +182,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
       state.copyWith(
         items: next,
         actionStatus: allRestored ? ActionStatus.success : ActionStatus.failure,
+        completedOperationId: event.operationId,
         failure: allRestored ? null : const ServerFailure('Could not restore some favourites'),
       ),
     );

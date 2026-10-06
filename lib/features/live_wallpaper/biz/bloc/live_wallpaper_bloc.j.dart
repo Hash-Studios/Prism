@@ -23,6 +23,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
         gradientApplied: (event) => _onGradientApplied(event, emit),
         videoPicked: (event) => _onVideoPicked(event, emit),
         videoApplied: (event) => _onVideoApplied(emit),
+        outcomeHandled: (event) async => emit(state.copyWith(outcome: null)),
       ),
       transformer: (events, mapper) => events.asyncExpand(mapper),
     );

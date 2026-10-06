@@ -331,22 +331,6 @@ class _Controls extends StatelessWidget {
     final bool caching = config.enabled && status.isRunning && status.totalCount > 0;
     final int cached = status.cachedCount.clamp(0, status.totalCount);
 
-    Future<void> pickHour({required bool start}) async {
-      final TimeOfDay? picked = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay(hour: start ? config.activeHoursStart : config.activeHoursEnd, minute: 0),
-      );
-      if (picked == null) return;
-      bloc.add(
-        AutoRotateEvent.activeHoursChanged(
-          start: start ? picked.hour : config.activeHoursStart,
-          end: start ? config.activeHoursEnd : picked.hour,
-        ),
-      );
-    }
-
-    String hourLabel(int hour) => TimeOfDay(hour: hour, minute: 0).format(context);
-
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 32),
       children: [
@@ -435,29 +419,6 @@ class _Controls extends StatelessWidget {
               bloc.add(AutoRotateEvent.chargingOnlyChanged(value));
             },
           ),
-          SwitchListTile(
-            activeThumbColor: accent,
-            secondary: const Icon(Icons.schedule_rounded),
-            value: config.activeHoursEnabled,
-            title: Text('Active hours', style: titleStyle),
-            subtitle: const Text('Only change wallpapers between these hours', style: subtitleStyle),
-            onChanged: (value) {
-              PrismHaptics.selection();
-              bloc.add(AutoRotateEvent.activeHoursEnabledChanged(value));
-            },
-          ),
-          if (config.activeHoursEnabled) ...[
-            ListTile(
-              title: Text('From', style: titleStyle),
-              trailing: Text(hourLabel(config.activeHoursStart), style: titleStyle),
-              onTap: () => pickHour(start: true),
-            ),
-            ListTile(
-              title: Text('Until', style: titleStyle),
-              trailing: Text(hourLabel(config.activeHoursEnd), style: titleStyle),
-              onTap: () => pickHour(start: false),
-            ),
-          ],
         ]),
         card('STATUS', [
           ListTile(title: Text(_statusText(), style: titleStyle)),

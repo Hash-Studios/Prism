@@ -106,7 +106,7 @@ These are important but not blocking the 3.0.0 release.
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
 | G1 | [x] **Badge system activation** | 12 badges with triggers — infrastructure already exists in code. Unlock animations. | Medium | Month 1 |
-| G2 | [x] **Auto wallpaper rotation (Pro)** | Schedule-based wallpaper changing from favorites or downloads, with charging-only and active hours. Android only. THE loyalty feature. | High | Month 1-2 |
+| G2 | [x] **Auto wallpaper rotation (Pro)** | Schedule-based wallpaper changing from favorites or downloads, with a charging-only option. Android only. THE loyalty feature. | High | Month 1-2 |
 | G3 | [x] **"For You" personalized feed** | Tag-based matching from interests + favorites + download history | High | Month 2 |
 | G4 | [ ] **Weekly challenges** | Rotating challenges with coin + badge rewards. Drives feature exploration. | Medium | Month 2 |
 | G5 | [ ] **Collection subscribe + notifications** | "New in [collection]" push when content is added | Low | Month 1 |

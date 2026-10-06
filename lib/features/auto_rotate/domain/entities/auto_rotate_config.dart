@@ -10,9 +10,6 @@ class AutoRotateConfig {
     this.shuffle = true,
     this.source = AutoRotateSource.favourites,
     this.chargingOnly = false,
-    this.activeHoursEnabled = false,
-    this.activeHoursStart = 6,
-    this.activeHoursEnd = 23,
   });
 
   static const List<int> intervalOptions = <int>[60, 360, 720, 1440];
@@ -23,9 +20,6 @@ class AutoRotateConfig {
   final bool shuffle;
   final AutoRotateSource source;
   final bool chargingOnly;
-  final bool activeHoursEnabled;
-  final int activeHoursStart;
-  final int activeHoursEnd;
 
   AutoRotateConfig copyWith({
     bool? enabled,
@@ -34,9 +28,6 @@ class AutoRotateConfig {
     bool? shuffle,
     AutoRotateSource? source,
     bool? chargingOnly,
-    bool? activeHoursEnabled,
-    int? activeHoursStart,
-    int? activeHoursEnd,
   }) {
     return AutoRotateConfig(
       enabled: enabled ?? this.enabled,
@@ -45,9 +36,6 @@ class AutoRotateConfig {
       shuffle: shuffle ?? this.shuffle,
       source: source ?? this.source,
       chargingOnly: chargingOnly ?? this.chargingOnly,
-      activeHoursEnabled: activeHoursEnabled ?? this.activeHoursEnabled,
-      activeHoursStart: activeHoursStart ?? this.activeHoursStart,
-      activeHoursEnd: activeHoursEnd ?? this.activeHoursEnd,
     );
   }
 
@@ -59,23 +47,10 @@ class AutoRotateConfig {
       other.target == target &&
       other.shuffle == shuffle &&
       other.source == source &&
-      other.chargingOnly == chargingOnly &&
-      other.activeHoursEnabled == activeHoursEnabled &&
-      other.activeHoursStart == activeHoursStart &&
-      other.activeHoursEnd == activeHoursEnd;
+      other.chargingOnly == chargingOnly;
 
   @override
-  int get hashCode => Object.hash(
-    enabled,
-    intervalMinutes,
-    target,
-    shuffle,
-    source,
-    chargingOnly,
-    activeHoursEnabled,
-    activeHoursStart,
-    activeHoursEnd,
-  );
+  int get hashCode => Object.hash(enabled, intervalMinutes, target, shuffle, source, chargingOnly);
 }
 
 class AutoRotateStatus {

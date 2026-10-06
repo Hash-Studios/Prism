@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
+import {logger} from "firebase-functions/v2";
 import {db, REGION} from "./common";
 
 const USERS = "usersv2";
@@ -15,28 +16,25 @@ const UID_PREFIX_KEYED = ["coinAdRateDaily"];
 /** Mirrors the client's requirement in delete_account_service.dart: a fresh sign-in before deleting. */
 const RECENT_LOGIN_WINDOW_S = 300;
 
-/** Queues the deletes and returns their promises, so a failed delete fails the call instead of going unseen. */
+type QueueDelete = (ref: admin.firestore.DocumentReference) => void;
+
 async function queueDeleteWhereEqual(
   collection: string,
   field: string,
   value: string,
-  writer: admin.firestore.BulkWriter,
-): Promise<Promise<unknown>[]> {
-  if (!value) return [];
+  queue: QueueDelete,
+): Promise<void> {
+  if (!value) return;
   const snap = await db.collection(collection).where(field, "==", value).get();
-  return snap.docs.map((doc) => writer.delete(doc.ref));
+  snap.docs.forEach((doc) => queue(doc.ref));
 }
 
-async function queueDeleteByIdPrefix(
-  collection: string,
-  prefix: string,
-  writer: admin.firestore.BulkWriter,
-): Promise<Promise<unknown>[]> {
+async function queueDeleteByIdPrefix(collection: string, prefix: string, queue: QueueDelete): Promise<void> {
   const snap = await db.collection(collection)
     .where(admin.firestore.FieldPath.documentId(), ">=", prefix)
     .where(admin.firestore.FieldPath.documentId(), "<", `${prefix}\uf8ff`)
     .get();
-  return snap.docs.map((doc) => writer.delete(doc.ref));
+  snap.docs.forEach((doc) => queue(doc.ref));
 }
 
 /**
@@ -66,18 +64,26 @@ export const deleteAccount = onCall({region: REGION, cors: true}, async (request
 
   // 2-4. Owned records elsewhere in Firestore.
   const writer = db.bulkWriter();
-  const queued: Promise<unknown>[] = [
-    ...(await queueDeleteWhereEqual(COIN_TRANSACTIONS, "userId", callerUid, writer)),
-    ...(await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, writer)),
-    ...(email ? await queueDeleteWhereEqual(DRAFT_SETUPS, "email", email, writer) : []),
-    ...UID_KEYED.map((collection) => writer.delete(db.collection(collection).doc(callerUid))),
-  ];
-  for (const collection of UID_PREFIX_KEYED) {
-    queued.push(...(await queueDeleteByIdPrefix(collection, `${callerUid}_`, writer)));
+  // A handler is attached as each delete is queued, so an early failure is never an unhandled rejection.
+  const outcomes: Promise<boolean>[] = [];
+  const queue: QueueDelete = (ref) => {
+    outcomes.push(writer.delete(ref).then(() => true, (err) => {
+      logger.warn("deleteAccount: a delete failed.", {path: ref.path, err});
+      return false;
+    }));
+  };
+  try {
+    await queueDeleteWhereEqual(COIN_TRANSACTIONS, "userId", callerUid, queue);
+    await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
+    if (email) await queueDeleteWhereEqual(DRAFT_SETUPS, "email", email, queue);
+    for (const collection of UID_KEYED) queue(db.collection(collection).doc(callerUid));
+    for (const collection of UID_PREFIX_KEYED) {
+      await queueDeleteByIdPrefix(collection, `${callerUid}_`, queue);
+    }
+  } finally {
+    await writer.close();
   }
-  await writer.close();
-  const failed = (await Promise.allSettled(queued)).filter((result) => result.status === "rejected");
-  if (failed.length > 0) {
+  if ((await Promise.all(outcomes)).includes(false)) {
     throw new HttpsError("internal", "Could not delete all account data. Try again.");
   }
 

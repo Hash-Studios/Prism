@@ -38,6 +38,7 @@ class CoinMutationResult {
     this.insufficientBalance = false,
     this.reason = '',
     this.transactionId = '',
+    this.unknownOutcomeTransactionId = '',
   });
 
   final bool success;
@@ -50,8 +51,16 @@ class CoinMutationResult {
   final String reason;
   final String transactionId;
 
+  /// Set when a spend got no answer: the debit may have committed under this server transaction id.
+  final String unknownOutcomeTransactionId;
+
   // ignore: prefer_constructors_over_static_methods
-  static CoinMutationResult noChange({required int balance, String reason = '', bool success = true}) {
+  static CoinMutationResult noChange({
+    required int balance,
+    String reason = '',
+    bool success = true,
+    String unknownOutcomeTransactionId = '',
+  }) {
     return CoinMutationResult(
       success: success,
       changed: false,
@@ -59,6 +68,7 @@ class CoinMutationResult {
       currentBalance: balance,
       delta: 0,
       reason: reason,
+      unknownOutcomeTransactionId: unknownOutcomeTransactionId,
     );
   }
 }
@@ -71,6 +81,9 @@ class _AiGenerationReservationResult {
   final String? transactionId;
 
   bool get success => mode != AiChargeMode.insufficient && mutation.success;
+
+  /// The charge may have gone through but the reply never arrived. A refund is queued for it.
+  bool get refundPending => mutation.unknownOutcomeTransactionId.isNotEmpty;
 
   int get coinsSpent => mode == AiChargeMode.coinSpend && mutation.changed ? -mutation.delta : 0;
 }
@@ -560,6 +573,9 @@ class CoinsService {
       reason: 'ai_generation_reserved',
     );
     _applyLocalBalance(mutation.currentBalance, delta: mutation.delta);
+    if (mutation.unknownOutcomeTransactionId.isNotEmpty) {
+      await _rememberPendingAiRefund(mutation.unknownOutcomeTransactionId);
+    }
     final _AiGenerationReservationResult result = _AiGenerationReservationResult(
       mode: mutation.changed ? AiChargeMode.coinSpend : AiChargeMode.insufficient,
       mutation: mutation,
@@ -1120,7 +1136,13 @@ class CoinsService {
         logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
         final bool retryable = error.code == 'deadline-exceeded' || error.code == 'unavailable';
         if (retryable && attempt < attempts) continue;
-        return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: error.code);
+        final bool unknownOutcome = retryable || error.code == 'internal';
+        return CoinMutationResult.noChange(
+          balance: app_state.prismUser.coins,
+          success: false,
+          reason: error.code,
+          unknownOutcomeTransactionId: requestId != null && unknownOutcome ? 'spend_${userId}_$requestId' : '',
+        );
       }
     }
     return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'unavailable');

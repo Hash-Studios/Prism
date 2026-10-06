@@ -58,25 +58,11 @@ void main() {
       shuffle: false,
       source: AutoRotateSource.downloads,
       chargingOnly: true,
-      activeHoursEnabled: true,
-      activeHoursStart: 22,
-      activeHoursEnd: 7,
     );
 
     await repository.saveConfig(config);
 
     expect(await repository.loadConfig(), config);
-  });
-
-  test('ignores stored hours outside 0 to 23', () async {
-    final InMemoryLocalStore store = InMemoryLocalStore();
-    final AutoRotateRepositoryImpl repo = AutoRotateRepositoryImpl(SettingsLocalDataSource(store));
-    await repo.saveConfig(const AutoRotateConfig(activeHoursStart: 40, activeHoursEnd: -2));
-
-    final AutoRotateConfig loaded = await repo.loadConfig();
-
-    expect(loaded.activeHoursStart, 6);
-    expect(loaded.activeHoursEnd, 23);
   });
 
   test('maps the options to plugin triggers', () {
@@ -86,10 +72,6 @@ void main() {
     expect(
       AutoRotateRepositoryImpl.triggersFor(const AutoRotateConfig(chargingOnly: true)),
       <aw.WallpaperRotationTrigger>{aw.WallpaperRotationTrigger.charging},
-    );
-    expect(
-      AutoRotateRepositoryImpl.triggersFor(const AutoRotateConfig(activeHoursEnabled: true)),
-      <aw.WallpaperRotationTrigger>{aw.WallpaperRotationTrigger.timeOfDay},
     );
   });
 

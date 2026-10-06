@@ -59,6 +59,7 @@ String? userTopicFromId(String uid) {
 const String _pushTopicsSyncedKey = 'pushTopicsSyncedFor';
 const String _legacyWotdTopic = 'wall_of_the_day';
 const String _wotdBucketKey = 'wotdBucketTopic';
+const String _wotdPendingCleanupKey = 'wotdPendingCleanupTopics';
 
 /// Topic for the devices at [offset] from UTC, for example `wall_of_the_day_utc_p0530`. FCM topic names cannot hold `+`, so `p` marks east of UTC and `m` marks west.
 /// The server sends the Wall of the Day push to the bucket where it is 09:00 local, in 15 minute steps.
@@ -83,37 +84,69 @@ Future<bool> setWotdTopics(
 }) async {
   final String storedBucket = settings.get<String>(_wotdBucketKey, defaultValue: '');
   if (!subscribed) {
-    final List<bool> results = await Future.wait(<Future<bool>>[
-      _changeTopic(messaging, _legacyWotdTopic, subscribe: false, sourceTag: sourceTag),
-      _changeTopic(
-        messaging,
-        storedBucket.isEmpty ? wotdBucketTopic(offset) : storedBucket,
-        subscribe: false,
-        sourceTag: sourceTag,
-      ),
-    ]);
-    final bool done = results.every((bool ok) => ok);
+    final String bucketToLeave = storedBucket.isEmpty ? wotdBucketTopic(offset) : storedBucket;
+    final bool done = await _cleanupWotdTopics(messaging, settings, <String>[
+      _legacyWotdTopic,
+      bucketToLeave,
+    ], sourceTag: sourceTag);
     if (done) await settings.set(_wotdBucketKey, '');
     return done;
   }
   final String bucket = wotdBucketTopic(offset);
   final bool joined = await subscribeToTopicSafely(messaging, bucket, sourceTag: sourceTag);
   if (!joined) return false;
-  await _changeTopic(messaging, _legacyWotdTopic, subscribe: false, sourceTag: sourceTag);
-  if (storedBucket.isNotEmpty && storedBucket != bucket) {
-    await _changeTopic(messaging, storedBucket, subscribe: false, sourceTag: sourceTag);
-  }
+  await _cleanupWotdTopics(
+    messaging,
+    settings,
+    <String>[_legacyWotdTopic, if (storedBucket.isNotEmpty) storedBucket],
+    keep: bucket,
+    sourceTag: sourceTag,
+  );
   await settings.set(_wotdBucketKey, bucket);
   return true;
 }
 
+Set<String> _pendingWotdCleanup(SettingsLocalDataSource settings) => settings
+    .get<String>(_wotdPendingCleanupKey, defaultValue: '')
+    .split(',')
+    .where((String topic) => topic.isNotEmpty)
+    .toSet();
+
+/// Unsubscribes from [topics] plus every topic an earlier call could not leave, and keeps the ones that still fail
+/// so the next refresh or toggle retries them. Never leaves [keep], the bucket the device just joined.
+Future<bool> _cleanupWotdTopics(
+  FirebaseMessaging messaging,
+  SettingsLocalDataSource settings,
+  Iterable<String> topics, {
+  required String sourceTag,
+  String keep = '',
+}) async {
+  final List<String> targets = <String>{
+    ..._pendingWotdCleanup(settings),
+    ...topics,
+  }.where((String topic) => topic.isNotEmpty && topic != keep).toList();
+  final List<bool> results = await Future.wait(
+    targets.map((String topic) => _changeTopic(messaging, topic, subscribe: false, sourceTag: sourceTag)),
+  );
+  final List<String> failed = <String>[
+    for (int i = 0; i < targets.length; i++)
+      if (!results[i]) targets[i],
+  ];
+  await settings.set(_wotdPendingCleanupKey, failed.join(','));
+  return failed.isEmpty;
+}
+
 /// Moves the device to its current time zone bucket when the offset changed (travel, daylight saving) and also
-/// moves installs that still use the global topic. Does nothing when the Wall of the Day push is off.
+/// moves installs that still use the global topic. It also retries unsubscribes that failed before. Does not join
+/// anything when the Wall of the Day push is off.
 Future<void> refreshWotdTopics(
   FirebaseMessaging messaging,
   SettingsLocalDataSource settings, {
   Duration? offset,
 }) async {
+  if (_pendingWotdCleanup(settings).isNotEmpty) {
+    await _cleanupWotdTopics(messaging, settings, const <String>[], sourceTag: 'push_topics.wotd_refresh');
+  }
   if (!settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true)) return;
   if (settings.get<String>(_wotdBucketKey, defaultValue: '') == wotdBucketTopic(offset)) return;
   await setWotdTopics(messaging, settings, subscribed: true, sourceTag: 'push_topics.wotd_refresh', offset: offset);

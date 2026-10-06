@@ -161,30 +161,15 @@ void main() {
       expect(repository.starts, hasLength(1));
     });
 
-    test('active hours do not restart while the option is off', () async {
+    test('charging only restarts rotation and persists', () async {
       await openAsPro(_urls(3));
-
-      bloc.add(const AutoRotateEvent.activeHoursChanged(start: 8, end: 20));
-      await _settle();
-
-      expect(repository.starts, hasLength(1));
-      expect(bloc.state.config.activeHoursStart, 8);
-      expect(repository.config.activeHoursEnd, 20);
-    });
-
-    test('charging only and active hours switch each other off and persist', () async {
-      await openAsPro(_urls(3));
-
-      bloc.add(const AutoRotateEvent.activeHoursEnabledChanged(true));
-      await _settle();
-      expect(repository.starts.last.$1.activeHoursEnabled, isTrue);
 
       bloc.add(const AutoRotateEvent.chargingOnlyChanged(true));
       await _settle();
 
-      expect(repository.starts, hasLength(3));
+      expect(repository.starts, hasLength(2));
+      expect(repository.starts.last.$1.chargingOnly, isTrue);
       expect(repository.config.chargingOnly, isTrue);
-      expect(repository.config.activeHoursEnabled, isFalse);
     });
 
     test('switching to downloads starts rotation with the downloaded files', () async {

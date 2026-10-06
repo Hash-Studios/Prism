@@ -356,6 +356,7 @@ test("a signed-out reminder retries after 15 minutes and sends after sign-in", a
     },
   };
   t.mock.method(db, "collection", (name: string) => name === "usersv2" ? query : {add: async () => undefined});
+  mockTransactions(t, [userDoc]);
   const sentMessages: admin.messaging.Message[] = [];
   const send = t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
     sentMessages.push(message);
@@ -411,6 +412,7 @@ test("a legacy streak user without loggedIn still gets a reminder", async (t) =>
     get: async () => ({empty: false, size: 1, docs: [userDoc]}),
   };
   t.mock.method(db, "collection", (name: string) => name === "usersv2" ? query : {add: async () => undefined});
+  mockTransactions(t, [userDoc]);
   const sentMessages: admin.messaging.Message[] = [];
   const send = t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
     sentMessages.push(message);
@@ -464,6 +466,28 @@ test("a claim re-locks to the new device offset after 24 hours and keeps the str
   assert.equal(result.streakCount, 4);
 });
 
+type TransactionDoc = {data: () => Record<string, unknown>; ref: {update: (data: Record<string, unknown>) => unknown}};
+
+/** Runs transactions one at a time, like Firestore retrying a contended document. */
+function mockTransactions(t: test.TestContext, docs: TransactionDoc[]) {
+  let queue: Promise<unknown> = Promise.resolve();
+  t.mock.method(db, "runTransaction", (callback: (tx: unknown) => Promise<unknown>) => {
+    const run = queue.then(async () => {
+      const pending: unknown[] = [];
+      const result = await callback({
+        get: async (ref: unknown) => ({data: () => docs.find((d) => d.ref === ref)?.data()}),
+        update: (ref: TransactionDoc["ref"], data: Record<string, unknown>) => {
+          pending.push(ref.update(data));
+        },
+      });
+      await Promise.all(pending);
+      return result;
+    });
+    queue = run.catch(() => undefined);
+    return run;
+  });
+}
+
 type ReminderDoc = {
   data: () => Record<string, unknown>;
   ref: {id: string; update: (data: Record<string, unknown>) => Promise<void>};
@@ -479,7 +503,7 @@ function reminderDoc(id: string, updates: Record<string, unknown>[], failUpdate 
       lastDailyClaimDate: "2026-01-01",
       streakTimezoneOffsetMinutes: 0,
       streakClaimTimezoneOffsetMinutes: 0,
-      streakReminderNextAtUtc: admin.firestore.Timestamp.now(),
+      streakReminderNextAtUtc: admin.firestore.Timestamp.fromDate(new Date("2026-01-02T19:45:00Z")),
     }}),
     ref: {
       id,
@@ -504,6 +528,7 @@ function mockReminderRun(t: test.TestContext, docs: ReminderDoc[], inbox: Array<
     doc: (id: string) => ({set: async (data: unknown) => inbox.push({id, data})}),
   });
   t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({})})}));
+  mockTransactions(t, docs);
 }
 
 test("the reminder marker is written before the push and the inbox doc uses the stored email casing", async (t) => {
@@ -529,16 +554,13 @@ test("the reminder marker is written before the push and the inbox doc uses the 
 });
 
 test("a failed reminder push rolls the sent marker back and retries in 15 minutes", async (t) => {
-  const updates: Record<string, unknown>[] = [];
-  mockReminderRun(t, [reminderDoc("u1", updates)]);
+  const {coinState} = statefulReminder(t);
   t.mock.method(admin.messaging(), "send", async () => {
     throw new Error("fcm down");
   });
   await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
-  assert.equal(updates.length, 2);
-  assert.equal(updates[0]["coinState.streakReminderLastSentDate"], "2026-01-02");
-  assert.equal(updates[1]["coinState.streakReminderLastSentDate"], "");
-  const retryAt = updates[1]["coinState.streakReminderNextAtUtc"] as admin.firestore.Timestamp;
+  assert.equal(coinState.streakReminderLastSentDate, "");
+  const retryAt = coinState.streakReminderNextAtUtc as admin.firestore.Timestamp;
   assert.equal(retryAt.toMillis(), Date.parse("2026-01-02T20:15:00Z"));
 });
 
@@ -558,4 +580,59 @@ test("a page that comes back unchanged ends the run instead of looping", async (
   const send = t.mock.method(admin.messaging(), "send", async () => "id");
   await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
   assert.equal(send.mock.callCount(), 200);
+});
+
+function statefulReminder(t: test.TestContext) {
+  const source = reminderDoc("u1", []);
+  const coinState = {...(source.data().coinState as Record<string, unknown>)};
+  const doc: ReminderDoc = {
+    data: () => ({...source.data(), coinState: {...coinState}}),
+    ref: {
+      id: "u1",
+      update: async (data) => {
+        for (const [key, value] of Object.entries(data)) {
+          const field = key.replace("coinState.", "");
+          if (value instanceof admin.firestore.FieldValue) delete coinState[field];
+          else coinState[field] = value;
+        }
+      },
+    },
+  };
+  mockReminderRun(t, [doc]);
+  return {doc, coinState};
+}
+
+test("two overlapping runs send one reminder", async (t) => {
+  statefulReminder(t);
+  const send = t.mock.method(admin.messaging(), "send", async () => {
+    await new Promise((resolve) => setImmediate(resolve));
+    return "id";
+  });
+  await Promise.all([
+    sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]),
+    sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]),
+  ]);
+  assert.equal(send.mock.callCount(), 1);
+});
+
+test("a failed push rolls back its own claim and clears the claim id", async (t) => {
+  const {coinState} = statefulReminder(t);
+  t.mock.method(admin.messaging(), "send", async () => {
+    throw new Error("fcm down");
+  });
+  await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
+  assert.equal(coinState.streakReminderLastSentDate, "");
+  assert.ok(!("streakReminderClaimId" in coinState));
+});
+
+test("a failed push does not roll back a marker that another run claimed", async (t) => {
+  const {coinState} = statefulReminder(t);
+  t.mock.method(admin.messaging(), "send", async () => {
+    coinState.streakReminderClaimId = "other-run";
+    coinState.streakReminderLastSentDate = "2026-01-02";
+    throw new Error("fcm down");
+  });
+  await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
+  assert.equal(coinState.streakReminderClaimId, "other-run");
+  assert.equal(coinState.streakReminderLastSentDate, "2026-01-02");
 });

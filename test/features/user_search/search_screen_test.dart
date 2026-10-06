@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -215,5 +217,50 @@ void main() {
     final SearchSubmittedEvent event = analytics.events.whereType<SearchSubmittedEvent>().single;
     expect(event.provider, SearchProviderValue.pexels);
     expect(event.sourceContext, 'search_textfield');
+  });
+
+  testWidgets('changing filters drops the old results while the new search runs', (tester) async {
+    final Completer<WallpaperSearchPage> filtered = Completer<WallpaperSearchPage>();
+    when(
+      () => service.search(
+        any(),
+        filters: any(named: 'filters', that: equals(const SearchFilters())),
+      ),
+    ).thenAnswer(
+      (_) async => (
+        provider: SearchProviderValue.wallhaven,
+        results: <FeedItemEntity>[_wallpaper('unfiltered-1')],
+        prismResults: const <FeedItemEntity>[],
+      ),
+    );
+    when(
+      () => service.search(any(), filters: const SearchFilters(minResolution: '1440x2560')),
+    ).thenAnswer((_) => filtered.future);
+
+    await submit(tester, 'forest');
+    await tester.pump();
+    expect(tester.widget<SearchGrid>(find.byType(SearchGrid)).initialResults.single.id, 'unfiltered-1');
+
+    await tester.tap(find.byTooltip('Filters'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('1440p'));
+    await tester.tap(find.text('Apply'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(SearchGrid), findsNothing);
+    expect(find.byType(LoadingCards), findsOneWidget);
+
+    filtered.complete((
+      provider: SearchProviderValue.wallhaven,
+      results: <FeedItemEntity>[_wallpaper('filtered-1')],
+      prismResults: const <FeedItemEntity>[],
+    ));
+    await tester.pump();
+    await tester.pump();
+
+    final SearchGrid grid = tester.widget<SearchGrid>(find.byType(SearchGrid));
+    expect(grid.initialResults.single.id, 'filtered-1');
   });
 }
