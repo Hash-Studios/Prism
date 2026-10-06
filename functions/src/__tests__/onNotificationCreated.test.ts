@@ -6,11 +6,17 @@ import {sendNotification} from "../notificationHelper";
 
 import {onNotificationCreated, topicForModifier} from "../onNotificationCreated";
 
-type Sent = {topic?: string; notification?: {title?: string}; data?: Record<string, string>};
+type Sent = {
+  topic?: string;
+  token?: string;
+  notification?: {title?: string};
+  data?: Record<string, string>;
+  android?: {notification?: {tag?: string}};
+};
 
 async function run(
   doc: Record<string, unknown>, t: test.TestContext,
-  {deliveries = 1, loggedIn = true, retryClaim = false} = {},
+  {deliveries = 1, loggedIn = true, retryClaim = false, token = ""} = {},
 ): Promise<Sent[]> {
   const users = {
     where: () => users,
@@ -25,6 +31,7 @@ async function run(
     return "id";
   });
   const ref = db.doc("notifications/n1");
+  t.mock.method(db, "doc", () => ({get: async () => ({data: () => (token ? {fcmToken: token} : {})})}));
   let stored = {...doc};
   let transactions = Promise.resolve();
   t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<boolean>) => {
@@ -78,9 +85,20 @@ test("an admin-written inbox entry also goes out as a push", async (t) => {
     data: {route: "announcement", imageUrl: "", arguments: []},
   }, t);
   assert.equal(sent.length, 1);
-  assert.equal(sent[0].topic, "artist");
+  assert.equal(sent[0].topic, "u_u1");
   assert.equal(sent[0].notification?.title, "Wallpaper Rejected");
   assert.equal(sent[0].data?.route, "announcement");
+});
+
+test("an admin-written inbox entry reaches the user's uid topic and token once per device", async (t) => {
+  const sent = await run({
+    modifier: "artist@example.com",
+    notification: {title: "Wallpaper Rejected", body: "Low quality"},
+  }, t, {token: "tok-1"});
+  assert.deepEqual(sent.map((m) => m.topic ?? "token"), ["u_u1", "token"]);
+  assert.equal(sent[1].token, "tok-1");
+  assert.equal(sent[0].android?.notification?.tag, sent[1].android?.notification?.tag);
+  assert.ok(sent[0].android?.notification?.tag);
 });
 
 test("entries written by sendNotification are not pushed twice", async (t) => {

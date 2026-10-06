@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { GITHUB_URL, PLAY_STORE_URL } from "@/lib/site-config";
+import { APP_STORE_URL, GITHUB_URL, PLAY_STORE_URL } from "@/lib/site-config";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -46,6 +46,14 @@ export function Footer() {
               className="text-neutral-400 hover:text-black transition-all"
             >
               Play Store
+            </a>
+            <a
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-400 hover:text-black transition-all"
+            >
+              App Store
             </a>
           </div>
         </div>

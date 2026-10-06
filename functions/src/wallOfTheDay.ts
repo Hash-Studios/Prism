@@ -2,38 +2,96 @@ import * as admin from "firebase-admin";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
 import {sendNotification} from "./notificationHelper";
-import {db, REGION} from "./common";
+import {db, REGION, utcDateString} from "./common";
+
+const DEFAULT_PREMIUM_COLLECTIONS = ["space", "abstract", "flat", "mesh gradients", "fluids"];
+const BUCKET_STEP_MINUTES = 15;
+const PUSH_LOCAL_MINUTE = 9 * 60;
+const MAX_PICK_AGE_MS = 30 * 60 * 60 * 1000;
+
+/** Walls that a free user cannot open are never the free daily pick. */
+export function isWotdEligible(wall: admin.firestore.DocumentData, premiumCollections: string[]): boolean {
+  if (wall.is_streak_exclusive === true) return false;
+  const collections: unknown[] = Array.isArray(wall.collections) ? wall.collections : [];
+  return !collections.some((c) => premiumCollections.includes(String(c).trim()));
+}
+
+/** Parses the app's Remote Config list format: `["a", "b"]` or `a, b`. */
+export function parseCollectionList(raw: string): string[] {
+  return raw.replace(/["[\]]/g, "").split(",").map((e) => e.trim()).filter((e) => e.length > 0);
+}
+
+async function premiumCollections(): Promise<string[]> {
+  try {
+    const template = await admin.remoteConfig().getTemplate();
+    const value = (template.parameters?.premiumCollections?.defaultValue as {value?: string} | undefined)?.value;
+    const parsed = value ? parseCollectionList(value) : [];
+    return parsed.length > 0 ? parsed : DEFAULT_PREMIUM_COLLECTIONS;
+  } catch (err) {
+    logger.warn("Could not read premiumCollections from Remote Config; using the app defaults.", {err});
+    return DEFAULT_PREMIUM_COLLECTIONS;
+  }
+}
+
+/** Topic of the devices whose clock is `offsetMinutes` ahead of UTC, for example `wall_of_the_day_utc_p0530`. FCM topic names cannot hold `+`, so `p` marks east of UTC and `m` west. */
+export function wotdBucketTopic(offsetMinutes: number): string {
+  const abs = Math.abs(offsetMinutes);
+  const hh = String(Math.floor(abs / 60)).padStart(2, "0");
+  const mm = String(abs % 60).padStart(2, "0");
+  return `wall_of_the_day_utc_${offsetMinutes < 0 ? "m" : "p"}${hh}${mm}`;
+}
+
+/** UTC offsets (minutes, in 15 minute steps, -12:00 to +14:00) where it is 09:00 local at `nowMs`. */
+export function offsetsAtNineLocal(nowMs: number): number[] {
+  const utcMinutes = Math.round((nowMs / 60_000 % 1440) / BUCKET_STEP_MINUTES) * BUCKET_STEP_MINUTES;
+  const base = (((PUSH_LOCAL_MINUTE - utcMinutes) % 1440) + 1440) % 1440;
+  return [base, base - 1440].filter((offset) => offset >= -720 && offset <= 840);
+}
+
+function isRecentPick(date: unknown, nowMs: number, maxAgeMs: number): boolean {
+  return date instanceof admin.firestore.Timestamp && nowMs - date.toMillis() < maxAgeMs && date.toMillis() <= nowMs;
+}
+
+function isSameUtcDay(date: unknown, now: Date): boolean {
+  return date instanceof admin.firestore.Timestamp && date.toDate().toISOString().slice(0, 10) ===
+    now.toISOString().slice(0, 10);
+}
 
 /**
  * Scheduled Cloud Function — runs daily at 9:00 AM IST (03:30 UTC).
  *
  * What it does:
- *   1. Reads the current wall_of_the_day/current doc.
+ *   1. Skips when wall_of_the_day/current already holds today's pick (a retry or a second run).
  *   2. Archives { wallId, date } to past_picks/{yyyy-MM-dd} for dedup.
  *   3. Picks a new wall from the `walls` collection that hasn't appeared
- *      in past_picks within the last 30 days.
+ *      in past_picks within the last 30 days, is not streak-exclusive and is not in a premium collection.
  *   4. Writes the new wall to wall_of_the_day/current.
- *   5. Sends an FCM topic push to the `wall_of_the_day` topic.
+ *   5. Sends an FCM topic push to the legacy `wall_of_the_day` topic (clients without a time zone bucket).
+ *
+ * Any failure throws, so Cloud Scheduler retries the run. `sendWallOfTheDayBuckets` sends the 09:00 local push.
  */
 export const wallOfTheDay = onSchedule(
   {
     schedule: "30 3 * * *", // 03:30 UTC = 09:00 AM IST
     timeZone: "UTC",
     region: REGION,
+    retryCount: 2,
   },
   async () => {
-    let currentWallId: string | null = null;
+    const currentRef = db.collection("wall_of_the_day").doc("current");
+    const data = (await currentRef.get()).data();
+    if (data && isSameUtcDay(data.date, new Date())) {
+      if (data.pushedAt == null) {
+        logger.info("Today's wall of the day is set but not announced; announcing it.", {wallId: data.wallId});
+        await announce(String(data.wallId ?? ""));
+      } else {
+        logger.info("Today's wall of the day is already set and announced; skipping.", {wallId: data.wallId});
+      }
+      return;
+    }
 
     try {
-      const currentSnap = await db
-        .collection("wall_of_the_day")
-        .doc("current")
-        .get();
-
-      const data = currentSnap.data();
       if (data) {
-        currentWallId = data.wallId ?? null;
-
         // Archive pointer only: `past_picks/{yyyy-MM-dd}` holds wallId + date for dedup queries.
         const archiveDate = firestoreTimestampToDateString(data.date) ?? yesterdayDateString();
         const archivePayload = {
@@ -42,7 +100,7 @@ export const wallOfTheDay = onSchedule(
         };
         await db.collection("past_picks").doc(archiveDate).set(archivePayload);
         logger.info(`Archived wall_of_the_day → past_picks/${archiveDate}`, {
-          wallId: currentWallId,
+          wallId: data.wallId ?? null,
         });
       }
     } catch (err) {
@@ -71,87 +129,78 @@ export const wallOfTheDay = onSchedule(
     // Pick a random approved wall, retrying up to MAX_RETRIES times to avoid one from the last 30 days.
     //   a) Count approved walls with a count() aggregate.
     //   b) Fetch one doc at a random offset, ordered by document ID (stable, index-free).
-    //   c) If it was picked recently, retry with a fresh offset.
+    //   c) If it was picked recently or is not eligible, retry with a fresh offset.
     //   d) If every retry hit an excluded wall, take the first non-excluded wall from the 100 newest.
     const MAX_RETRIES = 5;
+    const premium = await premiumCollections();
 
     let newWall: admin.firestore.DocumentData | null = null;
     let newWallId: string | null = null;
 
-    try {
-      const countSnap = await db
-        .collection("walls")
-        .where("review", "==", true)
-        .count()
-        .get();
-      const totalCount = countSnap.data().count;
-      logger.info(`Total approved walls: ${totalCount}`);
+    const countSnap = await db
+      .collection("walls")
+      .where("review", "==", true)
+      .count()
+      .get();
+    const totalCount = countSnap.data().count;
+    logger.info(`Total approved walls: ${totalCount}`);
 
-      if (totalCount > 0) {
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-          const randomOffset = Math.floor(Math.random() * totalCount);
-          const snap = await db
-            .collection("walls")
-            .where("review", "==", true)
-            .orderBy(admin.firestore.FieldPath.documentId())
-            .offset(randomOffset)
-            .limit(1)
-            .get();
-
-          if (!snap.empty) {
-            const doc = snap.docs[0];
-            if (!excludedWallIds.has(doc.id)) {
-              newWall = doc.data();
-              newWallId = doc.id;
-              logger.info(`Selected wall on attempt ${attempt + 1} at offset ${randomOffset}.`, {
-                wallId: newWallId,
-              });
-              break;
-            }
-            logger.info(
-              `Attempt ${attempt + 1}: wall ${doc.id} is in past_picks — retrying.`,
-            );
-          }
-        }
-      }
-
-      if (!newWall) {
-        logger.warn(
-          `All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`,
-        );
-        const fallbackSnap = await db
+    if (totalCount > 0) {
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        const randomOffset = Math.floor(Math.random() * totalCount);
+        const snap = await db
           .collection("walls")
           .where("review", "==", true)
-          .orderBy("createdAt", "desc")
-          .limit(100)
+          .orderBy(admin.firestore.FieldPath.documentId())
+          .offset(randomOffset)
+          .limit(1)
           .get();
 
-        for (const doc of fallbackSnap.docs) {
-          if (!excludedWallIds.has(doc.id)) {
+        if (!snap.empty) {
+          const doc = snap.docs[0];
+          if (!excludedWallIds.has(doc.id) && isWotdEligible(doc.data(), premium)) {
             newWall = doc.data();
             newWallId = doc.id;
+            logger.info(`Selected wall on attempt ${attempt + 1} at offset ${randomOffset}.`, {
+              wallId: newWallId,
+            });
             break;
           }
-        }
-
-        // Last-resort: use the absolute latest wall regardless of exclusion.
-        if (!newWall && fallbackSnap.size > 0) {
-          const lastResortDoc = fallbackSnap.docs[0];
-          newWall = lastResortDoc.data();
-          newWallId = lastResortDoc.id;
-          logger.warn("Last-resort fallback: all 100 newest walls excluded; using latest.", {
-            wallId: newWallId,
-          });
+          logger.info(
+            `Attempt ${attempt + 1}: wall ${doc.id} is excluded or not eligible — retrying.`,
+          );
         }
       }
-    } catch (err) {
-      logger.error("Failed to query walls collection.", {err});
-      return;
+    }
+
+    if (!newWall) {
+      logger.warn(
+        `All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`,
+      );
+      const fallbackSnap = await db
+        .collection("walls")
+        .where("review", "==", true)
+        .orderBy("createdAt", "desc")
+        .limit(100)
+        .get();
+
+      const eligible = fallbackSnap.docs.filter((doc) => isWotdEligible(doc.data(), premium));
+      const pick = eligible.find((doc) => !excludedWallIds.has(doc.id));
+      if (pick) {
+        newWall = pick.data();
+        newWallId = pick.id;
+      } else if (eligible.length > 0) {
+        // Last-resort: the latest eligible wall, even if it was a recent pick.
+        newWall = eligible[0].data();
+        newWallId = eligible[0].id;
+        logger.warn("Last-resort fallback: all eligible newest walls were recent picks; using latest.", {
+          wallId: newWallId,
+        });
+      }
     }
 
     if (!newWall || !newWallId) {
-      logger.error("No eligible walls found. Aborting wall_of_the_day update.");
-      return;
+      throw new Error("No eligible walls found for wall_of_the_day.");
     }
 
     const wotdDoc = {
@@ -159,40 +208,87 @@ export const wallOfTheDay = onSchedule(
       date: admin.firestore.Timestamp.now(),
     };
 
-    try {
-      await db.collection("wall_of_the_day").doc("current").set(wotdDoc);
-      logger.info("wall_of_the_day/current updated", {
-        wallId: newWallId,
-      });
-    } catch (err) {
-      logger.error("Failed to write wall_of_the_day/current.", {err});
+    await currentRef.set(wotdDoc);
+    logger.info("wall_of_the_day/current updated", {
+      wallId: newWallId,
+    });
+    await announce(newWallId);
+  },
+);
+
+/** Sends the legacy global-topic push (with the in-app doc) and stamps `pushedAt`. Throws when the push fails. */
+async function announce(wallId: string): Promise<void> {
+  const payload = await wotdPushPayload(wallId);
+  const delivered = await sendNotification({
+    ...payload,
+    modifier: "all",
+    fcmTarget: {topic: "wall_of_the_day"},
+    docId: `wotd_${utcDateString()}`,
+  });
+  if (!delivered) {
+    throw new Error("Wall of the day push failed.");
+  }
+  await db.collection("wall_of_the_day").doc("current").update({pushedAt: admin.firestore.Timestamp.now()});
+  logger.info("WOTD notification sent and in-app doc written.", {wallId});
+}
+
+async function wotdPushPayload(wallId: string): Promise<{
+  title: string;
+  body: string;
+  data: {route: string; wall_id: string; url: string};
+  imageUrl?: string;
+  channelId: string;
+}> {
+  const wall = (await db.collection("walls").doc(wallId).get()).data() ?? {};
+  const wallTitle = (wall.title as string | undefined)?.trim() || "Check it out";
+  const wallpaperUrl = String(wall.wallpaper_url ?? "");
+  const thumbnailUrl = String(wall.wallpaper_thumb ?? "");
+  // Share links resolve walls by their `id` field, which is not the doc id.
+  const shareId = typeof wall.id === "string" && wall.id.trim() ? wall.id.trim() : wallId;
+  return {
+    title: "Today's Wall of the Day is here",
+    body: wallTitle,
+    data: {
+      route: "wall_of_the_day",
+      wall_id: wallId,
+      url: wallShareUrl({wallId: shareId, wallpaperUrl, thumbnailUrl}),
+    },
+    imageUrl: thumbnailUrl || undefined,
+    channelId: "wall_of_the_day",
+  };
+}
+
+/**
+ * Every 15 minutes: sends today's wall to the topic of the UTC offset where it is 09:00 local right now
+ * (`wall_of_the_day_utc_p0530`). Offsets come in 15 minute steps, so an hourly job would miss +05:30 and +05:45.
+ * Clients subscribe to their bucket and leave the legacy global topic.
+ */
+export const sendWallOfTheDayBuckets = onSchedule(
+  {
+    schedule: "*/15 * * * *",
+    timeZone: "UTC",
+    region: REGION,
+    retryCount: 1,
+  },
+  async () => {
+    const nowMs = Date.now();
+    const current = (await db.collection("wall_of_the_day").doc("current").get()).data();
+    if (!current?.wallId || !isRecentPick(current.date, nowMs, MAX_PICK_AGE_MS)) {
+      logger.warn("sendWallOfTheDayBuckets: no recent pick; skipping.", {wallId: current?.wallId ?? null});
       return;
     }
-
-    const wallTitle = (newWall.title as string | undefined)?.trim() || "Check it out";
-    const wallpaperUrl = String(newWall.wallpaper_url ?? "");
-    const thumbnailUrl = String(newWall.wallpaper_thumb ?? "");
-    // Share links resolve walls by their `id` field, which is not the doc id.
-    const shareId = typeof newWall.id === "string" && newWall.id.trim() ? newWall.id.trim() : newWallId;
-    const canonicalWallUrl = wallShareUrl({
-      wallId: shareId,
-      wallpaperUrl,
-      thumbnailUrl,
-    });
-    await sendNotification({
-      title: "Today's Wall of the Day is here",
-      body: wallTitle,
-      data: {
-        route: "wall_of_the_day",
-        wall_id: newWallId,
-        url: canonicalWallUrl,
-      },
-      imageUrl: thumbnailUrl || undefined,
-      modifier: "all",
-      channelId: "wall_of_the_day",
-      fcmTarget: {topic: "wall_of_the_day"},
-    });
-    logger.info("WOTD notification sent and in-app doc written.", {wallId: newWallId});
+    const payload = await wotdPushPayload(String(current.wallId));
+    for (const offset of offsetsAtNineLocal(nowMs)) {
+      const topic = wotdBucketTopic(offset);
+      const delivered = await sendNotification({
+        ...payload,
+        modifier: "all",
+        fcmTarget: {topic},
+        pushOnly: true,
+      });
+      if (!delivered) throw new Error(`Wall of the day bucket push failed for ${topic}.`);
+      logger.info("sendWallOfTheDayBuckets: sent.", {topic, wallId: current.wallId});
+    }
   },
 );
 

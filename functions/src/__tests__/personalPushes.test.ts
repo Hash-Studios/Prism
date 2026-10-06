@@ -19,7 +19,7 @@ function setup(t: TestContext, users: Record<string, Record<string, unknown>>, a
         limit: () => query,
         get: async () => {
           const user = users[email] ?? users[email.toLowerCase()];
-          return user ? {empty: false, docs: [{id: email, data: () => user}]} : {empty: true, docs: []};
+          return user ? {empty: false, docs: [{id: `uid-${email.split("@")[0]}`, data: () => user}]} : {empty: true, docs: []};
         },
       };
       return query;
@@ -27,13 +27,17 @@ function setup(t: TestContext, users: Record<string, Record<string, unknown>>, a
   };
   t.mock.method(db, "collection", (name: string) => {
     if (name === "usersv2") return usersCollection;
-    if (name === "notifications") return {add: async (data: unknown) => inbox.push(data)};
+    if (name === "notifications") {
+      return {add: async (data: unknown) => inbox.push(data), doc: () => ({set: async (data: unknown) => inbox.push(data)})};
+    }
     if (name === "notificationRequests") return {doc: () => ({update: async () => undefined})};
     if (name === "config") return {doc: () => ({get: async () => ({exists: true, data: () => ({emails: adminEmails})})})};
     if (name === "walls") return {doc: () => ({get: async () => ({data: () => ({})})})};
     throw new Error(`Unexpected collection ${name}`);
   });
-  t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({})})}));
+  t.mock.method(db, "doc", (path: string) => ({
+    get: async () => ({data: () => path === "usersv2/artist-1" ? {loggedIn: false} : {}}),
+  }));
   t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
     topics.push(message.topic ?? "");
     return "id";
@@ -52,8 +56,8 @@ test("campaign email target skips signed-out users and keeps inbox", async (t) =
 });
 
 for (const [email, user, topic, state] of [
-  ["in@example.com", {loggedIn: true}, "in", "signed-in"],
-  ["old@example.com", {}, "old", "legacy"],
+  ["in@example.com", {loggedIn: true}, "u_uid-in", "signed-in"],
+  ["old@example.com", {}, "u_uid-old", "legacy"],
   ["missing@example.com", undefined, "missing", "unmatched"],
 ] as const) {
   test(`campaign email target still sends for ${state} user`, async (t) => {
@@ -66,6 +70,21 @@ for (const [email, user, topic, state] of [
     assert.deepEqual(topics, [topic]);
   });
 }
+
+test("campaign email target also pushes to the stored token, once per device", async (t) => {
+  const {topics} = setup(t, {"in@example.com": {loggedIn: true, fcmToken: "legacy-token"}});
+  const messages: Array<{topic?: string; token?: string}> = [];
+  t.mock.method(admin.messaging(), "send", async (message: {topic?: string; token?: string}) => {
+    messages.push(message);
+    return "id";
+  });
+  await onCampaignNotificationRequested.run({
+    params: {requestId: "r1"},
+    data: {data: () => ({title: "t", body: "b", modifier: "in@example.com"})},
+  } as unknown as Parameters<typeof onCampaignNotificationRequested.run>[0]);
+  assert.deepEqual(messages.map((m) => m.topic ?? m.token), ["u_uid-in", "legacy-token"]);
+  assert.deepEqual(topics, []);
+});
 
 for (const [modifier, expectedTopic] of [["all", "recommendations"], ["premium", "premium"], ["free", "free"]]) {
   test(`campaign ${modifier} broadcast sends without a user lookup`, async (t) => {
