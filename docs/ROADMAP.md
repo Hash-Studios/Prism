@@ -85,7 +85,7 @@ Everything below must ship together as the v3.0.0 release. This is the minimum v
 | E3 | [x] **Streak reminder push** | 8 PM notification if user hasn't opened today + has active streak | Low |
 | E4 | [x] **"Tomorrow hook"** | End of first session: "Your first Wall of the Day drops tomorrow at 9 AM" + notification permission ask | Low |
 | E5 | [x] **Profile completeness nudge** | Post-signup: "Complete your profile to earn 25 Prism Coins" with progress ring | Low |
-| E6 | [ ] **Smart notification permission** | Don't ask on first launch. Ask after first download/favorite with clear value prop. | Low |
+| E6 | [x] **Smart notification permission** | Don't ask on first launch. Ask after first download/favorite with clear value prop. Now asks after a first set, download or onboarding wallpaper. | Low |
 
 ### F. Onboarding Revamp
 
@@ -105,28 +105,30 @@ These are important but not blocking the 3.0.0 release.
 
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
-| G1 | [ ] **Badge system activation** | 12 badges with triggers — infrastructure already exists in code. Unlock animations. | Medium | Month 1 |
-| G2 | [ ] **Auto wallpaper rotation (Pro)** | Schedule-based wallpaper changing from favorites/collections. THE loyalty feature. | High | Month 1-2 |
+| G1 | [x] **Badge system activation** | 12 badges with triggers — infrastructure already exists in code. Unlock animations. | Medium | Month 1 |
+| G2 | [x] **Auto wallpaper rotation (Pro)** | Schedule-based wallpaper changing from favorites or downloads, with charging-only and active hours. Android only. THE loyalty feature. | High | Month 1-2 |
 | G3 | [x] **"For You" personalized feed** | Tag-based matching from interests + favorites + download history | High | Month 2 |
 | G4 | [ ] **Weekly challenges** | Rotating challenges with coin + badge rewards. Drives feature exploration. | Medium | Month 2 |
 | G5 | [ ] **Collection subscribe + notifications** | "New in [collection]" push when content is added | Low | Month 1 |
-| G6 | [ ] **Re-engagement push sequence** | Day 3/7/14/30/60 lapsed user notifications, then stop | Medium | Month 1 |
+| G6 | [x] **Re-engagement push sequence** | Day 3/7/14/30/60 lapsed user notifications, then stop | Medium | Month 1 |
 | G7 | [ ] **Trending feed** | Popular wallpapers last 24h / 7d. Social proof + FOMO. | Medium | Month 2 |
 
-### H. Setup Features (The Differentiator)
+### H. Setup Features (Removed)
+
+Home screen setups were removed from the app. Items H1 to H3 and J10 are closed (`[-]`) and will not ship.
 
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
-| H1 | [ ] **Setup of the Day** | Daily featured setup, same mechanic as Wall of the Day | Low | Month 1 |
-| H2 | [ ] **Setup sharing with deep links** | Share setups that open directly in Prism | Medium | Month 1 |
-| H3 | [ ] **Setup creation for all users** | Currently Pro-only browse. Let free users create (with coin cost or limit). | Low | Month 2 |
+| H1 | [-] **Setup of the Day** | Daily featured setup, same mechanic as Wall of the Day | Low | Month 1 |
+| H2 | [-] **Setup sharing with deep links** | Share setups that open directly in Prism | Medium | Month 1 |
+| H3 | [-] **Setup creation for all users** | Currently Pro-only browse. Let free users create (with coin cost or limit). | Low | Month 2 |
 
 ### I. Growth Infrastructure
 
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
-| I1 | [ ] **Referral system** | Share referral link → friend signs up → both get 100 coins. Code placeholder already exists. | Medium | Month 2 |
-| I2 | [ ] **ASO update** | New store listing: "Prism — AI Wallpapers & Setups", screenshots showing AI, setup sharing | Low | Launch day |
+| I1 | [x] **Referral system** | Share referral link → friend signs up → both get 100 coins. Code placeholder already exists. | Medium | Month 2 |
+| I2 | [ ] **ASO update** | New store listing: "Prism — AI Wallpapers", screenshots showing AI and live wallpapers | Low | Launch day |
 | I3 | [ ] **AI share optimization** | One-tap share to Instagram Stories with Prism template/branding | Medium | Month 1 |
 
 ---
@@ -144,9 +146,9 @@ These are important but not blocking the 3.0.0 release.
 | J5 | [ ] **Home screen widget** | Shows Wall of the Day or rotates wallpapers. Keeps app visible. | High | Month 3 |
 | J6 | [ ] **Ad mediation** | Add Unity Ads + Meta Audience Network alongside AdMob for better fill rate + eCPM | Medium | Month 3 |
 | J7 | [ ] **AI style transfer** | "Reimagine my photo" — upload photo, get artistic wallpaper version | High | Month 4 |
-| J8 | [ ] **Live/video wallpapers** | Basic video wallpaper support — table stakes by 2026 | High | Month 5+ |
+| J8 | [ ] **Live/video wallpapers** | Basic video wallpaper support — table stakes by 2026. Partly done: Android has Make it live, Living gradients and Video to wallpaper. iOS has none. | High | Month 5+ |
 | J9 | [ ] **Coin doubler events** | Weekend 2x ad rewards. Drives engagement spikes. | Low | Month 4 |
-| J10 | [ ] **Setup marketplace** | Creators sell premium setups. One-tap install. | High | Month 6 |
+| J10 | [-] **Setup marketplace** | Creators sell premium setups. One-tap install. | High | Month 6 |
 
 ---
 
