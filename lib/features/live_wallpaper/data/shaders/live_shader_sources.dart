@@ -10,8 +10,9 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 /// only `for` loops with integer literal bounds, and under 64 KiB.
 ///
 /// Colours are templated as `vec3` constants. Every time-based phase uses a multiple of 0.1 rad/s
-/// on `loopTime()`, so the animation repeats cleanly when the clock wraps and `mediump` devices
-/// never lose precision on a long-running wallpaper.
+/// on `loopTime()`, so the animation repeats cleanly when the clock wraps. Without fragment `highp`
+/// the shaders keep every intermediate value inside the `mediump` range: `grain()` hashes `v_uv`
+/// instead of `gl_FragCoord`, and the starfield hash uses small constants.
 // ignore: avoid_classes_with_only_static_members
 abstract final class LiveShaderSources {
   static const int maxBytes = 64 * 1024;
@@ -23,10 +24,8 @@ abstract final class LiveShaderSources {
   static const String _header = '''
 precision mediump float;
 #ifdef GL_FRAGMENT_PRECISION_HIGH
-#define HP highp
 uniform highp float u_time;
 #else
-#define HP mediump
 uniform mediump float u_time;
 #endif
 uniform vec2 u_resolution;
@@ -38,10 +37,16 @@ float loopTime() {
   return mod(u_time, 62.831853);
 }
 
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 float grain() {
-  HP vec2 p = gl_FragCoord.xy;
+  highp vec2 p = gl_FragCoord.xy;
   return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
 }
+#else
+float grain() {
+  return fract(sin(dot(v_uv, vec2(12.9898, 78.233))) * 437.58) - 0.5;
+}
+#endif
 ''';
 
   static const String _colors = '''
@@ -145,11 +150,19 @@ void main() {
 ''';
 
   static const String _starfield = '''
-float hash21(HP vec2 p) {
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+float hash21(highp vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
   p += dot(p, p + 45.32);
   return fract(p.x * p.y);
 }
+#else
+float hash21(vec2 p) {
+  p = fract(p * vec2(0.1031, 0.1030));
+  p += dot(p, p.yx + 1.7);
+  return fract(p.x * p.y * 3.0 + p.x);
+}
+#endif
 
 void main() {
   vec2 uv = v_uv;

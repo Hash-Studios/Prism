@@ -9,7 +9,9 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart'
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:injectable/injectable.dart';
 
+@LazySingleton(as: LiveWallpaperRepository)
 class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
   const LiveWallpaperRepositoryImpl({LiveTexturePreparer texturePreparer = const LiveTexturePreparer()})
     : _texturePreparer = texturePreparer;

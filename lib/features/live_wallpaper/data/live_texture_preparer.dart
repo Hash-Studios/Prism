@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:Prism/features/live_wallpaper/data/texture_geometry.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:injectable/injectable.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -18,6 +19,7 @@ class LiveTextureException implements Exception {
 }
 
 /// Downloads a wallpaper and writes a screen-shaped JPEG that fits the renderer texture limits.
+@lazySingleton
 class LiveTexturePreparer {
   const LiveTexturePreparer();
 

@@ -93,6 +93,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   late List<int> imageBytesThumb;
   bool _submitted = false;
   bool _submissionAttempted = false;
+  bool _submissionUnresolved = false;
   bool _discarding = false;
   bool _leaving = false;
 
@@ -359,6 +360,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               false,
               docId: _wallDocId ??= 'wall_${_fileName ?? id}',
             );
+      if (result == wall_store.WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
+        setState(() {
+          _stage = _UploadStage.failedSubmission;
+          _errorMessage = 'We could not confirm the submission. Check your review status before trying again.';
+        });
+        return;
+      }
+      _submissionUnresolved = false;
       if (result == wall_store.WallSubmissionResult.quotaExceeded) {
         _submissionAttempted = false;
         final deleted = await _deleteFile();
@@ -373,6 +382,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       }
     } catch (error) {
       logger.w('Wallpaper submission failed: $error');
+      _submissionUnresolved = true;
       if (!mounted) return;
       setState(() {
         _stage = _UploadStage.failedSubmission;

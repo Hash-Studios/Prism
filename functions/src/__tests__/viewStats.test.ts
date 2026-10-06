@@ -25,20 +25,34 @@ function store(t: TestContext, docs: Record<string, Record<string, unknown>>) {
   const versions: Record<string, number> = {};
   const tick = () => new Promise((resolve) => setImmediate(resolve));
   const lost = (code: number) => Object.assign(new Error("claim lost"), {code});
-  t.mock.method(db, "runTransaction", () => {
-    throw new Error("view counting must not use a transaction");
-  });
+  t.mock.method(admin.firestore.FieldValue, "increment", (n: number) => ({increment: n}));
+  const applyStats = (path: string, data: Record<string, unknown>) => {
+    const views = data.views as {increment?: number} | number;
+    const current = docs[path]?.views;
+    const base = typeof current === "number" ? current : 0;
+    const next = typeof views === "object" ? base + (views.increment ?? 0) : views;
+    docs[path] = {...docs[path], views: next};
+    writes.push({path, data});
+  };
+  t.mock.method(db, "runTransaction", async (fn: (tx: unknown) => Promise<unknown>) => fn({
+    get: async (ref: {path: string}) => ({data: () => docs[ref.path]}),
+    set: (ref: {path: string}, data: Record<string, unknown>) => applyStats(ref.path, data),
+  }));
   t.mock.method(db, "collection", (name: string) => ({
     doc: (id: string) => {
       const path = `${name}/${id}`;
       return {
+        path,
         get: async () => {
           const data = docs[path];
           const updateTime = data ? {version: versions[path] ?? 0} : undefined;
           await tick();
           return {exists: data !== undefined, data: () => data, updateTime};
         },
-        set: async (data: Record<string, unknown>) => writes.push({path, data}),
+        set: async (data: Record<string, unknown>) => {
+          if (name.endsWith("_stats")) applyStats(path, data);
+          else writes.push({path, data});
+        },
         create: async (data: Record<string, unknown>) => {
           if (docs[path]) throw lost(6);
           docs[path] = data;
@@ -58,8 +72,8 @@ function store(t: TestContext, docs: Record<string, Record<string, unknown>>) {
   return writes;
 }
 
-const call = (wallId = "w1") => recordWallpaperView.run({
-  auth: {uid: "u1"}, data: {wallId},
+const call = (wallId = "w1", uid = "u1") => recordWallpaperView.run({
+  auth: {uid}, data: {wallId},
 } as unknown as Parameters<typeof recordWallpaperView.run>[0]);
 
 test("a view increments the counter atomically and stamps a rate doc that expires", async (t) => {
@@ -92,6 +106,20 @@ test("a legacy string counter is rewritten as a number", async (t) => {
 });
 
 const statsWrites = (writes: Write[]) => writes.filter((w) => w.path === "wallpaper_stats/W1");
+
+test("two concurrent first views from distinct users on a new counter end at 2", async (t) => {
+  const docs: Record<string, Record<string, unknown>> = {};
+  store(t, docs);
+  await Promise.all([call("w1", "u1"), call("w1", "u2")]);
+  assert.equal(docs["wallpaper_stats/W1"].views, 2);
+});
+
+test("two concurrent distinct viewers of a numeric counter end at +2", async (t) => {
+  const docs: Record<string, Record<string, unknown>> = {"wallpaper_stats/W1": {views: 4}};
+  store(t, docs);
+  await Promise.all([call("w1", "u1"), call("w1", "u2")]);
+  assert.equal(docs["wallpaper_stats/W1"].views, 6);
+});
 
 test("ten concurrent first views from one user increment once", async (t) => {
   const writes = store(t, {"wallpaper_stats/W1": {views: 4}});

@@ -317,6 +317,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('keeps uploaded files when a retry after an unconfirmed save reports the quota', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    var saveCalls = 0;
+    final deletedFiles = <String>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          uploadFileForTesting: ({required isThumbnail}) async => isThumbnail
+              ? const GitHubContent(
+                  downloadUrl: 'https://example.test/thumb.png',
+                  path: 'thumb_pixel.png',
+                  sha: 'thumb-sha',
+                )
+              : const GitHubContent(downloadUrl: 'https://example.test/wall.png', path: 'pixel.png', sha: 'wall-sha'),
+          deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
+          createRecordForTesting: () async {
+            saveCalls++;
+            if (saveCalls == 1) throw StateError('network response was lost');
+            return wall_store.WallSubmissionResult.quotaExceeded;
+          },
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.tap(find.text('Submit for review'));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry submit'), findsOneWidget);
+
+    await tester.tap(find.text('Retry submit'));
+    await tester.pumpAndSettle();
+
+    expect(saveCalls, 2);
+    expect(deletedFiles, isEmpty);
+    expect(find.text('Submission did not finish'), findsOneWidget);
+    expect(find.text('Upload limit reached'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('keeps the quota screen open when file cleanup fails and lets Back retry cleanup', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);

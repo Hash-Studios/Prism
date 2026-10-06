@@ -65,6 +65,12 @@ import '../../features/in_app_notifications/domain/repositories/notifications_re
     as _i366;
 import '../../features/in_app_notifications/domain/usecases/notifications_usecases.dart'
     as _i474;
+import '../../features/live_wallpaper/data/live_texture_preparer.dart'
+    as _i1003;
+import '../../features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart'
+    as _i1067;
+import '../../features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart'
+    as _i485;
 import '../../features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart'
     as _i224;
 import '../../features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart'
@@ -161,6 +167,8 @@ import '../../features/wallpaper_detail/domain/repositories/palette_repository.d
     as _i652;
 import '../../features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart'
     as _i231;
+import '../../features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart'
+    as _i62;
 import '../../features/wallpaper_history/data/wallpaper_history_store.dart'
     as _i121;
 import '../content_reports/content_report_repository.dart' as _i177;
@@ -205,6 +213,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i673.AiGenerationRepositoryImpl>(
     () => _i673.AiGenerationRepositoryImpl(),
+  );
+  gh.lazySingleton<_i1003.LiveTexturePreparer>(
+    () => const _i1003.LiveTexturePreparer(),
   );
   gh.lazySingleton<_i721.StartupRepository>(
     () => _i152.StartupRepositoryImpl(),
@@ -293,6 +304,11 @@ _i174.GetIt initGetIt(
     () => _i176.FavouriteWallsRepositoryImpl(
       gh<_i349.FirestoreClient>(),
       gh<_i640.FavoritesLocalDataSource>(),
+    ),
+  );
+  gh.lazySingleton<_i485.LiveWallpaperRepository>(
+    () => _i1067.LiveWallpaperRepositoryImpl(
+      texturePreparer: gh<_i1003.LiveTexturePreparer>(),
     ),
   );
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
@@ -473,6 +489,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i95.SaveInterestsUseCase>(
     () => _i95.SaveInterestsUseCase(gh<_i897.OnboardingV2Repository>()),
+  );
+  gh.factory<_i62.WallpaperHistoryBloc>(
+    () => _i62.WallpaperHistoryBloc(gh<_i121.WallpaperHistoryStore>()),
   );
   gh.lazySingleton<_i289.PrismWallSearch>(
     () => _i289.PrismWallSearch(

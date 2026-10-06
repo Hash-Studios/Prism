@@ -136,14 +136,19 @@ void main() {
 
   for (final succeeds in <bool>[true, false]) {
     testWidgets('clear favourites reports the ${succeeds ? 'success' : 'failure'} outcome once', (tester) async {
+      registerFallbackValue(const FavouriteWallsEvent.refreshRequested());
       final bloc = _MockFavouriteWallsBloc();
       final states = StreamController<FavouriteWallsState>.broadcast();
       addTearDown(states.close);
       final loaded = FavouriteWallsState.initial().copyWith(status: LoadStatus.success, userId: 'user-1');
       when(() => bloc.state).thenReturn(loaded);
       when(() => bloc.stream).thenAnswer((_) => states.stream);
-      when(() => bloc.add(const FavouriteWallsEvent.clearRequested())).thenAnswer((_) {
-        final outcome = loaded.copyWith(actionStatus: succeeds ? ActionStatus.success : ActionStatus.failure);
+      when(() => bloc.add(any(that: isA<FavouriteWallsEvent>()))).thenAnswer((invocation) {
+        final event = invocation.positionalArguments.first as FavouriteWallsEvent;
+        final outcome = loaded.copyWith(
+          actionStatus: succeeds ? ActionStatus.success : ActionStatus.failure,
+          completedOperationId: event.whenOrNull(clearRequested: (int operationId) => operationId) ?? 0,
+        );
         when(() => bloc.state).thenReturn(outcome);
         states.add(outcome);
       });

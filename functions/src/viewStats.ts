@@ -45,6 +45,21 @@ function isLostClaim(err: unknown): boolean {
   return code === ALREADY_EXISTS || code === NOT_FOUND || code === FAILED_PRECONDITION;
 }
 
+/** A missing or numeric counter takes an atomic increment. Any other type is a legacy value and is migrated in a transaction. */
+async function bumpViews(statsRef: admin.firestore.DocumentReference, rawViews: unknown): Promise<void> {
+  if (rawViews === undefined || typeof rawViews === "number") {
+    await statsRef.set({views: admin.firestore.FieldValue.increment(1)}, {merge: true});
+    return;
+  }
+  await db.runTransaction(async (tx) => {
+    const current = (await tx.get(statsRef)).data()?.views;
+    const next = current === undefined || typeof current === "number" ?
+      admin.firestore.FieldValue.increment(1) :
+      parseViews(current) + 1;
+    tx.set(statsRef, {views: next}, {merge: true});
+  });
+}
+
 async function incrementAndReadViews(uid: string, collection: string, docId: string): Promise<number> {
   const statsRef = db.collection(collection).doc(docId);
   const rateRef = db.collection("viewRate").doc(`${uid}_${collection}_${docId}`);
@@ -71,9 +86,7 @@ async function incrementAndReadViews(uid: string, collection: string, docId: str
     if (isLostClaim(err)) return views;
     throw err;
   }
-  // A legacy doc may hold views as a string, which FieldValue.increment would reset to 1.
-  const next = typeof rawViews === "number" ? admin.firestore.FieldValue.increment(1) : views + 1;
-  await statsRef.set({views: next}, {merge: true});
+  await bumpViews(statsRef, rawViews);
   return views + 1;
 }
 

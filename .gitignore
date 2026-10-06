@@ -68,6 +68,8 @@ docs/**
 !docs/development/doppler.md
 !docs/agents/
 !docs/agents/*.md
+!docs/features/
+!docs/features/*.md
 sentry.properties
 infra/cloudflare/worker/.wrangler/**
 AuthKey.p8

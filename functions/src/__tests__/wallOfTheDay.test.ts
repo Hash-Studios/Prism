@@ -89,44 +89,77 @@ type Harness = {
   sets: Array<Record<string, unknown>>;
   updates: Array<Record<string, unknown>>;
   topics: string[];
-  deliveries: Record<string, string>;
+  deliveries: Record<string, unknown>;
+  state: {current?: Record<string, unknown>};
+  gateFirstTransaction: () => () => void;
 };
+
+const entry = (wallId: string, date: string, claimId = `claim-${wallId}`) => ({wallId, date, claimId});
+const deliveredWall = (h: Harness, topic: string) => (h.deliveries[topic] as {wallId?: string} | undefined)?.wallId;
 
 function harness(t: TestContext, options: {
   current?: Record<string, unknown>;
   walls?: Array<{id: string; data: () => Record<string, unknown>}>;
   wallDoc?: Record<string, unknown>;
   sendFails?: boolean;
-  deliveries?: Record<string, string>;
+  deliveries?: Record<string, unknown>;
+  onSend?: (h: Harness) => void;
 }): Harness {
-  const result: Harness = {sets: [], updates: [], topics: [], deliveries: {...options.deliveries}};
-  const state = {current: options.current};
+  const state: {current?: Record<string, unknown>} = {current: options.current};
+  const result: Harness = {
+    sets: [],
+    updates: [],
+    topics: [],
+    deliveries: {...options.deliveries},
+    state,
+    gateFirstTransaction: () => () => undefined,
+  };
   const deliveriesRef = {path: "wall_of_the_day/bucket_deliveries"};
-  t.mock.method(db, "runTransaction", async (fn: (tx: unknown) => Promise<unknown>) => fn({
-    get: async () => ({data: () => ({buckets: {...result.deliveries}})}),
-    set: (_ref: unknown, data: {buckets: Record<string, unknown>}) => {
-      for (const [topic, wallId] of Object.entries(data.buckets)) {
-        if (typeof wallId === "string") result.deliveries[topic] = wallId;
-        else delete result.deliveries[topic];
-      }
+  const currentRef = {
+    path: "wall_of_the_day/current",
+    get: async () => ({data: () => state.current}),
+    set: async (data: Record<string, unknown>) => {
+      state.current = data;
+      return result.sets.push(data);
     },
-  }));
+    update: async (data: Record<string, unknown>) => {
+      state.current = {...state.current, ...data};
+      return result.updates.push(data);
+    },
+  };
+  let gate: Promise<void> | undefined;
+  result.gateFirstTransaction = () => {
+    let open = () => undefined as void;
+    gate = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    return open;
+  };
+  t.mock.method(db, "runTransaction", async (fn: (tx: unknown) => Promise<unknown>) => {
+    const wait = gate;
+    gate = undefined;
+    await wait;
+    return fn({
+      get: async (ref: {path: string}) => ref.path === deliveriesRef.path ?
+        {data: () => ({buckets: {...result.deliveries}})} :
+        {data: () => state.current},
+      set: (_ref: unknown, data: {buckets: Record<string, unknown>}) => {
+        for (const [topic, value] of Object.entries(data.buckets)) {
+          if (typeof value === "string" || (typeof value === "object" && value !== null && "claimId" in value)) {
+            result.deliveries[topic] = value;
+          } else {
+            delete result.deliveries[topic];
+          }
+        }
+      },
+    });
+  });
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
     throw new Error("no remote config in tests");
   });
   t.mock.method(db, "collection", (name: string) => {
     if (name === "wall_of_the_day") {
-      return {doc: (id: string) => id === "bucket_deliveries" ? deliveriesRef : ({
-        get: async () => ({data: () => state.current}),
-        set: async (data: Record<string, unknown>) => {
-          state.current = data;
-          return result.sets.push(data);
-        },
-        update: async (data: Record<string, unknown>) => {
-          state.current = {...state.current, ...data};
-          return result.updates.push(data);
-        },
-      })};
+      return {doc: (id: string) => id === "bucket_deliveries" ? deliveriesRef : currentRef};
     }
     if (name === "past_picks") return {...query([]), doc: () => ({set: async () => undefined})};
     if (name === "walls") {
@@ -136,6 +169,7 @@ function harness(t: TestContext, options: {
     throw new Error(`Unexpected collection ${name}`);
   });
   t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
+    options.onSend?.(result);
     if (options.sendFails) throw new Error("fcm down");
     result.topics.push(message.topic ?? "");
     return "id";
@@ -152,7 +186,7 @@ test("a run that finds today's announced pick does nothing", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T03:30:05Z")});
   const h = harness(t, {
     current: {wallId: "w1", date: admin.firestore.Timestamp.now(), pushedAt: admin.firestore.Timestamp.now()},
-    deliveries: {wall_of_the_day_utc_p0530: "w1"},
+    deliveries: {wall_of_the_day_utc_p0530: entry("w1", "2026-01-02")},
   });
   await wallOfTheDay.run(event);
   assert.deepEqual(h.sets, []);
@@ -164,7 +198,7 @@ test("a retry after the pick was saved but not announced only sends the push", a
   const h = harness(t, {
     current: {wallId: "w1", date: admin.firestore.Timestamp.now()},
     wallDoc: {title: "Dunes"},
-    deliveries: {wall_of_the_day_utc_p0530: "w1"},
+    deliveries: {wall_of_the_day_utc_p0530: entry("w1", "2026-01-02")},
   });
   await wallOfTheDay.run(event);
   assert.deepEqual(h.sets, []);
@@ -239,7 +273,7 @@ test("same slot, bucket job first: no stale resend, then today's wall reaches +0
     current: {wallId: "yesterday", date: yesterday, pushedAt: yesterday},
     walls: [wall("today")],
     wallDoc: {title: "t"},
-    deliveries: {[bucket]: "yesterday"},
+    deliveries: {[bucket]: entry("yesterday", "2026-01-01")},
   });
   await sendWallOfTheDayBuckets.run(event);
   assert.deepEqual(h.topics, []);
@@ -247,7 +281,7 @@ test("same slot, bucket job first: no stale resend, then today's wall reaches +0
   await wallOfTheDay.run(event);
   assert.equal(h.sets[0].wallId, "today");
   assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
-  assert.equal(h.deliveries[bucket], "today");
+  assert.equal(deliveredWall(h, bucket), "today");
 
   await sendWallOfTheDayBuckets.run(event);
   await wallOfTheDay.run(event);
@@ -261,7 +295,7 @@ test("same slot, picker first: the bucket job does not resend today's wall", asy
     current: {wallId: "yesterday", date: yesterday, pushedAt: yesterday},
     walls: [wall("today")],
     wallDoc: {title: "t"},
-    deliveries: {[bucket]: "yesterday"},
+    deliveries: {[bucket]: entry("yesterday", "2026-01-01")},
   });
   await wallOfTheDay.run(event);
   await sendWallOfTheDayBuckets.run(event);
@@ -277,7 +311,7 @@ test("repeated bucket runs send one wall once per bucket", async (t) => {
   await sendWallOfTheDayBuckets.run(event);
   await sendWallOfTheDayBuckets.run(event);
   assert.deepEqual(h.topics, [bucket]);
-  assert.equal(h.deliveries[bucket], "w1");
+  assert.equal(deliveredWall(h, bucket), "w1");
 });
 
 test("a failed bucket push restores the marker so the retry sends it", async (t) => {
@@ -285,11 +319,74 @@ test("a failed bucket push restores the marker so the retry sends it", async (t)
   const h = harness(t, {
     current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
     wallDoc: {title: "Dunes"},
-    deliveries: {[bucket]: "w0"},
+    deliveries: {[bucket]: entry("w0", "2026-01-01")},
     sendFails: true,
   });
   await assert.rejects(async () => {
     await sendWallOfTheDayBuckets.run(event);
   }, /bucket push failed/);
-  assert.equal(h.deliveries[bucket], "w0");
+  assert.equal(deliveredWall(h, bucket), "w0");
+});
+
+test("a bucket claim started before the picker committed never resends yesterday's wall", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const yesterday = admin.firestore.Timestamp.fromMillis(Date.now() - 24 * 3_600_000);
+  const h = harness(t, {
+    current: {wallId: "yesterday", date: yesterday, pushedAt: yesterday},
+    walls: [wall("today")],
+    wallDoc: {title: "t"},
+    deliveries: {[bucket]: entry("yesterday", "2026-01-01")},
+  });
+  const release = h.gateFirstTransaction();
+  const bucketJob = sendWallOfTheDayBuckets.run(event);
+  await wallOfTheDay.run(event);
+  assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
+  release();
+  await bucketJob;
+  await sendWallOfTheDayBuckets.run(event);
+  await wallOfTheDay.run(event);
+  assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
+  assert.equal(deliveredWall(h, bucket), "today");
+});
+
+test("a bucket never moves back to an older pick date", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc: {title: "Dunes"},
+    deliveries: {[bucket]: entry("w2", "2026-01-03")},
+  });
+  await sendWallOfTheDayBuckets.run(event);
+  assert.deepEqual(h.topics, []);
+  assert.equal(deliveredWall(h, bucket), "w2");
+});
+
+test("a legacy string marker for another wall is replaced by the current pick", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc: {title: "Dunes"},
+    deliveries: {[bucket]: "old"},
+  });
+  await sendWallOfTheDayBuckets.run(event);
+  assert.deepEqual(h.topics, [bucket]);
+  assert.equal(deliveredWall(h, bucket), "w1");
+});
+
+test("a failed send does not roll back a claim that another run has replaced", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const newer = entry("w2", "2026-01-02", "other-run");
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc: {title: "Dunes"},
+    deliveries: {[bucket]: entry("w0", "2026-01-01")},
+    sendFails: true,
+    onSend: (state) => {
+      state.deliveries[bucket] = newer;
+    },
+  });
+  await assert.rejects(async () => {
+    await sendWallOfTheDayBuckets.run(event);
+  }, /bucket push failed/);
+  assert.deepEqual(h.deliveries[bucket], newer);
 });

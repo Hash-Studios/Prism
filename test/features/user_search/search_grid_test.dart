@@ -149,6 +149,36 @@ void main() {
     expect(find.text('From Prism'), findsOneWidget);
   });
 
+  testWidgets('a Prism-only page never asks the external providers for more or a refresh', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchGrid(
+            query: 'landscape',
+            provider: SearchProviderValue.prism,
+            initialResults: const <FeedItemEntity>[],
+            prismResults: <FeedItemEntity>[_wallpaper(2)],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('From Prism'), findsOneWidget);
+    await tester.drag(find.text('From Prism'), const Offset(0, -400));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.drag(find.text('From Prism'), const Offset(0, 400));
+    await tester.pump(const Duration(seconds: 1));
+
+    verifyNever(
+      () => search.fetchPage(
+        any(),
+        any(),
+        refresh: any(named: 'refresh'),
+        filters: any(named: 'filters'),
+      ),
+    );
+  });
+
   testWidgets('a From Prism tile reports the Prism provider and its real index, and opens with a hero tag', (
     tester,
   ) async {

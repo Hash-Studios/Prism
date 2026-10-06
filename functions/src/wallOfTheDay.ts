@@ -1,3 +1,4 @@
+import {randomUUID} from "node:crypto";
 import * as admin from "firebase-admin";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
@@ -89,7 +90,7 @@ export const wallOfTheDay = onSchedule(
       } else {
         logger.info("Today's wall of the day is already set and announced; skipping.", {wallId: data.wallId});
       }
-      await sendDueBuckets(String(data.wallId ?? ""), Date.now());
+      await sendDueBuckets(Date.now());
       return;
     }
 
@@ -216,7 +217,7 @@ export const wallOfTheDay = onSchedule(
       wallId: newWallId,
     });
     await announce(newWallId);
-    await sendDueBuckets(newWallId, Date.now());
+    await sendDueBuckets(Date.now());
   },
 );
 
@@ -268,54 +269,84 @@ function bucketDeliveriesRef() {
   return db.collection("wall_of_the_day").doc(BUCKET_DELIVERIES_DOC);
 }
 
+type BucketEntry = {wallId: string; date: string; claimId: string};
+type BucketClaim = {won: false} | {won: true; wallId: string; claimId: string; previous: unknown};
+
+function bucketWallId(entry: unknown): string | undefined {
+  if (typeof entry === "string") return entry;
+  const wallId = (entry as Partial<BucketEntry> | undefined)?.wallId;
+  return typeof wallId === "string" ? wallId : undefined;
+}
+
+function bucketDate(entry: unknown): string | undefined {
+  const date = typeof entry === "object" && entry !== null ? (entry as Partial<BucketEntry>).date : undefined;
+  return typeof date === "string" ? date : undefined;
+}
+
 /**
- * Records `wallId` as the last wall sent to `topic`, unless it already is. Returns whether this call won the claim
- * and the wall that was recorded before, so a failed send can restore it.
+ * Claims the bucket for the wall in `wall_of_the_day/current`, read inside the transaction so a claim never acts on a
+ * stale pick. The claim wins only when that pick is recent and its date is newer than the date stored for the bucket,
+ * so delivery never moves backward. It returns the raw previous entry, so a failed send can restore it.
  */
-async function claimBucket(topic: string, wallId: string): Promise<{won: boolean; previous?: string}> {
+async function claimBucket(topic: string, nowMs: number): Promise<BucketClaim> {
   const ref = bucketDeliveriesRef();
-  return db.runTransaction(async (tx) => {
+  const currentRef = db.collection("wall_of_the_day").doc("current");
+  return db.runTransaction(async (tx): Promise<BucketClaim> => {
+    const current = (await tx.get(currentRef)).data();
     const buckets = (await tx.get(ref)).data()?.buckets as Record<string, unknown> | undefined;
-    const previous = typeof buckets?.[topic] === "string" ? buckets[topic] as string : undefined;
-    if (previous === wallId) return {won: false};
-    tx.set(ref, {buckets: {[topic]: wallId}}, {merge: true});
-    return {won: true, previous};
+    if (!current?.wallId || !isRecentPick(current.date, nowMs, MAX_PICK_AGE_MS)) {
+      logger.warn("sendDueBuckets: no recent pick; skipping.", {topic, wallId: current?.wallId ?? null});
+      return {won: false};
+    }
+    const wallId = String(current.wallId);
+    const date = (current.date as admin.firestore.Timestamp).toDate().toISOString().slice(0, 10);
+    const previous = buckets?.[topic];
+    const storedDate = bucketDate(previous);
+    if (bucketWallId(previous) === wallId || (storedDate !== undefined && storedDate >= date)) return {won: false};
+    const claimId = randomUUID();
+    tx.set(ref, {buckets: {[topic]: {wallId, date, claimId} satisfies BucketEntry}}, {merge: true});
+    return {won: true, wallId, claimId, previous};
   });
 }
 
-/** Undoes a claim after a failed send, unless a later run has already recorded another wall. */
-async function releaseBucket(topic: string, wallId: string, previous: string | undefined): Promise<void> {
+/** Undoes a claim after a failed send, unless another run has already replaced it. */
+async function releaseBucket(topic: string, claimId: string, previous: unknown): Promise<void> {
   const ref = bucketDeliveriesRef();
   await db.runTransaction(async (tx) => {
     const buckets = (await tx.get(ref)).data()?.buckets as Record<string, unknown> | undefined;
-    if (buckets?.[topic] !== wallId) return;
+    const stored = buckets?.[topic] as Partial<BucketEntry> | undefined;
+    if (typeof stored !== "object" || stored === null || stored.claimId !== claimId) return;
     tx.set(ref, {buckets: {[topic]: previous ?? admin.firestore.FieldValue.delete()}}, {merge: true});
   });
 }
 
 /**
- * Sends `wallId` to the buckets whose 09:00 local is in the slot of `nowMs`, once per bucket and wall.
- * A bucket that already received this wall is skipped, so the picker and the bucket job can both call it.
+ * Sends the current pick to the buckets whose 09:00 local is in the slot of `nowMs`, once per bucket and pick.
+ * A bucket that already received this pick, or a newer one, is skipped, so the picker and the bucket job can both
+ * call it.
  */
-async function sendDueBuckets(wallId: string, nowMs: number): Promise<void> {
-  if (!wallId) return;
-  let payload: Awaited<ReturnType<typeof wotdPushPayload>> | undefined;
+async function sendDueBuckets(nowMs: number): Promise<void> {
+  const payloads = new Map<string, Awaited<ReturnType<typeof wotdPushPayload>>>();
   for (const offset of offsetsAtNineLocal(nowMs)) {
     const topic = wotdBucketTopic(offset);
-    const claim = await claimBucket(topic, wallId);
+    const claim = await claimBucket(topic, nowMs);
     if (!claim.won) {
-      logger.info("sendDueBuckets: bucket already has this wall; skipping.", {topic, wallId});
+      logger.info("sendDueBuckets: nothing to send to this bucket.", {topic});
       continue;
     }
     let delivered = false;
     try {
-      payload ??= await wotdPushPayload(wallId);
+      let payload = payloads.get(claim.wallId);
+      if (!payload) {
+        payload = await wotdPushPayload(claim.wallId);
+        payloads.set(claim.wallId, payload);
+      }
       delivered = await sendNotification({...payload, modifier: "all", fcmTarget: {topic}, pushOnly: true});
     } finally {
-      if (!delivered) await releaseBucket(topic, wallId, claim.previous);
+      if (!delivered) await releaseBucket(topic, claim.claimId, claim.previous);
     }
     if (!delivered) throw new Error(`Wall of the day bucket push failed for ${topic}.`);
-    logger.info("sendDueBuckets: sent.", {topic, wallId});
+    logger.info("sendDueBuckets: sent.", {topic, wallId: claim.wallId});
   }
 }
 
@@ -333,13 +364,7 @@ export const sendWallOfTheDayBuckets = onSchedule(
     retryCount: 1,
   },
   async () => {
-    const nowMs = Date.now();
-    const current = (await db.collection("wall_of_the_day").doc("current").get()).data();
-    if (!current?.wallId || !isRecentPick(current.date, nowMs, MAX_PICK_AGE_MS)) {
-      logger.warn("sendWallOfTheDayBuckets: no recent pick; skipping.", {wallId: current?.wallId ?? null});
-      return;
-    }
-    await sendDueBuckets(String(current.wallId), nowMs);
+    await sendDueBuckets(Date.now());
   },
 );
 
