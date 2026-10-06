@@ -64,7 +64,7 @@
 
 **Closest competitors**: Backdrops (community + curation, Android-focused) and Walli (creator community + social).
 
-**Prism's moat**: The **Setups feature is genuinely unique** — none of these apps let you browse and share full home screen configurations (wallpaper + icon pack + widget layout). That's the differentiator to build around.
+**Prism's edge**: Home screen setups were removed from the app, so they are no longer a moat. The edge now is the mix of community creators, a personalised feed, AI generation with coins and streaks, and auto-rotate with live wallpapers on Android.
 
 **Biggest threat**: Not any single app — it's the wave of AI wallpaper generators eating into the "browse and download" model. That's why AI generation is the highest-priority new feature.
 
@@ -79,15 +79,14 @@
 | Collections | Yes | Yes | Yes | Yes | Yes |
 | Comments | Limited | No | No | No | No |
 | Sharing | Yes | Yes | Yes | Yes | Yes |
-| Home screen setups | No | No | No | No | **Yes** |
 | Creator payouts | Yes | Yes | No | N/A | No |
-| AI generation | Yes | No | No | No | No |
-| Auto rotation | No | No | No | Yes | No |
-| Live/video wallpapers | Yes | No | No | No | No |
+| AI generation | Yes | No | No | No | Yes |
+| Auto rotation | No | No | No | Yes | Yes (Android, Pro) |
+| Live/video wallpapers | Yes | No | No | No | Yes (Android) |
 | Ringtones/sounds | Yes | No | No | No | No |
 | Depth effect | No | No | No | No | No |
 | Home screen widget | No | No | No | No | No |
 | AMOLED category | Yes | No | No | No | Partial |
-| Wall of the Day | No | No | Yes | No | No |
+| Wall of the Day | No | No | Yes | No | Yes |
 | Premium subscription | Yes | No | Yes | Free | Yes |
 | Ad monetization | Yes | Yes | No | No | Yes |

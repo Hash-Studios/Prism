@@ -114,7 +114,7 @@ make find-unused        # dead-code report (allowlist: tool/find_unused_allowlis
 ### Functions and web
 
 ```sh
-cd functions && npm ci && npm run build && node --test lib/__tests__/
+cd functions && npm ci && npm run build && node --test 'lib/__tests__/*.test.js'
 cd web && npm ci && npm run build
 ```
 
