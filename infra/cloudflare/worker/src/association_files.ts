@@ -15,7 +15,7 @@ const APPLE_ASSOCIATION_PAYLOAD = {
     details: [
       {
         appID: 'X2955Z4CKQ.com.hash.prism',
-        paths: ['/share/*', '/user/*', '/setup/*', '/refer/*', '/l/*'],
+        paths: ['/share', '/share*', '/share/*', '/user/*', '/setup/*', '/refer/*', '/l/*'],
       },
     ],
   },

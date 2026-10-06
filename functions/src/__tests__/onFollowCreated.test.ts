@@ -3,7 +3,7 @@ import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 
-import {followCollapseKey, isFollowerAlertsOff, onFollowCreated} from "../onFollowCreated";
+import {followCollapseKey, followInboxDocId, isFollowerAlertsOff, onFollowCreated} from "../onFollowCreated";
 
 test("follower pushes are muted only by an explicit false", () => {
   assert.equal(isFollowerAlertsOff({followerAlerts: false}), true);
@@ -27,6 +27,7 @@ test("a signed-out user keeps the follow in the inbox but gets no push", async (
     limit: () => query,
     get: async () => ({empty: true, docs: []}),
     add: async (data: unknown) => inbox.push(data),
+    doc: () => ({set: async (data: unknown) => inbox.push(data)}),
   };
   t.mock.method(db, "collection", () => query);
   t.mock.method(db, "doc", () => ({get: async () => ({data: () => undefined})}));
@@ -41,4 +42,10 @@ test("a signed-out user keeps the follow in the inbox but gets no push", async (
   } as unknown as Parameters<typeof onFollowCreated.run>[0]);
   assert.equal(send.mock.callCount(), 0);
   assert.equal(inbox.length, 1);
+});
+
+test("one follower has one inbox doc id, so a retried trigger rewrites it", () => {
+  assert.equal(followInboxDocId("u1", " Kim@Example.com "), followInboxDocId("u1", "kim@example.com"));
+  assert.notEqual(followInboxDocId("u1", "kim@example.com"), followInboxDocId("u2", "kim@example.com"));
+  assert.notEqual(followInboxDocId("u1", "kim@example.com"), followInboxDocId("u1", "lee@example.com"));
 });

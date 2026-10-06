@@ -1,6 +1,6 @@
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "./common";
-import {emailToTopic, sendNotification} from "./notificationHelper";
+import {emailToTopic, sendNotification, sendToUserByEmail} from "./notificationHelper";
 
 /** Topic the audience of an inbox entry subscribes to, or undefined when none does. */
 export function topicForModifier(modifier: string): string | undefined {
@@ -26,10 +26,11 @@ export const onNotificationCreated = onDocumentCreated(
     const doc = snapshot?.data();
     if (!snapshot || !doc || doc.pushHandled === true) return;
     const modifier = str(doc.modifier);
+    const personal = modifier.includes("@");
     const topic = topicForModifier(modifier);
     const title = str(doc.notification?.title);
     const body = str(doc.notification?.body);
-    if (!topic || !title || !body) return;
+    if ((!personal && !topic) || !title || !body) return;
 
     const data: Record<string, string> = {};
     for (const [key, value] of Object.entries(doc.data ?? {})) {
@@ -45,15 +46,19 @@ export const onNotificationCreated = onDocumentCreated(
     });
     if (!claimed) return;
 
-    await sendNotification({
+    const payload = {
       title,
       body,
       data: {...data, route: data.route ?? "announcement"},
       imageUrl: data.imageUrl,
       modifier,
       channelId: "posts",
-      fcmTarget: {topic},
       pushOnly: true,
-    });
+    };
+    if (personal) {
+      await sendToUserByEmail(payload, modifier);
+    } else if (topic) {
+      await sendNotification({...payload, fcmTarget: {topic}});
+    }
   },
 );

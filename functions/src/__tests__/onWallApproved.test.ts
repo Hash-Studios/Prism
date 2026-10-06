@@ -30,3 +30,42 @@ test("a signed-out artist keeps the approval in the inbox but gets no push; foll
   assert.deepEqual(topics, ["artist_posts"]);
   assert.equal(inbox.length, 1);
 });
+
+test("a repeated approval event sends no second set of pushes", async (t) => {
+  const inbox: unknown[] = [];
+  const query = {
+    where: () => query,
+    limit: () => query,
+    get: async () => ({empty: true, docs: []}),
+    doc: () => ({get: async () => ({exists: false}), set: async (data: unknown) => inbox.push(data)}),
+    add: async (data: unknown) => inbox.push(data),
+  };
+  t.mock.method(db, "collection", () => query);
+  let stamped = false;
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<boolean>) =>
+    callback({
+      get: async () => ({data: () => stamped ? {approvedNotifiedAt: 1} : {}}),
+      update: () => {
+        stamped = true;
+      },
+    } as unknown as admin.firestore.Transaction));
+  const send = t.mock.method(admin.messaging(), "send", async () => "id");
+  const event = {
+    params: {wallId: "w1"},
+    data: {
+      before: {data: () => ({review: false})},
+      after: {
+        ref: {},
+        data: () => ({review: true, email: "artist@example.com", by: "Artist", title: "Dunes"}),
+      },
+    },
+  } as unknown as Parameters<typeof onWallApproved.run>[0];
+  await onWallApproved.run(event);
+  const firstInbox = inbox.length;
+  const firstSends = send.mock.callCount();
+  assert.ok(firstInbox >= 1);
+  assert.ok(firstSends >= 1);
+  await onWallApproved.run(event);
+  assert.equal(inbox.length, firstInbox);
+  assert.equal(send.mock.callCount(), firstSends);
+});

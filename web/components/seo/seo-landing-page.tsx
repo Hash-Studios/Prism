@@ -4,7 +4,7 @@ import { Header } from "@/components/sections/header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { seoRouteContent, seoRouteOrder, type SeoRouteContent } from "@/lib/seo-pages";
-import { APP_NAME, PLAY_STORE_URL } from "@/lib/site-config";
+import { APP_NAME, APP_STORE_URL, PLAY_STORE_URL } from "@/lib/site-config";
 
 type SeoLandingPageProps = {
   content: SeoRouteContent;
@@ -22,7 +22,7 @@ export function SeoLandingPage({ content }: SeoLandingPageProps) {
       <main className="min-h-screen bg-hero-noise">
         <section className="border-b border-white/10 py-20 sm:py-24">
           <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
-            <Badge>Android personalization</Badge>
+            <Badge>Wallpaper personalization</Badge>
             <h1 className="mt-5 text-balance text-4xl font-bold tracking-tight text-white sm:text-5xl">
               {content.h1}
             </h1>
@@ -32,6 +32,7 @@ export function SeoLandingPage({ content }: SeoLandingPageProps) {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Button href={PLAY_STORE_URL}>Get it on Google Play</Button>
+              <Button href={APP_STORE_URL}>Download on the App Store</Button>
             </div>
           </div>
         </section>
@@ -62,7 +63,7 @@ export function SeoLandingPage({ content }: SeoLandingPageProps) {
             <div className="mt-8 rounded-2xl border border-accent/30 bg-accent/10 p-5 text-sm text-white/85">
               <p>
                 Looking for the full product overview? Visit the main {APP_NAME} landing
-                page for features, collections, setups, and FAQs.
+                page for features and collections.
               </p>
               <a
                 href="/"
@@ -81,7 +82,7 @@ export function SeoLandingPage({ content }: SeoLandingPageProps) {
               Related personalization pages
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/70">
-              Explore more Android wallpaper and setup topics to find styles that match
+              Explore more wallpaper topics to find styles that match
               your taste.
             </p>
 

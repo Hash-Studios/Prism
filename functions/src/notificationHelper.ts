@@ -1,6 +1,7 @@
+import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
-import {findUserByEmail} from "./common";
+import {db as database, findUserByEmail, str} from "./common";
 
 export interface NotificationData extends Record<string, string> {
   route: string;
@@ -23,6 +24,8 @@ export interface NotificationPayload {
   /** Pushes with the same key replace each other on the device, so one event
    *  sent to both the uid topic and the legacy email topic shows once. */
   collapseKey?: string;
+  /** Fixed inbox doc id, so a retried or repeated event rewrites one doc instead of adding another. */
+  docId?: string;
 }
 
 /**
@@ -35,13 +38,14 @@ export interface NotificationPayload {
  * The Firestore document schema matches what InAppNotif.fromSnapshot()
  * expects in the Flutter client.
  */
-export async function sendNotification(payload: NotificationPayload): Promise<void> {
+export async function sendNotification(payload: NotificationPayload): Promise<boolean> {
   const db = admin.firestore();
   const messaging = admin.messaging();
 
   if (!payload.pushOnly) {
     try {
-      await db.collection("notifications").add({
+      const inbox = db.collection("notifications");
+      const doc = {
         notification: {
           title: payload.title,
           body: payload.body,
@@ -63,7 +67,12 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
         // onNotificationCreated pushes entries without this flag.
         pushHandled: true,
         createdAt: admin.firestore.Timestamp.now(),
-      });
+      };
+      if (payload.docId) {
+        await inbox.doc(payload.docId).set(doc);
+      } else {
+        await inbox.add(doc);
+      }
     } catch (err) {
       logger.error("Failed to write notification doc to Firestore.", {err, payload});
       // Do not throw: still attempt the FCM push.
@@ -71,7 +80,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
   }
 
   if (!payload.fcmTarget) {
-    return;
+    return true;
   }
 
   const message = fcmMessage({...payload, fcmTarget: payload.fcmTarget});
@@ -81,7 +90,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
       const personalEmailTopic = payload.fcmTarget.topic === emailToTopic(payload.modifier);
       if (!payload.pushOnly || personalEmailTopic) {
         const user = await findUserByEmail(payload.modifier);
-        if (isLoggedOut(user?.data())) return;
+        if (isLoggedOut(user?.data())) return true;
       }
     }
 
@@ -91,8 +100,10 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
       route: payload.data.route,
       target: payload.fcmTarget,
     });
+    return true;
   } catch (err) {
     logger.error("Failed to send FCM push.", {err, route: payload.data.route});
+    return false;
   }
 }
 
@@ -124,7 +135,6 @@ export function fcmMessage(
       payload: {
         aps: {
           sound: "default",
-          badge: 1,
         },
       },
     },
@@ -132,20 +142,86 @@ export function fcmMessage(
   };
 }
 
-/**
- * Sends to the user's uid topic (with an in-app doc), then to the legacy email
- * topic as push only. The shared collapseKey shows the push once on a device
- * subscribed to both. Without a uid topic, sends only to the email topic.
- */
-export async function sendToUidAndEmailTopics(
-  payload: Omit<NotificationPayload, "fcmTarget" | "pushOnly">,
-  uidTopic: string | undefined,
-  emailTopic: string,
-): Promise<void> {
-  await sendNotification({...payload, fcmTarget: {topic: uidTopic ?? emailTopic}});
-  if (uidTopic) {
-    await sendNotification({...payload, fcmTarget: {topic: emailTopic}, pushOnly: true});
+export type PersonalPayload = Omit<NotificationPayload, "fcmTarget">;
+
+export interface PushRecipient {
+  uid?: string;
+  email: string;
+  loggedOut?: boolean;
+  /** `usersv2.fcmToken`, which builds before the private session doc wrote. */
+  legacyToken?: unknown;
+}
+
+/** The app stores the token in private/session; older builds wrote usersv2.fcmToken. */
+export function pickFcmToken(sessionToken: unknown, legacyToken: unknown): string {
+  return str(sessionToken) || str(legacyToken);
+}
+
+export async function userPushTokens(uid: string, legacyToken: unknown): Promise<string[]> {
+  let sessionToken: unknown;
+  try {
+    sessionToken = (await database.doc(`usersv2/${uid}/private/session`).get()).data()?.fcmToken;
+  } catch (err) {
+    logger.warn("Could not read the session FCM token.", {uid, err});
   }
+  const token = pickFcmToken(sessionToken, legacyToken);
+  return token ? [token] : [];
+}
+
+/** Same key on every push of one event, so a device that gets the topic and the token push shows it once. */
+function personalCollapseKey(payload: PersonalPayload): string {
+  const hash = createHash("sha1")
+    .update(JSON.stringify([payload.title, payload.body, payload.data]))
+    .digest("hex")
+    .slice(0, 16);
+  return `p_${hash}`;
+}
+
+/**
+ * Writes the in-app doc (unless pushOnly), then pushes to the user's uid topic and FCM token. The email-prefix
+ * topic is shared by every address with the same prefix, so it is used only when no user doc matches the email.
+ * Returns false when every push failed.
+ */
+export async function sendToUser(
+  payload: PersonalPayload,
+  recipient: PushRecipient,
+  pushEnabled = true,
+): Promise<boolean> {
+  await sendNotification(payload);
+  if (!pushEnabled || recipient.loggedOut) return true;
+
+  if (!recipient.uid) {
+    const emailTopic = emailToTopic(recipient.email);
+    return emailTopic ?
+      sendNotification({...payload, fcmTarget: {topic: emailTopic}, pushOnly: true}) :
+      true;
+  }
+  const collapseKey = payload.collapseKey ?? personalCollapseKey(payload);
+  const targets = [
+    {topic: userIdToTopic(recipient.uid)},
+    ...(await userPushTokens(recipient.uid, recipient.legacyToken)).map((token) => ({token})),
+  ];
+  const results = await Promise.all(
+    targets.map((fcmTarget) => sendNotification({...payload, collapseKey, fcmTarget, pushOnly: true})),
+  );
+  return results.some(Boolean);
+}
+
+/** Like sendToUser, for a recipient known only by email (admins, campaign and inbox audiences). */
+export async function sendToUserByEmail(payload: PersonalPayload, email: string, pushEnabled = true): Promise<boolean> {
+  let user: admin.firestore.QueryDocumentSnapshot | null = null;
+  try {
+    user = await findUserByEmail(email);
+  } catch (err) {
+    logger.warn("Could not resolve the recipient; using the email topic.", {email, err});
+  }
+  const data = user?.data();
+  return sendToUser(payload, {
+    uid: user?.id,
+    email,
+    loggedOut: isLoggedOut(data),
+    legacyToken: data?.fcmToken,
+  }, pushEnabled);
 }
 
 export function isLoggedOut(user: {loggedIn?: unknown} | undefined): boolean {
