@@ -29,9 +29,30 @@ class UserSearch extends StatefulWidget {
 class _UserSearchState extends State<UserSearch> {
   final TextEditingController searchController = TextEditingController();
   final UserSearchBloc _bloc = getIt<UserSearchBloc>();
+  Timer? _debounce;
+
+  void _search(String text, {required String sourceContext}) {
+    _debounce?.cancel();
+    final String trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      _bloc.add(const UserSearchEvent.cleared());
+      return;
+    }
+    unawaited(analytics.track(UserSearchSubmittedEvent(queryLength: trimmed.length, sourceContext: sourceContext)));
+    _bloc.add(UserSearchEvent.searchRequested(query: trimmed));
+  }
+
+  void _onChanged(String text) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted || text.trim() == _bloc.state.query) return;
+      _search(text, sourceContext: 'user_search_typing');
+    });
+  }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     searchController.dispose();
     unawaited(_bloc.close());
     super.dispose();
@@ -70,17 +91,8 @@ class _UserSearchState extends State<UserSearch> {
                     ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                     suffixIcon: Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                   ),
-                  onSubmitted: (tex) {
-                    if (tex.trim().isNotEmpty) {
-                      final String trimmed = tex.trim();
-                      analytics.track(
-                        UserSearchSubmittedEvent(queryLength: trimmed.length, sourceContext: 'user_search_textfield'),
-                      );
-                      _bloc.add(UserSearchEvent.searchRequested(query: trimmed));
-                      return;
-                    }
-                    _bloc.add(const UserSearchEvent.cleared());
-                  },
+                  onChanged: _onChanged,
+                  onSubmitted: (tex) => _search(tex, sourceContext: 'user_search_textfield'),
                 ),
               ),
             ),

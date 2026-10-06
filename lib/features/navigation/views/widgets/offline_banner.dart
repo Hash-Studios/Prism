@@ -4,7 +4,9 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:flutter/material.dart';
 
 class ConnectivityWidget extends StatefulWidget {
-  const ConnectivityWidget({super.key});
+  const ConnectivityWidget({required this.offline, super.key});
+
+  final bool offline;
 
   @override
   _ConnectivityWidgetState createState() => _ConnectivityWidgetState();
@@ -22,20 +24,26 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
     reverseCurve: PrismCurves.exit,
   );
   late final Animation<Offset> _position = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(_curve);
-  late final Timer _showTimer;
-  late final Timer _hideTimer;
-  bool _visible = false;
+  Timer? _showTimer;
 
   @override
   void initState() {
     super.initState();
-    _showTimer = Timer(const Duration(seconds: 1), () => _move(true));
-    _hideTimer = Timer(const Duration(seconds: 10), () => _move(false));
+    if (widget.offline) {
+      _showTimer = Timer(const Duration(seconds: 1), () => _move(true));
+    }
+  }
+
+  @override
+  void didUpdateWidget(ConnectivityWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.offline == widget.offline) return;
+    _showTimer?.cancel();
+    _move(widget.offline);
   }
 
   void _move(bool show) {
     if (!mounted) return;
-    _visible = show;
     if (context.reduceMotion) {
       _controller.value = show ? 1 : 0;
     } else {
@@ -46,13 +54,12 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (context.reduceMotion) _controller.value = _visible ? 1 : 0;
+    if (context.reduceMotion && _showTimer?.isActive != true) _controller.value = widget.offline ? 1 : 0;
   }
 
   @override
   void dispose() {
-    _showTimer.cancel();
-    _hideTimer.cancel();
+    _showTimer?.cancel();
     _curve.dispose();
     _controller.dispose();
     super.dispose();

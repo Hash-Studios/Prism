@@ -50,40 +50,24 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   }
 
   Future<void> _onStarted(_Started event, Emitter<CategoryFeedState> emit) async {
-    emit(state.copyWith(status: LoadStatus.loading, failure: null));
-
     final categoriesResult = await _loadCategoriesUseCase(const NoParams());
     categoriesResult.fold(
-      onSuccess: (categories) {
-        if (categories.isEmpty) {
-          emit(
-            state.copyWith(
-              status: LoadStatus.success,
-              categories: categories,
-              items: const <FeedItemEntity>[],
-              selectedCategory: null,
-              hasMore: false,
-            ),
-          );
-          return;
-        }
-
-        final selected = categories.first;
-        emit(state.copyWith(categories: categories, selectedCategory: selected));
-        add(CategoryFeedEvent.categorySelected(category: selected));
-      },
-      onFailure: (failure) {
-        emit(state.copyWith(status: LoadStatus.failure, failure: failure));
-      },
+      onSuccess: (categories) => emit(state.copyWith(categories: categories)),
+      onFailure: (failure) => emit(state.copyWith(status: LoadStatus.failure, failure: failure)),
     );
   }
 
   Future<void> _onCategorySelected(_CategorySelected event, Emitter<CategoryFeedState> emit) async {
+    final CategoryEntity? previous = state.selectedCategory;
+    final bool sameCategory =
+        previous != null && previous.name == event.category.name && previous.source == event.category.source;
     emit(
       state.copyWith(
         status: LoadStatus.loading,
         actionStatus: ActionStatus.inProgress,
         selectedCategory: event.category,
+        items: sameCategory ? state.items : const <FeedItemEntity>[],
+        hasMore: sameCategory && state.hasMore,
         failure: null,
       ),
     );

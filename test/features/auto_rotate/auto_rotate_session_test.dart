@@ -61,6 +61,15 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
 
   @override
   Future<bool> rotateNow() async => true;
+
+  @override
+  Future<List<String>?> loadAppliedSources() async => null;
+
+  @override
+  Future<List<String>> listDownloads() async => const <String>[];
+
+  @override
+  Future<bool> consumeBatteryTip() async => false;
 }
 
 void main() {

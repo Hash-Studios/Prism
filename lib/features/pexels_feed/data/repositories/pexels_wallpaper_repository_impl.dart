@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -23,6 +25,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   static const String _searchPath = '/v1/search';
   static const String _curatedPath = '/v1/curated';
   static const String _photosPath = '/v1/photos';
+  static const Duration _requestTimeout = Duration(seconds: 10);
 
   @override
   bool hasMoreForCategory(String categoryName, {String? paginationKey}) =>
@@ -34,15 +37,17 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     required bool refresh,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
   }) {
     return _fetchPage(
       categoryName,
       refresh: refresh,
       startPage: startPage,
       paginationKey: paginationKey,
+      portraitOnly: portraitOnly,
       buildUri: (page) => categoryName == 'Curated'
           ? Uri.https(_host, _curatedPath, <String, String>{'per_page': '24', 'page': page.toString()})
-          : _searchUri(query: categoryName, page: page),
+          : _searchUri(query: categoryName, page: page, portraitOnly: portraitOnly),
     );
   }
 
@@ -59,14 +64,19 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     return _fetchPage(
       'color: $color',
       refresh: refresh,
-      buildUri: (page) =>
-          _searchUri(query: '${name.trim().toLowerCase()} wallpaper'.trim(), page: page, color: '#$color'),
+      buildUri: (page) => _searchUri(
+        query: '${name.trim().toLowerCase()} wallpaper'.trim(),
+        page: page,
+        color: '#$color',
+        portraitOnly: true,
+      ),
     );
   }
 
-  Uri _searchUri({required String query, required int page, String? color}) {
+  Uri _searchUri({required String query, required int page, required bool portraitOnly, String? color}) {
     return Uri.https(_host, _searchPath, <String, String>{
       'query': query,
+      if (portraitOnly) 'orientation': 'portrait',
       'color': ?color,
       'per_page': '80',
       'page': page.toString(),
@@ -79,24 +89,26 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     required Uri Function(int page) buildUri,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
   }) async {
     final String pageKey = paginationKey ?? categoryName;
     if (refresh) {
       _cache.reset(pageKey);
     }
 
+    final String scope = _scope(categoryName, paginationKey, portraitOnly: portraitOnly);
     final int page = refresh ? startPage : _cache.pageFor(pageKey);
     final Uri uri = buildUri(page);
 
     try {
-      final http.Response response = await http.get(
-        uri,
-        headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)},
-      );
+      final http.Response response = await http
+          .get(uri, headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)})
+          .timeout(_requestTimeout);
       if (response.statusCode != 200) {
         return await _cachedOrFailure(
-          categoryName: categoryName,
-          paginationKey: paginationKey,
+          refresh: refresh,
+          pageKey: pageKey,
+          scope: scope,
           failure: ServerFailure(
             'Pexels feed request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
           ),
@@ -111,13 +123,17 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
 
       final List<PexelsWallpaper> walls = payload.photos.map((item) => item.toDomain()).toList(growable: false);
 
-      await _cache.write(
-        pageKey,
-        scope: _scope(categoryName, paginationKey),
-        payload: payload.toJson(),
-        nextPage: currentPage + 1,
-        hasMore: hasMore,
-      );
+      if (refresh) {
+        await _cache.write(
+          pageKey,
+          scope: scope,
+          payload: payload.toJson(),
+          nextPage: currentPage + 1,
+          hasMore: hasMore,
+        );
+      } else {
+        _cache.advance(pageKey, nextPage: currentPage + 1, hasMore: hasMore);
+      }
 
       logger.i(
         '[PexelsWallpaperRepository] fetchFeed success',
@@ -125,7 +141,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
-      final cached = await _readCached(categoryName: categoryName, paginationKey: paginationKey);
+      final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope) : null;
       if (cached != null) {
         logger.w(
           '[PexelsWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -144,10 +160,9 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   Future<Result<PexelsWallpaper?>> fetchById(String id) async {
     final Uri uri = Uri.https(_host, '$_photosPath/$id');
     try {
-      final http.Response response = await http.get(
-        uri,
-        headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)},
-      );
+      final http.Response response = await http
+          .get(uri, headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)})
+          .timeout(_requestTimeout);
       if (response.statusCode != 200) {
         return Result.error(
           ServerFailure(
@@ -165,29 +180,33 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   }
 
   Future<Result<List<PexelsWallpaper>>> _cachedOrFailure({
-    required String categoryName,
-    String? paginationKey,
+    required bool refresh,
+    required String pageKey,
+    required String scope,
     required Failure failure,
   }) async {
-    final cached = await _readCached(categoryName: categoryName, paginationKey: paginationKey);
+    final cached = refresh ? await _readCached(pageKey: pageKey, scope: scope) : null;
     if (cached != null) {
       logger.w(
         '[PexelsWallpaperRepository] remote status failed; returning cached snapshot',
-        fields: <String, Object?>{'category': categoryName},
+        fields: <String, Object?>{'scope': scope},
       );
       return Result.success(cached);
     }
     return Result.error(failure);
   }
 
-  Future<List<PexelsWallpaper>?> _readCached({required String categoryName, String? paginationKey}) => _cache.read(
-    paginationKey ?? categoryName,
-    scope: _scope(categoryName, paginationKey),
+  Future<List<PexelsWallpaper>?> _readCached({required String pageKey, required String scope}) => _cache.read(
+    pageKey,
+    scope: scope,
     decode: (payload) =>
         PexelsSearchResponseDto.fromJson(payload).photos.map((item) => item.toDomain()).toList(growable: false),
   );
 
-  String _scope(String categoryName, String? paginationKey) => feedCacheSlug(
-    paginationKey == null || paginationKey == categoryName ? categoryName : '$categoryName.$paginationKey',
-  );
+  String _scope(String categoryName, String? paginationKey, {required bool portraitOnly}) {
+    final String slug = feedCacheSlug(
+      paginationKey == null || paginationKey == categoryName ? categoryName : '$categoryName.$paginationKey',
+    );
+    return portraitOnly ? '$slug.portrait' : slug;
+  }
 }

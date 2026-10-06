@@ -7,14 +7,17 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
+import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -25,11 +28,22 @@ String? _authorName(FeedItemEntity wallpaper) => wallpaper.when(
 );
 
 class SearchGrid extends StatefulWidget {
-  const SearchGrid({super.key, required this.query, required this.provider, required this.initialResults});
+  const SearchGrid({
+    super.key,
+    required this.query,
+    required this.provider,
+    required this.initialResults,
+    this.prismResults = const <FeedItemEntity>[],
+    this.filters = const SearchFilters(),
+  });
 
   final String query;
   final SearchProviderValue provider;
   final List<FeedItemEntity> initialResults;
+
+  /// Prism catalogue walls that match [query]. Shown first, in a "From Prism" row.
+  final List<FeedItemEntity> prismResults;
+  final SearchFilters filters;
 
   @override
   State<SearchGrid> createState() => _SearchGridState();
@@ -38,10 +52,10 @@ class SearchGrid extends StatefulWidget {
 class _SearchGridState extends State<SearchGrid> {
   final WallpaperSearchService _search = getIt<WallpaperSearchService>();
   final ShakeController _shake = ShakeController();
-  final GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
   late List<FeedItemEntity> _results = widget.initialResults;
   bool seeMoreLoader = false;
   bool _hasMore = true;
+  bool _loadMoreFailed = false;
   int _currentPage = 1;
 
   int get _queryLength => widget.query.trim().length;
@@ -66,13 +80,14 @@ class _SearchGridState extends State<SearchGrid> {
     }
     setState(() {
       seeMoreLoader = true;
+      _loadMoreFailed = false;
     });
     final int nextPage = _currentPage + 1;
     analytics.track(
       SearchPaginationRequestedEvent(provider: widget.provider, queryLength: _queryLength, page: nextPage),
     );
     try {
-      final more = await _search.fetchPage(widget.provider, widget.query, refresh: false);
+      final more = await _search.fetchPage(widget.provider, widget.query, refresh: false, filters: widget.filters);
       if (!mounted) {
         return;
       }
@@ -84,6 +99,9 @@ class _SearchGridState extends State<SearchGrid> {
       _trackResultsLoaded(page: nextPage, result: _loadedResult);
     } catch (error, stackTrace) {
       logger.e('Failed to load search results page.', error: error, stackTrace: stackTrace);
+      if (mounted) {
+        setState(() => _loadMoreFailed = true);
+      }
       _trackResultsLoaded(page: nextPage, result: EventResultValue.failure);
     } finally {
       if (mounted) {
@@ -109,9 +127,8 @@ class _SearchGridState extends State<SearchGrid> {
   }
 
   Future<void> refreshList() async {
-    refreshHomeKey.currentState?.show();
     try {
-      final fresh = await _search.fetchPage(widget.provider, widget.query, refresh: true);
+      final fresh = await _search.fetchPage(widget.provider, widget.query, refresh: true, filters: widget.filters);
       if (!mounted) {
         return;
       }
@@ -121,10 +138,12 @@ class _SearchGridState extends State<SearchGrid> {
         }
         _currentPage = 1;
         _hasMore = fresh.isNotEmpty;
+        _loadMoreFailed = false;
       });
       _trackResultsLoaded(page: 1, result: _loadedResult);
     } catch (error, stackTrace) {
       logger.e('Failed to refresh search results.', error: error, stackTrace: stackTrace);
+      toasts.error("Couldn't refresh. Pull down to try again.");
       _trackResultsLoaded(page: 1, result: EventResultValue.failure);
     }
   }
@@ -148,73 +167,177 @@ class _SearchGridState extends State<SearchGrid> {
     );
   }
 
+  void _openPrismWallpaper(FeedItemEntity wallpaper, int index) {
+    analytics.track(
+      SearchResultOpenedEvent(
+        provider: SearchProviderValue.prism,
+        itemType: ItemTypeValue.wallpaper,
+        itemId: wallpaper.id,
+        index: index,
+        queryLength: _queryLength,
+      ),
+    );
+    context.router.push(
+      WallpaperDetailRoute(
+        entity: wallpaper,
+        analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+        heroTag: prismHeroTag(widget.prismResults, index, wallpaper.id),
+      ),
+    );
+  }
+
   void _shareWallpaper(FeedItemEntity wallpaper, int index) {
     _shake.shake(index);
     PrismHaptics.impact();
-    createDynamicLink(wallpaper.id, wallpaper.source, wallpaper.fullUrl, wallpaper.thumbnailUrl);
+    unawaited(copyWallpaperLink(wallpaper.id, wallpaper.source, wallpaper.fullUrl, wallpaper.thumbnailUrl));
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool showFooter = _hasMore && _results.length >= 24;
+    final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
-      key: refreshHomeKey,
       onRefresh: () {
         PrismHaptics.impact();
         return refreshList();
       },
       child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
-          if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+          if (!_loadMoreFailed && isNearFeedEnd(scrollInfo.metrics)) {
             unawaited(_requestNextPage());
           }
           return false;
         },
         child: PulsePlaceholder(
-          builder: (context, _) => GridView.builder(
-            padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-            itemCount: _results.length + (_hasMore && _results.length >= 24 ? 1 : 0),
-            shrinkWrap: true,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-              childAspectRatio: 0.5,
-            ),
-            itemBuilder: (context, index) {
-              if (_hasMore && _results.length >= 24 && index == _results.length) {
-                return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _requestNextPage);
-              }
-
-              final FeedItemEntity wallpaper = _results[index];
-              return Semantics(
-                button: true,
-                label: wallpaperSemanticLabel(_authorName(wallpaper)),
-                child: ShakeOnce(
-                  controller: _shake,
-                  target: index,
-                  child: Stack(
-                    children: [
-                      PrismImageTile(url: wallpaper.thumbnailUrl, heroTag: prismHeroTag(this, index, wallpaper.id)),
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                          enableFeedback: false,
-                          onTap: () {
-                            PrismHaptics.tap();
-                            _openWallpaper(wallpaper, index);
-                          },
-                          onLongPress: () => _shareWallpaper(wallpaper, index),
+          builder: (context, _) => CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: <Widget>[
+              if (widget.prismResults.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper),
+                ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    childAspectRatio: 0.5,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    if (showFooter && index == _results.length) {
+                      return SeeMoreButton(
+                        seeMoreLoader: seeMoreLoader,
+                        failed: _loadMoreFailed,
+                        func: _requestNextPage,
+                      );
+                    }
+                    final FeedItemEntity wallpaper = _results[index];
+                    return KeyedSubtree(
+                      key: ValueKey<String>(wallpaper.id),
+                      child: Semantics(
+                        button: true,
+                        label: wallpaperSemanticLabel(_authorName(wallpaper)),
+                        child: ShakeOnce(
+                          controller: _shake,
+                          target: index,
+                          child: Stack(
+                            children: [
+                              PrismImageTile(
+                                url: wallpaper.thumbnailUrl,
+                                memCacheHeight: decodeHeight,
+                                heroTag: prismHeroTag(this, index, wallpaper.id),
+                              ),
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                                  highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                                  enableFeedback: false,
+                                  onTap: () {
+                                    PrismHaptics.tap();
+                                    _openWallpaper(wallpaper, index);
+                                  },
+                                  onLongPress: () => _shareWallpaper(wallpaper, index),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
+                    );
+                  }, childCount: _results.length + (showFooter ? 1 : 0)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FromPrismRow extends StatelessWidget {
+  const _FromPrismRow({required this.results, required this.onOpen});
+
+  final List<FeedItemEntity> results;
+  final void Function(FeedItemEntity wallpaper, int index) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          child: Text('From Prism', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+        ),
+        SizedBox(
+          height: 176,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            itemCount: results.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 6),
+            itemBuilder: (context, index) {
+              final FeedItemEntity wallpaper = results[index];
+              return KeyedSubtree(
+                key: ValueKey<String>('prism-${wallpaper.id}'),
+                child: Semantics(
+                  button: true,
+                  label: wallpaperSemanticLabel(_authorName(wallpaper)),
+                  child: AspectRatio(
+                    aspectRatio: 0.5,
+                    child: Stack(
+                      children: <Widget>[
+                        PrismImageTile(
+                          url: wallpaper.thumbnailUrl,
+                          memCacheHeight: 400,
+                          heroTag: prismHeroTag(results, index, wallpaper.id),
+                        ),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            splashColor: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                            highlightColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                            onTap: () {
+                              PrismHaptics.tap();
+                              onOpen(wallpaper, index);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
             },
           ),
         ),
-      ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }

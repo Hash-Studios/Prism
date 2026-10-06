@@ -94,6 +94,9 @@ void main() {
   });
 
   testWidgets('cancelled Google sign-in keeps its toast without adding an error haptic', (tester) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final _MockOnboardingBloc bloc = _MockOnboardingBloc();
     whenListen(bloc, const Stream<OnboardingV2State>.empty(), initialState: OnboardingV2State.initial());
     when(() => bloc.close()).thenAnswer((_) async {});

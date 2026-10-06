@@ -11,6 +11,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
+import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -182,7 +183,8 @@ void main() {
     getIt
       ..registerSingleton<FirestoreClient>(firestore)
       ..registerSingleton<TasteSignalStore>(TasteSignalStore(settings))
-      ..registerSingleton<FeedImpressionStore>(FeedImpressionStore(settings));
+      ..registerSingleton<FeedImpressionStore>(FeedImpressionStore(settings))
+      ..registerSingleton<WallpaperHistoryStore>(WallpaperHistoryStore(settings));
     auth = GoogleAuth(auth: _FakeAuth(), googleSignIn: _FakeGoogleSignIn(), messaging: _FakeMessaging());
   });
 
@@ -326,6 +328,26 @@ void main() {
     expect(taste.read(), isEmpty);
     expect(taste.isSeeded, isFalse, reason: 'the next user seeds from their own favourites');
     expect(impressions.recentShows(now), isEmpty);
+  });
+
+  test('clears the applied-wallpaper history', () async {
+    app_state.prismUser = profileUser();
+    final WallpaperHistoryStore history = getIt<WallpaperHistoryStore>();
+    await history.record(
+      AppliedWallpaper(
+        id: 'a',
+        source: 'prism',
+        thumbnailUrl: 'u',
+        fullUrl: 'u',
+        target: 'home',
+        appliedAt: DateTime.now().toUtc(),
+      ),
+    );
+    expect(history.items(), hasLength(1));
+
+    await auth.signOutGoogle();
+
+    expect(history.items(), isEmpty);
   });
 
   test('clears feed impressions even when the taste store is not registered', () async {

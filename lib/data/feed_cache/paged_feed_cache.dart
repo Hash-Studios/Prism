@@ -26,6 +26,12 @@ class PagedFeedCache {
     _hasMoreMap[key] = true;
   }
 
+  /// Moves the cursor without touching the on-disk snapshot. Used for pages after the first.
+  void advance(String key, {required int nextPage, required bool hasMore}) {
+    _pageNumbers[key] = nextPage;
+    _hasMoreMap[key] = hasMore;
+  }
+
   /// Advances the cursor and stores [payload] (a DTO's `toJson()`) under [scope].
   Future<void> write(
     String key, {
@@ -34,8 +40,7 @@ class PagedFeedCache {
     required int nextPage,
     required bool hasMore,
   }) {
-    _pageNumbers[key] = nextPage;
-    _hasMoreMap[key] = hasMore;
+    advance(key, nextPage: nextPage, hasMore: hasMore);
     return _local.write(
       source: source,
       scope: scope,

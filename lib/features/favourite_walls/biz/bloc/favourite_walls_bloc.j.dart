@@ -1,5 +1,6 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:bloc/bloc.dart';
@@ -21,6 +22,11 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     on<_RefreshRequested>(_onRefreshRequested);
     on<_ToggleRequested>(_onToggleRequested);
     on<_ClearRequested>(_onClearRequested);
+    on<_SortChanged>((event, emit) => emit(state.copyWith(sort: event.sort)));
+    on<_SourceFilterChanged>((event, emit) => emit(state.copyWith(sourceFilter: event.source)));
+    on<_QueryChanged>((event, emit) => emit(state.copyWith(query: event.query)));
+    on<_RemoveRequested>(_onRemoveRequested);
+    on<_RestoreRequested>(_onRestoreRequested);
   }
 
   final FetchFavouriteWallsUseCase _fetchFavouriteWallsUseCase;
@@ -104,25 +110,58 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     );
   }
 
-  Future<void> _onClearRequested(_ClearRequested event, Emitter<FavouriteWallsState> emit) async {
-    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-    final result = await _clearFavouriteWallsUseCase(
-      ClearFavouriteWallsParams(
-        userId: state.userId,
-        wallIds: state.items.map((item) => item.id).toList(growable: false),
-      ),
-    );
+  Future<void> _onClearRequested(_ClearRequested event, Emitter<FavouriteWallsState> emit) {
+    return _removeAndRefetchOnFailure(state.items.map((item) => item.id).toList(growable: false), emit);
+  }
 
-    result.fold(
-      onSuccess: (_) => emit(
-        state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: const <FavouriteWallEntity>[],
-          failure: null,
-        ),
+  Future<void> _onRemoveRequested(_RemoveRequested event, Emitter<FavouriteWallsState> emit) {
+    return _removeAndRefetchOnFailure(event.wallIds, emit);
+  }
+
+  Future<void> _removeAndRefetchOnFailure(List<String> wallIds, Emitter<FavouriteWallsState> emit) async {
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    final result = await _clearFavouriteWallsUseCase(ClearFavouriteWallsParams(userId: state.userId, wallIds: wallIds));
+
+    final bool removed = result.fold(
+      onSuccess: (_) {
+        final Set<String> removedIds = wallIds.toSet();
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            actionStatus: ActionStatus.success,
+            items: state.items.where((item) => !removedIds.contains(item.id)).toList(growable: false),
+            failure: null,
+          ),
+        );
+        return true;
+      },
+      onFailure: (failure) {
+        emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure));
+        return false;
+      },
+    );
+    if (!removed) await _fetch(emit);
+  }
+
+  Future<void> _onRestoreRequested(_RestoreRequested event, Emitter<FavouriteWallsState> emit) async {
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    final List<FavouriteWallEntity> restored = <FavouriteWallEntity>[];
+    for (final FavouriteWallEntity wall in event.walls) {
+      if (_containsWall(wall.id) || restored.any((item) => item.id == wall.id)) continue;
+      final result = await _toggleFavouriteWallUseCase(
+        ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: false),
+      );
+      if (result.isSuccess) restored.add(wall);
+    }
+    final List<FavouriteWallEntity> next = <FavouriteWallEntity>[...state.items, ...restored]
+      ..sort(compareByCreatedAtDesc);
+    final bool allRestored = restored.length == event.walls.length;
+    emit(
+      state.copyWith(
+        items: next,
+        actionStatus: allRestored ? ActionStatus.success : ActionStatus.failure,
+        failure: allRestored ? null : const ServerFailure('Could not restore some favourites'),
       ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 }

@@ -18,25 +18,43 @@ class FavouriteQuickTileListener extends StatefulWidget {
 }
 
 class _FavouriteQuickTileListenerState extends State<FavouriteQuickTileListener> {
+  late bool _wasLoggedIn;
+  late String _lastUserId;
+
   @override
   void initState() {
     super.initState();
-    _cache(clearIfUnavailable: true);
+    final session = context.read<SessionBloc>().state.session;
+    _wasLoggedIn = session.loggedIn;
+    _lastUserId = session.userId;
+    _cache();
   }
 
-  void _cache({bool clearIfUnavailable = false}) {
+  void _cache() {
     final session = context.read<SessionBloc>().state.session;
     final favourites = context.read<FavouriteWallsBloc>().state;
-    final bool sameUser = session.loggedIn && session.userId == favourites.userId;
-    if (sameUser && favourites.status != LoadStatus.success && !clearIfUnavailable) return;
-    final urls = sameUser && favourites.status == LoadStatus.success
-        ? favourites.items.map((item) => item.fullUrl).toList(growable: false)
-        : const <String>[];
+    if (!session.loggedIn || session.userId != favourites.userId || favourites.status != LoadStatus.success) return;
+    _push(favourites.items.map((item) => item.fullUrl).toList(growable: false));
+  }
+
+  void _push(List<String> urls) {
     unawaited(
       QuickTileConfigService.pushFavWallUrls(urls).catchError((Object error, StackTrace stackTrace) {
         logger.w('Could not update favourites tile', error: error, stackTrace: stackTrace);
       }),
     );
+  }
+
+  void _onSessionChanged(SessionState current) {
+    final bool loggedOut = _wasLoggedIn && !current.session.loggedIn;
+    final bool switchedAccount = _wasLoggedIn && current.session.loggedIn && _lastUserId != current.session.userId;
+    _wasLoggedIn = current.session.loggedIn;
+    _lastUserId = current.session.userId;
+    if (loggedOut || switchedAccount) {
+      _push(const <String>[]);
+    } else {
+      _cache();
+    }
   }
 
   @override
@@ -45,7 +63,7 @@ class _FavouriteQuickTileListenerState extends State<FavouriteQuickTileListener>
       BlocListener<SessionBloc, SessionState>(
         listenWhen: (previous, current) =>
             previous.session.userId != current.session.userId || previous.session.loggedIn != current.session.loggedIn,
-        listener: (_, _) => _cache(clearIfUnavailable: true),
+        listener: (_, state) => _onSessionChanged(state),
       ),
       BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
         listenWhen: (previous, current) =>

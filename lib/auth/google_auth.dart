@@ -15,6 +15,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
+import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -30,6 +31,23 @@ class WrongAccountException implements Exception {
   const WrongAccountException({required this.selectedEmail, required this.expectedEmail});
   @override
   String toString() => 'WrongAccountException: selected $selectedEmail but expected $expectedEmail';
+}
+
+const String genericSignInErrorMessage = 'Something went wrong, please try again!';
+
+/// The toast text for a Google sign-in error that is not a cancellation.
+String googleSignInErrorMessage(Object error, {TargetPlatform? platform}) {
+  final String message = error.toString();
+  final bool isPlayServicesError =
+      (platform ?? defaultTargetPlatform) == TargetPlatform.android &&
+      (message.contains('providerConfigurationError') || message.contains('no provider dependencies'));
+  if (isPlayServicesError) {
+    return 'Google Play services on this device cannot sign in.';
+  }
+  if (error is GoogleSignInException && error.code == GoogleSignInExceptionCode.unknownError) {
+    return 'Google sign-in failed. Check your connection and try again.';
+  }
+  return genericSignInErrorMessage;
 }
 
 class GoogleAuth {
@@ -148,7 +166,7 @@ class GoogleAuth {
 
   bool _isSignInCancelled(Object error) {
     if (error is GoogleSignInException) {
-      return error.code == GoogleSignInExceptionCode.canceled || error.code == GoogleSignInExceptionCode.unknownError;
+      return error.code == GoogleSignInExceptionCode.canceled;
     }
     final String message = error.toString().toLowerCase();
     return message.contains('user canceled') ||
@@ -311,7 +329,7 @@ class GoogleAuth {
     }
   }
 
-  /// Taste signals and feed impressions belong to the user, not the device.
+  /// Taste signals, feed impressions and applied-wallpaper history belong to the user, not the device.
   Future<void> _clearPersonalization() async {
     if (getIt.isRegistered<TasteSignalStore>()) {
       try {
@@ -325,6 +343,13 @@ class GoogleAuth {
         await getIt<FeedImpressionStore>().clear();
       } catch (e, st) {
         logger.w('Feed impression clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+    }
+    if (getIt.isRegistered<WallpaperHistoryStore>()) {
+      try {
+        await getIt<WallpaperHistoryStore>().clear();
+      } catch (e, st) {
+        logger.w('Wallpaper history clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
     }
   }

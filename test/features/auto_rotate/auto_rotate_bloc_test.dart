@@ -33,6 +33,7 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
   final List<(AutoRotateConfig, List<String>)> starts = <(AutoRotateConfig, List<String>)>[];
   int stops = 0;
   int rotateNows = 0;
+  List<String>? applied;
 
   @override
   Future<AutoRotateConfig> loadConfig() async => config;
@@ -50,6 +51,7 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
       await startGate?.future;
       if (startError case final Object error) throw error;
       running = startResult;
+      if (startResult) applied = imageUrls;
       return startResult;
     } finally {
       _activeMutations--;
@@ -84,6 +86,15 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
     statusLastError = rotateNowResult ? null : 'Wallpaper apply failed';
     return rotateNowResult;
   }
+
+  @override
+  Future<List<String>?> loadAppliedSources() async => applied;
+
+  @override
+  Future<List<String>> listDownloads() async => const <String>[];
+
+  @override
+  Future<bool> consumeBatteryTip() async => false;
 }
 
 void main() {
@@ -182,13 +193,14 @@ void main() {
 
   blocTest<AutoRotateBloc, AutoRotateState>(
     'dropping below 2 favourites while enabled stops rotation',
-    build: build,
+    build: () => build()..favouritesDebounce = const Duration(milliseconds: 10),
     act: (bloc) async {
       bloc.add(const AutoRotateEvent.started(favouriteUrls: urls, isPro: true));
       await Future<void>.delayed(Duration.zero);
       bloc.add(const AutoRotateEvent.toggled(true));
       await Future<void>.delayed(Duration.zero);
       bloc.add(const AutoRotateEvent.favouritesChanged(<String>['https://a.test/1.jpg']));
+      await Future<void>.delayed(const Duration(milliseconds: 60));
     },
     verify: (bloc) {
       expect(repo.stops, 1);

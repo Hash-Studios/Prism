@@ -32,6 +32,11 @@ const Map<WallpaperTarget, String> _targetLabels = <WallpaperTarget, String>{
   WallpaperTarget.both: 'Both',
 };
 
+const Map<AutoRotateSource, String> _sourceLabels = <AutoRotateSource, String>{
+  AutoRotateSource.favourites: 'Favourites',
+  AutoRotateSource.downloads: 'Downloads',
+};
+
 List<String> _urlsOf(FavouriteWallsState state) => state.items.map((item) => item.fullUrl).toList(growable: false);
 
 Future<void> _presentAutoRotatePaywall(BuildContext context) async {
@@ -169,7 +174,6 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                 }
                 if (!state.loaded) return const Center(child: CircularProgressIndicator());
                 if (!state.isPro) return const _ProPrompt();
-                if (state.favouriteCount < AutoRotateBloc.minWallpapers) return const _EmptyState();
                 if (state.startFailed) {
                   return _Message(
                     icon: Icons.error_outline_rounded,
@@ -218,20 +222,6 @@ class _Message extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return _Message(
-      icon: Icons.favorite_border_rounded,
-      text: 'Favourite at least 2 wallpapers to rotate them.',
-      buttonLabel: 'Open favourites',
-      onPressed: () => context.router.push(const FavouriteWallpaperRoute()),
-    );
-  }
-}
-
 class _ProPrompt extends StatelessWidget {
   const _ProPrompt();
 
@@ -259,6 +249,7 @@ class _Controls extends StatelessWidget {
 
   String _statusText() {
     if (state.startFailed) return 'Could not start. Try again.';
+    if (state.starting) return 'Starting';
     if (!state.config.enabled) return 'Off';
     final int next = state.status.nextRunEpochMs;
     if (!state.status.isRunning || next <= 0) return 'Scheduled';
@@ -333,6 +324,29 @@ class _Controls extends StatelessWidget {
       ),
     );
 
+    final bool fromDownloads = config.source == AutoRotateSource.downloads;
+    final bool tooFew = state.sourceCount < AutoRotateBloc.minWallpapers;
+    final bool canToggle = !state.starting && (config.enabled || !tooFew);
+    final AutoRotateStatus status = state.status;
+    final bool caching = config.enabled && status.isRunning && status.totalCount > 0;
+    final int cached = status.cachedCount.clamp(0, status.totalCount);
+
+    Future<void> pickHour({required bool start}) async {
+      final TimeOfDay? picked = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay(hour: start ? config.activeHoursStart : config.activeHoursEnd, minute: 0),
+      );
+      if (picked == null) return;
+      bloc.add(
+        AutoRotateEvent.activeHoursChanged(
+          start: start ? picked.hour : config.activeHoursStart,
+          end: start ? config.activeHoursEnd : picked.hour,
+        ),
+      );
+    }
+
+    String hourLabel(int hour) => TimeOfDay(hour: hour, minute: 0).format(context);
+
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 32),
       children: [
@@ -340,15 +354,58 @@ class _Controls extends StatelessWidget {
           SwitchListTile(
             activeThumbColor: accent,
             secondary: const Icon(Icons.autorenew_rounded),
-            value: config.enabled,
+            value: config.enabled || state.starting,
             title: Text('Auto-rotate wallpapers', style: titleStyle),
-            subtitle: Text('${state.favouriteCount} favourites in the mix', style: subtitleStyle),
-            onChanged: (value) {
-              PrismHaptics.selection();
-              bloc.add(AutoRotateEvent.toggled(value));
-            },
+            subtitle: Text(
+              '${state.sourceCount} ${fromDownloads ? 'downloads' : 'favourites'} in the mix'
+              '${state.sourcesCapped ? '. Using your first 100.' : ''}',
+              style: subtitleStyle,
+            ),
+            onChanged: canToggle
+                ? (value) {
+                    PrismHaptics.selection();
+                    bloc.add(AutoRotateEvent.toggled(value));
+                  }
+                : null,
           ),
+          if (state.starting)
+            _ProgressRow(label: 'Preparing ${state.sourceCount} wallpapers', color: accent)
+          else if (caching && cached < status.totalCount)
+            _ProgressRow(
+              label: 'Downloaded $cached of ${status.totalCount} wallpapers',
+              value: cached / status.totalCount,
+              color: accent,
+            ),
+          if (tooFew && !config.enabled)
+            ListTile(
+              title: Text(
+                fromDownloads
+                    ? 'Download at least 2 wallpapers to rotate them.'
+                    : 'Favourite at least 2 wallpapers to rotate them.',
+                style: subtitleStyle,
+              ),
+              trailing: TextButton(
+                onPressed: () =>
+                    context.router.push(fromDownloads ? const DownloadRoute() : const FavouriteWallpaperRoute()),
+                child: Text(fromDownloads ? 'Open downloads' : 'Open favourites'),
+              ),
+            ),
         ]),
+        if (state.showBatteryTip)
+          card('KEEP IT RUNNING', [
+            ListTile(
+              title: const Text(
+                'If wallpapers stop changing, set battery use for Prism to Unrestricted. '
+                'Open settings, then Apps, Prism, Battery.',
+                style: subtitleStyle,
+              ),
+              trailing: TextButton(
+                onPressed: () => bloc.add(const AutoRotateEvent.batteryTipDismissed()),
+                child: const Text('Got it'),
+              ),
+            ),
+          ]),
+        card('SOURCE', [chips(_sourceLabels, config.source, (v) => bloc.add(AutoRotateEvent.sourceChanged(v)))]),
         card('CHANGE', [
           chips(_intervalLabels, config.intervalMinutes, (v) => bloc.add(AutoRotateEvent.intervalChanged(v))),
         ]),
@@ -366,8 +423,46 @@ class _Controls extends StatelessWidget {
             },
           ),
         ]),
+        card('', [
+          SwitchListTile(
+            activeThumbColor: accent,
+            secondary: const Icon(Icons.power_rounded),
+            value: config.chargingOnly,
+            title: Text('Only while charging', style: titleStyle),
+            subtitle: const Text('Change when plugged in, at most once per interval', style: subtitleStyle),
+            onChanged: (value) {
+              PrismHaptics.selection();
+              bloc.add(AutoRotateEvent.chargingOnlyChanged(value));
+            },
+          ),
+          SwitchListTile(
+            activeThumbColor: accent,
+            secondary: const Icon(Icons.schedule_rounded),
+            value: config.activeHoursEnabled,
+            title: Text('Active hours', style: titleStyle),
+            subtitle: const Text('Only change wallpapers between these hours', style: subtitleStyle),
+            onChanged: (value) {
+              PrismHaptics.selection();
+              bloc.add(AutoRotateEvent.activeHoursEnabledChanged(value));
+            },
+          ),
+          if (config.activeHoursEnabled) ...[
+            ListTile(
+              title: Text('From', style: titleStyle),
+              trailing: Text(hourLabel(config.activeHoursStart), style: titleStyle),
+              onTap: () => pickHour(start: true),
+            ),
+            ListTile(
+              title: Text('Until', style: titleStyle),
+              trailing: Text(hourLabel(config.activeHoursEnd), style: titleStyle),
+              onTap: () => pickHour(start: false),
+            ),
+          ],
+        ]),
         card('STATUS', [
           ListTile(title: Text(_statusText(), style: titleStyle)),
+          if (caching && cached >= status.totalCount)
+            ListTile(title: Text('$cached of ${status.totalCount} wallpapers ready', style: subtitleStyle)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: OutlinedButton.icon(
@@ -383,6 +478,29 @@ class _Controls extends StatelessWidget {
           ),
         ]),
       ],
+    );
+  }
+}
+
+class _ProgressRow extends StatelessWidget {
+  const _ProgressRow({required this.label, required this.color, this.value});
+
+  final String label;
+  final Color color;
+  final double? value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12)),
+          const SizedBox(height: 6),
+          LinearProgressIndicator(value: value, color: color, borderRadius: BorderRadius.circular(4)),
+        ],
+      ),
     );
   }
 }

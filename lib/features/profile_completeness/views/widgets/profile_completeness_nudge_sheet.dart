@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -40,7 +41,7 @@ class _ProfileCompletenessNudgeSheet extends StatelessWidget {
             decoration: BoxDecoration(color: Theme.of(context).dividerColor, borderRadius: BorderRadius.circular(99)),
           ),
           Text(
-            'Complete your profile to earn 25 Prism Coins',
+            'Complete your profile to earn ${CoinPolicy.profileCompletion} Prism Coins',
             style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),

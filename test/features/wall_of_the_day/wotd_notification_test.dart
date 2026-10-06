@@ -24,6 +24,7 @@ void main() {
           'new-wall-doc': <String, dynamic>{
             'id': 'new-wall',
             'source': 'prism',
+            'review': true,
             'wallpaper_url': 'https://example.com/new.jpg',
             'wallpaper_thumb': 'https://example.com/new-thumb.jpg',
           },

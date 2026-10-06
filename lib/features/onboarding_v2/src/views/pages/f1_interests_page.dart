@@ -1,8 +1,11 @@
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/interest_category_tile.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_fade_mask.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_load_failure.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_skip_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,7 +29,7 @@ class F1InterestsPage extends StatelessWidget {
           }
         }
       },
-      buildWhen: (prev, curr) => prev.interestsData != curr.interestsData,
+      buildWhen: (prev, curr) => prev.interestsData != curr.interestsData || prev.loadStatus != curr.loadStatus,
       builder: (context, state) {
         final interestsData = state.interestsData;
         final available = interestsData.available;
@@ -42,12 +45,18 @@ class F1InterestsPage extends StatelessWidget {
                   right: OnboardingLayout.tilesX * sx,
                   height: OnboardingLayout.tilesHeight * sy,
                   child: available.isEmpty
-                      ? const Center(
-                          child: SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          ),
-                        )
+                      ? (state.loadStatus == LoadStatus.loading || state.loadStatus == LoadStatus.initial)
+                            ? const Center(
+                                child: SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
+                              )
+                            : OnboardingLoadFailure(
+                                message: 'We could not load categories.',
+                                onRetry: () =>
+                                    context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.loadRetried()),
+                              )
                       : OnboardingFadeMask(
                           stops: const [0.01, 0.10, 0.82, 1.0],
                           child: GridView.builder(
@@ -72,6 +81,12 @@ class F1InterestsPage extends StatelessWidget {
                             },
                           ),
                         ),
+                ),
+                OnboardingSkipButton(
+                  sx: sx,
+                  sy: sy,
+                  color: OnboardingColors.textPrimary,
+                  onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.interestsSkipped()),
                 ),
               ],
             );

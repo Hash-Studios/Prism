@@ -14,6 +14,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_starter_creator_entity.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/complete_onboarding_v2_usecase.dart';
@@ -26,7 +27,7 @@ import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wal
 import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, visibleForTesting;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -50,12 +51,15 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }) : _aiRepositoryOverride = aiRepository,
        super(OnboardingV2State.initial()) {
     on<_Started>(_onStarted);
+    on<_LoadRetried>(_onLoadRetried);
     on<_AuthCompleted>(_onAuthCompleted);
     on<_AuthLoadingChanged>(_onAuthLoadingChanged);
     on<_InterestToggled>(_onInterestToggled);
     on<_InterestsConfirmed>(_onInterestsConfirmed);
+    on<_InterestsSkipped>(_onInterestsSkipped);
     on<_CreatorFollowToggled>(_onCreatorFollowToggled);
     on<_StarterPackConfirmed>(_onStarterPackConfirmed);
+    on<_StarterPackSkipped>(_onStarterPackSkipped);
     on<_FirstWallpaperActionRequested>(_onFirstWallpaperActionRequested);
     on<_FirstWallpaperActionCompleted>(_onFirstWallpaperActionCompleted);
     on<_FirstWallpaperStepContinued>(_onFirstWallpaperStepContinued);
@@ -82,11 +86,24 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   final math.Random _random = math.Random();
 
+  /// Waits between the background retries of the server completion write.
+  @visibleForTesting
+  static List<Duration> completionRetryDelays = const <Duration>[
+    Duration(seconds: 3),
+    Duration(seconds: 10),
+    Duration(seconds: 30),
+  ];
+
   Stopwatch? _onboardingStopwatch;
   bool _completionInFlight = false;
   bool _completionTracked = false;
+  bool _paywallHandled = false;
 
-  Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) async {
+  Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) => _loadData(emit);
+
+  Future<void> _onLoadRetried(_LoadRetried event, Emitter<OnboardingV2State> emit) => _loadData(emit);
+
+  Future<void> _loadData(Emitter<OnboardingV2State> emit) async {
     _onboardingStopwatch ??= Stopwatch()..start();
     emit(state.copyWith(loadStatus: LoadStatus.loading, navRequest: null));
     final catalog = await PersonalizedInterestsCatalog.load(remoteConfig: _remoteConfig, settingsLocal: _settingsLocal);
@@ -133,6 +150,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final userId = app_state.prismUser.id;
     bool skipInterests = false;
     bool skipStarterPack = false;
+    bool alreadyCompleted = false;
 
     if (!OnboardingV2Config.debugForceOnboarding && userId.isNotEmpty) {
       final statusResult = await _onboardingRepository.fetchUserCompletionStatus(userId: userId);
@@ -140,11 +158,17 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         onSuccess: (status) {
           skipInterests = status.hasInterests;
           skipStarterPack = status.hasFollows;
+          alreadyCompleted = status.completed;
         },
         onFailure: (_) {
           // Fall back to showing all steps on error
         },
       );
+    }
+
+    if (alreadyCompleted) {
+      await _skipForReturningUser(emit);
+      return;
     }
 
     final isPremium = app_state.prismUser.premium;
@@ -178,6 +202,24 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         ),
       );
     }
+  }
+
+  /// The server already has `onboardingV2.completed`: restore the local flag and skip the paywall too.
+  Future<void> _skipForReturningUser(Emitter<OnboardingV2State> emit) async {
+    _completionTracked = true;
+    try {
+      await _settingsLocal.set(OnboardingV2Keys.onboardedNew, true);
+    } catch (error) {
+      logger.w('Could not store the onboarding flag for a returning user: $error', tag: 'OnboardingV2Bloc');
+    }
+    emit(
+      state.copyWith(
+        isAuthLoading: false,
+        skipInterests: true,
+        skipStarterPack: true,
+        navRequest: OnboardingV2NavRequest.completeOnboarding,
+      ),
+    );
   }
 
   void _onAuthLoadingChanged(_AuthLoadingChanged event, Emitter<OnboardingV2State> emit) {
@@ -215,10 +257,24 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       state.copyWith(
         actionStatus: ActionStatus.success,
         step: nextStep,
+        aiData: nextStep == OnboardingV2Step.aiGenerate ? _promptForInterests(selectedInterests) : state.aiData,
         wallpaperData: OnboardingWallpaperData(
           wallpaper: refreshedWallpaper ?? state.wallpaperData.wallpaper,
           status: FirstWallpaperStatus.idle,
         ),
+      ),
+    );
+  }
+
+  void _onInterestsSkipped(_InterestsSkipped event, Emitter<OnboardingV2State> emit) {
+    if (state.step != OnboardingV2Step.interests) return;
+    final nextStep = state.skipStarterPack ? OnboardingV2Step.aiGenerate : OnboardingV2Step.starterPack;
+    emit(
+      state.copyWith(
+        step: nextStep,
+        actionStatus: ActionStatus.idle,
+        aiData: nextStep == OnboardingV2Step.aiGenerate ? _promptForInterests(const <String>[]) : state.aiData,
+        navRequest: null,
       ),
     );
   }
@@ -249,6 +305,15 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
     unawaited(analytics.track(OnboardingV2StarterPackCompletedEvent(followedCount: selectedCreators.length)));
 
+    await _leaveStarterPack(emit);
+  }
+
+  Future<void> _onStarterPackSkipped(_StarterPackSkipped event, Emitter<OnboardingV2State> emit) async {
+    if (state.step != OnboardingV2Step.starterPack) return;
+    await _leaveStarterPack(emit);
+  }
+
+  Future<void> _leaveStarterPack(Emitter<OnboardingV2State> emit) async {
     if (state.skipInterests) {
       // Interests was skipped, so the wallpaper step is skipped too: go straight to the paywall.
       emit(state.copyWith(actionStatus: ActionStatus.success, navRequest: null));
@@ -312,7 +377,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     _FirstWallpaperStepContinued event,
     Emitter<OnboardingV2State> emit,
   ) async {
-    if (app_state.prismUser.premium) {
+    if (app_state.prismUser.premium || _paywallHandled) {
       await _finishOnboarding(emit, didPurchase: false);
     } else {
       emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
@@ -320,6 +385,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _onPaywallResultReceived(_PaywallResultReceived event, Emitter<OnboardingV2State> emit) async {
+    _paywallHandled = true;
     await _finishOnboarding(emit, didPurchase: event.didPurchase);
   }
 
@@ -328,38 +394,60 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     _completionInFlight = true;
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
     try {
+      // The local flag goes first so a failed server write never traps the user in onboarding.
+      await _settingsLocal.set(OnboardingV2Keys.onboardedNew, true);
       final totalMs = _onboardingStopwatch?.elapsedMilliseconds ?? 0;
       final result = await _completeOnboardingUseCase(const NoParams());
-      result.fold(
-        onSuccess: (_) {
-          _completionTracked = true;
-          unawaited(analytics.track(OnboardingV2CompletedEvent(didPurchase: didPurchase, totalElapsedMs: totalMs)));
-          emit(
-            state.copyWith(actionStatus: ActionStatus.success, navRequest: OnboardingV2NavRequest.completeOnboarding),
-          );
-        },
-        onFailure: (_) => emit(state.copyWith(actionStatus: ActionStatus.failure)),
-      );
+      if (result.isFailure) {
+        unawaited(_retryCompletionInBackground(didPurchase: didPurchase, totalMs: totalMs));
+        emit(state.copyWith(actionStatus: ActionStatus.failure, navRequest: OnboardingV2NavRequest.completeOnboarding));
+        return;
+      }
+      _trackCompleted(didPurchase: didPurchase, totalMs: totalMs);
+      emit(state.copyWith(actionStatus: ActionStatus.success, navRequest: OnboardingV2NavRequest.completeOnboarding));
     } finally {
       _completionInFlight = false;
     }
   }
 
-  void _onStepBack(_StepBack event, Emitter<OnboardingV2State> emit) {
-    // auth is terminal — no backward navigation
-    if (state.step == OnboardingV2Step.auth) return;
+  void _trackCompleted({required bool didPurchase, required int totalMs}) {
+    _completionTracked = true;
+    unawaited(analytics.track(OnboardingV2CompletedEvent(didPurchase: didPurchase, totalElapsedMs: totalMs)));
+  }
 
+  /// Runs after the screen has moved on, so it only uses the use case and analytics, never `emit`.
+  Future<void> _retryCompletionInBackground({required bool didPurchase, required int totalMs}) async {
+    for (final delay in completionRetryDelays) {
+      await Future<void>.delayed(delay);
+      try {
+        final result = await _completeOnboardingUseCase(const NoParams());
+        if (result.isSuccess) {
+          _trackCompleted(didPurchase: didPurchase, totalMs: totalMs);
+          return;
+        }
+      } catch (error) {
+        logger.w('Onboarding completion retry failed: $error', tag: 'OnboardingV2Bloc');
+      }
+    }
+    logger.w('Onboarding completion could not be saved to the server.', tag: 'OnboardingV2Bloc');
+  }
+
+  void _onStepBack(_StepBack event, Emitter<OnboardingV2State> emit) {
     final OnboardingV2Step? prevStep = switch (state.step) {
-      OnboardingV2Step.interests => OnboardingV2Step.auth,
-      OnboardingV2Step.starterPack => state.skipInterests ? OnboardingV2Step.auth : OnboardingV2Step.interests,
+      OnboardingV2Step.auth => null,
+      // A signed-in user never goes back to the sign-in step.
+      OnboardingV2Step.interests => null,
+      OnboardingV2Step.starterPack => state.skipInterests ? null : OnboardingV2Step.interests,
       OnboardingV2Step.aiGenerate => state.skipStarterPack ? OnboardingV2Step.interests : OnboardingV2Step.starterPack,
       OnboardingV2Step.firstWallpaper => OnboardingV2Step.aiGenerate,
-      OnboardingV2Step.auth => null,
     };
 
     if (prevStep != null) {
       emit(state.copyWith(step: prevStep, navRequest: null));
+      return;
     }
+    emit(state.copyWith(navRequest: OnboardingV2NavRequest.exitApp));
+    emit(state.copyWith(navRequest: null));
   }
 
   Future<void> _onAiGenerationRequested(_AiGenerationRequested event, Emitter<OnboardingV2State> emit) async {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 const String _shareDomain = 'prismwalls.com';
+const String _defaultPreviewTitle = 'Wallpaper on Prism';
 
 class _CanonicalLinkBuilder {
   const _CanonicalLinkBuilder();
@@ -102,7 +104,11 @@ void _trackDynamicLinkCreateResult({
   required EventResultValue result,
   AnalyticsReasonValue? reason,
 }) {
-  analytics.track(DynamicLinkCreateResultEvent(shareType: shareType, result: result, reason: reason));
+  try {
+    unawaited(analytics.track(DynamicLinkCreateResultEvent(shareType: shareType, result: result, reason: reason)));
+  } catch (error, stackTrace) {
+    logger.w('Dynamic link analytics failed', error: error, stackTrace: stackTrace);
+  }
 }
 
 Future<String> _buildShareableLink({
@@ -120,7 +126,15 @@ Future<String> _buildShareableLink({
   return resolved.toString();
 }
 
-Future<String> createDynamicLink(String id, WallpaperSource source, String? url, String thumbUrl) async {
+/// Builds a share link for a wallpaper. It has no side effects besides analytics.
+/// Returns null when the link cannot be created, so callers choose how to tell the user.
+Future<String?> createDynamicLink(
+  String id,
+  WallpaperSource source,
+  String? url,
+  String thumbUrl, {
+  String? title,
+}) async {
   try {
     final Uri canonical = _canonicalLinkBuilder.wallpaper(id: id, source: source, url: url, thumbUrl: thumbUrl);
     final String link = await _buildShareableLink(
@@ -134,17 +148,14 @@ Future<String> createDynamicLink(String id, WallpaperSource source, String? url,
         'thumb': thumbUrl,
       },
       preview: <String, dynamic>{
-        'title': '$id - Prism',
+        'title': (title?.trim().isEmpty ?? true) ? _defaultPreviewTitle : title!.trim(),
         'description': 'Check out this amazing wallpaper from Prism.',
         'image_source_url': thumbUrl,
         'provider': source.legacyProviderString,
         'wall_id': id,
       },
     );
-
-    await Clipboard.setData(ClipboardData(text: 'Hey check this out ➜ $link'));
     _trackDynamicLinkCreateResult(shareType: ShareTypeValue.wallpaper, result: EventResultValue.success);
-    toasts.success('Sharing link copied!');
     return link;
   } catch (error, stackTrace) {
     logger.e('Failed to create wallpaper dynamic link.', error: error, stackTrace: stackTrace);
@@ -153,8 +164,26 @@ Future<String> createDynamicLink(String id, WallpaperSource source, String? url,
       result: EventResultValue.failure,
       reason: AnalyticsReasonValue.error,
     );
-    rethrow;
+    return null;
   }
+}
+
+/// Creates the wallpaper link, copies it to the clipboard and shows a toast. Never throws.
+Future<bool> copyWallpaperLink(String id, WallpaperSource source, String? url, String thumbUrl, {String? title}) async {
+  final String? link = await createDynamicLink(id, source, url, thumbUrl, title: title);
+  if (link == null) {
+    toasts.error("Couldn't create the share link. Try again.");
+    return false;
+  }
+  try {
+    await Clipboard.setData(ClipboardData(text: 'Hey check this out ➜ $link'));
+  } catch (error, stackTrace) {
+    logger.w('Failed to copy the wallpaper link.', error: error, stackTrace: stackTrace);
+    toasts.error("Couldn't copy the link. Try again.");
+    return false;
+  }
+  toasts.success('Sharing link copied!');
+  return true;
 }
 
 Future<void> createUserDynamicLink(

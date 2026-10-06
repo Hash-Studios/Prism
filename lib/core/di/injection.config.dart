@@ -18,6 +18,7 @@ import 'package:internet_connection_checker/internet_connection_checker.dart'
 
 import '../../data/content_reports/firebase_content_report_repository.dart'
     as _i1058;
+import '../../data/notifications/notification_tombstones.dart' as _i150;
 import '../../data/user_blocks/firebase_user_block_repository.dart' as _i545;
 import '../../data/view_stats/firebase_view_stats_repository.dart' as _i818;
 import '../../features/admin_review/biz/bloc/review_batch_bloc.dart' as _i711;
@@ -94,6 +95,7 @@ import '../../features/pexels_feed/data/repositories/pexels_wallpaper_repository
     as _i914;
 import '../../features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart'
     as _i312;
+import '../../features/prism_feed/data/prism_wall_search.dart' as _i289;
 import '../../features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart'
     as _i759;
 import '../../features/prism_feed/domain/repositories/prism_wallpaper_repository.dart'
@@ -159,6 +161,8 @@ import '../../features/wallpaper_detail/domain/repositories/palette_repository.d
     as _i652;
 import '../../features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart'
     as _i231;
+import '../../features/wallpaper_history/data/wallpaper_history_store.dart'
+    as _i121;
 import '../content_reports/content_report_repository.dart' as _i177;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
@@ -217,6 +221,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i1073.SettingsLocalDataSource>(
     () => _i1073.SettingsLocalDataSource(gh<_i496.LocalStore>()),
   );
+  gh.lazySingleton<_i150.NotificationTombstones>(
+    () => _i150.NotificationTombstones(gh<_i496.LocalStore>()),
+  );
   gh.lazySingleton<_i602.ViewStatsRepository>(
     () => _i818.FirebaseViewStatsRepository(),
   );
@@ -234,6 +241,12 @@ _i174.GetIt initGetIt(
     () =>
         _i231.RecordPrismWallpaperViewsUsecase(gh<_i602.ViewStatsRepository>()),
   );
+  gh.lazySingleton<_i366.NotificationsRepository>(
+    () => _i1017.NotificationsRepositoryImpl(
+      gh<_i290.NotificationsLocalDataSource>(),
+      gh<_i150.NotificationTombstones>(),
+    ),
+  );
   gh.lazySingleton<_i177.ContentReportRepository>(
     () => _i1058.FirebaseContentReportRepository(),
   );
@@ -241,6 +254,34 @@ _i174.GetIt initGetIt(
     () => _i387.WallhavenWallpaperRepositoryImpl(
       gh<_i954.FeedCacheLocalDataSource>(),
     ),
+  );
+  gh.lazySingleton<_i474.FetchNotificationsUseCase>(
+    () => _i474.FetchNotificationsUseCase(gh<_i366.NotificationsRepository>()),
+  );
+  gh.lazySingleton<_i474.MarkNotificationAsReadUseCase>(
+    () => _i474.MarkNotificationAsReadUseCase(
+      gh<_i366.NotificationsRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i474.DeleteNotificationUseCase>(
+    () => _i474.DeleteNotificationUseCase(gh<_i366.NotificationsRepository>()),
+  );
+  gh.lazySingleton<_i474.ClearNotificationsUseCase>(
+    () => _i474.ClearNotificationsUseCase(gh<_i366.NotificationsRepository>()),
+  );
+  gh.lazySingleton<_i474.DeleteNotificationsByIdsUseCase>(
+    () => _i474.DeleteNotificationsByIdsUseCase(
+      gh<_i366.NotificationsRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i474.MarkAllNotificationsAsReadUseCase>(
+    () => _i474.MarkAllNotificationsAsReadUseCase(
+      gh<_i366.NotificationsRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i474.RestoreNotificationsUseCase>(
+    () =>
+        _i474.RestoreNotificationsUseCase(gh<_i366.NotificationsRepository>()),
   );
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(
@@ -259,11 +300,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i428.ThemeRepository>(
     () => _i593.ThemeRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
-  );
-  gh.lazySingleton<_i366.NotificationsRepository>(
-    () => _i1017.NotificationsRepositoryImpl(
-      gh<_i290.NotificationsLocalDataSource>(),
-    ),
   );
   gh.lazySingleton<_i601.CacheMaintenanceService>(
     () => _i601.CacheMaintenanceService(
@@ -299,18 +335,14 @@ _i174.GetIt initGetIt(
     () =>
         _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
-  gh.lazySingleton<_i577.WallpaperSearchService>(
-    () => _i577.WallpaperSearchService(
-      gh<_i604.WallhavenWallpaperRepository>(),
-      gh<_i312.PexelsWallpaperRepository>(),
-      gh<_i1073.SettingsLocalDataSource>(),
-    ),
-  );
   gh.lazySingleton<_i937.LoadThemeUseCase>(
     () => _i937.LoadThemeUseCase(gh<_i428.ThemeRepository>()),
   );
   gh.lazySingleton<_i937.UpdateThemeUseCase>(
     () => _i937.UpdateThemeUseCase(gh<_i428.ThemeRepository>()),
+  );
+  gh.lazySingleton<_i121.WallpaperHistoryStore>(
+    () => _i121.WallpaperHistoryStore(gh<_i1073.SettingsLocalDataSource>()),
   );
   gh.lazySingleton<_i491.ConnectivityService>(
     () => _i491.InternetConnectivityService(
@@ -342,9 +374,6 @@ _i174.GetIt initGetIt(
       gh<_i406.ClearFavouriteWallsUseCase>(),
     ),
   );
-  gh.lazySingleton<_i204.UserSearchRepository>(
-    () => _i352.UserSearchRepositoryImpl(gh<_i349.FirestoreClient>()),
-  );
   gh.factory<_i313.StartupBloc>(
     () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
   );
@@ -356,6 +385,17 @@ _i174.GetIt initGetIt(
       gh<_i627.FirebaseRemoteConfig>(),
       gh<_i349.FirestoreClient>(),
       gh<_i1073.SettingsLocalDataSource>(),
+    ),
+  );
+  gh.lazySingleton<_i584.InAppNotificationsBloc>(
+    () => _i584.InAppNotificationsBloc(
+      gh<_i474.FetchNotificationsUseCase>(),
+      gh<_i474.MarkNotificationAsReadUseCase>(),
+      gh<_i474.DeleteNotificationUseCase>(),
+      gh<_i474.DeleteNotificationsByIdsUseCase>(),
+      gh<_i474.ClearNotificationsUseCase>(),
+      gh<_i474.MarkAllNotificationsAsReadUseCase>(),
+      gh<_i474.RestoreNotificationsUseCase>(),
     ),
   );
   gh.lazySingleton<_i25.AdminModerationRepository>(
@@ -385,38 +425,16 @@ _i174.GetIt initGetIt(
       gh<_i937.UpdateThemeUseCase>(),
     ),
   );
-  gh.lazySingleton<_i474.FetchNotificationsUseCase>(
-    () => _i474.FetchNotificationsUseCase(gh<_i366.NotificationsRepository>()),
-  );
-  gh.lazySingleton<_i474.MarkNotificationAsReadUseCase>(
-    () => _i474.MarkNotificationAsReadUseCase(
-      gh<_i366.NotificationsRepository>(),
-    ),
-  );
-  gh.lazySingleton<_i474.DeleteNotificationUseCase>(
-    () => _i474.DeleteNotificationUseCase(gh<_i366.NotificationsRepository>()),
-  );
-  gh.lazySingleton<_i474.ClearNotificationsUseCase>(
-    () => _i474.ClearNotificationsUseCase(gh<_i366.NotificationsRepository>()),
-  );
-  gh.lazySingleton<_i474.DeleteNotificationsByIdsUseCase>(
-    () => _i474.DeleteNotificationsByIdsUseCase(
-      gh<_i366.NotificationsRepository>(),
+  gh.lazySingleton<_i204.UserSearchRepository>(
+    () => _i352.UserSearchRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
     ),
   );
   gh.factory<_i711.ReviewBatchBloc>(
     () => _i711.ReviewBatchBloc(
       gh<_i122.ReviewBatchRepository>(),
       gh<_i25.AdminModerationRepository>(),
-    ),
-  );
-  gh.lazySingleton<_i584.InAppNotificationsBloc>(
-    () => _i584.InAppNotificationsBloc(
-      gh<_i474.FetchNotificationsUseCase>(),
-      gh<_i474.MarkNotificationAsReadUseCase>(),
-      gh<_i474.DeleteNotificationUseCase>(),
-      gh<_i474.DeleteNotificationsByIdsUseCase>(),
-      gh<_i474.ClearNotificationsUseCase>(),
     ),
   );
   gh.lazySingleton<_i750.SearchUsersUseCase>(
@@ -456,6 +474,12 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i95.SaveInterestsUseCase>(
     () => _i95.SaveInterestsUseCase(gh<_i897.OnboardingV2Repository>()),
   );
+  gh.lazySingleton<_i289.PrismWallSearch>(
+    () => _i289.PrismWallSearch(
+      gh<_i349.FirestoreClient>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
   gh.lazySingleton<_i563.CategoryFeedRepository>(
     () => _i307.CategoryFeedRepositoryImpl(
       gh<_i1073.SettingsLocalDataSource>(),
@@ -470,6 +494,14 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i301.FetchCategoryFeedUseCase>(
     () => _i301.FetchCategoryFeedUseCase(gh<_i563.CategoryFeedRepository>()),
+  );
+  gh.lazySingleton<_i577.WallpaperSearchService>(
+    () => _i577.WallpaperSearchService(
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i289.PrismWallSearch>(),
+    ),
   );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
     () => _i903.PersonalizedFeedRepositoryImpl(

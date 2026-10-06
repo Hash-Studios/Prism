@@ -60,14 +60,16 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       final fetched = await _fetchFromSource(category, refresh: refresh);
       final page = fetched.data;
       if (page == null) {
-        return await _cachedOrFailure(
-          category: category,
-          mode: mode,
-          failure: fetched.failure ?? const UnknownFailure('Failed to fetch feed'),
-        );
+        final failure = fetched.failure ?? const UnknownFailure('Failed to fetch feed');
+        if (!refresh) {
+          return Result.error(failure);
+        }
+        return await _cachedOrFailure(category: category, mode: mode, failure: failure);
       }
 
-      await _writeCache(category, page);
+      if (refresh) {
+        await _writeCache(category, page);
+      }
 
       logger.i(
         '[CategoryFeedRepository] fetchCategoryFeed success',
@@ -82,7 +84,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
 
       return Result.success(page);
     } catch (error, stackTrace) {
-      final cached = await _readCached(category);
+      final cached = refresh ? await _readCached(category) : null;
       if (cached != null) {
         logger.w(
           '[CategoryFeedRepository] remote fetch failed; returning cached snapshot',
@@ -204,6 +206,14 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     return CategoryFeedPage(items: items, hasMore: payload['hasMore'] == true);
   }
 
-  String _scopeFor(CategoryEntity category) =>
-      '${category.source.wireValue}.${category.searchType.name}.${feedCacheSlug(category.name)}';
+  String _scopeFor(CategoryEntity category) {
+    final String base = '${category.source.wireValue}.${category.searchType.name}.${feedCacheSlug(category.name)}';
+    return switch (category.source) {
+      WallpaperSource.wallhaven =>
+        '$base.${_settingsLocal.get<int>('WHcategories', defaultValue: 100)}'
+            '.${_settingsLocal.get<int>('WHpurity', defaultValue: 100)}.portrait',
+      WallpaperSource.pexels => '$base.portrait',
+      _ => base,
+    };
+  }
 }

@@ -10,6 +10,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -31,9 +32,9 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -103,8 +104,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _submitting = false;
   final Set<String> _unconfirmedSubmissionIds = <String>{};
 
-  static const int _maxPromptChars = 4000;
-  static const int _maxVariationChars = 2000;
+  static const int _maxPromptChars = 160;
+  static const int _maxVariationChars = 160;
 
   static const Map<AiStylePreset, List<String>> _scenePoolByStyle = <AiStylePreset, List<String>>{
     AiStylePreset.anime: <String>[
@@ -460,7 +461,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
     PrismHaptics.tap();
     final AiStylePreset style = _selectedStyle;
-    final AiQualityTier qualityTier = _selectedQualityTier;
+    final AiQualityTier qualityTier = latest.qualityTier;
     await _runGeneration(
       style: style,
       qualityTier: qualityTier,
@@ -552,13 +553,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         return;
       }
       logger.w('AI generation failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      await CoinsService.instance.rollbackAiGenerationReservation(
+      final CoinMutationResult refund = await CoinsService.instance.rollbackAiGenerationReservation(
         reservation.mode,
         sourceTag: 'coins.rollback.ai_screen',
         reservationTransactionId: reservation.transactionId,
       );
       analytics.track(AiGenerateFailedEvent(error: error.toString(), mode: reservation.mode));
-      if (mounted) toasts.error(_toastForGenerateFailure(error));
+      if (mounted) {
+        toasts.error('${_toastForGenerateFailure(error)} ${refund.changed ? 'Coins refunded.' : 'Refund pending.'}');
+      }
     } finally {
       if (mounted) {
         setState(() => _loadingGeneration = false);
@@ -586,6 +589,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final result = await PrismMediaHostApi().enqueueDownload(request);
       if (result.success) {
         toasts.success(wallpaperSavedMessage);
+        if (mounted) await showIosSetWallpaperGuide(context);
+      } else if (isPhotosPermissionDenied(result.errorCode)) {
+        if (mounted) showPhotosPermissionDenied(context);
       } else {
         toasts.error(result.message ?? "Couldn't download! Please retry.");
       }
@@ -958,7 +964,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     minLines: 2,
                     maxLines: 4,
                     autofocus: true,
-                    inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(_maxVariationChars)],
+                    maxLength: _maxVariationChars,
                     decoration: InputDecoration(
                       labelText: 'Changes you want',
                       hintText: 'Darker sky, warmer palette, softer edges…',
@@ -1386,7 +1392,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 minLines: 2,
                 maxLines: 5,
                 textInputAction: TextInputAction.done,
-                inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(_maxPromptChars)],
+                maxLength: _maxPromptChars,
                 decoration: InputDecoration(
                   labelText: 'Description',
                   floatingLabelBehavior: FloatingLabelBehavior.auto,
@@ -1660,6 +1666,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 const SizedBox(height: _AiGenSpace.md),
                 _buildPromptArea(_loadingGeneration),
                 const SizedBox(height: _AiGenSpace.md),
+                if (!app_state.prismUser.premium) ...<Widget>[
+                  Text(
+                    'Free images carry a Prism watermark. Pro removes it.',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: _AiGenSpace.xs),
+                ],
                 ValueListenableBuilder<int>(
                   valueListenable: CoinsService.instance.balanceNotifier,
                   builder: (BuildContext context, int coinBalance, _) {
@@ -1809,14 +1824,15 @@ class _DecodedNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
-      url,
+    return CachedNetworkImage(
+      imageUrl: url,
       fit: BoxFit.cover,
-      cacheWidth: cacheWidth,
-      cacheHeight: cacheHeight,
+      memCacheWidth: cacheWidth,
+      memCacheHeight: cacheHeight,
       filterQuality: filterQuality,
-      gaplessPlayback: true,
-      errorBuilder: (_, _, _) => ColoredBox(color: errorColor),
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      errorWidget: (_, _, _) => ColoredBox(color: errorColor),
     );
   }
 }

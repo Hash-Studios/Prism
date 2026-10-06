@@ -447,6 +447,7 @@ interface PrismMediaHostApi {
   fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit)
   fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit)
   fun clearDownloads(callback: (Result<OperationResult>) -> Unit)
+  fun deleteDownload(path: String, callback: (Result<OperationResult>) -> Unit)
 
   companion object {
     /** The codec used by PrismMediaHostApi. */
@@ -520,6 +521,26 @@ interface PrismMediaHostApi {
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.clearDownloads{ result: Result<OperationResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.deleteDownload$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pathArg = args[0] as String
+            api.deleteDownload(pathArg) { result: Result<OperationResult> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(PrismMediaApiPigeonUtils.wrapError(error))

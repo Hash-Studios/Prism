@@ -10,6 +10,8 @@ import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
 class FavouriteWallpaperButton extends StatefulWidget {
@@ -55,9 +57,6 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
           } else {
             onFav(widget.wall);
           }
-          if (widget.trash) {
-            Navigator.pop(context);
-          }
         },
         iconColor: Theme.of(context).colorScheme.secondary,
         iconSize: 30,
@@ -66,28 +65,33 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     );
   }
 
-  Future<void> onFav(FavouriteWallEntity? wall) async {
+  Future<bool> onFav(FavouriteWallEntity? wall) async {
+    if (wall == null) return false;
     setState(() {
       isLoading = true;
     });
-    if (wall == null) {
-      setState(() {
-        isLoading = false;
-      });
-      return;
+    final adapter = context.favouriteWallsAdapter(listen: false);
+    bool success = false;
+    try {
+      success = await adapter.favCheck(wall);
+    } catch (error, stackTrace) {
+      logger.w('Favourite toggle failed', error: error, stackTrace: stackTrace);
     }
-    context.favouriteWallsAdapter(listen: false).favCheck(wall).then((success) {
-      if (success) {
-        analytics.track(FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString));
-        if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
-          widget.onFavourited?.call();
-        }
+    if (success) {
+      analytics.track(FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString));
+      if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
+        widget.onFavourited?.call();
       }
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+    } else {
+      toasts.error("Couldn't update favourites. Try again.");
+    }
+    if (!mounted) return success;
+    setState(() {
+      isLoading = false;
     });
+    if (success && widget.trash) {
+      Navigator.pop(context);
+    }
+    return success;
   }
 }

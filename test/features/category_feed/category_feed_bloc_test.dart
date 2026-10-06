@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -42,6 +45,35 @@ FeedItemEntity _prismItem(String id, {required String authorEmail}) {
 }
 
 void main() {
+  test('started loads the category list and fetches no feed', () async {
+    final load = _MockLoadCategoriesUseCase();
+    final fetch = _MockFetchCategoryFeedUseCase();
+    when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+
+    bloc.add(const CategoryFeedEvent.started());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(bloc.state.categories, const <CategoryEntity>[_home]);
+    expect(bloc.state.selectedCategory, isNull);
+    verifyNever(() => fetch(any()));
+  });
+
+  test('refreshRequested does nothing until a category was selected', () async {
+    final load = _MockLoadCategoriesUseCase();
+    final fetch = _MockFetchCategoryFeedUseCase();
+    when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+
+    bloc.add(const CategoryFeedEvent.started());
+    bloc.add(const CategoryFeedEvent.refreshRequested());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    verifyNever(() => fetch(any()));
+  });
+
   setUpAll(() {
     registerFallbackValue(const NoParams());
     registerFallbackValue(const FetchCategoryFeedParams(category: _home, refresh: true));
@@ -67,6 +99,8 @@ void main() {
     addTearDown(bloc.close);
 
     bloc.add(const CategoryFeedEvent.started());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
     await Future<void>.delayed(const Duration(milliseconds: 10));
     expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
 
@@ -97,6 +131,8 @@ void main() {
 
     bloc.add(const CategoryFeedEvent.started());
     await Future<void>.delayed(const Duration(milliseconds: 10));
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
     bloc.add(const CategoryFeedEvent.refreshRequested());
     await Future<void>.delayed(const Duration(milliseconds: 10));
     bloc.add(const CategoryFeedEvent.fetchMoreRequested());
@@ -105,6 +141,52 @@ void main() {
     final calls = verify(() => fetch(captureAny())).captured.cast<FetchCategoryFeedParams>();
     expect(calls.map((call) => call.refresh), <bool>[true, true, false]);
     expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+    expect(bloc.state.hasMore, isFalse);
+  });
+
+  test('selecting another category clears the old items, and a same-category refresh keeps them', () async {
+    const other = CategoryEntity(
+      name: 'Other',
+      source: WallpaperSource.prism,
+      searchType: CategorySearchType.nonSearch,
+      image: '',
+      image2: '',
+    );
+    final load = _MockLoadCategoriesUseCase();
+    final fetch = _MockFetchCategoryFeedUseCase();
+    final pending = Completer<Result<CategoryFeedPage>>();
+    var calls = 0;
+    when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home, other]));
+    when(() => fetch(any())).thenAnswer((_) {
+      calls++;
+      if (calls < 3) {
+        return Future.value(
+          Result.success(
+            CategoryFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'a@example.com')], hasMore: true),
+          ),
+        );
+      }
+      return pending.future;
+    });
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+    final states = <CategoryFeedState>[];
+    final sub = bloc.stream.listen(states.add);
+    addTearDown(sub.cancel);
+
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    states.clear();
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(states.first.status, LoadStatus.loading);
+    expect(states.first.items.map((e) => e.id), <String>['1']);
+
+    bloc.add(const CategoryFeedEvent.categorySelected(category: other));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(bloc.state.status, LoadStatus.loading);
+    expect(bloc.state.selectedCategory, other);
+    expect(bloc.state.items, isEmpty);
     expect(bloc.state.hasMore, isFalse);
   });
 }

@@ -2,6 +2,16 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:flutter/material.dart';
 
+/// Makes every [CircularMenuButton] below it draw a bare icon button: no fill and no shadow.
+class FlatMenuButtons extends InheritedWidget {
+  const FlatMenuButtons({super.key, required super.child});
+
+  static bool of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<FlatMenuButtons>() != null;
+
+  @override
+  bool updateShouldNotify(FlatMenuButtons oldWidget) => false;
+}
+
 /// Shared skeleton for the circular action buttons on the wallpaper detail menu:
 /// a primary-color circle with a soft drop shadow around [child], plus a loading
 /// spinner overlay while [isLoading] is true.
@@ -27,24 +37,23 @@ class CircularMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool flat = FlatMenuButtons.of(context);
     final Widget button = Stack(
       children: [
         Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
-            ],
-            borderRadius: BorderRadius.circular(500),
-          ),
+          decoration: flat
+              ? null
+              : BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
+                  ],
+                  borderRadius: BorderRadius.circular(500),
+                ),
           padding: padding,
           child: child,
         ),
-        Positioned(
-          top: 0,
-          left: 0,
-          height: 53,
-          width: 53,
+        Positioned.fill(
           child: AnimatedSwitcher(
             duration: context.motion(const Duration(milliseconds: 120)),
             child: isLoading
