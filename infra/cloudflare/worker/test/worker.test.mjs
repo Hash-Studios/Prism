@@ -281,7 +281,7 @@ async function postGeneration(env) {
   );
 }
 
-function mockFal({ providerStatus = 200, imageSize = 4096 } = {}) {
+function mockFal({ providerStatus = 200, imageSize = 4096, imageStatus = 200 } = {}) {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input) => {
     const url = String(input instanceof Request ? input.url : input);
@@ -291,6 +291,7 @@ function mockFal({ providerStatus = 200, imageSize = 4096 } = {}) {
         : new Response('boom', { status: providerStatus });
     }
     if (url === 'https://fal.media/image.png') {
+      if (imageStatus !== 200) return new Response('gone', { status: imageStatus });
       return new Response(new Uint8Array(imageSize), { headers: { 'content-type': 'image/png' } });
     }
     throw new Error(`unexpected fetch ${url}`);
@@ -344,6 +345,60 @@ test('an unsafe output keeps the daily cap because the provider already billed',
   } finally {
     restoreWorking();
   }
+});
+
+test('an unsafe output stops the request so a second provider is never billed', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  const kv = aiKv();
+  await kv.put('ai:routing:active', JSON.stringify({
+    hardUserDailyCap: 5,
+    fallbackOrder: ['fal', 'gemini'],
+    providers: { gemini: { enabled: true, weight: 0 } },
+  }));
+  const env = aiEnv(kv, coordinator, { GEMINI_API_KEY: 'test-gemini-key' });
+
+  let providerCalls = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://fal.run/')) {
+      providerCalls += 1;
+      return Response.json({ images: [{ url: 'https://fal.media/image.png' }] });
+    }
+    if (url === 'https://fal.media/image.png') {
+      return new Response(new Uint8Array(16), { headers: { 'content-type': 'image/png' } });
+    }
+    if (url.startsWith('https://generativelanguage.googleapis.com/')) {
+      providerCalls += 1;
+      return Response.json({
+        candidates: [{ content: { parts: [{ inlineData: { data: 'AAAA', mimeType: 'image/png' } }] } }],
+      });
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  };
+  try {
+    assert.equal((await postGeneration(env)).status, 502);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(providerCalls, 1);
+});
+
+test('a failed image download keeps the daily cap and the budget spend because fal already billed', async () => {
+  const storage = new MemoryStorage();
+  const coordinator = new AiQuotaCoordinator({ storage });
+  const env = aiEnv(aiKv(), coordinator);
+
+  const restoreBroken = mockFal({ imageStatus: 500 });
+  try {
+    assert.equal((await postGeneration(env)).status, 502);
+    assert.equal((await postGeneration(env)).status, 429);
+  } finally {
+    restoreBroken();
+  }
+
+  const spent = await storage.get(`provider:fal:daily:${new Date().toISOString().slice(0, 10)}`);
+  assert.equal(spent, 0.006);
 });
 
 test('a watermark failure still returns success, keeps the original and defers the public image', async () => {

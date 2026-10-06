@@ -91,6 +91,7 @@ interface AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult>;
 }
 
@@ -858,6 +859,18 @@ async function runGenerationAttempts(
     const model = providerConfig.modelByQuality[effectiveQualityTier];
     const startedAt = Date.now();
     let shouldReleaseReservation = true;
+    let reservationCommitted = false;
+    const markBilled = async (): Promise<void> => {
+      if (reservationCommitted) {
+        return;
+      }
+      reservationCommitted = true;
+      if (isNonEmptyString(reservationId)) {
+        await commitBilledReservation(reservationId, providerName, estimatedCost, params.env);
+      }
+      shouldReleaseReservation = false;
+      billing.billed = true;
+    };
     try {
       const result = await adapter.generate({
         prompt: params.prompt,
@@ -869,14 +882,10 @@ async function runGenerationAttempts(
         stylePreset: params.stylePreset,
         timeoutMs: providerConfig.timeoutMs,
         env: params.env,
+        onProviderBilled: markBilled,
       });
 
-      const billedCost = result.estimatedCostUsd > 0 ? result.estimatedCostUsd : estimatedCost;
-      if (isNonEmptyString(reservationId)) {
-        await commitBilledReservation(reservationId, providerName, billedCost, params.env);
-      }
-      shouldReleaseReservation = false;
-      billing.billed = true;
+      await markBilled();
 
       if (!isOutputSafe(result.imageBytes, result.contentType)) {
         lastErrorCode = 'unsafe_output';
@@ -886,7 +895,7 @@ async function runGenerationAttempts(
           model: result.model,
           contentType: result.contentType,
         });
-        continue;
+        break;
       }
 
       const generationId = createId('gen');
@@ -919,7 +928,7 @@ async function runGenerationAttempts(
           promptSafe: true,
           outputSafe: true,
         },
-        estimatedCostUsd: billedCost,
+        estimatedCostUsd: estimatedCost,
         latencyMs,
       };
 
@@ -965,6 +974,9 @@ async function runGenerationAttempts(
         effectiveQualityTier,
         error: `${error ?? ''}`,
       });
+      if (reservationCommitted) {
+        break;
+      }
     } finally {
       if (shouldReleaseReservation && isNonEmptyString(reservationId)) {
         try {
@@ -1898,6 +1910,7 @@ class FalProviderAdapter implements AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult> {
     if (!isNonEmptyString(params.env.FAL_API_KEY)) {
       throw new Error('FAL_API_KEY missing');
@@ -1927,6 +1940,7 @@ class FalProviderAdapter implements AiProviderAdapter {
       const details = await readErrorDetails(response);
       throw new Error(`fal_failed_${response.status}${details}`);
     }
+    await params.onProviderBilled();
     const payload = await response.json() as {
       images?: Array<{ url?: string }>;
       image?: { url?: string };
@@ -1966,6 +1980,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult> {
     if (!isNonEmptyString(params.env.GEMINI_API_KEY)) {
       throw new Error('GEMINI_API_KEY missing');
@@ -1993,6 +2008,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
       const details = await readErrorDetails(response);
       throw new Error(`gemini_failed_${response.status}${details}`);
     }
+    await params.onProviderBilled();
     const payload = await response.json() as {
       candidates?: Array<{
         content?: {
