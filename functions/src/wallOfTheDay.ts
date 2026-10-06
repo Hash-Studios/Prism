@@ -286,7 +286,7 @@ function bucketDate(entry: unknown): string | undefined {
 /**
  * Claims the bucket for the wall in `wall_of_the_day/current`, read inside the transaction so a claim never acts on a
  * stale pick. The claim wins only when that pick is recent and its date is newer than the date stored for the bucket,
- * so delivery never moves backward. It returns the raw previous entry, so a failed send can restore it.
+ * so delivery never moves backward. A legacy entry without a date blocks only the same wall. It returns the raw previous entry, so a failed send can restore it.
  */
 async function claimBucket(topic: string, nowMs: number): Promise<BucketClaim> {
   const ref = bucketDeliveriesRef();
@@ -302,7 +302,7 @@ async function claimBucket(topic: string, nowMs: number): Promise<BucketClaim> {
     const date = (current.date as admin.firestore.Timestamp).toDate().toISOString().slice(0, 10);
     const previous = buckets?.[topic];
     const storedDate = bucketDate(previous);
-    if (bucketWallId(previous) === wallId || (storedDate !== undefined && storedDate >= date)) return {won: false};
+    if (storedDate !== undefined ? storedDate >= date : bucketWallId(previous) === wallId) return {won: false};
     const claimId = randomUUID();
     tx.set(ref, {buckets: {[topic]: {wallId, date, claimId} satisfies BucketEntry}}, {merge: true});
     return {won: true, wallId, claimId, previous};

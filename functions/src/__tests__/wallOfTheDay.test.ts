@@ -302,6 +302,30 @@ test("same slot, picker first: the bucket job does not resend today's wall", asy
   assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
 });
 
+test("yesterday's delivery of a wall does not block today's pick of the same wall", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const h = harness(t, {
+    current: {wallId: "x", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc: {title: "Dunes"},
+    deliveries: {[bucket]: entry("x", "2026-01-01")},
+  });
+  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(event);
+  assert.deepEqual(h.topics, [bucket]);
+  assert.equal((h.deliveries[bucket] as {date?: string}).date, "2026-01-02");
+});
+
+test("a legacy undated marker for the same wall still blocks a resend", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const h = harness(t, {
+    current: {wallId: "x", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc: {title: "Dunes"},
+    deliveries: {[bucket]: "x"},
+  });
+  await sendWallOfTheDayBuckets.run(event);
+  assert.deepEqual(h.topics, []);
+});
+
 test("repeated bucket runs send one wall once per bucket", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
   const h = harness(t, {

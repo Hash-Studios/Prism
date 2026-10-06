@@ -715,6 +715,7 @@ class CoinsService {
         continue;
       }
       if (entryUser != userId) continue;
+      if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
       final CoinMutationResult refund = await refundSpend(
         CoinSpendAction.aiGeneration,
         sourceTag: 'coins.rollback.ai_generation.retry',
@@ -722,6 +723,7 @@ class CoinsService {
         reason: 'ai_generation_failed_refund',
       );
       if (refund.changed || !_isRetryableRefundFailure(refund)) resolvedIds.add(transactionId);
+      if (app_state.prismUser.id != userId) break;
     }
     await _withRefundQueueLock(() async {
       final List<Map<String, dynamic>> latest = _readPendingAiRefunds();
@@ -1147,12 +1149,23 @@ class CoinsService {
     };
     final int attempts = requestId == null ? 1 : 2;
     bool mayHaveCommitted = false;
+    CoinMutationResult signedOut({required bool mayHaveDebited}) => mayHaveDebited && requestId != null
+        ? CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'not_logged_in',
+            unknownOutcomeTransactionId: 'spend_${userId}_$requestId',
+          )
+        : _notLoggedIn;
     for (int attempt = 1; attempt <= attempts; attempt++) {
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return signedOut(mayHaveDebited: mayHaveCommitted);
       try {
         final HttpsCallable callable = appFunctions.httpsCallable(callableName);
         final HttpsCallableResult<dynamic> response = await callable.call(payload);
-        if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
         final Map<String, dynamic> data = toJsonMap(response.data);
+        if (!_canMutateCoins() || userId != app_state.prismUser.id) {
+          return signedOut(mayHaveDebited: data['changed'] == true);
+        }
         final int balance = parseIntOr(data['currentBalance']);
         return CoinMutationResult(
           success: data['success'] == true,

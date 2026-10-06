@@ -222,6 +222,95 @@ void main() {
     expect(stored, isNot(contains('tx-a')));
   });
 
+  test('an account switch after a lost first reply never retries the debit on the new account', () async {
+    final accountA = app_state.prismUser.id;
+    final requestIds = <String>[];
+    backend.onCall = (name, parameters) async {
+      if (name == 'spendCoins') {
+        requestIds.add(parameters['requestId'] as String);
+        app_state.prismUser.id = 'user-b';
+        throw FirebaseFunctionsException(code: 'unavailable', message: 'lost reply');
+      }
+      return _spent;
+    };
+
+    final reservation = await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
+
+    final expectedId = 'spend_${accountA}_${requestIds.single}';
+    expect(requestIds, hasLength(1));
+    expect(reservation.refundPending, isTrue);
+    expect(reservation.mutation.unknownOutcomeTransactionId, expectedId);
+    final stored = getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: '');
+    expect(stored, contains(expectedId));
+    expect(stored, contains('"userId":"$accountA"'));
+
+    final refunds = <Map<String, dynamic>>[];
+    backend.onCall = (name, parameters) async {
+      refunds.add(parameters);
+      return <String, Object>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 90,
+        'currentBalance': 100,
+        'delta': 10,
+      };
+    };
+    await service.retryPendingAiRefunds();
+    expect(refunds, isEmpty);
+
+    app_state.prismUser.id = accountA;
+    await service.retryPendingAiRefunds();
+    expect(refunds.single['transactionId'], expectedId);
+  });
+
+  test('a debit that succeeds after an account switch is queued for a refund under the original account', () async {
+    final accountA = app_state.prismUser.id;
+    backend.onCall = (name, parameters) async {
+      app_state.prismUser.id = 'user-b';
+      return _spent;
+    };
+
+    final reservation = await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
+
+    expect(reservation.success, isFalse);
+    expect(reservation.refundPending, isTrue);
+    expect(reservation.mutation.unknownOutcomeTransactionId, startsWith('spend_${accountA}_'));
+    expect(
+      getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''),
+      contains('"userId":"$accountA"'),
+    );
+  });
+
+  test('an account switch during a refund retry stops the retry and keeps the unsent refunds', () async {
+    final accountA = app_state.prismUser.id;
+    final settings = getIt<SettingsLocalDataSource>();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await settings.set(
+      'pendingAiRefunds',
+      '[{"userId":"$accountA","transactionId":"tx-1","atMs":$now},'
+          '{"userId":"$accountA","transactionId":"tx-2","atMs":$now}]',
+    );
+    final refunded = <String>[];
+    backend.onCall = (name, parameters) async {
+      refunded.add(parameters['transactionId'] as String);
+      app_state.prismUser.id = 'user-b';
+      return <String, Object>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 90,
+        'currentBalance': 100,
+        'delta': 10,
+      };
+    };
+
+    await service.retryPendingAiRefunds();
+
+    expect(refunded, <String>['tx-1']);
+    final stored = settings.get<String>('pendingAiRefunds', defaultValue: '');
+    expect(stored, isNot(contains('tx-1')));
+    expect(stored, contains('tx-2'));
+  });
+
   test('a definite spend failure does not queue a refund', () async {
     backend.onCall = (name, parameters) async =>
         throw FirebaseFunctionsException(code: 'permission-denied', message: 'no');

@@ -15,7 +15,9 @@ import UserNotifications
       object: nil,
       queue: .main
     ) { _ in
-      AppDelegate.clearBadge()
+      Task { @MainActor in
+        AppDelegate.clearBadge()
+      }
     }
   }
 
