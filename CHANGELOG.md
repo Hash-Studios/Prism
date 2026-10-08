@@ -1,6 +1,6 @@
 ## Changelog
 
-### Unreleased
+### v3.4.0
 - Live wallpapers on Android: make any wallpaper move, pick a living gradient, or use your own video
 - Choose Fill or Fit when you set a wallpaper, crop it yourself on Android, and pick a default Home, Lock or Both
 - See clear messages and a Retry button when a wallpaper does not set
@@ -18,6 +18,8 @@
 - Faster starts, an offline banner, and feeds that no longer show old pages after an error
 - On iPhone, a short guide shows how to use a saved wallpaper from Photos
 - Settings gets a Personalise section, a storage readout and Manage subscription, and About gets Send feedback
+- Trending and Popular wallpapers, updated through the day
+- Restore a long streak you missed, once a month
 - Security and stability fixes
 
 ### v3.3.0
