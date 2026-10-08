@@ -43,7 +43,7 @@ void main() {
       return null;
     });
     messenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call);
+      if (call.method == 'showToast') toastCalls.add(call);
       return true;
     });
     addTearDown(() {

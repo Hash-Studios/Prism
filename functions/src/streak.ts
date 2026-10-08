@@ -24,6 +24,9 @@ const REMINDER_RETRY_MS = 15 * 60_000;
 const REMINDER_CHANNEL_ID = "streak_reminder";
 
 const MAX_STREAK_FREEZES = 2;
+/** A broken streak of at least this many days can be bought back for 48 hours. */
+export const STREAK_RESCUE_MIN_COUNT = 7;
+const STREAK_RESCUE_WINDOW_MS = 2 * DAY_MS;
 const STREAK_MILESTONES = [7, 30, 100, 365];
 
 interface ClaimDailyStreakRequest {
@@ -175,6 +178,9 @@ export const claimDailyStreak = onCall(
       coinState.streakCount = plan.count;
       coinState.streakBest = plan.best;
       coinState.streakFreezes = plan.freezesLeft;
+      if (plan.streakBroken && plan.previousCount >= STREAK_RESCUE_MIN_COUNT) {
+        coinState.rescue = {count: plan.previousCount, expiresAtMs: now.getTime() + STREAK_RESCUE_WINDOW_MS};
+      }
 
       if (!alreadyClaimedToday) {
         streakDay = plan.cycleDay;
@@ -540,6 +546,11 @@ function normalizeCoinState(raw: unknown): CoinState {
   };
 }
 
+/** Day of the 7-day reward cycle (1 to 7) for a streak of `count` days. */
+export function streakCycleDay(count: number): number {
+  return ((count - 1) % 7) + 1;
+}
+
 export function streakMilestone(count: number): number | null {
   return STREAK_MILESTONES.includes(count) ? count : null;
 }
@@ -618,7 +629,7 @@ export function planStreakClaim(state: StreakClaimState, todayKey: string, isPro
     used = gap - 1;
   }
   const streakBroken = lastKey.length > 0 && count === 1 && prev > 0;
-  const cycleDay = ((count - 1) % 7) + 1;
+  const cycleDay = streakCycleDay(count);
   const rewardParts = rewardForStreakDay(cycleDay);
   return {
     ...base,

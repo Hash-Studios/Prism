@@ -2,6 +2,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -50,6 +51,13 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
                   previous.session.loggedIn != current.session.loggedIn ||
                   previous.session.premium != current.session.premium),
           listener: (context, state) => _syncSession(context, state),
+        ),
+        BlocListener<AutoRotateBloc, AutoRotateState>(
+          listenWhen: (previous, current) => !previous.proLapsed && current.proLapsed,
+          listener: (context, state) {
+            toasts.info('Auto-rotate is off because your Prism Pro plan ended.');
+            context.read<AutoRotateBloc>().add(const AutoRotateEvent.proLapseAcknowledged());
+          },
         ),
         BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
           listenWhen: (previous, current) =>

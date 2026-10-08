@@ -7,17 +7,17 @@ WallpaperCore _core(String thumbnailUrl) =>
 
 void main() {
   group('WallpaperCore.thumbnailUrl', () {
-    test('rewrites wallhaven lg crop to orig', () {
+    test('keeps wallhaven lg crop unchanged', () {
       expect(
         _core('https://th.wallhaven.cc/lg/21/21276x.jpg').thumbnailUrl,
-        'https://th.wallhaven.cc/orig/21/21276x.jpg',
+        'https://th.wallhaven.cc/lg/21/21276x.jpg',
       );
     });
 
-    test('rewrites wallhaven small crop to orig', () {
+    test('rewrites wallhaven small crop to lg', () {
       expect(
         _core('https://th.wallhaven.cc/small/21/21276x.jpg').thumbnailUrl,
-        'https://th.wallhaven.cc/orig/21/21276x.jpg',
+        'https://th.wallhaven.cc/lg/21/21276x.jpg',
       );
     });
 
@@ -34,10 +34,10 @@ void main() {
         'https://uploads.example/wall.jpg?source=https://th.wallhaven.cc/lg/21/21276x.jpg',
       );
       expect(
-        _core('http://th.wallhaven.cc/lg/21/21276x.jpg').thumbnailUrl,
-        'http://th.wallhaven.cc/orig/21/21276x.jpg',
+        _core('http://th.wallhaven.cc/small/21/21276x.jpg').thumbnailUrl,
+        'http://th.wallhaven.cc/lg/21/21276x.jpg',
       );
-      expect(_core('//th.wallhaven.cc/lg/21/21276x.jpg').thumbnailUrl, '//th.wallhaven.cc/orig/21/21276x.jpg');
+      expect(_core('//th.wallhaven.cc/small/21/21276x.jpg').thumbnailUrl, '//th.wallhaven.cc/lg/21/21276x.jpg');
     });
 
     test('keeps non-wallhaven url unchanged', () {
@@ -53,14 +53,14 @@ void main() {
   });
 
   group('normalizeWallpaperThumbnailUrl', () {
-    test('rewrites Wallhaven crop URLs and leaves other URLs unchanged', () {
+    test('maps Wallhaven small to lg and leaves other URLs unchanged', () {
       expect(
         normalizeWallpaperThumbnailUrl('https://th.wallhaven.cc/lg/21/21276x.jpg'),
-        'https://th.wallhaven.cc/orig/21/21276x.jpg',
+        'https://th.wallhaven.cc/lg/21/21276x.jpg',
       );
       expect(
         normalizeWallpaperThumbnailUrl('https://th.wallhaven.cc/small/21/21276x.jpg'),
-        'https://th.wallhaven.cc/orig/21/21276x.jpg',
+        'https://th.wallhaven.cc/lg/21/21276x.jpg',
       );
       expect(
         normalizeWallpaperThumbnailUrl('https://images.pexels.com/photos/1/a.jpg'),

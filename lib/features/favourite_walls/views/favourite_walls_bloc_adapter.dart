@@ -15,20 +15,18 @@ class FavouriteWallsAdapter {
 
   Future<List<FavouriteWallEntity>?> getDataBase({bool forceRefresh = false}) async {
     await _ensureLoaded(forceRefresh: forceRefresh);
-    return _bloc.state.status == LoadStatus.initial ? null : _bloc.state.items;
+    final LoadStatus status = _bloc.state.status;
+    return status == LoadStatus.initial || status == LoadStatus.failure ? null : _bloc.state.items;
   }
 
-  Future<bool> favCheck(FavouriteWallEntity wall) async {
+  /// Pass [desired] with the state the heart is going to show, so the tap never undoes a favourite that
+  /// the list has not loaded yet.
+  Future<bool> favCheck(FavouriteWallEntity wall, {bool? desired}) async {
     if (wall.id.isEmpty) {
       return false;
     }
 
-    final userId = app_state.prismUser.id;
-    if (userId.isEmpty) {
-      return false;
-    }
-
-    return _runAction((int id) => FavouriteWallsEvent.toggleRequested(wall: wall, operationId: id));
+    return _runAction((int id) => FavouriteWallsEvent.toggleRequested(wall: wall, desired: desired, operationId: id));
   }
 
   Future<bool> deleteData() => _runAction((int id) => FavouriteWallsEvent.clearRequested(operationId: id));
@@ -40,10 +38,6 @@ class FavouriteWallsAdapter {
       _runAction((int id) => FavouriteWallsEvent.restoreRequested(walls: walls, operationId: id));
 
   Future<bool> _runAction(FavouriteWallsEvent Function(int operationId) eventFor) async {
-    if (app_state.prismUser.id.isEmpty) {
-      return false;
-    }
-
     await _ensureLoaded();
     return (await _dispatch(eventFor)).actionStatus == ActionStatus.success;
   }
@@ -57,9 +51,6 @@ class FavouriteWallsAdapter {
 
   Future<void> _ensureLoaded({bool forceRefresh = false}) async {
     final userId = app_state.prismUser.id;
-    if (userId.isEmpty) {
-      return;
-    }
 
     if (_bloc.state.userId != userId || _bloc.state.status == LoadStatus.initial) {
       await _dispatch((int id) => FavouriteWallsEvent.started(userId: userId, operationId: id));

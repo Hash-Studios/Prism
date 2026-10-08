@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,6 +32,20 @@ class _WallpaperHistoryView extends StatelessWidget {
     if (context.mounted) context.read<WallpaperHistoryBloc>().add(const WallpaperHistoryEvent.started());
   }
 
+  void _remove(BuildContext context, AppliedWallpaper item) {
+    PrismHaptics.tap();
+    final WallpaperHistoryBloc bloc = context.read<WallpaperHistoryBloc>();
+    bloc.add(WallpaperHistoryEvent.removed(item.id));
+    ScaffoldMessenger.maybeOf(context)
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Removed from history'),
+          action: SnackBarAction(label: 'Undo', onPressed: () => bloc.add(WallpaperHistoryEvent.restored(item))),
+        ),
+      );
+  }
+
   Future<void> _confirmClear(BuildContext context) async {
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -51,6 +66,10 @@ class _WallpaperHistoryView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final List<AppliedWallpaper> items = context.select((WallpaperHistoryBloc bloc) => bloc.state.items);
+    final Set<String> currentIds = <String>{
+      ?currentWallpaperFor(items, 'home')?.id,
+      ?currentWallpaperFor(items, 'lock')?.id,
+    };
     return Scaffold(
       appBar: AppBar(
         title: Text('Wallpaper history', style: theme.textTheme.displaySmall),
@@ -81,9 +100,37 @@ class _WallpaperHistoryView extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final AppliedWallpaper item = items[index];
-                return AppliedWallpaperTile(key: ValueKey(item.id), item: item, onTap: () => _setAgain(context, item));
+                return Dismissible(
+                  key: ValueKey(item.id),
+                  background: const _RemoveBackground(alignment: Alignment.centerLeft),
+                  secondaryBackground: const _RemoveBackground(alignment: Alignment.centerRight),
+                  onDismissed: (_) => _remove(context, item),
+                  child: AppliedWallpaperTile(
+                    item: item,
+                    isCurrent: currentIds.contains(item.id),
+                    onTap: () => _setAgain(context, item),
+                    onRemove: () => _remove(context, item),
+                  ),
+                );
               },
             ),
+    );
+  }
+}
+
+class _RemoveBackground extends StatelessWidget {
+  const _RemoveBackground({required this.alignment});
+
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(color: scheme.error.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(16)),
+      child: Icon(JamIcons.trash_alt, color: scheme.error),
     );
   }
 }

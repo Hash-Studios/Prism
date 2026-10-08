@@ -2,18 +2,23 @@ import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 const int _kActivityLimit = 30;
 const int _kActivityCollapsed = 8;
 
-/// "Activity": the latest coin transactions.
+/// "Activity": the latest coin transactions. "See all" opens the full coin history.
 class RewardsActivitySection extends StatefulWidget {
-  const RewardsActivitySection({super.key});
+  const RewardsActivitySection({super.key, this.onSeeAll});
+
+  /// Test hook. By default it pushes [CoinHistoryRoute].
+  final VoidCallback? onSeeAll;
 
   @override
   State<RewardsActivitySection> createState() => _RewardsActivitySectionState();
@@ -24,7 +29,6 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
   bool _failed = false;
   bool _inFlight = false;
   bool _reloadRequested = false;
-  bool _expanded = false;
   List<CoinTransactionEntry> _items = const <CoinTransactionEntry>[];
 
   @override
@@ -71,6 +75,16 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
     }
   }
 
+  void _seeAll() {
+    PrismHaptics.tap();
+    final VoidCallback? override = widget.onSeeAll;
+    if (override != null) {
+      override();
+      return;
+    }
+    context.router.root.push(const CoinHistoryRoute());
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -94,7 +108,7 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
     } else if (_items.isEmpty) {
       body = Text('No coin activity yet.', style: PrismTextStyles.body(context));
     } else {
-      final int shown = _expanded ? _items.length : _items.length.clamp(0, _kActivityCollapsed);
+      final int shown = _items.length.clamp(0, _kActivityCollapsed);
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -116,8 +130,8 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
           if (_items.length > _kActivityCollapsed)
             Center(
               child: TextButton(
-                onPressed: () => setState(() => _expanded = !_expanded),
-                child: Text(_expanded ? 'Show less' : 'Show more', style: PrismTextStyles.rowTitle(context)),
+                onPressed: _seeAll,
+                child: Text('Show more', style: PrismTextStyles.rowTitle(context)),
               ),
             ),
         ],
@@ -128,7 +142,16 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Activity', style: PrismTextStyles.sectionTitle(context)),
+          Row(
+            children: <Widget>[
+              Expanded(child: Text('Activity', style: PrismTextStyles.sectionTitle(context))),
+              if (!_loading && !_failed && _items.isNotEmpty)
+                TextButton(
+                  onPressed: _seeAll,
+                  child: Text('See all', style: PrismTextStyles.rowTitle(context)),
+                ),
+            ],
+          ),
           const SizedBox(height: 12),
           body,
         ],

@@ -33,7 +33,7 @@ void main() {
     await Firebase.initializeApp();
   });
 
-  testWidgets('cancelling sign-in keeps the toast but does not play a success haptic', (tester) async {
+  testWidgets('cancelling sign-in is silent: no toast and no success haptic', (tester) async {
     final GoogleSignInPlatform previousPlatform = GoogleSignInPlatform.instance;
     GoogleSignInPlatform.instance = _CancelledGoogleSignInPlatform();
     addTearDown(() => GoogleSignInPlatform.instance = previousPlatform);
@@ -44,7 +44,7 @@ void main() {
       return null;
     });
     messenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call);
+      if (call.method == 'showToast') toastCalls.add(call);
       return true;
     });
     addTearDown(() {
@@ -63,10 +63,10 @@ void main() {
     );
     await tester.tap(find.text('Open sign-in'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('GOOGLE'));
+    await tester.tap(find.text('Google'));
     await tester.pumpAndSettle();
 
-    expect(toastCalls.any((call) => (call.arguments as Map<Object?, Object?>)['msg'] == 'Sign in cancelled.'), isTrue);
+    expect(toastCalls, isEmpty);
     expect(hapticTypes, <Object?>['HapticFeedbackType.lightImpact']);
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));

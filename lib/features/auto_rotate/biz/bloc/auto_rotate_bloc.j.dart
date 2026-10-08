@@ -30,10 +30,12 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
         targetChanged: (event) => _onConfigChanged(state.config.copyWith(target: event.target), emit),
         shuffleChanged: (event) => _onConfigChanged(state.config.copyWith(shuffle: event.shuffle), emit),
         sourceChanged: (event) => _onSourceChanged(event, emit),
+        categoryChanged: (event) => _onCategoryChanged(event, emit),
         chargingOnlyChanged: (event) => _onConfigChanged(state.config.copyWith(chargingOnly: event.chargingOnly), emit),
         rotateNowPressed: (event) => _onRotateNow(event, emit),
         statusRefreshed: (event) => _onStatusRefreshed(emit),
         batteryTipDismissed: (event) async => emit(state.copyWith(showBatteryTip: false)),
+        proLapseAcknowledged: (event) async => emit(state.copyWith(proLapsed: false)),
       ),
       transformer: (events, mapper) => events.asyncExpand(mapper),
     );
@@ -52,6 +54,8 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   final AutoRotateRepository _repository;
   List<String> _favouriteUrls = const <String>[];
   List<String> _downloadUrls = const <String>[];
+  List<String> _remoteUrls = const <String>[];
+  bool _remoteFailed = false;
   bool _favouritesCapped = false;
   bool _downloadsCapped = false;
   List<String>? _appliedUrls;
@@ -62,8 +66,25 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   Timer? _pollTimer;
   int _pollsLeft = _maxStatusPolls;
 
-  List<String> _activeUrls(AutoRotateConfig config) =>
-      config.source == AutoRotateSource.downloads ? _downloadUrls : _favouriteUrls;
+  Set<WallpaperTarget> _supportedTargets = const <WallpaperTarget>{
+    WallpaperTarget.home,
+    WallpaperTarget.lock,
+    WallpaperTarget.both,
+  };
+
+  bool _isRemote(AutoRotateSource source) =>
+      source == AutoRotateSource.category ||
+      source == AutoRotateSource.wallOfTheDay ||
+      source == AutoRotateSource.history;
+
+  List<String> _activeUrls(AutoRotateConfig config) => switch (config.source) {
+    AutoRotateSource.favourites => _favouriteUrls,
+    AutoRotateSource.downloads => _downloadUrls,
+    AutoRotateSource.category || AutoRotateSource.wallOfTheDay || AutoRotateSource.history => _remoteUrls,
+  };
+
+  /// True when the list for the chosen source could not be loaded. A rotation that already runs keeps its own list.
+  bool _remoteUnavailable(AutoRotateConfig config) => _isRemote(config.source) && _remoteFailed;
 
   bool _isCapped(AutoRotateSource source) =>
       source == AutoRotateSource.downloads ? _downloadsCapped : _favouritesCapped;
@@ -83,6 +104,33 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
         .toList(growable: false);
     _downloadsCapped = paths.length > _maxSources;
     _downloadUrls = paths.take(_maxSources).toList(growable: false);
+  }
+
+  /// Loads the list of a category, Wall of the Day or history source. Keeps the old list and returns false on failure.
+  Future<bool> _refreshRemote(AutoRotateConfig config) async {
+    List<String>? urls;
+    try {
+      urls = await _repository.loadRemoteUrls(config.source, category: config.categoryName);
+    } catch (_) {
+      urls = null;
+    }
+    if (urls == null) return false;
+    final Set<String> seen = <String>{};
+    _remoteUrls = urls.where(_isValidHttpsUrl).where(seen.add).take(_maxSources).toList(growable: false);
+    return true;
+  }
+
+  Future<void> _refreshSource(AutoRotateConfig config) async {
+    if (config.source == AutoRotateSource.downloads) await _refreshDownloads();
+    if (_isRemote(config.source)) _remoteFailed = !await _refreshRemote(config);
+  }
+
+  Future<void> _loadSupportedTargets() async {
+    try {
+      _supportedTargets = await _repository.supportedTargets();
+    } catch (_) {
+      // Keep the default: every target.
+    }
   }
 
   Future<void> _loadApplied() async {
@@ -110,6 +158,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       previous.target != next.target ||
       previous.shuffle != next.shuffle ||
       previous.source != next.source ||
+      previous.categoryName != next.categoryName ||
       previous.chargingOnly != next.chargingOnly;
 
   AutoRotateState _snapshot(AutoRotateConfig config, {AutoRotateStatus? status, bool? isPro, bool? loaded}) =>
@@ -120,6 +169,10 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
         status: status ?? state.status,
         favouriteCount: _favouriteUrls.length,
         downloadCount: _downloadUrls.length,
+        remoteCount: _remoteUrls.length,
+        loadingSource: false,
+        sourceLoadFailed: _remoteUnavailable(config),
+        supportedTargets: _supportedTargets,
         sourcesCapped: _isCapped(config.source),
       );
 
@@ -166,7 +219,8 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     }
     _favouritesKnown = true;
     final AutoRotateConfig config = await _repository.loadConfig();
-    if (config.source == AutoRotateSource.downloads) await _refreshDownloads();
+    await _loadSupportedTargets();
+    if (isPro || config.source == AutoRotateSource.downloads) await _refreshSource(config);
     await _loadApplied();
     final AutoRotateStatus status = await _status();
     _pollsLeft = _maxStatusPolls;
@@ -180,6 +234,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       if (status.isRunning || status.lastError != null) await _disable(emit);
       return;
     }
+    if (_remoteUnavailable(config) && status.isRunning && status.lastError == null) return;
     if (!_canRotate) {
       await _disable(emit);
     } else if (!status.isRunning && status.lastError != null) {
@@ -202,10 +257,16 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     if (config.source == AutoRotateSource.downloads) await _refreshDownloads();
     await _loadApplied();
     final AutoRotateStatus status = await _status();
+    if (event.isPro && config.enabled && !status.isRunning && _isRemote(config.source)) {
+      _remoteFailed = !await _refreshRemote(config);
+    }
     emit(_snapshot(config, status: status, isPro: event.isPro, loaded: true));
     final bool somethingToStop = config.enabled || status.isRunning || status.lastError != null;
     if (!event.isPro || accountChanged) {
       if (somethingToStop) await _disable(emit);
+      if (!event.isPro && !accountChanged && event.userId.isNotEmpty && (config.enabled || status.isRunning)) {
+        emit(state.copyWith(proLapsed: true));
+      }
     } else if (!config.enabled && somethingToStop) {
       await _disable(emit);
     } else if (!status.isRunning && status.lastError != null) {
@@ -235,6 +296,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
 
   Future<void> _onFavouritesSettled(Emitter<AutoRotateState> emit) async {
     if (!state.loaded) return;
+    if (_remoteUnavailable(state.config) && state.status.isRunning && state.status.lastError == null) return;
     if (state.status.isRunning && _canRotate && _urlsMatchApplied(state.config)) return;
     if (!_canRotate && (state.config.enabled || state.status.isRunning || state.status.lastError != null)) {
       await _disable(emit);
@@ -253,6 +315,10 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
 
   Future<void> _onToggled(_Toggled event, Emitter<AutoRotateState> emit) async {
     if (event.enabled) {
+      if (state.isPro && _isRemote(state.config.source) && (_remoteFailed || _remoteUrls.isEmpty)) {
+        _remoteFailed = !await _refreshRemote(state.config);
+        emit(_snapshot(state.config));
+      }
       if (!_canRotate || (state.config.enabled && state.status.isRunning)) return;
       await _start(state.config.copyWith(enabled: true), emit, userInitiated: true);
     } else {
@@ -263,8 +329,31 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
 
   Future<void> _onSourceChanged(_SourceChanged event, Emitter<AutoRotateState> emit) async {
     if (event.source == state.config.source) return;
-    if (event.source == AutoRotateSource.downloads) await _refreshDownloads();
-    await _onConfigChanged(state.config.copyWith(source: event.source), emit);
+    await _switchSource(state.config.copyWith(source: event.source), emit);
+  }
+
+  Future<void> _onCategoryChanged(_CategoryChanged event, Emitter<AutoRotateState> emit) async {
+    final AutoRotateConfig next = state.config.copyWith(
+      source: AutoRotateSource.category,
+      categoryName: event.category,
+    );
+    if (next == state.config) return;
+    await _switchSource(next, emit);
+  }
+
+  /// Loads the list for [next] first. When it cannot be loaded the old source and its rotation stay as they are.
+  Future<void> _switchSource(AutoRotateConfig next, Emitter<AutoRotateState> emit) async {
+    if (next.source == AutoRotateSource.downloads) await _refreshDownloads();
+    if (_isRemote(next.source)) {
+      emit(state.copyWith(loadingSource: true, sourceLoadFailed: false));
+      final bool loaded = await _refreshRemote(next);
+      if (!loaded) {
+        emit(state.copyWith(loadingSource: false, sourceLoadFailed: true));
+        return;
+      }
+      _remoteFailed = false;
+    }
+    await _onConfigChanged(next, emit);
   }
 
   Future<void> _onConfigChanged(AutoRotateConfig next, Emitter<AutoRotateState> emit) async {
@@ -288,6 +377,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     } on PlatformException {
       rotated = false;
     }
+    analytics.track(AutoRotateRunResultEvent(result: rotated ? BinaryResultValue.success : BinaryResultValue.failure));
     final AutoRotateStatus status = await _status();
     if (status.isRunning) {
       emit(
@@ -350,6 +440,8 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
             target: config.target,
             shuffle: config.shuffle,
             wallpaperCount: urls.length,
+            source: config.source.name,
+            category: config.source == AutoRotateSource.category ? config.categoryName : null,
           ),
         );
       }

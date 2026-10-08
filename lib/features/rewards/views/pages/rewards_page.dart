@@ -18,9 +18,12 @@ import 'package:flutter/material.dart';
 /// Streak, freezes and coins in one page. It is the Rewards tab, and a pushed route with a back button.
 @RoutePage()
 class RewardsPage extends StatefulWidget {
-  const RewardsPage({super.key, this.showBack = true});
+  const RewardsPage({super.key, this.showBack = true, this.scrollToEarn = false});
 
   final bool showBack;
+
+  /// Scrolls to "Earn coins" once the page is laid out.
+  final bool scrollToEarn;
 
   @override
   State<RewardsPage> createState() => _RewardsPageState();
@@ -29,6 +32,34 @@ class RewardsPage extends StatefulWidget {
 class _RewardsPageState extends State<RewardsPage> {
   final GlobalKey _spendKey = GlobalKey();
   final GlobalKey _earnKey = GlobalKey();
+
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.scrollToEarn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _revealEarn());
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// The list builds rows lazily, so the Earn section may not exist yet. Scroll down a screen at a time until it does.
+  Future<void> _revealEarn() async {
+    for (int step = 0; step < 12 && mounted && _earnKey.currentContext == null; step++) {
+      if (!_scroll.hasClients) return;
+      final ScrollPosition position = _scroll.position;
+      if (position.pixels >= position.maxScrollExtent) return;
+      _scroll.jumpTo((position.pixels + position.viewportDimension).clamp(0.0, position.maxScrollExtent));
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    if (mounted) _scrollTo(_earnKey);
+  }
 
   void _scrollTo(GlobalKey key) {
     final BuildContext? target = key.currentContext;
@@ -58,6 +89,7 @@ class _RewardsPageState extends State<RewardsPage> {
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(
+          controller: _scroll,
           slivers: <Widget>[
             SliverToBoxAdapter(child: _Header(showBack: widget.showBack)),
             SliverPadding(

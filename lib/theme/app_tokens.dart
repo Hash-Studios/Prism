@@ -15,8 +15,8 @@ abstract final class PrismColors {
   /// Semi-transparent brand pink used as a glow shadow on the notification dot.
   static const Color notificationBadgeShadow = Color(0x80E57697);
 
-  /// Foreground color on primary / app-bar surfaces.
-  /// Always white so that content stays legible regardless of the active theme.
+  /// White for content over photography and scrims. Do not use it on theme surfaces such as `primaryColor`,
+  /// which is white in Frost White. Use `onColor` from `contrast.dart` there.
   static const Color onPrimary = Colors.white;
 
   /// Destructive red for light surfaces. Also the fill for destructive buttons that carry white text.
@@ -74,12 +74,12 @@ abstract final class PrismTextStyles {
   /// Body copy (14 w500, 70%).
   static TextStyle body(BuildContext context) => _base(context, 14, FontWeight.w500, alpha: 0.7);
 
-  /// Small supporting text (12 w500, 55%).
-  static TextStyle caption(BuildContext context) => _base(context, 12, FontWeight.w500, alpha: 0.55);
+  /// Small supporting text (12 w500, 72%).
+  static TextStyle caption(BuildContext context) => _base(context, 12, FontWeight.w500, alpha: 0.72);
 
   /// Small label above a value (11 w700, tracked). The caller upper-cases the text.
   static TextStyle eyebrow(BuildContext context) =>
-      _base(context, 11, FontWeight.w700, alpha: 0.55).copyWith(letterSpacing: 1.4);
+      _base(context, 11, FontWeight.w700, alpha: 0.72).copyWith(letterSpacing: 1.4);
 
   /// Big number in Fraunces.
   static TextStyle numeral(BuildContext context, double size) => TextStyle(

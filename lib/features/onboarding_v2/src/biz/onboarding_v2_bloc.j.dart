@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -53,6 +54,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_Started>(_onStarted);
     on<_LoadRetried>(_onLoadRetried);
     on<_AuthCompleted>(_onAuthCompleted);
+    on<_GuestBrowseStarted>(_onGuestBrowseStarted);
     on<_AuthLoadingChanged>(_onAuthLoadingChanged);
     on<_InterestToggled>(_onInterestToggled);
     on<_InterestsConfirmed>(_onInterestsConfirmed);
@@ -94,12 +96,21 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     Duration(seconds: 30),
   ];
 
+  static const String _stepAuth = 'auth';
+  static const String _stepInterests = 'interests';
+  static const String _stepStarterPack = 'starter_pack';
+  static const String _stepAiGenerate = 'ai_generate';
+  static const String _stepFirstWallpaper = 'first_wallpaper';
+
   Stopwatch? _onboardingStopwatch;
   bool _completionInFlight = false;
   bool _completionTracked = false;
   bool _paywallHandled = false;
 
-  Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) => _loadData(emit);
+  Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) {
+    unawaited(analytics.track(const OnboardingStartedEvent()));
+    return _loadData(emit);
+  }
 
   Future<void> _onLoadRetried(_LoadRetried event, Emitter<OnboardingV2State> emit) => _loadData(emit);
 
@@ -146,6 +157,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   Future<void> _onAuthCompleted(_AuthCompleted event, Emitter<OnboardingV2State> emit) async {
     emit(state.copyWith(isAuthLoading: true, navRequest: null));
+    _trackStepCompleted(_stepAuth);
 
     final userId = app_state.prismUser.id;
     bool skipInterests = false;
@@ -209,8 +221,13 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     _completionTracked = true;
     try {
       await _settingsLocal.set(OnboardingV2Keys.onboardedNew, true);
-    } catch (error) {
-      logger.w('Could not store the onboarding flag for a returning user: $error', tag: 'OnboardingV2Bloc');
+    } catch (error, stackTrace) {
+      logger.w(
+        'Could not store the onboarding flag for a returning user.',
+        tag: 'OnboardingV2Bloc',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
     emit(
       state.copyWith(
@@ -234,8 +251,54 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     emit(state.copyWith(interestsData: state.interestsData.copyWith(selected: updated), navRequest: null));
   }
 
+  void _onGuestBrowseStarted(_GuestBrowseStarted event, Emitter<OnboardingV2State> emit) {
+    emit(
+      state.copyWith(
+        isGuest: true,
+        step: OnboardingV2Step.interests,
+        actionStatus: ActionStatus.idle,
+        isAuthLoading: false,
+        navRequest: null,
+      ),
+    );
+  }
+
+  /// A guest has no account to save to, so the picks stay on the device. Signing in later sends them to the server.
+  Future<void> _confirmGuestInterests(Emitter<OnboardingV2State> emit) async {
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
+    final selectedInterests = state.interestsData.selected;
+    try {
+      await _settingsLocal.set(OnboardingV2Keys.selectedInterests, selectedInterests.join(','));
+    } catch (error, stackTrace) {
+      logger.w('Could not store the guest interests.', tag: 'OnboardingV2Bloc', error: error, stackTrace: stackTrace);
+      emit(state.copyWith(actionStatus: ActionStatus.failure));
+      return;
+    }
+    unawaited(analytics.track(OnboardingV2InterestsCompletedEvent(selectedCount: selectedInterests.length)));
+    _trackStepCompleted(_stepInterests);
+    await _finishGuest(emit);
+  }
+
+  Future<void> _finishGuest(Emitter<OnboardingV2State> emit) async {
+    try {
+      await _settingsLocal.set(OnboardingV2Keys.onboardedNew, true);
+    } catch (error, stackTrace) {
+      logger.w(
+        'Could not store the onboarding flag for a guest.',
+        tag: 'OnboardingV2Bloc',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    emit(state.copyWith(actionStatus: ActionStatus.success, navRequest: OnboardingV2NavRequest.openDashboardAsGuest));
+  }
+
   Future<void> _onInterestsConfirmed(_InterestsConfirmed event, Emitter<OnboardingV2State> emit) async {
     if (!state.interestsData.canContinue) {
+      return;
+    }
+    if (state.isGuest) {
+      await _confirmGuestInterests(emit);
       return;
     }
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, navRequest: null));
@@ -249,6 +312,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     }
 
     unawaited(analytics.track(OnboardingV2InterestsCompletedEvent(selectedCount: selectedInterests.length)));
+    _trackStepCompleted(_stepInterests);
 
     final refreshedWallpaper = await _firstWallpaperService.recommendForOnboarding(selectedInterests);
 
@@ -266,8 +330,12 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     );
   }
 
-  void _onInterestsSkipped(_InterestsSkipped event, Emitter<OnboardingV2State> emit) {
+  Future<void> _onInterestsSkipped(_InterestsSkipped event, Emitter<OnboardingV2State> emit) async {
     if (state.step != OnboardingV2Step.interests) return;
+    if (state.isGuest) {
+      await _finishGuest(emit);
+      return;
+    }
     final nextStep = state.skipStarterPack ? OnboardingV2Step.aiGenerate : OnboardingV2Step.starterPack;
     emit(
       state.copyWith(
@@ -304,6 +372,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     }
 
     unawaited(analytics.track(OnboardingV2StarterPackCompletedEvent(followedCount: selectedCreators.length)));
+    _trackStepCompleted(_stepStarterPack);
 
     await _leaveStarterPack(emit);
   }
@@ -341,16 +410,23 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     emit(
       state.copyWith(
         navRequest: null,
-        wallpaperData: state.wallpaperData.copyWith(status: FirstWallpaperStatus.loading),
+        wallpaperData: state.wallpaperData.copyWith(status: FirstWallpaperStatus.loading, errorCode: null),
       ),
     );
 
     final actionStopwatch = Stopwatch()..start();
-    final success = await _firstWallpaperService.performAction(wallpaperVm.fullUrl);
+    final result = await _firstWallpaperService.performAction(wallpaperVm.fullUrl);
     final elapsedMs = actionStopwatch.elapsedMilliseconds;
 
     if (!isClosed) {
-      add(OnboardingV2Event.firstWallpaperActionCompleted(success: success, elapsedMs: elapsedMs));
+      add(
+        OnboardingV2Event.firstWallpaperActionCompleted(
+          success: result.success,
+          elapsedMs: elapsedMs,
+          errorCode: result.errorCode,
+          target: result.target,
+        ),
+      );
     }
   }
 
@@ -364,10 +440,13 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         ),
       ),
     );
+    if (event.success) _trackStepCompleted(_stepFirstWallpaper);
     emit(
       state.copyWith(
         wallpaperData: state.wallpaperData.copyWith(
           status: event.success ? FirstWallpaperStatus.success : FirstWallpaperStatus.failure,
+          errorCode: event.success ? null : event.errorCode,
+          target: event.success ? event.target : null,
         ),
       ),
     );
@@ -425,8 +504,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
           _trackCompleted(didPurchase: didPurchase, totalMs: totalMs);
           return;
         }
-      } catch (error) {
-        logger.w('Onboarding completion retry failed: $error', tag: 'OnboardingV2Bloc');
+      } catch (error, stackTrace) {
+        logger.w('Onboarding completion retry failed.', tag: 'OnboardingV2Bloc', error: error, stackTrace: stackTrace);
       }
     }
     logger.w('Onboarding completion could not be saved to the server.', tag: 'OnboardingV2Bloc');
@@ -436,14 +515,17 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final OnboardingV2Step? prevStep = switch (state.step) {
       OnboardingV2Step.auth => null,
       // A signed-in user never goes back to the sign-in step.
-      OnboardingV2Step.interests => null,
+      // A guest came from the sign-in step, so back returns there.
+      OnboardingV2Step.interests => state.isGuest ? OnboardingV2Step.auth : null,
       OnboardingV2Step.starterPack => state.skipInterests ? null : OnboardingV2Step.interests,
       OnboardingV2Step.aiGenerate => state.skipStarterPack ? OnboardingV2Step.interests : OnboardingV2Step.starterPack,
       OnboardingV2Step.firstWallpaper => OnboardingV2Step.aiGenerate,
     };
 
     if (prevStep != null) {
-      emit(state.copyWith(step: prevStep, navRequest: null));
+      emit(
+        state.copyWith(step: prevStep, isGuest: state.isGuest && prevStep != OnboardingV2Step.auth, navRequest: null),
+      );
       return;
     }
     emit(state.copyWith(navRequest: OnboardingV2NavRequest.exitApp));
@@ -467,8 +549,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
           OnboardingV2Event.aiGenerationCompleted(imageUrl: record.imageUrl, thumbnailUrl: record.watermarkedImageUrl),
         );
       }
-    } catch (e) {
-      logger.e('AI onboarding generation failed: $e', tag: 'OnboardingV2Bloc');
+    } catch (error, stackTrace) {
+      logger.e('AI onboarding generation failed.', tag: 'OnboardingV2Bloc', error: error, stackTrace: stackTrace);
       if (!isClosed) {
         add(const OnboardingV2Event.aiGenerationCompleted(imageUrl: null, thumbnailUrl: null));
       }
@@ -503,12 +585,15 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   Future<void> _onAiGenerationStepContinued(_AiGenerationStepContinued event, Emitter<OnboardingV2State> emit) async {
     if (state.step == OnboardingV2Step.firstWallpaper) return;
+    if (state.aiData.status == AiGenerateStatus.success) _trackStepCompleted(_stepAiGenerate);
     final wallpaper = state.wallpaperData.wallpaper;
     if (wallpaper != null && wallpaper.fullUrl.trim().isNotEmpty) {
       unawaited(analytics.track(const OnboardingV2FirstWallpaperShownEvent()));
     }
     emit(state.copyWith(step: OnboardingV2Step.firstWallpaper, navRequest: null));
   }
+
+  void _trackStepCompleted(String step) => unawaited(analytics.track(OnboardingStepCompletedEvent(step: step)));
 
   /// Picks a style and prompt based on the user's selected interest categories.
   /// Falls back to a random style from the curated pool if no keyword matches.

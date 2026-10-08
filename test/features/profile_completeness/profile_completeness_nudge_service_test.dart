@@ -23,7 +23,7 @@ Future<BuildContext> _pumpContext(WidgetTester tester) async {
 }
 
 class _Harness {
-  _Harness({this.answer = ProfileCompletenessNudgeAction.notNow}) {
+  _Harness({this.answer = ProfileCompletenessNudgeAction.notNow, this.session = 3, this.slotFree = true}) {
     service = ProfileCompletenessNudgeService(
       readPrefValue: (key, {defaultValue = false}) => prefs[key] ?? defaultValue,
       writePrefValue: (key, value) async => prefs[key] = value,
@@ -33,10 +33,18 @@ class _Harness {
         return answer;
       },
       openEditProfile: (context) async => editOpened = true,
+      sessionNumber: () => session,
+      claimStartupSlot: () {
+        slotClaims += 1;
+        return slotFree;
+      },
     );
   }
 
   final ProfileCompletenessNudgeAction answer;
+  final int session;
+  final bool slotFree;
+  int slotClaims = 0;
   final Map<String, bool> prefs = <String, bool>{};
   final List<AnalyticsEvent> events = <AnalyticsEvent>[];
   int launchCount = 0;
@@ -112,5 +120,40 @@ void main() {
     await harness.service.maybeShowNudge(await _pumpContext(tester), sourceContext: 'dashboard_entry');
 
     expect(harness.editOpened, isTrue);
+  });
+
+  testWidgets('waits for the third session', (tester) async {
+    app_state.prismUser = profileUser(id: 'new_user', username: 'creator_01');
+    final context = await _pumpContext(tester);
+
+    final second = _Harness(session: 2);
+    await second.service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
+    expect(second.launchCount, 0);
+    expect(second.prefs, isEmpty);
+
+    final third = _Harness();
+    await third.service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
+    expect(third.launchCount, 1);
+  });
+
+  testWidgets('stays away while another startup sheet holds the slot, and tries again later', (tester) async {
+    app_state.prismUser = profileUser(id: 'busy_user', username: 'creator_01');
+    final context = await _pumpContext(tester);
+
+    final busy = _Harness(slotFree: false);
+    await busy.service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
+    expect(busy.slotClaims, 1);
+    expect(busy.launchCount, 0);
+    expect(busy.prefs, isEmpty);
+    expect(busy.events, isEmpty);
+  });
+
+  testWidgets('does not claim the slot when it has nothing to show', (tester) async {
+    app_state.prismUser = profileUser(id: 'logged_out_user', loggedIn: false);
+    final harness = _Harness();
+
+    await harness.service.maybeShowNudge(await _pumpContext(tester), sourceContext: 'dashboard_entry');
+
+    expect(harness.slotClaims, 0);
   });
 }

@@ -15,15 +15,19 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
-const Duration remoteConfigFetchBudget = Duration(seconds: 5);
+const Duration remoteConfigFetchBudget = Duration(seconds: 3);
+
+/// A successful fetch newer than this is fresh enough that the splash does not wait for the next one.
+const Duration remoteConfigFreshFor = Duration(hours: 24);
 
 /// Applies cached values at once, then waits at most [fetchBudget] for fresh ones. A slow fetch keeps running and
-/// activates on its own. Splash never waits on the network for long.
+/// activates on its own. Splash never waits on the network for long, and not at all when the last fetch is fresh.
 @visibleForTesting
 Future<void> prepareRemoteConfig(
   FirebaseRemoteConfig remoteConfig, {
   required bool release,
   Duration fetchBudget = remoteConfigFetchBudget,
+  DateTime Function() now = DateTime.now,
 }) async {
   await remoteConfig.setConfigSettings(
     RemoteConfigSettings(
@@ -55,6 +59,10 @@ Future<void> prepareRemoteConfig(
   }
   final Future<bool> fetch = remoteConfig.fetchAndActivate();
   unawaited(fetch.then<void>((_) {}, onError: (Object _) {}));
+  final bool fresh =
+      remoteConfig.lastFetchStatus == RemoteConfigFetchStatus.success &&
+      now().difference(remoteConfig.lastFetchTime) < remoteConfigFreshFor;
+  if (fresh) return;
   try {
     await fetch.timeout(fetchBudget);
   } catch (error) {

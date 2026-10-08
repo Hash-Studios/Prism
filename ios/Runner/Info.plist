@@ -34,6 +34,16 @@
 				<string>com.googleusercontent.apps.91450035905-9u7uc8b1792srp90ccvv64mdicm0eqe1</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.hash.prism</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>prism</string>
+			</array>
+		</dict>
 	</array>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-4649644680694757~6175744196</string>

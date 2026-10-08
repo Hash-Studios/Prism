@@ -2,7 +2,7 @@ import {randomUUID} from "node:crypto";
 import * as admin from "firebase-admin";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
-import {sendNotification} from "./notificationHelper";
+import {sendNotification, sendToUserByEmail} from "./notificationHelper";
 import {db, REGION, utcDateString} from "./common";
 
 const DEFAULT_PREMIUM_COLLECTIONS = ["space", "abstract", "flat", "mesh gradients", "fluids"];
@@ -80,7 +80,8 @@ export const wallOfTheDay = onSchedule(
     region: REGION,
     retryCount: 2,
   },
-  async () => {
+  async (event) => {
+    const slotMs = scheduledAtMs(event.scheduleTime);
     const currentRef = db.collection("wall_of_the_day").doc("current");
     const data = (await currentRef.get()).data();
     if (data && isSameUtcDay(data.date, new Date())) {
@@ -90,7 +91,7 @@ export const wallOfTheDay = onSchedule(
       } else {
         logger.info("Today's wall of the day is already set and announced; skipping.", {wallId: data.wallId});
       }
-      await sendDueBuckets(Date.now());
+      await sendDueBuckets(slotMs);
       return;
     }
 
@@ -217,13 +218,13 @@ export const wallOfTheDay = onSchedule(
       wallId: newWallId,
     });
     await announce(newWallId);
-    await sendDueBuckets(Date.now());
+    await sendDueBuckets(slotMs);
   },
 );
 
 /** Sends the legacy global-topic push (with the in-app doc) and stamps `pushedAt`. Throws when the push fails. */
 async function announce(wallId: string): Promise<void> {
-  const payload = await wotdPushPayload(wallId);
+  const {creatorEmail, ...payload} = await wotdPushPayload(wallId);
   const delivered = await sendNotification({
     ...payload,
     modifier: "all",
@@ -235,6 +236,27 @@ async function announce(wallId: string): Promise<void> {
   }
   await db.collection("wall_of_the_day").doc("current").update({pushedAt: admin.firestore.Timestamp.now()});
   logger.info("WOTD notification sent and in-app doc written.", {wallId});
+  await notifyCreator(wallId, creatorEmail, payload.data.url, payload.imageUrl);
+}
+
+/** Tells the creator that the wall is today's pick. The fixed doc id and collapse key make a retry replace the first notice. */
+async function notifyCreator(wallId: string, creatorEmail: string, url: string, imageUrl?: string): Promise<void> {
+  if (!creatorEmail) return;
+  const day = utcDateString();
+  try {
+    await sendToUserByEmail({
+      title: "Your wallpaper is the Wall of the Day",
+      body: "Prism picked your wallpaper for everyone today. Thank you for sharing it.",
+      data: {route: "wall_of_the_day", wall_id: wallId, url},
+      imageUrl,
+      modifier: creatorEmail,
+      channelId: "wall_of_the_day",
+      collapseKey: `wotd_creator_${day}`,
+      docId: `wotd_creator_${day}`,
+    }, creatorEmail);
+  } catch (err) {
+    logger.warn("WOTD creator notice failed.", {wallId, err});
+  }
 }
 
 async function wotdPushPayload(wallId: string): Promise<{
@@ -243,6 +265,7 @@ async function wotdPushPayload(wallId: string): Promise<{
   data: {route: string; wall_id: string; url: string};
   imageUrl?: string;
   channelId: string;
+  creatorEmail: string;
 }> {
   const wall = (await db.collection("walls").doc(wallId).get()).data() ?? {};
   const wallTitle = (wall.title as string | undefined)?.trim() || "Check it out";
@@ -260,6 +283,7 @@ async function wotdPushPayload(wallId: string): Promise<{
     },
     imageUrl: thumbnailUrl || undefined,
     channelId: "wall_of_the_day",
+    creatorEmail: String(wall.email ?? "").trim(),
   };
 }
 
@@ -320,16 +344,22 @@ async function releaseBucket(topic: string, claimId: string, previous: unknown):
   });
 }
 
+/** The slot the scheduler meant to run. A run that starts late still sends to the buckets of its own slot. */
+function scheduledAtMs(scheduleTime: string): number {
+  const ms = Date.parse(scheduleTime);
+  return Number.isFinite(ms) ? ms : Date.now();
+}
+
 /**
- * Sends the current pick to the buckets whose 09:00 local is in the slot of `nowMs`, once per bucket and pick.
+ * Sends the current pick to the buckets whose 09:00 local is in the slot of `slotMs`, once per bucket and pick.
  * A bucket that already received this pick, or a newer one, is skipped, so the picker and the bucket job can both
  * call it.
  */
-async function sendDueBuckets(nowMs: number): Promise<void> {
+async function sendDueBuckets(slotMs: number): Promise<void> {
   const payloads = new Map<string, Awaited<ReturnType<typeof wotdPushPayload>>>();
-  for (const offset of offsetsAtNineLocal(nowMs)) {
+  for (const offset of offsetsAtNineLocal(slotMs)) {
     const topic = wotdBucketTopic(offset);
-    const claim = await claimBucket(topic, nowMs);
+    const claim = await claimBucket(topic, Date.now());
     if (!claim.won) {
       logger.info("sendDueBuckets: nothing to send to this bucket.", {topic});
       continue;
@@ -363,8 +393,8 @@ export const sendWallOfTheDayBuckets = onSchedule(
     region: REGION,
     retryCount: 1,
   },
-  async () => {
-    await sendDueBuckets(Date.now());
+  async (event) => {
+    await sendDueBuckets(scheduledAtMs(event.scheduleTime));
   },
 );
 

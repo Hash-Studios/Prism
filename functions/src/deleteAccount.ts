@@ -8,15 +8,22 @@ const COIN_TRANSACTIONS = "coinTransactions";
 const AI_GENERATIONS = "aiGenerations";
 const DRAFT_SETUPS = "draftSetups";
 const BLOCKED_USERS = "blockedUsers";
-/** Docs keyed by the bare uid. */
-const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate"];
+const GITHUB_UPLOADS = "githubUploads";
+const DELETED_NAME = "Deleted Account";
+/** Docs keyed by the bare uid. The last two are legacy collections. */
+const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens"];
 /** Docs keyed `<uid>_<day>`. */
-const UID_PREFIX_KEYED = ["coinAdRateDaily"];
+const UID_PREFIX_KEYED = ["coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily"];
+/** Public docs that carry the caller's email: they stay, with the creator details blanked. */
+const SCRUBBED_BY_EMAIL = ["walls", "setups"];
+/** Docs that carry the caller's email and are deleted. */
+const DELETED_BY_EMAIL = ["rejectedWalls", "rejectedSetups"];
 
 /** Mirrors the client's requirement in delete_account_service.dart: a fresh sign-in before deleting. */
 const RECENT_LOGIN_WINDOW_S = 300;
 
 type QueueDelete = (ref: admin.firestore.DocumentReference) => void;
+type QueueUpdate = (ref: admin.firestore.DocumentReference, data: admin.firestore.UpdateData<admin.firestore.DocumentData>) => void;
 
 async function queueDeleteWhereEqual(
   collection: string,
@@ -27,6 +34,18 @@ async function queueDeleteWhereEqual(
   if (!value) return;
   const snap = await db.collection(collection).where(field, "==", value).get();
   snap.docs.forEach((doc) => queue(doc.ref));
+}
+
+async function queueUpdateWhere(
+  collection: string,
+  field: string,
+  op: admin.firestore.WhereFilterOp,
+  value: string,
+  data: admin.firestore.UpdateData<admin.firestore.DocumentData>,
+  queue: QueueUpdate,
+): Promise<void> {
+  const snap = await db.collection(collection).where(field, op, value).get();
+  snap.docs.forEach((doc) => queue(doc.ref, data));
 }
 
 async function queueDeleteByIdPrefix(collection: string, prefix: string, queue: QueueDelete): Promise<void> {
@@ -42,7 +61,7 @@ async function queueDeleteByIdPrefix(collection: string, prefix: string, queue: 
  * draft setups is read before the profile is anonymized, and any failed delete throws before the profile is
  * anonymized or the auth user is removed. A retry therefore finishes what an earlier call left.
  */
-export const deleteAccount = onCall({region: REGION, cors: true}, async (request: CallableRequest<unknown>) => {
+export const deleteAccount = onCall({region: REGION, cors: true, timeoutSeconds: 300}, async (request: CallableRequest<unknown>) => {
   const callerUid = request.auth?.uid;
   if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to delete your account.");
 
@@ -66,16 +85,33 @@ export const deleteAccount = onCall({region: REGION, cors: true}, async (request
   const writer = db.bulkWriter();
   // A handler is attached as each delete is queued, so an early failure is never an unhandled rejection.
   const outcomes: Promise<boolean>[] = [];
-  const queue: QueueDelete = (ref) => {
-    outcomes.push(writer.delete(ref).then(() => true, (err) => {
-      logger.warn("deleteAccount: a delete failed.", {path: ref.path, err});
+  const track = (ref: admin.firestore.DocumentReference, write: Promise<unknown>) => {
+    outcomes.push(write.then(() => true, (err) => {
+      logger.warn("deleteAccount: a write failed.", {path: ref.path, err});
       return false;
     }));
   };
+  const queue: QueueDelete = (ref) => track(ref, writer.delete(ref));
+  const queueUpdate: QueueUpdate = (ref, data) => track(ref, writer.update(ref, data));
   try {
     await queueDeleteWhereEqual(COIN_TRANSACTIONS, "userId", callerUid, queue);
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
     if (email) await queueDeleteWhereEqual(DRAFT_SETUPS, "email", email, queue);
+    await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
+    // The email may be stored as typed or in lower case.
+    for (const address of new Set(email ? [email, email.toLowerCase()] : [])) {
+      for (const collection of SCRUBBED_BY_EMAIL) {
+        await queueUpdateWhere(collection, "email", "==", address,
+          {by: DELETED_NAME, userPhoto: "", email: ""}, queueUpdate);
+      }
+      for (const collection of DELETED_BY_EMAIL) await queueDeleteWhereEqual(collection, "email", address, queue);
+      await queueDeleteWhereEqual("notifications", "modifier", address, queue);
+      for (const field of ["followers", "following"]) {
+        await queueUpdateWhere(USERS, field, "array-contains", address,
+          {[field]: admin.firestore.FieldValue.arrayRemove(address)}, queueUpdate);
+      }
+      await queueUpdateWhere("contentReports", "reporterEmail", "==", address, {reporterEmail: null}, queueUpdate);
+    }
     for (const collection of UID_KEYED) queue(db.collection(collection).doc(callerUid));
     for (const collection of UID_PREFIX_KEYED) {
       await queueDeleteByIdPrefix(collection, `${callerUid}_`, queue);

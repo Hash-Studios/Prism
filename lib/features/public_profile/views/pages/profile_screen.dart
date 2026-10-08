@@ -21,6 +21,7 @@ import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
@@ -30,8 +31,10 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
 import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -203,10 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
                     builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
                       if (BlockedCreatorsFilter.hidesCreatorEmail(profile.email, blockSnap.data ?? <String>{})) {
-                        final String display = <String>[
-                          profile.name.trim(),
-                          profile.username.trim(),
-                        ].firstWhere((String value) => value.isNotEmpty, orElse: () => profile.email);
+                        final String display = creatorLabel(name: profile.name, username: profile.username);
                         return BlockedUserProfileShell(
                           targetUserId: profile.id,
                           targetEmail: profile.email,
@@ -305,9 +305,21 @@ class _ProfileChildState extends State<_ProfileChild> {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: _profile.id,
         targetUserEmail: _profile.email,
-        targetName: _profile.name,
+        targetName: creatorLabel(name: _profile.name, username: _profile.username),
       ),
     );
+  }
+
+  /// Opens a profile link. A link with an unsafe scheme or no host is refused with a calm toast.
+  Future<bool> _openProfileLink(String link) async {
+    final Uri? uri = safeProfileLinkUri(link);
+    try {
+      if (uri != null && await launchUrl(uri)) return true;
+    } catch (error, stackTrace) {
+      logger.w('Could not open a profile link.', error: error, stackTrace: stackTrace);
+    }
+    toasts.info("Couldn't open this link.");
+    return false;
   }
 
   bool _isFollowing(PublicProfileState state) {
@@ -329,7 +341,12 @@ class _ProfileChildState extends State<_ProfileChild> {
         if (uid.isEmpty || email.isEmpty) {
           return;
         }
-        await confirmAndBlockUser(context: context, targetUserId: uid, targetEmail: email, displayName: _profile.name);
+        await confirmAndBlockUser(
+          context: context,
+          targetUserId: uid,
+          targetEmail: email,
+          displayName: creatorLabel(name: _profile.name, username: _profile.username),
+        );
     }
   }
 
@@ -488,7 +505,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
                                       child: Text(
-                                        _profile.name,
+                                        creatorLabel(name: _profile.name, username: _profile.username),
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -592,11 +609,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                                                     AnalyticsActionValue.actionChipTapped,
                                                     sourceContext: 'profile_screen_link_chip',
                                                   );
-                                                  final String link = _profile.links[key].toString();
-                                                  final String targetLink = link.contains('@gmail.com')
-                                                      ? 'mailto:$link'
-                                                      : link;
-                                                  final bool launched = await launchUrl(Uri.parse(targetLink));
+                                                  final bool launched = await _openProfileLink(
+                                                    _profile.links[key].toString(),
+                                                  );
                                                   unawaited(
                                                     analytics.track(
                                                       ExternalLinkOpenResultEvent(

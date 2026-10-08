@@ -175,7 +175,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       path,
       choice.target,
       fit: choice.fit,
-      useSystemCropper: choice.useSystemCropper,
       recordHistory: false,
     );
     if (mounted) {

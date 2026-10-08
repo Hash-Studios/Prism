@@ -110,7 +110,7 @@ void main() {
     await bloc.stream.firstWhere((state) => state.actionStatus == ActionStatus.success);
 
     expect(states.any((state) => state.actionStatus == ActionStatus.failure), isTrue);
-    verify(() => fetch(any())).called(2);
+    verify(() => fetch(any())).called(3);
     expect(bloc.state.items, hasLength(3));
   });
 }

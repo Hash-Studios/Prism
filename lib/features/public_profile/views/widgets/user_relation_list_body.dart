@@ -268,6 +268,7 @@ class _SearchBar extends StatelessWidget {
             builder: (_, value, _) {
               if (value.text.isEmpty) return const SizedBox.shrink();
               return IconButton(
+                tooltip: 'Clear search',
                 icon: Icon(
                   Icons.clear,
                   size: 18,

@@ -1,4 +1,4 @@
-import { AiQuotaCoordinator, type AiEnvBindings, handleAiApiRequest } from './ai';
+import { AiQuotaCoordinator, type AiEnvBindings, bumpRateLimit, handleAiApiRequest } from './ai';
 import { maybeHandleAssociationRequest } from './association_files';
 
 export interface Env extends AiEnvBindings {
@@ -74,6 +74,10 @@ const PREVIEW_IMAGE_HOSTS = new Set([
 ]);
 const SHORT_CODE_REGEX = /^[A-Za-z0-9]{7,10}$/;
 const DEFAULT_OG_VERSION = 1;
+const IOS_APP_ID = '1405860595';
+const CREATE_LINK_MAX_BODY_BYTES = 8 * 1024;
+const CAMPAIGN_MAX_KEYS = 10;
+const CAMPAIGN_MAX_TEXT_LENGTH = 100;
 const PRISM_APP_ICON_URL = 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png';
 const USER_IDENTIFIER_QUERY_KEYS = ['identifier', 'username', 'user', 'email'];
 const SETUP_NAME_QUERY_KEYS = ['name', 'setupName', 'setup_name'];
@@ -138,10 +142,22 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
     return json({ error: 'rate_limited' }, 429);
   }
 
+  const declaredLength = Number.parseInt(request.headers.get('content-length') ?? '', 10);
+  if (declaredLength > CREATE_LINK_MAX_BODY_BYTES) {
+    return json({ error: 'payload_too_large' }, 413);
+  }
+  const rawBody = await readBoundedText(request, CREATE_LINK_MAX_BODY_BYTES);
+  if (rawBody == null) {
+    return json({ error: 'payload_too_large' }, 413);
+  }
+
   let body: CreateLinkRequest;
   try {
-    body = (await request.json()) as CreateLinkRequest;
+    body = JSON.parse(rawBody) as CreateLinkRequest;
   } catch {
+    return json({ error: 'invalid_json' }, 400);
+  }
+  if (typeof body !== 'object' || body == null) {
     return json({ error: 'invalid_json' }, 400);
   }
 
@@ -163,7 +179,7 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
     type: body.type,
     canonical_url: parsedCanonical.canonical.toString(),
     created_at: new Date().toISOString(),
-    campaign: body.campaign,
+    campaign: sanitizeCampaign(body.campaign),
     preview,
     og_image_path: null,
     og_storage: null,
@@ -199,6 +215,44 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
     },
     201,
   );
+}
+
+async function readBoundedText(request: Request, maxBytes: number): Promise<string | null> {
+  if (request.body == null) {
+    return '';
+  }
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let text = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      return text + decoder.decode();
+    }
+    received += value.byteLength;
+    if (received > maxBytes) {
+      await reader.cancel();
+      return null;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+}
+
+function sanitizeCampaign(raw: unknown): Record<string, string> | undefined {
+  if (typeof raw !== 'object' || raw == null || Array.isArray(raw)) {
+    return undefined;
+  }
+  const entries = Object.entries(raw);
+  if (entries.length > CAMPAIGN_MAX_KEYS) {
+    return undefined;
+  }
+  for (const [key, value] of entries) {
+    if (key.length > CAMPAIGN_MAX_TEXT_LENGTH || typeof value !== 'string' || value.length > CAMPAIGN_MAX_TEXT_LENGTH) {
+      return undefined;
+    }
+  }
+  return Object.fromEntries(entries) as Record<string, string>;
 }
 
 async function getLinkDetails(pathname: string, env: Env): Promise<Response> {
@@ -239,12 +293,12 @@ async function getLinkDetails(pathname: string, env: Env): Promise<Response> {
 async function resolveShortLink(pathname: string, request: Request, env: Env): Promise<Response> {
   const code = pathname.replace('/l/', '').trim();
   if (!SHORT_CODE_REGEX.test(code)) {
-    return new Response('Invalid code', { status: 400 });
+    return html(renderUnavailableHtml(request, env), 400);
   }
 
   const record = await readLinkRecord(code, env);
   if (record == null) {
-    return new Response('Not found', { status: 404 });
+    return html(renderUnavailableHtml(request, env), 404);
   }
 
   if (isCrawlerRequest(request)) {
@@ -330,6 +384,11 @@ async function enforceCreateRateLimits(ip: string, env: Env): Promise<boolean> {
 }
 
 async function bumpRateCounter(env: Env, key: string, limit: number, ttlSeconds: number): Promise<boolean> {
+  try {
+    return await bumpRateLimit(env, key, limit, ttlSeconds);
+  } catch (error) {
+    console.warn('Durable Object rate limit failed, using KV counter', error);
+  }
   const existing = await env.LINKS_KV.get(key);
   const current = Number.parseInt(existing ?? '0', 10);
   if (current >= limit) {
@@ -926,8 +985,8 @@ function buildCtaText(type: LinkType): string {
 function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): string {
   const shortUrl = `https://${DOMAIN}/l/${code}`;
   const canonicalUrl = record.canonical_url;
-  const title = escapeHtml(record.preview.title || 'Prism');
-  const description = escapeHtml(record.preview.description || 'Discover Prism.');
+  const title = record.preview.title || 'Prism';
+  const description = record.preview.description || 'Discover Prism.';
   const ogImage = escapeAttribute(getOgImageUrl(record, env));
 
   return `<!doctype html>
@@ -935,7 +994,7 @@ function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): s
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
   <meta property="og:title" content="${escapeAttribute(title)}" />
   <meta property="og:description" content="${escapeAttribute(description)}" />
   <meta property="og:type" content="website" />
@@ -957,11 +1016,27 @@ function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): s
 </html>`;
 }
 
+const LANDING_STYLE = `  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #0f1020; color: #f7f7ff; }
+    main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
+    .card { max-width: 420px; width: 100%; background: #1b1c33; border: 1px solid #2f315f; border-radius: 16px; padding: 20px; box-sizing: border-box; }
+    .brand { margin: 0 0 12px; font-size: 14px; font-weight: 700; letter-spacing: .4px; color: #b9b6ff; }
+    .hero { display: block; width: 100%; max-height: 60vh; object-fit: cover; border-radius: 12px; background: #111; }
+    .hero.icon { width: 96px; height: 96px; margin: 0 auto; object-fit: contain; }
+    h1 { margin: 16px 0 4px; font-size: 22px; overflow-wrap: anywhere; }
+    .creator { margin: 0 0 8px; color: #b9b6ff; font-weight: 600; }
+    p { margin: 0 0 16px; color: #d5d6f3; }
+    .actions { display: flex; flex-direction: column; gap: 10px; }
+    .btn { display: block; text-align: center; padding: 14px 16px; border-radius: 12px; border: 1px solid #4a4d8f; color: #f7f7ff; text-decoration: none; font-weight: 700; }
+    .btn.primary { background: #7f6cf9; border-color: #7f6cf9; }
+    .hint { margin: 12px 0 0; font-size: 14px; }
+  </style>`;
+
 function renderHumanLandingHtml(shortUrl: string, record: LinkRecord, request: Request, env: Env): string {
   const canonicalUrl = record.canonical_url;
-  const title = escapeHtml(record.preview.title || 'Prism');
-  const description = escapeHtml(record.preview.description || 'Discover wallpapers on Prism.');
-  const creator = record.preview.username ? `by @${escapeHtml(record.preview.username)}` : '';
+  const title = record.preview.title || 'Prism';
+  const description = record.preview.description || 'Discover wallpapers on Prism.';
+  const creator = record.preview.username ? `by @${record.preview.username}` : '';
   const ogImage = escapeAttribute(getOgImageUrl(record, env));
   const hasImage = isNonEmptyString(record.preview.image_source_url);
   const heroImage = escapeAttribute(hasImage ? record.preview.image_source_url : PRISM_APP_ICON_URL);
@@ -989,7 +1064,7 @@ function renderHumanLandingHtml(shortUrl: string, record: LinkRecord, request: R
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeAttribute(description)}" />
   <meta property="og:title" content="${escapeAttribute(title)}" />
   <meta property="og:description" content="${escapeAttribute(description)}" />
@@ -1004,34 +1079,48 @@ function renderHumanLandingHtml(shortUrl: string, record: LinkRecord, request: R
   <link rel="canonical" href="${escapeAttribute(shortUrl)}" />
   <meta name="robots" content="noindex,nofollow" />
   <meta name="color-scheme" content="dark" />
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #0f1020; color: #f7f7ff; }
-    main { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
-    .card { max-width: 420px; width: 100%; background: #1b1c33; border: 1px solid #2f315f; border-radius: 16px; padding: 20px; box-sizing: border-box; }
-    .brand { margin: 0 0 12px; font-size: 14px; font-weight: 700; letter-spacing: .4px; color: #b9b6ff; }
-    .hero { display: block; width: 100%; max-height: 60vh; object-fit: cover; border-radius: 12px; background: #111; }
-    .hero.icon { width: 96px; height: 96px; margin: 0 auto; object-fit: contain; }
-    h1 { margin: 16px 0 4px; font-size: 22px; overflow-wrap: anywhere; }
-    .creator { margin: 0 0 8px; color: #b9b6ff; font-weight: 600; }
-    p { margin: 0 0 16px; color: #d5d6f3; }
-    .actions { display: flex; flex-direction: column; gap: 10px; }
-    .btn { display: block; text-align: center; padding: 14px 16px; border-radius: 12px; border: 1px solid #4a4d8f; color: #f7f7ff; text-decoration: none; font-weight: 700; }
-    .btn.primary { background: #7f6cf9; border-color: #7f6cf9; }
-    .hint { margin: 12px 0 0; font-size: 14px; }
-  </style>
+  <meta name="apple-itunes-app" content="app-id=${IOS_APP_ID}, app-argument=${escapeAttribute(canonicalUrl)}" />
+${LANDING_STYLE}
 </head>
 <body>
   <main>
     <div class="card">
       <p class="brand">PRISM</p>
-      <img class="hero${hasImage ? '' : ' icon'}" src="${heroImage}" alt="${hasImage ? title : 'Prism'}" referrerpolicy="no-referrer" />
-      <h1>${title}</h1>
-      ${creator ? `<p class="creator">${creator}</p>` : ''}
-      <p>${description}</p>
+      <img class="hero${hasImage ? '' : ' icon'}" src="${heroImage}" alt="${hasImage ? escapeAttribute(title) : 'Prism'}" referrerpolicy="no-referrer" />
+      <h1>${escapeHtml(title)}</h1>
+      ${creator ? `<p class="creator">${escapeHtml(creator)}</p>` : ''}
+      <p>${escapeHtml(description)}</p>
       <div class="actions">
         ${buttons.join('\n        ')}
       </div>
       ${hint}
+    </div>
+  </main>
+</body>
+</html>`;
+}
+
+function renderUnavailableHtml(request: Request, env: Env): string {
+  const storeUrl = escapeAttribute(selectStoreUrl(request, env));
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prism</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="color-scheme" content="dark" />
+${LANDING_STYLE}
+</head>
+<body>
+  <main>
+    <div class="card">
+      <p class="brand">PRISM</p>
+      <h1>This link is no longer available</h1>
+      <p>The wallpaper or page you wanted has moved or been removed.</p>
+      <div class="actions">
+        <a class="btn primary" href="${storeUrl}">Open Prism</a>
+      </div>
     </div>
   </main>
 </body>

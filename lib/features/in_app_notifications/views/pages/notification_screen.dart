@@ -209,17 +209,11 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                   tooltip: 'Clear inbox',
                   backgroundColor: colorScheme.error,
                   foregroundColor: colorScheme.onError,
-                  onPressed: () async {
-                    final bool confirmed = await _confirm(
-                      context,
-                      title: 'Clear your inbox?',
-                      content: "You'll remove every notification from this list on this device. This can't be undone.",
-                      confirmLabel: 'Clear inbox',
-                    );
-                    if (!confirmed || !context.mounted) return;
+                  onPressed: () {
                     PrismHaptics.tap();
                     analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
                     context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
+                    _showUndoSnackBar(context, 'Inbox cleared', notifications);
                   },
                   child: const Icon(JamIcons.trash),
                 )
@@ -227,45 +221,6 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         );
       },
     );
-  }
-
-  Future<bool> _confirm(
-    BuildContext context, {
-    required String title,
-    required String content,
-    required String confirmLabel,
-  }) async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) {
-        final ThemeData t = Theme.of(ctx);
-        final ColorScheme cs = t.colorScheme;
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          backgroundColor: t.primaryColor,
-          title: Text(
-            title,
-            style: t.textTheme.headlineSmall?.copyWith(color: cs.secondary, fontWeight: FontWeight.w600),
-          ),
-          content: Text(content, style: t.textTheme.bodyMedium?.copyWith(color: cs.secondary.withValues(alpha: 0.9))),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text('Cancel', style: TextStyle(color: cs.secondary)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(
-                confirmLabel,
-                style: TextStyle(color: cs.error, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-          actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-        );
-      },
-    );
-    return confirmed ?? false;
   }
 
   void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {

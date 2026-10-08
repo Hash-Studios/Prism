@@ -16,20 +16,26 @@ import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
+import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
+import 'package:Prism/features/library/data/favourites_export.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
 
 String _sourceLabel(WallpaperSource source) => switch (source) {
   WallpaperSource.prism => 'Prism',
@@ -51,8 +57,13 @@ const List<WallpaperSource> _filterSources = <WallpaperSource>[
   WallpaperSource.pexels,
 ];
 
+enum _FavouritesMenuAction { export, clearAll }
+
 class FavouriteGrid extends StatefulWidget {
-  const FavouriteGrid({super.key});
+  const FavouriteGrid({super.key, this.header});
+
+  /// Shown above the toolbar when nothing is selected. The Library hub puts its smart rows here.
+  final Widget? header;
 
   @override
   State<FavouriteGrid> createState() => _FavouriteGridState();
@@ -63,6 +74,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late final TextEditingController _searchController;
   final Set<String> _selected = <String>{};
+  final Set<String> _unavailable = <String>{};
+
+  /// A guest closes the sign-in banner once per app session.
+  static bool _guestBannerDismissed = false;
 
   bool get _selecting => _selected.isNotEmpty;
 
@@ -139,10 +154,14 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   Future<void> _removeSelected(List<FavouriteWallEntity> all) async {
     final List<FavouriteWallEntity> walls = _selectedWalls(all);
     if (walls.isEmpty) return;
+    _exitSelection();
+    await _removeWalls(walls);
+  }
+
+  Future<void> _removeWalls(List<FavouriteWallEntity> walls) async {
     final FavouriteWallsAdapter adapter = context.favouriteWallsAdapter(listen: false);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     PrismHaptics.tap();
-    _exitSelection();
     final bool removed = await adapter.removeWalls(walls.map((wall) => wall.id).toList(growable: false));
     if (!removed) {
       toasts.error("Couldn't remove favourites. Try again.");
@@ -161,6 +180,116 @@ class _FavouriteGridState extends State<FavouriteGrid> {
           ),
         ),
       );
+  }
+
+  Future<void> _clearAll(List<FavouriteWallEntity> all) async {
+    if (all.isEmpty) return;
+    final bool guest = app_state.prismUser.id.isEmpty;
+    final bool confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(all.length == 1 ? 'Clear 1 favourite?' : 'Clear ${all.length} favourites?'),
+            content: Text(guest ? 'This removes them from this device.' : 'This removes them from your account.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text('Clear all', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+    final FavouriteWallsAdapter adapter = context.favouriteWallsAdapter(listen: false);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final List<FavouriteWallEntity> before = List<FavouriteWallEntity>.of(all);
+    PrismHaptics.tap();
+    _exitSelection();
+    if (!await adapter.deleteData()) {
+      toasts.error("Couldn't clear favourites. Try again.");
+      return;
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(before.length == 1 ? 'Cleared 1 favourite' : 'Cleared ${before.length} favourites'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () async {
+              if (!await adapter.restoreWalls(before)) toasts.error("Couldn't restore favourites.");
+            },
+          ),
+        ),
+      );
+  }
+
+  Future<void> _export(List<FavouriteWallEntity> all) async {
+    if (all.isEmpty) {
+      toasts.info('No favourites to export yet.');
+      return;
+    }
+    PrismHaptics.tap();
+    final RenderObject? box = context.findRenderObject();
+    final Rect origin = box is RenderBox && box.hasSize ? box.localToGlobal(Offset.zero) & box.size : Rect.zero;
+    try {
+      final file = await writeFavouritesExportFile(all);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: <XFile>[XFile(file.path)],
+          sharePositionOrigin: origin.isEmpty ? const Rect.fromLTWH(1, 1, 1, 1) : origin,
+        ),
+      );
+      unawaited(analytics.track(FavouritesExportedEvent(count: all.length)));
+    } catch (error, stackTrace) {
+      logger.e('Could not export favourites', error: error, stackTrace: stackTrace, tag: favouritesExportSourceTag);
+      toasts.error("Couldn't export favourites. Try again.");
+    }
+  }
+
+  void _markUnavailable(String id) {
+    if (_unavailable.contains(id) || !mounted) return;
+    setState(() => _unavailable.add(id));
+  }
+
+  Widget _guestBanner(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 2, 2, 2),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Sign in to keep them on every device',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  PrismHaptics.tap();
+                  googleSignInPopUp(context, () => main.RestartWidget.restartApp(context));
+                },
+                child: const Text('Sign in'),
+              ),
+              IconButton(
+                tooltip: 'Dismiss',
+                icon: Icon(JamIcons.close, size: 18, color: theme.hintColor),
+                onPressed: () => setState(() => _guestBannerDismissed = true),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _shareSelected(List<FavouriteWallEntity> all) async {
@@ -234,6 +363,24 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                     PopupMenuItem<FavouriteSort>(value: sort, child: Text(_sortLabel(sort))),
                 ],
               ),
+              PopupMenuButton<_FavouritesMenuAction>(
+                tooltip: 'More favourites actions',
+                icon: Icon(JamIcons.more_vertical, color: theme.colorScheme.secondary),
+                onSelected: (action) => switch (action) {
+                  _FavouritesMenuAction.export => unawaited(_export(state.items)),
+                  _FavouritesMenuAction.clearAll => unawaited(_clearAll(state.items)),
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem<_FavouritesMenuAction>(
+                    value: _FavouritesMenuAction.export,
+                    child: Text('Export favourites'),
+                  ),
+                  PopupMenuItem<_FavouritesMenuAction>(
+                    value: _FavouritesMenuAction.clearAll,
+                    child: Text('Clear all favourites'),
+                  ),
+                ],
+              ),
             ],
           ),
           SizedBox(
@@ -250,6 +397,16 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                     source: source,
                   ),
               ],
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
+              child: Text(
+                state.items.length == 1 ? '1 favourite' : '${state.items.length} favourites',
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+              ),
             ),
           ),
         ],
@@ -283,7 +440,12 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         key: ValueKey<String>(wall.id),
         children: [
           Positioned.fill(
-            child: PrismImageTile(url: wall.thumbnailUrl, heroTag: prismHeroTag(this, index, wall.id)),
+            child: FavouriteTileImage(
+              thumbnailUrl: wall.thumbnailUrl,
+              fullUrl: wall.fullUrl,
+              heroTag: prismHeroTag(this, index, wall.id),
+              onUnavailable: () => _markUnavailable(wall.id),
+            ),
           ),
           if (isSelected)
             Positioned.fill(
@@ -323,6 +485,19 @@ class _FavouriteGridState extends State<FavouriteGrid> {
               ),
             ),
           ),
+          if (_unavailable.contains(wall.id) && !isSelected)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 8,
+              child: Center(
+                child: TextButton.icon(
+                  onPressed: () => unawaited(_removeWalls(<FavouriteWallEntity>[wall])),
+                  icon: Icon(JamIcons.trash, size: 16, color: scheme.error),
+                  label: Text('Remove', style: TextStyle(color: scheme.error)),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -332,13 +507,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     final List<FavouriteWallEntity> walls = state.visibleItems;
     if (!loaded) {
       if (state.status == LoadStatus.initial && app_state.prismUser.id.isEmpty) {
-        return _scrollable(
-          const GlintState(
-            kind: GlintStateKind.empty,
-            title: 'Sign in to save favourites',
-            body: 'Your favourite wallpapers show up here once you are signed in.',
-          ),
-        );
+        return _scrollable(const SignInPrompt(feature: 'favourites'));
       }
       return const LoadingCards();
     }
@@ -413,7 +582,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<FavouriteWallsBloc, FavouriteWallsState>(
+    return BlocConsumer<FavouriteWallsBloc, FavouriteWallsState>(
+      listenWhen: (previous, current) =>
+          previous.status != LoadStatus.failure && current.status == LoadStatus.failure && current.items.isNotEmpty,
+      listener: (context, state) => toasts.info("Couldn't refresh favourites. Showing your saved list."),
       builder: (context, state) {
         final bool loaded =
             state.status != LoadStatus.initial && (state.status != LoadStatus.loading || state.items.isNotEmpty);
@@ -448,8 +620,12 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                   hint: selectedWalls.length > 1 && !hideSetWallpaperUi ? 'Set uses the first one you picked' : null,
                   onCancel: _exitSelection,
                 )
-              else if (state.items.isNotEmpty)
-                _toolbar(context, state),
+              else ...[
+                ?widget.header,
+                if (app_state.prismUser.id.isEmpty && state.items.isNotEmpty && !_guestBannerDismissed)
+                  _guestBanner(context),
+                if (state.items.isNotEmpty) _toolbar(context, state),
+              ],
               Expanded(
                 child: RefreshIndicator(
                   backgroundColor: Theme.of(context).primaryColor,

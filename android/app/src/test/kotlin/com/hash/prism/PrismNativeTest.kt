@@ -113,7 +113,25 @@ internal class PrismNativeTest {
         assertEquals("Another media operation is in progress. Please try again.", mediaFailureMessage(rejection))
         val failure = IOException("Could not publish image")
         assertEquals("SAVE_FAILED", mediaFailureCode("SAVE_FAILED", failure))
-        assertEquals(failure.message, mediaFailureMessage(failure))
+        assertEquals("Something went wrong. Try again.", mediaFailureMessage(failure))
+        assertEquals("Check your connection and try again.", mediaFailureMessage(java.net.UnknownHostException("host")))
+        assertEquals("This image is too large to process.", mediaFailureMessage(OutOfMemoryError("heap")))
+    }
+
+    @Test internal fun tileErrorsMapToFixedStrings() {
+        assertEquals(R.string.tile_error_offline, tileErrorMessage(java.net.UnknownHostException("host")))
+        assertEquals(R.string.tile_error_timeout, tileErrorMessage(java.net.SocketTimeoutException("slow")))
+        assertEquals(R.string.tile_error_download, tileErrorMessage(IOException("HTTP 429")))
+        assertEquals(R.string.tile_error_setup, tileErrorMessage(IllegalStateException("not configured")))
+        assertEquals(R.string.tile_error_unavailable, tileErrorMessage(WallpaperUnavailableException()))
+        assertEquals(R.string.tile_error_generic, tileErrorMessage(OutOfMemoryError()))
+    }
+
+    @Test internal fun widgetBitmapsDecodeToAtMostOneMegapixel() {
+        assertEquals(1, widgetSampleSize(1000, 1000))
+        assertEquals(2, widgetSampleSize(1500, 1500))
+        assertEquals(4, widgetSampleSize(4000, 3000))
+        assertEquals(16, widgetSampleSize(12000, 9000))
     }
 
     private data class Response(val code: Int = 200, val body: ByteArray = byteArrayOf(), val declaredSize: Int = body.size, val location: String? = null)

@@ -1,6 +1,7 @@
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/state/app_state.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
@@ -12,13 +13,16 @@ void showNoLoadLinksPopUp(BuildContext context, Map link) {
       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
     ),
     actions: [
-      MaterialButton(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).colorScheme.error,
+      FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.error,
+          foregroundColor: onColor(Theme.of(context).colorScheme.error),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        ),
         onPressed: () {
           Navigator.of(context).pop();
         },
-        child: const Text('CLOSE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+        child: const Text('Close', style: TextStyle(fontSize: 16.0)),
       ),
     ],
     content: Container(

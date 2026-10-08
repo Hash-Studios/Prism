@@ -65,7 +65,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('a search failure shows an error with Retry, not "No wallpapers found"', (tester) async {
+  testWidgets('a search failure shows an error with Try again, not "No wallpapers found"', (tester) async {
     when(
       () => service.search(any(), filters: any(named: 'filters')),
     ).thenAnswer((_) => Future<WallpaperSearchPage>.error(const WallpaperSearchException('down')));
@@ -74,19 +74,19 @@ void main() {
     await tester.pump();
 
     expect(find.text("Couldn't search right now"), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
     expect(find.textContaining('No wallpapers found'), findsNothing);
     expect(find.byType(LoadingCards), findsNothing);
   });
 
-  testWidgets('Retry runs the same search again', (tester) async {
+  testWidgets('Try again runs the same search again', (tester) async {
     when(
       () => service.search(any(), filters: any(named: 'filters')),
     ).thenAnswer((_) => Future<WallpaperSearchPage>.error(const WallpaperSearchException('down')));
     await submit(tester, 'forest');
     await tester.pump();
 
-    await tester.tap(find.text('Retry'));
+    await tester.tap(find.text('Try again'));
     await tester.pump();
 
     verify(() => service.search('forest', filters: any(named: 'filters'))).called(2);
@@ -262,5 +262,51 @@ void main() {
 
     final SearchGrid grid = tester.widget<SearchGrid>(find.byType(SearchGrid));
     expect(grid.initialResults.single.id, 'filtered-1');
+  });
+
+  testWidgets('the tag row lists the classifier names in the same order every time the screen opens', (tester) async {
+    Future<List<String>> openTags() async {
+      await tester.pumpWidget(MaterialApp(key: UniqueKey(), home: const SearchScreen()));
+      final List<Text> chips = tester
+          .widgetList<Text>(find.textContaining('#'))
+          .where((text) => text.data?.startsWith('#') ?? false)
+          .toList();
+      return chips.take(3).map((text) => text.data!).toList();
+    }
+
+    final List<String> first = await openTags();
+    final List<String> second = await openTags();
+
+    expect(first, <String>['#Nature', '#Architecture', '#Cars']);
+    expect(second, first);
+  });
+
+  testWidgets('one discovery bloc serves the screen, so returning from a search does not reload trending', (
+    tester,
+  ) async {
+    int created = 0;
+    final discovery = _MockSearchDiscoveryBloc();
+    when(() => discovery.state).thenReturn(SearchDiscoveryState.initial());
+    await getIt.unregister<SearchDiscoveryBloc>();
+    getIt.registerFactory<SearchDiscoveryBloc>(() {
+      created++;
+      return discovery;
+    });
+    when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
+      (_) async => (
+        provider: SearchProviderValue.wallhaven,
+        results: <FeedItemEntity>[_wallpaper('wh-1')],
+        prismResults: const <FeedItemEntity>[],
+      ),
+    );
+
+    await submit(tester, 'forest');
+    await tester.pump();
+    await tester.tap(find.byTooltip('Clear search'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+
+    expect(created, 1);
+    verify(() => discovery.close()).called(1);
   });
 }

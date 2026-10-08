@@ -13,8 +13,13 @@ export {submitContentReport} from "./submitContentReport";
 export {onContentReportCreated} from "./onContentReportCreated";
 export {blockUser, unblockUser} from "./userBlockCallables";
 export {githubPutFile, githubDeleteFile} from "./githubContent";
-export {awardCoins, spendCoins, processReferral, buyStreakFreeze, unlockPremiumPreview} from "./coinsCallables";
+export {awardCoins, spendCoins, processReferral, buyStreakFreeze, unlockPremiumPreview, restoreStreak} from "./coinsCallables";
 export {checkBadges} from "./badges";
 export {deleteAccount} from "./deleteAccount";
-export {syncSubscription} from "./syncSubscription";
+export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
 
+export {recordWallpaperAction, onFavouriteWritten} from "./wallStats";
+export {computeTrending} from "./trending";
+export {sweepOpenReports} from "./reportSweeper";
+export {claimUsername} from "./claimUsername";
+export {onUserCreated} from "./onUserCreated";

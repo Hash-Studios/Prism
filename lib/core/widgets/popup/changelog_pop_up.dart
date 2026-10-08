@@ -7,6 +7,7 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/accent_color.dart';
 import 'package:Prism/core/widgets/popup/popup_header.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
@@ -87,13 +88,14 @@ void showChangelog(BuildContext context, [VoidCallback? func]) {
           func?.call();
         },
         child: Text(
-          'VIEW FULL',
+          'View full',
           style: TextStyle(fontSize: 14.0, color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
         ),
       ),
       FilledButton(
         style: FilledButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.error,
+          foregroundColor: onColor(Theme.of(context).colorScheme.error),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
         onPressed: () {
@@ -102,10 +104,7 @@ void showChangelog(BuildContext context, [VoidCallback? func]) {
           }
           func?.call();
         },
-        child: const Text(
-          'CLOSE',
-          style: TextStyle(fontSize: 14.0, color: Colors.white, fontWeight: FontWeight.w600),
-        ),
+        child: const Text('Close', style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.w600)),
       ),
     ],
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),

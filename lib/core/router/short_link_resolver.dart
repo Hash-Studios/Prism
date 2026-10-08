@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/monitoring/sentry_before_send.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/logger/logger.dart';
@@ -18,10 +19,15 @@ final class ShortLinkResolved extends ShortLinkResult {
 }
 
 final class ShortLinkFailed extends ShortLinkResult {
-  const ShortLinkFailed(this.reason);
+  const ShortLinkFailed(this.reason, {this.isNetwork = false});
 
   final AnalyticsReasonValue reason;
+
+  /// True when the request never reached a working server, so the link may still be valid.
+  final bool isNetwork;
 }
+
+const Set<int> _serverUnavailableStatuses = <int>{502, 503, 504};
 
 class ShortLinkResolver {
   ShortLinkResolver({http.Client? client, DeepLinkParser parser = const DeepLinkParser()})
@@ -42,7 +48,10 @@ class ShortLinkResolver {
           'Short-link resolve returned non-success status.',
           fields: <String, Object?>{'status': response.statusCode, 'code': code, 'body': response.body},
         );
-        return const ShortLinkFailed(AnalyticsReasonValue.error);
+        return ShortLinkFailed(
+          AnalyticsReasonValue.error,
+          isNetwork: _serverUnavailableStatuses.contains(response.statusCode),
+        );
       }
 
       final decoded = jsonDecode(response.body);
@@ -60,7 +69,7 @@ class ShortLinkResolver {
         stackTrace: stackTrace,
         fields: <String, Object?>{'code': code},
       );
-      return const ShortLinkFailed(AnalyticsReasonValue.error);
+      return ShortLinkFailed(AnalyticsReasonValue.error, isNetwork: isNetworkNoise(error));
     }
   }
 }

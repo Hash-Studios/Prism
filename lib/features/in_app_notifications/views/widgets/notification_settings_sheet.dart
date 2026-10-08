@@ -142,9 +142,10 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
   TextStyle _listTileSubtitleStyle() =>
       const TextStyle(fontSize: 12).copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.78));
 
-  /// Applies a switch change. Turning a switch on first makes sure the system allows notifications.
+  /// Applies a switch change. Turning a switch on first makes sure the system allows notifications. A guest can
+  /// still turn a signed-in switch off on this device.
   Future<void> _change(bool value, Future<void> Function() change, {bool needsSignIn = false}) async {
-    if (needsSignIn && !app_state.prismUser.loggedIn) {
+    if (value && needsSignIn && !app_state.prismUser.loggedIn) {
       analytics.track(
         const NotificationActionBlockedEvent(
           action: AnalyticsActionValue.notificationSettingsOpened,
@@ -194,15 +195,17 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     required String subtitle,
     required bool value,
     required ValueChanged<bool>? onChanged,
+    bool needsSignIn = false,
   }) {
     final cs = Theme.of(context).colorScheme;
+    final bool needsSignInToTurnOn = needsSignIn && !app_state.prismUser.loggedIn && !value;
     return SwitchListTile(
       activeThumbColor: cs.error,
       secondary: Icon(icon, color: cs.secondary),
       value: value,
       title: Text(title, style: _listTileTitleStyle),
-      subtitle: Text(subtitle, style: _listTileSubtitleStyle()),
-      onChanged: onChanged,
+      subtitle: Text(needsSignInToTurnOn ? 'Sign in to turn on' : subtitle, style: _listTileSubtitleStyle()),
+      onChanged: needsSignInToTurnOn ? null : onChanged,
     );
   }
 
@@ -244,6 +247,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
               title: 'Followers',
               subtitle: 'Alerts when someone new follows you.',
               value: _followers,
+              needsSignIn: true,
               onChanged: (bool value) => _change(value, () => _setFollowers(value), needsSignIn: true),
             ),
             _toggle(
@@ -251,6 +255,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
               title: 'Posts',
               subtitle: 'Alerts when creators you follow share new work.',
               value: _posts,
+              needsSignIn: true,
               onChanged: _followers ? (bool value) => _change(value, () => _setPosts(value), needsSignIn: true) : null,
             ),
             _toggle(
@@ -265,6 +270,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
               title: 'Streak reminders',
               subtitle: 'Evening heads-up around 8 PM if your login streak is about to break.',
               value: _streakReminders,
+              needsSignIn: true,
               onChanged: (bool value) => _change(value, () => _setStreakReminders(value), needsSignIn: true),
             ),
             const SizedBox(height: 24),
@@ -347,6 +353,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     analytics.track(
       NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.recommendations, value: value),
     );
+    unawaited(FcmTokenService.instance.saveMarketingPushes(userId: app_state.prismUser.id, enabled: value));
     if (value) {
       await subscribeToTopicSafely(
         widget.permissions.messaging,

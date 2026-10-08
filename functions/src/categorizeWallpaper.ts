@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
-import {getAdminEmails} from "./adminConfig";
+import {isAdminCaller} from "./adminConfig";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, REGION} from "./common";
 
@@ -40,10 +40,7 @@ export const categorizeWallpaper = onCall(
 
     const callerEmail = (request.auth.token.email ?? "").toString().trim().toLowerCase();
     const wallEmail = (data.email ?? "").toString().trim().toLowerCase();
-    const configuredAdmins = await getAdminEmails();
-    const isAdmin = request.auth.token.admin === true || configuredAdmins.some((email) =>
-      email.trim().toLowerCase() === callerEmail,
-    );
+    const isAdmin = await isAdminCaller(request.auth);
     if (!isAdmin && callerEmail !== wallEmail) {
       throw new HttpsError("permission-denied", "You cannot categorize this wallpaper.");
     }

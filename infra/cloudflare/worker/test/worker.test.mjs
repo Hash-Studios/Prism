@@ -268,24 +268,29 @@ function aiEnv(kv, coordinator, overrides = {}) {
   });
 }
 
-async function postGeneration(env) {
-  const token = await makeToken({ sub: 'alice' });
+async function postGeneration(env, extra = {}, token = undefined) {
+  const bearer = token ?? await makeToken({ sub: 'alice' });
   return worker.fetch(
     new Request('https://prismwalls.com/api/ai/generations', {
       method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ prompt: 'A quiet mountain lake', qualityTier: 'fast' }),
+      headers: { authorization: `Bearer ${bearer}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt: 'A quiet mountain lake', qualityTier: 'fast', ...extra }),
     }),
     env,
     { waitUntil() {} },
   );
 }
 
-function mockFal({ providerStatus = 200, imageSize = 4096, imageStatus = 200 } = {}) {
+function mockFal({ providerStatus = 200, imageSize = 4096, imageStatus = 200, firestore = null, stats = {} } = {}) {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (input) => {
+  globalThis.fetch = async (input, init) => {
     const url = String(input instanceof Request ? input.url : input);
+    if (url.startsWith('https://firestore.googleapis.com/') && firestore != null) {
+      stats.firestore = (stats.firestore ?? 0) + 1;
+      return firestore(url, init);
+    }
     if (url.startsWith('https://fal.run/')) {
+      stats.fal = (stats.fal ?? 0) + 1;
       return providerStatus === 200
         ? Response.json({ images: [{ url: 'https://fal.media/image.png' }] })
         : new Response('boom', { status: providerStatus });
@@ -299,10 +304,10 @@ function mockFal({ providerStatus = 200, imageSize = 4096, imageStatus = 200 } =
   return () => { globalThis.fetch = originalFetch; };
 }
 
-function aiKv() {
+function aiKv(hardUserDailyCap = 1) {
   const kv = new MemoryKv([
     ['ai:firebase:jwks:v1', jwksCache],
-    ['ai:routing:active', JSON.stringify({ hardUserDailyCap: 1 })],
+    ['ai:routing:active', JSON.stringify({ hardUserDailyCap })],
   ]);
   kv.delete = async (key) => kv.del(key);
   return kv;
@@ -428,6 +433,425 @@ test('a watermark failure still returns success, keeps the original and defers t
     monthKey: new Date().toISOString().slice(0, 7),
   }));
   assert.ok((await responseJson(budget)).dailySpentUsd > 0);
+});
+
+function chargeDoc(overrides = {}) {
+  const f = {
+    userId: 'alice',
+    action: 'aiGeneration',
+    type: 'debit',
+    status: 'completed',
+    delta: -10,
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  };
+  return Response.json({
+    name: 'projects/p/databases/(default)/documents/coinTransactions/x',
+    fields: {
+      userId: { stringValue: f.userId },
+      action: { stringValue: f.action },
+      type: { stringValue: f.type },
+      status: { stringValue: f.status },
+      delta: { integerValue: String(f.delta) },
+      createdAt: { timestampValue: f.createdAt },
+    },
+  });
+}
+
+const TX_ID = 'spend_alice_req12345';
+const chargedEnv = (kv, coordinator) => aiEnv(kv, coordinator, { AI_REQUIRE_CHARGE: 'true' });
+
+async function getChargeEvidence(env, txId) {
+  const response = await worker.fetch(
+    new Request(`https://prismwalls.com/api/ai/charges/${txId}`),
+    env,
+    { waitUntil() {} },
+  );
+  return { status: response.status, cache: response.headers.get('cache-control'), body: await response.json() };
+}
+
+test('with the charge flag on, a request without chargeTxId gets 402 and no provider call', async () => {
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const restore = mockFal({ stats, firestore: () => chargeDoc() });
+  try {
+    const response = await postGeneration(env);
+    assert.equal(response.status, 402);
+    assert.equal((await response.json()).error, 'charge_required');
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal ?? 0, 0);
+});
+
+test('with the charge flag off, a request without chargeTxId still works and a bad id shape is rejected', async () => {
+  const env = aiEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const restore = mockFal();
+  try {
+    assert.equal((await postGeneration(env)).status, 200);
+    const bad = await postGeneration(env, { chargeTxId: 'a/b' });
+    assert.equal(bad.status, 400);
+    assert.equal((await postGeneration(env, { chargeTxId: 42 })).status, 400);
+  } finally {
+    restore();
+  }
+});
+
+test('a valid charge succeeds once and a replay returns the stored image without a second provider call', async () => {
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const token = await makeToken({ sub: 'alice' });
+  let seen;
+  const restore = mockFal({
+    stats,
+    firestore: (url, init) => {
+      seen = { url, authorization: new Headers(init.headers).get('authorization') };
+      return chargeDoc();
+    },
+  });
+  try {
+    const first = await postGeneration(env, { chargeTxId: TX_ID }, token);
+    assert.equal(first.status, 200);
+    const firstBody = await first.json();
+    const replay = await postGeneration(env, { chargeTxId: TX_ID }, token);
+    assert.equal(replay.status, 200);
+    assert.deepEqual(await replay.json(), firstBody);
+    assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'succeeded');
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal, 1);
+  assert.equal(stats.firestore, 1);
+  assert.equal(
+    seen.url,
+    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/coinTransactions/${TX_ID}`,
+  );
+  assert.equal(seen.authorization, `Bearer ${token}`);
+});
+
+test('a charge that does not match the caller, tier, ledger state or age is refused and the claim is released', async () => {
+  const cases = {
+    'foreign user': { userId: 'bob' },
+    'wrong tier amount': { delta: -75 },
+    'refunded debit': { status: 'refunded' },
+    'credit row': { type: 'credit', delta: 10 },
+    'other action': { action: 'wallpaperDownload' },
+    'old debit': { createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString() },
+  };
+  for (const [label, overrides] of Object.entries(cases)) {
+    const stats = {};
+    const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+    const restore = mockFal({ stats, firestore: () => chargeDoc(overrides) });
+    try {
+      const response = await postGeneration(env, { chargeTxId: TX_ID });
+      assert.equal(response.status, 402, label);
+      assert.equal((await response.json()).error, 'charge_invalid', label);
+      assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'not_started', label);
+    } finally {
+      restore();
+    }
+    assert.equal(stats.fal ?? 0, 0, label);
+  }
+
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const restore = mockFal({ firestore: () => new Response('missing', { status: 404 }) });
+  try {
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID })).status, 402);
+  } finally {
+    restore();
+  }
+});
+
+test('a Firestore outage gives 502 without a charge_invalid verdict and frees the claim', async () => {
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const restore = mockFal({ firestore: () => new Response('down', { status: 503 }) });
+  try {
+    assert.equal((await postGeneration(env, { chargeTxId: TX_ID })).status, 502);
+    assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'not_started');
+  } finally {
+    restore();
+  }
+});
+
+test('a charge that is still running gets 409 and a failed provider call marks the charge failed', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  const env = chargedEnv(aiKv(5), coordinator);
+  const claim = await coordinator.fetch(quotaRequest({ op: 'charge_claim', txId: TX_ID }));
+  assert.equal((await responseJson(claim)).status, 'new');
+
+  const restore = mockFal({ providerStatus: 500, firestore: () => chargeDoc() });
+  try {
+    const busy = await postGeneration(env, { chargeTxId: TX_ID });
+    assert.equal(busy.status, 409);
+    assert.equal((await busy.json()).error, 'charge_in_progress');
+    assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'in_progress');
+
+    const other = 'spend_alice_req99999';
+    assert.equal((await postGeneration(env, { chargeTxId: other })).status, 502);
+    assert.equal((await getChargeEvidence(env, other)).body.status, 'failed');
+    const retry = await postGeneration(env, { chargeTxId: other });
+    assert.equal(retry.status, 402);
+    assert.equal((await retry.json()).error, 'charge_invalid');
+  } finally {
+    restore();
+  }
+});
+
+test('charge evidence reports not_started for an unseen id, no-store, and 404 for a bad shape', async () => {
+  const env = aiEnv(aiKv(), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const unseen = await getChargeEvidence(env, 'spend_alice_unseen01');
+  assert.equal(unseen.status, 200);
+  assert.deepEqual(unseen.body, { status: 'not_started' });
+  assert.equal(unseen.cache, 'no-store');
+  assert.equal((await getChargeEvidence(env, 'bad.id')).status, 404);
+  assert.equal((await getChargeEvidence(env, 'abc')).status, 404);
+});
+
+test('a paid request is never downgraded by the budget guardrail but an unpaid one still is', async () => {
+  const storage = new MemoryStorage();
+  await storage.put(`provider:fal:daily:${new Date().toISOString().slice(0, 10)}`, 29);
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage }));
+  const restore = mockFal({ stats, firestore: () => chargeDoc({ delta: -75 }) });
+  try {
+    const paid = await postGeneration(env, { chargeTxId: TX_ID, qualityTier: 'balanced' });
+    assert.equal(paid.status, 429);
+    assert.equal((await paid.json()).error, 'budget_exhausted');
+    assert.equal(stats.fal ?? 0, 0);
+    assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'failed');
+  } finally {
+    restore();
+  }
+
+  const unpaidEnv = aiEnv(aiKv(5), new AiQuotaCoordinator({ storage }));
+  const restoreUnpaid = mockFal({ stats });
+  try {
+    const unpaid = await postGeneration(unpaidEnv, { qualityTier: 'balanced' });
+    assert.equal(unpaid.status, 200);
+    assert.equal((await unpaid.json()).qualityTier, 'fast');
+  } finally {
+    restoreUnpaid();
+  }
+});
+
+test('a variation request is charged at the stored tier of its parent', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  const kv = aiKv(5);
+  await kv.put('ai:gen:gen-parent', JSON.stringify({
+    generationId: 'gen-parent', userId: 'alice', prompt: 'A quiet mountain lake', stylePreset: 'minimal',
+    qualityTier: 'fast', width: 1080, height: 1920,
+  }));
+  const env = chargedEnv(kv, coordinator);
+  const token = await makeToken({ sub: 'alice' });
+  const variation = (chargeTxId) => worker.fetch(
+    new Request('https://prismwalls.com/api/ai/generations/gen-parent/variations', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      body: JSON.stringify(chargeTxId == null ? {} : { chargeTxId }),
+    }),
+    env,
+    { waitUntil() {} },
+  );
+  let doc = () => chargeDoc({ delta: -100 });
+  const restore = mockFal({ firestore: () => doc() });
+  try {
+    assert.equal((await variation(null)).status, 402);
+    assert.equal((await variation(TX_ID)).status, 402);
+    doc = () => chargeDoc({ delta: -10 });
+    assert.equal((await variation(TX_ID)).status, 200);
+  } finally {
+    restore();
+  }
+});
+
+test('charge records expire after 24 hours and a stuck claim reads as failed', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  const send = async (body) => responseJson(await coordinator.fetch(quotaRequest(body)));
+  const realNow = Date.now;
+  try {
+    assert.equal((await send({ op: 'charge_claim', txId: TX_ID })).status, 'new');
+    assert.equal((await send({ op: 'charge_claim', txId: TX_ID })).status, 'in_progress');
+    await send({ op: 'charge_finish', txId: TX_ID, outcome: 'succeeded', response: '{"a":1}' });
+    assert.deepEqual(await send({ op: 'charge_claim', txId: TX_ID }), { ok: true, status: 'done', response: '{"a":1}' });
+
+    const now = realNow();
+    Date.now = () => now + 24 * 60 * 60 * 1000 + 1000;
+    assert.equal((await send({ op: 'charge_status', txId: TX_ID })).status, 'not_started');
+
+    Date.now = () => now;
+    assert.equal((await send({ op: 'charge_claim', txId: 'spend_alice_stuck001' })).status, 'new');
+    Date.now = () => now + 6 * 60 * 1000;
+    assert.equal((await send({ op: 'charge_status', txId: 'spend_alice_stuck001' })).status, 'failed');
+    assert.equal((await send({ op: 'charge_claim', txId: 'spend_alice_stuck001' })).status, 'failed');
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+test('health shows only ok for anonymous callers and budget numbers for a valid token', async () => {
+  const env = aiEnv(aiKv(), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const anonymous = await worker.fetch(new Request('https://prismwalls.com/api/ai/health'), env, { waitUntil() {} });
+  assert.equal(anonymous.status, 200);
+  assert.deepEqual(await anonymous.json(), { ok: true });
+
+  const token = await makeToken({ sub: 'alice' });
+  const signedIn = await worker.fetch(
+    new Request('https://prismwalls.com/api/ai/health', { headers: { authorization: `Bearer ${token}` } }),
+    env,
+    { waitUntil() {} },
+  );
+  const body = await signedIn.json();
+  assert.equal(body.ok, true);
+  assert.equal(typeof body.providers.fal.budget.dailyBudgetUsd, 'number');
+});
+
+test('prompt blocklist matches whole words only and keeps multi-word terms', async () => {
+  const env = aiEnv(aiKv(10), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const restore = mockFal();
+  try {
+    assert.equal((await postGeneration(env, { prompt: 'a bowl of grapes' })).status, 200);
+    assert.equal((await postGeneration(env, { prompt: 'drape and scrape texture' })).status, 200);
+    for (const prompt of ['rape', 'a scene of Rape.', 'child   porn', 'Deepfake nude of a star', 'gore kill']) {
+      const response = await postGeneration(env, { prompt });
+      assert.equal(response.status, 422, prompt);
+      assert.equal((await response.json()).error, 'unsafe_prompt', prompt);
+    }
+  } finally {
+    restore();
+  }
+});
+
+test('share page escapes titles once for text and attributes', async () => {
+  const links = new MemoryKv([['AbCdEfGh', JSON.stringify({
+    code: 'AbCdEfGh',
+    type: 'share',
+    canonical_url: `https://prismwalls.com${SHARE_PATH}`,
+    created_at: new Date().toISOString(),
+    preview: { title: "Don't & Co", description: 'A "quote" & more', username: "o'neil" },
+    version: 1,
+  })]]);
+  const env = workerEnv({
+    LINKS_KV: links,
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+  });
+  for (const userAgent of [ANDROID_UA, 'WhatsApp/2.23']) {
+    const body = await (await getShare(userAgent, '/l/AbCdEfGh', env)).text();
+    assert.match(body, /og:title" content="Don&#39;t &amp; Co"/);
+    assert.match(body, /og:description" content="A &quot;quote&quot; &amp; more"/);
+    assert.match(body, /<title>Don&#39;t &amp; Co<\/title>/);
+    assert.doesNotMatch(body, /&amp;#39;|&amp;amp;|&amp;quot;|&amp;lt;/);
+  }
+  const human = await (await getShare(ANDROID_UA, '/l/AbCdEfGh', env)).text();
+  assert.match(human, /<h1>Don&#39;t &amp; Co<\/h1>/);
+  assert.match(human, /by @o&#39;neil/);
+});
+
+test('human landing page adds the Smart App Banner meta with the canonical URL', async () => {
+  const body = await (await getShare(IOS_UA)).text();
+  assert.match(
+    body,
+    /<meta name="apple-itunes-app" content="app-id=1405860595, app-argument=https:\/\/prismwalls\.com\/share\?id=wall-1[^"]*" \/>/,
+  );
+  assert.match(body, />Open in Prism</);
+});
+
+test('a missing or malformed short link shows the unavailable page with a store link', async () => {
+  const env = workerEnv({
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id1405860595',
+  });
+  const missing = await getShare(IOS_UA, '/l/ZzZzZzZz', env);
+  assert.equal(missing.status, 404);
+  assert.match(missing.headers.get('content-type'), /text\/html/);
+  const missingBody = await missing.text();
+  assert.match(missingBody, /PRISM/);
+  assert.match(missingBody, /This link is no longer available/);
+  assert.match(missingBody, /href="https:\/\/apps\.apple\.com\/app\/id1405860595"[^>]*>Open Prism</);
+
+  const malformed = await getShare(ANDROID_UA, '/l/x', env);
+  assert.equal(malformed.status, 400);
+  assert.match(await malformed.text(), /href="https:\/\/play\.google\.com\/store\/apps\/details\?id=com\.hash\.prism"[^>]*>Open Prism</);
+});
+
+function postLink(env, body, headers = {}) {
+  return worker.fetch(
+    new Request('https://prismwalls.com/api/links', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'CF-Connecting-IP': '203.0.113.9', ...headers },
+      body: typeof body === 'string' ? body : JSON.stringify(body),
+    }),
+    env,
+    { waitUntil() {} },
+  );
+}
+
+const LINK_BODY = { type: 'share', canonical_url: 'https://prismwalls.com/share?id=wall-1' };
+
+test('createLink refuses oversized bodies by header and by streamed size', async () => {
+  const env = workerEnv();
+  const big = JSON.stringify({ ...LINK_BODY, campaign: { note: 'x'.repeat(20 * 1024) } });
+
+  const declared = await postLink(env, big, { 'content-length': String(big.length) });
+  assert.equal(declared.status, 413);
+
+  const streamed = await postLink(env, big);
+  assert.equal(streamed.status, 413);
+  assert.equal((await postLink(env, LINK_BODY)).status, 201);
+});
+
+test('createLink keeps a flat campaign of short strings and drops anything else', async () => {
+  const env = workerEnv();
+  const stored = async (campaign) => {
+    const response = await postLink(env, { ...LINK_BODY, campaign });
+    assert.equal(response.status, 201);
+    const record = JSON.parse(await env.LINKS_KV.get((await response.json()).code));
+    return record.campaign;
+  };
+  assert.deepEqual(await stored({ source: 'spring', medium: 'push' }), { source: 'spring', medium: 'push' });
+  assert.equal(await stored({ nested: { a: 'b' } }), undefined);
+  assert.equal(await stored({ count: 3 }), undefined);
+  assert.equal(await stored(['a']), undefined);
+  assert.equal(await stored({ long: 'x'.repeat(101) }), undefined);
+  assert.equal(await stored({ ['k'.repeat(101)]: 'v' }), undefined);
+  assert.equal(
+    await stored(Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`k${i}`, 'v']))),
+    undefined,
+  );
+});
+
+test('createLink rate limit uses the Durable Object counter and falls back to KV when it fails', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  const doEnv = aiEnv(aiKv(), coordinator, { LINKS_KV: new MemoryKv() });
+  for (let i = 0; i < 20; i += 1) {
+    assert.equal((await postLink(doEnv, LINK_BODY)).status, 201, `call ${i}`);
+  }
+  assert.equal((await postLink(doEnv, LINK_BODY)).status, 429);
+  assert.equal(await doEnv.LINKS_KV.get('rl:10m:203.0.113.9'), null);
+
+  const kvEnv = workerEnv();
+  for (let i = 0; i < 20; i += 1) {
+    assert.equal((await postLink(kvEnv, LINK_BODY)).status, 201, `call ${i}`);
+  }
+  assert.equal((await postLink(kvEnv, LINK_BODY)).status, 429);
+});
+
+test('rate limit counter resets after its window', async () => {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  const bump = async () => responseJson(await coordinator.fetch(
+    quotaRequest({ op: 'rate_limit_bump', key: 'rl:test', limit: 1, ttlSeconds: 60 }),
+  ));
+  const realNow = Date.now;
+  try {
+    const now = realNow();
+    Date.now = () => now;
+    assert.equal((await bump()).allowed, true);
+    assert.equal((await bump()).allowed, false);
+    Date.now = () => now + 61_000;
+    assert.equal((await bump()).allowed, true);
+  } finally {
+    Date.now = realNow;
+  }
 });
 
 async function makeToken(overrides = {}) {

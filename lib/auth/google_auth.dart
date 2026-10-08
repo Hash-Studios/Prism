@@ -14,6 +14,7 @@ import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
+import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/logger/logger.dart';
@@ -182,6 +183,9 @@ class GoogleAuth {
     clearInAppNotificationSyncGateAll();
     await _bounded(FcmTokenService.instance.cancelAndWait, 'stop FCM token writes');
     await _bounded(waitForSignInBootstraps, 'drain sign-in bootstrap');
+    if (getIt.isRegistered<FavouritesSyncService>()) {
+      await _bounded(getIt<FavouritesSyncService>().stop, 'stop favourites sync');
+    }
     final PrismUsersV2 existingUser = app_state.prismUser;
     final User? authenticatedUser = _auth.currentUser;
     final String authenticatedUid = authenticatedUser?.uid.trim() ?? '';

@@ -24,8 +24,8 @@ class PaletteRepositoryImpl implements PaletteRepository {
       final generator = await PaletteGenerator.fromImageProvider(
         ResizeImage(
           isLocalFile ? FileImage(File(imageUrl)) : CachedNetworkImageProvider(imageUrl),
-          height: 10,
-          width: 10,
+          height: 64,
+          width: 64,
         ),
       );
 

@@ -2,6 +2,7 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -16,10 +17,7 @@ class OldVersion extends StatelessWidget {
         automaticallyImplyLeading: false,
         titleSpacing: 0,
         centerTitle: true,
-        title: Text(
-          "Update",
-          style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-        ),
+        title: Text("Update", style: PrismTextStyles.sectionTitle(context)),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -31,29 +29,17 @@ class OldVersion extends StatelessWidget {
               child: Text(
                 "The version ${app_state.currentAppVersion}+${app_state.currentAppVersionCode} is obsolete and no longer supported. Please update the app to the latest version, to use it.",
                 textAlign: TextAlign.center,
+                style: PrismTextStyles.body(context),
               ),
             ),
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
               PrismHaptics.tap();
               openPrismLink(context, _storeLink);
             },
-            style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
-            child: const SizedBox(
-              width: 60,
-              child: Text(
-                'UPDATE',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFFE57697),
-                  fontSize: 15,
-                  fontFamily: "Roboto",
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+            child: const Text('Update'),
           ),
           const Spacer(),
         ],

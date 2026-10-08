@@ -45,6 +45,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
             searchType: def.searchType,
             image: def.imageUrl,
             image2: def.secondaryImageUrl,
+            hasPrismWalls: def.hasPrismWalls,
           ),
         )
         .toList(growable: false);
@@ -57,8 +58,12 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     final mode = refresh ? 'r' : 'm';
 
     try {
+      final Future<List<FeedItemEntity>> prismFirst = refresh ? _fetchPrismFirst(category) : Future.value(const []);
       final fetched = await _fetchFromSource(category, refresh: refresh);
-      final page = fetched.data;
+      final CategoryFeedPage? providerPage = fetched.data;
+      final page = providerPage == null
+          ? null
+          : CategoryFeedPage(items: _prependPrism(await prismFirst, providerPage.items), hasMore: providerPage.hasMore);
       if (page == null) {
         final failure = fetched.failure ?? const UnknownFailure('Failed to fetch feed');
         if (!refresh) {
@@ -107,6 +112,37 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       );
       return Result.error(ServerFailure('Failed to fetch category feed: $error'));
     }
+  }
+
+  /// Prism creator walls that match a category with classifier data. Never fails the feed.
+  Future<List<FeedItemEntity>> _fetchPrismFirst(CategoryEntity category) async {
+    if (!category.hasPrismWalls || category.source == WallpaperSource.prism) {
+      return const <FeedItemEntity>[];
+    }
+    final result = await _prismRepository.fetchByCategory(category.name);
+    final walls = result.data;
+    if (walls == null) {
+      logger.w(
+        '[CategoryFeedRepository] Prism-first walls failed; showing the provider feed only',
+        fields: <String, Object?>{'category': category.name, 'failure': result.failure?.message},
+      );
+      return const <FeedItemEntity>[];
+    }
+    return walls.map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall)).toList(growable: false);
+  }
+
+  List<FeedItemEntity> _prependPrism(List<FeedItemEntity> prism, List<FeedItemEntity> provider) {
+    if (prism.isEmpty) return provider;
+    final Map<String, FeedItemEntity> unique = <String, FeedItemEntity>{};
+    for (final FeedItemEntity item in <FeedItemEntity>[...prism, ...provider]) {
+      unique.putIfAbsent(_canonicalKey(item), () => item);
+    }
+    return unique.values.toList(growable: false);
+  }
+
+  String _canonicalKey(FeedItemEntity item) {
+    final String url = item.fullUrl.trim().toLowerCase();
+    return url.isNotEmpty ? url : '${item.source.wireValue}:${item.id.trim().toLowerCase()}';
   }
 
   Future<Result<CategoryFeedPage>> _fetchFromSource(CategoryEntity category, {required bool refresh}) async {

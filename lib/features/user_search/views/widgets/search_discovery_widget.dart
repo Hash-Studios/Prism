@@ -8,18 +8,22 @@ import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Portrait card width: 3.5 cards across a phone, capped so a tablet does not get giant cards.
 double _cardWidth(BuildContext context) => min(MediaQuery.sizeOf(context).width / 3.5, 160);
+
+/// Decode height, in physical pixels, for a portrait card. The card is taller than most photos, so height sets the scale.
+int _cardDecodeHeight(BuildContext context) =>
+    (_cardWidth(context) * 2 * MediaQuery.devicePixelRatioOf(context)).round();
 
 class SearchDiscoveryWidget extends StatelessWidget {
   const SearchDiscoveryWidget({
@@ -270,7 +274,11 @@ class _TrendingList extends StatelessWidget {
               child: SizedBox(
                 width: _cardWidth(context),
                 height: _cardWidth(context) * 2,
-                child: CachedNetworkImage(imageUrl: thumbUrl, fit: BoxFit.cover),
+                child: PrismImageTile(
+                  url: thumbUrl,
+                  fallbackUrl: wall.core.fullUrl,
+                  memCacheHeight: _cardDecodeHeight(context),
+                ),
               ),
             ),
           );
@@ -309,8 +317,8 @@ class _TrendingError extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlintState(
       kind: GlintStateKind.error,
-      title: 'Could not load trending',
-      actionLabel: 'Retry',
+      title: "Couldn't load trending",
+      actionLabel: 'Try again',
       onAction: onRetry,
       glintSize: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -351,7 +359,11 @@ class _CategorySection extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        CachedNetworkImage(imageUrl: cat.imageUrl, fit: BoxFit.cover),
+                        PrismImageTile(
+                          url: cat.imageUrl,
+                          fallbackUrl: cat.secondaryImageUrl,
+                          memCacheHeight: _cardDecodeHeight(context),
+                        ),
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(

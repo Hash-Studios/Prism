@@ -13,6 +13,7 @@ abstract class FirestoreTransaction {
 /// Write-only batch for grouping multiple writes into one round-trip.
 abstract class FirestoreBatch {
   void addDoc(String collection, Map<String, dynamic> data);
+  void setDoc(String collection, String id, Map<String, dynamic> data);
   void updateDoc(String collection, String id, Map<String, dynamic> data);
   void deleteDoc(String collection, String id);
 }
@@ -43,6 +44,12 @@ abstract class FirestoreClient {
   Future<String> addDoc(String collection, Map<String, dynamic> data, {required String sourceTag});
 
   Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map);
+
+  /// Like [watchQuery], and also reports whether each snapshot came from the local cache.
+  Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map,
+  );
 
   Future<T> runTransaction<T>(
     Future<T> Function(FirestoreTransaction transaction) action, {

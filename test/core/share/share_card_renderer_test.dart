@@ -33,6 +33,31 @@ void main() {
   Future<File> failRender({required String imageUrl, required String link, String? contextLine}) async =>
       throw StateError('no image');
 
+  testWidgets('the card never gets a context line that holds an email address', (tester) async {
+    await pumpContext(tester);
+    final List<String?> lines = <String?>[];
+    Future<File> recordingRender({required String imageUrl, required String link, String? contextLine}) async {
+      lines.add(contextLine);
+      return File('card.png');
+    }
+
+    await tester.runAsync(() async {
+      for (final String? line in <String?>['by ana@example.com', 'by Ana Lee', null]) {
+        await shareWallpaperCard(
+          context,
+          imageUrl: 'u',
+          link: 'https://x.test/a',
+          contextLine: line,
+          render: recordingRender,
+          sendCard: ({required String text, required File file, required BuildContext context}) async => _shared,
+          sendText: ({required String text, required BuildContext context}) async => _shared,
+        );
+      }
+    });
+
+    expect(lines, <String?>[null, 'by Ana Lee', null]);
+  });
+
   testWidgets('shares the card file with the link text when rendering works', (tester) async {
     await pumpContext(tester);
     File? sent;

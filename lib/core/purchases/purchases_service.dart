@@ -232,18 +232,8 @@ class PurchasesService {
 
   Future<void> _logSubscriptionConversion({
     required SubscriptionTier tier,
-    SubscriptionConversionContext? conversionContext,
+    required SubscriptionConversionContext context,
   }) async {
-    final SubscriptionConversionContext context =
-        conversionContext ??
-        const SubscriptionConversionContext(
-          source: 'entitlement_refresh',
-          productId: 'unknown_product',
-          packageType: 'unknown_package',
-          currency: 'unknown_currency',
-          price: 0,
-        );
-
     await analytics.track(
       SubscriptionConversionEvent(
         source: context.source,
@@ -301,8 +291,8 @@ class PurchasesService {
     app_state.persistPrismUser();
     await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
     await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
-    if (!wasPremium && isPremium) {
-      await _logSubscriptionConversion(tier: tier, conversionContext: conversionContext);
+    if (!wasPremium && isPremium && conversionContext != null) {
+      await _logSubscriptionConversion(tier: tier, context: conversionContext);
     }
     analytics.track(
       SubscriptionEntitlementRefreshEvent(

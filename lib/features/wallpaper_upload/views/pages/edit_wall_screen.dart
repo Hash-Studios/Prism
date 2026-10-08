@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:extended_image/extended_image.dart';
@@ -11,9 +12,12 @@ import 'package:image_editor/image_editor.dart' hide ImageSource;
 
 @RoutePage()
 class EditWallScreen extends StatefulWidget {
-  const EditWallScreen({super.key, required this.image});
+  const EditWallScreen({super.key, required this.image, this.batch});
 
   final File image;
+
+  /// Set when this image is one of several picked together.
+  final UploadBatch? batch;
 
   @override
   _EditWallScreenState createState() => _EditWallScreenState();
@@ -67,7 +71,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
         title: Text(
-          "Edit Wallpaper",
+          widget.batch?.isMulti == true
+              ? 'Edit wallpaper ${widget.batch!.position} of ${widget.batch!.total}'
+              : "Edit Wallpaper",
           style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
         ),
         leading: IconButton(
@@ -325,7 +331,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     }
 
     widget.image.writeAsBytesSync(result);
-    await context.router.replace(UploadWallRoute(image: widget.image));
+    await context.router.replace(UploadWallRoute(image: widget.image, batch: widget.batch));
   }
 
   void flip() {

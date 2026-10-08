@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
@@ -133,6 +134,30 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
       return Result.success(null);
     } catch (error) {
       return Result.error(ServerFailure('Failed to save interests: $error'));
+    }
+  }
+
+  @override
+  Future<Result<void>> syncLocalInterests({required String userId}) async {
+    try {
+      final localInterests = PersonalizedInterestsCatalog.selectedFromLocal(_settingsLocal);
+      final accountInterests =
+          await _firestoreClient.getById<List<String>>(FirebaseCollections.usersV2, userId, (data, _) {
+            final raw = data['interestCategories'];
+            return raw is List ? raw.map((e) => e.toString()).toList(growable: false) : const <String>[];
+          }, sourceTag: 'onboarding_v2.sync_local_interests.read') ??
+          const <String>[];
+      if (accountInterests.length >= OnboardingV2Config.minInterests) {
+        await _settingsLocal.set(OnboardingV2Keys.selectedInterests, accountInterests.join(','));
+      } else if (localInterests.isNotEmpty) {
+        await _firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+          'interestCategories': localInterests,
+          'onboardingV2.selectedInterests': localInterests,
+        }, sourceTag: 'onboarding_v2.sync_local_interests.write');
+      }
+      return Result.success(null);
+    } catch (error) {
+      return Result.error(ServerFailure('Failed to sync local interests: $error'));
     }
   }
 

@@ -5,7 +5,7 @@ Live wallpapers let the user move a wallpaper. The screen has three modes: Make 
 ## Where to find it
 
 - Settings, section PERSONALISE, row "Live wallpapers". It opens the screen with no photo, so only Gradients and Video show. Code: `lib/features/session/views/pages/settings_screen.dart`.
-- Wallpaper detail screen, button "Make it live". It opens the screen with the wallpaper `fullUrl`, so all three modes show. Code: `lib/features/wallpaper_detail/views/widgets/make_it_live_button.dart`.
+- Wallpaper detail screen, button "Make it live", and the small "Live" chip over the wallpaper. Both open the screen with the wallpaper `fullUrl`, so all three modes show. Code: `lib/features/wallpaper_detail/views/widgets/make_it_live_button.dart`.
 
 The detail button shows only when two things are true:
 
@@ -47,8 +47,8 @@ The screen reads two capabilities from the `async_wallpaper` plugin.
 
 | Path | Role |
 |---|---|
-| `lib/features/live_wallpaper/views/pages/live_wallpaper_screen.dart` | Route `LiveWallpaperRoute({String? imageUrl})`. Creates the bloc and sends `started`. |
-| `lib/features/live_wallpaper/views/widgets/live_wallpaper_view.dart` | Mode chips, style pickers, battery saver switch, apply bar. |
+| `lib/features/live_wallpaper/views/pages/live_wallpaper_screen.dart` | Route `LiveWallpaperRoute({String? imageUrl, Color? accentSeed})`. Creates the bloc and sends `started`. |
+| `lib/features/live_wallpaper/views/widgets/live_wallpaper_view.dart` | Mode chips, style pickers, colour swatches, battery saver switch, apply bar. |
 | `lib/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart` | State, Pro gate, apply events. |
 | `lib/features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart` | Capability call, plugin requests, frame rates, video size limit. |
 | `lib/features/live_wallpaper/data/shaders/live_shader_sources.dart` | Shader text and colour templating. |
@@ -56,7 +56,7 @@ The screen reads two capabilities from the `async_wallpaper` plugin.
 | `lib/features/live_wallpaper/data/texture_geometry.dart` | Crop and size maths for the texture. |
 | `lib/features/live_wallpaper/data/live_apply_outcome_mapper.dart` | Maps plugin results to user messages. |
 | `lib/features/live_wallpaper/domain/entities/live_style.dart` | Style names, descriptions, free flags. |
-| `lib/features/live_wallpaper/domain/entities/live_palette.dart` | Four colours and a background from the user accent. |
+| `lib/features/live_wallpaper/domain/entities/live_palette.dart` | Four colours and a background from a seed colour. Also the seed and its three variants for the swatch row. |
 
 Data path:
 
@@ -71,12 +71,15 @@ Apply button -> LiveWallpaperBloc -> Pro gate
 
 - Styles: Drift (slow pan and zoom, follows home screen swipes), Breathe, Ripple, Shimmer.
 - The photo is texture `u_texture0`. The screen shows a static preview of the photo. It does not run the shader in Flutter.
-- The preparer downloads the photo with a 30 second timeout. It crops to the screen aspect ratio and writes `live_wallpaper_texture.jpg` (quality 90) in the temporary directory.
+- The preparer downloads the photo with a 30 second timeout, through `PrismFullImageCache.instance` (60 files, 7 days). It crops to the screen aspect ratio and writes `live_wallpaper_texture.jpg` (quality 90) in the temporary directory.
 
 ### Living gradients
 
 - Styles: Aurora, Mesh, Waves, Plasma, Starfield.
-- Colours come from the active theme accent. `LivePalette.fromAccent` builds four colours and a background. The shader text receives them as `vec3` constants.
+- Colours come from a seed colour. `LivePalette.fromAccent` builds four colours and a background. The shader text receives them as `vec3` constants.
+- The seed is the route argument `accentSeed`. The wallpaper detail screen can pass the dominant colour of the wallpaper. When there is no `accentSeed`, the seed is the theme accent (`ColorScheme.primary`).
+- A row of four swatches shows under the style description in the Gradients tab. The first swatch is the seed. The other three are the seed with the hue shifted by 38, -42 and 180 degrees (`LivePalette.seedVariants`). A tap on a swatch changes the preview and the colours that Prism sends to the plugin. Each swatch has a screen reader label such as "Gradient colour 2 of 4". The first swatch is selected when the screen opens.
+- The Make it live tab uses the same seed for its palette.
 - Starfield stays pure black for all themes (see `test/features/live_wallpaper/live_shader_sources_test.dart`).
 - The gradient preview in Flutter is a plain gradient, not the shader.
 
@@ -140,7 +143,8 @@ Prism resizes the photo to fit these limits. If the JPEG is still over 8 MiB, th
 - Make it live needs the photo to download within 30 seconds.
 - Shader compile and link depend on the device driver. A device can fail with "This device could not start that style. Try another one."
 - Without fragment `highp`, `u_time` is `mediump` and gets coarse after long runs. The shaders wrap it with `loopTime()`, but the plugin must also wrap `u_time` on the native side. This is a plugin follow-up. The `mediump` grain and starfield hash have not run on a GLES2 device.
-- The code adds no analytics events for this feature.
+- The route only receives `accentSeed` when the caller passes it. A caller that passes nothing gets the theme accent.
+- Analytics: `live_wallpaper_applied` has the fields `style` and `result`. `style` is the motion, gradient or video name (for example `ripple`, `aurora`, `video`). `result` is the outcome name (`applied`, `confirmInPreview`, `cancelled`, `failed`, `unsupported`). The bloc sends it after each apply. It sends nothing when a Pro style is refused.
 - No device run was done for this page. Real playback, battery use, and the system preview need a device.
 
 ## How to test
@@ -149,6 +153,7 @@ Prism resizes the photo to fit these limits. If the JPEG is still over 8 MiB, th
 2. Open Settings, then "Live wallpapers". Make sure the screen opens on Gradients and has no Make it live chip.
 3. Select Aurora. Tap "Set live wallpaper". Make sure Android opens a preview and tap Set wallpaper there.
 4. Select Waves. Make sure a lock icon shows and the button reads "Unlock with Prism Pro". Tap it and make sure the paywall opens.
+4a. Open Gradients. Make sure four colour swatches show. Tap the third swatch and make sure the preview changes colour. Apply and make sure the colours match.
 5. Turn on Battery saver. Make sure the text reads "15 frames per second".
 6. Open a wallpaper. Tap "Make it live". Select Drift and apply it. Select Breathe and make sure it is locked.
 7. Open the Video chip. Tap "Choose a video", pick a short clip, and tap "Set live wallpaper".
@@ -165,6 +170,7 @@ Automated tests:
 - `test/features/live_wallpaper/live_wallpaper_bloc_test.dart`
 - `test/features/live_wallpaper/live_wallpaper_repository_test.dart`
 - `test/features/live_wallpaper/live_wallpaper_view_test.dart`
+- `test/features/live_wallpaper/live_texture_preparer_test.dart`
 - `test/features/wallpaper_detail/views/widgets/wallpaper_detail_widgets_test.dart` (the "Make it live" button)
 
 Command:

@@ -1,9 +1,18 @@
+import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {db, findUserByEmail, REGION, str} from "./common";
-import {emailToTopic, isLoggedOut, sendNotification, sendToUser, sendToUserByEmail} from "./notificationHelper";
+import {
+  emailHash,
+  emailToTopic,
+  isLoggedOut,
+  postsTopic,
+  sendNotification,
+  sendToUser,
+  sendToUserByEmail,
+} from "./notificationHelper";
 
 /**
  * When a wall goes from review=false to review=true (approved), notifies the
@@ -62,25 +71,30 @@ export const onWallApproved = onDocumentUpdated(
       legacyToken: artistData?.fcmToken,
     });
 
-    logger.info("onWallApproved: artist notification sent.", {wallId, artistEmail});
+    logger.info("onWallApproved: artist notification sent.", {wallId, artistHash: emailHash(artistEmail)});
 
-    // Followers subscribe to <email prefix>_posts (followersTopicFromEmail).
+    // Followers subscribe to <email prefix>_posts (followersTopicFromEmail). Newer builds subscribe to posts_<uid>,
+    // which cannot collide across creators. Both topics get the push, with one collapse key.
     // Push only: an in-app doc would show the artist a duplicate.
-    const followersTopic = `${emailToTopic(artistEmail)}_posts`;
-    await sendNotification({
-      title: `New wall by ${artistName}`,
-      body: `"${wallTitle}" is now live on Prism.`,
-      data: {route: "wall", wall_id: wallId, artist_email: artistEmail},
-      imageUrl: wallThumb || undefined,
-      modifier: artistEmail,
-      channelId: "posts",
-      fcmTarget: {topic: followersTopic},
-      pushOnly: true,
-    });
+    const followersTopics = [`${emailToTopic(artistEmail)}_posts`, ...(artist ? [postsTopic(artist.id)] : [])];
+    const collapseKey = postsCollapseKey(artistEmail);
+    for (const topic of followersTopics) {
+      await sendNotification({
+        title: `New wall by ${artistName}`,
+        body: `"${wallTitle}" is now live on Prism.`,
+        data: {route: "wall", wall_id: wallId, artist_email: artistEmail},
+        imageUrl: wallThumb || undefined,
+        modifier: artistEmail,
+        channelId: "posts",
+        fcmTarget: {topic},
+        pushOnly: true,
+        collapseKey,
+      });
+    }
 
     logger.info("onWallApproved: followers notification sent.", {
       wallId,
-      followersTopic,
+      followersTopics,
     });
 
     for (const email of await getAdminEmails()) {
@@ -95,6 +109,12 @@ export const onWallApproved = onDocumentUpdated(
     }
   },
 );
+
+/** Same key on every followers push of one creator, short enough for apns-collapse-id (64 bytes). */
+export function postsCollapseKey(artistEmail: string): string {
+  const hash = createHash("sha1").update(artistEmail.trim().toLowerCase()).digest("hex").slice(0, 16);
+  return `posts_${hash}`;
+}
 
 /** Stamps the wall once, so a retried or repeated approval event sends no second set of pushes. */
 async function claimApprovalNotice(ref: admin.firestore.DocumentReference | undefined): Promise<boolean> {
@@ -116,7 +136,7 @@ async function resolveUserByEmail(email: string): ReturnType<typeof findUserByEm
   try {
     return await findUserByEmail(email);
   } catch (err) {
-    logger.warn("onWallApproved: could not resolve artist uid.", {email, err});
+    logger.warn("onWallApproved: could not resolve artist uid.", {emailHash: emailHash(email), err});
     return null;
   }
 }

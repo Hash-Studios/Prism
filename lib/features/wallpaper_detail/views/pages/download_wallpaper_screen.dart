@@ -125,7 +125,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
                       pageBuilder: (context, animation, secondaryAnimation) {
                         return FadeTransition(
                           opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                          child: ClockOverlay(accent: null, link: widget.file.path, file: true),
+                          child: ClockOverlay(link: widget.file.path, file: true),
                         );
                       },
                       fullscreenDialog: true,

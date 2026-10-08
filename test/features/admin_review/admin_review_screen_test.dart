@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -26,6 +27,7 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   int wallStreamCalls = 0;
   int approvals = 0;
   int rejections = 0;
+  String? lastRejectReason;
   bool failFirstWallStream = false;
   Stream<List<FirestoreDocument>>? reportsStream;
   Stream<List<FirestoreDocument>>? wallsStream;
@@ -48,7 +50,12 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
       reportsStream ?? Stream<List<FirestoreDocument>>.value(const <FirestoreDocument>[]);
 
   @override
-  Future<void> approveWall(FirestoreDocument wall) async {
+  Future<void> approveWall(
+    FirestoreDocument wall, {
+    List<String>? collections,
+    bool? streakExclusive,
+    int? streakShopCoinCost,
+  }) async {
     approvals++;
     await approveAction?.call();
   }
@@ -56,6 +63,7 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   @override
   Future<void> rejectWall(FirestoreDocument wall, {required String reason}) async {
     rejections++;
+    lastRejectReason = reason;
     await rejectAction?.call();
   }
 
@@ -319,6 +327,25 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(repository.rejections, 2);
     expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('a reason chip fills the rejection text that the creator will read', (WidgetTester tester) async {
+    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() => messenger.setMockMethodCallHandler(toastChannel, null));
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await pumpReviewScreen(tester, repository);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Reject'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ActionChip, 'Watermark'));
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, rejectReasons[1].text);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Reject'));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastRejectReason, rejectReasons[1].text);
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('a successful wallpaper rejection uses success outcome feedback', (WidgetTester tester) async {

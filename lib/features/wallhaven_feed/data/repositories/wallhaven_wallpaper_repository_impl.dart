@@ -4,6 +4,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
 import 'package:Prism/features/wallhaven_feed/data/dtos/wallhaven_dtos.dart';
@@ -195,12 +196,15 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     final Uri uri = Uri.https(_host, '/api/v1/w/${id.toLowerCase()}');
     try {
       final http.Response response = await http.get(uri).timeout(_requestTimeout);
+      if (response.statusCode == 404) {
+        return Result.success(null);
+      }
       if (response.statusCode != 200) {
-        return Result.error(
-          ServerFailure(
-            'WallHaven wallpaper request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
-          ),
+        logger.e(
+          '[WallhavenWallpaperRepository] fetchById failed',
+          fields: <String, Object?>{'status': response.statusCode, 'reason': response.reasonPhrase},
         );
+        return Result.error(ServerFailure(wallpaperLoadFailureMessage, code: 'http_${response.statusCode}'));
       }
 
       final Map<String, dynamic> decoded = decodeJsonMap(response.body);
@@ -208,7 +212,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       return Result.success(payload.data?.toDomain());
     } catch (error, stackTrace) {
       logger.e('[WallhavenWallpaperRepository] fetchById failed', error: error, stackTrace: stackTrace);
-      return Result.error(ServerFailure('Failed to fetch WallHaven wallpaper by id: $error'));
+      return Result.error(const ServerFailure(wallpaperLoadFailureMessage));
     }
   }
 

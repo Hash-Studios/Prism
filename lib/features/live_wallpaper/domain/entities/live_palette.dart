@@ -31,6 +31,15 @@ class LivePalette {
     );
   }
 
+  /// The seed and three related seeds, for the colour picker. Hues match the shifts in [LivePalette.fromAccent].
+  static List<Color> seedVariants(Color seed) {
+    final HSLColor base = HSLColor.fromColor(seed);
+    return <Color>[
+      seed,
+      ...<double>[38, -42, 180].map((shift) => base.withHue((base.hue + shift) % 360).toColor()),
+    ];
+  }
+
   final List<Color> colors;
   final Color background;
 }

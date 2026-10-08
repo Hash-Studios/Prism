@@ -19,7 +19,7 @@ void main() {
     expect(firestore.querySpecs, isEmpty);
   });
 
-  test('prefix-searches name and the lowercase username, and lists a user found by both once', () async {
+  test('prefix-searches both name fields and the lowercase username, and lists a user found by all once', () async {
     final firestore = FakeFirestoreClient(
       onQuery: (spec) {
         final field = spec.filters.first.field;
@@ -40,14 +40,18 @@ void main() {
 
     final result = await _repo(firestore).searchUsers(' kev ');
 
-    expect(firestore.querySpecs.map((spec) => spec.filters.first.field), <String>['name', 'usernameLower']);
+    expect(firestore.querySpecs.map((spec) => spec.filters.first.field), <String>[
+      'nameLower',
+      'name',
+      'usernameLower',
+    ]);
     for (final spec in firestore.querySpecs) {
       expect(spec.filters.map((f) => f.op), <FirestoreFilterOp>[
         FirestoreFilterOp.isGreaterThanOrEqualTo,
         FirestoreFilterOp.isLessThanOrEqualTo,
       ]);
     }
-    expect(firestore.querySpecs.map((spec) => spec.filters.first.value), <String>['kev', 'kev']);
+    expect(firestore.querySpecs.map((spec) => spec.filters.first.value), <String>['kev', 'kev', 'kev']);
     final users = result.data!;
     expect(users.map((user) => user.id), <String>['doc_kevin', 'kev2']);
     expect(users.first.followerCount, 2);
@@ -62,13 +66,30 @@ void main() {
     expect(result.isFailure, isTrue);
   });
 
-  test('a mixed-case query searches usernameLower with the lowercased text', () async {
-    final firestore = FakeFirestoreClient();
+  test(
+    'a mixed-case query searches the lowercase fields with lowercased text and keeps the typed case for name',
+    () async {
+      final firestore = FakeFirestoreClient();
 
-    await _repo(firestore).searchUsers('KeViN');
+      await _repo(firestore).searchUsers('KeViN');
 
-    final byField = {for (final spec in firestore.querySpecs) spec.filters.first.field: spec.filters.first.value};
-    expect(byField, <String, Object?>{'name': 'KeViN', 'usernameLower': 'kevin'});
+      final byField = {for (final spec in firestore.querySpecs) spec.filters.first.field: spec.filters.first.value};
+      expect(byField, <String, Object?>{'nameLower': 'kevin', 'name': 'KeViN', 'usernameLower': 'kevin'});
+    },
+  );
+
+  test('"john" finds a creator saved as "John", through nameLower', () async {
+    final firestore = FakeFirestoreClient(
+      onQuery: (spec) => spec.filters.first.field == 'nameLower'
+          ? <FakeDocRow>[
+              (id: 'd1', data: <String, dynamic>{'name': 'John', 'nameLower': 'john'}),
+            ]
+          : const <FakeDocRow>[],
+    );
+
+    final result = await _repo(firestore).searchUsers('john');
+
+    expect(result.data!.map((UserSearchUser u) => u.name), <String>['John']);
   });
 
   test('creators the user blocked never show up in the results', () async {

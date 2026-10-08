@@ -57,7 +57,7 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
                 const SizedBox(height: 120),
                 GlintState(
                   kind: GlintStateKind.offline,
-                  title: "Can't connect to the Servers!",
+                  title: "Couldn't load collections",
                   actionLabel: 'Try again',
                   onAction: () {
                     PrismHaptics.tap();

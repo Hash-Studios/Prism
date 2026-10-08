@@ -9,9 +9,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
 class LiveWallpaperScreen extends StatelessWidget {
-  const LiveWallpaperScreen({super.key, this.imageUrl});
+  const LiveWallpaperScreen({super.key, this.imageUrl, this.accentSeed});
 
   final String? imageUrl;
+
+  /// The dominant colour of the wallpaper the user came from. The gradients start from it.
+  final Color? accentSeed;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +22,7 @@ class LiveWallpaperScreen extends StatelessWidget {
       create: (_) =>
           LiveWallpaperBloc(getIt<LiveWallpaperRepository>(), imageUrl: imageUrl)
             ..add(LiveWallpaperEvent.started(isPro: app_state.prismUser.premium)),
-      child: LiveWallpaperView(imageUrl: imageUrl),
+      child: LiveWallpaperView(imageUrl: imageUrl, accentSeed: accentSeed),
     );
   }
 }
