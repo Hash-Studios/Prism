@@ -53,6 +53,8 @@ Future<SearchFilters?> showSearchFilterSheet(BuildContext context, SearchFilters
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
+    // The Search tab has its own navigator under the floating nav bar; the root one puts the sheet above it.
+    useRootNavigator: true,
     builder: (BuildContext sheetContext) => _SearchFilterSheet(initial: current),
   );
 }
