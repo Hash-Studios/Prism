@@ -11,6 +11,17 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
+internal fun copyWallpaperCropFile(source: File, folder: File): File {
+    folder.mkdirs()
+    val destination = File.createTempFile("wallpaper_crop_", ".${source.extension.ifBlank { "jpg" }}", folder)
+    return try {
+        source.copyTo(destination, overwrite = true)
+    } catch (error: Exception) {
+        destination.delete()
+        throw error
+    }
+}
+
 class MainActivity : FlutterFragmentActivity() {
     private var mediaApi: PrismMediaHostApiImpl? = null
     private var hapticsChannel: MethodChannel? = null
@@ -73,9 +84,7 @@ class MainActivity : FlutterFragmentActivity() {
     /** The system cropper reads only content URIs. Copies [path] into the shared cache folder and returns its URI. */
     private fun cropContentUri(path: String): String {
         val source = File(path)
-        val folder = File(cacheDir, "wallpaper_crop").apply { mkdirs() }
-        folder.listFiles()?.forEach { it.delete() }
-        val copy = source.copyTo(File(folder, "wallpaper.${source.extension.ifBlank { "jpg" }}"), overwrite = true)
+        val copy = copyWallpaperCropFile(source, File(cacheDir, "wallpaper_crop"))
         return FileProvider.getUriForFile(this, "$packageName.wallpaper_crop", copy).toString()
     }
 
