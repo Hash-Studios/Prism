@@ -174,6 +174,8 @@ void main() {
       '@drawable/ic_downloads',
     ]);
     await tester.pumpWidget(const SizedBox());
+    // On a macOS host Platform.isMacOS is true, so topic calls wait for an APNs token with retry timers.
+    await tester.pump(const Duration(seconds: 3));
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.android}));
 
   test('the For You and Collections shortcuts map to their tabs, others to none', () {
