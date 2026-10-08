@@ -184,6 +184,35 @@ void main() {
       expect(client.requests.single.source.filePath, isNull);
     });
 
+    test('a missing or null crop URI becomes a retryable failure', () async {
+      const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+      addTearDown(() => messenger.setMockMethodCallHandler(cropChannel, null));
+      final _FakeClient client = _FakeClient([aw.WallpaperOperationStatus.applied]);
+      aw.AsyncWallpaper.debugSetClient(client);
+
+      messenger.setMockMethodCallHandler(cropChannel, null);
+      final WallpaperSetResult missingPlugin = await WallpaperService.setWallpaper(
+        '/tmp/wall.png',
+        WallpaperTarget.home,
+        useSystemCropper: true,
+        recordHistory: false,
+      );
+      expect(missingPlugin.status, WallpaperSetStatus.failed);
+      expect(missingPlugin.canRetry, isTrue);
+      expect(client.requests, isEmpty);
+
+      messenger.setMockMethodCallHandler(cropChannel, (_) async => null);
+      final WallpaperSetResult nullUri = await WallpaperService.setWallpaper(
+        '/tmp/wall.png',
+        WallpaperTarget.home,
+        useSystemCropper: true,
+        recordHistory: false,
+      );
+      expect(nullUri.status, WallpaperSetStatus.failed);
+      expect(nullUri.canRetry, isTrue);
+      expect(client.requests, isEmpty);
+    });
+
     test('fit maps to the plugin scale mode', () async {
       final _FakeClient client = _FakeClient([aw.WallpaperOperationStatus.applied]);
       aw.AsyncWallpaper.debugSetClient(client);

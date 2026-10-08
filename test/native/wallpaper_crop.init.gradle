@@ -1,0 +1,7 @@
+allprojects {
+    afterEvaluate { project ->
+        if (project.path == ':app') {
+            project.android.sourceSets.test.java.srcDir(new File(project.rootProject.projectDir, '../test/native'))
+        }
+    }
+}
