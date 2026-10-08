@@ -274,7 +274,7 @@ void main() {
     onList = () async => DownloadItemsResult(success: true, items: <String>[a.path, b.path]);
     await pumpScreen(tester);
 
-    await tester.longPress(find.byType(InkWell).first);
+    await tester.longPress(find.byKey(ValueKey<String>(a.path)));
     await tester.pump();
     await tester.tap(find.bySemanticsLabel('Delete'));
     await tester.pumpAndSettle();
@@ -288,9 +288,9 @@ void main() {
     onList = () async => DownloadItemsResult(success: true, items: <String>[a.path, b.path]);
     await pumpScreen(tester);
 
-    await tester.longPress(find.byType(InkWell).first);
+    await tester.longPress(find.byKey(ValueKey<String>(a.path)));
     await tester.pump();
-    await tester.tap(find.descendant(of: find.byType(GridView), matching: find.byType(InkWell)).last);
+    await tester.tap(find.byKey(ValueKey<String>(b.path)));
     await tester.pump();
     await tester.tap(find.bySemanticsLabel('Delete'));
     await tester.pumpAndSettle();
@@ -309,7 +309,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    final Color? color = tester.widget<Text>(find.text('1 download')).style?.color;
+    final Color? color = tester.widget<Text>(find.text('1 download · 3 B')).style?.color;
     expect(color, Colors.orange.withValues(alpha: 0.6));
     expect(color, isNot(theme.hintColor));
   });

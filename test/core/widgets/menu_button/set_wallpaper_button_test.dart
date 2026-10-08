@@ -296,6 +296,7 @@ void main() {
 
     await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Always use this'));
     await tester.tap(find.text('Always use this'));
     await tester.pump();
     await tester.tap(find.text('Lock Screen'));
@@ -551,6 +552,7 @@ void main() {
     Future<void> openPair(WidgetTester tester) async {
       await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Different wallpaper for lock screen'));
       await tester.tap(find.text('Different wallpaper for lock screen'));
       await tester.pumpAndSettle(const Duration(seconds: 2));
     }
