@@ -5,7 +5,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -49,13 +51,23 @@ class _WotdCardContent extends StatelessWidget {
 
   void _openWallpaper(BuildContext context) {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
+    final PrismWallpaper? wallpaper = entity.wallpaper;
     context.router.push(
-      WallpaperDetailRoute(
-        wallId: entity.wallId,
-        source: entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source,
-        thumbnailUrl: entity.thumbnailUrl.isNotEmpty ? entity.thumbnailUrl : entity.url,
-      ),
+      wallpaper != null
+          ? WallpaperDetailRoute(
+              entity: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+            )
+          : WallpaperDetailRoute(
+              wallId: entity.wallId,
+              source: entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source,
+              thumbnailUrl: entity.thumbnailUrl.isNotEmpty ? entity.thumbnailUrl : entity.url,
+            ),
     );
+  }
+
+  void _openArchive(BuildContext context) {
+    PrismHaptics.tap();
+    context.router.push(const WotdArchiveRoute());
   }
 
   @override
@@ -71,7 +83,11 @@ class _WotdCardContent extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              PrismImageTile(url: entity.thumbnailUrl, fallbackUrl: entity.url),
+              PrismImageTile(
+                url: entity.thumbnailUrl,
+                fallbackUrl: entity.url,
+                memCacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
+              ),
 
               Center(
                 child: DecoratedBox(
@@ -110,6 +126,20 @@ class _WotdCardContent extends StatelessWidget {
                       ],
                     ),
                   ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: TextButton(
+                  onPressed: () => _openArchive(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: PrismColors.onPrimary,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.scrim.withValues(alpha: PrismOverlay.carouselBannerScrimAlpha),
+                    minimumSize: const Size(48, 48),
+                  ),
+                  child: const Text('See past picks'),
                 ),
               ),
             ],

@@ -5,10 +5,13 @@ import 'package:flutter/scheduler.dart';
 
 /// Shows the daily claim sheet when a claim lands and this route is on top.
 class DailyClaimSheetHost extends StatefulWidget {
-  const DailyClaimSheetHost({super.key, required this.child, required this.onSeeRewards});
+  const DailyClaimSheetHost({super.key, required this.child, required this.onSeeRewards, this.onEarnCoins});
 
   final Widget child;
   final VoidCallback onSeeRewards;
+
+  /// Opens the earn section when a streak rescue needs more coins. Falls back to [onSeeRewards].
+  final VoidCallback? onEarnCoins;
 
   @override
   State<DailyClaimSheetHost> createState() => _DailyClaimSheetHostState();
@@ -61,7 +64,7 @@ class _DailyClaimSheetHostState extends State<DailyClaimSheetHost> with WidgetsB
         (WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed) == AppLifecycleState.resumed;
     if (!current || !resumed) return;
     CoinsService.instance.consumeLastClaim();
-    showDailyClaimSheet(context, result, onSeeRewards: widget.onSeeRewards);
+    showDailyClaimSheet(context, result, onSeeRewards: widget.onSeeRewards, onEarnCoins: widget.onEarnCoins);
   }
 
   @override

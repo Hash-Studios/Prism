@@ -1,5 +1,8 @@
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class InterestCategoryTile extends StatelessWidget {
@@ -21,8 +24,9 @@ class InterestCategoryTile extends StatelessWidget {
     const tileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
     const selectedTileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
     final accent = Theme.of(context).colorScheme.primary;
+    final shortMotion = context.motion(OnboardingMotion.short);
     return AnimatedContainer(
-      duration: OnboardingMotion.short,
+      duration: shortMotion,
       curve: OnboardingMotion.emphasized,
       decoration: BoxDecoration(
         color: OnboardingColors.surfaceGlass.withValues(alpha: OnboardingOpacity.cardBase),
@@ -44,9 +48,18 @@ class InterestCategoryTile extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 if (imageUrl != null)
-                  Image.network(imageUrl!, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink()),
+                  LayoutBuilder(
+                    builder: (context, constraints) => CachedNetworkImage(
+                      imageUrl: imageUrl!,
+                      cacheManager: PrismImageCache.instance,
+                      memCacheWidth: (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context)).round(),
+                      fit: BoxFit.cover,
+                      fadeInDuration: shortMotion,
+                      errorWidget: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
                 AnimatedContainer(
-                  duration: OnboardingMotion.short,
+                  duration: shortMotion,
                   curve: OnboardingMotion.emphasized,
                   decoration: BoxDecoration(
                     color: isSelected
@@ -75,10 +88,10 @@ class InterestCategoryTile extends StatelessWidget {
                   top: 6,
                   right: 6,
                   child: AnimatedOpacity(
-                    duration: OnboardingMotion.short,
+                    duration: shortMotion,
                     opacity: isSelected ? 1.0 : 0.0,
                     child: AnimatedScale(
-                      duration: OnboardingMotion.short,
+                      duration: shortMotion,
                       curve: OnboardingMotion.emphasized,
                       scale: isSelected ? 1.0 : 0.5,
                       child: Container(

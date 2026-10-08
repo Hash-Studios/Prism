@@ -18,4 +18,21 @@ void main() {
   test('de-duplicates case-insensitively', () {
     expect(dto(category: 'space', tags: <String>['Space']).toDomain(docId: 'a').tags, <String>['Space']);
   });
+
+  group('title', () {
+    test('survives the JSON round trip', () {
+      final PrismWallDocDto parsed = PrismWallDocDto.fromJson(<String, dynamic>{
+        'wallpaper_url': 'https://x/y.jpg',
+        'title': ' Night city ',
+      });
+      expect(PrismWallDocDto.fromJson(parsed.toJson()).title, ' Night city ');
+      expect(parsed.toDomain(docId: 'a').title, 'Night city');
+    });
+
+    test('is null when the document has none or a blank one', () {
+      expect(PrismWallDocDto.fromJson(<String, dynamic>{'wallpaper_url': 'https://x/y.jpg'}).title, isNull);
+      expect(const PrismWallDocDto(wallpaperUrl: 'https://x/y.jpg', title: '  ').toDomain(docId: 'a').title, isNull);
+      expect(dto().toDomain(docId: 'a').title, isNull);
+    });
+  });
 }

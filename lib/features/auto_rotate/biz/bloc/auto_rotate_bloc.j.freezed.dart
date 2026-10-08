@@ -61,7 +61,7 @@ extension AutoRotateEventPatterns on AutoRotateEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _EntitlementChanged value)?  entitlementChanged,TResult Function( _FavouritesChanged value)?  favouritesChanged,TResult Function( _Toggled value)?  toggled,TResult Function( _IntervalChanged value)?  intervalChanged,TResult Function( _TargetChanged value)?  targetChanged,TResult Function( _ShuffleChanged value)?  shuffleChanged,TResult Function( _SourceChanged value)?  sourceChanged,TResult Function( _ChargingOnlyChanged value)?  chargingOnlyChanged,TResult Function( _RotateNowPressed value)?  rotateNowPressed,TResult Function( _FavouritesSettled value)?  favouritesSettled,TResult Function( _StatusRefreshed value)?  statusRefreshed,TResult Function( _BatteryTipDismissed value)?  batteryTipDismissed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _EntitlementChanged value)?  entitlementChanged,TResult Function( _FavouritesChanged value)?  favouritesChanged,TResult Function( _Toggled value)?  toggled,TResult Function( _IntervalChanged value)?  intervalChanged,TResult Function( _TargetChanged value)?  targetChanged,TResult Function( _ShuffleChanged value)?  shuffleChanged,TResult Function( _SourceChanged value)?  sourceChanged,TResult Function( _CategoryChanged value)?  categoryChanged,TResult Function( _ChargingOnlyChanged value)?  chargingOnlyChanged,TResult Function( _RotateNowPressed value)?  rotateNowPressed,TResult Function( _FavouritesSettled value)?  favouritesSettled,TResult Function( _StatusRefreshed value)?  statusRefreshed,TResult Function( _BatteryTipDismissed value)?  batteryTipDismissed,TResult Function( _ProLapseAcknowledged value)?  proLapseAcknowledged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -72,12 +72,14 @@ return toggled(_that);case _IntervalChanged() when intervalChanged != null:
 return intervalChanged(_that);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that);case _ShuffleChanged() when shuffleChanged != null:
 return shuffleChanged(_that);case _SourceChanged() when sourceChanged != null:
-return sourceChanged(_that);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
+return sourceChanged(_that);case _CategoryChanged() when categoryChanged != null:
+return categoryChanged(_that);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
 return chargingOnlyChanged(_that);case _RotateNowPressed() when rotateNowPressed != null:
 return rotateNowPressed(_that);case _FavouritesSettled() when favouritesSettled != null:
 return favouritesSettled(_that);case _StatusRefreshed() when statusRefreshed != null:
 return statusRefreshed(_that);case _BatteryTipDismissed() when batteryTipDismissed != null:
-return batteryTipDismissed(_that);case _:
+return batteryTipDismissed(_that);case _ProLapseAcknowledged() when proLapseAcknowledged != null:
+return proLapseAcknowledged(_that);case _:
   return orElse();
 
 }
@@ -95,7 +97,7 @@ return batteryTipDismissed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _EntitlementChanged value)  entitlementChanged,required TResult Function( _FavouritesChanged value)  favouritesChanged,required TResult Function( _Toggled value)  toggled,required TResult Function( _IntervalChanged value)  intervalChanged,required TResult Function( _TargetChanged value)  targetChanged,required TResult Function( _ShuffleChanged value)  shuffleChanged,required TResult Function( _SourceChanged value)  sourceChanged,required TResult Function( _ChargingOnlyChanged value)  chargingOnlyChanged,required TResult Function( _RotateNowPressed value)  rotateNowPressed,required TResult Function( _FavouritesSettled value)  favouritesSettled,required TResult Function( _StatusRefreshed value)  statusRefreshed,required TResult Function( _BatteryTipDismissed value)  batteryTipDismissed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _EntitlementChanged value)  entitlementChanged,required TResult Function( _FavouritesChanged value)  favouritesChanged,required TResult Function( _Toggled value)  toggled,required TResult Function( _IntervalChanged value)  intervalChanged,required TResult Function( _TargetChanged value)  targetChanged,required TResult Function( _ShuffleChanged value)  shuffleChanged,required TResult Function( _SourceChanged value)  sourceChanged,required TResult Function( _CategoryChanged value)  categoryChanged,required TResult Function( _ChargingOnlyChanged value)  chargingOnlyChanged,required TResult Function( _RotateNowPressed value)  rotateNowPressed,required TResult Function( _FavouritesSettled value)  favouritesSettled,required TResult Function( _StatusRefreshed value)  statusRefreshed,required TResult Function( _BatteryTipDismissed value)  batteryTipDismissed,required TResult Function( _ProLapseAcknowledged value)  proLapseAcknowledged,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -106,12 +108,14 @@ return toggled(_that);case _IntervalChanged():
 return intervalChanged(_that);case _TargetChanged():
 return targetChanged(_that);case _ShuffleChanged():
 return shuffleChanged(_that);case _SourceChanged():
-return sourceChanged(_that);case _ChargingOnlyChanged():
+return sourceChanged(_that);case _CategoryChanged():
+return categoryChanged(_that);case _ChargingOnlyChanged():
 return chargingOnlyChanged(_that);case _RotateNowPressed():
 return rotateNowPressed(_that);case _FavouritesSettled():
 return favouritesSettled(_that);case _StatusRefreshed():
 return statusRefreshed(_that);case _BatteryTipDismissed():
-return batteryTipDismissed(_that);case _:
+return batteryTipDismissed(_that);case _ProLapseAcknowledged():
+return proLapseAcknowledged(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -128,7 +132,7 @@ return batteryTipDismissed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _EntitlementChanged value)?  entitlementChanged,TResult? Function( _FavouritesChanged value)?  favouritesChanged,TResult? Function( _Toggled value)?  toggled,TResult? Function( _IntervalChanged value)?  intervalChanged,TResult? Function( _TargetChanged value)?  targetChanged,TResult? Function( _ShuffleChanged value)?  shuffleChanged,TResult? Function( _SourceChanged value)?  sourceChanged,TResult? Function( _ChargingOnlyChanged value)?  chargingOnlyChanged,TResult? Function( _RotateNowPressed value)?  rotateNowPressed,TResult? Function( _FavouritesSettled value)?  favouritesSettled,TResult? Function( _StatusRefreshed value)?  statusRefreshed,TResult? Function( _BatteryTipDismissed value)?  batteryTipDismissed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _EntitlementChanged value)?  entitlementChanged,TResult? Function( _FavouritesChanged value)?  favouritesChanged,TResult? Function( _Toggled value)?  toggled,TResult? Function( _IntervalChanged value)?  intervalChanged,TResult? Function( _TargetChanged value)?  targetChanged,TResult? Function( _ShuffleChanged value)?  shuffleChanged,TResult? Function( _SourceChanged value)?  sourceChanged,TResult? Function( _CategoryChanged value)?  categoryChanged,TResult? Function( _ChargingOnlyChanged value)?  chargingOnlyChanged,TResult? Function( _RotateNowPressed value)?  rotateNowPressed,TResult? Function( _FavouritesSettled value)?  favouritesSettled,TResult? Function( _StatusRefreshed value)?  statusRefreshed,TResult? Function( _BatteryTipDismissed value)?  batteryTipDismissed,TResult? Function( _ProLapseAcknowledged value)?  proLapseAcknowledged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -139,12 +143,14 @@ return toggled(_that);case _IntervalChanged() when intervalChanged != null:
 return intervalChanged(_that);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that);case _ShuffleChanged() when shuffleChanged != null:
 return shuffleChanged(_that);case _SourceChanged() when sourceChanged != null:
-return sourceChanged(_that);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
+return sourceChanged(_that);case _CategoryChanged() when categoryChanged != null:
+return categoryChanged(_that);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
 return chargingOnlyChanged(_that);case _RotateNowPressed() when rotateNowPressed != null:
 return rotateNowPressed(_that);case _FavouritesSettled() when favouritesSettled != null:
 return favouritesSettled(_that);case _StatusRefreshed() when statusRefreshed != null:
 return statusRefreshed(_that);case _BatteryTipDismissed() when batteryTipDismissed != null:
-return batteryTipDismissed(_that);case _:
+return batteryTipDismissed(_that);case _ProLapseAcknowledged() when proLapseAcknowledged != null:
+return proLapseAcknowledged(_that);case _:
   return null;
 
 }
@@ -161,7 +167,7 @@ return batteryTipDismissed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro)?  started,TResult Function( bool isPro,  String userId)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function( AutoRotateSource source)?  sourceChanged,TResult Function( bool chargingOnly)?  chargingOnlyChanged,TResult Function()?  rotateNowPressed,TResult Function()?  favouritesSettled,TResult Function()?  statusRefreshed,TResult Function()?  batteryTipDismissed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro)?  started,TResult Function( bool isPro,  String userId)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function( AutoRotateSource source)?  sourceChanged,TResult Function( String category)?  categoryChanged,TResult Function( bool chargingOnly)?  chargingOnlyChanged,TResult Function()?  rotateNowPressed,TResult Function()?  favouritesSettled,TResult Function()?  statusRefreshed,TResult Function()?  batteryTipDismissed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged() when entitlementChanged != null:
@@ -171,12 +177,14 @@ return toggled(_that.enabled);case _IntervalChanged() when intervalChanged != nu
 return intervalChanged(_that.minutes);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that.target);case _ShuffleChanged() when shuffleChanged != null:
 return shuffleChanged(_that.shuffle);case _SourceChanged() when sourceChanged != null:
-return sourceChanged(_that.source);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
+return sourceChanged(_that.source);case _CategoryChanged() when categoryChanged != null:
+return categoryChanged(_that.category);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
 return chargingOnlyChanged(_that.chargingOnly);case _RotateNowPressed() when rotateNowPressed != null:
 return rotateNowPressed();case _FavouritesSettled() when favouritesSettled != null:
 return favouritesSettled();case _StatusRefreshed() when statusRefreshed != null:
 return statusRefreshed();case _BatteryTipDismissed() when batteryTipDismissed != null:
-return batteryTipDismissed();case _:
+return batteryTipDismissed();case _ProLapseAcknowledged() when proLapseAcknowledged != null:
+return proLapseAcknowledged();case _:
   return orElse();
 
 }
@@ -194,7 +202,7 @@ return batteryTipDismissed();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro)  started,required TResult Function( bool isPro,  String userId)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function( AutoRotateSource source)  sourceChanged,required TResult Function( bool chargingOnly)  chargingOnlyChanged,required TResult Function()  rotateNowPressed,required TResult Function()  favouritesSettled,required TResult Function()  statusRefreshed,required TResult Function()  batteryTipDismissed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro)  started,required TResult Function( bool isPro,  String userId)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function( AutoRotateSource source)  sourceChanged,required TResult Function( String category)  categoryChanged,required TResult Function( bool chargingOnly)  chargingOnlyChanged,required TResult Function()  rotateNowPressed,required TResult Function()  favouritesSettled,required TResult Function()  statusRefreshed,required TResult Function()  batteryTipDismissed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged():
@@ -204,12 +212,14 @@ return toggled(_that.enabled);case _IntervalChanged():
 return intervalChanged(_that.minutes);case _TargetChanged():
 return targetChanged(_that.target);case _ShuffleChanged():
 return shuffleChanged(_that.shuffle);case _SourceChanged():
-return sourceChanged(_that.source);case _ChargingOnlyChanged():
+return sourceChanged(_that.source);case _CategoryChanged():
+return categoryChanged(_that.category);case _ChargingOnlyChanged():
 return chargingOnlyChanged(_that.chargingOnly);case _RotateNowPressed():
 return rotateNowPressed();case _FavouritesSettled():
 return favouritesSettled();case _StatusRefreshed():
 return statusRefreshed();case _BatteryTipDismissed():
-return batteryTipDismissed();case _:
+return batteryTipDismissed();case _ProLapseAcknowledged():
+return proLapseAcknowledged();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -226,7 +236,7 @@ return batteryTipDismissed();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro)?  started,TResult? Function( bool isPro,  String userId)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function( AutoRotateSource source)?  sourceChanged,TResult? Function( bool chargingOnly)?  chargingOnlyChanged,TResult? Function()?  rotateNowPressed,TResult? Function()?  favouritesSettled,TResult? Function()?  statusRefreshed,TResult? Function()?  batteryTipDismissed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro)?  started,TResult? Function( bool isPro,  String userId)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function( AutoRotateSource source)?  sourceChanged,TResult? Function( String category)?  categoryChanged,TResult? Function( bool chargingOnly)?  chargingOnlyChanged,TResult? Function()?  rotateNowPressed,TResult? Function()?  favouritesSettled,TResult? Function()?  statusRefreshed,TResult? Function()?  batteryTipDismissed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged() when entitlementChanged != null:
@@ -236,12 +246,14 @@ return toggled(_that.enabled);case _IntervalChanged() when intervalChanged != nu
 return intervalChanged(_that.minutes);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that.target);case _ShuffleChanged() when shuffleChanged != null:
 return shuffleChanged(_that.shuffle);case _SourceChanged() when sourceChanged != null:
-return sourceChanged(_that.source);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
+return sourceChanged(_that.source);case _CategoryChanged() when categoryChanged != null:
+return categoryChanged(_that.category);case _ChargingOnlyChanged() when chargingOnlyChanged != null:
 return chargingOnlyChanged(_that.chargingOnly);case _RotateNowPressed() when rotateNowPressed != null:
 return rotateNowPressed();case _FavouritesSettled() when favouritesSettled != null:
 return favouritesSettled();case _StatusRefreshed() when statusRefreshed != null:
 return statusRefreshed();case _BatteryTipDismissed() when batteryTipDismissed != null:
-return batteryTipDismissed();case _:
+return batteryTipDismissed();case _ProLapseAcknowledged() when proLapseAcknowledged != null:
+return proLapseAcknowledged();case _:
   return null;
 
 }
@@ -844,6 +856,78 @@ as AutoRotateSource,
 /// @nodoc
 
 
+class _CategoryChanged with DiagnosticableTreeMixin implements AutoRotateEvent {
+  const _CategoryChanged(this.category);
+  
+
+ final  String category;
+
+/// Create a copy of AutoRotateEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$CategoryChangedCopyWith<_CategoryChanged> get copyWith => __$CategoryChangedCopyWithImpl<_CategoryChanged>(this, _$identity);
+
+
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'AutoRotateEvent.categoryChanged'))
+    ..add(DiagnosticsProperty('category', category));
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CategoryChanged&&(identical(other.category, category) || other.category == category));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,category);
+
+@override
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  return 'AutoRotateEvent.categoryChanged(category: $category)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$CategoryChangedCopyWith<$Res> implements $AutoRotateEventCopyWith<$Res> {
+  factory _$CategoryChangedCopyWith(_CategoryChanged value, $Res Function(_CategoryChanged) _then) = __$CategoryChangedCopyWithImpl;
+@useResult
+$Res call({
+ String category
+});
+
+
+
+
+}
+/// @nodoc
+class __$CategoryChangedCopyWithImpl<$Res>
+    implements _$CategoryChangedCopyWith<$Res> {
+  __$CategoryChangedCopyWithImpl(this._self, this._then);
+
+  final _CategoryChanged _self;
+  final $Res Function(_CategoryChanged) _then;
+
+/// Create a copy of AutoRotateEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? category = null,}) {
+  return _then(_CategoryChanged(
+null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class _ChargingOnlyChanged with DiagnosticableTreeMixin implements AutoRotateEvent {
   const _ChargingOnlyChanged(this.chargingOnly);
   
@@ -1066,9 +1150,47 @@ String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
 
 
 /// @nodoc
+
+
+class _ProLapseAcknowledged with DiagnosticableTreeMixin implements AutoRotateEvent {
+  const _ProLapseAcknowledged();
+  
+
+
+
+
+
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'AutoRotateEvent.proLapseAcknowledged'))
+    ;
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProLapseAcknowledged);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  return 'AutoRotateEvent.proLapseAcknowledged()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
 mixin _$AutoRotateState implements DiagnosticableTreeMixin {
 
- bool get loaded; AutoRotateConfig get config; AutoRotateStatus get status; int get favouriteCount; int get downloadCount; bool get sourcesCapped; bool get isPro; bool get startFailed; bool get starting; bool get showBatteryTip;
+ bool get loaded; AutoRotateConfig get config; AutoRotateStatus get status; int get favouriteCount; int get downloadCount; int get remoteCount; bool get sourcesCapped; bool get isPro; bool get startFailed; bool get starting; bool get showBatteryTip; bool get loadingSource; bool get sourceLoadFailed; bool get proLapsed; Set<WallpaperTarget> get supportedTargets;
 /// Create a copy of AutoRotateState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1080,21 +1202,21 @@ $AutoRotateStateCopyWith<AutoRotateState> get copyWith => _$AutoRotateStateCopyW
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'AutoRotateState'))
-    ..add(DiagnosticsProperty('loaded', loaded))..add(DiagnosticsProperty('config', config))..add(DiagnosticsProperty('status', status))..add(DiagnosticsProperty('favouriteCount', favouriteCount))..add(DiagnosticsProperty('downloadCount', downloadCount))..add(DiagnosticsProperty('sourcesCapped', sourcesCapped))..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('startFailed', startFailed))..add(DiagnosticsProperty('starting', starting))..add(DiagnosticsProperty('showBatteryTip', showBatteryTip));
+    ..add(DiagnosticsProperty('loaded', loaded))..add(DiagnosticsProperty('config', config))..add(DiagnosticsProperty('status', status))..add(DiagnosticsProperty('favouriteCount', favouriteCount))..add(DiagnosticsProperty('downloadCount', downloadCount))..add(DiagnosticsProperty('remoteCount', remoteCount))..add(DiagnosticsProperty('sourcesCapped', sourcesCapped))..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('startFailed', startFailed))..add(DiagnosticsProperty('starting', starting))..add(DiagnosticsProperty('showBatteryTip', showBatteryTip))..add(DiagnosticsProperty('loadingSource', loadingSource))..add(DiagnosticsProperty('sourceLoadFailed', sourceLoadFailed))..add(DiagnosticsProperty('proLapsed', proLapsed))..add(DiagnosticsProperty('supportedTargets', supportedTargets));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoRotateState&&(identical(other.loaded, loaded) || other.loaded == loaded)&&(identical(other.config, config) || other.config == config)&&(identical(other.status, status) || other.status == status)&&(identical(other.favouriteCount, favouriteCount) || other.favouriteCount == favouriteCount)&&(identical(other.downloadCount, downloadCount) || other.downloadCount == downloadCount)&&(identical(other.sourcesCapped, sourcesCapped) || other.sourcesCapped == sourcesCapped)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.startFailed, startFailed) || other.startFailed == startFailed)&&(identical(other.starting, starting) || other.starting == starting)&&(identical(other.showBatteryTip, showBatteryTip) || other.showBatteryTip == showBatteryTip));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoRotateState&&(identical(other.loaded, loaded) || other.loaded == loaded)&&(identical(other.config, config) || other.config == config)&&(identical(other.status, status) || other.status == status)&&(identical(other.favouriteCount, favouriteCount) || other.favouriteCount == favouriteCount)&&(identical(other.downloadCount, downloadCount) || other.downloadCount == downloadCount)&&(identical(other.remoteCount, remoteCount) || other.remoteCount == remoteCount)&&(identical(other.sourcesCapped, sourcesCapped) || other.sourcesCapped == sourcesCapped)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.startFailed, startFailed) || other.startFailed == startFailed)&&(identical(other.starting, starting) || other.starting == starting)&&(identical(other.showBatteryTip, showBatteryTip) || other.showBatteryTip == showBatteryTip)&&(identical(other.loadingSource, loadingSource) || other.loadingSource == loadingSource)&&(identical(other.sourceLoadFailed, sourceLoadFailed) || other.sourceLoadFailed == sourceLoadFailed)&&(identical(other.proLapsed, proLapsed) || other.proLapsed == proLapsed)&&const DeepCollectionEquality().equals(other.supportedTargets, supportedTargets));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loaded,config,status,favouriteCount,downloadCount,sourcesCapped,isPro,startFailed,starting,showBatteryTip);
+int get hashCode => Object.hash(runtimeType,loaded,config,status,favouriteCount,downloadCount,remoteCount,sourcesCapped,isPro,startFailed,starting,showBatteryTip,loadingSource,sourceLoadFailed,proLapsed,const DeepCollectionEquality().hash(supportedTargets));
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AutoRotateState(loaded: $loaded, config: $config, status: $status, favouriteCount: $favouriteCount, downloadCount: $downloadCount, sourcesCapped: $sourcesCapped, isPro: $isPro, startFailed: $startFailed, starting: $starting, showBatteryTip: $showBatteryTip)';
+  return 'AutoRotateState(loaded: $loaded, config: $config, status: $status, favouriteCount: $favouriteCount, downloadCount: $downloadCount, remoteCount: $remoteCount, sourcesCapped: $sourcesCapped, isPro: $isPro, startFailed: $startFailed, starting: $starting, showBatteryTip: $showBatteryTip, loadingSource: $loadingSource, sourceLoadFailed: $sourceLoadFailed, proLapsed: $proLapsed, supportedTargets: $supportedTargets)';
 }
 
 
@@ -1105,7 +1227,7 @@ abstract mixin class $AutoRotateStateCopyWith<$Res>  {
   factory $AutoRotateStateCopyWith(AutoRotateState value, $Res Function(AutoRotateState) _then) = _$AutoRotateStateCopyWithImpl;
 @useResult
 $Res call({
- bool loaded, AutoRotateConfig config, AutoRotateStatus status, int favouriteCount, int downloadCount, bool sourcesCapped, bool isPro, bool startFailed, bool starting, bool showBatteryTip
+ bool loaded, AutoRotateConfig config, AutoRotateStatus status, int favouriteCount, int downloadCount, int remoteCount, bool sourcesCapped, bool isPro, bool startFailed, bool starting, bool showBatteryTip, bool loadingSource, bool sourceLoadFailed, bool proLapsed, Set<WallpaperTarget> supportedTargets
 });
 
 
@@ -1122,19 +1244,24 @@ class _$AutoRotateStateCopyWithImpl<$Res>
 
 /// Create a copy of AutoRotateState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? loaded = null,Object? config = null,Object? status = null,Object? favouriteCount = null,Object? downloadCount = null,Object? sourcesCapped = null,Object? isPro = null,Object? startFailed = null,Object? starting = null,Object? showBatteryTip = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? loaded = null,Object? config = null,Object? status = null,Object? favouriteCount = null,Object? downloadCount = null,Object? remoteCount = null,Object? sourcesCapped = null,Object? isPro = null,Object? startFailed = null,Object? starting = null,Object? showBatteryTip = null,Object? loadingSource = null,Object? sourceLoadFailed = null,Object? proLapsed = null,Object? supportedTargets = null,}) {
   return _then(_self.copyWith(
 loaded: null == loaded ? _self.loaded : loaded // ignore: cast_nullable_to_non_nullable
 as bool,config: null == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
 as AutoRotateConfig,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as AutoRotateStatus,favouriteCount: null == favouriteCount ? _self.favouriteCount : favouriteCount // ignore: cast_nullable_to_non_nullable
 as int,downloadCount: null == downloadCount ? _self.downloadCount : downloadCount // ignore: cast_nullable_to_non_nullable
+as int,remoteCount: null == remoteCount ? _self.remoteCount : remoteCount // ignore: cast_nullable_to_non_nullable
 as int,sourcesCapped: null == sourcesCapped ? _self.sourcesCapped : sourcesCapped // ignore: cast_nullable_to_non_nullable
 as bool,isPro: null == isPro ? _self.isPro : isPro // ignore: cast_nullable_to_non_nullable
 as bool,startFailed: null == startFailed ? _self.startFailed : startFailed // ignore: cast_nullable_to_non_nullable
 as bool,starting: null == starting ? _self.starting : starting // ignore: cast_nullable_to_non_nullable
 as bool,showBatteryTip: null == showBatteryTip ? _self.showBatteryTip : showBatteryTip // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,loadingSource: null == loadingSource ? _self.loadingSource : loadingSource // ignore: cast_nullable_to_non_nullable
+as bool,sourceLoadFailed: null == sourceLoadFailed ? _self.sourceLoadFailed : sourceLoadFailed // ignore: cast_nullable_to_non_nullable
+as bool,proLapsed: null == proLapsed ? _self.proLapsed : proLapsed // ignore: cast_nullable_to_non_nullable
+as bool,supportedTargets: null == supportedTargets ? _self.supportedTargets : supportedTargets // ignore: cast_nullable_to_non_nullable
+as Set<WallpaperTarget>,
   ));
 }
 
@@ -1219,10 +1346,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool loaded,  AutoRotateConfig config,  AutoRotateStatus status,  int favouriteCount,  int downloadCount,  bool sourcesCapped,  bool isPro,  bool startFailed,  bool starting,  bool showBatteryTip)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool loaded,  AutoRotateConfig config,  AutoRotateStatus status,  int favouriteCount,  int downloadCount,  int remoteCount,  bool sourcesCapped,  bool isPro,  bool startFailed,  bool starting,  bool showBatteryTip,  bool loadingSource,  bool sourceLoadFailed,  bool proLapsed,  Set<WallpaperTarget> supportedTargets)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AutoRotateState() when $default != null:
-return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_that.downloadCount,_that.sourcesCapped,_that.isPro,_that.startFailed,_that.starting,_that.showBatteryTip);case _:
+return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_that.downloadCount,_that.remoteCount,_that.sourcesCapped,_that.isPro,_that.startFailed,_that.starting,_that.showBatteryTip,_that.loadingSource,_that.sourceLoadFailed,_that.proLapsed,_that.supportedTargets);case _:
   return orElse();
 
 }
@@ -1240,10 +1367,10 @@ return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool loaded,  AutoRotateConfig config,  AutoRotateStatus status,  int favouriteCount,  int downloadCount,  bool sourcesCapped,  bool isPro,  bool startFailed,  bool starting,  bool showBatteryTip)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool loaded,  AutoRotateConfig config,  AutoRotateStatus status,  int favouriteCount,  int downloadCount,  int remoteCount,  bool sourcesCapped,  bool isPro,  bool startFailed,  bool starting,  bool showBatteryTip,  bool loadingSource,  bool sourceLoadFailed,  bool proLapsed,  Set<WallpaperTarget> supportedTargets)  $default,) {final _that = this;
 switch (_that) {
 case _AutoRotateState():
-return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_that.downloadCount,_that.sourcesCapped,_that.isPro,_that.startFailed,_that.starting,_that.showBatteryTip);case _:
+return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_that.downloadCount,_that.remoteCount,_that.sourcesCapped,_that.isPro,_that.startFailed,_that.starting,_that.showBatteryTip,_that.loadingSource,_that.sourceLoadFailed,_that.proLapsed,_that.supportedTargets);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1260,10 +1387,10 @@ return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool loaded,  AutoRotateConfig config,  AutoRotateStatus status,  int favouriteCount,  int downloadCount,  bool sourcesCapped,  bool isPro,  bool startFailed,  bool starting,  bool showBatteryTip)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool loaded,  AutoRotateConfig config,  AutoRotateStatus status,  int favouriteCount,  int downloadCount,  int remoteCount,  bool sourcesCapped,  bool isPro,  bool startFailed,  bool starting,  bool showBatteryTip,  bool loadingSource,  bool sourceLoadFailed,  bool proLapsed,  Set<WallpaperTarget> supportedTargets)?  $default,) {final _that = this;
 switch (_that) {
 case _AutoRotateState() when $default != null:
-return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_that.downloadCount,_that.sourcesCapped,_that.isPro,_that.startFailed,_that.starting,_that.showBatteryTip);case _:
+return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_that.downloadCount,_that.remoteCount,_that.sourcesCapped,_that.isPro,_that.startFailed,_that.starting,_that.showBatteryTip,_that.loadingSource,_that.sourceLoadFailed,_that.proLapsed,_that.supportedTargets);case _:
   return null;
 
 }
@@ -1275,7 +1402,7 @@ return $default(_that.loaded,_that.config,_that.status,_that.favouriteCount,_tha
 
 
 class _AutoRotateState extends AutoRotateState with DiagnosticableTreeMixin {
-  const _AutoRotateState({required this.loaded, required this.config, required this.status, required this.favouriteCount, required this.downloadCount, required this.sourcesCapped, required this.isPro, required this.startFailed, required this.starting, required this.showBatteryTip}): super._();
+  const _AutoRotateState({required this.loaded, required this.config, required this.status, required this.favouriteCount, required this.downloadCount, required this.remoteCount, required this.sourcesCapped, required this.isPro, required this.startFailed, required this.starting, required this.showBatteryTip, required this.loadingSource, required this.sourceLoadFailed, required this.proLapsed, required final  Set<WallpaperTarget> supportedTargets}): _supportedTargets = supportedTargets,super._();
   
 
 @override final  bool loaded;
@@ -1283,11 +1410,22 @@ class _AutoRotateState extends AutoRotateState with DiagnosticableTreeMixin {
 @override final  AutoRotateStatus status;
 @override final  int favouriteCount;
 @override final  int downloadCount;
+@override final  int remoteCount;
 @override final  bool sourcesCapped;
 @override final  bool isPro;
 @override final  bool startFailed;
 @override final  bool starting;
 @override final  bool showBatteryTip;
+@override final  bool loadingSource;
+@override final  bool sourceLoadFailed;
+@override final  bool proLapsed;
+ final  Set<WallpaperTarget> _supportedTargets;
+@override Set<WallpaperTarget> get supportedTargets {
+  if (_supportedTargets is EqualUnmodifiableSetView) return _supportedTargets;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableSetView(_supportedTargets);
+}
+
 
 /// Create a copy of AutoRotateState
 /// with the given fields replaced by the non-null parameter values.
@@ -1300,21 +1438,21 @@ _$AutoRotateStateCopyWith<_AutoRotateState> get copyWith => __$AutoRotateStateCo
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'AutoRotateState'))
-    ..add(DiagnosticsProperty('loaded', loaded))..add(DiagnosticsProperty('config', config))..add(DiagnosticsProperty('status', status))..add(DiagnosticsProperty('favouriteCount', favouriteCount))..add(DiagnosticsProperty('downloadCount', downloadCount))..add(DiagnosticsProperty('sourcesCapped', sourcesCapped))..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('startFailed', startFailed))..add(DiagnosticsProperty('starting', starting))..add(DiagnosticsProperty('showBatteryTip', showBatteryTip));
+    ..add(DiagnosticsProperty('loaded', loaded))..add(DiagnosticsProperty('config', config))..add(DiagnosticsProperty('status', status))..add(DiagnosticsProperty('favouriteCount', favouriteCount))..add(DiagnosticsProperty('downloadCount', downloadCount))..add(DiagnosticsProperty('remoteCount', remoteCount))..add(DiagnosticsProperty('sourcesCapped', sourcesCapped))..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('startFailed', startFailed))..add(DiagnosticsProperty('starting', starting))..add(DiagnosticsProperty('showBatteryTip', showBatteryTip))..add(DiagnosticsProperty('loadingSource', loadingSource))..add(DiagnosticsProperty('sourceLoadFailed', sourceLoadFailed))..add(DiagnosticsProperty('proLapsed', proLapsed))..add(DiagnosticsProperty('supportedTargets', supportedTargets));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AutoRotateState&&(identical(other.loaded, loaded) || other.loaded == loaded)&&(identical(other.config, config) || other.config == config)&&(identical(other.status, status) || other.status == status)&&(identical(other.favouriteCount, favouriteCount) || other.favouriteCount == favouriteCount)&&(identical(other.downloadCount, downloadCount) || other.downloadCount == downloadCount)&&(identical(other.sourcesCapped, sourcesCapped) || other.sourcesCapped == sourcesCapped)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.startFailed, startFailed) || other.startFailed == startFailed)&&(identical(other.starting, starting) || other.starting == starting)&&(identical(other.showBatteryTip, showBatteryTip) || other.showBatteryTip == showBatteryTip));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AutoRotateState&&(identical(other.loaded, loaded) || other.loaded == loaded)&&(identical(other.config, config) || other.config == config)&&(identical(other.status, status) || other.status == status)&&(identical(other.favouriteCount, favouriteCount) || other.favouriteCount == favouriteCount)&&(identical(other.downloadCount, downloadCount) || other.downloadCount == downloadCount)&&(identical(other.remoteCount, remoteCount) || other.remoteCount == remoteCount)&&(identical(other.sourcesCapped, sourcesCapped) || other.sourcesCapped == sourcesCapped)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.startFailed, startFailed) || other.startFailed == startFailed)&&(identical(other.starting, starting) || other.starting == starting)&&(identical(other.showBatteryTip, showBatteryTip) || other.showBatteryTip == showBatteryTip)&&(identical(other.loadingSource, loadingSource) || other.loadingSource == loadingSource)&&(identical(other.sourceLoadFailed, sourceLoadFailed) || other.sourceLoadFailed == sourceLoadFailed)&&(identical(other.proLapsed, proLapsed) || other.proLapsed == proLapsed)&&const DeepCollectionEquality().equals(other._supportedTargets, _supportedTargets));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,loaded,config,status,favouriteCount,downloadCount,sourcesCapped,isPro,startFailed,starting,showBatteryTip);
+int get hashCode => Object.hash(runtimeType,loaded,config,status,favouriteCount,downloadCount,remoteCount,sourcesCapped,isPro,startFailed,starting,showBatteryTip,loadingSource,sourceLoadFailed,proLapsed,const DeepCollectionEquality().hash(_supportedTargets));
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AutoRotateState(loaded: $loaded, config: $config, status: $status, favouriteCount: $favouriteCount, downloadCount: $downloadCount, sourcesCapped: $sourcesCapped, isPro: $isPro, startFailed: $startFailed, starting: $starting, showBatteryTip: $showBatteryTip)';
+  return 'AutoRotateState(loaded: $loaded, config: $config, status: $status, favouriteCount: $favouriteCount, downloadCount: $downloadCount, remoteCount: $remoteCount, sourcesCapped: $sourcesCapped, isPro: $isPro, startFailed: $startFailed, starting: $starting, showBatteryTip: $showBatteryTip, loadingSource: $loadingSource, sourceLoadFailed: $sourceLoadFailed, proLapsed: $proLapsed, supportedTargets: $supportedTargets)';
 }
 
 
@@ -1325,7 +1463,7 @@ abstract mixin class _$AutoRotateStateCopyWith<$Res> implements $AutoRotateState
   factory _$AutoRotateStateCopyWith(_AutoRotateState value, $Res Function(_AutoRotateState) _then) = __$AutoRotateStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool loaded, AutoRotateConfig config, AutoRotateStatus status, int favouriteCount, int downloadCount, bool sourcesCapped, bool isPro, bool startFailed, bool starting, bool showBatteryTip
+ bool loaded, AutoRotateConfig config, AutoRotateStatus status, int favouriteCount, int downloadCount, int remoteCount, bool sourcesCapped, bool isPro, bool startFailed, bool starting, bool showBatteryTip, bool loadingSource, bool sourceLoadFailed, bool proLapsed, Set<WallpaperTarget> supportedTargets
 });
 
 
@@ -1342,19 +1480,24 @@ class __$AutoRotateStateCopyWithImpl<$Res>
 
 /// Create a copy of AutoRotateState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? loaded = null,Object? config = null,Object? status = null,Object? favouriteCount = null,Object? downloadCount = null,Object? sourcesCapped = null,Object? isPro = null,Object? startFailed = null,Object? starting = null,Object? showBatteryTip = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? loaded = null,Object? config = null,Object? status = null,Object? favouriteCount = null,Object? downloadCount = null,Object? remoteCount = null,Object? sourcesCapped = null,Object? isPro = null,Object? startFailed = null,Object? starting = null,Object? showBatteryTip = null,Object? loadingSource = null,Object? sourceLoadFailed = null,Object? proLapsed = null,Object? supportedTargets = null,}) {
   return _then(_AutoRotateState(
 loaded: null == loaded ? _self.loaded : loaded // ignore: cast_nullable_to_non_nullable
 as bool,config: null == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
 as AutoRotateConfig,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as AutoRotateStatus,favouriteCount: null == favouriteCount ? _self.favouriteCount : favouriteCount // ignore: cast_nullable_to_non_nullable
 as int,downloadCount: null == downloadCount ? _self.downloadCount : downloadCount // ignore: cast_nullable_to_non_nullable
+as int,remoteCount: null == remoteCount ? _self.remoteCount : remoteCount // ignore: cast_nullable_to_non_nullable
 as int,sourcesCapped: null == sourcesCapped ? _self.sourcesCapped : sourcesCapped // ignore: cast_nullable_to_non_nullable
 as bool,isPro: null == isPro ? _self.isPro : isPro // ignore: cast_nullable_to_non_nullable
 as bool,startFailed: null == startFailed ? _self.startFailed : startFailed // ignore: cast_nullable_to_non_nullable
 as bool,starting: null == starting ? _self.starting : starting // ignore: cast_nullable_to_non_nullable
 as bool,showBatteryTip: null == showBatteryTip ? _self.showBatteryTip : showBatteryTip // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,loadingSource: null == loadingSource ? _self.loadingSource : loadingSource // ignore: cast_nullable_to_non_nullable
+as bool,sourceLoadFailed: null == sourceLoadFailed ? _self.sourceLoadFailed : sourceLoadFailed // ignore: cast_nullable_to_non_nullable
+as bool,proLapsed: null == proLapsed ? _self.proLapsed : proLapsed // ignore: cast_nullable_to_non_nullable
+as bool,supportedTargets: null == supportedTargets ? _self._supportedTargets : supportedTargets // ignore: cast_nullable_to_non_nullable
+as Set<WallpaperTarget>,
   ));
 }
 

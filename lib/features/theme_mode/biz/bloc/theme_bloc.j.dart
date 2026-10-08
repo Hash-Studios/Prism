@@ -2,6 +2,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
+import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/domain/usecases/theme_usecases.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc/bloc.dart';
@@ -15,7 +16,8 @@ part 'theme_bloc.j.freezed.dart';
 
 @injectable
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
-  ThemeBloc(this._loadThemeUseCase, this._updateThemeUseCase) : super(ThemeState.initial()) {
+  ThemeBloc(this._loadThemeUseCase, this._updateThemeUseCase, ThemeRepository repository)
+    : super(ThemeState.fromPreferences(repository.readSync())) {
     on<_Started>(_onStarted);
     on<_LightThemeChanged>((event, emit) => _update(UpdateThemeParams(lightThemeId: event.themeId), emit));
     on<_LightAccentChanged>(

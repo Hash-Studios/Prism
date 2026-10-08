@@ -1,6 +1,10 @@
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/data/categories/category_definition.dart';
 
-enum AutoRotateSource { favourites, downloads }
+enum AutoRotateSource { favourites, downloads, category, wallOfTheDay, history }
+
+/// The categories the picker offers. Same names as the discover grid.
+final List<String> autoRotateCategories = List<String>.unmodifiable(prismClassifierCategories);
 
 class AutoRotateConfig {
   const AutoRotateConfig({
@@ -9,16 +13,18 @@ class AutoRotateConfig {
     this.target = WallpaperTarget.home,
     this.shuffle = true,
     this.source = AutoRotateSource.favourites,
+    this.categoryName = 'Nature',
     this.chargingOnly = false,
   });
 
-  static const List<int> intervalOptions = <int>[60, 360, 720, 1440];
+  static const List<int> intervalOptions = <int>[15, 30, 60, 180, 360, 720, 1440, 4320, 10080];
 
   final bool enabled;
   final int intervalMinutes;
   final WallpaperTarget target;
   final bool shuffle;
   final AutoRotateSource source;
+  final String categoryName;
   final bool chargingOnly;
 
   AutoRotateConfig copyWith({
@@ -27,6 +33,7 @@ class AutoRotateConfig {
     WallpaperTarget? target,
     bool? shuffle,
     AutoRotateSource? source,
+    String? categoryName,
     bool? chargingOnly,
   }) {
     return AutoRotateConfig(
@@ -35,6 +42,7 @@ class AutoRotateConfig {
       target: target ?? this.target,
       shuffle: shuffle ?? this.shuffle,
       source: source ?? this.source,
+      categoryName: categoryName ?? this.categoryName,
       chargingOnly: chargingOnly ?? this.chargingOnly,
     );
   }
@@ -47,10 +55,11 @@ class AutoRotateConfig {
       other.target == target &&
       other.shuffle == shuffle &&
       other.source == source &&
+      other.categoryName == categoryName &&
       other.chargingOnly == chargingOnly;
 
   @override
-  int get hashCode => Object.hash(enabled, intervalMinutes, target, shuffle, source, chargingOnly);
+  int get hashCode => Object.hash(enabled, intervalMinutes, target, shuffle, source, categoryName, chargingOnly);
 }
 
 class AutoRotateStatus {

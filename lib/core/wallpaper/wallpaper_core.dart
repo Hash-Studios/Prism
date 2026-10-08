@@ -6,6 +6,9 @@ String wallpaperSemanticLabel(String? author) {
   return name.isEmpty ? 'Wallpaper' : 'Wallpaper by $name';
 }
 
+/// What a user reads when a wallpaper cannot be loaded. The raw error goes to the log, never to the screen.
+const String wallpaperLoadFailureMessage = "Couldn't load this wallpaper. Check your connection and try again.";
+
 final RegExp _wallhavenCropPath = RegExp('^/(?:lg|small)/');
 
 String normalizeWallpaperThumbnailUrl(String thumbnailUrl) {
@@ -15,7 +18,7 @@ String normalizeWallpaperThumbnailUrl(String thumbnailUrl) {
   if (uri.host == 'th.wallhaven.cc') {
     final String path = uri.path;
     if (!_wallhavenCropPath.hasMatch(path)) return thumbnailUrl;
-    return uri.replace(path: path.replaceFirst(_wallhavenCropPath, '/orig/')).toString();
+    return uri.replace(path: path.replaceFirst(_wallhavenCropPath, '/lg/')).toString();
   }
 
   if (uri.host == 'images.pexels.com') {

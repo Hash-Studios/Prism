@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, readDailyCount, REGION, str, utcDateString} from "./common";
+import {STREAK_RESCUE_MIN_COUNT, streakCycleDay} from "./streak";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -26,10 +27,18 @@ const SPENDS: Record<string, number> = {
 
 export const STREAK_FREEZE_COST = 50;
 export const MAX_STREAK_FREEZES = 2;
+export const STREAK_RESCUE_COST = 100;
+const STREAK_RESCUE_COOLDOWN_MS = 30 * 86_400_000;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 
 const AI_GENERATION_AMOUNTS = new Set([10, 75, 100]);
 const REFUND_WINDOW_MS = 600_000;
+// Allowed only when the AI worker confirms the generation did not succeed.
+const AI_REFUND_EVIDENCE_WINDOW_MS = 86_400_000;
+const AI_WORKER_DEFAULT_BASE = "https://prismwalls.com";
+const AI_WORKER_TIMEOUT_MS = 3_000;
+// The only spends a premium member may skip. AI generation always costs coins.
+const PREMIUM_BYPASS_ACTIONS = new Set(["wallpaperDownload", "premiumWallpaperDownload", "premiumFilter"]);
 const REFUND_MAX_PER_DAY = 5;
 // Only the debits the app refunds today: a failed download and a failed AI generation.
 const REFUNDABLE_ACTIONS = new Set(["wallpaperDownload", "premiumWallpaperDownload", "aiGeneration"]);
@@ -53,6 +62,11 @@ function requiredText(value: unknown, field: string): string {
 
 function optionalReason(value: unknown, fallback: string): string {
   return typeof value === "string" ? value.trim().slice(0, 200) : fallback;
+}
+
+function optionalLabel(value: unknown): string | undefined {
+  const label = typeof value === "string" ? value.trim().slice(0, 60) : "";
+  return label === "" ? undefined : label;
 }
 
 function requiredDocumentId(value: unknown, field: string): string {
@@ -87,9 +101,14 @@ function awardAmount(action: string): number {
 
 /**
  * Validates that `debit` (a coinTransactions doc) is refundable by `callerUid` right now.
- * Throws HttpsError otherwise. Returns the coin amount to credit back.
+ * Throws HttpsError otherwise. Returns the coin amount to credit back, or null when the stored delta is unreadable.
  */
-export function refundableDelta(debit: admin.firestore.DocumentData | undefined, callerUid: string, nowMs: number): number {
+export function refundableDelta(
+  debit: admin.firestore.DocumentData | undefined,
+  callerUid: string,
+  nowMs: number,
+  windowMs = REFUND_WINDOW_MS,
+): number | null {
   const notRefundable = () => new HttpsError("failed-precondition", "No refundable spend.");
   if (!debit) throw notRefundable();
   if (debit.userId !== callerUid) throw notRefundable();
@@ -98,8 +117,29 @@ export function refundableDelta(debit: admin.firestore.DocumentData | undefined,
   if (typeof debit.action !== "string" || !REFUNDABLE_ACTIONS.has(debit.action)) throw notRefundable();
   const createdAtMs = (debit.createdAt as admin.firestore.Timestamp | undefined)?.toMillis?.();
   if (typeof createdAtMs !== "number") throw notRefundable();
-  if (nowMs - createdAtMs > REFUND_WINDOW_MS) throw notRefundable();
-  return Math.abs(Math.trunc(Number(debit.delta)));
+  if (nowMs - createdAtMs > windowMs) throw notRefundable();
+  const delta = Number(debit.delta);
+  return Number.isFinite(delta) ? Math.abs(Math.trunc(delta)) : null;
+}
+
+type AiChargeStatus = "succeeded" | "failed" | "not_started";
+
+/**
+ * Asks the AI worker whether the charge `txId` produced an image. Null when the worker cannot say: network
+ * error, timeout, a non-200 answer or an answer in an unknown shape.
+ */
+async function fetchAiChargeStatus(txId: string): Promise<AiChargeStatus | null> {
+  const base = (process.env.AI_WORKER_BASE_URL ?? "").trim().replace(/\/+$/, "") || AI_WORKER_DEFAULT_BASE;
+  try {
+    const response = await fetch(`${base}/api/ai/charges/${encodeURIComponent(txId)}`, {
+      signal: AbortSignal.timeout(AI_WORKER_TIMEOUT_MS),
+    });
+    if (!response.ok) return null;
+    const status = ((await response.json()) as {status?: unknown} | null)?.status;
+    return status === "succeeded" || status === "failed" || status === "not_started" ? status : null;
+  } catch {
+    return null;
+  }
 }
 
 interface AdRateState {
@@ -240,6 +280,7 @@ function writeTx(
     action: string;
     sourceTag: string;
     reason: string;
+    description?: string;
     fixedId?: string;
   },
 ): string {
@@ -251,7 +292,7 @@ function writeTx(
     delta: params.delta,
     balanceBefore: params.previous,
     action: params.action,
-    description: params.reason,
+    description: params.description ?? params.reason,
     sourceTag: params.sourceTag,
     reason: params.reason,
   }));
@@ -264,11 +305,18 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
   const reason = optionalReason(request.data?.reason, action);
   const refundTxId = action === "refund" ? requiredDocumentId(request.data?.transactionId, "transactionId") : "";
+  const rawRequestId = request.data?.requestId;
+  if (rawRequestId != null && !isValidRequestId(rawRequestId)) {
+    throw new HttpsError("invalid-argument", "requestId is invalid.");
+  }
   const userRef = db.collection(USERS).doc(callerUid);
   const nowMs = Date.now();
   const today = utcDateString(new Date(nowMs));
   const adRateRef = db.collection(AD_RATE_DAILY).doc(`${callerUid}_${today}`);
   const debitRef = action === "refund" ? db.collection(TRANSACTIONS).doc(refundTxId) : null;
+  const adAwardRef = action === "rewardedAd" && rawRequestId != null ?
+    db.collection(TRANSACTIONS).doc(`award_${callerUid}_${rawRequestId}`) :
+    null;
   const refundDailyRef = db.collection(REFUND_DAILY).doc(`${callerUid}_${today}`);
   // Evidence for the one-time upload award: the caller has at least one wall submission.
   let hasWall = false;
@@ -276,7 +324,17 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     const email = str(request.auth?.token?.email);
     hasWall = email !== "" && await hasSubmittedWall(callerUid, [...new Set([email, email.toLowerCase()])]);
   }
-  let response = {
+  // The worker's answer for an AI refund, asked once even when the transaction retries. Undefined: not asked yet.
+  let aiChargeStatus: AiChargeStatus | null | undefined;
+  let response: {
+    success: boolean;
+    changed: boolean;
+    previousBalance: number;
+    currentBalance: number;
+    delta: number;
+    reason: string;
+    adsRemaining?: number;
+  } = {
     success: false,
     changed: false,
     previousBalance: 0,
@@ -291,15 +349,32 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     const snap = await tx.get(userRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
     const adRateSnap = action === "rewardedAd" ? await tx.get(adRateRef) : null;
+    const adAwardSnap = adAwardRef ? await tx.get(adAwardRef) : null;
     const debitSnap = debitRef ? await tx.get(debitRef) : null;
     const refundDailySnap = debitRef ? await tx.get(refundDailyRef) : null;
 
     const data = snap.data() ?? {};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const state = coinState(data.coinState);
+    const adCountToday = typeof adRateSnap?.data()?.count === "number" ? adRateSnap.data()?.count : 0;
+    const adsRemaining = action === "rewardedAd" ? {adsRemaining: Math.max(0, AD_RATE_MAX_PER_DAY - adCountToday)} : {};
     const skip = (skipReason: string) => {
-      response = {...response, previousBalance: previous, currentBalance: previous, reason: skipReason};
+      response = {...response, previousBalance: previous, currentBalance: previous, reason: skipReason, ...adsRemaining};
     };
+
+    if (adAwardSnap?.exists) {
+      const original = adAwardSnap.data() ?? {};
+      response = {
+        ...response,
+        success: true,
+        changed: true,
+        previousBalance: typeof original.balanceBefore === "number" ? Math.trunc(original.balanceBefore) : previous,
+        currentBalance: typeof original.balanceAfter === "number" ? Math.trunc(original.balanceAfter) : previous,
+        delta: typeof original.delta === "number" ? Math.trunc(original.delta) : 0,
+        ...adsRemaining,
+      };
+      return;
+    }
 
     if (action === "firstWallpaperUpload" && state.firstWallpaperUploadRewarded === true) {
       skip("first_upload_reward_already_claimed");
@@ -322,6 +397,20 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       skip("refund_daily_limit");
       return;
     }
+    const debit = debitSnap?.data();
+    if (action === "refund" && debit?.action === "aiGeneration" && debit.userId === callerUid &&
+      aiChargeStatus === undefined) {
+      aiChargeStatus = await fetchAiChargeStatus(refundTxId);
+    }
+    if (aiChargeStatus === "succeeded") {
+      skip("refund_denied_generation_succeeded");
+      return;
+    }
+    // An AI debit is refunded for up to 24 hours once the worker says no image was made. Without an answer the
+    // 10 minute rule holds.
+    const refundWindowMs = aiChargeStatus === "failed" || aiChargeStatus === "not_started" ?
+      AI_REFUND_EVIDENCE_WINDOW_MS :
+      REFUND_WINDOW_MS;
     if (action === "proDailyBonus" && data.premium !== true) {
       skip("pro_bonus_requires_premium");
       return;
@@ -336,7 +425,10 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       return;
     }
 
-    const delta = action === "refund" ? refundableDelta(debitSnap?.data(), callerUid, nowMs) : awardAmount(action);
+    const delta = action === "refund" ?
+      refundableDelta(debit, callerUid, nowMs, refundWindowMs) :
+      awardAmount(action);
+    if (delta === null) throw new HttpsError("failed-precondition", "No refundable spend.");
 
     if (action === "refund" && debitRef) {
       tx.update(debitRef, {status: "refunded", updatedAt: admin.firestore.Timestamp.now()});
@@ -345,16 +437,20 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     if (action === "firstWallpaperUpload") state.firstWallpaperUploadRewarded = true;
     if (action === "profileCompletion") state.profileCompletionRewarded = true;
     if (action === "proDailyBonus") state.proDailyBonusDate = today;
-    if (action === "rewardedAd") {
-      const adData = adRateSnap?.data();
-      const adCount = typeof adData?.count === "number" ? adData.count : 0;
-      tx.set(adRateRef, {count: adCount + 1, lastAt: nowMs});
-    }
+    if (action === "rewardedAd") tx.set(adRateRef, {count: adCountToday + 1, lastAt: nowMs});
 
     const current = previous + delta;
     tx.update(userRef, {coins: current, coinState: state});
-    writeTx(tx, {userId: callerUid, delta, previous, action, sourceTag, reason});
-    response = {success: true, changed: true, previousBalance: previous, currentBalance: current, delta, reason};
+    writeTx(tx, {userId: callerUid, delta, previous, action, sourceTag, reason, fixedId: adAwardRef?.id});
+    response = {
+      success: true,
+      changed: true,
+      previousBalance: previous,
+      currentBalance: current,
+      delta,
+      reason,
+      ...(action === "rewardedAd" ? {adsRemaining: Math.max(0, AD_RATE_MAX_PER_DAY - adCountToday - 1)} : {}),
+    };
   });
   return response;
 });
@@ -364,7 +460,8 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
   const action = requiredText(request.data?.action, "action");
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
   const reason = optionalReason(request.data?.reason, action);
-  const bypass = request.data?.allowPremiumBypass === true;
+  const bypass = request.data?.allowPremiumBypass === true && PREMIUM_BYPASS_ACTIONS.has(action);
+  const label = optionalLabel(request.data?.label);
   const cost = spendAmount(action, request.data?.amount);
   const rawRequestId = request.data?.requestId;
   if (rawRequestId != null && !isValidRequestId(rawRequestId)) {
@@ -394,7 +491,10 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     const data = snap.data() ?? {};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     if (spendTxSnap?.exists) {
-      response = duplicateSpendResponse(response, spendTxSnap.data() ?? {}, previous, reason);
+      const original = spendTxSnap.data() ?? {};
+      response = original.status === "completed" ?
+        duplicateSpendResponse(response, original, previous, reason) :
+        {...response, previousBalance: previous, currentBalance: previous, reason: "spend_refunded", transactionId: spendTxRef?.id ?? ""};
       return;
     }
     if (data.premium === true && bypass) {
@@ -427,6 +527,7 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       action,
       sourceTag,
       reason,
+      description: label,
       fixedId: spendTxRef?.id,
     });
     response = {
@@ -693,6 +794,112 @@ export const buyStreakFreeze = onCall(CALLABLE_OPTIONS, async (request: Callable
       currentBalance: plan.current,
       delta: -STREAK_FREEZE_COST,
       streakFreezes: plan.freezes,
+      transactionId: txId,
+    };
+  });
+  return response;
+});
+
+type StreakRescueRefusal = "streak_rescue_unavailable" | "streak_rescue_expired" | "streak_rescue_too_short" |
+  "streak_rescue_not_needed" | "streak_rescue_cooldown";
+
+/** Why a streak cannot be bought back right now, or null when it can. Premium never changes the rules. */
+function streakRescueRefusal(
+  rescue: unknown,
+  currentCount: number,
+  lastRescueAtMs: unknown,
+  nowMs: number,
+): StreakRescueRefusal | null {
+  if (!rescue || typeof rescue !== "object") return "streak_rescue_unavailable";
+  const {count, expiresAtMs} = rescue as {count?: unknown; expiresAtMs?: unknown};
+  if (typeof count !== "number" || !Number.isFinite(count) || typeof expiresAtMs !== "number") {
+    return "streak_rescue_unavailable";
+  }
+  if (nowMs > expiresAtMs) return "streak_rescue_expired";
+  if (count < STREAK_RESCUE_MIN_COUNT) return "streak_rescue_too_short";
+  if (currentCount > count) return "streak_rescue_not_needed";
+  if (typeof lastRescueAtMs === "number" && nowMs - lastRescueAtMs < STREAK_RESCUE_COOLDOWN_MS) {
+    return "streak_rescue_cooldown";
+  }
+  return null;
+}
+
+export const restoreStreak = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<{requestId?: unknown}>) => {
+  const callerUid = uid(request);
+  const requestId = request.data?.requestId;
+  if (!isValidRequestId(requestId)) throw new HttpsError("invalid-argument", "requestId is invalid.");
+  const userRef = db.collection(USERS).doc(callerUid);
+  const txId = `ctx_streakRescue_${callerUid}_${requestId}`;
+  const txRef = db.collection(TRANSACTIONS).doc(txId);
+  const nowMs = Date.now();
+  const emptyResponse = {
+    success: false,
+    changed: false,
+    previousBalance: 0,
+    currentBalance: 0,
+    delta: 0,
+    streakCount: 0,
+    insufficientBalance: false,
+    reason: "streak_rescue",
+    transactionId: "",
+  };
+  let response = emptyResponse;
+
+  await db.runTransaction(async (tx) => {
+    response = {...emptyResponse};
+    const snap = await tx.get(userRef);
+    if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
+    const txSnap = await tx.get(txRef);
+    const data = snap.data() ?? {};
+    const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
+    const state = coinState(data.coinState);
+    const rawCount = Number(state.streakCount);
+    const currentCount = Number.isFinite(rawCount) ? Math.max(0, Math.trunc(rawCount)) : 0;
+    const current = {previousBalance: previous, currentBalance: previous, streakCount: currentCount};
+    if (txSnap.exists) {
+      response = {...response, ...current, success: true, reason: "duplicate", transactionId: txId};
+      return;
+    }
+    const refusal = streakRescueRefusal(state.rescue, currentCount, state.rescueLastAt, nowMs);
+    if (refusal) {
+      response = {...response, ...current, reason: refusal};
+      return;
+    }
+    if (previous < STREAK_RESCUE_COST) {
+      response = {...response, ...current, insufficientBalance: true, reason: "streak_rescue_insufficient_balance"};
+      return;
+    }
+    const restored = Math.trunc((state.rescue as {count: number}).count) + 1;
+    const rawBest = Number(state.streakBest);
+    const best = Math.max(Number.isFinite(rawBest) ? Math.trunc(rawBest) : 0, restored);
+    const balance = previous - STREAK_RESCUE_COST;
+    tx.update(userRef, {
+      "coins": balance,
+      "coinState.streakCount": restored,
+      "coinState.streakDay": streakCycleDay(restored),
+      "coinState.streakBest": best,
+      "coinState.rescue": admin.firestore.FieldValue.delete(),
+      "coinState.rescueLastAt": nowMs,
+    });
+    tx.set(txRef, coinTransactionDoc({
+      id: txId,
+      userId: callerUid,
+      at: admin.firestore.Timestamp.now(),
+      delta: -STREAK_RESCUE_COST,
+      balanceBefore: previous,
+      action: "streakRescue",
+      description: "Streak rescue",
+      sourceTag: "coins.restore_streak.callable",
+      reason: "streak_rescue",
+    }));
+    response = {
+      ...response,
+      success: true,
+      changed: true,
+      previousBalance: previous,
+      currentBalance: balance,
+      delta: -STREAK_RESCUE_COST,
+      streakCount: restored,
       transactionId: txId,
     };
   });

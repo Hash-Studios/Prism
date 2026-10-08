@@ -25,6 +25,8 @@ internal fun copyWallpaperCropFile(source: File, folder: File): File {
 class MainActivity : FlutterFragmentActivity() {
     private var mediaApi: PrismMediaHostApiImpl? = null
     private var hapticsChannel: MethodChannel? = null
+    private var quickSettingsChannel: MethodChannel? = null
+    private var systemColorsChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
     private val storagePermissions = LegacyStoragePermissionGate()
 
@@ -59,6 +61,14 @@ class MainActivity : FlutterFragmentActivity() {
                     result.notImplemented()
                 }
             }
+        }
+        val quickSettings = PrismQuickSettings(this)
+        quickSettingsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/quick_settings").apply {
+            setMethodCallHandler(quickSettings::handle)
+        }
+        val systemColors = PrismSystemColors(this)
+        systemColorsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/system_colors").apply {
+            setMethodCallHandler(systemColors::handle)
         }
         wallpaperCropChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/wallpaper_crop").apply {
             setMethodCallHandler { call, result ->
@@ -99,6 +109,10 @@ class MainActivity : FlutterFragmentActivity() {
         PrismMediaHostApi.setUp(flutterEngine.dartExecutor.binaryMessenger, null)
         hapticsChannel?.setMethodCallHandler(null)
         hapticsChannel = null
+        quickSettingsChannel?.setMethodCallHandler(null)
+        quickSettingsChannel = null
+        systemColorsChannel?.setMethodCallHandler(null)
+        systemColorsChannel = null
         wallpaperCropChannel?.setMethodCallHandler(null)
         wallpaperCropChannel = null
         storagePermissions.close()

@@ -137,3 +137,16 @@ test("ten concurrent views after the cooldown expires increment once", async (t)
   await Promise.all(Array.from({length: 10}, () => call()));
   assert.equal(statsWrites(writes).length, 1);
 });
+
+test("a wallpaper view also counts in the daily doc that expires, and a repeat view does not", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T10:00:00Z")});
+  const writes = store(t, {});
+  await call();
+  await call();
+  const daily = writes.filter((w) => w.path === "wallpaper_stats_daily/20260102_W1");
+  assert.equal(daily.length, 1);
+  assert.equal(daily[0].data.wallId, "W1");
+  assert.equal(daily[0].data.day, "20260102");
+  assert.deepEqual(daily[0].data.views, {increment: 1});
+  assert.equal((daily[0].data.expireAt as admin.firestore.Timestamp).toMillis(), Date.now() + 14 * 86_400_000);
+});

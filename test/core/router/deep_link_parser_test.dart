@@ -92,4 +92,42 @@ void main() {
     expect(transformed.queryParameters, isEmpty);
     expect(transformed, Uri(path: '/not-found'));
   });
+
+  group('roots that the Android manifest and the iOS association file claim', () {
+    test('share, user, setup, refer and l each parse', () {
+      expect(parser.parse(Uri.parse('https://prismwalls.com/share?id=a&thumb=t')), isA<ShareLinkIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/user/alice')), isA<UserLinkIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/setup/desk')), isA<SetupLinkIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/refer/u1')), isA<ReferLinkIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/l/abc')), isA<ShortCodeIntent>());
+    });
+
+    test('older aliases still resolve', () {
+      expect(parser.parse(Uri.parse('https://prismwalls.com/profile/alice')), isA<UserLinkIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/follower-profile?email=a%40b.c')), isA<UserLinkIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/share-setup/desk')), isA<SetupLinkIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/referral/u1')), isA<ReferLinkIntent>());
+    });
+
+    test('www.prismwalls.com parses like the bare domain', () {
+      final DeepLinkActionEntity action = parser.parse(Uri.parse('https://www.prismwalls.com/user/alice'));
+
+      expect(action, isA<UserLinkIntent>());
+      expect((action as UserLinkIntent).profileIdentifier, 'alice');
+    });
+
+    test('the prism scheme parses every root', () {
+      expect(parser.parse(parser.transform(Uri.parse('prism://share/abc?thumb=t'))), isA<ShareLinkIntent>());
+      expect(parser.parse(parser.transform(Uri.parse('prism://user/alice'))), isA<UserLinkIntent>());
+      expect(parser.parse(parser.transform(Uri.parse('prism://refer/u1'))), isA<ReferLinkIntent>());
+      expect(parser.parse(parser.transform(Uri.parse('prism://l/abc'))), isA<ShortCodeIntent>());
+    });
+
+    test('web pages and look-alike paths stay unknown', () {
+      for (final String path in <String>['privacy', 'terms', 'legal', 'u/alice', 'shared', '']) {
+        expect(parser.parse(Uri.parse('https://prismwalls.com/$path')), isA<UnknownIntent>(), reason: path);
+      }
+      expect(parser.parse(Uri.parse('https://prismwalls.com/l')), isA<UnknownIntent>());
+    });
+  });
 }

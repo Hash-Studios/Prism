@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -100,4 +103,40 @@ void main() {
     final icon = tester.widget<Icon>(find.descendant(of: find.byTooltip('Home'), matching: find.byType(Icon)));
     expect(icon.color, scheme.onPrimary);
   });
+
+  testWidgets('the selected tab is exposed as selected to screen readers', (tester) async {
+    final handle = tester.ensureSemantics();
+    final router = _TestRouter();
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpAndSettle();
+
+    expect(tester.getSemantics(find.byTooltip('Home')), isSemantics(isSelected: true));
+    expect(tester.getSemantics(find.byTooltip('Search')), isSemantics(isSelected: false));
+
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+
+    expect(tester.getSemantics(find.byTooltip('Home')), isSemantics(isSelected: false));
+    expect(tester.getSemantics(find.byTooltip('Search')), isSemantics(isSelected: true));
+    handle.dispose();
+  });
+
+  for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
+    testWidgets('${option.label}: active and inactive icons are readable with the real theme', (tester) async {
+      final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+      await tester.pumpWidget(MaterialApp.router(theme: theme, routerConfig: _TestRouter().config()));
+      await tester.pumpAndSettle();
+
+      final Icon active = tester.widget<Icon>(find.descendant(of: find.byTooltip('Home'), matching: find.byType(Icon)));
+      final Icon inactive = tester.widget<Icon>(
+        find.descendant(of: find.byTooltip('Search'), matching: find.byType(Icon)),
+      );
+
+      expect(contrastRatio(active.color!, theme.colorScheme.primary), greaterThanOrEqualTo(4.5));
+      expect(
+        contrastRatio(Color.alphaBlend(inactive.color!, theme.primaryColor), theme.primaryColor),
+        greaterThanOrEqualTo(3),
+      );
+    });
+  }
 }

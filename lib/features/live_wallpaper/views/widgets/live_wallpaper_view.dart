@@ -34,9 +34,12 @@ Future<String?> _pickVideoFromGallery() async {
 }
 
 class LiveWallpaperView extends StatefulWidget {
-  const LiveWallpaperView({super.key, this.imageUrl, this.pickVideo = _pickVideoFromGallery});
+  const LiveWallpaperView({super.key, this.imageUrl, this.accentSeed, this.pickVideo = _pickVideoFromGallery});
 
   final String? imageUrl;
+
+  /// The dominant colour of the wallpaper the user came from. Null means the app accent.
+  final Color? accentSeed;
   final VideoPicker pickVideo;
 
   @override
@@ -45,6 +48,7 @@ class LiveWallpaperView extends StatefulWidget {
 
 class _LiveWallpaperViewState extends State<LiveWallpaperView> {
   late _LiveMode _mode = widget.imageUrl == null ? _LiveMode.gradients : _LiveMode.photo;
+  int _seedIndex = 0;
 
   List<_LiveMode> get _modes => <_LiveMode>[
     if (widget.imageUrl != null) _LiveMode.photo,
@@ -52,9 +56,11 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
     _LiveMode.video,
   ];
 
+  List<Color> _seeds(BuildContext context) =>
+      LivePalette.seedVariants(widget.accentSeed ?? Theme.of(context).colorScheme.primary);
+
   LivePalette _palette(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return LivePalette.fromAccent(theme.colorScheme.primary, dark: theme.brightness == Brightness.dark);
+    return LivePalette.fromAccent(_seeds(context)[_seedIndex], dark: Theme.of(context).brightness == Brightness.dark);
   }
 
   Future<void> _onOutcome(BuildContext context, LiveApplyOutcome outcome) async {
@@ -193,7 +199,16 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: switch (_mode) {
                     _LiveMode.photo => _PhotoSection(imageUrl: widget.imageUrl!, state: state),
-                    _LiveMode.gradients => _GradientSection(state: state, palette: _palette(context)),
+                    _LiveMode.gradients => _GradientSection(
+                      state: state,
+                      palette: _palette(context),
+                      seeds: _seeds(context),
+                      seedIndex: _seedIndex,
+                      onSeedSelected: (index) {
+                        PrismHaptics.selection();
+                        setState(() => _seedIndex = index);
+                      },
+                    ),
                     _LiveMode.video => _VideoSection(state: state, onChoose: () => _chooseVideo(context)),
                   },
                 ),
@@ -256,10 +271,19 @@ class _PhotoSection extends StatelessWidget {
 }
 
 class _GradientSection extends StatelessWidget {
-  const _GradientSection({required this.state, required this.palette});
+  const _GradientSection({
+    required this.state,
+    required this.palette,
+    required this.seeds,
+    required this.seedIndex,
+    required this.onSeedSelected,
+  });
 
   final LiveWallpaperState state;
   final LivePalette palette;
+  final List<Color> seeds;
+  final int seedIndex;
+  final ValueChanged<int> onSeedSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -280,7 +304,48 @@ class _GradientSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _Description(text: state.gradientStyle.description),
+        const SizedBox(height: 12),
+        _SeedSwatches(seeds: seeds, selected: seedIndex, onSelected: onSeedSelected),
         _BatterySaver(state: state),
+      ],
+    );
+  }
+}
+
+class _SeedSwatches extends StatelessWidget {
+  const _SeedSwatches({required this.seeds, required this.selected, required this.onSelected});
+
+  final List<Color> seeds;
+  final int selected;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (int index = 0; index < seeds.length; index++)
+          Semantics(
+            button: true,
+            selected: index == selected,
+            label: 'Gradient colour ${index + 1} of ${seeds.length}',
+            child: InkResponse(
+              onTap: () => onSelected(index),
+              radius: 28,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: seeds[index],
+                    shape: BoxShape.circle,
+                    border: index == selected ? Border.all(color: scheme.secondary, width: 2) : null,
+                  ),
+                  child: const SizedBox.square(dimension: 32),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

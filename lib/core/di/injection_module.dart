@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
+import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -28,7 +29,7 @@ abstract class AppModule {
   FirebaseRemoteConfig get remoteConfig => FirebaseRemoteConfig.instance;
 
   @lazySingleton
-  InternetConnectionChecker get internetConnectionChecker => InternetConnectionChecker.instance;
+  InternetConnectionChecker get internetConnectionChecker => buildInternetConnectionChecker();
 
   @lazySingleton
   LocalStore get localStore => PersistenceRuntime.store;

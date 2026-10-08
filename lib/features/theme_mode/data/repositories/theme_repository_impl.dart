@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -13,6 +15,8 @@ class ThemeRepositoryImpl implements ThemeRepository {
 
   final SettingsLocalDataSource _settingsLocal;
 
+  static const int _legacyAmoledAccentValue = 0xff000000;
+
   static const Map<ThemeMode, String> _modeNames = <ThemeMode, String>{
     ThemeMode.light: 'Light',
     ThemeMode.dark: 'Dark',
@@ -22,6 +26,17 @@ class ThemeRepositoryImpl implements ThemeRepository {
   ThemeMode _parseMode(String name) =>
       _modeNames.entries.where((entry) => entry.value == name).firstOrNull?.key ?? ThemeMode.dark;
 
+  /// Builds before the AMOLED default became white stored black as the accent. Black on AMOLED is invisible,
+  /// so it counts as "no custom accent": read the new default and write it back once.
+  int _readDarkAccent() {
+    final String darkThemeId = _settingsLocal.get<String>('darkThemeID', defaultValue: prismDefaultDarkThemeId);
+    final int stored = _settingsLocal.get<int>('darkAccent', defaultValue: prismDefaultAccentValue);
+    if (darkThemeId != prismAmoledDarkThemeId || stored != _legacyAmoledAccentValue) return stored;
+    final int corrected = prismThemeById(prismDarkThemes, prismAmoledDarkThemeId)!.defaultAccentValue;
+    unawaited(_settingsLocal.set('darkAccent', corrected));
+    return corrected;
+  }
+
   ThemePreferences _read() {
     return ThemePreferences(
       light: ThemeSelection(
@@ -30,7 +45,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
       ),
       dark: ThemeSelection(
         themeId: _settingsLocal.get<String>('darkThemeID', defaultValue: prismDefaultDarkThemeId),
-        accentColorValue: _settingsLocal.get<int>('darkAccent', defaultValue: prismDefaultAccentValue),
+        accentColorValue: _readDarkAccent(),
       ),
       mode: _parseMode(_settingsLocal.get<String>('themeMode', defaultValue: _modeNames[ThemeMode.system])),
     );
@@ -49,13 +64,18 @@ class ThemeRepositoryImpl implements ThemeRepository {
     final int previousDefault = prismThemeById(options, previousThemeId)?.defaultAccentValue ?? prismDefaultAccentValue;
     final int currentAccent = _settingsLocal.get<int>(accentKey, defaultValue: previousDefault);
     await _settingsLocal.set(themeKey, newThemeId);
-    if (currentAccent == previousDefault) {
+    final bool legacyAmoledAccent =
+        previousThemeId == prismAmoledDarkThemeId && currentAccent == _legacyAmoledAccentValue;
+    if (currentAccent == previousDefault || legacyAmoledAccent) {
       await _settingsLocal.set(
         accentKey,
         prismThemeById(options, newThemeId)?.defaultAccentValue ?? prismDefaultAccentValue,
       );
     }
   }
+
+  @override
+  ThemePreferences readSync() => _read();
 
   @override
   Future<Result<ThemePreferences>> load() async {

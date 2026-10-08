@@ -33,7 +33,7 @@ final List<PrismThemeOption> prismLightThemes = <PrismThemeOption>[
 
 final List<PrismThemeOption> prismDarkThemes = <PrismThemeOption>[
   PrismThemeOption(id: prismDefaultDarkThemeId, label: 'Material Dark', theme: kDarkTheme),
-  PrismThemeOption(id: prismAmoledDarkThemeId, label: 'AMOLED', theme: kDarkTheme2, defaultAccentValue: 0xff000000),
+  PrismThemeOption(id: prismAmoledDarkThemeId, label: 'AMOLED', theme: kDarkTheme2, defaultAccentValue: 0xffffffff),
   PrismThemeOption(id: 'kDOlive', label: 'Olive', theme: kDarkTheme3, defaultAccentValue: 0xff767b45),
   PrismThemeOption(id: 'kDDeep Ocean', label: 'Deep Ocean', theme: kDarkTheme4, defaultAccentValue: 0xff427da8),
   PrismThemeOption(id: 'kDJungle', label: 'Jungle', theme: kDarkTheme5, defaultAccentValue: 0xff4c7044),

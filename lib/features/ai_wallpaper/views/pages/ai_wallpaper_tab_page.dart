@@ -22,12 +22,14 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart' show AiQualityTier;
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -257,7 +259,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   String _toastForGenerateFailure(Object error) {
     if (error is AiGenerationApiException) {
-      return error.message;
+      return aiGenerationErrorCopy(error);
     }
     if (_isOfflineOrNetworkError(error)) {
       return 'No connection. Check your network and try again.';
@@ -380,10 +382,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
   }
 
+  void _promptSignIn() {
+    googleSignInPopUp(context, () {
+      if (mounted) _loadHistory();
+    });
+  }
+
   bool _canStartGeneration() {
     if (_loadingGeneration) return false;
     if (!_isLoggedIn) {
-      toasts.error('Please sign in to generate wallpapers.');
+      _promptSignIn();
       return false;
     }
     if (!_isRolloutEligible) {
@@ -424,13 +432,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     await _runGeneration(
       style: style,
       qualityTier: qualityTier,
-      request: (AiChargeMode mode, int coinsSpent) => _repository.generate(
+      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId) => _repository.generate(
         prompt: prompt,
         stylePreset: style,
         qualityTier: qualityTier,
         targetSize: targetSize,
         chargeMode: mode,
         coinsSpent: coinsSpent,
+        chargeTxId: chargeTxId,
       ),
       successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
           AiGenerateSuccessEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
@@ -451,12 +460,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
     if (prompt.length > _maxVariationChars) {
-      toasts.error('That refinement is too long (max $_maxVariationChars characters).');
+      toasts.error('That description is too long (max $_maxVariationChars characters).');
       return;
     }
     final AiGenerationRecord? latest = _latest;
     if (latest == null || !app_state.aiVariationsEnabled) {
-      toasts.error('Refinements are not available right now.');
+      toasts.error('Try another is not available right now.');
       return;
     }
     PrismHaptics.tap();
@@ -465,11 +474,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     await _runGeneration(
       style: style,
       qualityTier: qualityTier,
-      request: (AiChargeMode mode, int coinsSpent) => _repository.generateVariation(
+      request: (AiChargeMode mode, int coinsSpent, String? chargeTxId) => _repository.generateVariation(
         generationId: latest.id,
         chargeMode: mode,
         coinsSpent: coinsSpent,
         variationPrompt: prompt,
+        chargeTxId: chargeTxId,
       ),
       successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
           AiVariationUsedEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
@@ -480,7 +490,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Future<void> _runGeneration({
     required AiStylePreset style,
     required AiQualityTier qualityTier,
-    required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent) request,
+    required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent, String? chargeTxId) request,
     required AnalyticsEvent Function(AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) successEvent,
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
@@ -525,7 +535,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       analytics.track(
         AiGenerateStartedEvent(style: style.apiValue, quality: qualityTier.apiValue, mode: reservation.mode),
       );
-      final AiGenerationRecord generated = await request(reservation.mode, reservation.coinsSpent);
+      final AiGenerationRecord generated = await request(
+        reservation.mode,
+        reservation.coinsSpent,
+        reservation.transactionId,
+      );
       generationSucceeded = true;
 
       CoinsService.instance.commitAiGenerationReservation(
@@ -565,12 +579,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       );
       analytics.track(AiGenerateFailedEvent(error: error.toString(), mode: reservation.mode));
       if (mounted) {
-        final String refundNote = reservation.coinsSpent <= 0
+        final String message = _toastForGenerateFailure(error);
+        final String refundNote = reservation.coinsSpent <= 0 || message.contains('coins')
             ? ''
             : refund.changed
             ? ' Coins refunded.'
             : ' Refund pending.';
-        toasts.error('${_toastForGenerateFailure(error)}$refundNote');
+        toasts.error('$message$refundNote');
       }
     } finally {
       if (mounted) {
@@ -680,7 +695,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
     if (!_isLoggedIn) {
-      toasts.error('Please sign in to submit wallpapers.');
+      _promptSignIn();
       return;
     }
     if (!app_state.aiSubmitEnabled) {
@@ -729,7 +744,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 aiGenerationId: record.id,
                 aiProvider: record.provider,
                 aiModel: record.model,
-                aiOriginalImageUrl: record.imageUrl,
                 aiPrompt: record.prompt,
                 aiStylePreset: record.stylePreset.apiValue,
               ));
@@ -960,10 +974,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 children: <Widget>[
                   const AiSheetDragHandle(),
                   const SizedBox(height: _AiGenSpace.md),
-                  Text('Refine this wallpaper', style: Theme.of(ctx).textTheme.displaySmall),
+                  Text('Try another version', style: Theme.of(ctx).textTheme.displaySmall),
                   const SizedBox(height: _AiGenSpace.xs),
                   Text(
-                    'Say what should change. We keep the rest of the composition as close as we can.',
+                    'Say what should change. This makes a new wallpaper from the same prompt with a new seed, so it can look quite different.',
                     style: Theme.of(
                       ctx,
                     ).textTheme.bodySmall?.copyWith(color: Theme.of(ctx).colorScheme.onSurfaceVariant, height: 1.35),
@@ -988,7 +1002,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     width: double.infinity,
                     child: FilledButton.icon(
                       icon: const Icon(Icons.auto_fix_high, size: 18),
-                      label: const Text('Generate refinement'),
+                      label: const Text('Generate another'),
                       onPressed: !app_state.aiVariationsEnabled || _latest == null || _loadingGeneration
                           ? null
                           : () {
@@ -1288,8 +1302,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           if (canVary)
             _ActionButton(
               icon: Icons.auto_fix_high,
-              label: 'Refine',
-              semanticLabel: 'Refine this wallpaper with a follow-up description',
+              label: 'Try another',
+              semanticLabel: 'Try another version of this wallpaper with a follow-up description',
               onTap: _showAdvancedSheet,
             ),
         ],
@@ -1454,7 +1468,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     } else if (!hasCoins) {
       onPressed = () {
         PrismHaptics.tap();
-        context.router.push(RewardsRoute());
+        context.router.push(RewardsRoute(scrollToEarn: true));
       };
     } else {
       onPressed = () {

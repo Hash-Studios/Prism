@@ -44,6 +44,43 @@ void main() {
     });
   });
 
+  group('pushNotificationId', () {
+    RemoteMessage message({String? tag, String title = 'T', String body = 'B', Map<String, dynamic>? data}) =>
+        RemoteMessage(
+          data: data ?? const <String, dynamic>{},
+          notification: RemoteNotification(
+            title: title,
+            body: body,
+            android: tag == null ? null : AndroidNotification(tag: tag),
+          ),
+        );
+
+    test('the same tag gives the same id, so the second banner replaces the first', () {
+      expect(
+        LocalNotification.pushNotificationId(message(tag: 'wall_w1')),
+        LocalNotification.pushNotificationId(message(tag: 'wall_w1', title: 'Other')),
+      );
+    });
+
+    test('different tags give different ids', () {
+      expect(
+        LocalNotification.pushNotificationId(message(tag: 'wall_w1')),
+        isNot(LocalNotification.pushNotificationId(message(tag: 'wall_w2'))),
+      );
+    });
+
+    test('without a tag the id comes from title, body and data', () {
+      final RemoteMessage a = message(data: const <String, dynamic>{'route': 'wall', 'wall_id': 'w1'});
+      final RemoteMessage same = message(data: const <String, dynamic>{'route': 'wall', 'wall_id': 'w1'});
+      final RemoteMessage other = message(data: const <String, dynamic>{'route': 'wall', 'wall_id': 'w2'});
+
+      expect(LocalNotification.pushNotificationId(a), LocalNotification.pushNotificationId(same));
+      expect(LocalNotification.pushNotificationId(a), isNot(LocalNotification.pushNotificationId(other)));
+      expect(LocalNotification.pushNotificationId(a), greaterThanOrEqualTo(0));
+      expect(LocalNotification.pushNotificationId(a), lessThan(1 << 31));
+    });
+  });
+
   group('foreground push notifications', () {
     TestWidgetsFlutterBinding.ensureInitialized();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -74,6 +111,30 @@ void main() {
         'wall_id': 'w1',
         'url': 'https://prismwalls.com/share?id=a',
       });
+    });
+
+    testWidgets('a tagged push shows with its tag, a stable id and no repeat alert', (tester) async {
+      final shown = <Map<Object?, Object?>>[];
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        if (call.method == 'show') shown.add(call.arguments as Map<Object?, Object?>);
+        return true;
+      });
+      const RemoteMessage push = RemoteMessage(
+        notification: RemoteNotification(
+          title: 'New follower',
+          body: 'Ana follows you',
+          android: AndroidNotification(tag: 'follow_ana'),
+        ),
+      );
+
+      await LocalNotification().showPushNotification(push);
+      await LocalNotification().showPushNotification(push);
+
+      expect(shown, hasLength(2));
+      expect(shown[0]['id'], shown[1]['id']);
+      final platformSpecifics = shown[0]['platformSpecifics']! as Map<Object?, Object?>;
+      expect(platformSpecifics['tag'], 'follow_ana');
+      expect(platformSpecifics['onlyAlertOnce'], isTrue);
     });
 
     testWidgets('a tap routes the push data, and a legacy route-only payload still works', (tester) async {

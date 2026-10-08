@@ -46,3 +46,11 @@ class AppliedWallpaper {
     );
   }
 }
+
+/// The newest item in [newestFirst] that is on [target] now: its own target or `both`.
+AppliedWallpaper? currentWallpaperFor(Iterable<AppliedWallpaper> newestFirst, String target) {
+  for (final AppliedWallpaper item in newestFirst) {
+    if (item.target == target || item.target == 'both') return item;
+  }
+  return null;
+}

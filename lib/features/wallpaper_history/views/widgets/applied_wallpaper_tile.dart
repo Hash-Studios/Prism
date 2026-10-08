@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:intl/intl.dart';
 
 String appliedTargetLabel(String target) => switch (target) {
@@ -13,10 +15,22 @@ String appliedTargetLabel(String target) => switch (target) {
 };
 
 class AppliedWallpaperTile extends StatelessWidget {
-  const AppliedWallpaperTile({super.key, required this.item, required this.onTap});
+  const AppliedWallpaperTile({
+    super.key,
+    required this.item,
+    required this.onTap,
+    this.onRemove,
+    this.isCurrent = false,
+  });
 
   final AppliedWallpaper item;
   final VoidCallback onTap;
+
+  /// Removes the row from the list. Offered on long press and as a screen reader action.
+  final VoidCallback? onRemove;
+
+  /// True for the newest home or lock row, which is what Prism last set on that screen.
+  final bool isCurrent;
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +51,13 @@ class AppliedWallpaperTile extends StatelessWidget {
         : Image.file(File(thumbnail), fit: BoxFit.cover, cacheWidth: 400, errorBuilder: (_, _, _) => placeholder);
     return Semantics(
       button: true,
-      label: 'Set again. $target, $date',
+      label: '${isCurrent ? 'Current. ' : ''}Set again. $target, $date',
+      customSemanticsActions: onRemove == null
+          ? null
+          : <CustomSemanticsAction, VoidCallback>{const CustomSemanticsAction(label: 'Remove from history'): onRemove!},
       child: InkWell(
         onTap: onTap,
+        onLongPress: onRemove,
         borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,7 +65,30 @@ class AppliedWallpaperTile extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: SizedBox.expand(child: image),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    image,
+                    if (isCurrent)
+                      Positioned(
+                        left: 8,
+                        top: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(999)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            child: Text(
+                              'Current',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: onColor(scheme.error),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 6),

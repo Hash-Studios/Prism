@@ -55,11 +55,12 @@ extension FavouriteWallsEventPatterns on FavouriteWallsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _ToggleRequested value)?  toggleRequested,TResult Function( _ClearRequested value)?  clearRequested,TResult Function( _SortChanged value)?  sortChanged,TResult Function( _SourceFilterChanged value)?  sourceFilterChanged,TResult Function( _QueryChanged value)?  queryChanged,TResult Function( _RemoveRequested value)?  removeRequested,TResult Function( _RestoreRequested value)?  restoreRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Synced value)?  synced,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _ToggleRequested value)?  toggleRequested,TResult Function( _ClearRequested value)?  clearRequested,TResult Function( _SortChanged value)?  sortChanged,TResult Function( _SourceFilterChanged value)?  sourceFilterChanged,TResult Function( _QueryChanged value)?  queryChanged,TResult Function( _RemoveRequested value)?  removeRequested,TResult Function( _RestoreRequested value)?  restoreRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _RefreshRequested() when refreshRequested != null:
+return started(_that);case _Synced() when synced != null:
+return synced(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _ToggleRequested() when toggleRequested != null:
 return toggleRequested(_that);case _ClearRequested() when clearRequested != null:
 return clearRequested(_that);case _SortChanged() when sortChanged != null:
@@ -85,11 +86,12 @@ return restoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _ToggleRequested value)  toggleRequested,required TResult Function( _ClearRequested value)  clearRequested,required TResult Function( _SortChanged value)  sortChanged,required TResult Function( _SourceFilterChanged value)  sourceFilterChanged,required TResult Function( _QueryChanged value)  queryChanged,required TResult Function( _RemoveRequested value)  removeRequested,required TResult Function( _RestoreRequested value)  restoreRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Synced value)  synced,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _ToggleRequested value)  toggleRequested,required TResult Function( _ClearRequested value)  clearRequested,required TResult Function( _SortChanged value)  sortChanged,required TResult Function( _SourceFilterChanged value)  sourceFilterChanged,required TResult Function( _QueryChanged value)  queryChanged,required TResult Function( _RemoveRequested value)  removeRequested,required TResult Function( _RestoreRequested value)  restoreRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
-return started(_that);case _RefreshRequested():
+return started(_that);case _Synced():
+return synced(_that);case _RefreshRequested():
 return refreshRequested(_that);case _ToggleRequested():
 return toggleRequested(_that);case _ClearRequested():
 return clearRequested(_that);case _SortChanged():
@@ -114,11 +116,12 @@ return restoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _ToggleRequested value)?  toggleRequested,TResult? Function( _ClearRequested value)?  clearRequested,TResult? Function( _SortChanged value)?  sortChanged,TResult? Function( _SourceFilterChanged value)?  sourceFilterChanged,TResult? Function( _QueryChanged value)?  queryChanged,TResult? Function( _RemoveRequested value)?  removeRequested,TResult? Function( _RestoreRequested value)?  restoreRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Synced value)?  synced,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _ToggleRequested value)?  toggleRequested,TResult? Function( _ClearRequested value)?  clearRequested,TResult? Function( _SortChanged value)?  sortChanged,TResult? Function( _SourceFilterChanged value)?  sourceFilterChanged,TResult? Function( _QueryChanged value)?  queryChanged,TResult? Function( _RemoveRequested value)?  removeRequested,TResult? Function( _RestoreRequested value)?  restoreRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _RefreshRequested() when refreshRequested != null:
+return started(_that);case _Synced() when synced != null:
+return synced(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _ToggleRequested() when toggleRequested != null:
 return toggleRequested(_that);case _ClearRequested() when clearRequested != null:
 return clearRequested(_that);case _SortChanged() when sortChanged != null:
@@ -143,12 +146,13 @@ return restoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId,  int operationId)?  started,TResult Function( int operationId)?  refreshRequested,TResult Function( FavouriteWallEntity wall,  int operationId)?  toggleRequested,TResult Function( int operationId)?  clearRequested,TResult Function( FavouriteSort sort)?  sortChanged,TResult Function( WallpaperSource? source)?  sourceFilterChanged,TResult Function( String query)?  queryChanged,TResult Function( List<String> wallIds,  int operationId)?  removeRequested,TResult Function( List<FavouriteWallEntity> walls,  int operationId)?  restoreRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId,  int operationId)?  started,TResult Function( String userId,  List<FavouriteWallEntity> items)?  synced,TResult Function( int operationId)?  refreshRequested,TResult Function( FavouriteWallEntity wall,  bool? desired,  int operationId)?  toggleRequested,TResult Function( int operationId)?  clearRequested,TResult Function( FavouriteSort sort)?  sortChanged,TResult Function( WallpaperSource? source)?  sourceFilterChanged,TResult Function( String query)?  queryChanged,TResult Function( List<String> wallIds,  int operationId)?  removeRequested,TResult Function( List<FavouriteWallEntity> walls,  int operationId)?  restoreRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.userId,_that.operationId);case _RefreshRequested() when refreshRequested != null:
+return started(_that.userId,_that.operationId);case _Synced() when synced != null:
+return synced(_that.userId,_that.items);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that.operationId);case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that.wall,_that.operationId);case _ClearRequested() when clearRequested != null:
+return toggleRequested(_that.wall,_that.desired,_that.operationId);case _ClearRequested() when clearRequested != null:
 return clearRequested(_that.operationId);case _SortChanged() when sortChanged != null:
 return sortChanged(_that.sort);case _SourceFilterChanged() when sourceFilterChanged != null:
 return sourceFilterChanged(_that.source);case _QueryChanged() when queryChanged != null:
@@ -172,12 +176,13 @@ return restoreRequested(_that.walls,_that.operationId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId,  int operationId)  started,required TResult Function( int operationId)  refreshRequested,required TResult Function( FavouriteWallEntity wall,  int operationId)  toggleRequested,required TResult Function( int operationId)  clearRequested,required TResult Function( FavouriteSort sort)  sortChanged,required TResult Function( WallpaperSource? source)  sourceFilterChanged,required TResult Function( String query)  queryChanged,required TResult Function( List<String> wallIds,  int operationId)  removeRequested,required TResult Function( List<FavouriteWallEntity> walls,  int operationId)  restoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId,  int operationId)  started,required TResult Function( String userId,  List<FavouriteWallEntity> items)  synced,required TResult Function( int operationId)  refreshRequested,required TResult Function( FavouriteWallEntity wall,  bool? desired,  int operationId)  toggleRequested,required TResult Function( int operationId)  clearRequested,required TResult Function( FavouriteSort sort)  sortChanged,required TResult Function( WallpaperSource? source)  sourceFilterChanged,required TResult Function( String query)  queryChanged,required TResult Function( List<String> wallIds,  int operationId)  removeRequested,required TResult Function( List<FavouriteWallEntity> walls,  int operationId)  restoreRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started(_that.userId,_that.operationId);case _RefreshRequested():
+return started(_that.userId,_that.operationId);case _Synced():
+return synced(_that.userId,_that.items);case _RefreshRequested():
 return refreshRequested(_that.operationId);case _ToggleRequested():
-return toggleRequested(_that.wall,_that.operationId);case _ClearRequested():
+return toggleRequested(_that.wall,_that.desired,_that.operationId);case _ClearRequested():
 return clearRequested(_that.operationId);case _SortChanged():
 return sortChanged(_that.sort);case _SourceFilterChanged():
 return sourceFilterChanged(_that.source);case _QueryChanged():
@@ -200,12 +205,13 @@ return restoreRequested(_that.walls,_that.operationId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId,  int operationId)?  started,TResult? Function( int operationId)?  refreshRequested,TResult? Function( FavouriteWallEntity wall,  int operationId)?  toggleRequested,TResult? Function( int operationId)?  clearRequested,TResult? Function( FavouriteSort sort)?  sortChanged,TResult? Function( WallpaperSource? source)?  sourceFilterChanged,TResult? Function( String query)?  queryChanged,TResult? Function( List<String> wallIds,  int operationId)?  removeRequested,TResult? Function( List<FavouriteWallEntity> walls,  int operationId)?  restoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId,  int operationId)?  started,TResult? Function( String userId,  List<FavouriteWallEntity> items)?  synced,TResult? Function( int operationId)?  refreshRequested,TResult? Function( FavouriteWallEntity wall,  bool? desired,  int operationId)?  toggleRequested,TResult? Function( int operationId)?  clearRequested,TResult? Function( FavouriteSort sort)?  sortChanged,TResult? Function( WallpaperSource? source)?  sourceFilterChanged,TResult? Function( String query)?  queryChanged,TResult? Function( List<String> wallIds,  int operationId)?  removeRequested,TResult? Function( List<FavouriteWallEntity> walls,  int operationId)?  restoreRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.userId,_that.operationId);case _RefreshRequested() when refreshRequested != null:
+return started(_that.userId,_that.operationId);case _Synced() when synced != null:
+return synced(_that.userId,_that.items);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that.operationId);case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that.wall,_that.operationId);case _ClearRequested() when clearRequested != null:
+return toggleRequested(_that.wall,_that.desired,_that.operationId);case _ClearRequested() when clearRequested != null:
 return clearRequested(_that.operationId);case _SortChanged() when sortChanged != null:
 return sortChanged(_that.sort);case _SourceFilterChanged() when sourceFilterChanged != null:
 return sourceFilterChanged(_that.source);case _QueryChanged() when queryChanged != null:
@@ -290,6 +296,80 @@ as int,
 /// @nodoc
 
 
+class _Synced implements FavouriteWallsEvent {
+  const _Synced({required this.userId, required final  List<FavouriteWallEntity> items}): _items = items;
+  
+
+ final  String userId;
+ final  List<FavouriteWallEntity> _items;
+ List<FavouriteWallEntity> get items {
+  if (_items is EqualUnmodifiableListView) return _items;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_items);
+}
+
+
+/// Create a copy of FavouriteWallsEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$SyncedCopyWith<_Synced> get copyWith => __$SyncedCopyWithImpl<_Synced>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Synced&&(identical(other.userId, userId) || other.userId == userId)&&const DeepCollectionEquality().equals(other._items, _items));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,userId,const DeepCollectionEquality().hash(_items));
+
+@override
+String toString() {
+  return 'FavouriteWallsEvent.synced(userId: $userId, items: $items)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$SyncedCopyWith<$Res> implements $FavouriteWallsEventCopyWith<$Res> {
+  factory _$SyncedCopyWith(_Synced value, $Res Function(_Synced) _then) = __$SyncedCopyWithImpl;
+@useResult
+$Res call({
+ String userId, List<FavouriteWallEntity> items
+});
+
+
+
+
+}
+/// @nodoc
+class __$SyncedCopyWithImpl<$Res>
+    implements _$SyncedCopyWith<$Res> {
+  __$SyncedCopyWithImpl(this._self, this._then);
+
+  final _Synced _self;
+  final $Res Function(_Synced) _then;
+
+/// Create a copy of FavouriteWallsEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? userId = null,Object? items = null,}) {
+  return _then(_Synced(
+userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as String,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
+as List<FavouriteWallEntity>,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class _RefreshRequested implements FavouriteWallsEvent {
   const _RefreshRequested({this.operationId = 0});
   
@@ -357,10 +437,11 @@ as int,
 
 
 class _ToggleRequested implements FavouriteWallsEvent {
-  const _ToggleRequested({required this.wall, this.operationId = 0});
+  const _ToggleRequested({required this.wall, this.desired, this.operationId = 0});
   
 
  final  FavouriteWallEntity wall;
+ final  bool? desired;
 @JsonKey() final  int operationId;
 
 /// Create a copy of FavouriteWallsEvent
@@ -373,16 +454,16 @@ _$ToggleRequestedCopyWith<_ToggleRequested> get copyWith => __$ToggleRequestedCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToggleRequested&&(identical(other.wall, wall) || other.wall == wall)&&(identical(other.operationId, operationId) || other.operationId == operationId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToggleRequested&&(identical(other.wall, wall) || other.wall == wall)&&(identical(other.desired, desired) || other.desired == desired)&&(identical(other.operationId, operationId) || other.operationId == operationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,wall,operationId);
+int get hashCode => Object.hash(runtimeType,wall,desired,operationId);
 
 @override
 String toString() {
-  return 'FavouriteWallsEvent.toggleRequested(wall: $wall, operationId: $operationId)';
+  return 'FavouriteWallsEvent.toggleRequested(wall: $wall, desired: $desired, operationId: $operationId)';
 }
 
 
@@ -393,7 +474,7 @@ abstract mixin class _$ToggleRequestedCopyWith<$Res> implements $FavouriteWallsE
   factory _$ToggleRequestedCopyWith(_ToggleRequested value, $Res Function(_ToggleRequested) _then) = __$ToggleRequestedCopyWithImpl;
 @useResult
 $Res call({
- FavouriteWallEntity wall, int operationId
+ FavouriteWallEntity wall, bool? desired, int operationId
 });
 
 
@@ -410,10 +491,11 @@ class __$ToggleRequestedCopyWithImpl<$Res>
 
 /// Create a copy of FavouriteWallsEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? wall = null,Object? operationId = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? wall = null,Object? desired = freezed,Object? operationId = null,}) {
   return _then(_ToggleRequested(
 wall: null == wall ? _self.wall : wall // ignore: cast_nullable_to_non_nullable
-as FavouriteWallEntity,operationId: null == operationId ? _self.operationId : operationId // ignore: cast_nullable_to_non_nullable
+as FavouriteWallEntity,desired: freezed == desired ? _self.desired : desired // ignore: cast_nullable_to_non_nullable
+as bool?,operationId: null == operationId ? _self.operationId : operationId // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }

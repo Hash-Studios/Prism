@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
@@ -63,7 +65,12 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       screenAspectRatio: event.screenAspectRatio,
       batterySaver: state.batterySaver,
     );
+    _trackApplied(state.motionStyle.name, outcome);
     emit(state.copyWith(applying: false, outcome: outcome));
+  }
+
+  void _trackApplied(String style, LiveApplyOutcome outcome) {
+    analytics.track(LiveWallpaperAppliedEvent(style: style, result: outcome.status.name));
   }
 
   Future<void> _onGradientApplied(_GradientApplied event, Emitter<LiveWallpaperState> emit) async {
@@ -78,6 +85,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       palette: event.palette,
       batterySaver: state.batterySaver,
     );
+    _trackApplied(state.gradientStyle.name, outcome);
     emit(state.copyWith(applying: false, outcome: outcome));
   }
 
@@ -95,6 +103,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
     if (state.applying || path == null) return;
     emit(state.copyWith(applying: true));
     final LiveApplyOutcome outcome = await _repository.applyVideo(path);
+    _trackApplied('video', outcome);
     emit(state.copyWith(applying: false, outcome: outcome));
   }
 }

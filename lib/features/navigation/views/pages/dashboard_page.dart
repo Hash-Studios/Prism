@@ -94,6 +94,7 @@ class _DashboardPageState extends State<DashboardPage> {
               },
               child: DailyClaimSheetHost(
                 onSeeRewards: () => tabsRouter.setActiveIndex(2),
+                onEarnCoins: () => context.router.push(RewardsRoute(scrollToEarn: true)),
                 child: BadgeCelebrateHost(
                   onSeeRewards: () => tabsRouter.setActiveIndex(2),
                   child: BottomBar(child: child),

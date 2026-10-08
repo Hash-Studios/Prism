@@ -4,6 +4,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
+import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/domain/usecases/theme_usecases.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,8 @@ import 'package:mocktail/mocktail.dart';
 class _MockLoadThemeUseCase extends Mock implements LoadThemeUseCase {}
 
 class _MockUpdateThemeUseCase extends Mock implements UpdateThemeUseCase {}
+
+class _MockThemeRepository extends Mock implements ThemeRepository {}
 
 const _light = ThemeSelection(themeId: 'kLCoffee', accentColorValue: 0xff123456);
 const _dark = ThemeSelection(themeId: 'kDAMOLED', accentColorValue: 0xff654321);
@@ -24,10 +27,16 @@ void main() {
 
   late _MockLoadThemeUseCase loadUseCase;
   late _MockUpdateThemeUseCase updateUseCase;
+  late _MockThemeRepository repository;
 
   setUp(() {
     loadUseCase = _MockLoadThemeUseCase();
     updateUseCase = _MockUpdateThemeUseCase();
+    repository = _MockThemeRepository();
+    final defaults = ThemeState.initial();
+    when(
+      () => repository.readSync(),
+    ).thenReturn(ThemePreferences(light: defaults.light, dark: defaults.dark, mode: defaults.mode));
 
     when(() => loadUseCase(const NoParams())).thenAnswer(
       (_) async => Result.success(const ThemePreferences(light: _light, dark: _dark, mode: ThemeMode.system)),
@@ -37,7 +46,21 @@ void main() {
     );
   });
 
-  ThemeBloc buildBloc() => ThemeBloc(loadUseCase, updateUseCase);
+  ThemeBloc buildBloc() => ThemeBloc(loadUseCase, updateUseCase, repository);
+
+  test('the first state already holds the stored selection, before any event', () {
+    when(
+      () => repository.readSync(),
+    ).thenReturn(const ThemePreferences(light: _light, dark: _dark, mode: ThemeMode.dark));
+
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+
+    expect(bloc.state.light, _light);
+    expect(bloc.state.dark, _dark);
+    expect(bloc.state.mode, ThemeMode.dark);
+    expect(bloc.state.status, LoadStatus.initial);
+  });
 
   final updated = ThemeState.initial().copyWith(
     status: LoadStatus.success,

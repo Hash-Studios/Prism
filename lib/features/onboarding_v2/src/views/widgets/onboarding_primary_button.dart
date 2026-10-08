@@ -1,4 +1,5 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +32,7 @@ class OnboardingPrimaryButton extends StatelessWidget {
       child: PressScale(
         enabled: isEnabled,
         child: AnimatedOpacity(
-          duration: OnboardingMotion.short,
+          duration: context.motion(OnboardingMotion.short),
           opacity: isEnabled ? 1 : OnboardingOpacity.disabledButton,
           child: Material(
             color: OnboardingColors.buttonBackground,
@@ -46,7 +47,7 @@ class OnboardingPrimaryButton extends StatelessWidget {
                   : null,
               child: Center(
                 child: AnimatedSwitcher(
-                  duration: OnboardingMotion.short,
+                  duration: context.motion(OnboardingMotion.short),
                   child: loading
                       ? const SizedBox(
                           width: OnboardingLayout.loadingIndicatorSize,

@@ -195,6 +195,93 @@ The client code for consent is `lib/features/ads/data/ad_consent.dart`. It asks 
 | UMP message not published | Users in the EEA and the UK see no consent form. What the ads SDK then allows in those regions is not confirmed. |
 | `firebase deploy --force` | Can delete a live index or a function that the file or `index.ts` does not list. |
 
+## Fix wave (second round of this release)
+
+The fix wave adds backend changes on top of the steps above. Ship them in this order. Each step needs the human owner's yes.
+
+```text
+A indexes  ->  wait READY  ->  B rules  ->  C functions  ->  D worker (flag off)  ->  E client  ->  F flag flip
+```
+
+### Step A. Firestore indexes
+
+| Change | Detail |
+|---|---|
+| New TTL field override | Collection group `wallActionRate`, field `expireAt`. |
+| New TTL field override | Collection group `wallpaper_stats_daily`, field `expireAt`. |
+
+No new composite index. Check both TTL policies show `Serving` in the console after the deploy.
+
+### Step B. Firestore rules
+
+`firestore.rules` changes. Every change only loosens a rule or blocks a write that no shipped client makes:
+
+| Change | Detail |
+|---|---|
+| `walls`, `setups` owner update | Needs the stored `review != true` as well. Owners cannot unpublish an approved wall. |
+| `rejectedWalls`, `rejectedSetups` | Owner can delete (`isEmailOwner(resource.data.email)`). Fixes the "permission denied" on delete. |
+| `admin_users` admin | Also needs `request.auth.token.email_verified == true`. Confirm the admin signs in with Google or Apple. |
+| `usersv2` chains | `isOwner` is checked before `isConfiguredAdmin` (cost only). |
+| New matches | `trending/{d}` and `popular/{d}`: public read, no client write. `usernames/{name}`: signed-in read, no client write. |
+
+The rules smoke test (`tool/firestore_rules_smoke.mjs`) has 20 new cases. CI runs it on the emulator. Command: `firebase deploy --only firestore:rules --project prism-wallpapers --account <email> --non-interactive`.
+
+### Step C. Cloud Functions
+
+New exports:
+
+| Function | What it does |
+|---|---|
+| `recordWallpaperAction` | Callable. Counts download, set and share per wallpaper. Dedupes per user, wall and action for 24 hours. |
+| `onFavouriteWritten` | Trigger on `usersv2/{uid}/images/{wallId}`. Keeps `wallpaper_stats.favs`. |
+| `computeTrending` | Scheduled every 3 hours. Writes `trending/current` and `popular/current`. |
+| `sweepOpenReports` | Scheduled every 2 hours. Re-pings admins once for reports open longer than 12 hours. |
+| `claimUsername` | Callable. Username registry in `usernames/{lower}`. Additive. |
+| `onUserCreated` | Trigger on `usersv2/{uid}` create. Adds a suffix to a duplicate username. |
+| `restoreStreak` | Callable. Restores a broken streak of 7 days or more for 100 coins, once per 30 days. |
+| `reconcileSubscriptions` | Scheduled daily at 02:30 UTC. Revokes expired premium. Never grants. Uses `REVENUECAT_SECRET_KEY`. |
+
+Changed exports: `spendCoins` (optional `label`, refunded replay refused, premium bypass only for downloads), `awardCoins` (optional `requestId`, `adsRemaining`, AI refund evidence check against the worker, 24 hour AI window when evidence allows), `syncSubscription` (grace period counts as active, 5 second floor for Free users), `deleteAccount` (scrubs walls, setups, rejected docs, notifications, follower arrays, reports, rate docs, legacy docs; 300 second timeout), `sendWinBackPushes` (skips `marketingPushes == false`), `claimDailyStreak` (writes `coinState.rescue`), `onContentReportCreated` (auto-hold at 3 distinct reporters), `onWallApproved` (also sends to `posts_<uid>`, collapse key), `onFollowCreated` (removes a blocked follow, keeps `nameLower`), `onWallSubmitted` (rewrites `by` and `userPhoto` from the owner doc), `blockUser` (removes both follow directions), `wallOfTheDay` (creator notice, slot from `scheduleTime`), `recordWallpaperView` (daily doc), `categorizeWallpaper` and `githubDeleteFile` (one admin check).
+
+New Firestore fields: `coinState.rescue`, `coinState.rescueLastAt`, ledger `description`, `wallpaper_stats.{downloads, sets, shares, favs, lastEventAt}`, `usersv2.nameLower`, `walls.{heldForReview, heldAt}`, `contentReports.escalatedAt`, `usersv2/{uid}/images.favouritedAt` (client), `usersv2/{uid}/private/session.marketingPushes` (client).
+
+New collections: `wallActionRate`, `wallpaper_stats_daily`, `trending`, `popular`, `usernames`.
+
+Optional env: `AI_WORKER_BASE_URL` (defaults to `https://prismwalls.com`). No new secret.
+
+Make sure the Cloud Scheduler jobs for `computeTrending`, `sweepOpenReports` and `reconcileSubscriptions` exist after the deploy.
+
+### Step D. Cloudflare worker
+
+| Change | Detail |
+|---|---|
+| `AI_REQUIRE_CHARGE` | New plain var in `wrangler.toml`, ships as `"false"`. With `"true"` every generation needs a `chargeTxId` that matches a completed `aiGeneration` debit. |
+| `chargeTxId` | Optional body field on `/api/ai/generations` and `/variations`. Replay with the same id returns the stored image for 24 hours. Paid requests are never tier-downgraded. |
+| `GET /api/ai/charges/{txId}` | Refund evidence for `awardCoins`. No auth. |
+| Prompt blocklist | Word boundaries. |
+| Share pages | OG tags escaped once. `apple-itunes-app` meta. Branded page for a dead short link. |
+| `createLink` | 8 KB body cap, flat `campaign` only, Durable Object rate limit. |
+| `/api/ai/health` | Budget numbers only with a valid Firebase token. |
+
+The `AiQuotaCoordinator` class gets new ops but no new migration.
+
+### Step E. Client release
+
+The client in this wave calls `restoreStreak` and `recordWallpaperAction`, sends `requestId` to `awardCoins` and `label` and `chargeTxId` on AI spends, subscribes to `posts_<uid>`, writes `marketingPushes` and `favouritedAt`, and reads `trending`, `popular`, `wallpaper_stats` and `past_picks`. Steps A to D must be live first. Old clients keep working after every step.
+
+### Step F. Flip the AI charge flag
+
+Only after the client that sends `chargeTxId` is the minimum supported build. Set `AI_REQUIRE_CHARGE = "true"` in `wrangler.toml` and redeploy the worker. This is an owner decision.
+
+### What breaks if the order is wrong
+
+| Wrong order | What breaks |
+|---|---|
+| Client before functions | `restoreStreak` and `recordWallpaperAction` return `not-found`. The app hides the result. Rewarded ad `requestId` is ignored, so a retry can credit twice. |
+| Client before rules | `trending/current` and `popular/current` reads fail. The Popular chip falls back to `wallpaper_stats`. |
+| Flag flip before the client | Old builds get 402 `charge_required` on every AI generation. |
+| Functions before the worker | AI refunds fall back to the 10 minute rule. Nothing breaks. |
+
 ## Rollback
 
 | Part | How to roll back | Note |

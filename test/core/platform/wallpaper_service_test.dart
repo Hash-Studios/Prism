@@ -11,6 +11,33 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/in_memory_local_store.dart';
 
+aw.WallpaperOperationResult _result(
+  aw.WallpaperOperationStatus status, {
+  String? code,
+  aw.WallpaperTargetStatus? home,
+  aw.WallpaperTargetStatus? lock,
+  aw.WallpaperTarget target = aw.WallpaperTarget.home,
+}) => aw.WallpaperOperationResult(
+  status: status,
+  requestedTarget: target,
+  errorCode: code,
+  home: home == null ? null : aw.WallpaperTargetResult(status: home),
+  lock: lock == null ? null : aw.WallpaperTargetResult(status: lock),
+);
+
+/// Answers each apply call with the next prepared result.
+class _ResultClient extends _FakeClient {
+  _ResultClient(this.prepared) : super(const <aw.WallpaperOperationStatus>[]);
+
+  final List<aw.WallpaperOperationResult> prepared;
+
+  @override
+  Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
+    requests.add(request);
+    return prepared[(requests.length - 1).clamp(0, prepared.length - 1)];
+  }
+}
+
 class _FakeClient implements WallpaperClient {
   _FakeClient(this.results);
 
@@ -80,14 +107,9 @@ void main() {
   group('status mapping', () {
     tearDown(aw.AsyncWallpaper.debugResetClient);
 
-    Future<WallpaperSetResult> run(List<aw.WallpaperOperationStatus> statuses, {bool cropper = false}) {
+    Future<WallpaperSetResult> run(List<aw.WallpaperOperationStatus> statuses) {
       aw.AsyncWallpaper.debugSetClient(_FakeClient(statuses));
-      return WallpaperService.setWallpaper(
-        '/tmp/wall.png',
-        WallpaperTarget.both,
-        useSystemCropper: cropper,
-        recordHistory: false,
-      );
+      return WallpaperService.setWallpaper('/tmp/wall.png', WallpaperTarget.both, recordHistory: false);
     }
 
     test('applied is success', () async {
@@ -156,6 +178,17 @@ void main() {
       expect(result.canRetry, isTrue);
       expect(result.errorCode, 'boom');
     });
+
+    test(
+      'every apply goes out as a file path with the direct strategy first unless the cropper is asked for',
+      () async {
+        final _FakeClient client = _FakeClient([aw.WallpaperOperationStatus.failed]);
+        aw.AsyncWallpaper.debugSetClient(client);
+        await WallpaperService.setWallpaper('/tmp/wall.png', WallpaperTarget.home, recordHistory: false);
+        expect(client.requests.first.strategy, aw.WallpaperApplyStrategy.direct);
+        expect(client.requests.map((r) => r.strategy), isNot(contains(aw.WallpaperApplyStrategy.systemCropper)));
+      },
+    );
 
     test('the system cropper gets a content URI and is not retried', () async {
       const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
@@ -241,6 +274,86 @@ void main() {
     });
   });
 
+  group('error codes', () {
+    tearDown(aw.AsyncWallpaper.debugResetClient);
+
+    Future<WallpaperSetResult> set(_FakeClient client, {WallpaperTarget target = WallpaperTarget.home}) {
+      aw.AsyncWallpaper.debugSetClient(client);
+      return WallpaperService.setWallpaper('/tmp/wall.png', target, recordHistory: false);
+    }
+
+    test('image-too-large explains the problem, offers no retry and skips the second attempt', () async {
+      final _ResultClient client = _ResultClient([
+        _result(aw.WallpaperOperationStatus.failed, code: 'image-too-large'),
+      ]);
+      final WallpaperSetResult result = await set(client);
+      expect(result.message, 'This image is too large for your device to set.');
+      expect(result.canRetry, isFalse);
+      expect(result.isFailure, isTrue);
+      expect(client.requests, hasLength(1));
+    });
+
+    test('wallpaper-not-allowed arrives as unsupported and names the work profile', () async {
+      final _ResultClient client = _ResultClient([
+        _result(aw.WallpaperOperationStatus.unsupported, code: 'wallpaper-not-allowed'),
+      ]);
+      final WallpaperSetResult result = await set(client);
+      expect(result.status, WallpaperSetStatus.unsupported);
+      expect(result.message, 'Your device or work profile does not allow wallpaper changes.');
+      expect(result.canRetry, isFalse);
+      expect(result.isFailure, isTrue);
+      expect(client.requests, hasLength(1));
+    });
+
+    test('unsupported without a code keeps the screen message', () async {
+      final WallpaperSetResult result = await set(_ResultClient([_result(aw.WallpaperOperationStatus.unsupported)]));
+      expect(result.message, "This device can't set that screen.");
+    });
+
+    test('out-of-memory is retryable with its own message', () async {
+      final _ResultClient client = _ResultClient([_result(aw.WallpaperOperationStatus.failed, code: 'out-of-memory')]);
+      final WallpaperSetResult result = await set(client);
+      expect(result.message, 'Not enough memory. Close other apps and try again.');
+      expect(result.canRetry, isTrue);
+      expect(client.requests, hasLength(2));
+    });
+
+    test('partial-apply names the screen that worked and the one that failed', () async {
+      final _ResultClient client = _ResultClient([
+        _result(
+          aw.WallpaperOperationStatus.failed,
+          code: 'partial-apply',
+          home: aw.WallpaperTargetStatus.applied,
+          lock: aw.WallpaperTargetStatus.failed,
+          target: aw.WallpaperTarget.both,
+        ),
+      ]);
+      final WallpaperSetResult result = await set(client, target: WallpaperTarget.both);
+      expect(result.message, 'Home screen set. Lock screen failed.');
+      expect(result.isPartial, isTrue);
+      expect(result.appliedTarget, WallpaperTarget.home);
+      expect(result.failedTarget, WallpaperTarget.lock);
+      expect(result.canRetry, isTrue);
+    });
+
+    test('partial-apply with only the lock screen changed says so', () async {
+      final WallpaperSetResult result = await set(
+        _ResultClient([
+          _result(
+            aw.WallpaperOperationStatus.failed,
+            code: 'partial-apply',
+            home: aw.WallpaperTargetStatus.failed,
+            lock: aw.WallpaperTargetStatus.applied,
+            target: aw.WallpaperTarget.both,
+          ),
+        ]),
+        target: WallpaperTarget.both,
+      );
+      expect(result.message, 'Lock screen set. Home screen failed.');
+      expect(result.failedTarget, WallpaperTarget.home);
+    });
+  });
+
   group('history recording', () {
     late WallpaperHistoryStore store;
 
@@ -281,6 +394,86 @@ void main() {
 
       await WallpaperService.setWallpaper('/storage/emulated/0/Pictures/Prism/saved.png', WallpaperTarget.home);
       expect(store.items().single.fullUrl, '/storage/emulated/0/Pictures/Prism/saved.png');
+    });
+
+    test('history keeps the original wall when a rendered copy is set', () async {
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      await WallpaperService.setWallpaper(
+        '/scratch/temp/prism_edit/position_1/placement.png',
+        WallpaperTarget.home,
+        historySource: 'https://img.prismwalls.com/full.jpg',
+        historyThumbnail: 'https://img.prismwalls.com/thumb.jpg',
+      );
+      expect(store.items().single.fullUrl, 'https://img.prismwalls.com/full.jpg');
+      expect(store.items().single.thumbnailUrl, 'https://img.prismwalls.com/thumb.jpg');
+      expect(store.items().single.source, 'prism');
+    });
+
+    test('a success returns the previous wall of each affected screen and the new history row', () async {
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      await WallpaperService.setWallpaper('/storage/a.jpg', WallpaperTarget.home);
+      await WallpaperService.setWallpaper('/storage/b.jpg', WallpaperTarget.lock);
+
+      final WallpaperSetResult result = await WallpaperService.setWallpaper('/storage/c.jpg', WallpaperTarget.both);
+
+      expect(result.restore.map((r) => (r.target, r.previous.fullUrl)), [
+        (WallpaperTarget.home, '/storage/a.jpg'),
+        (WallpaperTarget.lock, '/storage/b.jpg'),
+      ]);
+      expect(result.historyIds, [store.items().first.id]);
+    });
+
+    test('one previous wall on both screens becomes one both entry', () async {
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      await WallpaperService.setWallpaper('/storage/a.jpg', WallpaperTarget.both);
+
+      final WallpaperSetResult result = await WallpaperService.setWallpaper('/storage/c.jpg', WallpaperTarget.home);
+
+      expect(result.restore.single.target, WallpaperTarget.home);
+      final WallpaperSetResult both = await WallpaperService.setWallpaper('/storage/d.jpg', WallpaperTarget.both);
+      expect(both.restore.map((r) => (r.target, r.previous.fullUrl)), [
+        (WallpaperTarget.home, '/storage/c.jpg'),
+        (WallpaperTarget.lock, '/storage/a.jpg'),
+      ]);
+    });
+
+    test('setting the wall that is already there offers no undo', () async {
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      await WallpaperService.setWallpaper('/storage/a.jpg', WallpaperTarget.home);
+      final WallpaperSetResult result = await WallpaperService.setWallpaper('/storage/a.jpg', WallpaperTarget.home);
+      expect(result.restore, isEmpty);
+    });
+
+    test('the first set has nothing to restore and recordHistory false returns no row', () async {
+      aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      final WallpaperSetResult first = await WallpaperService.setWallpaper('/storage/a.jpg', WallpaperTarget.home);
+      expect(first.restore, isEmpty);
+      expect(first.historyIds, hasLength(1));
+      final WallpaperSetResult silent = await WallpaperService.setWallpaper(
+        '/storage/b.jpg',
+        WallpaperTarget.home,
+        recordHistory: false,
+      );
+      expect(silent.restore, isEmpty);
+      expect(silent.historyIds, isEmpty);
+    });
+
+    test('a partial apply records only the screen that changed', () async {
+      aw.AsyncWallpaper.debugSetClient(
+        _ResultClient([
+          _result(
+            aw.WallpaperOperationStatus.failed,
+            code: 'partial-apply',
+            home: aw.WallpaperTargetStatus.applied,
+            lock: aw.WallpaperTargetStatus.failed,
+            target: aw.WallpaperTarget.both,
+          ),
+        ]),
+      );
+      final WallpaperSetResult result = await WallpaperService.setWallpaper('/storage/a.jpg', WallpaperTarget.both);
+      expect(result.isPartial, isTrue);
+      expect(store.items().single.target, 'home');
+      expect(result.historyIds, [store.items().single.id]);
     });
 
     test('failures, pending results and opt-outs are not recorded', () async {

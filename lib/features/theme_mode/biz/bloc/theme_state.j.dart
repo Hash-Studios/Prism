@@ -18,4 +18,7 @@ abstract class ThemeState with _$ThemeState {
     dark: ThemeSelection(themeId: prismDefaultDarkThemeId, accentColorValue: prismDefaultAccentValue),
     mode: ThemeMode.system,
   );
+
+  factory ThemeState.fromPreferences(ThemePreferences preferences) =>
+      ThemeState.initial().copyWith(light: preferences.light, dark: preferences.dark, mode: preferences.mode);
 }

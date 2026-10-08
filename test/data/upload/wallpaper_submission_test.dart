@@ -37,10 +37,12 @@ class _FakeFirestoreClient extends Fake implements FirestoreClient {
   Completer<void>? saveGate;
   Completer<void>? saveStarted;
   Map<String, dynamic>? userUpdate;
+  Map<String, dynamic>? lastRecord;
 
   @override
   Future<String> addDoc(String collection, Map<String, dynamic> data, {required String sourceTag}) async {
     wallWrites++;
+    lastRecord = Map<String, dynamic>.of(data);
     saveStarted?.complete();
     if (saveGate != null) await saveGate!.future;
     if (saveError != null) throw saveError!;
@@ -89,7 +91,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('PonnamKarthik/fluttertoast'),
       (call) async {
-        toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+        if (call.method == 'showToast') toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
         return true;
       },
     );
@@ -312,5 +314,64 @@ void main() {
     }
     expect(await _submit(now: () => testNow), _submitted);
     expect(UploadQuota.currentUploadsThisWeek(now: testNow), 1);
+  });
+
+  test('the record never holds the unwatermarked AI original', () async {
+    await wall_store.createRecord(
+      'wall',
+      'Prism',
+      'thumb',
+      'image',
+      '100x100',
+      'AI',
+      'Sunset',
+      'Nature',
+      'Community',
+      false,
+      isAiGenerated: true,
+      aiGenerationId: 'gen1',
+      now: () => testNow,
+    );
+
+    expect(firestore.lastRecord, isNot(contains('aiOriginalImageUrl')));
+    expect(firestore.lastRecord!['aiGenerationId'], 'gen1');
+  });
+
+  test('the record carries the optional title, tags and the repo files of the upload', () async {
+    await wall_store.createRecord(
+      'wall',
+      'Prism',
+      'thumb',
+      'image',
+      '100x100',
+      '1MB',
+      '  Calm dunes ',
+      'Nature',
+      'Community',
+      false,
+      wallpaperTags: <String>['sand', ' ', 'desert'],
+      wallpaperPath: 'u_1_a.png',
+      wallpaperSha: 'sha-a',
+      thumbPath: 'thumb_u_1_a.png',
+      thumbSha: 'sha-t',
+      now: () => testNow,
+    );
+
+    final record = firestore.lastRecord!;
+    expect(record['title'], 'Calm dunes');
+    expect(record['tags'], <String>['sand', 'desert']);
+    expect(record['wallpaper_path'], 'u_1_a.png');
+    expect(record['wallpaper_sha'], 'sha-a');
+    expect(record['thumb_path'], 'thumb_u_1_a.png');
+    expect(record['thumb_sha'], 'sha-t');
+  });
+
+  test('a record without a title or file details has none of those keys', () async {
+    await _submit(now: () => testNow);
+
+    final record = firestore.lastRecord!;
+    for (final key in <String>['title', 'wallpaper_path', 'wallpaper_sha', 'thumb_path', 'thumb_sha']) {
+      expect(record, isNot(contains(key)));
+    }
   });
 }

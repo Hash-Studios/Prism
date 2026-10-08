@@ -81,7 +81,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
     ) async {
-      toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      if (call.method == 'showToast') toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
   });
@@ -93,7 +93,7 @@ void main() {
     await getIt.reset();
   });
 
-  testWidgets('cancelled Google sign-in keeps its toast without adding an error haptic', (tester) async {
+  testWidgets('cancelled Google sign-in stays silent and adds no error haptic', (tester) async {
     tester.view.physicalSize = const Size(393, 852);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -113,7 +113,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(toasts, <String>['Sign in cancelled.']);
+    expect(toasts, isEmpty);
     expect(haptics, <String>['tap']);
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));

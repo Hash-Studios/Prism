@@ -1,38 +1,33 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
-import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
+import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 enum ClockPreviewMode { lock, home }
 
+/// Width of the decode used to pick the clock text colour.
+const int _sampleWidth = 32;
+
 /// Full-screen preview of the wallpaper under a lock screen clock or a home screen dock.
-/// The image is shown as it will be set: the palette accent only colours the text.
+/// The image is shown as it will be set. The clock text is black or white, whichever reads on the top third.
 class ClockOverlay extends StatefulWidget {
-  const ClockOverlay({required this.link, required this.file, required this.accent});
+  const ClockOverlay({required this.link, required this.file, this.thumbnailUrl});
 
   final String link;
   final bool file;
-  final Color? accent;
 
-  /// Superscript ordinal suffix for a day of the month: 1ˢᵗ, 2ⁿᵈ, 3ʳᵈ, 4ᵗʰ, 11ᵗʰ.
-  @visibleForTesting
-  static String ordinalSuffix(int day) {
-    if (day >= 11 && day <= 13) return 'ᵗʰ';
-    return switch (day % 10) {
-      1 => 'ˢᵗ',
-      2 => 'ⁿᵈ',
-      3 => 'ʳᵈ',
-      _ => 'ᵗʰ',
-    };
-  }
-
-  /// Time of day in the device 12 or 24 hour style.
-  @visibleForTesting
-  static String formatTime(DateTime time, {required bool use24Hour}) =>
-      DateFormat(use24Hour ? 'HH:mm' : 'h:mm').format(time);
+  /// Shown while the full image loads.
+  final String? thumbnailUrl;
 
   @override
   State<ClockOverlay> createState() => _ClockOverlayState();
@@ -42,145 +37,105 @@ class _ClockOverlayState extends State<ClockOverlay> {
   late ClockPreviewMode _mode = defaultTargetPlatform == TargetPlatform.iOS
       ? ClockPreviewMode.lock
       : ClockPreviewMode.home;
+  Color? _textColor;
+  ImageStream? _sampleStream;
+  ImageStreamListener? _sampleListener;
+
+  ImageProvider get _provider =>
+      widget.file ? FileImage(File(widget.link)) : CachedNetworkImageProvider(widget.link, cacheManager: _cache);
+
+  BaseCacheManager get _cache => PrismFullImageCache.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _sampleText();
+  }
+
+  void _sampleText() {
+    final ImageStream stream = ResizeImage(_provider, width: _sampleWidth).resolve(ImageConfiguration.empty);
+    final ImageStreamListener listener = ImageStreamListener(
+      (info, _) {
+        unawaited(_applySample(info.image));
+        _stopSampling();
+      },
+      onError: (error, stackTrace) {
+        logger.w('ClockOverlay: could not sample the image', error: error, stackTrace: stackTrace);
+        _stopSampling();
+      },
+    );
+    _sampleStream = stream;
+    _sampleListener = listener;
+    stream.addListener(listener);
+  }
+
+  Future<void> _applySample(ui.Image image) async {
+    final Color color = await textColorForTopThird(image);
+    if (mounted) setState(() => _textColor = color);
+  }
+
+  void _stopSampling() {
+    final ImageStreamListener? listener = _sampleListener;
+    if (listener != null) _sampleStream?.removeListener(listener);
+    _sampleListener = null;
+    _sampleStream = null;
+  }
+
+  @override
+  void dispose() {
+    _stopSampling();
+    super.dispose();
+  }
+
+  Widget _image(BuildContext context, Size size) {
+    final Color placeholder = Theme.of(context).primaryColor;
+    final int cacheWidth = previewCacheWidth(size.width, MediaQuery.devicePixelRatioOf(context));
+    Widget error() => ColoredBox(
+      color: placeholder,
+      child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
+    );
+    if (widget.file) {
+      return SizedBox.expand(
+        child: Image.file(
+          File(widget.link),
+          fit: BoxFit.cover,
+          cacheWidth: cacheWidth,
+          errorBuilder: (_, _, _) => error(),
+        ),
+      );
+    }
+    final String thumbnail = widget.thumbnailUrl?.trim() ?? '';
+    return SizedBox.expand(
+      child: CachedNetworkImage(
+        cacheManager: _cache,
+        imageUrl: widget.link,
+        fit: BoxFit.cover,
+        memCacheWidth: cacheWidth,
+        placeholder: (_, _) => thumbnail.isEmpty
+            ? ColoredBox(color: placeholder)
+            : CachedNetworkImage(
+                cacheManager: PrismImageCache.instance,
+                imageUrl: thumbnail,
+                fit: BoxFit.cover,
+                errorWidget: (_, _, _) => ColoredBox(color: placeholder),
+              ),
+        errorWidget: (_, _, _) => error(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
     final size = MediaQuery.sizeOf(context);
-    final bool use24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
-    final String time = ClockOverlay.formatTime(now, use24Hour: use24Hour);
-    final Color textColor = widget.accent == null ? Theme.of(context).colorScheme.secondary : onColor(widget.accent!);
-    final bool iosPreview = defaultTargetPlatform == TargetPlatform.iOS;
+    final Color textColor = _textColor ?? Theme.of(context).colorScheme.secondary;
     final bool lock = _mode == ClockPreviewMode.lock;
     return Material(
       child: Stack(
         children: <Widget>[
-          if (!widget.file)
-            CachedNetworkImage(
-              imageUrl: widget.link,
-              imageBuilder: (context, imageProvider) => Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
-                ),
-              ),
-            )
-          else
-            SizedBox(
-              height: size.height,
-              width: size.width,
-              child: Image.file(File(widget.link), fit: BoxFit.cover),
-            ),
-          if (iosPreview)
-            if (lock)
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          DateFormat('EEEE d MMMM').format(now),
-                          style: TextStyle(
-                            color: textColor,
-                            fontFamily: 'CupertinoSystemText',
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          time,
-                          style: TextStyle(
-                            color: textColor,
-                            fontFamily: 'CupertinoSystemDisplay',
-                            fontSize: 96,
-                            fontWeight: FontWeight.w700,
-                            height: 1.1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )
-            else
-              const SizedBox.shrink()
-          else ...<Widget>[
-            SizedBox(
-              height: size.height / 3,
-              width: size.width,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (lock) ...<Widget>[
-                      Text(
-                        time,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'Roboto',
-                          fontSize: 72,
-                          fontWeight: FontWeight.w200,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        "${DateFormat('EEEE').format(now)}, ${DateFormat('MMMM').format(now)} ${now.day}",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'Roboto',
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ] else ...<Widget>[
-                      Text(
-                        "${DateFormat('EEEE').format(now)},",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'Roboto',
-                          fontSize: 25,
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        "${DateFormat('MMMM').format(now)} ${now.day}${ClockOverlay.ordinalSuffix(now.day)}",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'Roboto',
-                          fontSize: 25,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            if (!lock)
-              Positioned(
-                bottom: 100,
-                child: SizedBox(
-                  width: size.width,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <Widget>[
-                      Image.asset("assets/images/dialer.webp", width: size.width * 0.14),
-                      Image.asset("assets/images/messages.webp", width: size.width * 0.14),
-                      Image.asset("assets/images/prism.webp", width: size.width * 0.14),
-                      Image.asset("assets/images/playstore.webp", width: size.width * 0.14),
-                      Image.asset("assets/images/chrome.webp", width: size.width * 0.14),
-                    ],
-                  ),
-                ),
-              ),
-          ],
+          Positioned.fill(child: _image(context, size)),
+          Positioned.fill(
+            child: lock ? LockPreviewLayer(textColor: textColor) : HomePreviewLayer(textColor: textColor),
+          ),
           Semantics(
             button: true,
             label: 'Close preview',

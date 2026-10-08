@@ -24,6 +24,8 @@ import com.hash.prism.pigeon.SaveMediaRequest
 import java.io.File
 import java.io.IOException
 import java.io.OutputStream
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.UUID
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.RejectedExecutionException
@@ -38,7 +40,7 @@ internal class PrismMediaHostApiImpl(
     private val mainHandler = Handler(Looper.getMainLooper())
     private var requestStoragePermission: (((Boolean) -> Unit) -> Unit)? = requestStoragePermission
     @Volatile private var closed = false
-    private val executor = ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, ArrayBlockingQueue<Runnable>(2))
+    private val executor = ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, ArrayBlockingQueue<Runnable>(16))
 
     override fun saveMedia(request: SaveMediaRequest, callback: (Result<OperationResult>) -> Unit) {
         withWritePermission(callback) {
@@ -263,7 +265,7 @@ internal class PrismMediaHostApiImpl(
         } finally { temporary.delete() }
     }
 
-    private fun <T> runInBackground(callback: (Result<T>) -> Unit, onError: (Exception) -> T, task: () -> T) {
+    private fun <T> runInBackground(callback: (Result<T>) -> Unit, onError: (Throwable) -> T, task: () -> T) {
         try {
             executor.execute {
                 val result = try {
@@ -273,7 +275,10 @@ internal class PrismMediaHostApiImpl(
                         check(!closed) { ENGINE_DETACHED_MESSAGE }
                         task()
                     }
-                } catch (error: Exception) { onError(error) }
+                } catch (error: Throwable) {
+                    Log.w(TAG, "Media operation failed", error)
+                    onError(error)
+                }
                 mainHandler.post { callback(Result.success(result)) }
             }
         } catch (error: RejectedExecutionException) {
@@ -317,11 +322,16 @@ private fun copyFromUri(context: Context, uri: Uri, file: File) {
     input.use { source -> file.outputStream().use { PrismImageTransfer.copy(source, it) } }
 }
 
-internal fun mediaFailureCode(fallback: String, error: Exception): String =
+internal fun mediaFailureCode(fallback: String, error: Throwable): String =
     if (error is RejectedExecutionException) "MEDIA_BUSY" else fallback
 
-internal fun mediaFailureMessage(error: Exception): String? =
-    if (error is RejectedExecutionException) "Another media operation is in progress. Please try again." else error.message
+internal fun mediaFailureMessage(error: Throwable): String = when {
+    error is RejectedExecutionException -> "Another media operation is in progress. Please try again."
+    error is IllegalStateException && error.message == ENGINE_DETACHED_MESSAGE -> ENGINE_DETACHED_MESSAGE
+    error is UnknownHostException || error is SocketTimeoutException -> "Check your connection and try again."
+    error is OutOfMemoryError -> "This image is too large to process."
+    else -> "Something went wrong. Try again."
+}
 
-private fun operationError(code: String, error: Exception) =
+private fun operationError(code: String, error: Throwable) =
     OperationResult(success = false, errorCode = mediaFailureCode(code, error), message = mediaFailureMessage(error))

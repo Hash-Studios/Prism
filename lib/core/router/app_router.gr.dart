@@ -190,6 +190,22 @@ class BlockedAccountsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [CoinHistoryPage]
+class CoinHistoryRoute extends PageRouteInfo<void> {
+  const CoinHistoryRoute({List<PageRouteInfo>? children})
+    : super(CoinHistoryRoute.name, initialChildren: children);
+
+  static const String name = 'CoinHistoryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const CoinHistoryPage();
+    },
+  );
+}
+
+/// generated route for
 /// [CollectionTabPage]
 class CollectionTabRoute extends PageRouteInfo<void> {
   const CollectionTabRoute({List<PageRouteInfo>? children})
@@ -437,12 +453,16 @@ class EditProfilePanelRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [EditWallScreen]
 class EditWallRoute extends PageRouteInfo<EditWallRouteArgs> {
-  EditWallRoute({Key? key, required File image, List<PageRouteInfo>? children})
-    : super(
-        EditWallRoute.name,
-        args: EditWallRouteArgs(key: key, image: image),
-        initialChildren: children,
-      );
+  EditWallRoute({
+    Key? key,
+    required File image,
+    UploadBatch? batch,
+    List<PageRouteInfo>? children,
+  }) : super(
+         EditWallRoute.name,
+         args: EditWallRouteArgs(key: key, image: image, batch: batch),
+         initialChildren: children,
+       );
 
   static const String name = 'EditWallRoute';
 
@@ -450,32 +470,38 @@ class EditWallRoute extends PageRouteInfo<EditWallRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<EditWallRouteArgs>();
-      return EditWallScreen(key: args.key, image: args.image);
+      return EditWallScreen(
+        key: args.key,
+        image: args.image,
+        batch: args.batch,
+      );
     },
   );
 }
 
 class EditWallRouteArgs {
-  const EditWallRouteArgs({this.key, required this.image});
+  const EditWallRouteArgs({this.key, required this.image, this.batch});
 
   final Key? key;
 
   final File image;
 
+  final UploadBatch? batch;
+
   @override
   String toString() {
-    return 'EditWallRouteArgs{key: $key, image: $image}';
+    return 'EditWallRouteArgs{key: $key, image: $image, batch: $batch}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! EditWallRouteArgs) return false;
-    return key == other.key && image == other.image;
+    return key == other.key && image == other.image && batch == other.batch;
   }
 
   @override
-  int get hashCode => key.hashCode ^ image.hashCode;
+  int get hashCode => key.hashCode ^ image.hashCode ^ batch.hashCode;
 }
 
 /// generated route for
@@ -625,15 +651,69 @@ class HomeTabRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [LibraryScreen]
+class LibraryRoute extends PageRouteInfo<LibraryRouteArgs> {
+  LibraryRoute({
+    Key? key,
+    LibraryTab initialTab = LibraryTab.favourites,
+    List<PageRouteInfo>? children,
+  }) : super(
+         LibraryRoute.name,
+         args: LibraryRouteArgs(key: key, initialTab: initialTab),
+         initialChildren: children,
+       );
+
+  static const String name = 'LibraryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<LibraryRouteArgs>(
+        orElse: () => const LibraryRouteArgs(),
+      );
+      return LibraryScreen(key: args.key, initialTab: args.initialTab);
+    },
+  );
+}
+
+class LibraryRouteArgs {
+  const LibraryRouteArgs({this.key, this.initialTab = LibraryTab.favourites});
+
+  final Key? key;
+
+  final LibraryTab initialTab;
+
+  @override
+  String toString() {
+    return 'LibraryRouteArgs{key: $key, initialTab: $initialTab}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! LibraryRouteArgs) return false;
+    return key == other.key && initialTab == other.initialTab;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ initialTab.hashCode;
+}
+
+/// generated route for
 /// [LiveWallpaperScreen]
 class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
   LiveWallpaperRoute({
     Key? key,
     String? imageUrl,
+    Color? accentSeed,
     List<PageRouteInfo>? children,
   }) : super(
          LiveWallpaperRoute.name,
-         args: LiveWallpaperRouteArgs(key: key, imageUrl: imageUrl),
+         args: LiveWallpaperRouteArgs(
+           key: key,
+           imageUrl: imageUrl,
+           accentSeed: accentSeed,
+         ),
          initialChildren: children,
        );
 
@@ -645,32 +725,40 @@ class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
       final args = data.argsAs<LiveWallpaperRouteArgs>(
         orElse: () => const LiveWallpaperRouteArgs(),
       );
-      return LiveWallpaperScreen(key: args.key, imageUrl: args.imageUrl);
+      return LiveWallpaperScreen(
+        key: args.key,
+        imageUrl: args.imageUrl,
+        accentSeed: args.accentSeed,
+      );
     },
   );
 }
 
 class LiveWallpaperRouteArgs {
-  const LiveWallpaperRouteArgs({this.key, this.imageUrl});
+  const LiveWallpaperRouteArgs({this.key, this.imageUrl, this.accentSeed});
 
   final Key? key;
 
   final String? imageUrl;
 
+  final Color? accentSeed;
+
   @override
   String toString() {
-    return 'LiveWallpaperRouteArgs{key: $key, imageUrl: $imageUrl}';
+    return 'LiveWallpaperRouteArgs{key: $key, imageUrl: $imageUrl, accentSeed: $accentSeed}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! LiveWallpaperRouteArgs) return false;
-    return key == other.key && imageUrl == other.imageUrl;
+    return key == other.key &&
+        imageUrl == other.imageUrl &&
+        accentSeed == other.accentSeed;
   }
 
   @override
-  int get hashCode => key.hashCode ^ imageUrl.hashCode;
+  int get hashCode => key.hashCode ^ imageUrl.hashCode ^ accentSeed.hashCode;
 }
 
 /// generated route for
@@ -812,12 +900,20 @@ class ReviewRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [RewardsPage]
 class RewardsRoute extends PageRouteInfo<RewardsRouteArgs> {
-  RewardsRoute({Key? key, bool showBack = true, List<PageRouteInfo>? children})
-    : super(
-        RewardsRoute.name,
-        args: RewardsRouteArgs(key: key, showBack: showBack),
-        initialChildren: children,
-      );
+  RewardsRoute({
+    Key? key,
+    bool showBack = true,
+    bool scrollToEarn = false,
+    List<PageRouteInfo>? children,
+  }) : super(
+         RewardsRoute.name,
+         args: RewardsRouteArgs(
+           key: key,
+           showBack: showBack,
+           scrollToEarn: scrollToEarn,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'RewardsRoute';
 
@@ -827,32 +923,44 @@ class RewardsRoute extends PageRouteInfo<RewardsRouteArgs> {
       final args = data.argsAs<RewardsRouteArgs>(
         orElse: () => const RewardsRouteArgs(),
       );
-      return RewardsPage(key: args.key, showBack: args.showBack);
+      return RewardsPage(
+        key: args.key,
+        showBack: args.showBack,
+        scrollToEarn: args.scrollToEarn,
+      );
     },
   );
 }
 
 class RewardsRouteArgs {
-  const RewardsRouteArgs({this.key, this.showBack = true});
+  const RewardsRouteArgs({
+    this.key,
+    this.showBack = true,
+    this.scrollToEarn = false,
+  });
 
   final Key? key;
 
   final bool showBack;
 
+  final bool scrollToEarn;
+
   @override
   String toString() {
-    return 'RewardsRouteArgs{key: $key, showBack: $showBack}';
+    return 'RewardsRouteArgs{key: $key, showBack: $showBack, scrollToEarn: $scrollToEarn}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! RewardsRouteArgs) return false;
-    return key == other.key && showBack == other.showBack;
+    return key == other.key &&
+        showBack == other.showBack &&
+        scrollToEarn == other.scrollToEarn;
   }
 
   @override
-  int get hashCode => key.hashCode ^ showBack.hashCode;
+  int get hashCode => key.hashCode ^ showBack.hashCode ^ scrollToEarn.hashCode;
 }
 
 /// generated route for
@@ -989,12 +1097,19 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
   UploadWallRoute({
     Key? key,
     required File image,
+    UploadBatch? batch,
+    Size? imageSizeForTesting,
     Future<void> Function()? prepareImageForTesting,
     Future<GitHubContent> Function({required bool isThumbnail})?
     uploadFileForTesting,
     Future<void> Function({required String path, required String sha})?
     deleteFileForTesting,
     Future<WallSubmissionResult> Function()? createRecordForTesting,
+    Future<WallSubmissionResult> Function({
+      required String id,
+      required SubmissionMetadata metadata,
+    })?
+    createRecordWithMetadataForTesting,
     Future<void> Function()? presentPaywallForTesting,
     DateTime Function()? nowForTesting,
     List<PageRouteInfo>? children,
@@ -1003,10 +1118,14 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
          args: UploadWallRouteArgs(
            key: key,
            image: image,
+           batch: batch,
+           imageSizeForTesting: imageSizeForTesting,
            prepareImageForTesting: prepareImageForTesting,
            uploadFileForTesting: uploadFileForTesting,
            deleteFileForTesting: deleteFileForTesting,
            createRecordForTesting: createRecordForTesting,
+           createRecordWithMetadataForTesting:
+               createRecordWithMetadataForTesting,
            presentPaywallForTesting: presentPaywallForTesting,
            nowForTesting: nowForTesting,
          ),
@@ -1022,10 +1141,14 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
       return UploadWallScreen(
         key: args.key,
         image: args.image,
+        batch: args.batch,
+        imageSizeForTesting: args.imageSizeForTesting,
         prepareImageForTesting: args.prepareImageForTesting,
         uploadFileForTesting: args.uploadFileForTesting,
         deleteFileForTesting: args.deleteFileForTesting,
         createRecordForTesting: args.createRecordForTesting,
+        createRecordWithMetadataForTesting:
+            args.createRecordWithMetadataForTesting,
         presentPaywallForTesting: args.presentPaywallForTesting,
         nowForTesting: args.nowForTesting,
       );
@@ -1037,10 +1160,13 @@ class UploadWallRouteArgs {
   const UploadWallRouteArgs({
     this.key,
     required this.image,
+    this.batch,
+    this.imageSizeForTesting,
     this.prepareImageForTesting,
     this.uploadFileForTesting,
     this.deleteFileForTesting,
     this.createRecordForTesting,
+    this.createRecordWithMetadataForTesting,
     this.presentPaywallForTesting,
     this.nowForTesting,
   });
@@ -1048,6 +1174,10 @@ class UploadWallRouteArgs {
   final Key? key;
 
   final File image;
+
+  final UploadBatch? batch;
+
+  final Size? imageSizeForTesting;
 
   final Future<void> Function()? prepareImageForTesting;
 
@@ -1059,24 +1189,37 @@ class UploadWallRouteArgs {
 
   final Future<WallSubmissionResult> Function()? createRecordForTesting;
 
+  final Future<WallSubmissionResult> Function({
+    required String id,
+    required SubmissionMetadata metadata,
+  })?
+  createRecordWithMetadataForTesting;
+
   final Future<void> Function()? presentPaywallForTesting;
 
   final DateTime Function()? nowForTesting;
 
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! UploadWallRouteArgs) return false;
-    return key == other.key && image == other.image;
+    return key == other.key &&
+        image == other.image &&
+        batch == other.batch &&
+        imageSizeForTesting == other.imageSizeForTesting;
   }
 
   @override
-  int get hashCode => key.hashCode ^ image.hashCode;
+  int get hashCode =>
+      key.hashCode ^
+      image.hashCode ^
+      batch.hashCode ^
+      imageSizeForTesting.hashCode;
 }
 
 /// generated route for
@@ -1266,6 +1409,97 @@ class WallpaperHistoryRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const WallpaperHistoryScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [WallpaperPositionScreen]
+class WallpaperPositionRoute extends PageRouteInfo<WallpaperPositionRouteArgs> {
+  WallpaperPositionRoute({
+    Key? key,
+    required String imageUrl,
+    String? thumbnailUrl,
+    String? entryPoint,
+    List<PageRouteInfo>? children,
+  }) : super(
+         WallpaperPositionRoute.name,
+         args: WallpaperPositionRouteArgs(
+           key: key,
+           imageUrl: imageUrl,
+           thumbnailUrl: thumbnailUrl,
+           entryPoint: entryPoint,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'WallpaperPositionRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<WallpaperPositionRouteArgs>();
+      return WallpaperPositionScreen(
+        key: args.key,
+        imageUrl: args.imageUrl,
+        thumbnailUrl: args.thumbnailUrl,
+        entryPoint: args.entryPoint,
+      );
+    },
+  );
+}
+
+class WallpaperPositionRouteArgs {
+  const WallpaperPositionRouteArgs({
+    this.key,
+    required this.imageUrl,
+    this.thumbnailUrl,
+    this.entryPoint,
+  });
+
+  final Key? key;
+
+  final String imageUrl;
+
+  final String? thumbnailUrl;
+
+  final String? entryPoint;
+
+  @override
+  String toString() {
+    return 'WallpaperPositionRouteArgs{key: $key, imageUrl: $imageUrl, thumbnailUrl: $thumbnailUrl, entryPoint: $entryPoint}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! WallpaperPositionRouteArgs) return false;
+    return key == other.key &&
+        imageUrl == other.imageUrl &&
+        thumbnailUrl == other.thumbnailUrl &&
+        entryPoint == other.entryPoint;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      imageUrl.hashCode ^
+      thumbnailUrl.hashCode ^
+      entryPoint.hashCode;
+}
+
+/// generated route for
+/// [WotdArchivePage]
+class WotdArchiveRoute extends PageRouteInfo<void> {
+  const WotdArchiveRoute({List<PageRouteInfo>? children})
+    : super(WotdArchiveRoute.name, initialChildren: children);
+
+  static const String name = 'WotdArchiveRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return WrappedRoute(child: const WotdArchivePage());
     },
   );
 }

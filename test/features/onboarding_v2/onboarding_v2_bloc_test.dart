@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -266,7 +267,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       bloc.add(const OnboardingV2Event.interestsConfirmed());
     },
-    verify: (_) => expect(analytics.events, isEmpty),
+    verify: (_) => expect(trackedNames(), isNot(contains('onboarding_v2_interests_completed'))),
   );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
@@ -426,7 +427,9 @@ void main() {
           sourceCategory: 'Nature',
         ),
       );
-      when(() => firstWallpaperService.performAction(any())).thenAnswer((_) async => false);
+      when(
+        () => firstWallpaperService.performAction(any()),
+      ).thenAnswer((_) async => const FirstWallpaperResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'));
     },
     build: buildBloc,
     act: (bloc) async {
@@ -444,6 +447,7 @@ void main() {
       );
       final action = analytics.events.singleWhere((e) => e.eventName == 'onboarding_v2_first_wallpaper_action');
       expect(action.toWireParameters()['result'], 'failure');
+      expect(trackedNames(), isNot(contains('onboarding_step_completed')));
     },
   );
 
@@ -499,7 +503,7 @@ void main() {
         verify(() => settingsLocalDataSource.set('onboarded_v2_new', true)).called(1);
         expect(bloc.state.actionStatus, ActionStatus.failure);
         expect(bloc.state.navRequest, OnboardingV2NavRequest.completeOnboarding);
-        expect(analytics.events, isEmpty);
+        expect(trackedNames(), isNot(contains('onboarding_v2_completed')));
       },
     );
 
@@ -560,7 +564,7 @@ void main() {
         expect(bloc.state.step, OnboardingV2Step.auth);
         verify(() => settingsLocalDataSource.set('onboarded_v2_new', true)).called(1);
         verifyNever(() => completeOnboardingUseCase(any()));
-        expect(analytics.events, isEmpty);
+        expect(trackedNames(), isNot(contains('onboarding_v2_completed')));
       },
     );
 
@@ -676,5 +680,224 @@ void main() {
       },
       verify: (bloc) => expect(bloc.state.step, OnboardingV2Step.interests),
     );
+  });
+
+  group('analytics funnel', () {
+    int stepCompletions(String step) => analytics.events
+        .where((e) => e.eventName == 'onboarding_step_completed' && e.toWireParameters()['step'] == step)
+        .length;
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'starting onboarding records onboarding_started once',
+      build: buildBloc,
+      act: (bloc) => bloc.add(const OnboardingV2Event.started()),
+      verify: (_) => expect(trackedNames().where((n) => n == 'onboarding_started'), hasLength(1)),
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'each finished step records onboarding_step_completed with its name',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
+        when(() => followStarterPackUseCase(any())).thenAnswer((_) async => Result.success(null));
+        when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+          (_) async =>
+              Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+        );
+        when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer(
+          (_) async => const OnboardingWallpaperVm(
+            fullUrl: 'https://example.com/wall.jpg',
+            thumbnailUrl: 'https://example.com/thumb.jpg',
+            sourceCategory: 'Nature',
+          ),
+        );
+        when(
+          () => firstWallpaperService.performAction(any()),
+        ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.both));
+        when(
+          () => aiRepository.generate(
+            prompt: any(named: 'prompt'),
+            stylePreset: any(named: 'stylePreset'),
+            qualityTier: any(named: 'qualityTier'),
+            targetSize: any(named: 'targetSize'),
+            chargeMode: any(named: 'chargeMode'),
+            coinsSpent: any(named: 'coinsSpent'),
+          ),
+        ).thenAnswer((_) async => _aiRecord());
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        for (final interest in <String>['Nature', 'Anime', 'Minimal']) {
+          bloc.add(OnboardingV2Event.interestToggled(interest));
+        }
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+        bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+        await bloc.stream.firstWhere((s) => s.aiData.status == AiGenerateStatus.success);
+        bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.firstWallpaper);
+        bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
+        await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.success);
+      },
+      verify: (_) {
+        for (final step in <String>['auth', 'interests', 'starter_pack', 'ai_generate', 'first_wallpaper']) {
+          expect(stepCompletions(step), 1, reason: step);
+        }
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'skipping the AI step does not count it as completed',
+      setUp: () => app_state.prismUser = _user(id: 'resume-user', loggedIn: true),
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestsSkipped());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackSkipped());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+        bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.firstWallpaper);
+      },
+      verify: (_) {
+        expect(stepCompletions('ai_generate'), 0);
+        expect(stepCompletions('interests'), 0);
+      },
+    );
+  });
+
+  group('first wallpaper outcome', () {
+    setUp(() {
+      when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer(
+        (_) async => const OnboardingWallpaperVm(
+          fullUrl: 'https://example.com/wall.jpg',
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          sourceCategory: 'Nature',
+        ),
+      );
+    });
+
+    Future<void> request(OnboardingV2Bloc bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
+    }
+
+    test('a success keeps the screen that was set so the toast can name it', () async {
+      when(
+        () => firstWallpaperService.performAction(any()),
+      ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.home));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      await request(bloc);
+      final state = await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.success);
+
+      expect(state.wallpaperData.target, WallpaperTarget.home);
+      expect(state.wallpaperData.errorCode, isNull);
+    });
+
+    test('a failure keeps the error code and trying again clears it', () async {
+      when(
+        () => firstWallpaperService.performAction(any()),
+      ).thenAnswer((_) async => const FirstWallpaperResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      await request(bloc);
+      final failed = await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.failure);
+      expect(failed.wallpaperData.errorCode, 'PHOTO_PERMISSION_DENIED');
+
+      bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
+      final loading = await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.loading);
+      expect(loading.wallpaperData.errorCode, isNull);
+    });
+  });
+
+  group('guest path', () {
+    Future<void> startAsGuest(OnboardingV2Bloc bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      bloc.add(const OnboardingV2Event.guestBrowseStarted());
+      await bloc.stream.firstWhere((s) => s.isGuest);
+    }
+
+    void pickThree(OnboardingV2Bloc bloc) {
+      for (final interest in <String>['Nature', 'Anime', 'Minimal']) {
+        bloc.add(OnboardingV2Event.interestToggled(interest));
+      }
+    }
+
+    test('browsing without an account opens the interests step', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      await startAsGuest(bloc);
+
+      expect(bloc.state.step, OnboardingV2Step.interests);
+      expect(bloc.state.isGuest, isTrue);
+    });
+
+    test('confirming stores the picks on the device only and opens the dashboard', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await startAsGuest(bloc);
+
+      pickThree(bloc);
+      bloc.add(const OnboardingV2Event.interestsConfirmed());
+      final done = await bloc.stream.firstWhere((s) => s.navRequest != null);
+
+      expect(done.navRequest, OnboardingV2NavRequest.openDashboardAsGuest);
+      verify(() => settingsLocalDataSource.set('onboarding_v2_interests', 'Nature,Anime,Minimal')).called(1);
+      verify(() => settingsLocalDataSource.set('onboarded_v2_new', true)).called(1);
+      verifyNever(() => saveInterestsUseCase(any()));
+      verifyNever(() => completeOnboardingUseCase(any()));
+      expect(trackedNames(), containsAll(<String>['onboarding_v2_interests_completed', 'onboarding_step_completed']));
+    });
+
+    test('skipping opens the dashboard without storing interests', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await startAsGuest(bloc);
+
+      bloc.add(const OnboardingV2Event.interestsSkipped());
+      final done = await bloc.stream.firstWhere((s) => s.navRequest != null);
+
+      expect(done.navRequest, OnboardingV2NavRequest.openDashboardAsGuest);
+      verify(() => settingsLocalDataSource.set('onboarded_v2_new', true)).called(1);
+      verifyNever(() => settingsLocalDataSource.set('onboarding_v2_interests', any()));
+    });
+
+    test('a failed local write reports the failure and stays on the step', () async {
+      when(() => settingsLocalDataSource.set('onboarding_v2_interests', any())).thenThrow(StateError('disk full'));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await startAsGuest(bloc);
+
+      pickThree(bloc);
+      bloc.add(const OnboardingV2Event.interestsConfirmed());
+      final failed = await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.failure);
+
+      expect(failed.step, OnboardingV2Step.interests);
+      expect(failed.navRequest, isNull);
+      verifyNever(() => settingsLocalDataSource.set('onboarded_v2_new', true));
+    });
+
+    test('back returns a guest to the sign-in step and ends the guest path', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await startAsGuest(bloc);
+
+      bloc.add(const OnboardingV2Event.stepBack());
+      final back = await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.auth);
+
+      expect(back.isGuest, isFalse);
+      expect(back.navRequest, isNull);
+    });
   });
 }

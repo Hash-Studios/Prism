@@ -12,6 +12,7 @@ class WallHavenGrid extends StatelessWidget {
       surface: AnalyticsSurfaceValue.homeWallhavenGrid,
       listName: ScrollListNameValue.wallhavenGrid,
       sourceContextPrefix: 'home_wallhaven_grid',
+      includePrism: true,
     );
   }
 }

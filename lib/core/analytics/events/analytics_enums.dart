@@ -88,6 +88,7 @@ enum AnalyticsActionValue {
   quickActionFollowFeed,
   quickActionCollections,
   quickActionDownloads,
+  quickActionWallOfTheDay,
   quickActionUnknown,
   backTapped,
   clockOverlayOpened,
@@ -102,6 +103,7 @@ enum AnalyticsActionValue {
   openDrawerTapped,
   drawerFavWallsTapped,
   drawerDownloadsTapped,
+  drawerLibraryTapped,
   drawerSharePrismTapped,
   drawerLogoutTapped,
   openDownloadedWallpaperTapped,
@@ -109,6 +111,7 @@ enum AnalyticsActionValue {
   actionChipTapped,
   contributorProfileTapped,
   bannerTapped,
+  homeChipSelected,
   carouselItemOpened,
   tileOpened,
   seeMoreTapped;
@@ -263,6 +266,9 @@ enum AnalyticsSurfaceValue {
   homePexelsGrid,
   homeColorGrid,
   homeCollectionsViewGrid,
+  homeLatestGrid,
+  homeFollowingGrid,
+  homePopularGrid,
   favouriteWallsGrid;
 
   String get wireValue => _snakeCase(name);
@@ -296,6 +302,16 @@ enum LinkDestinationValue {
   telegram,
   email,
   external;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum PushKindValue {
+  streakReminder,
+  follower,
+  post,
+  wotd,
+  moderation;
 
   String get wireValue => _snakeCase(name);
 }

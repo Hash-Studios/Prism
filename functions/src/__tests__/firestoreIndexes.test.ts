@@ -21,3 +21,10 @@ test("walls have the tag search index: tags contains, review, newest first", () 
 test("view rate docs expire through a TTL policy on expireAt", () => {
   assert.ok(config.fieldOverrides.some((o) => o.collectionGroup === "viewRate" && o.fieldPath === "expireAt" && o.ttl === true));
 });
+
+test("wall action rate docs and daily stats docs expire through a TTL policy on expireAt", () => {
+  for (const collectionGroup of ["wallActionRate", "wallpaper_stats_daily"]) {
+    assert.ok(config.fieldOverrides.some((o) => o.collectionGroup === collectionGroup && o.fieldPath === "expireAt" &&
+      o.ttl === true), collectionGroup);
+  }
+});

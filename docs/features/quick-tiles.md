@@ -5,7 +5,8 @@ Quick tiles are Android Quick Settings tiles. They set a wallpaper with one tap:
 ## Where to find it
 
 - Settings, section PERSONALISE, row "Quick tiles" (route `QuickTileSettingsRoute`, screen title "Quick Tile Settings"). Code: `lib/features/session/views/pages/settings_screen.dart`.
-- The user adds the tiles from the Android notification shade. The screen explains how: pull the shade down twice, tap the edit icon, drag the Prism tiles to the active tiles.
+- On Android 13 and newer, each tile section has an "Add to Quick Settings" button. The system then asks the user to confirm.
+- On older Android versions, the user adds the tiles by hand from the notification shade. The screen explains how: pull the shade down twice, tap the edit icon, drag the Prism tiles to the active tiles.
 
 ## Platforms
 
@@ -61,6 +62,39 @@ Flutter settings screen -> QuickTileConfigService -> shared preferences (flutter
 - Pexels query sends `orientation=portrait` and a random `page` from 1 to 5.
 - For Pexels, the tile now uses the `large2x` image when it exists. It falls back to `original`. This change was not in the original list of fixes.
 
+### Add to Quick Settings
+
+- The button shows only on Android 13 (API 33) and newer. Prism asks the native side for the SDK version (`prism/quick_settings`, method `sdkInt`). On iOS and older Android, the button is hidden.
+- A tap calls `StatusBarManager.requestAddTileService`. The system shows its own confirm dialog. Prism does not add the tile without the user.
+- Prism shows a snackbar for each result:
+
+| Result | Snackbar |
+|---|---|
+| Added | "Tile added to Quick Settings." |
+| Already added | "This tile is already in Quick Settings." |
+| Not added (user said no) | "Tile not added. You can add it any time." |
+| Error or not supported | "Could not add the tile. Add it by hand from the Quick Settings edit screen." |
+
+- Each tap sends the analytics event `quick_tile_add_requested` with `tile` (`shuffle`, `wotd` or `favs`) and `result` (`added`, `alreadyAdded`, `notAdded`, `unsupported` or `error`).
+- Code: `lib/core/platform/quick_settings_channel.dart` and `android/app/src/main/kotlin/com/hash/prism/PrismSystemChannels.kt`.
+
+### Tile messages
+
+The tile shows a short fixed message in a toast. It no longer shows raw error text. The strings are in `android/app/src/main/res/values/strings.xml`.
+
+| Cause | Toast |
+|---|---|
+| Success | "Wallpaper updated" |
+| No network | "No connection. Try again." |
+| Timeout | "The wallpaper took too long to load. Try again." |
+| Other download error | "Could not download the wallpaper. Try again." |
+| Tile not set up | "Open Prism to finish setting up this tile." |
+| Device blocks wallpaper changes | "Wallpaper changes are not available on this device." |
+| Anything else | "Could not apply the wallpaper. Try again." |
+
+- If the user closes the shade, the tile now finishes the work that is running. The service stops new work only. It does not cancel the work that runs. The toast and the tile state update only while the service is alive.
+- If Android kills the Prism process, the work is lost. A fix needs WorkManager, which is a new dependency.
+
 ### Unavailable state
 
 Each tile class has `isConfigured`. If it returns false, the tile state is `Tile.STATE_UNAVAILABLE`. On Android 10 (API 29) and newer, the subtitle reads "Open Prism to set up".
@@ -78,6 +112,8 @@ The tile state updates when the user opens the shade (`onStartListening`) and af
 Before, the cache was cleared on cold start, before favourites loaded. The tile then had an empty list. Now `FavouriteQuickTileListener` clears the cache only when the user logs out or switches account. It writes the list only when the user is signed in and favourites have loaded for that user.
 
 ## Limits
+
+- "Add to Quick Settings", the tile messages and the work-finishing change were not compiled and were not run on a device. CI compiles the Kotlin. A person must test them on an Android 13 or newer device.
 
 - The Kotlin changes were not compiled and were not run on a device or emulator. This covers `WallpaperTileService.kt`, `MyTileService.kt`, `WotdTileService.kt`, and `FavsTileService.kt`. Treat these parts as untested:
   - the Unavailable state and subtitle
@@ -98,10 +134,14 @@ Before, the cache was cleared on cold start, before favourites loaded. The tile 
 6. Open Settings, then the content filter, and change the Wallhaven category. Pick a Wallhaven category in the tile screen and tap the tile. Make sure the result matches the filter.
 7. Favourite 2 wallpapers. Close and open Prism. Tap the Random Favourite tile. Make sure it applies a favourite and does not show an empty-list error.
 8. Log out. Make sure the Random Favourite tile becomes unavailable.
+9. On Android 13 or newer, tap "Add to Quick Settings" under each tile. Confirm in the system dialog. Make sure the tile appears in the shade and the snackbar reads "Tile added to Quick Settings." Tap the button again. Make sure the snackbar says the tile is already added.
+10. Turn on airplane mode. Tap the Shuffle tile. Make sure the toast reads "No connection. Try again."
+11. On a slow network, tap a tile and close the shade at once. Make sure the wallpaper still changes and the toast reads "Wallpaper updated" if the shade opens again.
 
 Automated tests:
 
 - `test/features/quick_tiles/quick_tile_defaults_test.dart`
+- `test/features/quick_tiles/quick_tile_settings_screen_test.dart`
 - `test/features/favourite_walls/favourite_quick_tile_listener_test.dart`
 
 Commands:

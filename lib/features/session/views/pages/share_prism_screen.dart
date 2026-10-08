@@ -14,12 +14,20 @@ import 'package:flutter/material.dart';
 
 @RoutePage()
 class SharePrismScreen extends StatefulWidget {
+  /// A static seam, not a constructor argument, so `const SharePrismRoute()` stays valid.
+  @visibleForTesting
+  static Future<String> Function(String userId)? createLinkForTesting;
+
   @override
   _SharePrismScreenState createState() => _SharePrismScreenState();
 }
 
 class _SharePrismScreenState extends State<SharePrismScreen> {
   String link = "";
+  bool _loading = false;
+  bool _failed = false;
+
+  bool get _signedIn => app_state.prismUser.id.isNotEmpty;
 
   @override
   void initState() {
@@ -28,9 +36,25 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   }
 
   Future<void> _loadLink() async {
-    if (app_state.prismUser.id.isEmpty) return;
-    final value = await createSharingPrismLink(app_state.prismUser.id);
-    if (mounted) setState(() => link = value);
+    if (!_signedIn) return;
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
+    try {
+      final value =
+          await (SharePrismScreen.createLinkForTesting?.call(app_state.prismUser.id) ??
+              createSharingPrismLink(
+                app_state.prismUser.id,
+                inviterName: app_state.prismUser.name,
+                inviterPhoto: app_state.prismUser.profilePhoto,
+              ));
+      if (mounted) setState(() => link = value);
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -94,57 +118,71 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            MaterialButton(
-              disabledColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-              shape: const StadiumBorder(),
-              color: link.isEmpty
-                  ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-                  : Theme.of(context).colorScheme.error,
-              onPressed: link.isEmpty
-                  ? () {
-                      unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
-                      unawaited(
-                        analytics.track(
-                          const InviteShareResultEvent(
-                            channel: ShareChannelValue.link,
-                            result: EventResultValue.blocked,
-                            reason: AnalyticsReasonValue.notSignedIn,
-                            sourceContext: 'share_prism_screen',
-                          ),
-                        ),
-                      );
-                      toasts.error("Sign in to generate unique referral link!");
-                    }
-                  : () async {
-                      PrismHaptics.tap();
-                      unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
-                      try {
-                        await ShareService.shareText(text: link, context: context);
+            if (_failed) ...[
+              Text(
+                "Couldn't create the link.",
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.error),
+              ),
+              const SizedBox(height: 8),
+              TextButton(onPressed: _loadLink, child: const Text('Try again')),
+            ] else
+              MaterialButton(
+                disabledColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                shape: const StadiumBorder(),
+                color: link.isEmpty
+                    ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
+                    : Theme.of(context).colorScheme.error,
+                onPressed: _loading
+                    ? null
+                    : link.isEmpty
+                    ? () {
+                        unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
                         unawaited(
                           analytics.track(
                             const InviteShareResultEvent(
-                              channel: ShareChannelValue.shareSheet,
-                              result: EventResultValue.success,
+                              channel: ShareChannelValue.link,
+                              result: EventResultValue.blocked,
+                              reason: AnalyticsReasonValue.notSignedIn,
                               sourceContext: 'share_prism_screen',
                             ),
                           ),
                         );
-                      } catch (_) {
-                        unawaited(
-                          analytics.track(
-                            const InviteShareResultEvent(
-                              channel: ShareChannelValue.shareSheet,
-                              result: EventResultValue.failure,
-                              reason: AnalyticsReasonValue.error,
-                              sourceContext: 'share_prism_screen',
-                            ),
-                          ),
-                        );
-                        toasts.error("Unable to share invite right now.");
+                        toasts.error("Sign in to generate unique referral link!");
                       }
-                    },
-              child: const Text('SHARE INVITE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-            ),
+                    : () async {
+                        PrismHaptics.tap();
+                        unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
+                        try {
+                          await ShareService.shareText(text: link, context: context);
+                          unawaited(
+                            analytics.track(
+                              const InviteShareResultEvent(
+                                channel: ShareChannelValue.shareSheet,
+                                result: EventResultValue.success,
+                                sourceContext: 'share_prism_screen',
+                              ),
+                            ),
+                          );
+                        } catch (_) {
+                          unawaited(
+                            analytics.track(
+                              const InviteShareResultEvent(
+                                channel: ShareChannelValue.shareSheet,
+                                result: EventResultValue.failure,
+                                reason: AnalyticsReasonValue.error,
+                                sourceContext: 'share_prism_screen',
+                              ),
+                            ),
+                          );
+                          toasts.error("Unable to share invite right now.");
+                        }
+                      },
+                child: Text(
+                  _loading ? 'Creating link…' : 'Share invite',
+                  style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.onError),
+                ),
+              ),
             const SizedBox(height: 25),
           ],
         ),

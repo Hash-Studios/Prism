@@ -2,7 +2,7 @@ part of 'onboarding_v2_bloc.j.dart';
 
 enum OnboardingV2Step { auth, interests, starterPack, aiGenerate, firstWallpaper }
 
-enum OnboardingV2NavRequest { openPaywall, completeOnboarding, exitApp }
+enum OnboardingV2NavRequest { openPaywall, completeOnboarding, openDashboardAsGuest, exitApp }
 
 enum FirstWallpaperStatus { idle, loading, success, failure }
 
@@ -61,8 +61,16 @@ abstract class OnboardingAiData with _$OnboardingAiData {
 
 @freezed
 abstract class OnboardingWallpaperData with _$OnboardingWallpaperData {
-  const factory OnboardingWallpaperData({OnboardingWallpaperVm? wallpaper, required FirstWallpaperStatus status}) =
-      _OnboardingWallpaperData;
+  const factory OnboardingWallpaperData({
+    OnboardingWallpaperVm? wallpaper,
+    required FirstWallpaperStatus status,
+
+    /// Why the last action failed. `PHOTO_PERMISSION_DENIED` on iOS means Photos access is off.
+    String? errorCode,
+
+    /// The screen the wallpaper was set on (Android).
+    WallpaperTarget? target,
+  }) = _OnboardingWallpaperData;
 
   factory OnboardingWallpaperData.initial() => const OnboardingWallpaperData(status: FirstWallpaperStatus.idle);
 }
@@ -80,6 +88,9 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     required OnboardingAiData aiData,
     required bool skipInterests,
     required bool skipStarterPack,
+
+    /// iOS guest path: the user browses without an account and only picks interests.
+    required bool isGuest,
     OnboardingV2NavRequest? navRequest,
   }) = _OnboardingV2State;
 
@@ -94,5 +105,6 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     aiData: OnboardingAiData.initial(),
     skipInterests: false,
     skipStarterPack: false,
+    isGuest: false,
   );
 }

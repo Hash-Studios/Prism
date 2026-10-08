@@ -56,6 +56,7 @@ class AdsRepositoryImpl implements AdsRepository {
             _rewardedAd = ad;
             _numRewardedLoadAttempts = 0;
             _state = _state.copyWith(loadingAd: false, adLoaded: true, adFailed: false);
+            unawaited(analytics.track(const AdLoadResultEvent(result: 'loaded')));
             if (!completer.isCompleted) {
               completer.complete(Result.success(_state));
             }
@@ -70,7 +71,9 @@ class AdsRepositoryImpl implements AdsRepository {
               return;
             }
 
-            _state = _state.copyWith(loadingAd: false, adLoaded: false, adFailed: true);
+            final AdFailureReason reason = _loadFailureReason(error);
+            _state = _state.copyWith(loadingAd: false, adLoaded: false, adFailed: true, failureReason: reason);
+            unawaited(analytics.track(AdLoadResultEvent(result: 'failed', reason: reason.name)));
             if (!completer.isCompleted) {
               completer.complete(Result.success(_state));
             }
@@ -83,7 +86,13 @@ class AdsRepositoryImpl implements AdsRepository {
       AdConsent.instance.ensure().then((bool canRequestAds) {
         if (!canRequestAds) {
           logger.d('Ad consent not granted; skipping rewarded ad load.');
-          _state = _state.copyWith(loadingAd: false, adLoaded: false, adFailed: true);
+          _state = _state.copyWith(
+            loadingAd: false,
+            adLoaded: false,
+            adFailed: true,
+            failureReason: AdFailureReason.consent,
+          );
+          unawaited(analytics.track(AdLoadResultEvent(result: 'failed', reason: AdFailureReason.consent.name)));
           if (!completer.isCompleted) {
             completer.complete(Result.success(_state));
           }
@@ -97,7 +106,13 @@ class AdsRepositoryImpl implements AdsRepository {
     return completer.future.timeout(
       _loadTimeout,
       onTimeout: () {
-        _state = _state.copyWith(loadingAd: false, adLoaded: false, adFailed: true);
+        _state = _state.copyWith(
+          loadingAd: false,
+          adLoaded: false,
+          adFailed: true,
+          failureReason: AdFailureReason.timeout,
+        );
+        unawaited(analytics.track(AdLoadResultEvent(result: 'failed', reason: AdFailureReason.timeout.name)));
         return Result.error(const NetworkFailure('Timed out while loading rewarded ad'));
       },
     );
@@ -109,7 +124,15 @@ class AdsRepositoryImpl implements AdsRepository {
     final ad = _rewardedAd;
     if (ad == null) {
       logger.d('Warning: attempt to show rewarded before loaded.');
+      unawaited(analytics.track(const AdShowResultEvent(result: 'failed', reason: 'not_loaded')));
       return Result.error(const ValidationFailure('Rewarded ad is not loaded'));
+    }
+
+    bool reported = false;
+    void report(String result, [String? reason]) {
+      if (reported) return;
+      reported = true;
+      unawaited(analytics.track(AdShowResultEvent(result: result, reason: reason)));
     }
 
     final completer = Completer<Result<AdsEntity>>();
@@ -119,6 +142,7 @@ class AdsRepositoryImpl implements AdsRepository {
       },
       onAdDismissedFullScreenContent: (RewardedAd ad) {
         logger.d('$ad onAdDismissedFullScreenContent.');
+        report('dismissed', 'closed_early');
         ad.dispose();
         unawaited(createRewardedAd());
         if (!completer.isCompleted) {
@@ -127,6 +151,7 @@ class AdsRepositoryImpl implements AdsRepository {
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
         logger.d('$ad onAdFailedToShowFullScreenContent: $error');
+        report('failed', 'show_failed');
         ad.dispose();
         _state = _state.copyWith(adFailed: true);
         unawaited(createRewardedAd());
@@ -141,12 +166,28 @@ class AdsRepositoryImpl implements AdsRepository {
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
         logger.d('$ad with reward RewardItem(${reward.amount}, ${reward.type})');
         _state = _state.copyWith(rewardEarned: true);
+        report('earned');
         if (!completer.isCompleted) {
           completer.complete(Result.success(_state));
         }
       },
     );
 
-    return completer.future.timeout(_showTimeout, onTimeout: () => Result.success(_state));
+    return completer.future.timeout(
+      _showTimeout,
+      onTimeout: () {
+        report('failed', 'timeout');
+        return Result.success(_state);
+      },
+    );
+  }
+
+  /// Android and iOS number the same errors differently, so the no-fill code depends on the platform.
+  static AdFailureReason _loadFailureReason(LoadAdError error) {
+    const int networkErrorCode = 2;
+    final int noFillCode = Platform.isAndroid ? 3 : 1;
+    if (error.code == networkErrorCode) return AdFailureReason.offline;
+    if (error.code == noFillCode) return AdFailureReason.noFill;
+    return AdFailureReason.other;
   }
 }

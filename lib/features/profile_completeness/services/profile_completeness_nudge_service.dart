@@ -4,8 +4,10 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_nudge_sheet.dart';
+import 'package:Prism/features/session/data/app_session_tracker.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -25,23 +27,33 @@ class ProfileCompletenessNudgeService {
     _ProfileCompletenessOpenEditProfile? openEditProfile,
     _ReadPrefValue? readPrefValue,
     _WritePrefValue? writePrefValue,
+    int Function()? sessionNumber,
+    bool Function()? claimStartupSlot,
   }) : _sheetLauncher = sheetLauncher ?? showProfileCompletenessNudgeSheet,
        _trackEvent = trackEvent ?? analytics.track,
        _openEditProfile = openEditProfile ?? _defaultOpenEditProfile,
        _readPrefValue = readPrefValue ?? _defaultReadPrefValue,
-       _writePrefValue = writePrefValue ?? _defaultWritePrefValue;
+       _writePrefValue = writePrefValue ?? _defaultWritePrefValue,
+       _sessionNumber = sessionNumber ?? (() => AppSessionTracker.instance.sessionNumber),
+       _claimStartupSlot = claimStartupSlot ?? StartupModalSlot.tryClaim;
 
   static final ProfileCompletenessNudgeService instance = ProfileCompletenessNudgeService();
 
   static const String _prefPrefix = 'e5ProfileCompletenessNudgeShownV1';
+
+  /// The nudge waits until the user has opened Prism this many times.
+  static const int minSessions = 3;
 
   final _ProfileCompletenessSheetLauncher _sheetLauncher;
   final _ProfileCompletenessEventTracker _trackEvent;
   final _ProfileCompletenessOpenEditProfile _openEditProfile;
   final _ReadPrefValue _readPrefValue;
   final _WritePrefValue _writePrefValue;
+  final int Function() _sessionNumber;
+  final bool Function() _claimStartupSlot;
 
   Future<void> maybeShowNudge(BuildContext context, {required String sourceContext}) async {
+    final int session = _sessionNumber();
     if (!app_state.prismUser.loggedIn) {
       return;
     }
@@ -63,6 +75,10 @@ class ProfileCompletenessNudgeService {
     final String prefKey = shownPrefKeyForUser(userId);
     final bool hasShown = _readPrefValue(prefKey, defaultValue: false);
     if (hasShown) {
+      return;
+    }
+
+    if (session < minSessions || !_claimStartupSlot()) {
       return;
     }
 

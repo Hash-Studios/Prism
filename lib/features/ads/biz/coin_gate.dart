@@ -2,6 +2,8 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/biz/coin_gate_port.dart';
+import 'package:Prism/features/ads/biz/rewarded_ad_flow.dart';
+import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -49,11 +51,29 @@ enum CoinGateChoice {
 enum CoinGatePhase { nudge, insufficient }
 
 class CoinGatePrompt {
-  const CoinGatePrompt({required this.phase, required this.cost, required this.balance});
+  const CoinGatePrompt({
+    required this.phase,
+    required this.cost,
+    required this.balance,
+    this.adsAllowed = true,
+    this.adsRemaining,
+  });
 
   final CoinGatePhase phase;
   final int cost;
   final int balance;
+
+  /// False when the user refused ad consent. The prompt must not offer an ad.
+  final bool adsAllowed;
+
+  /// Rewarded ads left today, when known.
+  final int? adsRemaining;
+
+  /// Coins the user still lacks. Zero when the balance covers the cost.
+  int get missing => (cost - balance).clamp(0, cost);
+
+  /// Whether the prompt may offer a rewarded ad: consent is given and the daily limit is not reached.
+  bool get canWatchAd => adsAllowed && (adsRemaining ?? 1) > 0;
 
   bool get canSpend => balance >= cost;
 }
@@ -99,6 +119,8 @@ class CoinGateSpec {
     required this.choose,
     required this.isMounted,
     this.reason,
+    this.label,
+    this.pendingDownloadLink,
     this.spend,
     this.nudgeBelow,
     this.confirmFirst = false,
@@ -132,6 +154,12 @@ class CoinGateSpec {
   final Future<CoinGateChoice> Function(CoinGatePrompt prompt) choose;
   final bool Function() isMounted;
   final String? reason;
+
+  /// Text for the coin history row of this spend.
+  final String? label;
+
+  /// Marks the spend as a download of this link, so a download that never finishes is refunded.
+  final String? pendingDownloadLink;
 
   /// Replaces the plain coin spend (for example the 24h preview unlock).
   final Future<CoinMutationResult> Function(String sourceTag)? spend;
@@ -183,7 +211,9 @@ class CoinGate {
 
   final CoinGatePort _port;
 
-  Future<CoinGateResult> run(CoinGateSpec spec) async {
+  /// [startInsufficient] opens the low-balance prompt first when the balance is short, as after an ad that did not
+  /// cover the cost.
+  Future<CoinGateResult> run(CoinGateSpec spec, {bool startInsufficient = false}) async {
     if (!spec.isMounted()) {
       return CoinGateResult.cancelled;
     }
@@ -196,7 +226,9 @@ class CoinGate {
     final int? nudgeBelow = spec.nudgeBelow;
     final int balance = _port.balance;
     final bool low = nudgeBelow != null && balance < nudgeBelow;
-    if (low || spec.confirmFirst) {
+    if (startInsufficient && balance < cost) {
+      prompt = CoinGatePrompt(phase: CoinGatePhase.insufficient, cost: cost, balance: balance);
+    } else if (low || spec.confirmFirst) {
       prompt = CoinGatePrompt(phase: CoinGatePhase.nudge, cost: cost, balance: balance);
     } else if (spec.precheckBalance && balance < cost) {
       prompt = CoinGatePrompt(phase: CoinGatePhase.insufficient, cost: cost, balance: balance);
@@ -224,7 +256,7 @@ class CoinGate {
             requiredCoins: cost,
           );
         }
-        final CoinGateChoice choice = await spec.choose(current);
+        final CoinGateChoice choice = await spec.choose(await _withAdState(current));
         if (!spec.isMounted()) {
           return CoinGateResult.cancelled;
         }
@@ -275,6 +307,22 @@ class CoinGate {
     }
   }
 
+  Future<CoinGatePrompt> _withAdState(CoinGatePrompt prompt) async {
+    bool adsAllowed = true;
+    try {
+      adsAllowed = await _port.adsAllowed();
+    } catch (error, stackTrace) {
+      _port.logCoinError(sourceTag: 'coins.gate.ads_allowed', error: error, stackTrace: stackTrace);
+    }
+    return CoinGatePrompt(
+      phase: prompt.phase,
+      cost: prompt.cost,
+      balance: prompt.balance,
+      adsAllowed: adsAllowed,
+      adsRemaining: _port.adsRemaining,
+    );
+  }
+
   /// Earn-only path: watch a rewarded ad and credit the coins. Returns true when the coins landed.
   Future<bool> watchAdForCoins({
     required String sourceTag,
@@ -286,19 +334,19 @@ class CoinGate {
     if (!isMounted()) {
       return false;
     }
-    final bool watched;
+    final RewardedAdResult watched;
     try {
-      watched = await _port.watchRewardedAd();
+      watched = await _port.watchRewardedAdResult();
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
       if (isMounted()) {
-        _port.showError('Ad was not completed.');
+        _port.showError(adFailureMessage(null));
       }
       return false;
     }
-    if (!watched) {
+    if (!watched.earned) {
       if (isMounted()) {
-        _port.showError('Ad was not completed.');
+        _port.showError(adFailureMessage(watched.failure));
       }
       return false;
     }
@@ -317,7 +365,11 @@ class CoinGate {
     }
     if (!credit.changed) {
       if (isMounted()) {
-        _port.showError('Unable to credit coins right now.');
+        if (credit.unknownOutcomeTransactionId.isNotEmpty) {
+          _port.showInfo(rewardPendingMessage);
+        } else {
+          _port.showError(creditFailureMessage(credit));
+        }
       }
       return false;
     }
@@ -354,10 +406,8 @@ class CoinGate {
     if (retrySpec != null) {
       return run(retrySpec());
     }
-    final int balance = _port.balance;
-    if (balance < cost) {
-      _port.showError('Need ${cost - balance} more coins.');
-      return CoinGateResult.insufficient;
+    if (_port.balance < cost) {
+      return run(spec, startInsufficient: true);
     }
     return _spendAndPerform(spec, spec.tags.retrySpend ?? spec.tags.spend);
   }
@@ -366,7 +416,15 @@ class CoinGate {
     spec.onAttempt?.call(tag);
     final CoinMutationResult spent;
     try {
-      spent = await (spec.spend?.call(tag) ?? _port.spend(spec.action, sourceTag: tag, reason: spec.reason));
+      spent =
+          await (spec.spend?.call(tag) ??
+              _port.spend(
+                spec.action,
+                sourceTag: tag,
+                reason: spec.reason,
+                label: spec.label,
+                pendingDownloadLink: spec.pendingDownloadLink,
+              ));
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: tag, error: error, stackTrace: stackTrace);
       if (spec.isMounted()) {
@@ -439,3 +497,19 @@ class CoinGate {
     return CoinGateResult.failedNotRefunded;
   }
 }
+
+/// What to tell the user when no rewarded ad played.
+String adFailureMessage(AdFailureReason? reason) => switch (reason) {
+  AdFailureReason.consent => 'Ads are off. Change this in Settings > Privacy.',
+  AdFailureReason.noFill => 'No ad is available right now. Try again later.',
+  AdFailureReason.offline => 'You are offline. Check your connection and try again.',
+  _ => 'Ad was not completed.',
+};
+
+const String rewardPendingMessage = 'We could not confirm your reward yet. The coins arrive when you are back online.';
+
+/// What to tell the user when a watched ad did not add coins.
+String creditFailureMessage(CoinMutationResult credit) => switch (credit.reason) {
+  'rewarded_ad_limit' => 'Daily limit reached. Back tomorrow.',
+  _ => 'Unable to credit coins right now.',
+};

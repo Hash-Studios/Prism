@@ -13,12 +13,24 @@ class WallpaperHistoryBloc extends Bloc<WallpaperHistoryEvent, WallpaperHistoryS
   WallpaperHistoryBloc(this._store) : super(WallpaperHistoryState.initial()) {
     on<_Started>((event, emit) => emit(state.copyWith(items: _store.items())));
     on<_Cleared>(_onCleared);
+    on<_Removed>(_onRemoved);
+    on<_Restored>(_onRestored);
   }
 
   final WallpaperHistoryStore _store;
 
   Future<void> _onCleared(_Cleared event, Emitter<WallpaperHistoryState> emit) async {
     await _store.clear();
+    emit(state.copyWith(items: _store.items()));
+  }
+
+  Future<void> _onRemoved(_Removed event, Emitter<WallpaperHistoryState> emit) async {
+    await _store.remove(event.id);
+    emit(state.copyWith(items: _store.items()));
+  }
+
+  Future<void> _onRestored(_Restored event, Emitter<WallpaperHistoryState> emit) async {
+    await _store.record(event.item);
     emit(state.copyWith(items: _store.items()));
   }
 }

@@ -165,19 +165,19 @@ export const blockUser = onCall(
         {merge: true},
       );
 
-      const followingRemoves = matchingEmailsFromList(callerData.following, blockedEmailNorm);
-      const followersRemoves = callerEmailNorm ? matchingEmailsFromList(blockedData.followers, callerEmailNorm) : [];
-
-      if (followingRemoves.length > 0) {
-        tx.update(callerRef, {
-          following: admin.firestore.FieldValue.arrayRemove(...followingRemoves),
-        });
-      }
-      if (followersRemoves.length > 0) {
-        tx.update(blockedRef, {
-          followers: admin.firestore.FieldValue.arrayRemove(...followersRemoves),
-        });
-      }
+      // Both follow directions end: the blocked user stops following the caller too.
+      const callerUpdate: Record<string, admin.firestore.FieldValue> = {};
+      const blockedUpdate: Record<string, admin.firestore.FieldValue> = {};
+      const addRemoves = (update: typeof callerUpdate, field: string, list: unknown, target: string) => {
+        const removes = target ? matchingEmailsFromList(list, target) : [];
+        if (removes.length > 0) update[field] = admin.firestore.FieldValue.arrayRemove(...removes);
+      };
+      addRemoves(callerUpdate, "following", callerData.following, blockedEmailNorm);
+      addRemoves(callerUpdate, "followers", callerData.followers, blockedEmailNorm);
+      addRemoves(blockedUpdate, "followers", blockedData.followers, callerEmailNorm);
+      addRemoves(blockedUpdate, "following", blockedData.following, callerEmailNorm);
+      if (Object.keys(callerUpdate).length > 0) tx.update(callerRef, callerUpdate);
+      if (Object.keys(blockedUpdate).length > 0) tx.update(blockedRef, blockedUpdate);
 
       tx.set(
         targetRateRef,

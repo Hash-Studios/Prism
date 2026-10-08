@@ -1,3 +1,4 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -55,7 +56,7 @@ class _Dot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: OnboardingMotion.normal,
+      duration: context.motion(OnboardingMotion.normal),
       curve: OnboardingMotion.emphasized,
       width: wide ? OnboardingLayout.progressActiveWidth : OnboardingLayout.progressDotSize,
       height: OnboardingLayout.progressDotSize,

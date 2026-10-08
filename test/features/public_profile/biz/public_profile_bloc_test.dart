@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
@@ -13,6 +15,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../support/fake_app_analytics.dart';
 import '../../../support/profile_user_fixture.dart';
 
 class _MockWalls extends Mock implements FetchPublicProfileWallsUseCase {}
@@ -346,6 +349,54 @@ void main() {
       verifyNever(() => unfollow(any()));
     },
   );
+
+  group('follow_result analytics', () {
+    late FakeAppAnalytics recorder;
+
+    setUp(() {
+      recorder = FakeAppAnalytics();
+      AnalyticsRuntime.instance = recorder;
+      app_state.prismUser = profileUser();
+    });
+
+    tearDown(AnalyticsRuntime.reset);
+
+    List<(String, String)> results() =>
+        recorder.events.whereType<FollowResultEvent>().map((e) => (e.action, e.result)).toList();
+
+    test('records a successful follow and a successful unfollow', () async {
+      when(() => follow(any())).thenAnswer((_) async => Result.success<void>(null));
+      when(() => unfollow(any())).thenAnswer((_) async => Result.success<void>(null));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(followEvent);
+      await bloc.stream.firstWhere((s) => s.followOutcome != null);
+      bloc.add(
+        const PublicProfileEvent.followChangeRequested(
+          follow: false,
+          currentUserId: 'me',
+          currentUserEmail: 'me@x.com',
+          targetUserId: 'a-id',
+          targetUserEmail: 'A@x.com',
+        ),
+      );
+      await bloc.stream.firstWhere((s) => s.followOutcome?.id == 2);
+
+      expect(results(), <(String, String)>[('follow', 'success'), ('unfollow', 'success')]);
+    });
+
+    test('records a failed follow', () async {
+      when(() => follow(any())).thenAnswer((_) async => Result.error<void>(const ServerFailure('offline')));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(followEvent);
+      await bloc.stream.firstWhere((s) => s.followOutcome != null);
+
+      expect(results(), <(String, String)>[('follow', 'failure')]);
+    });
+  });
 
   test('withFollowState flips one user, matching the email in any case, in the list and its search results', () {
     final list = RelationList(summaries: [_user('a@x.com'), _user('b@x.com')], searchResults: [_user('A@x.com')]);

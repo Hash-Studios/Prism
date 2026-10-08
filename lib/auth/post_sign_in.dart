@@ -4,11 +4,14 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
+import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -18,6 +21,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 enum SignInOutcome { signedIn, cancelled }
 
 final Set<Future<void>> _signInBootstraps = <Future<void>>{};
+
+Future<void> _startFavouritesSync(String userId) async {
+  try {
+    await getIt<FavouritesSyncService>().start(userId);
+  } catch (error, stackTrace) {
+    logger.w('Favourites sync did not start.', tag: 'Auth', error: error, stackTrace: stackTrace);
+  }
+}
 
 Future<void> waitForSignInBootstraps() async {
   while (_signInBootstraps.isNotEmpty) {
@@ -79,6 +90,11 @@ Future<void> completeSignIn({
   }
 
   await app_state.persistPrismUser();
+  try {
+    await getIt<OnboardingV2Repository>().syncLocalInterests(userId: user.uid);
+  } catch (error, stackTrace) {
+    logger.w('Guest interests did not sync.', tag: 'Auth', error: error, stackTrace: stackTrace);
+  }
   await analytics.setUserId(user.uid);
   await analytics.setUserProperty(
     name: AnalyticsUserProperty.subscriptionTier.wireName,
@@ -100,12 +116,14 @@ Future<void> completeSignIn({
   unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id, messaging: resolvedMessaging));
   FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id, messaging: resolvedMessaging);
   Future<void> runBootstrap() async {
+    final Future<void> favourites = _startFavouritesSync(user.uid);
     await PurchasesService.instance.checkAndPersistPremium();
     await CoinsService.instance.bootstrapForCurrentUser();
     await CoinsService.instance.refreshBalance();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     await CoinsService.instance.maybeAwardProDailyBonus();
     await CoinsService.instance.processPendingReferralIfEligible();
+    await favourites;
   }
 
   late final Future<void> bootstrap;

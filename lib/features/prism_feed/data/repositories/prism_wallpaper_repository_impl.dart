@@ -6,6 +6,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
@@ -114,6 +115,48 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   }
 
   @override
+  Future<Result<List<PrismWallpaper>>> fetchByCategory(
+    String category, {
+    String? startAfterDocId,
+    int limit = _pageSize,
+    String sourceTag = 'category_feed.prism_first',
+  }) async {
+    try {
+      final List<_PrismRow> rows = await _firestoreClient.query<_PrismRow>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.walls,
+          sourceTag: sourceTag,
+          filters: <FirestoreFilter>[
+            FirestoreFilter(field: 'category', op: FirestoreFilterOp.isEqualTo, value: category),
+            const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+          ],
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+          startAfterDocId: startAfterDocId,
+          limit: limit,
+          dedupeWindowMs: 1000,
+          cachePolicy: FirestoreCachePolicy.memoryFirst,
+        ),
+        (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
+      );
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      return Result.success(
+        rows
+            .map((row) => row.doc.toDomain(docId: row.docId))
+            .where((wall) => !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked))
+            .toList(growable: false),
+      );
+    } catch (error, stackTrace) {
+      logger.e(
+        '[PrismWallpaperRepository] fetchByCategory failed',
+        error: error,
+        stackTrace: stackTrace,
+        fields: <String, Object?>{'category': category},
+      );
+      return Result.error(const ServerFailure(wallpaperLoadFailureMessage));
+    }
+  }
+
+  @override
   Future<Result<List<PrismWallpaper>>> fetchStreakShopWallpapers() async {
     try {
       final List<_PrismRow> rows = await _firestoreClient.query<_PrismRow>(
@@ -168,6 +211,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       if (results.isEmpty) {
         // Wall of the Day notification links carry the Firestore doc id, not the `id` field.
         final Result<PrismWallpaper?> byDocId = await fetchByDocumentId(id);
+        if (byDocId.isFailure) return byDocId;
         return byDocId.data?.review == true ? byDocId : Result.success(null);
       }
       final PrismWallpaper wall = results.first.doc.toDomain(docId: results.first.docId);
@@ -178,7 +222,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       return Result.success(wall);
     } catch (error, stackTrace) {
       logger.e('[PrismWallpaperRepository] fetchById failed', error: error, stackTrace: stackTrace);
-      return Result.error(ServerFailure('Failed to fetch Prism wallpaper by id: $error'));
+      return Result.error(const ServerFailure(wallpaperLoadFailureMessage));
     }
   }
 
@@ -205,7 +249,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       return Result.success(wallpaper);
     } catch (error, stackTrace) {
       logger.e('[PrismWallpaperRepository] fetchByDocumentId failed', error: error, stackTrace: stackTrace);
-      return Result.error(ServerFailure('Failed to fetch Prism wallpaper by document id: $error'));
+      return Result.error(const ServerFailure(wallpaperLoadFailureMessage));
     }
   }
 

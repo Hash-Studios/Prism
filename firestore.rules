@@ -11,8 +11,9 @@ service cloud.firestore {
     }
 
     function isAdminEmail() {
-      return isSignedIn() && 
-        exists(/databases/$(database)/documents/admin_users/$(authEmail()));
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/admin_users/$(authEmail()));
     }
 
     function isConfiguredAdmin() {
@@ -106,6 +107,7 @@ service cloud.firestore {
       allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && request.resource.data.email == resource.data.email
+              && resource.data.review != true
               && request.resource.data.review != true);
       allow delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email) && resource.data.review != true);
@@ -119,6 +121,7 @@ service cloud.firestore {
       allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && request.resource.data.email == resource.data.email
+              && resource.data.review != true
               && request.resource.data.review != true);
       allow delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email) && resource.data.review != true);
@@ -134,14 +137,17 @@ service cloud.firestore {
     }
 
     // Rejection archives are private to owner/admin.
+    // The owner may delete a rejected item from their own list.
     match /rejectedWalls/{docId} {
       allow read: if isConfiguredAdmin() || isEmailOwner(resource.data.email);
       allow write: if isConfiguredAdmin();
+      allow delete: if isEmailOwner(resource.data.email);
     }
 
     match /rejectedSetups/{docId} {
       allow read: if isConfiguredAdmin() || isEmailOwner(resource.data.email);
       allow write: if isConfiguredAdmin();
+      allow delete: if isEmailOwner(resource.data.email);
     }
 
     // Legacy public content bucket.
@@ -161,18 +167,18 @@ service cloud.firestore {
     // coins/email needs a profiles collection plus a migration.
     match /usersv2/{userId} {
       allow read: if isSignedIn();
-      allow create: if isConfiguredAdmin() || canCreateUserDoc(userId);
-      allow update: if isConfiguredAdmin()
-          || canToggleFollowersOnly()
-          || (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+      allow create: if canCreateUserDoc(userId) || isConfiguredAdmin();
+      allow update: if (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'name', 'username', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'following', 'interestCategories', 'onboardingV2', 'uploadsWeekStart',
             'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState'
-          ]) && ownerCoinStateOk());
+          ]) && ownerCoinStateOk())
+          || canToggleFollowersOnly()
+          || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
 
       match /private/session {
-        allow read, write: if isConfiguredAdmin() || isOwner(userId);
+        allow read, write: if isOwner(userId) || isConfiguredAdmin();
       }
 
       // Block list: owner can read; writes only via Cloud Functions (Admin SDK).
@@ -183,11 +189,11 @@ service cloud.firestore {
 
       // Per-user favourites subcollections.
       match /images/{docId} {
-        allow read, create, update, delete: if isConfiguredAdmin() || isOwner(userId);
+        allow read, create, update, delete: if isOwner(userId) || isConfiguredAdmin();
       }
 
       match /setups/{docId} {
-        allow read, create, update, delete: if isConfiguredAdmin() || isOwner(userId);
+        allow read, create, update, delete: if isOwner(userId) || isConfiguredAdmin();
       }
     }
 
@@ -271,6 +277,23 @@ service cloud.firestore {
 
     match /setup_stats/{docId} {
       allow read: if true;
+      allow write: if false;
+    }
+
+    // Trending and popular wallpaper ids, written by the computeTrending function.
+    match /trending/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /popular/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Username registry (claimUsername callable). Signed-in users can read it.
+    match /usernames/{name} {
+      allow read: if isSignedIn();
       allow write: if false;
     }
 

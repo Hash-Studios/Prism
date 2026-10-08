@@ -14,7 +14,7 @@ void main() {
     });
 
     expect(lookedUp, isFalse);
-    expect(() => port.watchRewardedAd(), throwsStateError);
+    expect(() => port.watchRewardedAdResult(), throwsStateError);
     expect(lookedUp, isTrue);
   });
 

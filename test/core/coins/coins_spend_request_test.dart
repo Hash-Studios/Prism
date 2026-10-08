@@ -131,7 +131,7 @@ void main() {
         'delta': 10,
       };
     };
-    await service.retryPendingAiRefunds();
+    await service.retryPendingRefunds();
 
     expect(refunds, hasLength(1));
     expect(refunds.single['transactionId'], 'reservation-1');
@@ -207,7 +207,7 @@ void main() {
       };
     };
 
-    final retry = service.retryPendingAiRefunds();
+    final retry = service.retryPendingRefunds();
     await Future<void>.delayed(Duration.zero);
     final failedB = await service.rollbackAiGenerationReservation(
       AiChargeMode.coinSpend,
@@ -255,11 +255,11 @@ void main() {
         'delta': 10,
       };
     };
-    await service.retryPendingAiRefunds();
+    await service.retryPendingRefunds();
     expect(refunds, isEmpty);
 
     app_state.prismUser.id = accountA;
-    await service.retryPendingAiRefunds();
+    await service.retryPendingRefunds();
     expect(refunds.single['transactionId'], expectedId);
   });
 
@@ -303,7 +303,7 @@ void main() {
       };
     };
 
-    await service.retryPendingAiRefunds();
+    await service.retryPendingRefunds();
 
     expect(refunded, <String>['tx-1']);
     final stored = settings.get<String>('pendingAiRefunds', defaultValue: '');
@@ -329,7 +329,7 @@ void main() {
     await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
     expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isNotEmpty);
 
-    await service.retryPendingAiRefunds();
+    await service.retryPendingRefunds();
 
     expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
   });
@@ -349,7 +349,7 @@ void main() {
     };
     await service.reserveForAiGeneration(qualityTier: AiQualityTier.fast);
 
-    await service.retryPendingAiRefunds();
+    await service.retryPendingRefunds();
 
     expect(refundedId, startsWith('spend_${app_state.prismUser.id}_'));
     expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
@@ -386,7 +386,7 @@ void main() {
       return _spent;
     };
 
-    await service.retryPendingAiRefunds();
+    await service.retryPendingRefunds();
 
     expect(calls, 0);
     expect(settings.get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);

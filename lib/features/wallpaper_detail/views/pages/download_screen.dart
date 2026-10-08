@@ -7,12 +7,14 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/logger/logger.dart';
@@ -20,18 +22,57 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
 
 enum _DownloadsStatus { loading, ready, error }
 
-@RoutePage()
-class DownloadScreen extends StatefulWidget {
-  @override
-  _DownloadScreenState createState() => _DownloadScreenState();
+enum _DownloadSort { newest, oldest, name }
+
+String _sortLabel(_DownloadSort sort) => switch (sort) {
+  _DownloadSort.newest => 'Newest',
+  _DownloadSort.oldest => 'Oldest',
+  _DownloadSort.name => 'Name',
+};
+
+typedef _FileMeta = ({DateTime modified, int bytes});
+
+/// A short size such as "820 KB" or "12.4 MB".
+String _formatDownloadSize(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).round()} KB';
+  if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
 }
 
-class _DownloadScreenState extends State<DownloadScreen> {
+@RoutePage()
+class DownloadScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Scaffold(
+      appBar: const PreferredSize(
+        preferredSize: Size(double.infinity, 55),
+        child: HeadingChipBar(current: "Downloads"),
+      ),
+      backgroundColor: theme.primaryColor,
+      body: const SafeArea(child: DownloadsBody()),
+    );
+  }
+}
+
+/// The downloads list without a scaffold, so the Library tabs can host it.
+class DownloadsBody extends StatefulWidget {
+  const DownloadsBody({super.key});
+
+  @override
+  State<DownloadsBody> createState() => _DownloadsBodyState();
+}
+
+class _DownloadsBodyState extends State<DownloadsBody> {
   List<File> files = [];
+  Map<String, _FileMeta> _meta = <String, _FileMeta>{};
+  _DownloadSort _sort = _DownloadSort.newest;
   _DownloadsStatus _status = _DownloadsStatus.loading;
   final Set<String> _selected = <String>{};
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
@@ -58,6 +99,15 @@ class _DownloadScreenState extends State<DownloadScreen> {
       logger.d(e.toString());
     }
     if (!mounted) return;
+    final Map<String, _FileMeta> meta = <String, _FileMeta>{};
+    for (final File file in found ?? const <File>[]) {
+      try {
+        final FileStat stat = file.statSync();
+        meta[file.path] = (modified: stat.modified, bytes: stat.size);
+      } catch (error) {
+        logger.d('Could not read the size of ${file.path}: $error');
+      }
+    }
     if (found == null) {
       if (files.isNotEmpty) toasts.error("Couldn't refresh downloads. Try again.");
       setState(() => _status = files.isEmpty ? _DownloadsStatus.error : _DownloadsStatus.ready);
@@ -65,6 +115,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
       final Set<String> paths = found.map((file) => file.path).toSet();
       setState(() {
         files = found!;
+        _meta = meta;
         _status = _DownloadsStatus.ready;
         _selected.removeWhere((path) => !paths.contains(path));
       });
@@ -166,6 +217,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
       files = files.where((file) => !deleted.contains(file.path)).toList(growable: false);
       _selected.removeAll(deleted);
     });
+    if (deleted.isNotEmpty) {
+      await getIt<DownloadedWallIndex>().forget(deleted, remainingPaths: files.map((file) => file.path));
+      if (!mounted) return;
+    }
     if (deleted.length < paths.length) {
       final int failed = paths.length - deleted.length;
       toasts.error(failed == 1 ? "Couldn't delete 1 download." : "Couldn't delete $failed downloads.");
@@ -191,6 +246,52 @@ class _DownloadScreenState extends State<DownloadScreen> {
       toasts.error("Couldn't share. Try again.");
     }
   }
+
+  List<File> get _sortedFiles {
+    final List<MapEntry<int, File>> indexed = files.asMap().entries.toList();
+    DateTime modified(File file) => _meta[file.path]?.modified ?? DateTime.fromMillisecondsSinceEpoch(0);
+    int byName(File a, File b) => p.basename(a.path).toLowerCase().compareTo(p.basename(b.path).toLowerCase());
+    indexed.sort((a, b) {
+      final int order = switch (_sort) {
+        _DownloadSort.newest => modified(b.value).compareTo(modified(a.value)),
+        _DownloadSort.oldest => modified(a.value).compareTo(modified(b.value)),
+        _DownloadSort.name => byName(a.value, b.value),
+      };
+      return order != 0 ? order : a.key.compareTo(b.key);
+    });
+    return indexed.map((entry) => entry.value).toList(growable: false);
+  }
+
+  String get _summary {
+    final int count = files.length;
+    final String label = count == 1 ? '1 download' : '$count downloads';
+    final int bytes = _meta.values.fold(0, (sum, meta) => sum + meta.bytes);
+    return bytes > 0 ? '$label · ${_formatDownloadSize(bytes)}' : label;
+  }
+
+  Widget _toolbar(ThemeData theme) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 0, 4, 0),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            _summary,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.6)),
+          ),
+        ),
+        PopupMenuButton<_DownloadSort>(
+          tooltip: 'Sort downloads',
+          icon: Icon(JamIcons.filter, color: theme.colorScheme.secondary),
+          initialValue: _sort,
+          onSelected: (sort) => setState(() => _sort = sort),
+          itemBuilder: (context) => [
+            for (final _DownloadSort sort in _DownloadSort.values)
+              PopupMenuItem<_DownloadSort>(value: sort, child: Text(_sortLabel(sort))),
+          ],
+        ),
+      ],
+    ),
+  );
 
   Widget _scrollable(Widget child) => LayoutBuilder(
     builder: (context, constraints) => ListView(
@@ -284,17 +385,18 @@ class _DownloadScreenState extends State<DownloadScreen> {
             ),
           );
         }
+        final List<File> sorted = _sortedFiles;
         return GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-          itemCount: files.length,
+          itemCount: sorted.length,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
             childAspectRatio: 0.6625,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
           ),
-          itemBuilder: (context, index) => _tile(context, files[index]),
+          itemBuilder: (context, index) => _tile(context, sorted[index]),
         );
     }
   }
@@ -302,66 +404,48 @@ class _DownloadScreenState extends State<DownloadScreen> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final bool showCount = _status == _DownloadsStatus.ready && files.isNotEmpty && !_selecting;
+    final bool showToolbar = _status == _DownloadsStatus.ready && files.isNotEmpty && !_selecting;
     return PopScope(
       canPop: !_selecting,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _exitSelection();
       },
-      child: Scaffold(
-        appBar: const PreferredSize(
-          preferredSize: Size(double.infinity, 55),
-          child: HeadingChipBar(current: "Downloads"),
-        ),
-        backgroundColor: theme.primaryColor,
-        body: SafeArea(
-          child: Column(
-            children: [
-              if (_selecting)
-                SelectionHeader(count: _selected.length, onCancel: _exitSelection)
-              else if (showCount)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      files.length == 1 ? '1 download' : '${files.length} downloads',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.secondary.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ),
-                ),
-              Expanded(
-                child: RefreshIndicator(
-                  backgroundColor: theme.primaryColor,
-                  onRefresh: () {
-                    PrismHaptics.impact();
-                    return refreshList();
-                  },
-                  child: _content(context),
-                ),
-              ),
-              if (_selecting)
-                SelectionActionBar(
-                  actions: [
-                    CircularMenuButton(
-                      label: 'Delete',
-                      isLoading: false,
-                      onTap: () => unawaited(_deleteSelected()),
-                      child: Icon(JamIcons.trash, color: theme.colorScheme.secondary, size: 20),
-                    ),
-                    CircularMenuButton(
-                      label: 'Share',
-                      isLoading: false,
-                      onTap: () => unawaited(_shareSelected()),
-                      child: Icon(JamIcons.share_alt, color: theme.colorScheme.secondary, size: 20),
-                    ),
-                  ],
-                ),
-            ],
+      child: Column(
+        children: [
+          if (_selecting)
+            SelectionHeader(count: _selected.length, onCancel: _exitSelection)
+          else if (showToolbar)
+            _toolbar(theme),
+          Expanded(
+            child: RefreshIndicator(
+              backgroundColor: theme.primaryColor,
+              onRefresh: () {
+                PrismHaptics.impact();
+                return refreshList();
+              },
+              child: _content(context),
+            ),
           ),
-        ),
+          if (_selecting)
+            SelectionActionBar(
+              actions: [
+                CircularMenuButton(
+                  label: 'Delete',
+                  isLoading: false,
+                  onTap: () => unawaited(_deleteSelected()),
+                  child: Icon(JamIcons.trash, color: theme.colorScheme.secondary, size: 20),
+                ),
+                if (_selected.length == 1 && !hideSetWallpaperUi)
+                  SetWallpaperButton(url: _selected.first, onSet: _exitSelection),
+                CircularMenuButton(
+                  label: 'Share',
+                  isLoading: false,
+                  onTap: () => unawaited(_shareSelected()),
+                  child: Icon(JamIcons.share_alt, color: theme.colorScheme.secondary, size: 20),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }

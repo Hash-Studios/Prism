@@ -5,10 +5,12 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
@@ -36,6 +38,13 @@ class _ReminderTransaction extends Fake implements FirestoreTransaction {
 
   @override
   void updateDoc(String collection, String id, Map<String, dynamic> data) => updates.addAll(data);
+}
+
+class _FakeConnectivity extends Fake implements ConnectivityService {
+  final StreamController<bool> changes = StreamController<bool>.broadcast();
+
+  @override
+  Stream<bool> get onConnectionChange => changes.stream;
 }
 
 void main() {
@@ -745,5 +754,113 @@ void main() {
     responses[0].complete(result);
     await first;
     expect(getIt<SettingsLocalDataSource>().get<String>('pendingStreakFreezeRequest.${backend.userId}'), requestIds[2]);
+  });
+
+  group('pending refund retries', () {
+    const queueKey = 'pendingAiRefunds';
+    const refunded = <String, Object>{
+      'success': true,
+      'changed': true,
+      'previousBalance': 90,
+      'currentBalance': 100,
+      'delta': 10,
+    };
+
+    Future<void> queueRefund(String id) => getIt<SettingsLocalDataSource>().set(
+      queueKey,
+      '[{"userId":"${app_state.prismUser.id}","transactionId":"$id","atMs":${DateTime.now().millisecondsSinceEpoch}}]',
+    );
+
+    String stored() => getIt<SettingsLocalDataSource>().get<String>(queueKey, defaultValue: '');
+
+    tearDown(() async {
+      service.pendingRetryInterval = const Duration(seconds: 30);
+      await getIt<SettingsLocalDataSource>().delete(queueKey);
+    });
+
+    test('app resume retries a queued refund', () async {
+      await queueRefund('tx-resume');
+      final ids = <String>[];
+      backend.onCall = (_, parameters) async {
+        ids.add(parameters['transactionId'] as String);
+        return refunded;
+      };
+
+      service.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      await pumpEventQueue();
+
+      expect(ids, <String>['tx-resume']);
+      expect(stored(), isEmpty);
+    });
+
+    test('app resume with an empty queue makes no call', () async {
+      var calls = 0;
+      backend.onCall = (_, _) async {
+        calls++;
+        return refunded;
+      };
+
+      service.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      await pumpEventQueue();
+
+      expect(calls, 0);
+    });
+
+    test('other lifecycle changes do not retry', () async {
+      await queueRefund('tx-paused');
+      var calls = 0;
+      backend.onCall = (_, _) async {
+        calls++;
+        return refunded;
+      };
+
+      service.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await pumpEventQueue();
+
+      expect(calls, 0);
+      expect(stored(), contains('tx-paused'));
+    });
+
+    test('a return of the network retries a queued refund', () async {
+      final connectivity = _FakeConnectivity();
+      getIt.registerSingleton<ConnectivityService>(connectivity);
+      addTearDown(connectivity.changes.close);
+      await queueRefund('tx-online');
+      final ids = <String>[];
+      backend.onCall = (_, parameters) async {
+        ids.add(parameters['transactionId'] as String);
+        return refunded;
+      };
+      service.startPendingRetryWatch();
+
+      connectivity.changes.add(false);
+      await pumpEventQueue();
+      expect(ids, isEmpty);
+      connectivity.changes.add(true);
+      await pumpEventQueue();
+
+      expect(ids, <String>['tx-online']);
+      expect(stored(), isEmpty);
+    });
+
+    test('a timer retries while the queue holds a refund the network keeps refusing', () async {
+      service.pendingRetryInterval = const Duration(milliseconds: 20);
+      await queueRefund('tx-timer');
+      var attempts = 0;
+      backend.onCall = (_, _) async {
+        attempts++;
+        if (attempts < 3) throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+        return refunded;
+      };
+
+      service.startPendingRetryWatch();
+      await service.retryPendingRefunds();
+      expect(attempts, 1);
+      expect(stored(), contains('tx-timer'));
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(attempts, 3);
+      expect(stored(), isEmpty);
+    });
   });
 }

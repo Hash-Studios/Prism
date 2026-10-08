@@ -15,8 +15,9 @@ class OnboardingV2Config {
   static const String remoteConfigStarterPackKey = 'onboarding_starter_pack_v1';
   static const String excludedCategory = 'Community';
   static const String termsUrl = 'https://prismwalls.com/terms';
+  static const String privacyUrl = 'https://prismwalls.com/privacy';
 
-  /// Local prefs key: has the user ever ticked "I agree to the Terms of Use"?
+  /// Local prefs key: has the user ever ticked the Terms and Privacy policy checkbox?
   static const String termsAcceptedKey = 'onboarding_terms_accepted';
 
   static const List<AiStylePreset> aiOnboardingStyles = [

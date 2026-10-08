@@ -2,6 +2,8 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/features/ads/biz/coin_gate_port.dart';
+import 'package:Prism/features/ads/biz/rewarded_ad_flow.dart';
+import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 
 /// In-memory [CoinGatePort]. Spends and awards move [balance]. Records every call in [log] and every toast.
 class FakeCoinGatePort implements CoinGatePort {
@@ -15,6 +17,9 @@ class FakeCoinGatePort implements CoinGatePort {
   final List<String> log = <String>[];
   final List<String> errors = <String>[];
   final List<String> successes = <String>[];
+  final List<String> infos = <String>[];
+  final List<String> spendLabels = <String>[];
+  final List<String?> pendingDownloadLinks = <String?>[];
 
   int awardAmount = CoinPolicy.rewardedAd;
   bool adCompletes = true;
@@ -28,18 +33,36 @@ class FakeCoinGatePort implements CoinGatePort {
   bool recordThrows = false;
   Future<void> Function()? afterRecord;
   bool refundApplies = true;
+  bool consentGiven = true;
+  AdFailureReason? adFailure;
+  String awardReason = '';
+  String awardUnknownOutcome = '';
 
   @override
-  Future<bool> watchRewardedAd() async {
+  int? adsRemaining;
+
+  @override
+  Future<bool> adsAllowed() async => consentGiven;
+
+  @override
+  Future<RewardedAdResult> watchRewardedAdResult() async {
     log.add('ad');
     if (adThrows) throw StateError('ad failed');
     await afterAd?.call();
-    return adCompletes;
+    return adCompletes ? const RewardedAdResult.earned() : RewardedAdResult.notEarned(adFailure);
   }
 
   @override
-  Future<CoinMutationResult> spend(CoinSpendAction action, {required String sourceTag, String? reason}) async {
+  Future<CoinMutationResult> spend(
+    CoinSpendAction action, {
+    required String sourceTag,
+    String? reason,
+    String? label,
+    String? pendingDownloadLink,
+  }) async {
     log.add('spend:$sourceTag');
+    if (label != null) spendLabels.add(label);
+    pendingDownloadLinks.add(pendingDownloadLink);
     if (spendThrows) throw StateError('spend failed');
     final int cost = action.cost();
     if (spendAlwaysInsufficient) {
@@ -79,7 +102,13 @@ class FakeCoinGatePort implements CoinGatePort {
   Future<CoinMutationResult> award(CoinEarnAction action, {required String sourceTag}) async {
     log.add('award:$sourceTag');
     if (awardThrows) throw StateError('award failed');
-    if (!awardChanges) return CoinMutationResult.noChange(balance: balance);
+    if (!awardChanges) {
+      return CoinMutationResult.noChange(
+        balance: balance,
+        reason: awardReason,
+        unknownOutcomeTransactionId: awardUnknownOutcome,
+      );
+    }
     final int reward = awardAmount;
     final int previous = balance;
     balance += reward;
@@ -135,4 +164,7 @@ class FakeCoinGatePort implements CoinGatePort {
 
   @override
   void showSuccess(String message) => successes.add(message);
+
+  @override
+  void showInfo(String message) => infos.add(message);
 }

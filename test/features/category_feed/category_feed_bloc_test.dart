@@ -189,4 +189,88 @@ void main() {
     expect(bloc.state.items, isEmpty);
     expect(bloc.state.hasMore, isFalse);
   });
+
+  group('switching category while a request is in flight', () {
+    const CategoryEntity space = CategoryEntity(
+      name: 'Space',
+      source: WallpaperSource.prism,
+      searchType: CategorySearchType.nonSearch,
+      image: '',
+      image2: '',
+    );
+
+    test('a late next page of the old category never joins the new category', () async {
+      final load = _MockLoadCategoriesUseCase();
+      final fetch = _MockFetchCategoryFeedUseCase();
+      when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home, space]));
+      final Completer<Result<CategoryFeedPage>> latePage = Completer<Result<CategoryFeedPage>>();
+      when(() => fetch(any())).thenAnswer((invocation) {
+        final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
+        if (params.category.name == 'Home' && !params.refresh) return latePage.future;
+        final String id = params.category.name == 'Home' ? 'home-1' : 'space-1';
+        return Future.value(
+          Result.success(
+            CategoryFeedPage(items: <FeedItemEntity>[_prismItem(id, authorEmail: 'a@x.com')], hasMore: true),
+          ),
+        );
+      });
+      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+      addTearDown(bloc.close);
+
+      bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      bloc.add(const CategoryFeedEvent.fetchMoreRequested());
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(bloc.state.isFetchingMore, isTrue);
+
+      bloc.add(const CategoryFeedEvent.categorySelected(category: space));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(bloc.state.isFetchingMore, isFalse, reason: 'the new category starts without a page in flight');
+      expect(bloc.state.items.map((e) => e.id), <String>['space-1']);
+
+      latePage.complete(
+        Result.success(
+          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('home-2', authorEmail: 'a@x.com')], hasMore: false),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(bloc.state.selectedCategory?.name, 'Space');
+      expect(bloc.state.items.map((e) => e.id), <String>['space-1']);
+      expect(bloc.state.hasMore, isTrue);
+      expect(bloc.state.isFetchingMore, isFalse);
+    });
+
+    test('a slow first page of the old category cannot replace the new one', () async {
+      final load = _MockLoadCategoriesUseCase();
+      final fetch = _MockFetchCategoryFeedUseCase();
+      when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home, space]));
+      final Completer<Result<CategoryFeedPage>> slowHome = Completer<Result<CategoryFeedPage>>();
+      when(() => fetch(any())).thenAnswer((invocation) {
+        final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
+        if (params.category.name == 'Home') return slowHome.future;
+        return Future.value(
+          Result.success(
+            CategoryFeedPage(items: <FeedItemEntity>[_prismItem('space-1', authorEmail: 'a@x.com')], hasMore: false),
+          ),
+        );
+      });
+      final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+      addTearDown(bloc.close);
+
+      bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      bloc.add(const CategoryFeedEvent.categorySelected(category: space));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      slowHome.complete(
+        Result.success(
+          CategoryFeedPage(items: <FeedItemEntity>[_prismItem('home-1', authorEmail: 'a@x.com')], hasMore: true),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(bloc.state.items.map((e) => e.id), <String>['space-1']);
+      expect(bloc.state.hasMore, isFalse);
+    });
+  });
 }

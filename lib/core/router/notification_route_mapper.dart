@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
@@ -12,7 +15,27 @@ import 'package:auto_route/auto_route.dart';
 class NotificationRouteMapper {
   const NotificationRouteMapper();
 
-  /// Maps a push or inbox payload to a route.
+  /// The kind of a push payload, or null for pushes that the app does not measure.
+  static PushKindValue? pushKindFor(Map<String, dynamic> data) {
+    final String route = data['route']?.toString().trim() ?? '';
+    final bool isReport = (data['report_id']?.toString().trim() ?? '').isNotEmpty;
+    return switch (route) {
+      'streak_reminder' => PushKindValue.streakReminder,
+      'follower' => PushKindValue.follower,
+      'wall' => isReport ? PushKindValue.moderation : PushKindValue.post,
+      'wall_of_the_day' => PushKindValue.wotd,
+      'content_report' => PushKindValue.moderation,
+      _ => null,
+    };
+  }
+
+  /// Records that the user opened a push. Call it once per tap.
+  void trackPushOpened(Map<String, dynamic> data) {
+    final PushKindValue? kind = pushKindFor(data);
+    if (kind != null) unawaited(analytics.track(PushOpenedEvent(kind: kind)));
+  }
+
+  /// Maps a push payload to a route and records the tap. Inbox rows use [fromRoute], which does not record it.
   ///
   /// With [fallbackToInbox] (the default) the result is never null: a missing or unknown target opens the inbox and
   /// shows a toast. Pass `false` to get null instead.
@@ -21,6 +44,7 @@ class NotificationRouteMapper {
     required String sourceTag,
     bool fallbackToInbox = true,
   }) {
+    trackPushOpened(data);
     final String route = data['route']?.toString().trim() ?? '';
     final String wallId = data['wall_id']?.toString().trim() ?? '';
     final String profileIdentifier = _firstPresent(data, const <String>[
