@@ -123,8 +123,11 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   Future<void> _onToggleRequested(_ToggleRequested event, Emitter<FavouriteWallsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final bool currentlyFavourited = _containsWall(event.wall.id);
+    final FavouriteWallEntity wall = currentlyFavourited
+        ? event.wall
+        : event.wall.withFavouritedAt(DateTime.now().toUtc());
     final result = await _toggleFavouriteWallUseCase(
-      ToggleFavouriteWallParams(userId: state.userId, wall: event.wall, currentlyFavourited: currentlyFavourited),
+      ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: currentlyFavourited),
     );
 
     result.fold(
@@ -132,9 +135,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
         state.copyWith(
           status: LoadStatus.success,
           actionStatus: ActionStatus.success,
-          items: isNowFavourite
-              ? _upsertWall(event.wall.withFavouritedAt(DateTime.now().toUtc()))
-              : _removeWall(event.wall.id),
+          items: isNowFavourite ? _upsertWall(wall) : _removeWall(event.wall.id),
           completedOperationId: event.operationId,
           failure: null,
         ),
@@ -192,10 +193,13 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     final List<FavouriteWallEntity> restored = <FavouriteWallEntity>[];
     for (final FavouriteWallEntity wall in event.walls) {
       if (_containsWall(wall.id) || restored.any((item) => item.id == wall.id)) continue;
+      final FavouriteWallEntity restoredWall = wall.favouritedAt == null
+          ? wall.withFavouritedAt(wall.createdAt ?? DateTime.now().toUtc())
+          : wall;
       final result = await _toggleFavouriteWallUseCase(
-        ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: false),
+        ToggleFavouriteWallParams(userId: state.userId, wall: restoredWall, currentlyFavourited: false),
       );
-      if (result.isSuccess) restored.add(wall);
+      if (result.isSuccess) restored.add(restoredWall);
     }
     final List<FavouriteWallEntity> next = <FavouriteWallEntity>[...state.items, ...restored]
       ..sort(compareByCreatedAtDesc);
