@@ -6,6 +6,9 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
+import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+// ignore: implementation_imports
+import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,6 +60,39 @@ Future<void> _waitForFailure(WidgetTester tester) async {
 }
 
 Widget _screenHost(String sourcePath) => MaterialApp(home: WallpaperFilterScreen(filePath: sourcePath));
+
+class _PreviewWallpaperClient implements WallpaperClient {
+  final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
+
+  @override
+  Future<aw.WallpaperCapabilities> getCapabilities() async => const aw.WallpaperCapabilities(
+    supportsStaticWallpaper: true,
+    supportsHomeWallpaper: true,
+    supportsLockWallpaper: true,
+    supportsBothWallpapers: true,
+  );
+
+  @override
+  Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
+    requests.add(request);
+    return aw.WallpaperOperationResult(
+      status: aw.WallpaperOperationStatus.previewOpened,
+      requestedTarget: request.target,
+    );
+  }
+
+  @override
+  Future<aw.WallpaperOperationResult> prepareVideoWallpaper(aw.VideoWallpaperRequest request) =>
+      throw UnimplementedError();
+
+  @override
+  Future<aw.WallpaperOperationResult> openLiveWallpaperPreview(aw.VideoWallpaperRequest request) =>
+      throw UnimplementedError();
+
+  @override
+  Future<aw.WallpaperOperationResult> applyOpenGlWallpaper(aw.OpenGlLiveWallpaperRequest request) =>
+      throw UnimplementedError();
+}
 
 void main() {
   testWidgets('does not offer export while the source image cannot be decoded', (tester) async {
@@ -228,4 +264,55 @@ void main() {
     expect(Directory(File(request.link).parent.path).existsSync(), isFalse);
     await tester.pump(const Duration(seconds: 1));
   });
+
+  testWidgets('removes the edited export after a pending wallpaper preview', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_cropper_');
+    final File source = File('${directory.path}/source.png');
+    source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+    addTearDown(() => directory.deleteSync(recursive: true));
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    final _PreviewWallpaperClient client = _PreviewWallpaperClient();
+    aw.AsyncWallpaper.debugSetClient(client);
+    addTearDown(aw.AsyncWallpaper.debugResetClient);
+
+    const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, (_) async => directory.path);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+    });
+
+    await tester.pumpWidget(_screenHost(source.path));
+    await _waitForReady(tester);
+    await tester.tap(find.text('AddictiveBlue'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Set as wallpaper'));
+    for (int attempt = 0; attempt < 40 && find.text('Home Screen').evaluate().isEmpty; attempt++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.text('Home Screen'), findsOneWidget);
+    final Finder homeTarget = find.ancestor(of: find.text('Home Screen'), matching: find.byType(GestureDetector)).last;
+    tester.widget<GestureDetector>(homeTarget).onTap!();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    for (int attempt = 0; attempt < 20 && client.requests.isEmpty; attempt++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+      await tester.pump();
+    }
+
+    expect(client.requests, hasLength(1));
+    expect(client.requests.single.source.filePath, isNotNull);
+    expect(File(client.requests.single.source.filePath!).existsSync(), isFalse);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
