@@ -5,6 +5,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -39,6 +40,9 @@ class WallpaperService {
   static const String failedMessage = "Couldn't set the wallpaper.";
   static const String timeoutMessage = 'Timed out. Check your connection and try again.';
 
+  /// Turns a local file into a content URI. The Android system cropper cannot read a file path.
+  static const MethodChannel _cropChannel = MethodChannel('prism/wallpaper_crop');
+
   static Future<WallpaperSetResult> setWallpaper(
     String source,
     WallpaperTarget target, {
@@ -67,9 +71,12 @@ class WallpaperService {
         : aw.WallpaperApplyStrategy.direct;
 
     try {
-      aw.WallpaperOperationResult result = await _apply(filePath, target, scaleMode, firstStrategy);
+      final aw.WallpaperSource wallpaperSource = useSystemCropper
+          ? aw.WallpaperSource.contentUri((await _cropChannel.invokeMethod<String>('contentUri', filePath))!)
+          : aw.WallpaperSource.filePath(filePath);
+      aw.WallpaperOperationResult result = await _apply(wallpaperSource, target, scaleMode, firstStrategy);
       if (!useSystemCropper && result.status == aw.WallpaperOperationStatus.failed) {
-        result = await _apply(filePath, target, scaleMode, aw.WallpaperApplyStrategy.automatic);
+        result = await _apply(wallpaperSource, target, scaleMode, aw.WallpaperApplyStrategy.automatic);
       }
       final WallpaperSetResult mapped = mapStatus(result);
       if (mapped.isSuccess && recordHistory) {
@@ -114,13 +121,13 @@ class WallpaperService {
   }
 
   static Future<aw.WallpaperOperationResult> _apply(
-    String filePath,
+    aw.WallpaperSource source,
     WallpaperTarget target,
     aw.WallpaperScaleMode scaleMode,
     aw.WallpaperApplyStrategy strategy,
   ) {
     final request = aw.StaticWallpaperRequest(
-      source: aw.WallpaperSource.filePath(filePath),
+      source: source,
       target: aw.WallpaperTarget.values.byName(target.name),
       scaleMode: scaleMode,
       strategy: strategy,
