@@ -1,3 +1,5 @@
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
@@ -6,6 +8,7 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/fake_app_analytics.dart';
 import 'fake_live_wallpaper_repository.dart';
 
 void main() {
@@ -17,7 +20,14 @@ void main() {
 
   Future<void> settle() => Future<void>.delayed(Duration.zero);
 
-  setUp(() => repository = FakeLiveWallpaperRepository());
+  late FakeAppAnalytics analytics;
+
+  setUp(() {
+    repository = FakeLiveWallpaperRepository();
+    analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+  });
+  tearDown(AnalyticsRuntime.reset);
 
   group('started', () {
     test('becomes ready when the device supports live wallpapers', () async {
@@ -178,5 +188,52 @@ void main() {
     await settle();
     expect(repository.motionApplies, isEmpty);
     await bloc.close();
+  });
+  group('analytics', () {
+    List<(String, String)> applied() => analytics.events
+        .whereType<LiveWallpaperAppliedEvent>()
+        .map((event) => (event.style, event.result))
+        .toList(growable: false);
+
+    test('reports the style and the result of a motion, a gradient and a video apply', () async {
+      final LiveWallpaperBloc bloc = build()
+        ..add(const LiveWallpaperEvent.started(isPro: true))
+        ..add(const LiveWallpaperEvent.motionSelected(MotionStyle.ripple))
+        ..add(LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45))
+        ..add(const LiveWallpaperEvent.gradientSelected(GradientStyle.mesh))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette))
+        ..add(const LiveWallpaperEvent.videoPicked('/tmp/loop.mp4'))
+        ..add(const LiveWallpaperEvent.videoApplied());
+      await settle();
+
+      expect(applied(), <(String, String)>[
+        ('ripple', 'confirmInPreview'),
+        ('mesh', 'confirmInPreview'),
+        ('video', 'confirmInPreview'),
+      ]);
+      await bloc.close();
+    });
+
+    test('reports a failed apply', () async {
+      repository.outcome = const LiveApplyOutcome.failed('nope');
+      final LiveWallpaperBloc bloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: false))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      await settle();
+
+      expect(applied(), <(String, String)>[('aurora', 'failed')]);
+      await bloc.close();
+    });
+
+    test('does not report a Pro style that was never applied', () async {
+      final LiveWallpaperBloc bloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: false))
+        ..add(const LiveWallpaperEvent.gradientSelected(GradientStyle.starfield))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      await settle();
+
+      expect(applied(), isEmpty);
+      await bloc.close();
+    });
   });
 }

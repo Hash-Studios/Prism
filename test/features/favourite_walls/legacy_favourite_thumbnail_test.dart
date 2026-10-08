@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
+import 'support/guest_store_fixture.dart';
 
 void main() {
   test('legacy favourite with an unknown provider normalizes a stored Wallhaven crop thumb', () async {
@@ -22,6 +23,7 @@ void main() {
         ],
       ),
       FavoritesLocalDataSource(InMemoryLocalStore()),
+      unusedGuestStore(),
     );
 
     final result = await repository.fetchFavourites(userId: 'user-id');
@@ -29,6 +31,6 @@ void main() {
     expect(result.isSuccess, isTrue);
     final wall = result.data!.single;
     expect(wall, isA<LegacyFavouriteWall>());
-    expect(wall.thumbnailUrl, 'https://th.wallhaven.cc/orig/21/wall.jpg');
+    expect(wall.thumbnailUrl, 'https://th.wallhaven.cc/lg/21/wall.jpg');
   });
 }

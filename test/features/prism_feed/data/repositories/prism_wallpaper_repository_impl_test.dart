@@ -1,5 +1,8 @@
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,6 +99,106 @@ void main() {
       expect((await repo.fetchById('doc-2')).data, isNull, reason: 'unreviewed walls stay hidden');
       expect((await repo.fetchById('doc-404')).data, isNull);
     });
+
+    group('failures', () {
+      const String offline = '[cloud_firestore/unavailable] The service is currently unavailable.';
+
+      PrismWallpaperRepositoryImpl repoWith(FakeFirestoreClient firestore) => PrismWallpaperRepositoryImpl(
+        firestore,
+        FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+
+      test('fetchById tells the user to check the connection and never shows the raw error', () async {
+        final firestore = _walls(_buildWallDocs(count: 1))..queryError = StateError(offline);
+
+        final result = await repoWith(firestore).fetchById('wall-1');
+
+        expect(result.failure, isA<ServerFailure>());
+        expect(result.failure!.message, wallpaperLoadFailureMessage);
+        expect(result.failure!.message, isNot(contains('cloud_firestore')));
+      });
+
+      test('fetchByDocumentId reports the same user-facing message', () async {
+        final firestore = _FailingGetFirestore();
+
+        final result = await repoWith(firestore).fetchByDocumentId('doc-1');
+
+        expect(result.failure!.message, wallpaperLoadFailureMessage);
+      });
+
+      test('a wall that does not exist is a success with no wall, not a failure', () async {
+        final result = await repoWith(
+          _walls(<({String docId, Map<String, dynamic> data})>[], matchIdField: true),
+        ).fetchById('missing');
+
+        expect(result.isSuccess, isTrue);
+        expect(result.data, isNull);
+      });
+
+      test('fetchById keeps a failed doc id lookup a failure instead of calling the wall missing', () async {
+        final firestore = _FailingGetFirestore(
+          docs: _walls(<({String docId, Map<String, dynamic> data})>[], matchIdField: true),
+        );
+
+        final result = await repoWith(firestore).fetchById('doc-1');
+
+        expect(result.isFailure, isTrue);
+        expect(result.failure!.message, wallpaperLoadFailureMessage);
+      });
+    });
+
+    group('fetchByCategory', () {
+      test('asks for reviewed walls of that category, newest first, with the Prism-first source tag', () async {
+        final docs = _buildWallDocs(count: 3);
+        final firestore = _walls(docs);
+        final repo = PrismWallpaperRepositoryImpl(
+          firestore,
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+        );
+
+        final result = await repo.fetchByCategory('Nature', startAfterDocId: 'doc-1', limit: 10);
+
+        final FirestoreQuerySpec spec = firestore.querySpecs.single;
+        expect(spec.sourceTag, 'category_feed.prism_first');
+        expect(spec.collection, FirebaseCollections.walls);
+        expect(spec.filters.map((f) => (f.field, f.op, f.value)), <(String, FirestoreFilterOp, Object?)>[
+          ('category', FirestoreFilterOp.isEqualTo, 'Nature'),
+          ('review', FirestoreFilterOp.isEqualTo, true),
+        ]);
+        expect(spec.orderBy.single.field, 'createdAt');
+        expect(spec.orderBy.single.descending, isTrue);
+        expect(spec.startAfterDocId, 'doc-1');
+        expect(spec.limit, 10);
+        expect(result.data!.map((wall) => wall.id), <String>['wall-2', 'wall-3']);
+      });
+
+      test('hides walls from blocked creators', () async {
+        final repo = PrismWallpaperRepositoryImpl(
+          _walls(_buildWallDocs(count: 3)),
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{'creator2@example.com'}),
+        );
+
+        final result = await repo.fetchByCategory('Nature');
+
+        expect(result.data!.map((wall) => wall.id), <String>['wall-1', 'wall-3']);
+      });
+
+      test('a failed query is a user-facing failure', () async {
+        final firestore = _walls(_buildWallDocs(count: 1))..queryError = StateError('boom');
+        final repo = PrismWallpaperRepositoryImpl(
+          firestore,
+          FakeFeedCacheLocalDataSource(),
+          FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+        );
+
+        final result = await repo.fetchByCategory('Nature');
+
+        expect(result.failure!.message, wallpaperLoadFailureMessage);
+      });
+    });
   });
 }
 
@@ -137,4 +240,18 @@ List<({String docId, Map<String, dynamic> data})> _buildWallDocs({required int c
       },
     );
   });
+}
+
+/// A client whose `getById` always fails, as when the device is offline and the document is not cached.
+class _FailingGetFirestore extends FakeFirestoreClient {
+  _FailingGetFirestore({FakeFirestoreClient? docs}) : super(onQuery: docs?.onQuery);
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) => Future<T?>.error(StateError('[cloud_firestore/unavailable] The service is currently unavailable.'));
 }

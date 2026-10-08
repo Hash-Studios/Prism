@@ -55,12 +55,14 @@ extension WallpaperHistoryEventPatterns on WallpaperHistoryEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Cleared value)?  cleared,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Cleared value)?  cleared,TResult Function( _Removed value)?  removed,TResult Function( _Restored value)?  restored,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Cleared() when cleared != null:
-return cleared(_that);case _:
+return cleared(_that);case _Removed() when removed != null:
+return removed(_that);case _Restored() when restored != null:
+return restored(_that);case _:
   return orElse();
 
 }
@@ -78,12 +80,14 @@ return cleared(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Cleared value)  cleared,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Cleared value)  cleared,required TResult Function( _Removed value)  removed,required TResult Function( _Restored value)  restored,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _Cleared():
-return cleared(_that);case _:
+return cleared(_that);case _Removed():
+return removed(_that);case _Restored():
+return restored(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -100,12 +104,14 @@ return cleared(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Cleared value)?  cleared,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Cleared value)?  cleared,TResult? Function( _Removed value)?  removed,TResult? Function( _Restored value)?  restored,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Cleared() when cleared != null:
-return cleared(_that);case _:
+return cleared(_that);case _Removed() when removed != null:
+return removed(_that);case _Restored() when restored != null:
+return restored(_that);case _:
   return null;
 
 }
@@ -122,11 +128,13 @@ return cleared(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  cleared,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  cleared,TResult Function( String id)?  removed,TResult Function( AppliedWallpaper item)?  restored,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _Cleared() when cleared != null:
-return cleared();case _:
+return cleared();case _Removed() when removed != null:
+return removed(_that.id);case _Restored() when restored != null:
+return restored(_that.item);case _:
   return orElse();
 
 }
@@ -144,11 +152,13 @@ return cleared();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  cleared,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  cleared,required TResult Function( String id)  removed,required TResult Function( AppliedWallpaper item)  restored,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _Cleared():
-return cleared();case _:
+return cleared();case _Removed():
+return removed(_that.id);case _Restored():
+return restored(_that.item);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -165,11 +175,13 @@ return cleared();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  cleared,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  cleared,TResult? Function( String id)?  removed,TResult? Function( AppliedWallpaper item)?  restored,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _Cleared() when cleared != null:
-return cleared();case _:
+return cleared();case _Removed() when removed != null:
+return removed(_that.id);case _Restored() when restored != null:
+return restored(_that.item);case _:
   return null;
 
 }
@@ -240,6 +252,138 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class _Removed implements WallpaperHistoryEvent {
+  const _Removed(this.id);
+  
+
+ final  String id;
+
+/// Create a copy of WallpaperHistoryEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$RemovedCopyWith<_Removed> get copyWith => __$RemovedCopyWithImpl<_Removed>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Removed&&(identical(other.id, id) || other.id == id));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id);
+
+@override
+String toString() {
+  return 'WallpaperHistoryEvent.removed(id: $id)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$RemovedCopyWith<$Res> implements $WallpaperHistoryEventCopyWith<$Res> {
+  factory _$RemovedCopyWith(_Removed value, $Res Function(_Removed) _then) = __$RemovedCopyWithImpl;
+@useResult
+$Res call({
+ String id
+});
+
+
+
+
+}
+/// @nodoc
+class __$RemovedCopyWithImpl<$Res>
+    implements _$RemovedCopyWith<$Res> {
+  __$RemovedCopyWithImpl(this._self, this._then);
+
+  final _Removed _self;
+  final $Res Function(_Removed) _then;
+
+/// Create a copy of WallpaperHistoryEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? id = null,}) {
+  return _then(_Removed(
+null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class _Restored implements WallpaperHistoryEvent {
+  const _Restored(this.item);
+  
+
+ final  AppliedWallpaper item;
+
+/// Create a copy of WallpaperHistoryEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$RestoredCopyWith<_Restored> get copyWith => __$RestoredCopyWithImpl<_Restored>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Restored&&(identical(other.item, item) || other.item == item));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,item);
+
+@override
+String toString() {
+  return 'WallpaperHistoryEvent.restored(item: $item)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$RestoredCopyWith<$Res> implements $WallpaperHistoryEventCopyWith<$Res> {
+  factory _$RestoredCopyWith(_Restored value, $Res Function(_Restored) _then) = __$RestoredCopyWithImpl;
+@useResult
+$Res call({
+ AppliedWallpaper item
+});
+
+
+
+
+}
+/// @nodoc
+class __$RestoredCopyWithImpl<$Res>
+    implements _$RestoredCopyWith<$Res> {
+  __$RestoredCopyWithImpl(this._self, this._then);
+
+  final _Restored _self;
+  final $Res Function(_Restored) _then;
+
+/// Create a copy of WallpaperHistoryEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? item = null,}) {
+  return _then(_Restored(
+null == item ? _self.item : item // ignore: cast_nullable_to_non_nullable
+as AppliedWallpaper,
+  ));
+}
+
+
+}
 
 /// @nodoc
 mixin _$WallpaperHistoryState {

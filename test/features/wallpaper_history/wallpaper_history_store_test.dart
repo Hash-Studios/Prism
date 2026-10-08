@@ -35,10 +35,18 @@ void main() {
     expect(store.items().map((i) => i.fullUrl), ['c', 'b', 'a']);
   });
 
-  test('drops a repeat of the same url and target within one minute', () async {
+  test('moves a repeat of the same url and target within one minute to the top instead of adding a row', () async {
     await store.record(_item('a', at: t0));
-    await store.record(_item('a', at: t0.add(const Duration(seconds: 30))));
-    expect(store.items(), hasLength(1));
+    await store.record(_item('b', at: t0.add(const Duration(seconds: 10))));
+    final String id = await store.record(_item('a', at: t0.add(const Duration(seconds: 30))));
+    expect(store.items().map((i) => i.fullUrl), ['a', 'b']);
+    expect(store.items().first.id, id);
+    expect(store.items().first.appliedAt, t0.add(const Duration(seconds: 30)));
+  });
+
+  test('record returns the id of the new row', () async {
+    final String id = await store.record(_item('a', at: t0));
+    expect(store.items().single.id, id);
   });
 
   test('keeps the same url on another target or after a minute', () async {
@@ -64,6 +72,44 @@ void main() {
     final WallpaperHistoryStore reopened = WallpaperHistoryStore(SettingsLocalDataSource(backing));
     expect(reopened.items().single.fullUrl, 'a');
     expect(reopened.items().single.appliedAt.toUtc(), t0);
+  });
+
+  test('remove deletes one row and keeps the rest', () async {
+    await store.record(_item('a', at: t0));
+    await store.record(_item('b', at: t0.add(const Duration(minutes: 5))));
+    await store.remove(store.items().last.id);
+    expect(store.items().map((i) => i.fullUrl), ['b']);
+    expect(WallpaperHistoryStore(SettingsLocalDataSource(backing)).items().map((i) => i.fullUrl), ['b']);
+  });
+
+  test('remove ignores an unknown id', () async {
+    await store.record(_item('a', at: t0));
+    await store.remove('missing');
+    expect(store.items(), hasLength(1));
+  });
+
+  group('currentFor', () {
+    test('is null before anything was set', () {
+      expect(store.currentFor('home'), isNull);
+      expect(store.currentFor('lock'), isNull);
+    });
+
+    test('is the newest row for the screen', () async {
+      await store.record(_item('a', at: t0));
+      await store.record(_item('b', target: 'lock', at: t0.add(const Duration(minutes: 5))));
+      await store.record(_item('c', at: t0.add(const Duration(minutes: 10))));
+      expect(store.currentFor('home')?.fullUrl, 'c');
+      expect(store.currentFor('lock')?.fullUrl, 'b');
+    });
+
+    test('a both row counts for each screen until a newer row replaces it', () async {
+      await store.record(_item('a', target: 'both', at: t0));
+      expect(store.currentFor('home')?.fullUrl, 'a');
+      expect(store.currentFor('lock')?.fullUrl, 'a');
+      await store.record(_item('b', target: 'lock', at: t0.add(const Duration(minutes: 5))));
+      expect(store.currentFor('home')?.fullUrl, 'a');
+      expect(store.currentFor('lock')?.fullUrl, 'b');
+    });
   });
 
   test('clear empties the list', () async {

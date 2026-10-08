@@ -99,6 +99,7 @@ async function runJob(users: User[], options: {
   failSend?: boolean;
   wall?: boolean;
   token?: string;
+  sessions?: Record<string, Record<string, unknown>>;
 } = {}) {
   const firestore = admin.firestore();
   const messaging = admin.messaging();
@@ -188,7 +189,10 @@ async function runJob(users: User[], options: {
   Object.defineProperty(firestore, "collection", {configurable: true, value: collection});
   Object.defineProperty(firestore, "doc", {
     configurable: true,
-    value: () => ({get: async () => ({data: () => options.token ? {fcmToken: options.token} : {}})}),
+    value: (path: string) => ({get: async () => ({data: () => ({
+      ...(options.token ? {fcmToken: options.token} : {}),
+      ...(options.sessions?.[path.split("/")[1]] ?? {}),
+    })})}),
   });
   Object.defineProperty(messaging, "send", {
     configurable: true,
@@ -335,4 +339,15 @@ test("failed later-step delivery preserves the earlier completed stamp", async (
   assert.equal(winBack?.step, 3);
   assert.equal(winBack?.claimAt, claimAt);
   assert.equal(winBack?.sentAt, sentAt);
+});
+
+test("a user who turned marketing pushes off gets no win-back push and no stamp", async () => {
+  const {sent, users} = await runJob([
+    makeUser("muted", 3.5),
+    makeUser("on", 3.5),
+    makeUser("unset", 3.5),
+  ], {token: "tok-1", sessions: {muted: {marketingPushes: false}, on: {marketingPushes: true}}});
+  assert.deepEqual(sent.map(messageTopic).filter(Boolean).sort(), ["u_on", "u_unset"]);
+  assert.equal(sent.length, 4);
+  assert.equal(users.get("muted")?.winBack, undefined);
 });

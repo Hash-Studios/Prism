@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {createHash, randomUUID} from "node:crypto";
 import {defineSecret} from "firebase-functions/params";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
+import {isAdminCaller} from "./adminConfig";
 import {db, readDailyCount, REGION, utcDateString} from "./common";
 
 const UPLOADS = "githubUploads";
@@ -556,7 +557,7 @@ export const githubDeleteFile = onCall(
     const {repo, path, message} = validateCommon(request.data ?? {});
     const sha = requiredString(request.data?.sha, "sha");
     if (sha.includes("/") || sha === "." || sha === "..") throw new HttpsError("invalid-argument", "Invalid SHA.");
-    const isAdmin = request.auth?.token?.admin === true;
+    const isAdmin = await isAdminCaller(request.auth);
 
     const uploadCollection = db.collection(UPLOADS);
     let uploadRef = uploadCollection.doc(uploadRecordId(repo, path, sha));

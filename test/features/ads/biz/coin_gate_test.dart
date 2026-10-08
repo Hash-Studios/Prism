@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
+import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_coin_gate_port.dart';
@@ -272,33 +273,165 @@ void main() {
     expect(port.errors, <String>['Unable to credit coins right now.']);
   });
 
-  test('ad reward that is still short reports the missing coins', () async {
+  test('ad reward that is still short returns to the low-balance prompt with the coins still missing', () async {
     port.balance = 0;
     port.awardAmount = 2;
-    choice = CoinGateChoice.watchAd;
-    expect(
-      await CoinGate(port).run(
-        CoinGateSpec(
-          action: CoinSpendAction.premiumFilter,
-          tags: _tags,
-          upsellSource: 'upsell',
-          upgradeSource: 'upgrade',
-          isMounted: () => true,
-          perform: () async {
-            performed++;
-            return performResult;
-          },
-          choose: (prompt) async {
-            prompts.add(prompt);
-            return choice;
-          },
-          precheckBalance: true,
-        ),
+    final List<CoinGateChoice> choices = <CoinGateChoice>[CoinGateChoice.watchAd, CoinGateChoice.cancel];
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async {
+          performed++;
+          return performResult;
+        },
+        choose: (prompt) async {
+          prompts.add(prompt);
+          return choices.removeAt(0);
+        },
+        precheckBalance: true,
       ),
-      CoinGateResult.insufficient,
     );
-    expect(port.errors.last, 'Need 3 more coins.');
+    expect(result, CoinGateResult.cancelled);
+    expect(prompts.map((p) => p.phase), <CoinGatePhase>[CoinGatePhase.insufficient, CoinGatePhase.insufficient]);
+    expect(prompts.map((p) => p.missing), <int>[5, 3]);
+    expect(port.errors, isEmpty);
     expect(performed, 0);
+  });
+
+  test('two ads can cover a Pro wallpaper that costs more than one ad pays', () async {
+    port.balance = 0;
+    final List<CoinGateChoice> choices = <CoinGateChoice>[CoinGateChoice.watchAd, CoinGateChoice.watchAd];
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumWallpaperDownload,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async {
+          performed++;
+          return true;
+        },
+        choose: (prompt) async {
+          prompts.add(prompt);
+          return choices.removeAt(0);
+        },
+        precheckBalance: true,
+      ),
+    );
+    expect(result, CoinGateResult.performed);
+    expect(prompts.map((p) => p.missing), <int>[15, 5]);
+    expect(port.log.where((e) => e == 'ad'), hasLength(2));
+    expect(performed, 1);
+    expect(port.balance, 5);
+  });
+
+  test('the prompt carries the ad consent and the ads left today', () async {
+    port.balance = 1;
+    port.consentGiven = false;
+    port.adsRemaining = 0;
+    await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async => true,
+        choose: (prompt) async {
+          prompts.add(prompt);
+          return CoinGateChoice.cancel;
+        },
+        precheckBalance: true,
+      ),
+    );
+    expect(prompts.single.adsAllowed, isFalse);
+    expect(prompts.single.adsRemaining, 0);
+    expect(prompts.single.canWatchAd, isFalse);
+  });
+
+  test('a prompt with consent and ads left allows an ad', () async {
+    port.balance = 1;
+    port.adsRemaining = 3;
+    await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async => true,
+        choose: (prompt) async {
+          prompts.add(prompt);
+          return CoinGateChoice.cancel;
+        },
+        precheckBalance: true,
+      ),
+    );
+    expect(prompts.single.canWatchAd, isTrue);
+    expect(prompts.single.adsRemaining, 3);
+  });
+
+  group('ad failure copy', () {
+    const Map<AdFailureReason?, String> copy = <AdFailureReason?, String>{
+      AdFailureReason.consent: 'Ads are off. Change this in Settings > Privacy.',
+      AdFailureReason.noFill: 'No ad is available right now. Try again later.',
+      AdFailureReason.offline: 'You are offline. Check your connection and try again.',
+      AdFailureReason.timeout: 'Ad was not completed.',
+      AdFailureReason.other: 'Ad was not completed.',
+      null: 'Ad was not completed.',
+    };
+    for (final MapEntry<AdFailureReason?, String> entry in copy.entries) {
+      test('${entry.key} shows "${entry.value}"', () async {
+        port.balance = 1;
+        choice = CoinGateChoice.watchAd;
+        port.adCompletes = false;
+        port.adFailure = entry.key;
+        expect(await CoinGate(port).run(spec()), CoinGateResult.cancelled);
+        expect(port.errors, <String>[entry.value]);
+      });
+    }
+  });
+
+  test('a daily-limit reply shows the limit copy', () async {
+    port.balance = 1;
+    choice = CoinGateChoice.watchAd;
+    port.awardChanges = false;
+    port.awardReason = 'rewarded_ad_limit';
+    expect(await CoinGate(port).run(spec()), CoinGateResult.cancelled);
+    expect(port.errors, <String>['Daily limit reached. Back tomorrow.']);
+  });
+
+  test('a reward the server may have granted is reported as pending, not as an error', () async {
+    port.balance = 1;
+    choice = CoinGateChoice.watchAd;
+    port.awardChanges = false;
+    port.awardUnknownOutcome = 'award_u_r';
+    expect(await CoinGate(port).run(spec()), CoinGateResult.cancelled);
+    expect(port.errors, isEmpty);
+    expect(port.infos, <String>[rewardPendingMessage]);
+  });
+
+  test('the spend carries the ledger label and the download marker link', () async {
+    await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        label: 'Wallpaper by Ana',
+        pendingDownloadLink: 'https://x.test/a.jpg',
+        isMounted: () => true,
+        perform: () async => true,
+        choose: (_) async => CoinGateChoice.cancel,
+      ),
+    );
+    expect(port.spendLabels, <String>['Wallpaper by Ana']);
+    expect(port.pendingDownloadLinks, <String?>['https://x.test/a.jpg']);
   });
 
   test('initial precheck skips spend when balance is short', () async {

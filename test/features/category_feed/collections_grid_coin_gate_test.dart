@@ -7,6 +7,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as collections_data;
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -36,7 +37,19 @@ class _DelayedPreviewFirestore extends Fake implements FirestoreClient {
 }
 
 void main() {
+  setUp(() {
+    // The coin gate asks for ad consent before it shows a prompt. The real flow needs the Google UMP plugin.
+    AdConsent.instance = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      canRequestAds: () async => true,
+      privacyOptionsRequired: () async => false,
+      showPrivacyOptions: () async {},
+    );
+  });
+
   tearDown(() async {
+    AdConsent.instance = AdConsent();
     app_state.prismUser = app_constants.createGuestPrismUser();
     CoinsService.instance.balanceNotifier.value = 0;
     collections_data.collections = <Map<String, dynamic>>[];

@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/data/recent_searches_store.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
+import 'package:Prism/features/user_search/data/search_tags.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_widget.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
@@ -29,82 +30,12 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final List<String> tags = [
-    'Art',
-    'Abstract',
-    'Patterns',
-    'Geometry',
-    'Cyber',
-    'Cars',
-    'Comics',
-    'Anime',
-    'Illustrations',
-    'Games',
-    'Street',
-    'Flowers',
-    'Epic',
-    'Minimalism',
-    'Mountains',
-    'Field',
-    'Chocolate',
-    'Train',
-    'Walking',
-    'Food',
-    'Design',
-    'Love',
-    'Wildlife',
-    'Stock',
-    'Trees',
-    'Planets',
-    'Space',
-    'Winter',
-    'Beach',
-    'Ninja',
-    'Summer',
-    'Titan',
-    'White',
-    '8bit',
-    'Fantasy',
-    'Fashion',
-    'Fitness',
-    'Fruits',
-    'Futuristic',
-    'Gems',
-    'Graffiti',
-    'Halloween',
-    'Hipster',
-    'Holidays',
-    'Industry',
-    'Interiors',
-    'Kids',
-    'Landscapes',
-    'Macro',
-    'Nature',
-    'Night',
-    'People',
-    'Plants',
-    'Portraits',
-    'Retro',
-    'Robots',
-    'Science',
-    'Sports',
-    'Technics',
-    'Textures',
-    'Transport',
-    'Travel',
-    'Wedding',
-    'Zombies',
-    'Cute',
-    'Fairy',
-    'Fairytale',
-    'Funny',
-    'Geometric',
-    'Graphic',
-  ];
-
   final TextEditingController searchController = TextEditingController();
   late final RecentSearchesStore _recents = RecentSearchesStore(getIt<SettingsLocalDataSource>());
   late List<String> _recentSearches = _recents.read();
+  // One bloc for the screen, so "Trending right now" does not reload each time the user returns from a search.
+  late final SearchDiscoveryBloc _discoveryBloc = getIt<SearchDiscoveryBloc>()
+    ..add(const SearchDiscoveryEvent.fetchRequested());
   Future<WallpaperSearchPage>? _search;
   String _submittedQuery = '';
   SearchFilters _filters = const SearchFilters();
@@ -169,6 +100,7 @@ class _SearchScreenState extends State<SearchScreen> {
       isSubmitted = false;
       _search = null;
     });
+    _discoveryBloc.add(const SearchDiscoveryEvent.fetchRequested());
   }
 
   void _clearQuery() {
@@ -208,7 +140,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void initState() {
-    tags.shuffle();
     super.initState();
     pendingTagSearch.addListener(_consumePendingTag);
     if (pendingTagSearch.value != null) {
@@ -220,6 +151,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     pendingTagSearch.removeListener(_consumePendingTag);
     searchController.dispose();
+    unawaited(_discoveryBloc.close());
     super.dispose();
   }
 
@@ -228,21 +160,21 @@ class _SearchScreenState extends State<SearchScreen> {
       future: _search,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingCards();
+          return const LoadingCards(useFeedLayout: true);
         }
         if (snapshot.hasError) {
           return RefreshableGlintState(
             kind: GlintStateKind.error,
             title: "Couldn't search right now",
             body: 'Check your connection and try again.',
-            actionLabel: 'Retry',
+            actionLabel: 'Try again',
             onAction: () => _triggerSearch(_submittedQuery),
             onRefresh: () async => _triggerSearch(_submittedQuery),
           );
         }
         final WallpaperSearchPage? page = snapshot.data;
         if (page == null) {
-          return const LoadingCards();
+          return const LoadingCards(useFeedLayout: true);
         }
         if (page.results.isEmpty && page.prismResults.isEmpty) {
           return GlintState(
@@ -341,10 +273,10 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         body: isSubmitted
             ? _results()
-            : BlocProvider<SearchDiscoveryBloc>(
-                create: (_) => getIt<SearchDiscoveryBloc>()..add(const SearchDiscoveryEvent.fetchRequested()),
+            : BlocProvider<SearchDiscoveryBloc>.value(
+                value: _discoveryBloc,
                 child: SearchDiscoveryWidget(
-                  tags: tags,
+                  tags: curatedSearchTags,
                   selectedTag: searchController.text,
                   recentSearches: _recentSearches,
                   onClearRecents: () => unawaited(_clearRecents()),

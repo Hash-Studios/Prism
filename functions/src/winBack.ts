@@ -53,6 +53,16 @@ function completedState(data: admin.firestore.DocumentData): WinBackState {
   };
 }
 
+/** True only when the user turned marketing pushes off; an unreadable pref does not block the push. */
+async function marketingPushesOff(uid: string): Promise<boolean> {
+  try {
+    return (await db.doc(`usersv2/${uid}/private/session`).get()).data()?.marketingPushes === false;
+  } catch (err) {
+    logger.warn("winBack: could not read the marketing push pref.", {uid, err});
+    return false;
+  }
+}
+
 async function todaysWall(): Promise<{title: string; wallId?: string; imageUrl?: string}> {
   const fallback = {title: "A fresh pick"};
   try {
@@ -107,6 +117,7 @@ export const sendWinBackPushes = onSchedule(
                   !(claimAt instanceof admin.firestore.Timestamp)) return false;
               const step = winBackStepFor(nowMs, claimAt.toMillis(), completedState(data));
               if (step !== n) return false;
+              if (await marketingPushesOff(uid)) return false;
 
               const targets = [
                 {topic: userIdToTopic(uid)},

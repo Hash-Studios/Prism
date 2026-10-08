@@ -14,6 +14,8 @@ extension PrismWallDocMapper on PrismWallDocDto {
         ? null
         : uploadedBy;
 
+    final String? cleanTitle = title?.trim();
+
     final List<String> mergedTags = <String>[...tags];
     if (category.isNotEmpty && category.toLowerCase() != 'general') mergedTags.add(category);
     final Set<String> seenTags = <String>{};
@@ -33,6 +35,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
         category: desc.isEmpty ? null : desc,
         createdAt: createdAt,
       ),
+      title: cleanTitle == null || cleanTitle.isEmpty ? null : cleanTitle,
       collections: collections.isEmpty ? null : collections,
       review: review,
       tags: mergedTags.isEmpty ? null : mergedTags,

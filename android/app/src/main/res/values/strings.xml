@@ -3,4 +3,14 @@
     <string name="quick_settings">Shuffle wallpaper</string>
     <string name="quick_settings_wotd">Wall of the Day</string>
     <string name="quick_settings_favs">Random Favourite</string>
+    <string name="tile_wallpaper_updated">Wallpaper updated</string>
+    <string name="tile_error_offline">No connection. Try again.</string>
+    <string name="tile_error_timeout">The wallpaper took too long to load. Try again.</string>
+    <string name="tile_error_download">Could not download the wallpaper. Try again.</string>
+    <string name="tile_error_setup">Open Prism to finish setting up this tile.</string>
+    <string name="tile_error_unavailable">Wallpaper changes are not available on this device.</string>
+    <string name="tile_error_generic">Could not apply the wallpaper. Try again.</string>
+    <string name="wotd_widget_label">Prism</string>
+    <string name="wotd_widget_hint">Open Prism for today\'s wallpaper</string>
+    <string name="wotd_widget_description">Today\'s wallpaper. Tap to open Prism.</string>
 </resources>

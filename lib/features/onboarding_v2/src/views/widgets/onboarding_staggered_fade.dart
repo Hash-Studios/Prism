@@ -1,9 +1,10 @@
 import 'dart:async';
 
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
-/// Fades [child] in [delay] after the first frame.
+/// Fades [child] in [delay] after the first frame. With reduced motion it shows at once.
 class OnboardingStaggeredFade extends StatefulWidget {
   const OnboardingStaggeredFade({super.key, required this.delay, required this.child});
 
@@ -22,9 +23,18 @@ class _OnboardingStaggeredFadeState extends State<OnboardingStaggeredFade> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || _visible) return;
       _timer = Timer(widget.delay, () => setState(() => _visible = true));
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) {
+      _timer?.cancel();
+      _visible = true;
+    }
   }
 
   @override
@@ -35,6 +45,10 @@ class _OnboardingStaggeredFadeState extends State<OnboardingStaggeredFade> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedOpacity(opacity: _visible ? 1.0 : 0.0, duration: OnboardingMotion.fade, child: widget.child);
+    return AnimatedOpacity(
+      opacity: _visible ? 1.0 : 0.0,
+      duration: context.motion(OnboardingMotion.fade),
+      child: widget.child,
+    );
   }
 }

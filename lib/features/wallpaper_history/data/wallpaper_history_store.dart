@@ -22,18 +22,30 @@ class WallpaperHistoryStore {
 
   List<AppliedWallpaper> items() => List<AppliedWallpaper>.unmodifiable(_load());
 
-  Future<void> record(AppliedWallpaper item) async {
-    final List<AppliedWallpaper> current = _load();
-    final bool duplicate = current.any(
-      (existing) =>
-          existing.fullUrl == item.fullUrl &&
-          existing.target == item.target &&
-          item.appliedAt.difference(existing.appliedAt).abs() < wallpaperHistoryDedupeWindow,
-    );
-    if (duplicate) return;
-    final List<AppliedWallpaper> next = <AppliedWallpaper>[item, ...current];
+  /// The newest item that is on [target] now: its own target or `both`. Null when Prism set nothing there yet.
+  AppliedWallpaper? currentFor(String target) => currentWallpaperFor(_load(), target);
+
+  /// Saves [item] at the top and returns its id. The same wall set again on the same target within
+  /// [wallpaperHistoryDedupeWindow] moves to the top instead of making a second row.
+  Future<String> record(AppliedWallpaper item) async {
+    final List<AppliedWallpaper> next = <AppliedWallpaper>[
+      item,
+      ..._load().where(
+        (existing) =>
+            !(existing.fullUrl == item.fullUrl &&
+                existing.target == item.target &&
+                item.appliedAt.difference(existing.appliedAt).abs() < wallpaperHistoryDedupeWindow),
+      ),
+    ];
     next.sort((a, b) => b.appliedAt.compareTo(a.appliedAt));
     await _save(next.length > wallpaperHistoryLimit ? next.sublist(0, wallpaperHistoryLimit) : next);
+    return item.id;
+  }
+
+  Future<void> remove(String id) async {
+    final List<AppliedWallpaper> current = _load();
+    if (!current.any((item) => item.id == id)) return;
+    await _save(current.where((item) => item.id != id).toList(growable: false));
   }
 
   Future<void> clear() => _save(const <AppliedWallpaper>[]);

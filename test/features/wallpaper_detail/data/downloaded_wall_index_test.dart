@@ -53,6 +53,52 @@ void main() {
     expect(failingIndex.resolve('/d/existing.jpg'), (id: 'old', source: WallpaperSource.prism));
   });
 
+  test('has() is true for a remembered link, whatever the extension, and false for others', () async {
+    await index.remember(link: 'https://example.com/a/image_picker1.png', id: 'w1', source: WallpaperSource.prism);
+
+    expect(index.has('https://example.com/a/image_picker1.png'), isTrue);
+    expect(index.has('https://example.com/b/image_picker1.jpg'), isTrue);
+    expect(index.has('https://example.com/a/image_picker2.png'), isFalse);
+  });
+
+  test('clear() forgets every entry', () async {
+    await index.remember(link: 'https://example.com/one.png', id: 'w1', source: WallpaperSource.prism);
+    await index.remember(link: 'https://example.com/two.png', id: 'w2', source: WallpaperSource.prism);
+
+    await index.clear();
+
+    expect(index.has('https://example.com/one.png'), isFalse);
+    expect(index.resolve('/d/two.jpg'), isNull);
+  });
+
+  test('forget() drops the entry of a deleted file', () async {
+    await index.remember(link: 'https://example.com/one.png', id: 'w1', source: WallpaperSource.prism);
+    await index.remember(link: 'https://example.com/two.png', id: 'w2', source: WallpaperSource.prism);
+
+    await index.forget(<String>['/d/one.jpg'], remainingPaths: <String>['/d/two.jpg']);
+
+    expect(index.has('https://example.com/one.png'), isFalse);
+    expect(index.has('https://example.com/two.png'), isTrue);
+  });
+
+  test('forget() keeps the entry while a copy of the file is left', () async {
+    await index.remember(link: 'https://example.com/one.png', id: 'w1', source: WallpaperSource.prism);
+
+    await index.forget(<String>['/d/one.jpg'], remainingPaths: <String>['/d/one (1).jpg']);
+    expect(index.resolve('/d/one (1).jpg')?.id, 'w1');
+
+    await index.forget(<String>['/d/one (1).jpg'], remainingPaths: const <String>[]);
+    expect(index.has('https://example.com/one.png'), isFalse);
+  });
+
+  test('a copy of another wall with the same file name opens its own wall, not the first one', () async {
+    await index.remember(link: 'https://example.com/shared.png', id: 'first', source: WallpaperSource.prism);
+    await index.remember(link: 'https://example.com/shared%20(1).png', id: 'second', source: WallpaperSource.prism);
+
+    expect(index.resolve('/d/shared (1).jpg')?.id, 'second');
+    expect(index.resolve('/d/shared.jpg')?.id, 'first');
+  });
+
   test('returns null for unknown files', () {
     expect(index.resolve('/d/image_picker42.jpg'), isNull);
     expect(index.resolve('/d/default_1700000000.png'), isNull);

@@ -141,7 +141,7 @@ void main() {
     expect(find.byType(SeeMoreButton), findsNothing);
   });
 
-  testWidgets('a failed first page shows an error with Retry, and Retry loads the feed', (tester) async {
+  testWidgets('a failed first page shows an error with Try again, and Try again loads the feed', (tester) async {
     int calls = 0;
     when(() => repository.fetchColorFeed(hex: 'ff0000', name: 'Red', refresh: true)).thenAnswer((_) async {
       calls++;
@@ -163,7 +163,7 @@ void main() {
     expect(find.text("Couldn't load wallpapers"), findsOneWidget);
     expect(find.byType(LoadingCards), findsNothing);
 
-    await tester.tap(find.text('Retry'));
+    await tester.tap(find.text('Try again'));
     await tester.pump();
     await tester.pump();
 

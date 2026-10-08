@@ -4,6 +4,7 @@ const Map<String, String> _actionLabels = <String, String>{
   'streakBonus': 'Week bonus',
   'proStreakBonus': 'Pro streak bonus',
   'proDailyBonus': 'Pro daily bonus',
+  'streakRescue': 'Streak restore',
   'rewardedAd': 'Watched a video',
   'referral': 'Invite reward',
   'firstWallpaperUpload': 'First upload',

@@ -5,6 +5,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -16,6 +17,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -31,13 +33,16 @@ import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
 import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
@@ -100,6 +105,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   static const double _chromePad = 8.0;
   static const double _minInteractiveTarget = 48.0;
   static const double _handleHeight = 36.0;
+
+  /// "Set N times" shows from this count, so a small number never reads as a poor wallpaper.
+  static const int _minSetCountShown = 5;
 
   final ShakeController _shake = ShakeController();
   final SimilarWallpapersLoader _similarLoader = SimilarWallpapersLoader.fromGetIt();
@@ -305,24 +313,39 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         );
 
   Widget _buildErrorState(WallpaperDetailError state) {
-    final message = state.message.trim();
+    final theme = Theme.of(context);
+    final thumbnailUrl = normalizeWallpaperThumbnailUrl(state.thumbnailUrl ?? '');
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: GlintState(
-                kind: GlintStateKind.error,
-                title: "Couldn't load this wallpaper",
-                body: message.isEmpty ? 'Check your connection and try again.' : message,
-                actionLabel: 'Try again',
-                onAction: () => _loadWallpaper(context),
-              ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (thumbnailUrl.isNotEmpty)
+            CachedNetworkImage(
+              cacheManager: PrismImageCache.instance,
+              imageUrl: thumbnailUrl,
+              fit: BoxFit.cover,
+              placeholder: (ctx, _) => Container(color: theme.primaryColor),
+              errorWidget: (ctx, _, _) => Container(color: theme.primaryColor),
             ),
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go back')),
-            const SizedBox(height: 16),
-          ],
-        ),
+          Container(color: theme.primaryColor.withValues(alpha: thumbnailUrl.isEmpty ? 1 : 0.8)),
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: GlintState(
+                    kind: GlintStateKind.error,
+                    title: "Couldn't load this wallpaper",
+                    body: state.message,
+                    actionLabel: 'Try again',
+                    onAction: () => _loadWallpaper(context),
+                  ),
+                ),
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go back')),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -416,7 +439,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                         },
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [_buildMetadataRow(context, entity, state), ..._buildPanelExtras(context, entity)],
+                          children: [_buildMetadataRow(context, entity, state), ..._buildPanelExtras(context, state)],
                         ),
                       ),
                     ),
@@ -625,29 +648,43 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       left: [
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            runSpacing: 4,
-            children: [
-              Text(
-                wallpaper.id.toUpperCase(),
-                style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary),
-              ),
-              if (state.views != null) ...[
-                divider,
-                Text(
-                  "${state.views} views",
-                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary.withValues(alpha: 0.7)),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              runSpacing: 4,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                  child: Text(
+                    wallpaperTitle(state.entity),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary),
+                  ),
                 ),
-              ] else if (state.viewsLoading) ...[
-                divider,
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(secondary)),
-                ),
+                if (state.views != null) ...[
+                  divider,
+                  Text(
+                    "${state.views} views",
+                    style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary.withValues(alpha: 0.7)),
+                  ),
+                ] else if (state.viewsLoading) ...[
+                  divider,
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(secondary)),
+                  ),
+                ],
+                if (state.setCount case final int sets when sets >= _minSetCountShown) ...[
+                  divider,
+                  Text(
+                    'Set $sets times',
+                    style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary.withValues(alpha: 0.7)),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         if (collections != null && collections.isNotEmpty) ...[
@@ -880,7 +917,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   String? _shareContextLine(FeedItemEntity entity) {
     final String? name = entity.wallpaperCore.authorName?.trim();
-    return name == null || name.isEmpty ? null : 'by $name';
+    return name == null || name.isEmpty || name.contains('@') ? null : 'by $name';
   }
 
   Widget _buildActionBar(BuildContext context, WallpaperDetailLoaded state) {
@@ -913,7 +950,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 url: widget.localFile?.path ?? url,
                 thumbnailUrl: entity.thumbnailUrl,
                 promptNotificationPermissionOnSuccess: true,
-                onSet: () => _recordTaste(TasteAction.set, entity),
+                entryPoint: 'wallpaper_detail',
+                notes: wallpaperResolutionNotes(entity.wallpaperCore, _screenPixels(context)),
+                onMatchAccent: _matchAccentAction(context, state),
+                onSet: () => _onWallpaperSet(entity),
               ),
             ),
           );
@@ -953,11 +993,51 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     );
   }
 
-  List<Widget> _buildPanelExtras(BuildContext context, FeedItemEntity entity) {
+  /// Opens Make it live. The first palette colour seeds its gradients, so they follow this wallpaper.
+  void _openMakeItLive(BuildContext context, WallpaperDetailLoaded state) {
+    context.router.push(LiveWallpaperRoute(imageUrl: state.entity.fullUrl, accentSeed: state.colors?.firstOrNull));
+  }
+
+  Size _screenPixels(BuildContext context) => MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
+
+  void _onWallpaperSet(FeedItemEntity entity) {
+    _recordTaste(TasteAction.set, entity);
+    if (entity.source == WallpaperSource.prism) {
+      unawaited(getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set));
+    }
+  }
+
+  /// "Match accent" on the success snackbar: sets Prism's accent to the first palette colour of this wallpaper.
+  VoidCallback? _matchAccentAction(BuildContext context, WallpaperDetailLoaded state) {
+    final Color? color = state.colors?.firstOrNull;
+    if (color == null) return null;
+    final ThemeBloc? themeBloc = _themeBloc(context);
+    if (themeBloc == null) return null;
+    final bool dark = Theme.of(context).brightness == Brightness.dark;
+    return () {
+      themeBloc.add(
+        dark
+            ? ThemeEvent.darkAccentChanged(accentColorValue: color.toARGB32())
+            : ThemeEvent.lightAccentChanged(accentColorValue: color.toARGB32()),
+      );
+      unawaited(analytics.track(const AccentMatchedFromWallEvent()));
+    };
+  }
+
+  ThemeBloc? _themeBloc(BuildContext context) {
+    try {
+      return context.read<ThemeBloc>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<Widget> _buildPanelExtras(BuildContext context, WallpaperDetailLoaded state) {
+    final entity = state.entity;
     final theme = Theme.of(context);
     final tags = wallpaperTags(entity);
-    final screenPixels = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
-    final bool lowResolution = isLowResolutionForScreen(entity.wallpaperCore, screenPixels);
+    final notes = wallpaperResolutionNotes(entity.wallpaperCore, _screenPixels(context));
+    final bool canBlock = canBlockWallCreator(entity);
     final String? reportWallDocId = switch (entity) {
       PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId,
       _ => null,
@@ -966,17 +1046,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     Widget padded(Widget child) =>
         Padding(padding: const EdgeInsets.fromLTRB(_sheetHPad, 0, _sheetHPad, 12), child: child);
     return [
-      if (lowResolution)
+      for (final note in notes)
         padded(
           Row(
             children: [
               Icon(JamIcons.alert, size: 18, color: theme.colorScheme.error),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  'Low resolution for your screen',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary),
-                ),
+                child: Text(note, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary)),
               ),
             ],
           ),
@@ -986,7 +1063,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         padded(
           Align(
             alignment: Alignment.centerLeft,
-            child: MakeItLiveButton(onPressed: () => context.router.push(LiveWallpaperRoute(imageUrl: entity.fullUrl))),
+            child: MakeItLiveButton(onPressed: () => _openMakeItLive(context, state)),
           ),
         ),
       padded(
@@ -1000,15 +1077,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         padded(
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => showContentReportSheet(
-                context,
-                contentType: 'wall',
-                targetFirestoreDocId: reportWallDocId,
-                subtitle: entity.id,
-              ),
-              icon: Icon(JamIcons.flag, size: 20, color: theme.colorScheme.secondary),
-              label: Text('Report', style: TextStyle(color: theme.colorScheme.secondary)),
+            child: Wrap(
+              children: [
+                TextButton.icon(
+                  onPressed: () => showContentReportSheet(
+                    context,
+                    contentType: 'wall',
+                    targetFirestoreDocId: reportWallDocId,
+                    subtitle: entity.id,
+                    onBlockCreator: canBlock ? () => unawaited(blockWallCreator(context, entity)) : null,
+                  ),
+                  icon: Icon(JamIcons.flag, size: 20, color: theme.colorScheme.secondary),
+                  label: Text('Report', style: TextStyle(color: theme.colorScheme.secondary)),
+                ),
+                if (canBlock)
+                  TextButton.icon(
+                    onPressed: () => unawaited(blockWallCreator(context, entity)),
+                    icon: Icon(JamIcons.user_remove, size: 20, color: theme.colorScheme.secondary),
+                    label: Text('Block creator', style: TextStyle(color: theme.colorScheme.secondary)),
+                  ),
+              ],
             ),
           ),
         ),
@@ -1087,9 +1175,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                       return FadeTransition(
                         opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
                         child: ClockOverlay(
-                          accent: state.accent,
                           link: widget.localFile?.path ?? entity.fullUrl,
                           file: widget.localFile != null,
+                          thumbnailUrl: entity.thumbnailUrl,
                         ),
                       );
                     },
@@ -1103,6 +1191,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             ),
           ),
         ),
+        if (!hideSetWallpaperUi && entity.fullUrl.trim().isNotEmpty)
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: const EdgeInsets.all(_chromePad),
+              child: MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)),
+            ),
+          ),
       ],
     );
   }
@@ -1148,6 +1244,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             },
           ),
           CachedNetworkImage(
+            cacheManager: PrismFullImageCache.instance,
             imageUrl: full,
             memCacheWidth: cacheWidth,
             fit: BoxFit.cover,
@@ -1171,6 +1268,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         imageLayer = Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
       } else {
         imageLayer = CachedNetworkImage(
+          cacheManager: full.isNotEmpty ? PrismFullImageCache.instance : PrismImageCache.instance,
           imageUrl: url,
           memCacheWidth: cacheWidth,
           fadeInDuration: context.motion(const Duration(milliseconds: 180)),

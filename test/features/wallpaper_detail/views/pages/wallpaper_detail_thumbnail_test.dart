@@ -43,7 +43,7 @@ void main() {
 
     expect(
       tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl,
-      'https://th.wallhaven.cc/orig/21/wall.jpg',
+      'https://th.wallhaven.cc/lg/21/wall.jpg',
     );
   });
 
@@ -57,7 +57,7 @@ void main() {
 
     expect(
       tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl,
-      'https://th.wallhaven.cc/orig/21/state.jpg',
+      'https://th.wallhaven.cc/lg/21/state.jpg',
     );
   });
 

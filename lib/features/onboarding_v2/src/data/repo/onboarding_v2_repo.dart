@@ -20,6 +20,10 @@ abstract class OnboardingV2Repository {
 
   Future<Result<void>> saveInterests({required String userId, required List<String> interests});
 
+  /// Joins the interests a guest picked on this device with the account. The account wins when it already has
+  /// enough interests, and the device copy follows it. Otherwise the device picks go to the account.
+  Future<Result<void>> syncLocalInterests({required String userId});
+
   Future<Result<void>> followCreators({
     required String currentUserId,
     required String currentUserEmail,

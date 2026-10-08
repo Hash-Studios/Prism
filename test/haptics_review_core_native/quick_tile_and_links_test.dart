@@ -49,7 +49,7 @@ void main() {
       return null;
     });
     messenger.setMockMethodCallHandler(toastChannel, (call) async {
-      messages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      if (call.method == 'showToast') messages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
   });

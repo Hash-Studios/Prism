@@ -466,6 +466,55 @@ test("a claim re-locks to the new device offset after 24 hours and keeps the str
   assert.equal(result.streakCount, 4);
 });
 
+async function claimWithStreak(t: test.TestContext, count: number, daysAgo: number): Promise<{
+  result: Awaited<ReturnType<typeof claimDailyStreak.run>>;
+  state: Record<string, unknown>;
+  nowMs: number;
+}> {
+  const nowMs = Date.now();
+  const lastClaimAt = new Date(nowMs - daysAgo * 24 * 60 * 60 * 1000);
+  let state: Record<string, unknown> = {};
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    await callback({
+      get: async () => ({exists: true, data: () => ({coins: 100, coinState: {
+        lastDailyClaimDate: localDateKeyFromUtc(lastClaimAt, 330),
+        streakDay: ((count - 1) % 7) + 1,
+        streakCount: count,
+        streakTimezoneOffsetMinutes: 330,
+        streakClaimTimezoneOffsetMinutes: 330,
+        streakLastClaimServerAt: admin.firestore.Timestamp.fromDate(lastClaimAt),
+      }})}),
+      update: (_ref: unknown, data: {coinState: Record<string, unknown>}) => {
+        state = data.coinState;
+      },
+      set: () => undefined,
+    } as unknown as admin.firestore.Transaction);
+  });
+  const result = await claimDailyStreak.run({
+    auth: {uid: "user-1"}, data: {timezoneOffsetMinutes: 330, reminderEnabled: false},
+  } as Parameters<typeof claimDailyStreak.run>[0]);
+  return {result, state, nowMs};
+}
+
+test("a broken streak of 7 days or more opens a 48 hour rescue offer", async (t) => {
+  const {result, state, nowMs} = await claimWithStreak(t, 12, 5);
+  assert.equal(result.streakBroken, true);
+  assert.equal(result.streakCount, 1);
+  const rescue = state.rescue as {count: number; expiresAtMs: number};
+  assert.equal(rescue.count, 12);
+  assert.ok(Math.abs(rescue.expiresAtMs - (nowMs + 48 * 60 * 60 * 1000)) < 5_000);
+});
+
+test("a broken streak under 7 days, and a streak that continues, open no rescue offer", async (t) => {
+  const short = await claimWithStreak(t, 6, 5);
+  assert.equal(short.result.streakBroken, true);
+  assert.equal(short.state.rescue, undefined);
+  t.mock.reset();
+  const kept = await claimWithStreak(t, 12, 1);
+  assert.equal(kept.result.streakBroken, false);
+  assert.equal(kept.state.rescue, undefined);
+});
+
 type TransactionDoc = {data: () => Record<string, unknown>; ref: {update: (data: Record<string, unknown>) => unknown}};
 
 /** Runs transactions one at a time, like Firestore retrying a contended document. */

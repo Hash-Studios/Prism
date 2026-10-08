@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/share/share_card.dart';
+import 'package:Prism/core/share/share_text.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
@@ -39,7 +40,7 @@ Future<ShareCardResult> shareWallpaperCard(
   final String text = '🔥Check this out ➜ $link';
   File? file;
   try {
-    file = await render(imageUrl: imageUrl, link: link, contextLine: contextLine);
+    file = await render(imageUrl: imageUrl, link: link, contextLine: shareSafeText(contextLine));
     if (!context.mounted) return (format: ShareFormatValue.text, dismissed: false);
     final ShareResult sent = await sendCard(text: text, file: file, context: context);
     return (format: ShareFormatValue.card, dismissed: sent.status == ShareResultStatus.dismissed);

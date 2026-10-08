@@ -32,10 +32,11 @@ No difference. Every notification type is free. Campaign pushes can target the `
 | Unread row | Shows a dot and a bold title. Read rows have no dot. |
 | Mark all as read | App bar icon with tooltip "Mark all as read". Shows only when `unreadCount > 0`. |
 | Swipe to delete | Swipe left or right. No dialog. A snackbar shows "Notification removed" with an Undo action. A group swipe shows "<n> notifications removed". |
-| Clear inbox | Floating button with tooltip "Clear inbox". It still asks for confirmation. |
+| Clear inbox | Floating button with tooltip "Clear inbox". It clears at once with no dialog. A snackbar shows "Inbox cleared" with an Undo action. |
 | Deleted items stay deleted | Each deleted id goes in a tombstone list. Sync skips these ids. |
 | Clear watermark | Clear stores the time of the clear. Sync asks the server only for newer items, and drops older ones. |
-| Undo | Removes the ids from the tombstone list and puts the items back. |
+| Undo | Removes the ids from the tombstone list and puts the items back. It works for a swipe and for Clear inbox. |
+| Open a row | A row with a link opens the link through `openPrismLink`. A Prism link that has a screen (wallpaper, profile, short link) opens in the app. A referral link keeps the inviter and opens the Rewards tab. Other Prism pages, such as `/privacy` and `/terms`, open in the browser. |
 
 Tombstone limits (`lib/data/notifications/notification_tombstones.dart`):
 
@@ -57,6 +58,8 @@ Tombstone limits (`lib/data/notifications/notification_tombstones.dart`):
 | Setup link | Home tab, and the toast "Home screen setups are no longer available." |
 | Anything else, or a lookup error | Fallback. |
 
+Push taps also record the event `push_opened` with `kind`: `streak_reminder`, `follower`, `post` (route `wall`), `wotd` or `moderation` (route `content_report`, or route `wall` with a `report_id`). `fromPayload` records the tap. `fromRoute`, which the inbox uses, does not. The older event `wotd_opened_from_push` stays.
+
 The fallback (default `fallbackToInbox: true`) opens the inbox. If `route` is not empty, the app shows the toast "That item is no longer available". The mapper then never returns null.
 
 ### Preferences sheet
@@ -68,8 +71,10 @@ The fallback (default `fallbackToInbox: true`) opens the inbox. If `route` is no
 | Wall of the Day | Time zone topic for the daily pick. Works for signed-out users. |
 | Followers | Alerts for new followers. Needs sign-in. |
 | Posts | Alerts for new work from followed creators. Needs sign-in. Off when Followers is off. |
-| Recommendations | Topic `recommendations`. |
+| Recommendations | Topic `recommendations`. A signed-in user also saves it as `marketingPushes` in `usersv2/{uid}/private/session`, next to `followerAlerts`. Win-back pushes skip a user with `marketingPushes == false`. A switch turned off before sign-in is saved on the next token sync. |
 | Streak reminders | Evening reminder around 8 PM local. Needs sign-in. |
+
+Guests: Followers, Posts and Streak reminders show the hint "Sign in to turn on" when they are off, and the switch is disabled. A guest can still turn one off on this device. Wall of the Day and Recommendations work for guests.
 
 Permission rules:
 
@@ -77,6 +82,24 @@ Permission rules:
 - The banner updates when the app resumes.
 - When the user turns a switch on, the sheet first asks the OS for permission. If the user refuses, the switch stays off and a toast shows.
 - Turning a switch off never asks for permission.
+
+### Posts topics
+
+A follow stores the creator email only. The app joins two topics for each followed creator:
+
+- `<email prefix>_posts`. Older servers use it. Creators with the same email prefix share it.
+- `posts_<creator uid>`. It is unique per creator.
+
+The uid comes from the caller when it knows it. Else the app reads the public profile once (`PublicProfileRepository.watchProfile`, 8 s limit) and keeps the email-to-uid pair in the settings key `creatorUidByEmail`. Unfollow, sign-out and the Posts switch leave both topics. One uid read never repeats.
+
+### Foreground pushes
+
+`LocalNotification.showPushNotification` shows a banner for a push that arrives while the app is open. The id is the hash of the Android `tag` of the push. When there is no tag, it is the hash of title, body and data. It is masked to 31 bits. The server sends a personal push twice (user topic and token). Both get the same id and tag, so the second banner replaces the first. `onlyAlertOnce` stops a second sound.
+
+### Links and share text
+
+- The link parser accepts the roots that the Android manifest and the iOS association file claim: `share`, `user`, `setup`, `refer`, `l`. It also accepts the older aliases `profile`, `fprofile`, `follower-profile`, `share-setup` and `referral`. `www.prismwalls.com` and `prism://` parse the same way.
+- `shareSafeText` (`lib/core/share/share_text.dart`) removes text that holds an email address. The share card line is cleaned with it. A wallpaper can have an email as its creator name when the creator has no display name.
 
 ### Post-onboarding prompt
 
@@ -108,6 +131,9 @@ Cloud Function event
 | Who uses it | Follow, wall approved, wall submitted (admins), content report (admins), win-back, campaign with an email, inbox entry with an email. |
 | Badge | The server no longer sets `aps.badge`. The iOS app clears the badge on its own. |
 | Approval push | `onWallApproved` stamps `approvedNotifiedAt` in a transaction. A retried event sends nothing. |
+| Followers push | `onWallApproved` sends the new-wall push to the legacy topic `<email prefix>_posts` and to the topic `posts_<uid>`. Both pushes share the collapse key `posts_<hash>`. The email prefix topic is shared by creators with the same prefix. The new topic is not. Clients that subscribe to `posts_<uid>` need a later app release. |
+| Wall of the Day creator notice | After the public push, the creator of the pick gets a personal push and an inbox doc `wotd_creator_<utc date>`. A failure never fails the public push. |
+| Wall of the Day slot | `wallOfTheDay` and `sendWallOfTheDayBuckets` pick the buckets from the scheduled time of the run. A late run still sends to its own slot. |
 | Follow inbox doc | `onFollowCreated` writes one doc with a fixed id (`follow_<hash>_<uid>`). A retry rewrites the same doc. |
 | Wall of the Day pick | `wallOfTheDay` runs at 03:30 UTC, retries 2 times, skips when today's pick exists. It skips streak-exclusive walls and walls in premium collections. |
 | Wall of the Day push | `sendWallOfTheDayBuckets` runs every 15 minutes. It sends to the topic of each UTC offset where it is 09:00 local. |
@@ -131,8 +157,11 @@ Cloud Function event
 | `lib/features/in_app_notifications/data/repositories/notifications_repository_impl.dart` | Delete, clear, mark all read, restore. |
 | `lib/data/notifications/notification_tombstones.dart` | Tombstone list (cap 500) and clear watermark. |
 | `lib/data/notifications/notifications.dart` | Remote sync. Applies the tombstones. |
-| `lib/core/router/notification_route_mapper.dart` | Payload to route, inbox fallback. |
-| `lib/notifications/topic_subscription.dart` | Topics, Wall of the Day buckets. |
+| `lib/core/router/notification_route_mapper.dart` | Payload to route, inbox fallback, `push_opened` event. |
+| `lib/notifications/topic_subscription.dart` | Topics, Wall of the Day buckets, posts topics by email and uid. |
+| `lib/notifications/fcm_token_service.dart` | Token sync, `followerAlerts`, `marketingPushes`. |
+| `lib/notifications/local_notification.dart` | Foreground push banner, stable id. |
+| `lib/core/utils/url_launcher_compat.dart` | `openPrismLink`, `opensInApp`. |
 | `lib/features/startup/services/notification_permission_prompt_service.dart` | One-time permission prompt. |
 | `functions/src/notificationHelper.ts` | `sendNotification`, `sendToUser`, token lookup. |
 | `functions/src/wallOfTheDay.ts` | Daily pick, bucket job. |
@@ -152,6 +181,9 @@ If the client ships first, new builds leave `wall_of_the_day`. The bucket topic 
 
 ## Limits
 
+- The uid of a creator needs one profile read. If the read fails, the app keeps the email prefix topic only and tries again at the next topic sync. A creator whose profile does not exist keeps the email prefix topic only.
+- Followed creators that the app cannot resolve do not get `posts_<uid>` pushes. Old creators with a shared email prefix can still get another creator's pushes through the legacy topic.
+- Pushes that open as a deep link (a `url` in the payload) are counted by `push_opened` only when the app calls `trackPushOpened` for them.
 - Tombstones and the clear time are local to one device. They do not sync between devices. A second device shows the item again.
 - After 500 deletes, the oldest tombstones drop. A forced or first sync (30-day backfill) can bring back an old item.
 - Devices east of about +05:30 get the previous day's pick. Their 09:00 local is before 03:30 UTC, and the pick for the new day does not exist yet. The bucket job accepts a pick up to 30 hours old (`MAX_PICK_AGE_MS`). This follows from the code. It was not confirmed on a live device.
@@ -167,11 +199,16 @@ If the client ships first, new builds leave `wall_of_the_day`. The bucket topic 
 3. Swipe one row. Make sure that no dialog shows and the snackbar has "Undo".
 4. Tap "Undo". Make sure that the row comes back.
 5. Swipe a row and wait. Reopen the inbox so it syncs. Make sure that the row stays gone.
-6. Tap "Clear inbox" and confirm. Reopen the inbox. Make sure that old items do not return.
+6. Tap "Clear inbox". Make sure that no dialog shows, the inbox empties, and the snackbar has "Undo". Tap "Undo" and make sure that all items return. Clear again, wait, and reopen the inbox. Make sure that old items do not return.
 7. Turn off OS notifications for Prism. Open Settings, "Notification preferences". Make sure that the banner shows, and "Open settings" opens the OS page.
 8. Turn a switch on while OS notifications are off. Make sure that the OS prompt shows, and the switch stays off if you refuse.
 9. Tap a push for a deleted wall. Make sure that the inbox opens and the toast "That item is no longer available" shows.
 10. On a fresh install, finish onboarding to the first wallpaper step. Make sure that the OS prompt shows once.
+11. Signed out, open "Notification preferences". Make sure that Followers, Posts and Streak reminders show "Sign in to turn on" once they are off, and that Recommendations still works.
+12. Signed in, turn off Recommendations. Make sure that `usersv2/{uid}/private/session.marketingPushes` is `false`.
+13. Follow a creator. Make sure that the device joins `<prefix>_posts` and `posts_<uid>`. Unfollow and make sure that it leaves both.
+14. Open About, then PRIVACY and TERMS. Make sure that the web pages open in the browser, not the Not found page.
+15. Send the same personal push while the app is open. Make sure that one banner shows.
 
 Automated tests:
 
@@ -181,8 +218,11 @@ Automated tests:
 | Preferences sheet | `test/features/in_app_notifications/notification_settings_sheet_test.dart` |
 | Bloc and repository | `test/features/in_app_notifications/biz`, `test/features/in_app_notifications/data` |
 | Tombstones and sync | `test/data/notifications/notification_tombstones_test.dart`, `test/data/notifications/notifications_sync_test.dart` |
-| Route mapper | `test/core/router/notification_route_mapper_test.dart` |
-| Topics | `test/notifications/topic_subscription_test.dart`, `test/notifications/push_topics_sync_test.dart` |
+| Route mapper and `push_opened` | `test/core/router/notification_route_mapper_test.dart` |
+| Links | `test/core/utils/url_launcher_compat_test.dart`, `test/core/router/deep_link_parser_test.dart`, `test/core/router/deep_link_navigation_test.dart` |
+| Share text | `test/core/share/share_text_test.dart`, `test/core/share/share_card_renderer_test.dart` |
+| Foreground push ids | `test/notifications/local_notification_test.dart` |
+| Topics and token | `test/notifications/topic_subscription_test.dart`, `test/notifications/push_topics_sync_test.dart`, `test/notifications/creator_posts_uid_topics_test.dart`, `test/notifications/fcm_token_service_test.dart` |
 | Functions | `functions/src/__tests__/wallOfTheDay.test.ts`, `notificationHelper.test.ts`, `personalPushes.test.ts`, `onWallApproved.test.ts`, `onFollowCreated.test.ts`, `streak.test.ts`, `winBack.test.ts` |
 
 Commands:

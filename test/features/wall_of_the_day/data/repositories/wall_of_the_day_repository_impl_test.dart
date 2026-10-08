@@ -181,4 +181,119 @@ void main() {
       verify(() => prismRepository.fetchByDocumentId('wall-doc-1')).called(2);
     });
   }
+
+  group('fetchRecent', () {
+    PrismWallpaper reviewed(String id, {bool review = true, String url = ''}) => PrismWallpaper(
+      core: WallpaperCore(
+        id: id,
+        source: WallpaperSource.prism,
+        fullUrl: url.isEmpty ? 'https://example.com/$id.jpg' : url,
+        thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+      ),
+      review: review,
+    );
+
+    WallOfTheDayRepositoryImpl repoWith(List<FakeDocRow> rows) {
+      firestoreClient.onQuery = (_) => rows;
+      return WallOfTheDayRepositoryImpl(
+        firestoreClient,
+        prismRepository,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+    }
+
+    test('reads past_picks newest first, 30 at a time, with the wotd source tag', () async {
+      final repo = repoWith(const <FakeDocRow>[]);
+
+      final result = await repo.fetchRecent();
+
+      expect(result.data, isEmpty);
+      final spec = firestoreClient.querySpecs.single;
+      expect(spec.collection, 'past_picks');
+      expect(spec.sourceTag, 'wotd.past_picks');
+      expect(spec.limit, 30);
+      expect(spec.orderBy.single.field, 'date');
+      expect(spec.orderBy.single.descending, isTrue);
+    });
+
+    test('resolves each pick to its wall, keeps the order, and skips walls that are gone or not reviewed', () async {
+      when(() => prismRepository.fetchByDocumentId('doc-a')).thenAnswer((_) async => Result.success(reviewed('a')));
+      when(() => prismRepository.fetchByDocumentId('doc-gone')).thenAnswer((_) async => Result.success(null));
+      when(
+        () => prismRepository.fetchByDocumentId('doc-hidden'),
+      ).thenAnswer((_) async => Result.success(reviewed('hidden', review: false)));
+      when(() => prismRepository.fetchByDocumentId('doc-b')).thenAnswer((_) async => Result.success(reviewed('b')));
+      final repo = repoWith(<FakeDocRow>[
+        (id: '2026-01-04', data: <String, dynamic>{'wallId': 'doc-a', 'date': DateTime.utc(2026, 1, 4)}),
+        (id: '2026-01-03', data: <String, dynamic>{'wallId': 'doc-gone', 'date': DateTime.utc(2026, 1, 3)}),
+        (id: '2026-01-02', data: <String, dynamic>{'wallId': 'doc-hidden', 'date': DateTime.utc(2026, 1, 2)}),
+        (id: '2026-01-01', data: <String, dynamic>{'wallId': 'doc-b'}),
+      ]);
+
+      final picks = (await repo.fetchRecent()).data!;
+
+      expect(picks.map((pick) => pick.wallpaper.id), <String>['a', 'b']);
+      expect(picks.first.date, DateTime.utc(2026, 1, 4));
+      expect(picks.last.date, DateTime.parse('2026-01-01'), reason: 'a pick with no date field uses its doc id');
+    });
+
+    test('a pointer with no wall id or no usable date is skipped without a lookup', () async {
+      final repo = repoWith(<FakeDocRow>[
+        (id: '2026-01-04', data: <String, dynamic>{'wallId': '', 'date': DateTime.utc(2026, 1, 4)}),
+        (id: 'not-a-date', data: <String, dynamic>{'wallId': 'doc-a'}),
+      ]);
+
+      expect((await repo.fetchRecent()).data, isEmpty);
+      verifyNever(() => prismRepository.fetchByDocumentId(any()));
+    });
+
+    test('a failed query is an error with a message the user can read', () async {
+      firestoreClient.queryError = StateError('[cloud_firestore/unavailable] offline');
+      final repo = WallOfTheDayRepositoryImpl(
+        firestoreClient,
+        prismRepository,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+
+      final result = await repo.fetchRecent();
+
+      expect(result.failure!.message, "Couldn't load past picks. Check your connection and try again.");
+    });
+
+    test('when every wall lookup fails the archive reports the failure instead of an empty list', () async {
+      when(
+        () => prismRepository.fetchByDocumentId(any()),
+      ).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+      final repo = repoWith(<FakeDocRow>[
+        (id: '2026-01-04', data: <String, dynamic>{'wallId': 'doc-a', 'date': DateTime.utc(2026, 1, 4)}),
+      ]);
+
+      expect((await repo.fetchRecent()).isFailure, isTrue);
+    });
+
+    test('one failed lookup among good ones only drops that pick', () async {
+      when(() => prismRepository.fetchByDocumentId('doc-a')).thenAnswer((_) async => Result.success(reviewed('a')));
+      when(
+        () => prismRepository.fetchByDocumentId('doc-b'),
+      ).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+      final repo = repoWith(<FakeDocRow>[
+        (id: '2026-01-04', data: <String, dynamic>{'wallId': 'doc-a', 'date': DateTime.utc(2026, 1, 4)}),
+        (id: '2026-01-03', data: <String, dynamic>{'wallId': 'doc-b', 'date': DateTime.utc(2026, 1, 3)}),
+      ]);
+
+      expect((await repo.fetchRecent()).data!.map((pick) => pick.wallpaper.id), <String>['a']);
+    });
+  });
+
+  test("today's pick carries the loaded wall, so the detail screen needs no second fetch", () async {
+    final wall = _wall('wall-1');
+    when(() => prismRepository.fetchByDocumentId('wall-doc-1')).thenAnswer((_) async => Result.success(wall));
+    final repo = WallOfTheDayRepositoryImpl(
+      firestoreClient,
+      prismRepository,
+      FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+    );
+
+    expect((await repo.fetchToday()).data?.wallpaper, same(wall));
+  });
 }

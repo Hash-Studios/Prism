@@ -210,6 +210,10 @@ actor PrismMediaFiles {
       ).appendingPathComponent("PrismDownloads", isDirectory: true)
     }
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    var excluded = URLResourceValues()
+    excluded.isExcludedFromBackup = true
+    var mutableDirectory = directory
+    try mutableDirectory.setResourceValues(excluded)
     return directory
   }
 }

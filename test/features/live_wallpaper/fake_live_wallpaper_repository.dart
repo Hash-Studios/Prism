@@ -12,6 +12,7 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
 
   final List<MotionStyle> motionApplies = <MotionStyle>[];
   final List<GradientStyle> gradientApplies = <GradientStyle>[];
+  final List<LivePalette> gradientPalettes = <LivePalette>[];
   final List<bool> batterySaverValues = <bool>[];
   final List<String> videoApplies = <String>[];
   final List<String> motionUrls = <String>[];
@@ -43,6 +44,7 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
     required bool batterySaver,
   }) async {
     gradientApplies.add(style);
+    gradientPalettes.add(palette);
     batterySaverValues.add(batterySaver);
     return outcome;
   }

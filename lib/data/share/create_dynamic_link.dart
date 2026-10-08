@@ -5,9 +5,13 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/platform/share_service.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/share/share_text.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -148,7 +152,7 @@ Future<String?> createDynamicLink(
         'thumb': thumbUrl,
       },
       preview: <String, dynamic>{
-        'title': (title?.trim().isEmpty ?? true) ? _defaultPreviewTitle : title!.trim(),
+        'title': shareSafeText(title) ?? _defaultPreviewTitle,
         'description': 'Check out this amazing wallpaper from Prism.',
         'image_source_url': thumbUrl,
         'provider': source.legacyProviderString,
@@ -186,6 +190,8 @@ Future<bool> copyWallpaperLink(String id, WallpaperSource source, String? url, S
   return true;
 }
 
+/// Shares a link to the profile. [email] is unused: a link never holds an email address. Without a username it
+/// opens the edit panel instead.
 Future<void> createUserDynamicLink(
   String name,
   String username,
@@ -194,7 +200,12 @@ Future<void> createUserDynamicLink(
   String userPhoto, {
   BuildContext? context,
 }) async {
-  final String userIdentifier = username.isNotEmpty ? username : email;
+  final String userIdentifier = username.trim();
+  if (userIdentifier.isEmpty) {
+    toasts.info('Set a username to share your profile');
+    if (context != null && context.mounted) unawaited(context.router.root.push(const EditProfilePanelRoute()));
+    return;
+  }
   try {
     final Uri canonical = _canonicalLinkBuilder.user(identifier: userIdentifier);
     final String link = await _buildShareableLink(
@@ -202,7 +213,7 @@ Future<void> createUserDynamicLink(
       canonicalUri: canonical,
       payload: <String, dynamic>{'username': userIdentifier},
       preview: <String, dynamic>{
-        'title': '$name (@$userIdentifier)',
+        'title': '${creatorLabel(name: name, username: userIdentifier)} (@$userIdentifier)',
         'description': bio.isNotEmpty ? bio : 'Check out this creator profile on Prism.',
         'image_source_url': userPhoto,
         'username': userIdentifier,
@@ -226,7 +237,10 @@ Future<void> createUserDynamicLink(
   }
 }
 
-Future<String> createSharingPrismLink(String userID) async {
+/// Creates the invite link. The preview reads "Name invited you to Prism" and shows the inviter's photo.
+Future<String> createSharingPrismLink(String userID, {String? inviterName, String? inviterPhoto}) async {
+  final String? who = shareSafeText(inviterName);
+  final String photo = inviterPhoto?.trim() ?? '';
   try {
     final Uri canonical = _canonicalLinkBuilder.refer(userId: userID);
     final String link = await _buildShareableLink(
@@ -234,8 +248,9 @@ Future<String> createSharingPrismLink(String userID) async {
       canonicalUri: canonical,
       payload: <String, dynamic>{'userID': userID},
       preview: <String, dynamic>{
-        'title': 'Join Prism',
+        'title': who == null ? 'Join Prism' : '$who invited you to Prism',
         'description': 'Download Prism to discover beautiful wallpapers.',
+        if (who != null && photo.isNotEmpty) 'image_source_url': photo,
       },
     );
 

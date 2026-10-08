@@ -158,5 +158,5 @@ test("signed-out artist and admins keep inbox entries while artist followers sti
     },
   } as unknown as Parameters<typeof onWallApproved.run>[0]);
   assert.equal(inbox.length, 2);
-  assert.deepEqual(topics, ["artist_posts"]);
+  assert.deepEqual(topics, ["artist_posts", "posts_uid-artist"]);
 });

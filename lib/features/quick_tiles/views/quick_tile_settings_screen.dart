@@ -1,5 +1,8 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/quick_settings_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -30,11 +33,34 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
   WallpaperTarget _favsTarget = WallpaperTarget.both;
 
   bool _loading = true;
+  bool _canAddTile = false;
 
   @override
   void initState() {
     super.initState();
     _loadConfig();
+    _loadAddTileSupport();
+  }
+
+  Future<void> _loadAddTileSupport() async {
+    final bool supported = await const QuickSettingsChannel().canRequestAddTile;
+    if (mounted && supported) setState(() => _canAddTile = true);
+  }
+
+  Future<void> _addTile(QuickTileKind tile) async {
+    final QuickSettingsAddResult result = await const QuickSettingsChannel().requestAddTile(tile);
+    analytics.track(QuickTileAddRequestedEvent(tile: tile.name, result: result.name));
+    if (!mounted) return;
+    final String message = switch (result) {
+      QuickSettingsAddResult.added => 'Tile added to Quick Settings.',
+      QuickSettingsAddResult.alreadyAdded => 'This tile is already in Quick Settings.',
+      QuickSettingsAddResult.notAdded => 'Tile not added. You can add it any time.',
+      QuickSettingsAddResult.unsupported ||
+      QuickSettingsAddResult.error => 'Could not add the tile. Add it by hand from the Quick Settings edit screen.',
+    };
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadConfig() async {
@@ -89,7 +115,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accentColor = theme.colorScheme.error == Colors.black ? theme.colorScheme.primary : theme.colorScheme.error;
+    final accentColor = theme.colorScheme.error;
 
     return Scaffold(
       backgroundColor: theme.primaryColor,
@@ -116,6 +142,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                   description: 'Tap the tile to apply a random wallpaper from the selected category.',
                   accentColor: accentColor,
                   value: _categoryTarget,
+                  onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.shuffle) : null,
                   onChanged: (v) {
                     setState(() => _categoryTarget = v);
                     _saveAll();
@@ -162,6 +189,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                       "Applies today's curated Wall of the Day. Open Prism once a day to cache the latest URL.",
                   accentColor: accentColor,
                   value: _wotdTarget,
+                  onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.wotd) : null,
                   onChanged: (v) {
                     setState(() => _wotdTarget = v);
                     _saveAll();
@@ -174,6 +202,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                       'Picks a random wallpaper from your saved favourites. Sign in and favourite some wallpapers first.',
                   accentColor: accentColor,
                   value: _favsTarget,
+                  onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.favs) : null,
                   onChanged: (v) {
                     setState(() => _favsTarget = v);
                     _saveAll();
@@ -201,6 +230,7 @@ class _TargetSection extends StatelessWidget {
     required this.accentColor,
     required this.value,
     required this.onChanged,
+    this.onAddToQuickSettings,
     this.beforeTarget = const [],
   });
 
@@ -209,6 +239,7 @@ class _TargetSection extends StatelessWidget {
   final Color accentColor;
   final WallpaperTarget value;
   final ValueChanged<WallpaperTarget> onChanged;
+  final VoidCallback? onAddToQuickSettings;
   final List<Widget> beforeTarget;
 
   @override
@@ -224,6 +255,18 @@ class _TargetSection extends StatelessWidget {
           ),
         ),
         _Hint(description),
+        if (onAddToQuickSettings != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: OutlinedButton.icon(
+                onPressed: onAddToQuickSettings,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add to Quick Settings'),
+              ),
+            ),
+          ),
         if (beforeTarget.isEmpty)
           const SizedBox(height: 12)
         else ...[

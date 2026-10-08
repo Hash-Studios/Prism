@@ -16,7 +16,7 @@ sealed class FavouriteWallEntity {
   final String id;
   final WallpaperSource source;
 
-  /// When the user favourited this wall. Null for docs written before this field existed.
+  /// When the user saved the wall. Docs written before this field existed have none.
   final DateTime? favouritedAt;
 
   String get thumbnailUrl;
@@ -74,10 +74,10 @@ List<FavouriteWallEntity> applyFavouritesView(
   }
 }
 
-/// Newest [FavouriteWallEntity.addedAt] first; entries without a date go last.
+/// Newest first by the date the wall was saved, else its upload date; entries without a date go last.
 int compareByCreatedAtDesc(FavouriteWallEntity a, FavouriteWallEntity b) {
-  final DateTime? aDate = a.addedAt;
-  final DateTime? bDate = b.addedAt;
+  final DateTime? aDate = a.favouritedAt ?? a.createdAt;
+  final DateTime? bDate = b.favouritedAt ?? b.createdAt;
   if (aDate == null && bDate == null) return 0;
   if (aDate == null) return 1;
   if (bDate == null) return -1;
@@ -117,6 +117,10 @@ final class PrismFavouriteWall extends FavouriteWallEntity {
 
   @override
   FeedItemEntity toFeedItem() => PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper);
+
+  @override
+  PrismFavouriteWall withFavouritedAt(DateTime at) =>
+      PrismFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at);
 }
 
 final class WallhavenFavouriteWall extends FavouriteWallEntity {
@@ -142,6 +146,10 @@ final class WallhavenFavouriteWall extends FavouriteWallEntity {
 
   @override
   FeedItemEntity toFeedItem() => WallhavenFeedItem(id: wallpaper.id, wallpaper: wallpaper);
+
+  @override
+  WallhavenFavouriteWall withFavouritedAt(DateTime at) =>
+      WallhavenFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at);
 }
 
 final class PexelsFavouriteWall extends FavouriteWallEntity {
@@ -167,6 +175,10 @@ final class PexelsFavouriteWall extends FavouriteWallEntity {
 
   @override
   FeedItemEntity toFeedItem() => PexelsFeedItem(id: wallpaper.id, wallpaper: wallpaper);
+
+  @override
+  PexelsFavouriteWall withFavouritedAt(DateTime at) =>
+      PexelsFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at);
 }
 
 /// Used when the existing Firestore doc cannot be resolved to a typed variant
@@ -199,4 +211,8 @@ final class LegacyFavouriteWall extends FavouriteWallEntity {
 
   @override
   FeedItemEntity toFeedItem() => throw ArgumentError('Cannot open a LegacyFavouriteWall as a feed item');
+
+  @override
+  LegacyFavouriteWall withFavouritedAt(DateTime at) =>
+      LegacyFavouriteWall(id: id, source: source, legacyPayload: legacyPayload, favouritedAt: at);
 }

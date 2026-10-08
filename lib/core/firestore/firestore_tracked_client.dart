@@ -70,6 +70,11 @@ class _FirestoreBatchBridge implements FirestoreBatch {
   }
 
   @override
+  void setDoc(String collection, String id, Map<String, dynamic> data) {
+    _batch.set(_firestore.collection(collection).doc(id), data, SetOptions(merge: false));
+  }
+
+  @override
   void updateDoc(String collection, String id, Map<String, dynamic> data) {
     _batch.update(_firestore.collection(collection).doc(id), data);
   }
@@ -508,6 +513,14 @@ class FirestoreTrackedClient implements FirestoreClient {
 
   @override
   Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
+    return watchQueryWithMetadata<T>(spec, map).map((snapshot) => snapshot.items);
+  }
+
+  @override
+  Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map,
+  ) {
     final Query<Map<String, dynamic>> query = _applySpec(spec);
     final DateTime start = DateTime.now();
     unawaited(
@@ -527,10 +540,15 @@ class FirestoreTrackedClient implements FirestoreClient {
     );
     return query
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => map(doc.data(), doc.id)).toList(growable: false))
+        .map(
+          (snapshot) => (
+            items: snapshot.docs.map((doc) => map(doc.data(), doc.id)).toList(growable: false),
+            isFromCache: snapshot.metadata.isFromCache,
+          ),
+        )
         .transform(
-          StreamTransformer<List<T>, List<T>>.fromHandlers(
-            handleError: (Object error, StackTrace stackTrace, EventSink<List<T>> sink) {
+          StreamTransformer<({List<T> items, bool isFromCache}), ({List<T> items, bool isFromCache})>.fromHandlers(
+            handleError: (Object error, StackTrace stackTrace, EventSink<({List<T> items, bool isFromCache})> sink) {
               final FirestoreError mapped = mapFirestoreError(error);
               unawaited(
                 _telemetry.emit(

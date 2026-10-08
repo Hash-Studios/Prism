@@ -169,4 +169,44 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     expect(cleared, isFalse);
   });
+
+  testWidgets('getDataBase gives null, not an empty list, when the load failed', (tester) async {
+    when(() => fetch(any())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+    bloc = FavouriteWallsBloc(fetch, toggle, clear);
+    addTearDown(bloc.close);
+    await tester.pumpWidget(
+      BlocProvider<FavouriteWallsBloc>.value(
+        value: bloc,
+        child: Builder(
+          builder: (BuildContext context) {
+            adapter = context.favouriteWallsAdapter(listen: false);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+
+    expect(await adapter.getDataBase(), isNull);
+  });
+
+  testWidgets('a tap with desired true does not remove a favourite the list already holds', (tester) async {
+    await pumpAdapter(tester);
+
+    final bool saved = await adapter.favCheck(prismFav('a'), desired: true);
+
+    expect(saved, isTrue);
+    final params = verify(() => toggle(captureAny())).captured.single as ToggleFavouriteWallParams;
+    expect(params.currentlyFavourited, isFalse);
+  });
+
+  testWidgets('a guest can save a favourite', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await pumpAdapter(tester);
+
+    final bool saved = await adapter.favCheck(legacyFav('x'), desired: true);
+
+    expect(saved, isTrue);
+    final params = verify(() => toggle(captureAny())).captured.single as ToggleFavouriteWallParams;
+    expect(params.userId, '');
+  });
 }

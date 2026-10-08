@@ -11,6 +11,8 @@ import android.util.Log
 import android.widget.Toast
 import java.io.File
 import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.concurrent.Executors
 
 internal enum class TileWallpaperTarget(val flags: Int) {
@@ -24,6 +26,17 @@ internal enum class TileWallpaperTarget(val flags: Int) {
             else -> throw IllegalArgumentException("Invalid wallpaper target; open Prism and save tile settings")
         }
     }
+}
+
+internal class WallpaperUnavailableException : IOException()
+
+internal fun tileErrorMessage(error: Throwable): Int = when (error) {
+    is UnknownHostException -> R.string.tile_error_offline
+    is SocketTimeoutException -> R.string.tile_error_timeout
+    is WallpaperUnavailableException -> R.string.tile_error_unavailable
+    is IOException -> R.string.tile_error_download
+    is IllegalStateException, is IllegalArgumentException -> R.string.tile_error_setup
+    else -> R.string.tile_error_generic
 }
 
 internal abstract class WallpaperTileService : TileService() {
@@ -59,15 +72,13 @@ internal abstract class WallpaperTileService : TileService() {
                 file = File.createTempFile("prism-tile-", ".tmp", cacheDir)
                 PrismImageTransfer.download(wallpaper.url, file)
                 PrismImageValidation.mime(file)
-                if (destroyed || Thread.currentThread().isInterrupted) throw IOException("Tile stopped")
                 val manager = WallpaperManager.getInstance(applicationContext)
-                if (!manager.isWallpaperSupported || !manager.isSetWallpaperAllowed) throw IOException("Wallpaper changes are unavailable")
+                if (!manager.isWallpaperSupported || !manager.isSetWallpaperAllowed) throw WallpaperUnavailableException()
                 file.inputStream().use { manager.setStream(it, null, false, wallpaper.target.flags) }
-            } catch (error: Exception) {
+                mainHandler.post { if (!destroyed) Toast.makeText(applicationContext, R.string.tile_wallpaper_updated, Toast.LENGTH_SHORT).show() }
+            } catch (error: Throwable) {
                 Log.w("PrismTile", "Could not apply wallpaper", error)
-                mainHandler.post {
-                    if (!destroyed) Toast.makeText(applicationContext, error.message ?: "Could not apply wallpaper", Toast.LENGTH_SHORT).show()
-                }
+                mainHandler.post { if (!destroyed) Toast.makeText(applicationContext, tileErrorMessage(error), Toast.LENGTH_SHORT).show() }
             } finally {
                 file?.delete()
                 mainHandler.post { applying = false; if (!destroyed) updateTile() }
@@ -86,7 +97,7 @@ internal abstract class WallpaperTileService : TileService() {
 
     override fun onDestroy() {
         destroyed = true
-        executor.shutdownNow()
+        executor.shutdown()
         super.onDestroy()
     }
 }

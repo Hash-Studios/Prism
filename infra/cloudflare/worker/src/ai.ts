@@ -10,6 +10,7 @@ export interface AiEnvBindings {
   BROWSER_RENDERING_API_TOKEN?: string;
   FIREBASE_PROJECT_ID?: string;
   FIREBASE_AUTH_DEBUG?: string;
+  AI_REQUIRE_CHARGE?: string;
 }
 
 type AiProviderName = 'fal' | 'gemini';
@@ -25,7 +26,10 @@ type AiErrorCode =
   | 'unsafe_prompt'
   | 'unsafe_output'
   | 'generation_not_found'
-  | 'service_disabled';
+  | 'service_disabled'
+  | 'charge_required'
+  | 'charge_invalid'
+  | 'charge_in_progress';
 type BudgetThresholdLevel = 0 | 70 | 85 | 95;
 
 interface AuthContext {
@@ -39,11 +43,13 @@ interface AiGenerateRequest {
   qualityTier: AiQualityTier;
   targetSize: string;
   seed?: number;
+  chargeTxId?: unknown;
 }
 
 interface AiVariationRequest {
   variationPrompt?: string;
   strength?: number;
+  chargeTxId?: unknown;
 }
 
 interface AiGenerationRecord {
@@ -181,6 +187,17 @@ const BLOCKED_PROMPT_TERMS = [
   'non consensual',
   'gore kill',
 ];
+const BLOCKED_PROMPT_REGEX = new RegExp(
+  `\\b(?:${BLOCKED_PROMPT_TERMS.map((term) => term.replaceAll(' ', '\\s+')).join('|')})(?:s|d|ed|ing)?\\b`,
+  'i',
+);
+
+const AI_COIN_COST_BY_TIER: Record<AiQualityTier, number> = { fast: 10, balanced: 75, quality: 100 };
+const CHARGE_TX_ID_REGEX = /^[A-Za-z0-9_-]{8,220}$/;
+const CHARGE_RECORD_TTL_MS = 24 * 60 * 60 * 1000;
+const CHARGE_STALE_IN_PROGRESS_MS = 5 * 60 * 1000;
+const CHARGE_MAX_AGE_MS = 15 * 60 * 1000;
+const CHARGE_CLOCK_SKEW_MS = 60 * 1000;
 
 const AI_QUOTA_OBJECT_NAME = 'global';
 const AI_QUOTA_RPC_URL = 'https://quota.internal/rpc';
@@ -191,7 +208,12 @@ type AiQuotaRpcOp =
   | 'provider_budget_read'
   | 'provider_budget_reserve'
   | 'provider_budget_release'
-  | 'provider_budget_commit';
+  | 'provider_budget_commit'
+  | 'charge_claim'
+  | 'charge_status'
+  | 'charge_finish'
+  | 'charge_release'
+  | 'rate_limit_bump';
 
 interface AiQuotaRpcBaseRequest {
   op: AiQuotaRpcOp;
@@ -233,7 +255,29 @@ interface AiQuotaProviderBudgetMutationRequest extends AiQuotaRpcBaseRequest {
   actualCostUsd?: number;
 }
 
+interface AiQuotaChargeRequest extends AiQuotaRpcBaseRequest {
+  op: 'charge_claim' | 'charge_status' | 'charge_release';
+  txId: string;
+}
+
+interface AiQuotaChargeFinishRequest extends AiQuotaRpcBaseRequest {
+  op: 'charge_finish';
+  txId: string;
+  outcome: 'succeeded' | 'failed';
+  response?: string;
+}
+
+interface AiQuotaRateLimitRequest extends AiQuotaRpcBaseRequest {
+  op: 'rate_limit_bump';
+  key: string;
+  limit: number;
+  ttlSeconds: number;
+}
+
 type AiQuotaRpcRequest =
+  | AiQuotaChargeRequest
+  | AiQuotaChargeFinishRequest
+  | AiQuotaRateLimitRequest
   | AiQuotaUserDailyCapRequest
   | AiQuotaUserDailyCapReleaseRequest
   | AiQuotaProviderBudgetReadRequest
@@ -280,7 +324,47 @@ interface AiQuotaProviderBudgetCommitResponse {
   committed: boolean;
 }
 
+type AiChargeClaimStatus = 'new' | 'in_progress' | 'done' | 'failed';
+type AiChargeEvidenceStatus = 'not_started' | 'in_progress' | 'succeeded' | 'failed';
+
+interface AiQuotaChargeClaimResponse {
+  ok: true;
+  status: AiChargeClaimStatus;
+  response?: string;
+}
+
+interface AiQuotaChargeStatusResponse {
+  ok: true;
+  status: AiChargeEvidenceStatus;
+}
+
+interface AiQuotaChargeMutationResponse {
+  ok: true;
+}
+
+interface AiQuotaRateLimitResponse {
+  ok: true;
+  allowed: boolean;
+  current: number;
+}
+
+interface AiChargeRecord {
+  state: 'in_progress' | 'succeeded' | 'failed';
+  at: number;
+  expiresAt: number;
+  response?: string;
+}
+
+interface AiRateLimitRecord {
+  count: number;
+  expiresAt: number;
+}
+
 type AiQuotaRpcResponse =
+  | AiQuotaChargeClaimResponse
+  | AiQuotaChargeStatusResponse
+  | AiQuotaChargeMutationResponse
+  | AiQuotaRateLimitResponse
   | AiQuotaRpcErrorResponse
   | AiQuotaUserDailyCapResponse
   | AiQuotaUserDailyCapReleaseResponse
@@ -332,6 +416,16 @@ export class AiQuotaCoordinator {
           return this.handleProviderBudgetRelease(body);
         case 'provider_budget_commit':
           return this.handleProviderBudgetCommit(body);
+        case 'charge_claim':
+          return this.handleChargeClaim(body);
+        case 'charge_status':
+          return this.handleChargeStatus(body);
+        case 'charge_finish':
+          return this.handleChargeFinish(body);
+        case 'charge_release':
+          return this.handleChargeRelease(body);
+        case 'rate_limit_bump':
+          return this.handleRateLimitBump(body);
       }
     } catch (error) {
       console.error('[ai] quota_coordinator_error', { error: `${error ?? ''}` });
@@ -467,6 +561,109 @@ export class AiQuotaCoordinator {
     return quotaJson<AiQuotaProviderBudgetCommitResponse>({ ok: true, committed });
   }
 
+  private async handleChargeClaim(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record == null) {
+      const now = Date.now();
+      await this.state.storage.put<AiChargeRecord>(this.chargeKey(txId), {
+        state: 'in_progress',
+        at: now,
+        expiresAt: now + CHARGE_RECORD_TTL_MS,
+      });
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
+    }
+    const state = effectiveChargeState(record);
+    if (state === 'succeeded') {
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'done', response: record.response ?? '' });
+    }
+    return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: state });
+  }
+
+  private async handleChargeStatus(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    return quotaJson<AiQuotaChargeStatusResponse>({
+      ok: true,
+      status: record == null ? 'not_started' : effectiveChargeState(record),
+    });
+  }
+
+  private async handleChargeFinish(request: AiQuotaChargeFinishRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null || (request.outcome !== 'succeeded' && request.outcome !== 'failed')) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record != null && record.state === 'in_progress') {
+      const now = Date.now();
+      await this.state.storage.put<AiChargeRecord>(this.chargeKey(txId), {
+        state: request.outcome,
+        at: now,
+        expiresAt: now + CHARGE_RECORD_TTL_MS,
+        response: request.outcome === 'succeeded' ? asString(request.response) : undefined,
+      });
+    }
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private async handleChargeRelease(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record != null && record.state === 'in_progress') {
+      await this.state.storage.delete(this.chargeKey(txId));
+    }
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private async handleRateLimitBump(request: AiQuotaRateLimitRequest): Promise<Response> {
+    const key = clipText(asString(request.key), 200);
+    const limit = Math.max(1, Math.round(asNumber(request.limit, 1)));
+    const ttlSeconds = Math.max(1, Math.round(asNumber(request.ttlSeconds, 60)));
+    if (!isNonEmptyString(key)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const storageKey = `ratelimit:${key}`;
+    const now = Date.now();
+    const stored = await this.state.storage.get<AiRateLimitRecord>(storageKey);
+    const current = stored != null && stored.expiresAt > now ? stored : null;
+    const count = current?.count ?? 0;
+    if (count >= limit) {
+      return quotaJson<AiQuotaRateLimitResponse>({ ok: true, allowed: false, current: count });
+    }
+    await this.state.storage.put<AiRateLimitRecord>(storageKey, {
+      count: count + 1,
+      expiresAt: current?.expiresAt ?? now + ttlSeconds * 1000,
+    });
+    return quotaJson<AiQuotaRateLimitResponse>({ ok: true, allowed: true, current: count + 1 });
+  }
+
+  private async readChargeRecord(txId: string): Promise<AiChargeRecord | null> {
+    const key = this.chargeKey(txId);
+    const record = await this.state.storage.get<AiChargeRecord>(key);
+    if (record == null) {
+      return null;
+    }
+    if (record.expiresAt <= Date.now()) {
+      await this.state.storage.delete(key);
+      return null;
+    }
+    return record;
+  }
+
+  private chargeKey(txId: string): string {
+    return `charge:${txId}`;
+  }
+
   private async readProviderBudgetStatus(provider: AiProviderName, dayKey: string, monthKey: string): Promise<BudgetStatus> {
     const [daily, monthly] = await Promise.all([
       this.state.storage.get<number | string>(this.providerDailyBudgetKey(provider, dayKey)),
@@ -515,7 +712,12 @@ export async function handleAiApiRequest(
   }
 
   if (request.method === 'GET' && url.pathname === '/api/ai/health') {
-    return handleAiHealth(env);
+    return handleAiHealth(request, env);
+  }
+
+  const chargeMatch = /^\/api\/ai\/charges\/([^/]+)$/.exec(url.pathname);
+  if (request.method === 'GET' && chargeMatch != null) {
+    return handleChargeEvidence(chargeMatch[1], env);
   }
 
   if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/api/ai/assets/')) {
@@ -606,7 +808,24 @@ async function assetNotFound(objectKey: string, env: AiEnvBindings): Promise<Res
   return aiError('generation_not_found', 404, 'Asset not found');
 }
 
-async function handleAiHealth(env: AiEnvBindings): Promise<Response> {
+async function handleChargeEvidence(rawTxId: string, env: AiEnvBindings): Promise<Response> {
+  const txId = chargeTxIdOrNull(rawTxId);
+  if (txId == null) {
+    return aiError('invalid_request', 404, 'Unknown charge id');
+  }
+  try {
+    const response = await sendQuotaRequest<AiQuotaChargeStatusResponse>(env, { op: 'charge_status', txId });
+    return aiJson({ status: response.status });
+  } catch (error) {
+    console.error('[ai] charge_status_failed', { error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+}
+
+async function handleAiHealth(request: Request, env: AiEnvBindings): Promise<Response> {
+  if (await parseAuth(request, env) == null) {
+    return aiJson({ ok: true });
+  }
   const config = await readRoutingConfig(env);
   let snapshots: Record<AiProviderName, ProviderBudgetSnapshot>;
   try {
@@ -649,6 +868,11 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     return aiError('invalid_json', 400, 'Invalid JSON body');
   }
 
+  const charge = readChargeTxId(body.chargeTxId, env);
+  if (charge instanceof Response) {
+    return charge;
+  }
+
   const parsed = normalizeGenerateRequest(body);
   if (parsed == null) {
     return aiError('invalid_request', 400, 'Invalid generation payload');
@@ -661,6 +885,7 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
   return executeGeneration({
     env,
     auth,
+    chargeTxId: charge,
     prompt: parsed.prompt,
     stylePreset: parsed.stylePreset,
     qualityTier: parsed.qualityTier,
@@ -688,6 +913,11 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
     return aiError('invalid_json', 400, 'Invalid JSON body');
   }
 
+  const charge = readChargeTxId(body.chargeTxId, env);
+  if (charge instanceof Response) {
+    return charge;
+  }
+
   const variationPrompt = clipText(sanitizeText(body.variationPrompt ?? ''), 160);
   const strength = clampNumber(asNumber(body.strength, 0.45), 0.1, 1.0);
   const mergedPrompt = variationPrompt.length === 0
@@ -700,6 +930,7 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
   return executeGeneration({
     env,
     auth,
+    chargeTxId: charge,
     prompt: mergedPrompt,
     stylePreset: original.stylePreset,
     qualityTier: original.qualityTier,
@@ -749,9 +980,149 @@ interface ExecuteGenerationParams {
   targetSize: string;
   seed: number;
   parentGenerationId?: string;
+  chargeTxId?: string;
+}
+
+function chargeTxIdOrNull(value: unknown): string | null {
+  return typeof value === 'string' && CHARGE_TX_ID_REGEX.test(value) ? value : null;
+}
+
+function effectiveChargeState(record: AiChargeRecord): 'in_progress' | 'succeeded' | 'failed' {
+  if (record.state === 'in_progress' && Date.now() - record.at > CHARGE_STALE_IN_PROGRESS_MS) {
+    return 'failed';
+  }
+  return record.state;
+}
+
+function readChargeTxId(value: unknown, env: AiEnvBindings): string | undefined | Response {
+  if (value == null) {
+    return env.AI_REQUIRE_CHARGE === 'true'
+      ? aiError('charge_required', 402, 'A paid charge id is required')
+      : undefined;
+  }
+  const txId = chargeTxIdOrNull(value);
+  return txId ?? aiError('invalid_request', 400, 'Invalid chargeTxId');
 }
 
 async function executeGeneration(params: ExecuteGenerationParams): Promise<Response> {
+  const txId = params.chargeTxId;
+  if (txId == null) {
+    return runQuotaGatedGeneration(params);
+  }
+
+  let claim: AiQuotaChargeClaimResponse;
+  try {
+    claim = await sendQuotaRequest<AiQuotaChargeClaimResponse>(params.env, { op: 'charge_claim', txId });
+  } catch (error) {
+    console.error('[ai] charge_claim_failed', { userId: params.auth.userId, error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+  if (claim.status === 'done') {
+    return new Response(claim.response ?? '', {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
+  if (claim.status === 'in_progress') {
+    return aiError('charge_in_progress', 409, 'This charge is already being processed');
+  }
+  if (claim.status === 'failed') {
+    return aiError('charge_invalid', 402, 'This charge already failed. Request a refund.');
+  }
+
+  const verdict = await verifyCharge(txId, params.qualityTier, params.auth, params.env);
+  if (verdict !== 'ok') {
+    await sendChargeMutation(params.env, { op: 'charge_release', txId });
+    return verdict === 'invalid'
+      ? aiError('charge_invalid', 402, 'Charge could not be verified')
+      : aiError('provider_error', 502, 'Charge verification unavailable');
+  }
+
+  let response: Response;
+  try {
+    response = await runQuotaGatedGeneration(params);
+  } catch (error) {
+    await sendChargeMutation(params.env, { op: 'charge_finish', txId, outcome: 'failed' });
+    throw error;
+  }
+  await sendChargeMutation(
+    params.env,
+    response.ok
+      ? { op: 'charge_finish', txId, outcome: 'succeeded', response: await response.clone().text() }
+      : { op: 'charge_finish', txId, outcome: 'failed' },
+  );
+  return response;
+}
+
+async function sendChargeMutation(env: AiEnvBindings, body: AiQuotaChargeRequest | AiQuotaChargeFinishRequest): Promise<void> {
+  try {
+    await sendQuotaRequest<AiQuotaChargeMutationResponse>(env, body);
+  } catch (error) {
+    console.error('[ai] charge_update_failed', { op: body.op, txId: body.txId, error: `${error ?? ''}` });
+  }
+}
+
+async function verifyCharge(
+  txId: string,
+  qualityTier: AiQualityTier,
+  auth: AuthContext,
+  env: AiEnvBindings,
+): Promise<'ok' | 'invalid' | 'unavailable'> {
+  if (!isNonEmptyString(env.FIREBASE_PROJECT_ID)) {
+    console.error('[ai] charge_verify_missing_project_id');
+    return 'unavailable';
+  }
+  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}`
+    + `/databases/(default)/documents/coinTransactions/${encodeURIComponent(txId)}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { authorization: `Bearer ${auth.token}` },
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch (error) {
+    console.error('[ai] charge_verify_fetch_failed', { error: `${error ?? ''}` });
+    return 'unavailable';
+  }
+  if (response.status === 404 || response.status === 403 || response.status === 401) {
+    return 'invalid';
+  }
+  if (!response.ok) {
+    console.error('[ai] charge_verify_http_error', { status: response.status });
+    return 'unavailable';
+  }
+  const doc = await readJson<{ fields?: Record<string, Record<string, unknown> | undefined> }>(response);
+  const fields = doc?.fields;
+  if (fields == null) {
+    return 'invalid';
+  }
+  const delta = firestoreNumber(fields.delta);
+  const createdAtMs = typeof fields.createdAt?.timestampValue === 'string'
+    ? Date.parse(fields.createdAt.timestampValue)
+    : Number.NaN;
+  const ageMs = Date.now() - createdAtMs;
+  const matches = fields.userId?.stringValue === auth.userId
+    && fields.action?.stringValue === 'aiGeneration'
+    && fields.type?.stringValue === 'debit'
+    && fields.status?.stringValue === 'completed'
+    && delta != null
+    && -delta === AI_COIN_COST_BY_TIER[qualityTier]
+    && Number.isFinite(ageMs)
+    && ageMs >= -CHARGE_CLOCK_SKEW_MS
+    && ageMs <= CHARGE_MAX_AGE_MS;
+  return matches ? 'ok' : 'invalid';
+}
+
+function firestoreNumber(field: Record<string, unknown> | undefined): number | null {
+  if (field == null) {
+    return null;
+  }
+  const raw = field.integerValue ?? field.doubleValue;
+  const value = typeof raw === 'string' ? Number(raw) : raw;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+async function runQuotaGatedGeneration(params: ExecuteGenerationParams): Promise<Response> {
   const config = await readRoutingConfig(params.env);
   if (!config.enabled) {
     return aiError('service_disabled', 503, 'AI generation is disabled');
@@ -805,6 +1176,15 @@ async function runGenerationAttempts(
     return aiError('service_disabled', 503, 'No AI providers are enabled');
   }
   const effectiveQualityTier = routingPlan.effectiveQualityTier;
+  if (params.chargeTxId != null && effectiveQualityTier !== params.qualityTier) {
+    console.warn('[ai] paid_request_not_downgraded', {
+      userId: params.auth.userId,
+      requestedQualityTier: params.qualityTier,
+      effectiveQualityTier,
+      guardrailLevel: routingPlan.guardrailLevel,
+    });
+    return aiError('budget_exhausted', 429, 'The requested quality is unavailable right now');
+  }
   const attemptedProviders: AiProviderName[] = [];
   const requestStartedAt = Date.now();
   if (routingPlan.guardrailLevel > 0) {
@@ -1452,6 +1832,16 @@ async function sendQuotaRequest<T extends AiQuotaRpcResponse>(env: AiEnvBindings
   return parsed as T;
 }
 
+export async function bumpRateLimit(env: AiEnvBindings, key: string, limit: number, ttlSeconds: number): Promise<boolean> {
+  const response = await sendQuotaRequest<AiQuotaRateLimitResponse>(env, {
+    op: 'rate_limit_bump',
+    key,
+    limit,
+    ttlSeconds,
+  });
+  return response.allowed;
+}
+
 function quotaCoordinatorStub(env: AiEnvBindings): DurableObjectStub {
   const id = env.AI_QUOTA_DO.idFromName(AI_QUOTA_OBJECT_NAME);
   return env.AI_QUOTA_DO.get(id);
@@ -1851,13 +2241,7 @@ async function readGenerationRecord(generationId: string, env: AiEnvBindings): P
 }
 
 function isPromptSafe(prompt: string): boolean {
-  const normalized = prompt.toLowerCase();
-  for (const token of BLOCKED_PROMPT_TERMS) {
-    if (normalized.includes(token)) {
-      return false;
-    }
-  }
-  return true;
+  return !BLOCKED_PROMPT_REGEX.test(prompt);
 }
 
 function isOutputSafe(imageBytes: Uint8Array, contentType: string): boolean {

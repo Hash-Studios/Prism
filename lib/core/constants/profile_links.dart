@@ -12,6 +12,9 @@ class ProfileLinkKind {
 
 const String customLinkName = 'custom link';
 
+/// Fewest characters a username can have.
+const int minUsernameLength = 3;
+
 /// Every link type a profile can carry, sorted by [ProfileLinkKind.name].
 const List<ProfileLinkKind> profileLinkKinds = <ProfileLinkKind>[
   ProfileLinkKind('behance', 'https://behance.net/username', JamIcons.behance, 'behance.net'),
@@ -46,4 +49,36 @@ IconData profileLinkIcon(String name) {
     }
   }
   return JamIcons.link;
+}
+
+final RegExp _bareEmail = RegExp(r'^[^\s@/:]+@[^\s@/:]+\.[^\s@/:.]+$');
+final RegExp _hasScheme = RegExp('^[a-zA-Z][a-zA-Z0-9+.-]*:');
+
+/// Parses [raw] into a link that is safe to open: https or http with a host, or mailto with an address.
+/// A bare address becomes mailto and a bare domain becomes https. Returns null for anything else.
+Uri? safeProfileLinkUri(String raw) {
+  final String value = raw.trim();
+  if (value.isEmpty) return null;
+  if (_bareEmail.hasMatch(value)) return Uri(scheme: 'mailto', path: value);
+  final Uri? uri = Uri.tryParse(_hasScheme.hasMatch(value) ? value : 'https://$value');
+  if (uri == null) return null;
+  final String scheme = uri.scheme.toLowerCase();
+  if (scheme == 'mailto') return _bareEmail.hasMatch(uri.path) ? uri : null;
+  if ((scheme == 'https' || scheme == 'http') && uri.host.isNotEmpty) return uri;
+  return null;
+}
+
+/// The value to store for a profile link of [kind], or null when [raw] is not a valid link for it.
+/// Email links stay a bare address so builds that already shipped can still open them.
+String? sanitizeProfileLink(ProfileLinkKind kind, String raw) {
+  final String value = raw.trim();
+  if (kind.name == 'email') {
+    final String address = value.toLowerCase().startsWith('mailto:') ? value.substring(7) : value;
+    return _bareEmail.hasMatch(address) ? address : null;
+  }
+  final Uri? uri = safeProfileLinkUri(value);
+  if (uri == null) return null;
+  if (uri.scheme == 'mailto' && kind.name != customLinkName) return null;
+  if (!value.toLowerCase().contains(kind.validator.toLowerCase())) return null;
+  return uri.toString();
 }

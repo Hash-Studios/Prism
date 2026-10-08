@@ -55,6 +55,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool linkEdit = false;
   bool enabled = false;
   bool? available;
+  String? _usernameError;
+  final Set<String> _invalidLinks = <String>{};
   bool isCheckingUsername = false;
   Timer? _usernameDebounce;
   int _usernameCheckId = 0;
@@ -198,11 +200,20 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
 
   void _onUsernameChanged(String value) {
     _usernameDebounce?.cancel();
-    final bool valid = value.length >= 8 && !value.contains(RegExp(r"(?: |[^\w\s])+"));
+    final bool longEnough = value.length >= minUsernameLength;
+    final bool validChars = !value.contains(RegExp(r"(?: |[^\w\s])+"));
+    final bool valid = longEnough && validChars;
     final int checkId = ++_usernameCheckId;
     setState(() {
       enabled = valid;
       available = null;
+      _usernameError = value.isEmpty || value == app_state.prismUser.username
+          ? null
+          : !longEnough
+          ? 'Use at least $minUsernameLength characters.'
+          : !validChars
+          ? 'Use letters, numbers and underscores only.'
+          : null;
       isCheckingUsername = valid && value != app_state.prismUser.username;
       usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
     });
@@ -218,6 +229,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       setState(() {
         available = isAvailable;
         isCheckingUsername = false;
+        if (isAvailable == false) _usernameError = 'That username is taken.';
       });
       if (isAvailable == null) toasts.error("Couldn't check the username. Try again.");
     });
@@ -225,7 +237,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
 
   bool get _hasChanges {
     final bool usernameOk = !usernameEdit || (enabled && available == true && !isCheckingUsername);
-    return (usernameEdit || pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit) && usernameOk;
+    return (usernameEdit || pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit) &&
+        usernameOk &&
+        _invalidLinks.isEmpty;
   }
 
   Future<void> _saveProfile() async {
@@ -238,7 +252,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     try {
       final PrismUsersV2 user = app_state.prismUser;
       final Map<String, dynamic> updates = <String, dynamic>{};
-      if (usernameEdit && usernameController.text.length >= 8) {
+      if (usernameEdit && usernameController.text.length >= minUsernameLength) {
         updates['username'] = usernameController.text;
       }
       if (_pfp != null && pfpEdit) {
@@ -287,7 +301,13 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     }
   }
 
-  InputDecoration _fieldDecoration({required String label, Widget? prefixIcon, Widget? suffixIcon, String? hintText}) {
+  InputDecoration _fieldDecoration({
+    required String label,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    String? hintText,
+    String? errorText,
+  }) {
     final secondary = Theme.of(context).colorScheme.secondary;
     final borderColor = secondary.withValues(alpha: PrismFormField.restingBorderOpacity);
     final borderSide = BorderSide(color: borderColor, width: PrismFormField.borderWidth);
@@ -315,6 +335,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       ),
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
+      errorText: errorText,
     );
   }
 
@@ -563,6 +584,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       controller: usernameController,
       decoration: _fieldDecoration(
         label: 'Username',
+        errorText: _usernameError,
         prefixIcon: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           child: Text(
@@ -679,7 +701,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               }).toList(),
               underline: const SizedBox.shrink(),
               onChanged: (value) {
-                setState(() => _link = value!);
+                setState(() {
+                  _invalidLinks.remove(_link.name);
+                  _link = value!;
+                });
                 linkController.text = _linkValues[_link.name] ?? '';
               },
               icon: const SizedBox.shrink(),
@@ -715,6 +740,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             decoration: _fieldDecoration(
               label: _link.name.inCaps,
               hintText: _link.placeholder,
+              errorText: _invalidLinks.contains(_link.name) ? _linkErrorText(_link) : null,
               suffixIcon: IconButton(
                 tooltip: 'Remove link',
                 onPressed: () => showRemoveAlertDialog(context, () async {
@@ -731,10 +757,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               ),
             ),
             onChanged: (value) {
-              if (value.toLowerCase().contains(_link.validator.toLowerCase())) {
-                _linkValues[_link.name] = value;
-              } else if (value.isEmpty) {
-                _linkValues[_link.name] = '';
+              final String? clean = value.trim().isEmpty ? '' : sanitizeProfileLink(_link, value);
+              if (clean == null) {
+                _invalidLinks.add(_link.name);
+              } else {
+                _invalidLinks.remove(_link.name);
+                _linkValues[_link.name] = clean;
               }
               final changed = _linkValues.values.any((v) => v.isNotEmpty);
               setState(() => linkEdit = changed);
@@ -744,6 +772,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       ],
     );
   }
+
+  String _linkErrorText(ProfileLinkKind kind) => switch (kind.name) {
+    'email' => 'Enter a valid email address.',
+    customLinkName => 'Enter a valid link.',
+    _ => 'Enter a valid ${kind.name} link.',
+  };
 
   Widget _buildSaveButton(Color secondary) {
     final isActive = _hasChanges;

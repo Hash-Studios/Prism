@@ -1,17 +1,26 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'dart:async';
+import 'dart:io';
+
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
-import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
+import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
+import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -31,6 +40,10 @@ class _AdsBloc extends MockBloc<AdsEvent, AdsState> implements AdsBloc {}
 class _NotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNotificationsState>
     implements InAppNotificationsBloc {}
 
+class _FavouritesBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
+
+class _WotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
+
 class _FeedBloc extends MockBloc<PersonalizedFeedEvent, PersonalizedFeedState> implements PersonalizedFeedBloc {}
 
 class _Connectivity extends Fake implements ConnectivityService {
@@ -41,6 +54,18 @@ class _Connectivity extends Fake implements ConnectivityService {
   Stream<bool> get onConnectionChange => const Stream<bool>.empty();
 }
 
+class _Sync extends Fake implements FavouritesSyncService {
+  final List<String> started = <String>[];
+  final StreamController<FavouritesSyncUpdate> updates = StreamController<FavouritesSyncUpdate>.broadcast();
+
+  @override
+  StreamSubscription<FavouritesSyncUpdate> listen(void Function(FavouritesSyncUpdate update) onUpdate) =>
+      updates.stream.listen(onUpdate);
+
+  @override
+  Future<void> start(String userId) async => started.add(userId);
+}
+
 const _messaging = MethodChannel('plugins.flutter.io/firebase_messaging');
 const _quickActions = MethodChannel('plugins.flutter.io/quick_actions');
 const _ios = TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS});
@@ -49,6 +74,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   late FakeFirestoreClient client;
+  late _Sync sync;
+  late _FavouritesBloc favourites;
+  late _WotdBloc wotd;
   late _AdsBloc ads;
   late _NotificationsBloc notifications;
   late String token;
@@ -57,8 +85,15 @@ void main() {
   final quickActionCalls = <MethodCall>[];
 
   setUpAll(() async {
+    registerFallbackValue(const FavouriteWallsEvent.refreshRequested());
     setupFirebaseCoreMocks();
     await Firebase.initializeApp();
+    FirebaseInit.setFuture(Future<bool>.value(true));
+    // The banner image opens the image cache, which asks for a temp directory.
+    messenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (call) async => Directory.systemTemp.path,
+    );
   });
 
   setUp(() async {
@@ -70,8 +105,11 @@ void main() {
     quickActionCalls.clear();
     client = FakeFirestoreClient();
     final store = InMemoryLocalStore();
-    final favorites = FavoritesLocalDataSource(store);
-    await favorites.setSeeded('u1', true);
+    sync = _Sync();
+    favourites = _FavouritesBloc();
+    wotd = _WotdBloc();
+    when(() => wotd.state).thenReturn(WotdState.initial());
+    when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
     final settings = SettingsLocalDataSource(store);
     await settings.set('lastSeenVersion', currentAppVersion);
     ads = _AdsBloc();
@@ -80,9 +118,10 @@ void main() {
     when(() => ads.state).thenReturn(AdsState.initial());
     when(() => notifications.state).thenReturn(InAppNotificationsState.initial());
     when(() => feed.state).thenReturn(PersonalizedFeedState.initial().copyWith(status: LoadStatus.failure));
+    when(feed.close).thenAnswer((_) async {});
     getIt
       ..registerSingleton<FirestoreClient>(client)
-      ..registerSingleton<FavoritesLocalDataSource>(favorites)
+      ..registerSingleton<FavouritesSyncService>(sync)
       ..registerSingleton<SettingsLocalDataSource>(settings)
       ..registerSingleton<ConnectivityService>(_Connectivity())
       ..registerSingleton<PersonalizedFeedBloc>(feed);
@@ -114,11 +153,15 @@ void main() {
           providers: [
             BlocProvider<AdsBloc>.value(value: ads),
             BlocProvider<InAppNotificationsBloc>.value(value: notifications),
+            BlocProvider<FavouriteWallsBloc>.value(value: favourites),
+            BlocProvider<WotdBloc>.value(value: wotd),
           ],
           child: const HomeTabPage(),
         ),
       ),
     );
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pump();
   }
 
@@ -159,7 +202,12 @@ void main() {
     await mount(tester);
 
     final items = quickActionCalls.singleWhere((c) => c.method == 'setShortcutItems').arguments! as List<Object?>;
-    expect(items.map((i) => (i! as Map)['type']), <String>['Personalized_Feed', 'Collections', 'Downloads']);
+    expect(items.map((i) => (i! as Map)['type']), <String>[
+      'Personalized_Feed',
+      'Collections',
+      'Downloads',
+      'Wall_of_the_Day',
+    ]);
     expect(items.map((i) => (i! as Map)['icon']), everyElement(isNull));
     await tester.pumpWidget(const SizedBox());
   }, variant: _ios);
@@ -172,6 +220,7 @@ void main() {
       '@drawable/ic_feed',
       '@drawable/ic_collections',
       '@drawable/ic_downloads',
+      '@drawable/ic_tile_wotd',
     ]);
     await tester.pumpWidget(const SizedBox());
     // On a macOS host Platform.isMacOS is true, so topic calls wait for an APNs token with retry timers.
@@ -183,5 +232,65 @@ void main() {
     expect(quickActionTabIndex('Collections'), 3);
     expect(quickActionTabIndex('Downloads'), isNull);
     expect(quickActionTabIndex('nope'), isNull);
+  });
+
+  testWidgets('a signed-in user starts the favourites sync and a sync update reaches the favourites bloc', (
+    tester,
+  ) async {
+    await mount(tester);
+
+    expect(sync.started, <String>['u1']);
+
+    sync.updates.add(const FavouritesSyncUpdate(userId: 'u1', items: []));
+    await tester.pump();
+
+    final FavouriteWallsEvent event = verify(() => favourites.add(captureAny())).captured.single as FavouriteWallsEvent;
+    expect(event, const FavouriteWallsEvent.synced(userId: 'u1', items: []));
+    await tester.pumpWidget(const SizedBox());
+  }, variant: _ios);
+
+  testWidgets('a guest does not start the favourites sync', (tester) async {
+    app_state.prismUser = createGuestPrismUser();
+
+    await mount(tester);
+
+    expect(sync.started, isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  }, variant: _ios);
+
+  test('the Wall of the Day shortcut opens that wall, with the thumbnail as the placeholder', () {
+    final WallpaperDetailRoute route = wallOfTheDayRoute(
+      const WallOfTheDayEntity(
+        wallId: 'w1',
+        url: 'https://example.com/full.jpg',
+        thumbnailUrl: 'https://example.com/thumb.jpg',
+        photographer: 'Ana',
+      ),
+    );
+
+    final WallpaperDetailRouteArgs args = route.args!;
+    expect(args.wallId, 'w1');
+    expect(args.source, WallpaperSource.prism);
+    expect(args.thumbnailUrl, 'https://example.com/thumb.jpg');
+  });
+
+  test('the Wall of the Day shortcut falls back to the full url and never to an unknown source', () {
+    final WallpaperDetailRoute route = wallOfTheDayRoute(
+      const WallOfTheDayEntity(
+        wallId: 'w2',
+        url: 'https://example.com/full.jpg',
+        thumbnailUrl: '',
+        photographer: '',
+        source: WallpaperSource.unknown,
+      ),
+    );
+
+    final WallpaperDetailRouteArgs args = route.args!;
+    expect(args.source, WallpaperSource.prism);
+    expect(args.thumbnailUrl, 'https://example.com/full.jpg');
+  });
+
+  test('the Wall of the Day shortcut opens no tab', () {
+    expect(quickActionTabIndex('Wall_of_the_Day'), isNull);
   });
 }
