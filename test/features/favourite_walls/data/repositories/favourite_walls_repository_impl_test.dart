@@ -6,6 +6,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:flutter_test/flutter_test.dart';
 import '../../../../support/fake_firestore_client.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../support/fav_fixtures.dart';
 
 class _BatchRecorder implements FirestoreBatch {
   final List<String> deleted = <String>[];
@@ -98,5 +99,25 @@ void main() {
 
     expect(result.isFailure, isTrue);
     expect(local.isWallFavourite('u', 'w1'), isTrue);
+  });
+
+  test('toggleFavourite writes favouritedAt and fetch maps it back', () async {
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final firestore = FakeFirestoreClient();
+    final repository = FavouriteWallsRepositoryImpl(firestore, local);
+
+    await repository.toggleFavourite(userId: 'u', wall: prismFav('p1'), currentlyFavourited: false);
+
+    expect(firestore.writes.single.data!['favouritedAt'], isA<DateTime>());
+
+    final stamp = DateTime.utc(2026, 3, 4);
+    final reader = FakeFirestoreClient(
+      onQuery: (_) => <FakeDocRow>[
+        (id: 'd1', data: <String, dynamic>{'id': 'p1', 'provider': 'prism', 'favouritedAt': stamp}),
+      ],
+    );
+    final result = await FavouriteWallsRepositoryImpl(reader, local).fetchFavourites(userId: 'u');
+
+    expect(result.data!.single.favouritedAt, stamp);
   });
 }

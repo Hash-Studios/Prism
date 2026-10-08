@@ -132,7 +132,9 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
         state.copyWith(
           status: LoadStatus.success,
           actionStatus: ActionStatus.success,
-          items: isNowFavourite ? _upsertWall(event.wall) : _removeWall(event.wall.id),
+          items: isNowFavourite
+              ? _upsertWall(event.wall.withFavouritedAt(DateTime.now().toUtc()))
+              : _removeWall(event.wall.id),
           completedOperationId: event.operationId,
           failure: null,
         ),

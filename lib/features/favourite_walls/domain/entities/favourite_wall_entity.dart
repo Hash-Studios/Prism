@@ -5,7 +5,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 
 sealed class FavouriteWallEntity {
-  const FavouriteWallEntity({required this.id, required this.source});
+  const FavouriteWallEntity({required this.id, required this.source, this.favouritedAt});
 
   factory FavouriteWallEntity.fromFeedItem(FeedItemEntity item) => item.when(
     prism: (_, wallpaper) => PrismFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
@@ -16,13 +16,31 @@ sealed class FavouriteWallEntity {
   final String id;
   final WallpaperSource source;
 
+  /// When the user favourited this wall. Null for docs written before this field existed.
+  final DateTime? favouritedAt;
+
   String get thumbnailUrl;
   String get fullUrl;
   DateTime? get createdAt;
   String? get authorName;
   String? get category;
 
+  /// Sort key for "Recently added": the favourite time, else the wall's own date for old docs.
+  DateTime? get addedAt => favouritedAt ?? createdAt;
+
   FeedItemEntity toFeedItem();
+
+  FavouriteWallEntity withFavouritedAt(DateTime at) => switch (this) {
+    PrismFavouriteWall(:final wallpaper) => PrismFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at),
+    WallhavenFavouriteWall(:final wallpaper) => WallhavenFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at),
+    PexelsFavouriteWall(:final wallpaper) => PexelsFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at),
+    LegacyFavouriteWall(:final legacyPayload) => LegacyFavouriteWall(
+      id: id,
+      source: source,
+      legacyPayload: legacyPayload,
+      favouritedAt: at,
+    ),
+  };
 }
 
 enum FavouriteSort { recentlyAdded, oldest, source }
@@ -56,20 +74,20 @@ List<FavouriteWallEntity> applyFavouritesView(
   }
 }
 
-/// Newest first; entries without a date go last.
+/// Newest [FavouriteWallEntity.addedAt] first; entries without a date go last.
 int compareByCreatedAtDesc(FavouriteWallEntity a, FavouriteWallEntity b) {
-  final DateTime? aDate = a.createdAt;
-  final DateTime? bDate = b.createdAt;
+  final DateTime? aDate = a.addedAt;
+  final DateTime? bDate = b.addedAt;
   if (aDate == null && bDate == null) return 0;
   if (aDate == null) return 1;
   if (bDate == null) return -1;
   return bDate.compareTo(aDate);
 }
 
-/// Oldest first; entries without a date go last.
+/// Oldest [FavouriteWallEntity.addedAt] first; entries without a date go last.
 int compareByCreatedAtAsc(FavouriteWallEntity a, FavouriteWallEntity b) {
-  final DateTime? aDate = a.createdAt;
-  final DateTime? bDate = b.createdAt;
+  final DateTime? aDate = a.addedAt;
+  final DateTime? bDate = b.addedAt;
   if (aDate == null && bDate == null) return 0;
   if (aDate == null) return 1;
   if (bDate == null) return -1;
@@ -77,7 +95,8 @@ int compareByCreatedAtAsc(FavouriteWallEntity a, FavouriteWallEntity b) {
 }
 
 final class PrismFavouriteWall extends FavouriteWallEntity {
-  const PrismFavouriteWall({required super.id, required this.wallpaper}) : super(source: WallpaperSource.prism);
+  const PrismFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt})
+    : super(source: WallpaperSource.prism);
 
   final PrismWallpaper wallpaper;
 
@@ -101,7 +120,8 @@ final class PrismFavouriteWall extends FavouriteWallEntity {
 }
 
 final class WallhavenFavouriteWall extends FavouriteWallEntity {
-  const WallhavenFavouriteWall({required super.id, required this.wallpaper}) : super(source: WallpaperSource.wallhaven);
+  const WallhavenFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt})
+    : super(source: WallpaperSource.wallhaven);
 
   final WallhavenWallpaper wallpaper;
 
@@ -125,7 +145,8 @@ final class WallhavenFavouriteWall extends FavouriteWallEntity {
 }
 
 final class PexelsFavouriteWall extends FavouriteWallEntity {
-  const PexelsFavouriteWall({required super.id, required this.wallpaper}) : super(source: WallpaperSource.pexels);
+  const PexelsFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt})
+    : super(source: WallpaperSource.pexels);
 
   final PexelsWallpaper wallpaper;
 
@@ -151,7 +172,12 @@ final class PexelsFavouriteWall extends FavouriteWallEntity {
 /// Used when the existing Firestore doc cannot be resolved to a typed variant
 /// (e.g., docs written by older app versions).
 final class LegacyFavouriteWall extends FavouriteWallEntity {
-  const LegacyFavouriteWall({required super.id, required super.source, required this.legacyPayload});
+  const LegacyFavouriteWall({
+    required super.id,
+    required super.source,
+    required this.legacyPayload,
+    super.favouritedAt,
+  });
 
   final JsonMap legacyPayload;
 

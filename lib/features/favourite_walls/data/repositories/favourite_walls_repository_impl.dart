@@ -102,6 +102,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
             collections: dto.collections.isEmpty ? null : dto.collections,
             firestoreDocumentId: docId,
           ),
+          favouritedAt: dto.favouritedAt,
         );
       case WallpaperSource.wallhaven:
         return WallhavenFavouriteWall(
@@ -121,6 +122,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
             favorites: int.tryParse(dto.fav),
             tags: dto.collections.isEmpty ? null : dto.collections,
           ),
+          favouritedAt: dto.favouritedAt,
         );
       case WallpaperSource.pexels:
         return PexelsFavouriteWall(
@@ -140,12 +142,14 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
             photographer: dto.photographer.isEmpty ? null : dto.photographer,
             src: PexelsSrc(original: dto.url, medium: dto.thumb),
           ),
+          favouritedAt: dto.favouritedAt,
         );
       case WallpaperSource.downloaded:
       case WallpaperSource.unknown:
         return LegacyFavouriteWall(
           id: id,
           source: source,
+          favouritedAt: dto.favouritedAt,
           legacyPayload: <String, Object?>{
             'id': id,
             'provider': dto.provider,
@@ -181,6 +185,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
           if (wall.wallpaper.core.authorName != null) 'photographer': wall.wallpaper.core.authorName,
           if (wall.wallpaper.collections != null) 'collections': wall.wallpaper.collections,
           'createdAt': wall.createdAt ?? DateTime.now().toUtc(),
+          'favouritedAt': wall.favouritedAt ?? DateTime.now().toUtc(),
         };
       case WallhavenFavouriteWall():
         doc = <String, dynamic>{
@@ -196,6 +201,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
           'photographer': '',
           if (wall.wallpaper.tags != null) 'collections': wall.wallpaper.tags,
           'createdAt': DateTime.now().toUtc(),
+          'favouritedAt': wall.favouritedAt ?? DateTime.now().toUtc(),
         };
       case PexelsFavouriteWall():
         doc = <String, dynamic>{
@@ -210,6 +216,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
           if (wall.wallpaper.core.sizeBytes != null) 'size': wall.wallpaper.core.sizeBytes.toString(),
           if (wall.wallpaper.photographer != null) 'photographer': wall.wallpaper.photographer,
           'createdAt': DateTime.now().toUtc(),
+          'favouritedAt': wall.favouritedAt ?? DateTime.now().toUtc(),
         };
       case LegacyFavouriteWall():
         final Map<String, dynamic> base = Map<String, dynamic>.fromEntries(
@@ -218,6 +225,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         base['id'] = wall.id;
         base['provider'] = wall.source.legacyProviderString;
         base['createdAt'] ??= DateTime.now().toUtc();
+        base['favouritedAt'] = wall.favouritedAt ?? DateTime.now().toUtc();
         doc = base;
     }
     return doc;
