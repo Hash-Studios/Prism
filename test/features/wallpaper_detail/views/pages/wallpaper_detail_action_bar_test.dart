@@ -92,6 +92,25 @@ void main() {
     expect(tester.getRect(find.widgetWithText(ActionChip, 'space')).bottom, lessThanOrEqualTo(before.top));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('collapsed panel content is faded out and returns when the panel opens', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+
+    expect(find.bySemanticsLabel('Original wallpaper colors'), findsNothing);
+    final Opacity chipFade = tester.widget<Opacity>(
+      find.ancestor(of: find.widgetWithText(ActionChip, 'space'), matching: find.byType(Opacity)).first,
+    );
+    expect(chipFade.opacity, 0);
+    expect(tester.getSemantics(find.bySemanticsLabel('Expand wallpaper details')).rect.height, lessThan(100));
+
+    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.bySemanticsLabel('Original wallpaper colors'), findsOneWidget);
+    semantics.dispose();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('iOS shows Save as the primary action and no Set action', (tester) async {
     await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
 
