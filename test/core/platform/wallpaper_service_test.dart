@@ -157,7 +157,14 @@ void main() {
       expect(result.errorCode, 'boom');
     });
 
-    test('the system cropper is not retried', () async {
+    test('the system cropper gets a content URI and is not retried', () async {
+      const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+      final List<Object?> cropArguments = <Object?>[];
+      messenger.setMockMethodCallHandler(cropChannel, (MethodCall call) async {
+        cropArguments.add(call.arguments);
+        return 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.png';
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(cropChannel, null));
       final _FakeClient client = _FakeClient([aw.WallpaperOperationStatus.failed]);
       aw.AsyncWallpaper.debugSetClient(client);
       await WallpaperService.setWallpaper(
@@ -166,8 +173,15 @@ void main() {
         useSystemCropper: true,
         recordHistory: false,
       );
+      expect(cropArguments, ['/tmp/wall.png']);
       expect(client.requests, hasLength(1));
       expect(client.requests.single.strategy, aw.WallpaperApplyStrategy.systemCropper);
+      // The plugin refuses the cropper for a file path, so every crop failed before.
+      expect(
+        client.requests.single.source.contentUri,
+        'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.png',
+      );
+      expect(client.requests.single.source.filePath, isNull);
     });
 
     test('fit maps to the plugin scale mode', () async {

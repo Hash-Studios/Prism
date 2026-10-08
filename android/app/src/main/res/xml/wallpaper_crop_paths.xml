@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The one cache folder that the system wallpaper cropper may read (see MainActivity.cropContentUri). -->
+<paths>
+    <cache-path name="wallpaper_crop" path="wallpaper_crop/" />
+</paths>
