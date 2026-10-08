@@ -38,11 +38,25 @@ class PersistenceKeys {
   static const String autoRotateIntervalMinutes = 'autoRotate.intervalMinutes';
   static const String autoRotateTarget = 'autoRotate.target';
   static const String autoRotateShuffle = 'autoRotate.shuffle';
+  static const String autoRotateChargingOnly = 'autoRotate.chargingOnly';
+  static const String autoRotateBatteryTipShown = 'autoRotate.batteryTipShown';
+
+  // Default target when the user taps Set: 'ask' | 'home' | 'lock' | 'both'.
+  static const String defaultApplyTarget = 'wallpaper.defaultApplyTarget';
+
+  // JSON list of applied wallpapers, newest first. Owned by wallpaper_history.
+  static const String wallpaperHistoryItems = 'wallpaper.history.items';
+
+  // JSON list of recent search queries, newest first.
+  static const String recentSearches = 'search.recent';
+
+  // Notification ids the user deleted, so a remote sync does not restore them.
+  static const String notificationsDeletedIds = 'notifications.deleted_ids';
 
   // Download quality: 'original' | 'compressed'
   static const String downloadQuality = 'downloadQuality';
 
-  // Quick tile configuration — written as raw strings so native TileServices
+  // Quick tile configuration, written as raw strings so native TileServices
   // can read them directly from SharedPreferences without the Flutter codec.
   static const String quickTileCategoryName = 'quick_tile.category.name';
   static const String quickTileCategorySource = 'quick_tile.category.source';

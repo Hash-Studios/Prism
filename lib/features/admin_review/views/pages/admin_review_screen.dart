@@ -447,6 +447,7 @@ class _WallContentReportCardState extends State<_WallContentReportCard> {
       wallId: widget.targetDocId,
       profileIdentifier: '',
       sourceTag: 'admin.content_report',
+      fallbackToInbox: false,
     );
     if (!context.mounted) {
       return;

@@ -37,8 +37,7 @@ class WallpaperTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final columns = crossAxisCount ?? wallpaperGridColumns(MediaQuery.sizeOf(context).width);
-    final width = (MediaQuery.sizeOf(context).width / columns).toInt();
-    final height = memCacheHeight ?? (width * 2 * 1.5).toInt();
+    final height = memCacheHeight ?? gridTileDecodeHeight(context, crossAxisCount: columns);
     final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
     return Semantics(
       button: true,

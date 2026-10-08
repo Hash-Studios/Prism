@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -11,7 +12,15 @@ import 'package:auto_route/auto_route.dart';
 class NotificationRouteMapper {
   const NotificationRouteMapper();
 
-  Future<PageRouteInfo?> fromPayload(Map<String, dynamic> data, {required String sourceTag}) {
+  /// Maps a push or inbox payload to a route.
+  ///
+  /// With [fallbackToInbox] (the default) the result is never null: a missing or unknown target opens the inbox and
+  /// shows a toast. Pass `false` to get null instead.
+  Future<PageRouteInfo?> fromPayload(
+    Map<String, dynamic> data, {
+    required String sourceTag,
+    bool fallbackToInbox = true,
+  }) {
     final String route = data['route']?.toString().trim() ?? '';
     final String wallId = data['wall_id']?.toString().trim() ?? '';
     final String profileIdentifier = _firstPresent(data, const <String>[
@@ -22,7 +31,13 @@ class NotificationRouteMapper {
       'username',
       'user',
     ]);
-    return _map(route: route, wallId: wallId, profileIdentifier: profileIdentifier, sourceTag: sourceTag);
+    return _map(
+      route: route,
+      wallId: wallId,
+      profileIdentifier: profileIdentifier,
+      sourceTag: sourceTag,
+      fallbackToInbox: fallbackToInbox,
+    );
   }
 
   Future<PageRouteInfo?> fromRoute({
@@ -30,16 +45,40 @@ class NotificationRouteMapper {
     String? wallId,
     String? profileIdentifier,
     required String sourceTag,
+    bool fallbackToInbox = true,
   }) {
     return _map(
       route: route.trim(),
       wallId: wallId?.trim() ?? '',
       profileIdentifier: profileIdentifier?.trim() ?? '',
       sourceTag: sourceTag,
+      fallbackToInbox: fallbackToInbox,
     );
   }
 
   Future<PageRouteInfo?> _map({
+    required String route,
+    required String wallId,
+    required String profileIdentifier,
+    required String sourceTag,
+    required bool fallbackToInbox,
+  }) async {
+    PageRouteInfo? mapped;
+    try {
+      mapped = await _resolve(route: route, wallId: wallId, profileIdentifier: profileIdentifier, sourceTag: sourceTag);
+    } catch (_) {
+      mapped = null;
+    }
+    if (mapped != null || !fallbackToInbox) {
+      return mapped;
+    }
+    if (route.isNotEmpty) {
+      toasts.error('That item is no longer available');
+    }
+    return const NotificationRoute();
+  }
+
+  Future<PageRouteInfo?> _resolve({
     required String route,
     required String wallId,
     required String profileIdentifier,
@@ -71,6 +110,8 @@ class NotificationRouteMapper {
         return const NotificationRoute();
       case 'announcement':
         return const NotificationRoute();
+      case 'content_report':
+        return app_state.isAdminUser() ? AdminReviewRoute() : null;
       default:
         return null;
     }
@@ -86,7 +127,7 @@ class NotificationRouteMapper {
       (Map<String, dynamic> data, String _) => data,
       sourceTag: sourceTag,
     );
-    if (wall == null) {
+    if (wall == null || (wall['review'] != true && !app_state.isAdminUser())) {
       return null;
     }
     final String id = wall['id']?.toString() ?? wallId;

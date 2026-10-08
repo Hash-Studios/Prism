@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
+import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -129,62 +130,66 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   Widget build(BuildContext context) {
     return BlocProvider<PublicProfileBloc>.value(
       value: _bloc,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: PreferredSize(
-          preferredSize: const Size(double.infinity, 55),
-          child: HeadingChipBar(current: _title),
-        ),
-        body: Column(
-          children: [
-            _SearchBar(controller: _searchController),
-            Expanded(
-              child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
-                buildWhen: (prev, curr) => _list(prev) != _list(curr),
-                builder: (context, state) {
-                  final list = _list(state);
-                  // Search mode.
-                  if (_isSearchActive) {
-                    if (list.isSearching) {
-                      return const GlintState(kind: GlintStateKind.loading, title: 'Searching');
+      child: BlocListener<PublicProfileBloc, PublicProfileState>(
+        listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+        listener: (context, state) => showFollowOutcomeToast(state.followOutcome!),
+        child: Scaffold(
+          backgroundColor: Theme.of(context).primaryColor,
+          appBar: PreferredSize(
+            preferredSize: const Size(double.infinity, 55),
+            child: HeadingChipBar(current: _title),
+          ),
+          body: Column(
+            children: [
+              _SearchBar(controller: _searchController),
+              Expanded(
+                child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
+                  buildWhen: (prev, curr) => _list(prev) != _list(curr),
+                  builder: (context, state) {
+                    final list = _list(state);
+                    // Search mode.
+                    if (_isSearchActive) {
+                      if (list.isSearching) {
+                        return const GlintState(kind: GlintStateKind.loading, title: 'Searching');
+                      }
+                      final results = list.searchResults ?? const <UserSummaryEntity>[];
+                      if (results.isEmpty) {
+                        return const GlintState(kind: GlintStateKind.empty, title: 'No results found.');
+                      }
+                      return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
                     }
-                    final results = list.searchResults ?? const <UserSummaryEntity>[];
-                    if (results.isEmpty) {
-                      return const GlintState(kind: GlintStateKind.empty, title: 'No results found.');
-                    }
-                    return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
-                  }
 
-                  // Paginated mode.
-                  final summaries = list.summaries;
-                  if (list.isFetching && summaries.isEmpty) {
-                    return GlintState(
-                      kind: GlintStateKind.loading,
-                      title: _isFollowers ? 'Loading followers' : 'Loading following',
-                    );
-                  }
-                  if (summaries.isEmpty) {
-                    if (widget.emails.isEmpty) {
-                      return GlintState(kind: GlintStateKind.empty, title: _emptySourceText);
+                    // Paginated mode.
+                    final summaries = list.summaries;
+                    if (list.isFetching && summaries.isEmpty) {
+                      return GlintState(
+                        kind: GlintStateKind.loading,
+                        title: _isFollowers ? 'Loading followers' : 'Loading following',
+                      );
                     }
-                    return GlintState(
-                      kind: GlintStateKind.error,
-                      title: _emptyLoadFailedText,
-                      actionLabel: 'Try again',
-                      onAction: () => _bloc.add(_fetchPageEvent(0)),
+                    if (summaries.isEmpty) {
+                      if (widget.emails.isEmpty) {
+                        return GlintState(kind: GlintStateKind.empty, title: _emptySourceText);
+                      }
+                      return GlintState(
+                        kind: GlintStateKind.error,
+                        title: _emptyLoadFailedText,
+                        actionLabel: 'Try again',
+                        onAction: () => _bloc.add(_fetchPageEvent(0)),
+                      );
+                    }
+                    _maybeAutoLoadMore(state);
+                    return _UserList(
+                      users: summaries,
+                      scrollController: _scrollController,
+                      hasMore: list.hasMore,
+                      isLoading: list.isFetching,
                     );
-                  }
-                  _maybeAutoLoadMore(state);
-                  return _UserList(
-                    users: summaries,
-                    scrollController: _scrollController,
-                    hasMore: list.hasMore,
-                    isLoading: list.isFetching,
-                  );
-                },
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

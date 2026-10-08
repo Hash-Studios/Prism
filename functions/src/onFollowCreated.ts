@@ -1,13 +1,7 @@
 import {createHash} from "node:crypto";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {
-  emailToTopic,
-  isLoggedOut,
-  sendNotification,
-  sendToUidAndEmailTopics,
-  userIdToTopic,
-} from "./notificationHelper";
+import {isLoggedOut, sendToUser} from "./notificationHelper";
 import {usernameLowerOf} from "./usernameLower";
 import {db, findUserByEmail, REGION, str} from "./common";
 
@@ -70,7 +64,9 @@ export const onFollowCreated = onDocumentUpdated(
     }
 
     const followedUid = event.params.userId;
-    const pushEnabled = !isLoggedOut(after) && !(await followerAlertsMuted(followedUid));
+    // The event snapshot can be stale: read the user again so a sign-out since then stops the push.
+    const current = await currentUserData(followedUid, after);
+    const pushEnabled = !isLoggedOut(current) && !(await followerAlertsMuted(followedUid));
 
     for (const followerEmail of newFollowerEmailsRaw) {
       const followerUid = await resolveUserIdByEmail(followerEmail);
@@ -102,12 +98,13 @@ export const onFollowCreated = onDocumentUpdated(
         modifier: followedUserEmail,
         channelId: "followers",
         collapseKey: followCollapseKey(followerEmail),
+        docId: followInboxDocId(followedUid, followerEmail),
       };
-      if (pushEnabled) {
-        await sendToUidAndEmailTopics(payload, userIdToTopic(followedUid), emailToTopic(followedUserEmail));
-      } else {
-        await sendNotification(payload);
-      }
+      await sendToUser(
+        payload,
+        {uid: followedUid, email: followedUserEmail, legacyToken: current.fcmToken},
+        pushEnabled,
+      );
 
       logger.info("onFollowCreated: follow notification sent.", {
         followedUserEmail,
@@ -123,9 +120,23 @@ export function followCollapseKey(followerEmail: string): string {
   return `follow_${hash}`;
 }
 
+/** One inbox doc per follower, so a retried trigger does not add a second one. */
+export function followInboxDocId(followedUid: string, followerEmail: string): string {
+  return `${followCollapseKey(followerEmail)}_${followedUid}`;
+}
+
 /** True only when the user explicitly turned Followers alerts off. */
 export function isFollowerAlertsOff(session: Record<string, unknown> | undefined): boolean {
   return session?.followerAlerts === false;
+}
+
+async function currentUserData(uid: string, fallback: Record<string, unknown>): Promise<Record<string, unknown>> {
+  try {
+    return (await db.doc(`usersv2/${uid}`).get()).data() ?? fallback;
+  } catch (err) {
+    logger.warn("onFollowCreated: could not re-read the followed user.", {uid, err});
+    return fallback;
+  }
 }
 
 async function followerAlertsMuted(uid: string): Promise<boolean> {

@@ -39,7 +39,11 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
   void runSignIn(Future<SignInOutcome> Function() signIn) {
     navigator.pop();
     loaderVisible = true;
-    showDialog(barrierDismissible: false, context: navigator.context, builder: (BuildContext context) => loaderDialog);
+    showDialog(
+      barrierDismissible: false,
+      context: navigator.context,
+      builder: (BuildContext context) => PopScope(canPop: false, child: loaderDialog),
+    );
     signIn()
         .then((outcome) {
           if (!navigator.mounted) {

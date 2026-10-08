@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' show min;
+import 'dart:ui' show ImageFilter;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
@@ -21,30 +23,35 @@ import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
+import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
+import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
+import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
@@ -88,14 +95,19 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   static const double _sheetHPad = 24.0;
-  static const double _panelSideInset = 10.0;
-  static const double _panelTopRadius = 20.0;
+  static const double _panelTopRadius = 24.0;
+  static const double _panelMaxFraction = 0.55;
   static const double _chromePad = 8.0;
   static const double _minInteractiveTarget = 48.0;
+  static const double _handleHeight = 36.0;
 
   final ShakeController _shake = ShakeController();
+  final SimilarWallpapersLoader _similarLoader = SimilarWallpapersLoader.fromGetIt();
 
   PanelController panelController = PanelController();
+
+  /// 0 when the panel is collapsed, 1 when open. The collapsed panel sits under the action bar, so its content fades.
+  final ValueNotifier<double> _panelPosition = ValueNotifier<double>(0);
   bool _accentToastShown = false;
   bool _openRecorded = false;
 
@@ -174,6 +186,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   @override
   void dispose() {
     _shake.dispose();
+    _panelPosition.dispose();
     super.dispose();
   }
 
@@ -270,6 +283,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return Scaffold(
       body: _withHero(
         CachedNetworkImage(
+          cacheManager: PrismImageCache.instance,
           imageUrl: thumbnailUrl,
           fit: BoxFit.cover,
           fadeInDuration: context.motion(const Duration(milliseconds: 180)),
@@ -323,79 +337,92 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       value: edgeToEdgeOverlayStyle(
         statusBarIconBrightness: onColor(backgroundColor) == Colors.black ? Brightness.dark : Brightness.light,
       ),
-      child: Scaffold(
-        backgroundColor: backgroundColor,
-        body: SlidingUpPanel(
-          onPanelOpened: () => _handlePanelOpened(context, state),
-          onPanelClosed: () => _handlePanelClosed(context, state),
-          // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(_panelTopRadius),
-            topRight: Radius.circular(_panelTopRadius),
-          ),
-          boxShadow: const [],
-          minHeight: MediaQuery.of(context).size.height / 20,
-          parallaxEnabled: true,
-          parallaxOffset: 0,
-          color: Colors.transparent,
-          maxHeight: MediaQuery.of(context).size.height * 0.43,
-          controller: panelController,
-          panel: _buildInfoPanel(context, state),
-          body: _buildImageBody(context, paletteLoading, state),
-        ),
+      child: Scaffold(backgroundColor: backgroundColor, body: _buildPanelStack(context, state, paletteLoading)),
+    );
+  }
+
+  double _collapsedPanelHeight(BuildContext context) =>
+      _handleHeight + WallpaperActionBar.height + MediaQuery.paddingOf(context).bottom;
+
+  Widget _buildPanelStack(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
+    final double collapsedHeight = _collapsedPanelHeight(context);
+    final Widget panel = SlidingUpPanel(
+      onPanelOpened: () => _handlePanelOpened(context, state),
+      onPanelClosed: () => _handlePanelClosed(context, state),
+      onPanelSlide: (double position) => _panelPosition.value = position,
+      // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(_panelTopRadius),
+        topRight: Radius.circular(_panelTopRadius),
       ),
+      boxShadow: const [],
+      minHeight: collapsedHeight,
+      parallaxEnabled: true,
+      parallaxOffset: 0,
+      color: Colors.transparent,
+      maxHeight: MediaQuery.of(context).size.height * _panelMaxFraction,
+      controller: panelController,
+      panel: _buildInfoPanel(context, state),
+      body: Padding(
+        padding: EdgeInsets.only(bottom: collapsedHeight),
+        child: _buildImageBody(context, paletteLoading, state),
+      ),
+    );
+    return Stack(
+      children: [
+        Positioned.fill(child: panel),
+        Positioned(left: 0, right: 0, bottom: 0, child: _buildActionBar(context, state)),
+      ],
     );
   }
 
   Widget _buildInfoPanel(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
-    final w = MediaQuery.sizeOf(context).width;
-    final h = MediaQuery.sizeOf(context).height;
-    final size = Size(w - _panelSideInset * 2, h * 0.43);
+    final theme = Theme.of(context);
+    final surface = Color.alphaBlend(
+      theme.colorScheme.secondary.withValues(alpha: 0.06),
+      theme.primaryColor,
+    ).withValues(alpha: 0.85);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(_panelSideInset, 0, _panelSideInset, _panelSideInset),
-      height: size.height,
-      width: size.width,
-      child: LiquidGlassLayer(
-        settings: LiquidGlassSettings(
-          thickness: 40,
-          ambientStrength: 0.2,
-          blur: 4,
-          glassColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-        ),
-        fake: defaultTargetPlatform != TargetPlatform.iOS,
-        child: LiquidGlass(
-          shape: const LiquidRoundedSuperellipse(borderRadius: 56),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(_panelTopRadius)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: surface),
           child: SizedBox(
-            height: size.height,
-            width: size.width,
+            height: MediaQuery.sizeOf(context).height * _panelMaxFraction,
+            width: MediaQuery.sizeOf(context).width,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildCollapseHandle(context, state),
-                _buildColorBar(context, state),
+                _fadeWithPanel(_buildColorBar(context, state)),
                 Expanded(
                   flex: 8,
-                  child: SingleChildScrollView(
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification is ScrollStartNotification) {
-                          context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
-                        } else if (notification is ScrollEndNotification) {
-                          Future.delayed(const Duration(milliseconds: 200), () {
-                            if (!context.mounted) return;
-                            context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
-                          });
-                        }
-                        return false;
-                      },
-                      child: _buildMetadataRow(context, entity, state),
+                  child: _fadeWithPanel(
+                    SingleChildScrollView(
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification is ScrollStartNotification) {
+                            context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
+                          } else if (notification is ScrollEndNotification) {
+                            Future.delayed(const Duration(milliseconds: 200), () {
+                              if (!context.mounted) return;
+                              context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
+                            });
+                          }
+                          return false;
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [_buildMetadataRow(context, entity, state), ..._buildPanelExtras(context, entity)],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                _buildActionButtons(context, state),
-                const SizedBox(height: _sheetHPad),
+                SizedBox(height: WallpaperActionBar.height + MediaQuery.paddingOf(context).bottom),
               ],
             ),
           ),
@@ -404,10 +431,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     );
   }
 
+  Widget _fadeWithPanel(Widget child) => ValueListenableBuilder<double>(
+    valueListenable: _panelPosition,
+    child: child,
+    builder: (BuildContext context, double position, Widget? child) => IgnorePointer(
+      ignoring: position == 0,
+      child: Opacity(opacity: position, child: child),
+    ),
+  );
+
   Widget _buildCollapseHandle(BuildContext context, WallpaperDetailLoaded state) {
     final isCollapsed = state.panelCollapsed;
     return Center(
       child: Semantics(
+        // Its own node: the faded panel content drops out of semantics, and this label must not merge into the panel.
+        container: true,
         button: true,
         label: isCollapsed ? 'Expand wallpaper details' : 'Collapse wallpaper details',
         child: GestureDetector(
@@ -422,7 +460,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           },
           behavior: HitTestBehavior.opaque,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: _minInteractiveTarget, minHeight: _minInteractiveTarget),
+            constraints: const BoxConstraints(minWidth: _minInteractiveTarget, minHeight: _handleHeight),
             child: Center(
               child: Icon(
                 isCollapsed ? JamIcons.chevron_up : JamIcons.chevron_down,
@@ -487,6 +525,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     required VoidCallback? onLongPress,
   }) {
     final label = color == null ? 'Original wallpaper colors' : 'Accent color';
+    final placeholder = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1);
     final hint = color == null ? null : 'Long press to copy hex color';
     return Semantics(
       button: onTap != null,
@@ -500,40 +539,29 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (localFile != null)
+            if (color != null)
+              Container(color: color)
+            else if (localFile != null)
               Image.file(
                 localFile,
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
-                color: color,
-                colorBlendMode: color == null ? null : BlendMode.hue,
-                errorBuilder: (_, _, _) =>
-                    Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+                errorBuilder: (_, _, _) => Container(color: placeholder),
               )
             else if (thumbnailUrl.isNotEmpty)
               CachedNetworkImage(
+                cacheManager: PrismImageCache.instance,
                 imageUrl: thumbnailUrl,
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
-                imageBuilder: (ctx, imageProvider) => Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: imageProvider,
-                      fit: BoxFit.cover,
-                      colorFilter: color != null ? ColorFilter.mode(color, BlendMode.hue) : null,
-                    ),
-                    border: Border(bottom: BorderSide(color: color ?? Theme.of(ctx).colorScheme.secondary, width: 8)),
-                  ),
-                ),
-                placeholder: (_, u) =>
-                    Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
-                errorWidget: (_, u, e) =>
-                    Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+                memCacheWidth: 240,
+                placeholder: (_, u) => Container(color: placeholder),
+                errorWidget: (_, u, e) => Container(color: placeholder),
               )
             else
-              Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+              Container(color: placeholder),
             AnimatedOpacity(
               duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
               opacity: isSelected ? 1.0 : 0.0,
@@ -855,76 +883,137 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return name == null || name.isEmpty ? null : 'by $name';
   }
 
-  Widget _buildActionButtons(BuildContext context, WallpaperDetailLoaded state) {
+  Widget _buildActionBar(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final url = entity.fullUrl;
-    final List<Widget> actions = <Widget>[
-      PressScale(
-        child: DownloadButton(
-          link: url,
-          sourceContext: _getSourceContext(state),
-          onDownloaded: () {
-            _recordTaste(TasteAction.download, entity);
-            unawaited(getIt<DownloadedWallIndex>().remember(link: url, id: entity.id, source: entity.source));
-          },
-        ),
+    final String previewTitle = wallpaperPreviewTitle(entity);
+    Widget downloadButton({String? label}) => PressScale(
+      child: DownloadButton(
+        label: label,
+        link: url,
+        isPremiumContent: isPremiumFeedItem(entity, app_state.premiumCollections),
+        contentId: entity.id,
+        sourceContext: _getSourceContext(state),
+        onDownloaded: () {
+          _recordTaste(TasteAction.download, entity);
+          unawaited(getIt<DownloadedWallIndex>().remember(link: url, id: entity.id, source: entity.source));
+        },
       ),
-      if (!hideSetWallpaperUi)
-        PressScale(
-          child: SetWallpaperButton(
-            url: widget.localFile?.path ?? url,
-            promptNotificationPermissionOnSuccess: true,
-            onSet: () => _recordTaste(TasteAction.set, entity),
+    );
+    final primary = hideSetWallpaperUi
+        ? WallpaperBarAction(
+            label: 'Save to Photos',
+            child: downloadButton(label: 'Save'),
+          )
+        : WallpaperBarAction(
+            label: 'Set as wallpaper',
+            child: PressScale(
+              child: SetWallpaperButton(
+                label: 'Set',
+                url: widget.localFile?.path ?? url,
+                thumbnailUrl: entity.thumbnailUrl,
+                promptNotificationPermissionOnSuccess: true,
+                onSet: () => _recordTaste(TasteAction.set, entity),
+              ),
+            ),
+          );
+    return WallpaperActionBar(
+      primary: primary,
+      actions: [
+        if (!hideSetWallpaperUi) WallpaperBarAction(label: 'Download', child: downloadButton()),
+        WallpaperBarAction(
+          label: 'Favourite',
+          child: PressScale(
+            child: FavouriteWallpaperButton(
+              wall: FavouriteWallEntity.fromFeedItem(entity),
+              trash: false,
+              onFavourited: () => _recordTaste(TasteAction.favourite, entity),
+            ),
           ),
         ),
-      PressScale(
-        child: FavouriteWallpaperButton(
-          wall: FavouriteWallEntity.fromFeedItem(entity),
-          trash: false,
-          onFavourited: () => _recordTaste(TasteAction.favourite, entity),
+        WallpaperBarAction(
+          label: 'Share',
+          child: PressScale(
+            child: ShareButton(
+              id: entity.id,
+              source: entity.source,
+              url: entity.fullUrl,
+              thumbUrl: entity.thumbnailUrl,
+              contextLine: _shareContextLine(entity),
+              createLink: (id, source, url, thumbUrl) =>
+                  createDynamicLink(id, source, url, thumbUrl, title: previewTitle),
+            ),
+          ),
         ),
-      ),
-      PressScale(
-        child: ShareButton(
-          id: entity.id,
-          source: entity.source,
-          url: entity.fullUrl,
-          thumbUrl: entity.thumbnailUrl,
-          contextLine: _shareContextLine(entity),
+        WallpaperBarAction(
+          label: 'Edit',
+          child: PressScale(child: EditButton(url: entity.fullUrl)),
         ),
-      ),
-      PressScale(child: EditButton(url: entity.fullUrl)),
-    ];
+      ],
+    );
+  }
+
+  List<Widget> _buildPanelExtras(BuildContext context, FeedItemEntity entity) {
+    final theme = Theme.of(context);
+    final tags = wallpaperTags(entity);
+    final screenPixels = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
+    final bool lowResolution = isLowResolutionForScreen(entity.wallpaperCore, screenPixels);
     final String? reportWallDocId = switch (entity) {
       PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId,
       _ => null,
     };
-    if (reportWallDocId != null && reportWallDocId.isNotEmpty) {
-      actions.insert(
-        actions.length - 1,
-        PressScale(
-          child: CircularMenuButton(
-            label: 'Report',
-            isLoading: false,
-            onTap: () {
-              showContentReportSheet(
+    const gap = SizedBox(height: 12);
+    Widget padded(Widget child) =>
+        Padding(padding: const EdgeInsets.fromLTRB(_sheetHPad, 0, _sheetHPad, 12), child: child);
+    return [
+      if (lowResolution)
+        padded(
+          Row(
+            children: [
+              Icon(JamIcons.alert, size: 18, color: theme.colorScheme.error),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Low resolution for your screen',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
+      if (!hideSetWallpaperUi && entity.fullUrl.trim().isNotEmpty)
+        padded(
+          Align(
+            alignment: Alignment.centerLeft,
+            child: MakeItLiveButton(onPressed: () => context.router.push(LiveWallpaperRoute(imageUrl: entity.fullUrl))),
+          ),
+        ),
+      padded(
+        SimilarWallpapersStrip(
+          entity: entity,
+          loader: _similarLoader.load,
+          onOpen: (item) => context.router.push(WallpaperDetailRoute(entity: item, thumbnailUrl: item.thumbnailUrl)),
+        ),
+      ),
+      if (reportWallDocId != null && reportWallDocId.isNotEmpty)
+        padded(
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => showContentReportSheet(
                 context,
                 contentType: 'wall',
                 targetFirestoreDocId: reportWallDocId,
                 subtitle: entity.id,
-              );
-            },
-            child: Icon(JamIcons.flag, color: Theme.of(context).colorScheme.secondary, size: 20),
+              ),
+              icon: Icon(JamIcons.flag, size: 20, color: theme.colorScheme.secondary),
+              label: Text('Report', style: TextStyle(color: theme.colorScheme.secondary)),
+            ),
           ),
         ),
-      );
-    }
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: actions),
-      ),
-    );
+      gap,
+    ];
   }
 
   Widget _buildImageBody(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
@@ -998,7 +1087,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                       return FadeTransition(
                         opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
                         child: ClockOverlay(
-                          colorChanged: state.colorChanged,
                           accent: state.accent,
                           link: widget.localFile?.path ?? entity.fullUrl,
                           file: widget.localFile != null,
@@ -1028,6 +1116,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }) {
     final String thumb = entity.thumbnailUrl.trim();
     final String full = entity.fullUrl.trim();
+    final int cacheWidth = previewCacheWidth(MediaQuery.sizeOf(context).width, MediaQuery.devicePixelRatioOf(context));
     final bool useProgressive = thumb.isNotEmpty && full.isNotEmpty && full != thumb;
 
     Widget imageLayer;
@@ -1036,6 +1125,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       imageLayer = Image.file(
         localFile,
         fit: BoxFit.cover,
+        cacheWidth: cacheWidth,
         errorBuilder: (_, _, _) =>
             const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
       );
@@ -1044,7 +1134,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         fit: StackFit.expand,
         children: [
           CachedNetworkImage(
+            cacheManager: PrismImageCache.instance,
             imageUrl: thumb,
+            memCacheWidth: cacheWidth,
             fadeInDuration: context.motion(const Duration(milliseconds: 180)),
             fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
             fit: BoxFit.cover,
@@ -1057,6 +1149,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ),
           CachedNetworkImage(
             imageUrl: full,
+            memCacheWidth: cacheWidth,
             fit: BoxFit.cover,
             fadeInDuration: context.motion(const Duration(milliseconds: 280)),
             fadeOutDuration: Duration.zero,
@@ -1079,6 +1172,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       } else {
         imageLayer = CachedNetworkImage(
           imageUrl: url,
+          memCacheWidth: cacheWidth,
           fadeInDuration: context.motion(const Duration(milliseconds: 180)),
           fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
           imageBuilder: (context, imageProvider) {
@@ -1092,10 +1186,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           },
         );
       }
-    }
-
-    if (state.colorChanged && state.accent != null) {
-      imageLayer = ColorFiltered(colorFilter: ColorFilter.mode(state.accent!, BlendMode.hue), child: imageLayer);
     }
 
     return SizedBox.expand(child: imageLayer);

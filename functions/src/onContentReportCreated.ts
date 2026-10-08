@@ -1,7 +1,7 @@
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
-import {emailToTopic, type NotificationData, sendNotification} from "./notificationHelper";
+import {type NotificationData, sendToUserByEmail} from "./notificationHelper";
 import {db, REGION} from "./common";
 
 interface ReportDoc {
@@ -76,16 +76,14 @@ export const onContentReportCreated = onDocumentCreated(
       };
 
     for (const adminEmail of adminEmails) {
-      const adminTopic = emailToTopic(adminEmail);
-      await sendNotification({
+      await sendToUserByEmail({
         title,
         body,
         data: notificationData,
         ...(wallThumbUrl ? {imageUrl: wallThumbUrl} : {}),
         modifier: adminEmail,
         channelId: "moderation",
-        fcmTarget: {topic: adminTopic},
-      });
+      }, adminEmail);
     }
 
     const webhookUrl = process.env.CONTENT_REPORT_WEBHOOK_URL?.trim();

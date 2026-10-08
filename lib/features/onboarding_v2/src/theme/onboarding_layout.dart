@@ -4,6 +4,15 @@ class OnboardingLayout {
   static const double designWidth = 393;
   static const double designHeight = 852;
 
+  /// Content never grows wider than this, so a tablet or a landscape phone keeps a phone-shaped column.
+  static const double maxContentWidth = 480;
+
+  /// Below this frame height at 1x text the fixed layout would overlap, so the page scrolls instead.
+  static const double minFrameHeight = 760;
+
+  /// The layout is built and checked up to this text scale; larger system scales are held here.
+  static const double maxTextScale = 1.3;
+
   static const double ctaX = 32;
   static const double ctaY = 721;
   static const double ctaHeight = 64;

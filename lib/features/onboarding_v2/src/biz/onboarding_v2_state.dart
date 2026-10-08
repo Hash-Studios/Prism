@@ -2,7 +2,7 @@ part of 'onboarding_v2_bloc.j.dart';
 
 enum OnboardingV2Step { auth, interests, starterPack, aiGenerate, firstWallpaper }
 
-enum OnboardingV2NavRequest { openPaywall, completeOnboarding }
+enum OnboardingV2NavRequest { openPaywall, completeOnboarding, exitApp }
 
 enum FirstWallpaperStatus { idle, loading, success, failure }
 
@@ -22,7 +22,10 @@ abstract class OnboardingInterestsData with _$OnboardingInterestsData {
   factory OnboardingInterestsData.initial() =>
       const OnboardingInterestsData(available: [], selected: [], categoryImages: {});
 
-  bool get canContinue => selected.length >= OnboardingV2Config.minInterests;
+  /// Fewer categories than the minimum must not block the user, so the bar drops to what exists.
+  int get requiredCount => math.min(OnboardingV2Config.minInterests, available.length);
+
+  bool get canContinue => requiredCount > 0 && selected.length >= requiredCount;
 }
 
 @freezed
@@ -37,7 +40,9 @@ abstract class OnboardingStarterPackData with _$OnboardingStarterPackData {
 
   factory OnboardingStarterPackData.initial() => const OnboardingStarterPackData(creators: [], selectedEmails: {});
 
-  bool get canContinue => selectedEmails.length >= OnboardingV2Config.minFollows;
+  int get requiredCount => math.min(OnboardingV2Config.minFollows, creators.length);
+
+  bool get canContinue => requiredCount > 0 && selectedEmails.length >= requiredCount;
 }
 
 @freezed

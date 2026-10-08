@@ -5,6 +5,11 @@ import org.json.JSONArray
 import kotlin.random.Random
 
 internal class FavsTileService : WallpaperTileService() {
+    internal override fun isConfigured(prefs: SharedPreferences): Boolean {
+        val raw = prefs.getString("flutter.quick_tile.favs.wall_urls", null)
+        return !raw.isNullOrBlank() && raw.trim() != "[]"
+    }
+
     internal override fun wallpaper(prefs: SharedPreferences): Wallpaper {
         val raw = prefs.getString("flutter.quick_tile.favs.wall_urls", null)
             ?: throw IllegalStateException("Open Prism and save some favourite wallpapers first")

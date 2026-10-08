@@ -15,4 +15,13 @@ abstract class AutoRotateRepository {
 
   /// Returns false when the platform could not change the wallpaper.
   Future<bool> rotateNow();
+
+  /// The sources the platform was last started with, or null when unknown.
+  Future<List<String>?> loadAppliedSources();
+
+  /// Paths of the wallpapers the user downloaded. Empty when they cannot be listed.
+  Future<List<String>> listDownloads();
+
+  /// Returns true once, the first time it is called.
+  Future<bool> consumeBatteryTip();
 }

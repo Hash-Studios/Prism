@@ -3,16 +3,19 @@ import 'package:Prism/core/firestore/dtos/public_user_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/domain/repositories/user_search_repository.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: UserSearchRepository)
 class UserSearchRepositoryImpl implements UserSearchRepository {
-  UserSearchRepositoryImpl(this._firestoreClient);
+  UserSearchRepositoryImpl(this._firestoreClient, this._userBlockRepository);
 
   final FirestoreClient _firestoreClient;
+  final UserBlockRepository _userBlockRepository;
 
   @override
   Future<Result<List<UserSearchUser>>> searchUsers(String query) async {
@@ -22,10 +25,17 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
     }
 
     try {
-      final results = await Future.wait([_prefixQuery('name', trimmed), _prefixQuery('username', trimmed)]);
+      final results = await Future.wait([
+        _prefixQuery('name', trimmed),
+        _prefixQuery('usernameLower', trimmed.toLowerCase()),
+      ]);
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
 
       final users = <String, UserSearchUser>{};
       for (final row in results.expand((rows) => rows)) {
+        if (BlockedCreatorsFilter.hidesCreatorEmail(row.doc.email, blocked)) {
+          continue;
+        }
         users.putIfAbsent(
           row.docId,
           () => UserSearchUser(

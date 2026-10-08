@@ -9,7 +9,7 @@ void main() {
     final key = GlobalKey();
     Future<void> pump() => tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: ConnectivityWidget(key: key)),
+        home: Scaffold(body: ConnectivityWidget(offline: true, key: key)),
       ),
     );
     await pump();
@@ -28,7 +28,7 @@ void main() {
       MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: reduce),
-          child: Scaffold(body: ConnectivityWidget(key: key)),
+          child: Scaffold(body: ConnectivityWidget(offline: true, key: key)),
         ),
       ),
     );
@@ -40,18 +40,49 @@ void main() {
     expect(tester.widget<SlideTransition>(_slide).position.value, Offset.zero);
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('the banner slides in after a second and out after ten', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget())));
+  testWidgets('the banner slides in after a second while offline and stays', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget(offline: true))));
     expect(find.text('No Internet'), findsOneWidget);
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, 1);
 
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pump(const Duration(seconds: 12));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(tester.widget<SlideTransition>(_slide).position.value, Offset.zero);
 
-    expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 30));
+    expect(tester.widget<SlideTransition>(_slide).position.value, Offset.zero);
   });
 
-  testWidgets('leaving the screen before the timers fire cancels them', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget())));
+  testWidgets('the banner hides on recovery and shows again when the connection drops', (tester) async {
+    Future<void> pump({required bool offline}) => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: ConnectivityWidget(offline: offline)),
+      ),
+    );
+
+    await pump(offline: true);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(tester.widget<SlideTransition>(_slide).position.value, Offset.zero);
+
+    await pump(offline: false);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, 1);
+
+    await pump(offline: true);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SlideTransition>(_slide).position.value, Offset.zero);
+  });
+
+  testWidgets('an online start never shows the banner', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget(offline: false))));
+    await tester.pump(const Duration(seconds: 12));
+
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, 1);
+  });
+
+  testWidgets('leaving the screen before the timer fires cancels it', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget(offline: true))));
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
 
     await tester.pump(const Duration(seconds: 12));

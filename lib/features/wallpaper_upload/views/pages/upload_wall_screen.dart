@@ -7,9 +7,12 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
+import 'package:Prism/data/upload/upload_failure.dart';
 import 'package:Prism/data/upload/upload_id.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
@@ -29,6 +32,8 @@ class UploadWallScreen extends StatefulWidget {
     @visibleForTesting this.uploadFileForTesting,
     @visibleForTesting this.deleteFileForTesting,
     @visibleForTesting this.createRecordForTesting,
+    @visibleForTesting this.presentPaywallForTesting,
+    @visibleForTesting this.nowForTesting,
   });
 
   final File image;
@@ -44,6 +49,12 @@ class UploadWallScreen extends StatefulWidget {
 
   @visibleForTesting
   final Future<wall_store.WallSubmissionResult> Function()? createRecordForTesting;
+
+  @visibleForTesting
+  final Future<void> Function()? presentPaywallForTesting;
+
+  @visibleForTesting
+  final DateTime Function()? nowForTesting;
 
   @override
   State<UploadWallScreen> createState() => _UploadWallScreenState();
@@ -75,10 +86,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   String? thumbSha;
   String? wallpaperPath;
   String? thumbPath;
+  String? _fileName;
+  String? _wallDocId;
+  bool _oversize = false;
   late List<int> imageBytes;
   late List<int> imageBytesThumb;
   bool _submitted = false;
   bool _submissionAttempted = false;
+  bool _submissionUnresolved = false;
   bool _discarding = false;
   bool _leaving = false;
 
@@ -113,6 +128,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   Future<void> _prepareImage() async {
     setState(() {
+      _oversize = false;
       _stage = _UploadStage.processing;
       _errorMessage = null;
     });
@@ -130,6 +146,15 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         return;
       }
       final imgList = await widget.image.readAsBytes();
+      if (imgList.length > maxUploadBytes) {
+        if (!mounted) return;
+        setState(() {
+          _oversize = true;
+          _stage = _UploadStage.failedProcessing;
+          _errorMessage = oversizeUploadMessage;
+        });
+        return;
+      }
       final decodedImage = await decodeImageFromList(imgList);
       final resolution = '${decodedImage.width}x${decodedImage.height}';
       decodedImage.dispose();
@@ -210,7 +235,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       }
       if (!mounted || _leaving) return false;
       final github = GitHubContentApi();
-      final baseName = path.basename(widget.image.path);
+      final baseName = _fileName ??= uploadFileName(
+        uid: app_state.prismUser.id,
+        epochMs: (widget.nowForTesting ?? DateTime.now)().millisecondsSinceEpoch,
+        basename: path.basename(widget.image.path),
+      );
+      final thumbName = uploadThumbName(baseName);
       if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
         final value = widget.uploadFileForTesting != null
             ? await widget.uploadFileForTesting!(isThumbnail: false)
@@ -236,12 +266,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             ? await widget.uploadFileForTesting!(isThumbnail: true)
             : await github.putFile(
                 repo: Env.normalize(Env.ghRepoWalls),
-                message: 'thumb_$baseName',
+                message: thumbName,
                 contentBase64: base64Encode(imageBytesThumb),
-                path: 'thumb_$baseName',
+                path: thumbName,
               );
         wallpaperThumb = thumbValue.downloadUrl;
-        thumbPath = thumbValue.path ?? 'thumb_$baseName';
+        thumbPath = thumbValue.path ?? thumbName;
         thumbSha = thumbValue.sha;
         if (wallpaperThumb == null || thumbPath == null || thumbSha == null) {
           throw StateError('The preview upload returned incomplete file details.');
@@ -258,12 +288,25 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         await _deleteFile();
         return false;
       }
+      final failure = UploadFailure.from(error);
       setState(() {
         _stage = _UploadStage.failedUpload;
-        _errorMessage = 'The upload did not finish. Your image is still here, so you can try again.';
+        _errorMessage = failure.message;
       });
+      if (failure.weeklyLimit) unawaited(_presentUploadLimitPaywall());
       return false;
     }
+  }
+
+  Future<void> _presentUploadLimitPaywall() async {
+    if (widget.presentPaywallForTesting case final presentPaywallForTesting?) {
+      await presentPaywallForTesting();
+      return;
+    }
+    await PaywallOrchestrator.instance.present(
+      placement: PaywallPlacement.uploadLimitReached,
+      source: 'upload_wallpaper_limit_reached',
+    );
   }
 
   Future<void> _retryUpload() async {
@@ -286,7 +329,20 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       _errorMessage = null;
     });
     if (!await _uploadFiles() || !mounted || _leaving) return;
-    setState(() => _stage = _UploadStage.saving);
+    await _saveRecord();
+  }
+
+  Future<void> _retrySubmit() async {
+    if (_stage != _UploadStage.failedSubmission || _submitted || _leaving) return;
+    PrismHaptics.tap();
+    await _saveRecord();
+  }
+
+  Future<void> _saveRecord() async {
+    setState(() {
+      _stage = _UploadStage.saving;
+      _errorMessage = null;
+    });
     _submissionAttempted = true;
     try {
       final result = widget.createRecordForTesting != null
@@ -302,7 +358,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               wallpaperCategory,
               wallpaperDesc,
               false,
+              docId: _wallDocId ??= 'wall_${_fileName ?? id}',
             );
+      if (result == wall_store.WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
+        setState(() {
+          _stage = _UploadStage.failedSubmission;
+          _errorMessage = 'We could not confirm the submission. Check your review status before trying again.';
+        });
+        return;
+      }
+      _submissionUnresolved = false;
       if (result == wall_store.WallSubmissionResult.quotaExceeded) {
         _submissionAttempted = false;
         final deleted = await _deleteFile();
@@ -317,6 +382,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       }
     } catch (error) {
       logger.w('Wallpaper submission failed: $error');
+      _submissionUnresolved = true;
       if (!mounted) return;
       setState(() {
         _stage = _UploadStage.failedSubmission;
@@ -505,18 +571,35 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     child: SizedBox(
                       width: double.infinity,
                       child: _stage == _UploadStage.failedProcessing
-                          ? FilledButton.icon(
-                              onPressed: _retryUpload,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Try again'),
-                            )
+                          ? _oversize
+                                ? FilledButton(
+                                    onPressed: () => Navigator.maybePop(context),
+                                    child: const Text('Choose another image'),
+                                  )
+                                : FilledButton.icon(
+                                    onPressed: _retryUpload,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Try again'),
+                                  )
                           : _stage == _UploadStage.quotaExceeded
                           ? FilledButton(onPressed: () => Navigator.maybePop(context), child: const Text('Back'))
                           : _stage == _UploadStage.failedSubmission
-                          ? FilledButton.icon(
-                              onPressed: () => unawaited(context.router.push(const ReviewRoute())),
-                              icon: const Icon(Icons.open_in_new),
-                              label: const Text('Check review status'),
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                FilledButton.icon(
+                                  onPressed: _retrySubmit,
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Retry submit'),
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: () => unawaited(context.router.push(const ReviewRoute())),
+                                  icon: const Icon(Icons.open_in_new),
+                                  label: const Text('Check review status'),
+                                ),
+                              ],
                             )
                           : FilledButton.icon(
                               onPressed:

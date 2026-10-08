@@ -17,7 +17,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
@@ -356,10 +355,7 @@ void main() {
         ),
       ),
     );
-    final Finder reportButton = find.byWidgetPredicate(
-      (Widget widget) => widget is CircularMenuButton && widget.label == 'Report',
-    );
-    tester.widget<CircularMenuButton>(reportButton).onTap!();
+    tester.widget<TextButton>(find.widgetWithText(TextButton, 'Report')).onPressed!();
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['error']);

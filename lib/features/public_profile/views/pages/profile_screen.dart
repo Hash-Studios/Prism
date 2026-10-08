@@ -24,6 +24,7 @@ import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dar
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
+import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
@@ -31,7 +32,6 @@ import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -93,7 +93,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         // The app bar gives guests a Back button out of this screen.
-        appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.surface),
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          actions: <Widget>[
+            IconButton(
+              tooltip: 'Settings',
+              icon: Icon(JamIcons.cog, color: Theme.of(context).colorScheme.secondary),
+              onPressed: () {
+                PrismHaptics.tap();
+                context.router.push(const SettingsRoute());
+              },
+            ),
+          ],
+        ),
         body: SignInPrompt(feature: _isOwnProfile ? 'your profile' : 'profiles'),
       );
     }
@@ -293,13 +305,15 @@ class _ProfileChildState extends State<_ProfileChild> {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: _profile.id,
         targetUserEmail: _profile.email,
+        targetName: _profile.name,
       ),
     );
-    if (following) {
-      toasts.success('Unfollowed ${_profile.name}!', haptic: false);
-    } else {
-      toasts.success('Followed ${_profile.name}!', haptic: false);
-    }
+  }
+
+  bool _isFollowing(PublicProfileState state) {
+    final String me = app_state.prismUser.email.trim().toLowerCase();
+    return state.followOverrides[_profile.email.trim().toLowerCase()] ??
+        _profile.followers.any((String e) => e.trim().toLowerCase() == me);
   }
 
   Future<void> _onMenuSelected(_ProfileMenuAction action) async {
@@ -351,7 +365,6 @@ class _ProfileChildState extends State<_ProfileChild> {
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
     final bool showProfileCompletenessCard = ownProfile && !profileCompletenessStatus.isComplete;
-    final bool following = _profile.followers.contains(app_state.prismUser.email);
 
     return Stack(
       children: [
@@ -385,10 +398,20 @@ class _ProfileChildState extends State<_ProfileChild> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          _HeaderButton(
-                            icon: following ? JamIcons.user_remove : JamIcons.user_plus,
-                            alignment: Alignment.centerRight,
-                            onPressed: () => _toggleFollow(following: following),
+                          BlocConsumer<PublicProfileBloc, PublicProfileState>(
+                            listenWhen: (prev, curr) =>
+                                curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+                            listener: (context, state) => showFollowOutcomeToast(state.followOutcome!),
+                            buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
+                            builder: (context, state) {
+                              final bool following = _isFollowing(state);
+                              return _HeaderButton(
+                                tooltip: following ? 'Unfollow' : 'Follow',
+                                icon: following ? JamIcons.user_remove : JamIcons.user_plus,
+                                alignment: Alignment.centerRight,
+                                onPressed: () => _toggleFollow(following: following),
+                              );
+                            },
                           ),
                           PopupMenuButton<_ProfileMenuAction>(
                             icon: const _CircleIcon(icon: JamIcons.more_vertical),

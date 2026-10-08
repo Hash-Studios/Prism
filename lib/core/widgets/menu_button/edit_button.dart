@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -53,7 +54,7 @@ class _EditButtonState extends State<EditButton> {
     toasts.success('Loading Wallpaper', haptic: false);
     Directory? sessionDirectory;
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
       if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
         toasts.error('Could not load wallpaper for editing');
         if (mounted) {
@@ -74,6 +75,10 @@ class _EditButtonState extends State<EditButton> {
         isLoading = false;
       });
       await context.router.push(WallpaperFilterRoute(filePath: file.path));
+    } on TimeoutException {
+      if (mounted) {
+        toasts.error('Timed out loading the wallpaper. Check your connection and try again.');
+      }
     } catch (_) {
       if (mounted) {
         toasts.error('Could not load wallpaper for editing');

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
@@ -97,14 +98,14 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
                             remainingSteps == 1 ? '1 step · ' : '$remainingSteps steps · ',
                             style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.monetization_on_rounded,
                             size: 12,
-                            color: Colors.amber,
+                            color: colorScheme.error,
                             semanticLabel: 'coin',
                           ),
                           Text(
-                            ' 25 coins',
+                            ' ${CoinPolicy.profileCompletion} coins',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,

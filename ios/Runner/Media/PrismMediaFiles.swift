@@ -175,12 +175,23 @@ actor PrismMediaFiles {
   }
 
   func list() throws -> [URL] {
-    try FileManager.default.contentsOfDirectory(
-      at: directory(), includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey], options: .skipsHiddenFiles
-    ).filter {
-      let properties = try $0.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
-      return properties.isRegularFile == true && properties.isSymbolicLink != true
-    }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+    let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .creationDateKey]
+    return try FileManager.default.contentsOfDirectory(
+      at: directory(), includingPropertiesForKeys: Array(keys), options: .skipsHiddenFiles
+    ).compactMap { url -> (URL, Date)? in
+      let properties = try url.resourceValues(forKeys: keys)
+      guard properties.isRegularFile == true, properties.isSymbolicLink != true else { return nil }
+      return (url, properties.creationDate ?? .distantPast)
+    }.sorted {
+      $0.1 == $1.1 ? $0.0.lastPathComponent < $1.0.lastPathComponent : $0.1 > $1.1
+    }.map(\.0)
+  }
+
+  func delete(path: String) throws -> Bool {
+    let target = URL(fileURLWithPath: path).standardizedFileURL
+    guard let match = try list().first(where: { $0.standardizedFileURL.path == target.path }) else { return false }
+    try FileManager.default.removeItem(at: match)
+    return true
   }
 
   func clear() throws -> Bool {

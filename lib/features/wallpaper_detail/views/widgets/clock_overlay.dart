@@ -6,12 +6,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class ClockOverlay extends StatelessWidget {
+enum ClockPreviewMode { lock, home }
+
+/// Full-screen preview of the wallpaper under a lock screen clock or a home screen dock.
+/// The image is shown as it will be set: the palette accent only colours the text.
+class ClockOverlay extends StatefulWidget {
+  const ClockOverlay({required this.link, required this.file, required this.accent});
+
   final String link;
   final bool file;
   final Color? accent;
-  final bool colorChanged;
-  const ClockOverlay({required this.link, required this.file, required this.accent, required this.colorChanged});
 
   /// Superscript ordinal suffix for a day of the month: 1ˢᵗ, 2ⁿᵈ, 3ʳᵈ, 4ᵗʰ, 11ᵗʰ.
   @visibleForTesting
@@ -25,122 +29,157 @@ class ClockOverlay extends StatelessWidget {
     };
   }
 
+  /// Time of day in the device 12 or 24 hour style.
+  @visibleForTesting
+  static String formatTime(DateTime time, {required bool use24Hour}) =>
+      DateFormat(use24Hour ? 'HH:mm' : 'h:mm').format(time);
+
+  @override
+  State<ClockOverlay> createState() => _ClockOverlayState();
+}
+
+class _ClockOverlayState extends State<ClockOverlay> {
+  late ClockPreviewMode _mode = defaultTargetPlatform == TargetPlatform.iOS
+      ? ClockPreviewMode.lock
+      : ClockPreviewMode.home;
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final day = DateFormat('EEEE').format(now);
-    final month = DateFormat('MMMM').format(now);
-    final Color textColor = accent == null ? Theme.of(context).colorScheme.secondary : onColor(accent!);
+    final size = MediaQuery.sizeOf(context);
+    final bool use24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
+    final String time = ClockOverlay.formatTime(now, use24Hour: use24Hour);
+    final Color textColor = widget.accent == null ? Theme.of(context).colorScheme.secondary : onColor(widget.accent!);
     final bool iosPreview = defaultTargetPlatform == TargetPlatform.iOS;
+    final bool lock = _mode == ClockPreviewMode.lock;
     return Material(
       child: Stack(
         children: <Widget>[
-          if (!file)
+          if (!widget.file)
             CachedNetworkImage(
-              imageUrl: link,
+              imageUrl: widget.link,
               imageBuilder: (context, imageProvider) => Container(
                 decoration: BoxDecoration(
-                  image: DecorationImage(
-                    colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                    image: imageProvider,
-                    fit: BoxFit.cover,
-                  ),
+                  image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
                 ),
               ),
             )
           else
             SizedBox(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              child: Image.file(
-                File(link),
-                color: colorChanged ? accent : null,
-                colorBlendMode: colorChanged ? BlendMode.hue : null,
-                fit: BoxFit.cover,
-              ),
+              height: size.height,
+              width: size.width,
+              child: Image.file(File(widget.link), fit: BoxFit.cover),
             ),
           if (iosPreview)
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        DateFormat('EEEE d MMMM').format(now),
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'CupertinoSystemText',
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
+            if (lock)
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          DateFormat('EEEE d MMMM').format(now),
+                          style: TextStyle(
+                            color: textColor,
+                            fontFamily: 'CupertinoSystemText',
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      Text(
-                        DateFormat('h:mm').format(now),
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'CupertinoSystemDisplay',
-                          fontSize: 96,
-                          fontWeight: FontWeight.w700,
-                          height: 1.1,
+                        Text(
+                          time,
+                          style: TextStyle(
+                            color: textColor,
+                            fontFamily: 'CupertinoSystemDisplay',
+                            fontSize: 96,
+                            fontWeight: FontWeight.w700,
+                            height: 1.1,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            )
+              )
+            else
+              const SizedBox.shrink()
           else ...<Widget>[
             SizedBox(
-              height: MediaQuery.of(context).size.height / 3,
-              width: MediaQuery.of(context).size.width,
+              height: size.height / 3,
+              width: size.width,
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      "$day,",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: textColor,
-                        fontFamily: "Roboto",
-                        fontSize: 25,
-                        fontWeight: FontWeight.w300,
+                    if (lock) ...<Widget>[
+                      Text(
+                        time,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'Roboto',
+                          fontSize: 72,
+                          fontWeight: FontWeight.w200,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "$month ${now.day}${ClockOverlay.ordinalSuffix(now.day)} | 27°C",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: textColor,
-                        fontFamily: "Roboto",
-                        fontSize: 25,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 5),
+                      Text(
+                        "${DateFormat('EEEE').format(now)}, ${DateFormat('MMMM').format(now)} ${now.day}",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'Roboto',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
+                    ] else ...<Widget>[
+                      Text(
+                        "${DateFormat('EEEE').format(now)},",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'Roboto',
+                          fontSize: 25,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        "${DateFormat('MMMM').format(now)} ${now.day}${ClockOverlay.ordinalSuffix(now.day)}",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'Roboto',
+                          fontSize: 25,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
-            Positioned(
-              bottom: 100,
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    Image.asset("assets/images/dialer.webp", width: MediaQuery.of(context).size.width * 0.14),
-                    Image.asset("assets/images/messages.webp", width: MediaQuery.of(context).size.width * 0.14),
-                    Image.asset("assets/images/prism.webp", width: MediaQuery.of(context).size.width * 0.14),
-                    Image.asset("assets/images/playstore.webp", width: MediaQuery.of(context).size.width * 0.14),
-                    Image.asset("assets/images/chrome.webp", width: MediaQuery.of(context).size.width * 0.14),
-                  ],
+            if (!lock)
+              Positioned(
+                bottom: 100,
+                child: SizedBox(
+                  width: size.width,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Image.asset("assets/images/dialer.webp", width: size.width * 0.14),
+                      Image.asset("assets/images/messages.webp", width: size.width * 0.14),
+                      Image.asset("assets/images/prism.webp", width: size.width * 0.14),
+                      Image.asset("assets/images/playstore.webp", width: size.width * 0.14),
+                      Image.asset("assets/images/chrome.webp", width: size.width * 0.14),
+                    ],
+                  ),
                 ),
               ),
-            ),
           ],
           Semantics(
             button: true,
@@ -148,7 +187,28 @@ class ClockOverlay extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
-              child: SizedBox(height: MediaQuery.of(context).size.height, width: MediaQuery.of(context).size.width),
+              child: SizedBox(height: size.height, width: size.width),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: SegmentedButton<ClockPreviewMode>(
+                  showSelectedIcon: false,
+                  style: SegmentedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.7),
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
+                  ),
+                  segments: const <ButtonSegment<ClockPreviewMode>>[
+                    ButtonSegment<ClockPreviewMode>(value: ClockPreviewMode.lock, label: Text('Lock')),
+                    ButtonSegment<ClockPreviewMode>(value: ClockPreviewMode.home, label: Text('Home')),
+                  ],
+                  selected: <ClockPreviewMode>{_mode},
+                  onSelectionChanged: (selection) => setState(() => _mode = selection.single),
+                ),
+              ),
             ),
           ),
         ],

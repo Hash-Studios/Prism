@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -18,6 +19,19 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
+
+const String _feedbackEmail = 'hash.studios.inc@gmail.com';
+
+/// A mailto link with the app version and platform in the body so reports carry the context.
+@visibleForTesting
+String buildFeedbackLink({required String version, required String build, required String platform}) {
+  final String body = '\n\n---\nPrism $version+$build\n$platform';
+  final String query = <String, String>{
+    'subject': 'Prism feedback',
+    'body': body,
+  }.entries.map((MapEntry<String, String> e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+  return 'mailto:$_feedbackEmail?$query';
+}
 
 @RoutePage()
 class AboutScreen extends StatefulWidget {
@@ -122,6 +136,17 @@ class _AboutScreenState extends State<AboutScreen> {
                   link: "https://www.github.com/Hash-Studios/Prism",
                 ),
                 ActionButton(icon: JamIcons.star_full, text: "RATE", link: _storeLink),
+                ActionButton(
+                  icon: JamIcons.envelope,
+                  text: "FEEDBACK",
+                  link: buildFeedbackLink(
+                    version: app_state.currentAppVersion,
+                    build: app_state.currentAppVersionCode,
+                    platform: '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+                  ),
+                ),
+                const ActionButton(icon: JamIcons.users, text: "PRIVACY", link: "https://prismwalls.com/privacy"),
+                const ActionButton(icon: JamIcons.file, text: "TERMS", link: "https://prismwalls.com/terms"),
                 const ActionButton(
                   icon: JamIcons.twitter,
                   text: "TWITTER",
@@ -381,7 +406,7 @@ class ActionButton extends StatelessWidget {
               ),
             ),
           );
-          final String target = link.contains("@gmail.com") ? "mailto:$link" : link;
+          final String target = link.contains("@gmail.com") && !link.startsWith('mailto:') ? "mailto:$link" : link;
           final bool launched = await openPrismLink(context, target);
           unawaited(
             analytics.track(

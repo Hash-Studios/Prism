@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -73,33 +74,42 @@ class _WotdCardContent extends StatelessWidget {
               PrismImageTile(url: entity.thumbnailUrl, fallbackUrl: entity.url),
 
               Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'wall of the day',
-                      style: TextStyle(
-                        fontFamily: 'Fraunces',
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    if (entity.photographer.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'by ${entity.photographer}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: 'Fraunces',
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.w400,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.scrim.withValues(alpha: PrismOverlay.carouselBannerScrimAlpha),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'wall of the day',
+                          style: TextStyle(
+                            fontFamily: 'Fraunces',
+                            color: PrismColors.onPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      ),
-                    ],
-                  ],
+                        if (entity.photographer.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'by ${entity.photographer}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'Fraunces',
+                              color: PrismColors.onPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],

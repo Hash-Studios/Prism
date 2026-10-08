@@ -18,6 +18,15 @@ abstract final class PrismColors {
   /// Foreground color on primary / app-bar surfaces.
   /// Always white so that content stays legible regardless of the active theme.
   static const Color onPrimary = Colors.white;
+
+  /// Destructive red for light surfaces. Also the fill for destructive buttons that carry white text.
+  static const Color destructiveLight = Color(0xFFD93036);
+
+  /// Destructive red for dark surfaces.
+  static const Color destructiveDark = Color(0xFFFF6369);
+
+  /// Text and icon colour for destructive actions such as Delete Account. It does not follow the user accent.
+  static Color destructive(Brightness brightness) => brightness == Brightness.dark ? destructiveDark : destructiveLight;
 }
 
 /// Font family name constants.

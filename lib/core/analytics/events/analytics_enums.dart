@@ -140,7 +140,8 @@ enum AnalyticsReasonValue {
 
 enum SearchProviderValue {
   wallhaven,
-  pexels;
+  pexels,
+  prism;
 
   String get wireValue => _snakeCase(name);
 }

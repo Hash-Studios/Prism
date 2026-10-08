@@ -2,6 +2,7 @@ package com.hash.prism
 
 import android.app.WallpaperManager
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.service.quicksettings.Tile
@@ -33,6 +34,8 @@ internal abstract class WallpaperTileService : TileService() {
     private var applying = false
 
     internal abstract fun wallpaper(prefs: SharedPreferences): Wallpaper
+
+    internal open fun isConfigured(prefs: SharedPreferences): Boolean = true
 
     override fun onStartListening() {
         super.onStartListening()
@@ -73,7 +76,12 @@ internal abstract class WallpaperTileService : TileService() {
     }
 
     private fun updateTile() {
-        qsTile?.apply { state = if (applying) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE; updateTile() }
+        val ready = isConfigured(applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE))
+        qsTile?.apply {
+            state = if (!ready) Tile.STATE_UNAVAILABLE else if (applying) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) subtitle = if (ready) null else "Open Prism to set up"
+            updateTile()
+        }
     }
 
     override fun onDestroy() {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
@@ -75,6 +76,38 @@ void main() {
     });
   }
 
+  testWidgets('tapping the label beside the circle starts the download', (tester) async {
+    getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    var requestCount = 0;
+    tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, (_) async {
+      requestCount++;
+      return <Object?>[OperationResult(success: true)];
+    });
+    addTearDown(() async {
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await getIt.reset();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: DownloadButton(link: 'https://example.com/wall.jpg', label: 'Save'),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(requestCount, 1);
+  });
+
   testWidgets('successful download records callback when permission prompt fails', (tester) async {
     getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
     app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
@@ -145,5 +178,52 @@ void main() {
 
     expect(toastMessages, contains('Wall downloaded in Pictures/Prism!'));
     await tester.pump(const Duration(seconds: 1));
+  });
+
+  group('on iOS', () {
+    const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+
+    Future<void> download(WidgetTester tester, OperationResult result) async {
+      getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
+      app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+      IosWallpaperGuideSession.shown = false;
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        channel,
+        (_) async => <Object?>[result],
+      );
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
+      addTearDown(() async {
+        tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null);
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+        app_state.prismUser = app_constants.createGuestPrismUser();
+        await getIt.reset();
+      });
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+        ),
+      );
+      await tester.tap(find.byType(CircularMenuButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(seconds: 2));
+    }
+
+    testWidgets('a saved wallpaper opens the Set as wallpaper guide', (tester) async {
+      await download(tester, OperationResult(success: true));
+
+      expect(find.text('Open Photos'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a denied Photos permission offers Open settings', (tester) async {
+      await download(tester, OperationResult(success: false, errorCode: photosPermissionDeniedCode));
+
+      expect(find.text('Open settings'), findsOneWidget);
+      expect(find.text('Open Photos'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 }

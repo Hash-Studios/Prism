@@ -93,7 +93,7 @@ class NotificationPermissionPromptService {
     bool subscribedToWotd = false;
     final bool wantsWotd = _settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
     if (wantsWotd) {
-      subscribedToWotd = await subscribeToTopicSafely(messaging, 'wall_of_the_day', sourceTag: '$sourceTag.wotd');
+      subscribedToWotd = await setWotdTopics(messaging, _settings, subscribed: true, sourceTag: '$sourceTag.wotd');
     }
 
     if (app_state.prismUser.loggedIn) {

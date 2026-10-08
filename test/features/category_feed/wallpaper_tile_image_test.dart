@@ -2,6 +2,7 @@ import 'dart:io' show SocketException;
 import 'dart:io' as io;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -44,6 +45,7 @@ void main() {
     AnalyticsRuntime.instance = FakeAppAnalytics();
     originalCache = CachedNetworkImageProvider.defaultCacheManager;
     CachedNetworkImageProvider.defaultCacheManager = cache;
+    PrismImageCache.testOverride = cache;
     when(() => cache.removeFile(any())).thenAnswer((_) async {});
     final file = _MockFile();
     final bytes = await io.File('assets/images/ic_launcher.webp').readAsBytes();
@@ -54,6 +56,7 @@ void main() {
   tearDown(() {
     AnalyticsRuntime.reset();
     CachedNetworkImageProvider.defaultCacheManager = originalCache;
+    PrismImageCache.testOverride = null;
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
   });

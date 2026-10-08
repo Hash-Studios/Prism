@@ -206,6 +206,48 @@ internal class PrismMediaHostApiImpl(
         }
     }
 
+    override fun deleteDownload(path: String, callback: (Result<OperationResult>) -> Unit) {
+        runInBackground(callback, { operationError("DELETE_FAILED", it) }) {
+            check(hasStorageAccess()) { "Storage access is required to delete downloads" }
+            val deleted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) deleteMediaStoreDownload(path) else deleteLegacyDownload(path)
+            if (deleted) OperationResult(success = true)
+            else OperationResult(success = false, errorCode = "NOT_FOUND", message = "Download not found")
+        }
+    }
+
+    private fun deleteMediaStoreDownload(path: String): Boolean {
+        val resolver = context.contentResolver
+        val cacheRoot = File(context.cacheDir, DOWNLOAD_CACHE_DIRECTORY).canonicalFile
+        val cached = File(path).canonicalFile
+        val idDirectory = cached.parentFile
+        val id = idDirectory?.name?.toLongOrNull()
+        val deleted = if (idDirectory != null && id != null && idDirectory.parentFile == cacheRoot) {
+            val rows = resolver.delete(
+                ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id),
+                "$DOWNLOAD_SELECTION AND ${MediaStore.Images.Media.IS_PENDING}=0", downloadSelectionArgs,
+            )
+            if (!idDirectory.deleteRecursively()) throw IOException("Could not remove download cache")
+            rows
+        } else {
+            resolver.delete(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                "$DOWNLOAD_SELECTION AND ${MediaStore.Images.Media.IS_PENDING}=0 AND ${MediaStore.Images.Media.DATA}=?",
+                downloadSelectionArgs + path,
+            )
+        }
+        return deleted > 0
+    }
+
+    private fun deleteLegacyDownload(path: String): Boolean {
+        val file = File(path).canonicalFile
+        val inDownloads = legacyDownloadDirectories().any { it.canonicalFile == file.parentFile }
+        require(inDownloads && isImageName(file.name)) { "Not a download" }
+        if (!file.exists()) return false
+        if (!file.delete()) throw IOException("Could not delete downloaded image")
+        MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, null)
+        return true
+    }
+
     private fun cacheDownload(id: Long, name: String): File {
         PrismImageTransfer.validateStoredFilename(name)
         val directory = File(context.cacheDir, "$DOWNLOAD_CACHE_DIRECTORY/$id")

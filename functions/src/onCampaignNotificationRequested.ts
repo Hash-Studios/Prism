@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {sendNotification, emailToTopic} from "./notificationHelper";
+import {emailToTopic, sendNotification, sendToUserByEmail} from "./notificationHelper";
 import {db, REGION, str} from "./common";
 
 /**
@@ -29,7 +29,7 @@ import {db, REGION, str} from "./common";
  *   modifier = "all"       → topic: "recommendations"  (all users are subscribed)
  *   modifier = "premium"   → topic: "premium"
  *   modifier = "free"      → topic: "free"
- *   modifier = {email}     → topic: emailToTopic(email)  (user's own topic)
+ *   modifier = {email}     → the user's uid topic and FCM token
  */
 export const onCampaignNotificationRequested = onDocumentCreated(
   {
@@ -57,6 +57,16 @@ export const onCampaignNotificationRequested = onDocumentCreated(
       return;
     }
 
+    if (modifier.includes("@")) {
+      await sendToUserByEmail(
+        {title, body, data: {route}, imageUrl: imageUrl || undefined, modifier, channelId},
+        modifier,
+      );
+      await markProcessed(requestId, {fcmTopic: "user"});
+      logger.info("onCampaignNotificationRequested: personal notification sent.", {requestId, modifier, route});
+      return;
+    }
+
     let fcmTopic: string;
     if (modifier === "all") {
       // All users subscribe to the "recommendations" topic on first app open.
@@ -64,7 +74,6 @@ export const onCampaignNotificationRequested = onDocumentCreated(
     } else if (modifier === "premium" || modifier === "free") {
       fcmTopic = modifier;
     } else {
-      // Treat as a user email — send to their own email-prefix topic.
       fcmTopic = emailToTopic(modifier);
     }
 

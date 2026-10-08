@@ -20,6 +20,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/flutter_error_handler.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
+import 'package:Prism/core/monitoring/sentry_before_send.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
@@ -42,6 +43,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
@@ -49,15 +51,19 @@ import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
+import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
+import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wotd_quick_tile_listener.dart';
 import 'package:Prism/firebase_options.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -148,7 +154,7 @@ Future<void> main() async {
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
         logger.e('Uncaught platform error', tag: 'PlatformError', error: error, stackTrace: stackTrace);
-        unawaited(analytics.track(const AppCrashFatalEvent()));
+        unawaited(analytics.track(const AppErrorEvent(errorSource: 'platform_dispatcher')));
         return true;
       };
       installFlutterFrameworkErrorHandler();
@@ -215,7 +221,12 @@ Future<void> main() async {
 
       // DI is not configured yet, so read the settings store directly.
       final settings = SettingsLocalDataSource(PersistenceRuntime.store);
-      final themeMode = settings.get<String>('themeMode', defaultValue: 'Dark');
+      final String? migratedThemeMode = initialThemeModeToStore(
+        storedMode: settings.get<Object?>('themeMode'),
+        hasLegacyMarker: settings.get<Object?>('WHcategories') != null,
+      );
+      if (migratedThemeMode != null) await settings.set('themeMode', migratedThemeMode);
+      final themeMode = settings.get<String>('themeMode', defaultValue: 'System');
       PrismHaptics.enabled = settings.get<bool>(PrismHaptics.settingsKey, defaultValue: true);
       final categories = settings.get<int>('WHcategories', defaultValue: 100);
       // App Store review: no sketchy content on iOS, regardless of the stored pref.
@@ -225,25 +236,33 @@ Future<void> main() async {
 
       // Accents saved by old builds are strings; rewrite them as ints so the theme repository can read them.
       await Future.wait(<Future<void>>[
-        settings.set(
+        _setIfChanged(
+          settings,
           'lightAccent',
           _colorValueFromPrefs(settings.get<Object?>('lightAccent'), fallback: prismDefaultAccentValue),
         ),
-        settings.set(
+        _setIfChanged(
+          settings,
           'darkAccent',
           _colorValueFromPrefs(settings.get<Object?>('darkAccent'), fallback: prismDefaultAccentValue),
         ),
-        settings.set('optimisedWallpapers', settings.get<bool>('optimisedWallpapers', defaultValue: false)),
-        settings.set('WHcategories', categories == 100 ? 100 : 111),
-        settings.set('WHpurity', purity == 100 ? 100 : 110),
+        _setIfChanged(settings, 'optimisedWallpapers', settings.get<bool>('optimisedWallpapers', defaultValue: false)),
+        _setIfChanged(settings, 'WHcategories', categories == 100 ? 100 : 110),
+        _setIfChanged(settings, 'WHpurity', purity == 100 ? 100 : 110),
       ]);
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        unawaited(QuickTileDefaults.mirrorWallhavenCategories(settings));
+      }
 
       configureDependencies();
       await Future.wait(<Future<void>>[
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
         SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
       ]);
-      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: themeMode == 'Light' ? Brightness.dark : Brightness.light);
+      final bool lightChrome =
+          themeMode == 'Light' ||
+          (themeMode == 'System' && PlatformDispatcher.instance.platformBrightness == Brightness.light);
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: lightChrome ? Brightness.dark : Brightness.light);
 
       await FirebaseInit.readyFuture;
 
@@ -276,16 +295,23 @@ Future<void> main() async {
     },
     (obj, stacktrace) {
       logger.e('Uncaught zone error', tag: 'ZoneError', error: obj, stackTrace: stacktrace);
-      unawaited(analytics.track(const AppCrashFatalEvent()));
+      unawaited(analytics.track(const AppErrorEvent(errorSource: 'zone')));
     },
   );
 }
 
+Future<void> _setIfChanged(SettingsLocalDataSource settings, String key, Object value) {
+  if (settings.get<Object?>(key) == value) return Future<void>.value();
+  return settings.set(key, value);
+}
+
 Future<void> _deferredStartup({required bool firebaseInitialized}) async {
-  await Future.wait(<Future<Object?>>[
-    MobileAds.instance.initialize(),
-    _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized),
-  ]);
+  unawaited(
+    AdConsent.instance.ensure().then((bool canRequestAds) {
+      if (canRequestAds) unawaited(MobileAds.instance.initialize());
+    }),
+  );
+  await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
 }
 
 SentryConfig _resolveSentryConfig() {
@@ -326,6 +352,7 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       // symbolicates with every thread suspended and can deadlock the app on
       // launch (getsentry/sentry-cocoa#5609). Release builds keep it.
       options.enableAppHangTracking = !kDebugMode;
+      options.beforeSend = dropNetworkNoise;
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(
@@ -526,6 +553,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   /// Throttle getNotifs on resume to avoid repeated queries with 0 results.
   static const Duration _getNotifsResumeThrottle = Duration(minutes: 5);
   DateTime? _lastGetNotifsResume;
+  DateTime? _lastWotdRefresh = DateTime.now();
 
   void _reloadInAppNotificationsFromCache() {
     if (!getIt.isRegistered<InAppNotificationsBloc>()) {
@@ -813,6 +841,20 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     final bool canRoute = await waitForPushTapStartup(isMounted: () => mounted, isReady: () => _pastStartup);
     if (!canRoute) return;
 
+    try {
+      await _routePushTap(data);
+    } catch (error, stackTrace) {
+      logger.w('Push tap routing failed; opening the inbox.', tag: 'Push', error: error, stackTrace: stackTrace);
+      if (!mounted) return;
+      try {
+        _appRouter.navigate(const NotificationRoute());
+      } catch (_) {
+        _appRouter.navigate(const HomeTabRoute());
+      }
+    }
+  }
+
+  Future<void> _routePushTap(Map<String, dynamic> data) async {
     final String route = data['route']?.toString() ?? '';
     final String wallId = (data['wall_id']?.toString() ?? '').trim();
     final String rawUrl = (data['url']?.toString() ?? '').trim();
@@ -878,12 +920,25 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     unawaited(_listenForPushMessages());
   }
 
+  Future<void> _refreshWotdTopics() async {
+    try {
+      if (!await FirebaseInit.readyFuture) return;
+      await refreshWotdTopics(FirebaseMessaging.instance, getIt<SettingsLocalDataSource>());
+    } catch (error, stackTrace) {
+      logger.w('Wall of the Day topic refresh failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // The app can stay alive across days, so pick up a new Wall of the Day.
-      context.read<WotdBloc>().add(const WotdEvent.started());
       final now = DateTime.now();
+      // The app can stay alive across days, so pick up a new Wall of the Day.
+      if (shouldRefreshWotdOnResume(lastRefresh: _lastWotdRefresh, now: now)) {
+        _lastWotdRefresh = now;
+        context.read<WotdBloc>().add(const WotdEvent.started());
+      }
+      unawaited(_refreshWotdTopics());
       if (_lastCoinSyncResume == null || now.difference(_lastCoinSyncResume!) >= _coinSyncResumeThrottle) {
         _lastCoinSyncResume = now;
         unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));

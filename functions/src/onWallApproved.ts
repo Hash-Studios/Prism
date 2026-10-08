@@ -1,14 +1,9 @@
+import * as admin from "firebase-admin";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
-import {findUserByEmail, REGION, str} from "./common";
-import {
-  emailToTopic,
-  isLoggedOut,
-  sendNotification,
-  sendToUidAndEmailTopics,
-  userIdToTopic,
-} from "./notificationHelper";
+import {db, findUserByEmail, REGION, str} from "./common";
+import {emailToTopic, isLoggedOut, sendNotification, sendToUser, sendToUserByEmail} from "./notificationHelper";
 
 /**
  * When a wall goes from review=false to review=true (approved), notifies the
@@ -44,6 +39,11 @@ export const onWallApproved = onDocumentUpdated(
       return;
     }
 
+    if (!(await claimApprovalNotice(event.data?.after.ref))) {
+      logger.info("onWallApproved: approval already announced, skipping.", {wallId});
+      return;
+    }
+
     const artist = await resolveUserByEmail(artistEmail);
     const artistPayload = {
       title: "Your wallpaper is live! 🎉",
@@ -54,15 +54,13 @@ export const onWallApproved = onDocumentUpdated(
       channelId: "posts",
       collapseKey: `wall_${wallId}`,
     };
-    if (isLoggedOut(artist?.data())) {
-      await sendNotification(artistPayload);
-    } else {
-      await sendToUidAndEmailTopics(
-        artistPayload,
-        artist ? userIdToTopic(artist.id) : undefined,
-        emailToTopic(artistEmail),
-      );
-    }
+    const artistData = artist?.data();
+    await sendToUser(artistPayload, {
+      uid: artist?.id,
+      email: artistEmail,
+      loggedOut: isLoggedOut(artistData),
+      legacyToken: artistData?.fcmToken,
+    });
 
     logger.info("onWallApproved: artist notification sent.", {wallId, artistEmail});
 
@@ -86,18 +84,33 @@ export const onWallApproved = onDocumentUpdated(
     });
 
     for (const email of await getAdminEmails()) {
-      await sendNotification({
+      await sendToUserByEmail({
         title: "Wall approved ✅",
         body: `"${wallTitle}" by ${artistName} is now live.`,
         data: {route: "wall", wall_id: wallId},
         imageUrl: wallThumb || undefined,
         modifier: email,
         channelId: "posts",
-        fcmTarget: {topic: emailToTopic(email)},
-      });
+      }, email);
     }
   },
 );
+
+/** Stamps the wall once, so a retried or repeated approval event sends no second set of pushes. */
+async function claimApprovalNotice(ref: admin.firestore.DocumentReference | undefined): Promise<boolean> {
+  if (!ref) return true;
+  try {
+    return await db.runTransaction(async (tx) => {
+      const current = await tx.get(ref);
+      if (current.data()?.approvedNotifiedAt != null) return false;
+      tx.update(ref, {approvedNotifiedAt: admin.firestore.FieldValue.serverTimestamp()});
+      return true;
+    });
+  } catch (err) {
+    logger.warn("onWallApproved: could not stamp the approval, sending anyway.", {err});
+    return true;
+  }
+}
 
 async function resolveUserByEmail(email: string): ReturnType<typeof findUserByEmail> {
   try {

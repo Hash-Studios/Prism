@@ -1,8 +1,9 @@
+import {randomUUID} from "node:crypto";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {isLoggedOut, sendNotification} from "./notificationHelper";
+import {isLoggedOut, pickFcmToken, sendNotification, userPushTokens} from "./notificationHelper";
 import {coinTransactionDoc, db, int, REGION, str} from "./common";
 
 const USERS_COLLECTION = "usersv2";
@@ -15,6 +16,10 @@ const PRO_STREAK_7_BONUS = 20;
 
 const DEFAULT_TZ_OFFSET_MINUTES = 330;
 const REMINDER_HOUR_LOCAL = 20;
+const REMINDER_CHUNK_SIZE = 25;
+const REMINDER_PAGE_SIZE = 200;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const REMINDER_RETRY_MS = 15 * 60_000;
 
 const REMINDER_CHANNEL_ID = "streak_reminder";
 
@@ -130,7 +135,13 @@ export const claimDailyStreak = onCall(
 
       const lockedOffset = storedTimezoneOffset(rawCoinState, "streakClaimTimezoneOffsetMinutes");
       const storedOffset = lockedOffset ?? storedTimezoneOffset(rawCoinState);
-      const effectiveOffset = resolveTimezoneOffset(storedOffset, requestOffset);
+      const relock = shouldRelockTimezone({
+        locked: lockedOffset,
+        requested: requestedOffset,
+        lastClaimAtMs: coinState.streakLastClaimServerAt?.toMillis(),
+        nowMs: now.getTime(),
+      });
+      const effectiveOffset = relock ? clampTimezoneOffset(requestOffset) : resolveTimezoneOffset(storedOffset, requestOffset);
       effectiveTimezoneOffsetMinutes = effectiveOffset;
       coinState.streakTimezoneOffsetMinutes = effectiveOffset;
       coinState.streakClaimTimezoneOffsetMinutes = effectiveOffset;
@@ -138,8 +149,8 @@ export const claimDailyStreak = onCall(
 
       todayLocalKey = localDateKeyFromUtc(now, effectiveOffset);
       let lastClaimDate = coinState.lastDailyClaimDate.trim();
-      // The legacy offset is client-writable. Rebase from the server timestamp when first locking it.
-      if (lockedOffset == null && coinState.streakLastClaimServerAt instanceof admin.firestore.Timestamp) {
+      // The legacy offset is client-writable. Rebase from the server timestamp when first locking it or moving the lock.
+      if ((lockedOffset == null || relock) && coinState.streakLastClaimServerAt instanceof admin.firestore.Timestamp) {
         lastClaimDate = localDateKeyFromUtc(coinState.streakLastClaimServerAt.toDate(), effectiveOffset);
         coinState.lastDailyClaimDate = lastClaimDate;
       }
@@ -272,6 +283,7 @@ export const sendStreakReminders = onSchedule(
     schedule: "*/15 * * * *",
     timeZone: "UTC",
     region: REGION,
+    timeoutSeconds: 540,
   },
   async () => {
     const nowTs = admin.firestore.Timestamp.now();
@@ -280,7 +292,9 @@ export const sendStreakReminders = onSchedule(
     let processed = 0;
     let sent = 0;
     let skipped = 0;
+    let failed = 0;
     let page = 0;
+    const seen = new Set<string>();
 
     while (true) {
       const snapshot = await db
@@ -288,78 +302,36 @@ export const sendStreakReminders = onSchedule(
         .where("coinState.streakReminderEnabled", "==", true)
         .where("coinState.streakReminderNextAtUtc", "<=", nowTs)
         .orderBy("coinState.streakReminderNextAtUtc", "asc")
-        .limit(200)
+        .limit(REMINDER_PAGE_SIZE)
         .get();
 
-      if (snapshot.empty) {
+      const docs = snapshot.docs.filter((doc) => !seen.has(doc.ref.id));
+      if (docs.length === 0) {
         break;
       }
 
       page += 1;
 
-      for (const userDoc of snapshot.docs) {
-        processed += 1;
-        const userData = userDoc.data() as Record<string, unknown>;
-        const userEmail = str(userData.email).toLowerCase();
-        const coinState = normalizeCoinState(userData.coinState);
-
-        const offset = resolveTimezoneOffset(
-          storedTimezoneOffset(userData.coinState, "streakClaimTimezoneOffsetMinutes"),
-          coinState.streakTimezoneOffsetMinutes,
+      for (let i = 0; i < docs.length; i += REMINDER_CHUNK_SIZE) {
+        const results = await Promise.allSettled(
+          docs.slice(i, i + REMINDER_CHUNK_SIZE).map((userDoc) => {
+            seen.add(userDoc.ref.id);
+            return remindUser(userDoc, nowTs, now);
+          }),
         );
-        const todayLocalKey = localDateKeyFromUtc(now, offset);
-        const lastClaimDate = coinState.lastDailyClaimDate;
-        const lastSentDate = coinState.streakReminderLastSentDate;
-        const streakDay = clampStreakDay(int(coinState.streakDay, 0));
-        const streakCount = coinState.streakCount > 0 ? coinState.streakCount : streakDay;
-
-        const activeStreak =
-          streakCount > 0 && isStreakAlive(lastClaimDate, todayLocalKey, coinState.streakFreezes);
-        const claimedToday = lastClaimDate === todayLocalKey;
-        const alreadySentToday = lastSentDate === todayLocalKey;
-
-        if (!activeStreak) {
-          await userDoc.ref.update({
-            "coinState.streakReminderNextAtUtc": admin.firestore.FieldValue.delete(),
-          });
-          skipped += 1;
-          continue;
+        for (const result of results) {
+          processed += 1;
+          if (result.status === "rejected") {
+            failed += 1;
+            logger.error("sendStreakReminders: user failed.", {err: result.reason});
+          } else if (result.value === "sent") {
+            sent += 1;
+          } else if (result.value === "skipped") {
+            skipped += 1;
+          } else {
+            failed += 1;
+          }
         }
-
-        const nextReminderTs = nextReminderAfterTodayClaim(todayLocalKey, offset);
-        const loggedOut = isLoggedOut(userData);
-        const retryAfterLogin = loggedOut && !claimedToday && !alreadySentToday && userEmail.length > 0;
-        const noReminder = claimedToday || alreadySentToday || userEmail.length === 0 || loggedOut;
-        const fcmToken = noReminder ? "" : await fcmTokenFor(userDoc.ref, userData);
-
-        if (noReminder || fcmToken.length === 0) {
-          await userDoc.ref.update({
-            "coinState.streakReminderNextAtUtc": retryAfterLogin ?
-              admin.firestore.Timestamp.fromMillis(nowTs.toMillis() + 15 * 60_000) :
-              nextReminderTs,
-          });
-          skipped += 1;
-          continue;
-        }
-
-        await sendNotification({
-          title: "Your streak is about to break!",
-          body: "Open Prism now to keep your login streak alive 🔥",
-          data: {
-            route: "streak_reminder",
-            streak_day: streakDay.toString(),
-            streak_count: streakCount.toString(),
-          },
-          modifier: userEmail,
-          channelId: REMINDER_CHANNEL_ID,
-          fcmTarget: {token: fcmToken},
-        });
-
-        await userDoc.ref.update({
-          "coinState.streakReminderLastSentDate": todayLocalKey,
-          "coinState.streakReminderNextAtUtc": nextReminderTs,
-        });
-        sent += 1;
       }
 
       logger.info("sendStreakReminders: processed page", {
@@ -367,7 +339,7 @@ export const sendStreakReminders = onSchedule(
         pageSize: snapshot.size,
       });
 
-      if (snapshot.size < 200) {
+      if (snapshot.size < REMINDER_PAGE_SIZE) {
         break;
       }
     }
@@ -376,27 +348,121 @@ export const sendStreakReminders = onSchedule(
       processed,
       sent,
       skipped,
+      failed,
       now: now.toISOString(),
     });
   },
 );
 
-/** The app now stores the token in private/session; older builds wrote usersv2.fcmToken. */
-export function pickFcmToken(sessionToken: unknown, legacyToken: unknown): string {
-  return str(sessionToken) || str(legacyToken);
+async function remindUser(
+  userDoc: admin.firestore.QueryDocumentSnapshot,
+  nowTs: admin.firestore.Timestamp,
+  now: Date,
+): Promise<"sent" | "skipped" | "failed"> {
+  const userData = userDoc.data() as Record<string, unknown>;
+  const userEmail = str(userData.email);
+  const coinState = normalizeCoinState(userData.coinState);
+
+  const offset = resolveTimezoneOffset(
+    storedTimezoneOffset(userData.coinState, "streakClaimTimezoneOffsetMinutes"),
+    coinState.streakTimezoneOffsetMinutes,
+  );
+  const todayLocalKey = localDateKeyFromUtc(now, offset);
+  const lastClaimDate = coinState.lastDailyClaimDate;
+  const lastSentDate = coinState.streakReminderLastSentDate;
+  const streakDay = clampStreakDay(int(coinState.streakDay, 0));
+  const streakCount = coinState.streakCount > 0 ? coinState.streakCount : streakDay;
+
+  const activeStreak =
+    streakCount > 0 && isStreakAlive(lastClaimDate, todayLocalKey, coinState.streakFreezes);
+  const claimedToday = lastClaimDate === todayLocalKey;
+  const alreadySentToday = lastSentDate === todayLocalKey;
+
+  if (!activeStreak) {
+    await userDoc.ref.update({
+      "coinState.streakReminderNextAtUtc": admin.firestore.FieldValue.delete(),
+    });
+    return "skipped";
+  }
+
+  const nextReminderTs = nextReminderAfterTodayClaim(todayLocalKey, offset);
+  const retryAt = admin.firestore.Timestamp.fromMillis(nowTs.toMillis() + REMINDER_RETRY_MS);
+  const loggedOut = isLoggedOut(userData);
+  const retryAfterLogin = loggedOut && !claimedToday && !alreadySentToday && userEmail.length > 0;
+  const noReminder = claimedToday || alreadySentToday || userEmail.length === 0 || loggedOut;
+  const [fcmToken] = noReminder ? [] : await userPushTokens(userDoc.ref.id, userData.fcmToken);
+
+  if (noReminder || !fcmToken) {
+    await userDoc.ref.update({
+      "coinState.streakReminderNextAtUtc": retryAfterLogin ? retryAt : nextReminderTs,
+    });
+    return "skipped";
+  }
+
+  // The claim goes first, in a transaction, so an overlapping run cannot send the same reminder twice.
+  const claimId = randomUUID();
+  const claim = await db.runTransaction(async (tx) => {
+    const current = (await tx.get(userDoc.ref)).data()?.coinState as Record<string, unknown> | undefined;
+    const state = normalizeCoinState(current);
+    const nextAt = current?.streakReminderNextAtUtc;
+    const due = nextAt instanceof admin.firestore.Timestamp && nextAt.toMillis() <= nowTs.toMillis();
+    if (!due || !state.streakReminderEnabled || state.streakReminderLastSentDate === todayLocalKey ||
+      state.lastDailyClaimDate === todayLocalKey) {
+      return null;
+    }
+    tx.update(userDoc.ref, {
+      "coinState.streakReminderLastSentDate": todayLocalKey,
+      "coinState.streakReminderNextAtUtc": nextReminderTs,
+      "coinState.streakReminderClaimId": claimId,
+    });
+    return {previousSentDate: state.streakReminderLastSentDate};
+  });
+  if (!claim) return "skipped";
+  const delivered = await sendNotification({
+    title: "Your streak is about to break!",
+    body: "Open Prism now to keep your login streak alive 🔥",
+    data: {
+      route: "streak_reminder",
+      streak_day: streakDay.toString(),
+      streak_count: streakCount.toString(),
+    },
+    modifier: userEmail,
+    channelId: REMINDER_CHANNEL_ID,
+    fcmTarget: {token: fcmToken},
+    docId: `streak_${userDoc.ref.id}_${todayLocalKey}`,
+  });
+  if (!delivered) {
+    await db.runTransaction(async (tx) => {
+      const current = (await tx.get(userDoc.ref)).data()?.coinState as Record<string, unknown> | undefined;
+      if (current?.streakReminderClaimId !== claimId) return;
+      tx.update(userDoc.ref, {
+        "coinState.streakReminderLastSentDate": claim.previousSentDate,
+        "coinState.streakReminderNextAtUtc": retryAt,
+        "coinState.streakReminderClaimId": admin.firestore.FieldValue.delete(),
+      });
+    });
+    return "failed";
+  }
+  return "sent";
 }
 
-async function fcmTokenFor(
-  userRef: admin.firestore.DocumentReference,
-  userData: Record<string, unknown>,
-): Promise<string> {
-  try {
-    const session = await userRef.collection("private").doc("session").get();
-    return pickFcmToken(session.get("fcmToken"), userData.fcmToken);
-  } catch (err) {
-    logger.warn("sendStreakReminders: could not read session token.", {uid: userRef.id, err});
-    return pickFcmToken(undefined, userData.fcmToken);
+export {pickFcmToken};
+
+/**
+ * The claim offset is locked so a client cannot shift its day. It moves only when the device offset differs
+ * and 24 hours passed since the last claim, so a traveller or a DST change is not stuck on the old day.
+ */
+export function shouldRelockTimezone(params: {
+  locked?: number;
+  requested?: number;
+  lastClaimAtMs?: number;
+  nowMs: number;
+}): boolean {
+  const {locked, requested, lastClaimAtMs, nowMs} = params;
+  if (locked == null || requested === undefined || lastClaimAtMs == null) {
+    return false;
   }
+  return clampTimezoneOffset(requested) !== clampTimezoneOffset(locked) && nowMs - lastClaimAtMs >= DAY_MS;
 }
 
 function asBool(value: unknown, fallback: boolean): boolean {

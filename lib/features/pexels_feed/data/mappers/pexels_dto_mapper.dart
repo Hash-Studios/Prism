@@ -22,7 +22,8 @@ extension PexelsPhotoDtoMapper on PexelsPhotoDto {
         ? domainSrc!.original
         : domainSrc?.large2x ?? domainSrc?.large ?? url;
 
-    final String thumbnailUrl = domainSrc?.medium ?? domainSrc?.small ?? domainSrc?.tiny ?? fullUrl;
+    final String thumbnailUrl =
+        domainSrc?.portrait ?? domainSrc?.large ?? domainSrc?.medium ?? domainSrc?.small ?? domainSrc?.tiny ?? fullUrl;
 
     final String? resolution = width != null && height != null ? '${width}x$height' : null;
 

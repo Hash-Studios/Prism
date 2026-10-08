@@ -30,5 +30,6 @@ abstract class PublicProfileEvent with _$PublicProfileEvent {
     required String currentUserEmail,
     required String targetUserId,
     required String targetUserEmail,
+    @Default('') String targetName,
   }) = _FollowChangeRequested;
 }

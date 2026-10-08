@@ -41,6 +41,27 @@ void main() {
       expect(repo.hasMore, isFalse);
     });
 
+    test('only a refresh writes the cache, and a failed fetch-more is an error, not the cached page', () async {
+      final firestore = _walls(_buildWallDocs(count: 60));
+      final cache = FakeFeedCacheLocalDataSource();
+      final repo = PrismWallpaperRepositoryImpl(
+        firestore,
+        cache,
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+
+      expect((await repo.fetchFeed(refresh: true)).isSuccess, isTrue);
+      final firstSnapshot = cache.snapshots['prism/main'];
+      expect(firstSnapshot, isNotNull);
+
+      expect((await repo.fetchFeed(refresh: false)).isSuccess, isTrue);
+      expect(cache.snapshots['prism/main'], same(firstSnapshot), reason: 'page 2 must not overwrite page 1');
+
+      firestore.queryError = StateError('offline');
+      expect((await repo.fetchFeed(refresh: false)).isFailure, isTrue);
+      expect((await repo.fetchFeed(refresh: true)).data, hasLength(24), reason: 'a failed refresh still has the cache');
+    });
+
     test('streak shop queries the same field the wall docs are read from', () async {
       final firestore = _walls(<({String docId, Map<String, dynamic> data})>[
         (

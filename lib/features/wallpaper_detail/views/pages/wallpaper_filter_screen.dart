@@ -8,14 +8,15 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
-import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
@@ -117,6 +118,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     final List<WallpaperFilter> stack = List<WallpaperFilter>.of(_stack);
     final WallpaperAdjustments adjustments = _adjustments;
     final double? previewPixelShortSide = _previewPixelShortSide;
+    final Size screenPixels = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
     if (stack.isEmpty && adjustments.isNone) {
       return File(widget.filePath);
     }
@@ -129,6 +131,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           stack,
           adjustments,
           previewPixelShortSide: previewPixelShortSide,
+          deviceLongSidePx: screenPixels.longestSide,
         );
         if (!mounted) {
           throw StateError('Wallpaper editor closed before export completed');
@@ -167,35 +170,22 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } catch (_) {}
   }
 
-  Future<bool> _setWallpaper(String path, WallpaperTarget target) async {
-    bool applied = false;
-    Object? setError;
-    try {
-      applied = await WallpaperService.setWallpaperFromSource(path, target);
-    } catch (e) {
-      logger.e('Set wallpaper failed', error: e);
-      setError = e;
-    }
-    void followUp(void Function() callback) {
+  Future<WallpaperSetResult> _setWallpaper(String path, SetWallpaperChoice choice) async {
+    final WallpaperSetResult result = await WallpaperService.setWallpaper(
+      path,
+      choice.target,
+      fit: choice.fit,
+      useSystemCropper: choice.useSystemCropper,
+      recordHistory: false,
+    );
+    if (mounted) {
       try {
-        callback();
+        reportWallpaperSetResult(context, result, target: choice.target);
       } catch (error) {
         logger.w('Wallpaper set outcome follow-up failed', error: error);
       }
     }
-
-    if (setError != null) {
-      followUp(() => analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.failure)));
-    } else if (applied) {
-      followUp(() => analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.success)));
-      followUp(() => toasts.success("Wallpaper set successfully!"));
-    } else {
-      followUp(() => toasts.error("Something went wrong!"));
-    }
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
-    return applied;
+    return result;
   }
 
   /// [action] is the export. It runs inside the coin gate and returns false when it failed, so the gate attempts a refund.
@@ -299,13 +289,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       if (result.success) {
         try {
           analytics.track(DownloadWallpaperEvent(link: imageFile.path));
-          toasts.success("Wall Saved in Pictures!");
+          toasts.success(wallpaperSavedMessage);
+          if (mounted) unawaited(showIosSetWallpaperGuide(context));
         } catch (error) {
           logger.w('Wallpaper saved but follow-up failed', error: error);
         }
         return true;
       }
-      toasts.error("Couldn't save wallpaper. Please retry!");
+      if (isPhotosPermissionDenied(result.errorCode) && mounted) {
+        showPhotosPermissionDenied(context);
+      } else {
+        toasts.error("Couldn't save wallpaper. Please retry!");
+      }
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {
         logger.w('saveMedia channel unavailable (native side not registered)', error: e);
@@ -338,29 +333,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return false;
     }
     try {
-      final WallpaperTarget? target = await showPrismSheet<WallpaperTarget>(
-        isScrollControlled: true,
-        context: context,
-        builder: (context) => SetOptionsPanel(
-          onTap1: () {
-            if (!mounted) return;
-            PrismHaptics.tap();
-            Navigator.of(context).pop(WallpaperTarget.home);
-          },
-          onTap2: () {
-            if (!mounted) return;
-            PrismHaptics.tap();
-            Navigator.of(context).pop(WallpaperTarget.lock);
-          },
-          onTap3: () {
-            if (!mounted) return;
-            PrismHaptics.tap();
-            Navigator.of(context).pop(WallpaperTarget.both);
-          },
-        ),
-      );
-      if (!mounted || target == null) return true;
-      return await _setWallpaper(imageFile.path, target);
+      final SetWallpaperChoice? choice = await showSetWallpaperSheet(context);
+      if (!mounted || choice == null) return true;
+      final WallpaperSetResult result = await _setWallpaper(imageFile.path, choice);
+      if (result.isSuccess || result.isInfo) {
+        if (mounted) Navigator.of(context).pop();
+      }
+      return !result.isFailure;
     } finally {
       await _deleteEditedFile(imageFile);
     }

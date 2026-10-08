@@ -175,9 +175,11 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
         final following = data['following'];
         final interestCount = interests is List ? interests.length : 0;
         final followCount = following is List ? following.length : 0;
+        final onboarding = data['onboardingV2'];
         return OnboardingUserStatus(
           hasInterests: interestCount >= OnboardingV2Config.minInterests,
           hasFollows: followCount >= OnboardingV2Config.minFollows,
+          completed: onboarding is Map && onboarding['completed'] == true,
         );
       }, sourceTag: 'onboarding_v2.fetch_user_status');
       return Result.success(status ?? const OnboardingUserStatus(hasInterests: false, hasFollows: false));

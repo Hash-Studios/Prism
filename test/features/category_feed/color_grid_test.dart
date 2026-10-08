@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -138,5 +139,35 @@ void main() {
 
     expect(find.byType(LoadingCards), findsNothing);
     expect(find.byType(SeeMoreButton), findsNothing);
+  });
+
+  testWidgets('a failed first page shows an error with Retry, and Retry loads the feed', (tester) async {
+    int calls = 0;
+    when(() => repository.fetchColorFeed(hex: 'ff0000', name: 'Red', refresh: true)).thenAnswer((_) async {
+      calls++;
+      return calls == 1
+          ? Result.error<List<PexelsWallpaper>>(const NetworkFailure('offline'))
+          : Result.success(<PexelsWallpaper>[_wallpaper('wallpaper-1')]);
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ColorGrid(hexColor: 'ff0000', name: 'Red'),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text("Couldn't load wallpapers"), findsOneWidget);
+    expect(find.byType(LoadingCards), findsNothing);
+
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text("Couldn't load wallpapers"), findsNothing);
+    expect(find.byType(SeeMoreButton), findsOneWidget);
   });
 }

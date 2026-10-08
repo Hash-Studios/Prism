@@ -41,6 +41,14 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     super.dispose();
   }
 
+  void _resetActiveTab(int index) {
+    PrismHaptics.selection();
+    final StackRouter? stack = _tabsRouter!.stackRouterOfIndex(index);
+    if (stack != null && stack.canPop()) {
+      stack.popUntilRoot();
+    }
+  }
+
   void _trackTabSelection({required int fromIndex, required int toIndex}) {
     analytics.track(NavTabSelectedEvent(fromTab: _tabs[fromIndex].value, toTab: _tabs[toIndex].value));
   }
@@ -48,6 +56,7 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   void _switchTab({required int toIndex}) {
     final fromIndex = _tabsRouter!.activeIndex;
     if (fromIndex == toIndex) {
+      _resetActiveTab(toIndex);
       return;
     }
     PrismHaptics.selection();
@@ -98,13 +107,12 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = isActive
-        ? Theme.of(context).colorScheme.secondary
-        : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final iconColor = isActive ? cs.onPrimary : cs.secondary.withValues(alpha: 0.4);
 
     return Container(
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: isActive ? const Color(0xFF252525) : Colors.transparent, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: isActive ? cs.primary : Colors.transparent, shape: BoxShape.circle),
       child: IconButton(
         tooltip: tooltip,
         padding: EdgeInsets.zero,

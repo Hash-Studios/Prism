@@ -39,6 +39,7 @@ abstract class FavouriteWallDocDto with _$FavouriteWallDocDto {
     @FirestoreStringConverter() @Default('') String photographer,
     @FirestoreStringListConverter() @Default(<String>[]) List<String> collections,
     @FirestoreDateTimeConverter() DateTime? createdAt,
+    @FirestoreDateTimeConverter() DateTime? favouritedAt,
   }) = _FavouriteWallDocDto;
 
   factory FavouriteWallDocDto.fromJson(Map<String, dynamic> json) => _$FavouriteWallDocDtoFromJson(json);
