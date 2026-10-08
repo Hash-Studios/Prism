@@ -216,4 +216,23 @@ void main() {
       expect(write.data, <String, dynamic>{'marketingPushes': false});
     });
   });
+
+  testWidgets('the sheet title uses the secondary colour, not the titleMedium colour', (tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final ThemeData theme = ThemeData.dark().copyWith(
+      colorScheme: const ColorScheme.dark(secondary: Colors.orange),
+      textTheme: ThemeData.dark().textTheme.copyWith(titleMedium: const TextStyle(color: Color(0xFF2F2F2F))),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: Scaffold(body: NotificationSettingsSheet(permissions: _FakePermissions(granted: true))),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.widget<Text>(find.text('Notification preferences')).style?.color, Colors.orange);
+  });
 }

@@ -58,4 +58,20 @@ void main() {
     expect(applyFavouritesView(items, source: WallpaperSource.prism, query: 'grace'), isEmpty);
     expect(ids(applyFavouritesView(items, source: WallpaperSource.prism, query: 'nature')), <String>['p_old']);
   });
+
+  test('recently added sorts on favouritedAt, not the wallpaper date', () {
+    final walls = <FavouriteWallEntity>[
+      wallhavenFav('w', createdAt: DateTime.utc(2026), favouritedAt: DateTime.utc(2025)),
+      prismFav('p', createdAt: DateTime.utc(2020), favouritedAt: DateTime.utc(2026)),
+    ];
+    expect(ids(applyFavouritesView(walls)), <String>['p', 'w']);
+    expect(ids(applyFavouritesView(walls, sort: FavouriteSort.oldest)), <String>['w', 'p']);
+  });
+
+  test('a wall without favouritedAt falls back to createdAt', () {
+    final wall = prismFav('p', createdAt: DateTime.utc(2024));
+    expect(wall.addedAt, DateTime.utc(2024));
+    final walls = <FavouriteWallEntity>[wall, wallhavenFav('w', favouritedAt: DateTime.utc(2025))];
+    expect(ids(applyFavouritesView(walls)), <String>['w', 'p']);
+  });
 }

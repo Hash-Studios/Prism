@@ -410,7 +410,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text('Default action for Set', style: Theme.of(ctx).textTheme.titleMedium),
+                  child: Text(
+                    'Default action for Set',
+                    style: Theme.of(ctx).textTheme.titleMedium?.copyWith(color: Theme.of(ctx).colorScheme.secondary),
+                  ),
                 ),
                 for (final MapEntry<String, String> option in _applyTargetLabels.entries)
                   RadioListTile<String>(

@@ -175,6 +175,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       path,
       choice.target,
       fit: choice.fit,
+      useSystemCropper: choice.useSystemCropper,
       recordHistory: false,
     );
     if (mounted) {
@@ -331,18 +332,16 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       await _deleteEditedFile(imageFile);
       return false;
     }
-    bool keepFile = false;
     try {
       final SetWallpaperChoice? choice = await showSetWallpaperSheet(context);
       if (!mounted || choice == null) return true;
       final WallpaperSetResult result = await _setWallpaper(imageFile.path, choice);
-      keepFile = result.isInfo;
       if (result.isSuccess || result.isInfo) {
         if (mounted) Navigator.of(context).pop();
       }
       return !result.isFailure;
     } finally {
-      if (!keepFile) await _deleteEditedFile(imageFile);
+      await _deleteEditedFile(imageFile);
     }
   }
 

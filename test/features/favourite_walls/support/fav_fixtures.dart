@@ -14,15 +14,24 @@ WallpaperCore _core(String id, WallpaperSource source, String? author, String? c
       createdAt: createdAt,
     );
 
-FavouriteWallEntity prismFav(String id, {String? author, String? category, DateTime? createdAt}) => PrismFavouriteWall(
+FavouriteWallEntity prismFav(
+  String id, {
+  String? author,
+  String? category,
+  DateTime? createdAt,
+  DateTime? favouritedAt,
+}) => PrismFavouriteWall(
   id: id,
+  favouritedAt: favouritedAt,
   wallpaper: PrismWallpaper(core: _core(id, WallpaperSource.prism, author, category, createdAt)),
 );
 
-FavouriteWallEntity wallhavenFav(String id, {String? category, DateTime? createdAt}) => WallhavenFavouriteWall(
-  id: id,
-  wallpaper: WallhavenWallpaper(core: _core(id, WallpaperSource.wallhaven, null, category, createdAt)),
-);
+FavouriteWallEntity wallhavenFav(String id, {String? category, DateTime? createdAt, DateTime? favouritedAt}) =>
+    WallhavenFavouriteWall(
+      id: id,
+      favouritedAt: favouritedAt,
+      wallpaper: WallhavenWallpaper(core: _core(id, WallpaperSource.wallhaven, null, category, createdAt)),
+    );
 
 FavouriteWallEntity pexelsFav(String id, {String? author, String? category, DateTime? createdAt}) =>
     PexelsFavouriteWall(

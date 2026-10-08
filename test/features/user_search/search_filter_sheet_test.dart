@@ -56,4 +56,24 @@ void main() {
 
     expect(result, const SearchFilters(minResolution: '1440x2560', sort: SearchSort.toplist));
   });
+
+  testWidgets('the sheet opens on the root navigator, above a nested tab navigator', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Navigator(
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
+            builder: (context) => TextButton(
+              onPressed: () => showSearchFilterSheet(context, const SearchFilters()),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    final NavigatorState root = tester.state<NavigatorState>(find.byType(Navigator).first);
+    expect(ModalRoute.of(tester.element(find.text('Apply')))!.navigator, root);
+  });
 }

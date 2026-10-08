@@ -14,9 +14,10 @@ import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// The set sheet: where to set the wall, how it fits, and the studio and pair entries.
+/// The set sheet: where to set the wall, how it fits, the system cropper, and the studio and pair entries.
 class SetOptionsPanel extends StatefulWidget {
   const SetOptionsPanel({
     super.key,
@@ -43,13 +44,14 @@ class SetOptionsPanel extends StatefulWidget {
 
 class _SetOptionsPanelState extends State<SetOptionsPanel> {
   WallpaperFit _fit = WallpaperFit.fill;
+  bool _cropFirst = false;
   bool _alwaysUse = false;
   late final Future<aw.WallpaperCapabilities> _capabilities = aw.AsyncWallpaper.getCapabilities();
 
   void _select(WallpaperTarget target) {
     PrismHaptics.tap();
     if (_alwaysUse) _saveDefault(target);
-    widget.onSelected(SetWallpaperChoice(target, fit: _fit));
+    widget.onSelected(SetWallpaperChoice(target, fit: _fit, useSystemCropper: _cropFirst));
   }
 
   void _saveDefault(WallpaperTarget target) {
@@ -65,6 +67,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
+    final bool canCrop = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
     return Material(
       color: theme.primaryColor,
       borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
@@ -122,11 +125,38 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                         ),
                       ),
                     ),
-                    onSelectionChanged: (selection) {
-                      PrismHaptics.selection();
-                      setState(() => _fit = selection.first);
-                    },
+                    onSelectionChanged: _cropFirst
+                        ? null
+                        : (selection) {
+                            PrismHaptics.selection();
+                            setState(() => _fit = selection.first);
+                          },
                   ),
+                  if (canCrop)
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        'Crop and position...',
+                        style: TextStyle(
+                          color: scheme.secondary,
+                          fontFamily: PrismFonts.proximaNova,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Choose the exact area in the system editor.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.secondary.withValues(alpha: 0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                      value: _cropFirst,
+                      onChanged: (value) {
+                        PrismHaptics.selection();
+                        setState(() => _cropFirst = value);
+                      },
+                    ),
                   if (widget.canAdjust) ...<Widget>[
                     const SizedBox(height: 4),
                     _SheetRow(

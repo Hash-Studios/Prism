@@ -7,6 +7,7 @@ import 'package:Prism/core/platform/wallpaper_error_messages.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -83,14 +84,19 @@ class WallpaperService {
   static const String failedMessage = "Couldn't set the wallpaper.";
   static const String timeoutMessage = 'Timed out. Check your connection and try again.';
 
+  /// Turns a local file into a content URI. The Android system cropper cannot read a file path.
+  static const MethodChannel _cropChannel = MethodChannel('prism/wallpaper_crop');
+
   /// Sets [source] on [target].
   ///
+  /// With [useSystemCropper] the Android system cropper opens first and the user picks the crop.
   /// History keeps [historySource] and [historyThumbnail] when given. Callers that set a rendered copy of a wall pass
   /// the original here, so history can set the wall again.
   static Future<WallpaperSetResult> setWallpaper(
     String source,
     WallpaperTarget target, {
     WallpaperFit fit = WallpaperFit.fill,
+    bool useSystemCropper = false,
     String? thumbnailUrl,
     bool recordHistory = true,
     String? historySource,
@@ -111,14 +117,22 @@ class WallpaperService {
       WallpaperFit.fill => aw.WallpaperScaleMode.centerCrop,
       WallpaperFit.whole => aw.WallpaperScaleMode.fitCenter,
     };
+    final aw.WallpaperApplyStrategy firstStrategy = useSystemCropper
+        ? aw.WallpaperApplyStrategy.systemCropper
+        : aw.WallpaperApplyStrategy.direct;
 
     try {
       final String recordedSource = historySource ?? normalizedSource;
       final bool canRecord = recordHistory && await _canRecord(recordedSource);
       final List<AppliedWallpaper?> previous = canRecord ? _previousFor(target) : const <AppliedWallpaper?>[];
-      aw.WallpaperOperationResult result = await _apply(filePath, target, scaleMode, aw.WallpaperApplyStrategy.direct);
-      if (result.status == aw.WallpaperOperationStatus.failed && canRetryWallpaperError(result.errorCode)) {
-        result = await _apply(filePath, target, scaleMode, aw.WallpaperApplyStrategy.automatic);
+      final aw.WallpaperSource wallpaperSource = useSystemCropper
+          ? aw.WallpaperSource.contentUri((await _cropChannel.invokeMethod<String>('contentUri', filePath))!)
+          : aw.WallpaperSource.filePath(filePath);
+      aw.WallpaperOperationResult result = await _apply(wallpaperSource, target, scaleMode, firstStrategy);
+      if (!useSystemCropper &&
+          result.status == aw.WallpaperOperationStatus.failed &&
+          canRetryWallpaperError(result.errorCode)) {
+        result = await _apply(wallpaperSource, target, scaleMode, aw.WallpaperApplyStrategy.automatic);
       }
       final WallpaperSetResult mapped = mapStatus(result);
       final WallpaperTarget? recordTarget = mapped.isSuccess ? target : mapped.appliedTarget;
@@ -196,13 +210,13 @@ class WallpaperService {
   };
 
   static Future<aw.WallpaperOperationResult> _apply(
-    String filePath,
+    aw.WallpaperSource source,
     WallpaperTarget target,
     aw.WallpaperScaleMode scaleMode,
     aw.WallpaperApplyStrategy strategy,
   ) {
     final request = aw.StaticWallpaperRequest(
-      source: aw.WallpaperSource.filePath(filePath),
+      source: source,
       target: aw.WallpaperTarget.values.byName(target.name),
       scaleMode: scaleMode,
       strategy: strategy,

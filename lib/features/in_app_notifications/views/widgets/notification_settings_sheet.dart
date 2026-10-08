@@ -232,7 +232,10 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text('Notification preferences', style: theme.textTheme.titleMedium),
+              child: Text(
+                'Notification preferences',
+                style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.secondary),
+              ),
             ),
             if (_permissionGranted == false) _permissionBanner(),
             _toggle(

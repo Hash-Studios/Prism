@@ -184,7 +184,11 @@ class _DownloadsBodyState extends State<DownloadsBody> {
           context: context,
           builder: (context) => AlertDialog(
             title: Text(paths.length == 1 ? 'Delete this download?' : 'Delete ${paths.length} downloads?'),
-            content: const Text('They are removed from this device. You can download them again later.'),
+            content: Text(
+              paths.length == 1
+                  ? 'It is removed from this device. You can download it again later.'
+                  : 'They are removed from this device. You can download them again later.',
+            ),
             actions: [
               TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
               TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
@@ -270,7 +274,10 @@ class _DownloadsBodyState extends State<DownloadsBody> {
     child: Row(
       children: [
         Expanded(
-          child: Text(_summary, style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
+          child: Text(
+            _summary,
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.6)),
+          ),
         ),
         PopupMenuButton<_DownloadSort>(
           tooltip: 'Sort downloads',

@@ -183,6 +183,7 @@ class SetWallpaperFlow {
         url,
         choice.target,
         fit: choice.fit,
+        useSystemCropper: choice.useSystemCropper,
         thumbnailUrl: thumbnailUrl,
         recordHistory: recordHistory,
       );
@@ -200,7 +201,7 @@ class SetWallpaperFlow {
         apply(
           context,
           url: url,
-          choice: SetWallpaperChoice(retryTarget, fit: choice.fit),
+          choice: SetWallpaperChoice(retryTarget, fit: choice.fit, useSystemCropper: choice.useSystemCropper),
           thumbnailUrl: thumbnailUrl,
           recordHistory: recordHistory,
           onBusy: onBusy,

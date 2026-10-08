@@ -314,4 +314,57 @@ void main() {
       expect(local.isWallFavourite('', 'g2'), isFalse);
     });
   });
+
+  test('toggleFavourite writes favouritedAt and fetch maps it back', () async {
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final firestore = FakeFirestoreClient();
+    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+
+    await repository.toggleFavourite(userId: 'u', wall: prismFav('p1'), currentlyFavourited: false);
+
+    expect(firestore.writes.single.data!['favouritedAt'], isA<DateTime>());
+
+    final stamp = DateTime.utc(2026, 3, 4);
+    final reader = FakeFirestoreClient(
+      onQuery: (_) => <FakeDocRow>[
+        (id: 'd1', data: <String, dynamic>{'id': 'p1', 'provider': 'prism', 'favouritedAt': stamp}),
+      ],
+    );
+    final result = await FavouriteWallsRepositoryImpl(reader, local, unusedGuestStore()).fetchFavourites(userId: 'u');
+
+    expect(result.data!.single.favouritedAt, stamp);
+  });
+
+  test('older favourite docs keep a null favourite time and can use createdAt', () async {
+    final createdAt = DateTime.utc(2022, 5, 6);
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final firestore = FakeFirestoreClient(
+      onQuery: (_) => <FakeDocRow>[
+        (id: 'old', data: <String, dynamic>{'id': 'old', 'provider': 'prism', 'createdAt': createdAt}),
+      ],
+    );
+
+    final result = await FavouriteWallsRepositoryImpl(
+      firestore,
+      local,
+      unusedGuestStore(),
+    ).fetchFavourites(userId: 'u');
+
+    expect(result.data!.single.favouritedAt, isNull);
+    expect(result.data!.single.addedAt, createdAt);
+  });
+
+  test('restoring a removed favourite preserves its original favourite time', () async {
+    final stamp = DateTime.utc(2026, 3, 4);
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final firestore = FakeFirestoreClient();
+
+    await FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore()).toggleFavourite(
+      userId: 'u',
+      wall: prismFav('p1', favouritedAt: stamp),
+      currentlyFavourited: false,
+    );
+
+    expect(firestore.writes.single.data!['favouritedAt'], stamp);
+  });
 }

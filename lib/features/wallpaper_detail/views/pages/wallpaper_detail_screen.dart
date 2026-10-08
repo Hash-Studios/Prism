@@ -113,6 +113,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   final SimilarWallpapersLoader _similarLoader = SimilarWallpapersLoader.fromGetIt();
 
   PanelController panelController = PanelController();
+
+  /// 0 when the panel is collapsed, 1 when open. The collapsed panel sits under the action bar, so its content fades.
+  final ValueNotifier<double> _panelPosition = ValueNotifier<double>(0);
   bool _accentToastShown = false;
   bool _openRecorded = false;
 
@@ -191,6 +194,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   @override
   void dispose() {
     _shake.dispose();
+    _panelPosition.dispose();
     super.dispose();
   }
 
@@ -368,6 +372,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final Widget panel = SlidingUpPanel(
       onPanelOpened: () => _handlePanelOpened(context, state),
       onPanelClosed: () => _handlePanelClosed(context, state),
+      onPanelSlide: (double position) => _panelPosition.value = position,
       // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(_panelTopRadius),
@@ -415,25 +420,27 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildCollapseHandle(context, state),
-                _buildColorBar(context, state),
+                _fadeWithPanel(_buildColorBar(context, state)),
                 Expanded(
                   flex: 8,
-                  child: SingleChildScrollView(
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification is ScrollStartNotification) {
-                          context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
-                        } else if (notification is ScrollEndNotification) {
-                          Future.delayed(const Duration(milliseconds: 200), () {
-                            if (!context.mounted) return;
-                            context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
-                          });
-                        }
-                        return false;
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [_buildMetadataRow(context, entity, state), ..._buildPanelExtras(context, state)],
+                  child: _fadeWithPanel(
+                    SingleChildScrollView(
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification is ScrollStartNotification) {
+                            context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
+                          } else if (notification is ScrollEndNotification) {
+                            Future.delayed(const Duration(milliseconds: 200), () {
+                              if (!context.mounted) return;
+                              context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
+                            });
+                          }
+                          return false;
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [_buildMetadataRow(context, entity, state), ..._buildPanelExtras(context, state)],
+                        ),
                       ),
                     ),
                   ),
@@ -447,10 +454,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     );
   }
 
+  Widget _fadeWithPanel(Widget child) => ValueListenableBuilder<double>(
+    valueListenable: _panelPosition,
+    child: child,
+    builder: (BuildContext context, double position, Widget? child) => IgnorePointer(
+      ignoring: position == 0,
+      child: Opacity(opacity: position, child: child),
+    ),
+  );
+
   Widget _buildCollapseHandle(BuildContext context, WallpaperDetailLoaded state) {
     final isCollapsed = state.panelCollapsed;
     return Center(
       child: Semantics(
+        // Its own node: the faded panel content drops out of semantics, and this label must not merge into the panel.
+        container: true,
         button: true,
         label: isCollapsed ? 'Expand wallpaper details' : 'Collapse wallpaper details',
         child: GestureDetector(
