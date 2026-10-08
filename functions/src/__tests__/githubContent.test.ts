@@ -615,3 +615,26 @@ test("githubPutFile keeps separate delete records when files share a blob SHA", 
   });
   assert.equal([...docs.keys()].filter((key) => key.startsWith("githubUploads/")).length, 1);
 });
+
+test("githubDeleteFile accepts a verified admin_users admin who owns no upload record", async (t) => {
+  testGithubEnvironment(t);
+  uploadStore(t, {"admin_users/boss@x.com": {ok: true}});
+  t.mock.method(globalThis, "fetch", async () => ({ok: true, json: async () => ({})}));
+  const result = await run(githubDeleteFile, {
+    auth: {uid: "boss", token: {email: "boss@x.com", email_verified: true}},
+    data: {repo: "walls", path: "thumb_a.jpg", message: "delete", sha: "sha"},
+  });
+  assert.deepEqual(result, {ok: true});
+});
+
+test("githubDeleteFile refuses an unverified admin_users email and a plain user", async (t) => {
+  testGithubEnvironment(t);
+  uploadStore(t, {"admin_users/boss@x.com": {ok: true}});
+  t.mock.method(globalThis, "fetch", async () => ({ok: true, json: async () => ({})}));
+  for (const token of [{email: "boss@x.com", email_verified: false}, {email: "user@x.com", email_verified: true}]) {
+    await assert.rejects(() => run(githubDeleteFile, {
+      auth: {uid: "boss", token},
+      data: {repo: "walls", path: "thumb_a.jpg", message: "delete", sha: "sha"},
+    }), {code: "permission-denied"});
+  }
+});

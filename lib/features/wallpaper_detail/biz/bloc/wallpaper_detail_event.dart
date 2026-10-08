@@ -36,6 +36,10 @@ final class FetchViews extends WallpaperDetailEvent {
   const FetchViews();
 }
 
+final class FetchSetCount extends WallpaperDetailEvent {
+  const FetchSetCount();
+}
+
 final class SelectAccentColor extends WallpaperDetailEvent {
   const SelectAccentColor({required this.color});
 

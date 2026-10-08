@@ -12,6 +12,8 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private var mediaApi: PrismMediaHostApiImpl? = null
     private var hapticsChannel: MethodChannel? = null
+    private var quickSettingsChannel: MethodChannel? = null
+    private var systemColorsChannel: MethodChannel? = null
     private val storagePermissions = LegacyStoragePermissionGate()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +48,14 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         }
+        val quickSettings = PrismQuickSettings(this)
+        quickSettingsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/quick_settings").apply {
+            setMethodCallHandler(quickSettings::handle)
+        }
+        val systemColors = PrismSystemColors(this)
+        systemColorsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/system_colors").apply {
+            setMethodCallHandler(systemColors::handle)
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -59,6 +69,10 @@ class MainActivity : FlutterFragmentActivity() {
         PrismMediaHostApi.setUp(flutterEngine.dartExecutor.binaryMessenger, null)
         hapticsChannel?.setMethodCallHandler(null)
         hapticsChannel = null
+        quickSettingsChannel?.setMethodCallHandler(null)
+        quickSettingsChannel = null
+        systemColorsChannel?.setMethodCallHandler(null)
+        systemColorsChannel = null
         storagePermissions.close()
         mediaApi?.close()
         mediaApi = null

@@ -1,10 +1,12 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/coins/streak_pill.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -39,21 +41,26 @@ class CoinBalanceChip extends StatelessWidget {
               context.router.push(RewardsRoute());
             }
 
+            final ColorScheme scheme = Theme.of(context).colorScheme;
+            final Color earnColor = scheme.tertiary;
+            final Color spendColor = PrismColors.destructive(scheme.brightness);
             final Color bgColor = isEarn
-                ? Colors.green.withValues(alpha: 0.2)
+                ? earnColor.withValues(alpha: 0.2)
                 : isSpend
-                ? Colors.red.withValues(alpha: 0.2)
+                ? spendColor.withValues(alpha: 0.2)
                 : Theme.of(context).hintColor;
             return AnimatedScale(
               scale: delta == 0 ? 1 : 1.06,
-              duration: const Duration(milliseconds: 220),
+              duration: context.motion(const Duration(milliseconds: 220)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   if (showStreak) ...[const StreakPill(compact: true), const SizedBox(width: 8)],
                   Semantics(
                     button: true,
-                    label: '$balance Prism coins',
+                    label: delta == 0
+                        ? '$balance Prism coins'
+                        : '$balance Prism coins, ${isEarn ? 'up $delta' : 'down ${-delta}'}',
                     excludeSemantics: true,
                     onTap: openCoins,
                     child: Material(
@@ -90,7 +97,7 @@ class CoinBalanceChip extends StatelessWidget {
                                 Text(
                                   isEarn ? '+$delta' : '$delta',
                                   style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                    color: isEarn ? Colors.green : Colors.red,
+                                    color: isEarn ? earnColor : spendColor,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),

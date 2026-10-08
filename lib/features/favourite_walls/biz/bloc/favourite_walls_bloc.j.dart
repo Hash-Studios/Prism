@@ -21,6 +21,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     this._clearFavouriteWallsUseCase,
   ) : super(FavouriteWallsState.initial()) {
     on<_Started>((event, emit) => _serial(() => _onStarted(event, emit)));
+    on<_Synced>(_onSynced);
     on<_RefreshRequested>((event, emit) => _serial(() => _onRefreshRequested(event, emit)));
     on<_ToggleRequested>((event, emit) => _serial(() => _onToggleRequested(event, emit)));
     on<_ClearRequested>((event, emit) => _serial(() => _onClearRequested(event, emit)));
@@ -79,24 +80,23 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     await _fetch(emit, event.operationId);
   }
 
+  void _onSynced(_Synced event, Emitter<FavouriteWallsState> emit) {
+    emit(
+      state.copyWith(
+        status: LoadStatus.success,
+        userId: event.userId,
+        items: <FavouriteWallEntity>[...event.items]..sort(compareByCreatedAtDesc),
+        failure: null,
+      ),
+    );
+  }
+
   Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<FavouriteWallsState> emit) {
     emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress));
     return _fetch(emit, event.operationId);
   }
 
   Future<void> _fetch(Emitter<FavouriteWallsState> emit, [int? operationId]) async {
-    if (state.userId.isEmpty) {
-      emit(
-        state.copyWith(
-          status: LoadStatus.failure,
-          actionStatus: ActionStatus.failure,
-          completedOperationId: operationId ?? state.completedOperationId,
-          failure: const ValidationFailure('userId is required'),
-        ),
-      );
-      return;
-    }
-
     final result = await _fetchFavouriteWallsUseCase(FetchFavouriteWallsParams(userId: state.userId));
 
     result.fold(
@@ -122,9 +122,12 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
 
   Future<void> _onToggleRequested(_ToggleRequested event, Emitter<FavouriteWallsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-    final bool currentlyFavourited = _containsWall(event.wall.id);
+    final bool currentlyFavourited = event.desired == null ? _containsWall(event.wall.id) : !event.desired!;
+    final FavouriteWallEntity wall = currentlyFavourited
+        ? event.wall
+        : event.wall.withFavouritedAt(DateTime.now().toUtc());
     final result = await _toggleFavouriteWallUseCase(
-      ToggleFavouriteWallParams(userId: state.userId, wall: event.wall, currentlyFavourited: currentlyFavourited),
+      ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: currentlyFavourited),
     );
 
     result.fold(
@@ -132,7 +135,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
         state.copyWith(
           status: LoadStatus.success,
           actionStatus: ActionStatus.success,
-          items: isNowFavourite ? _upsertWall(event.wall) : _removeWall(event.wall.id),
+          items: isNowFavourite ? _upsertWall(wall) : _removeWall(wall.id),
           completedOperationId: event.operationId,
           failure: null,
         ),
@@ -143,9 +146,23 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     );
   }
 
-  Future<void> _onClearRequested(_ClearRequested event, Emitter<FavouriteWallsState> emit) {
-    return _removeAndRefetchOnFailure(
-      state.items.map((item) => item.id).toList(growable: false),
+  Future<void> _onClearRequested(_ClearRequested event, Emitter<FavouriteWallsState> emit) async {
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    // Clear what the server holds now, not what this device last loaded. If the server cannot be read, clear nothing.
+    final fetched = await _fetchFavouriteWallsUseCase(FetchFavouriteWallsParams(userId: state.userId));
+    final List<FavouriteWallEntity>? current = fetched.data;
+    if (current == null) {
+      emit(
+        state.copyWith(
+          actionStatus: ActionStatus.failure,
+          completedOperationId: event.operationId,
+          failure: fetched.failure,
+        ),
+      );
+      return;
+    }
+    await _removeAndRefetchOnFailure(
+      current.map((item) => item.id).toList(growable: false),
       emit,
       operationId: event.operationId,
     );
@@ -188,8 +205,11 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   Future<void> _onRestoreRequested(_RestoreRequested event, Emitter<FavouriteWallsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final List<FavouriteWallEntity> restored = <FavouriteWallEntity>[];
-    for (final FavouriteWallEntity wall in event.walls) {
-      if (_containsWall(wall.id) || restored.any((item) => item.id == wall.id)) continue;
+    for (final FavouriteWallEntity original in event.walls) {
+      if (_containsWall(original.id) || restored.any((item) => item.id == original.id)) continue;
+      final FavouriteWallEntity wall = original.withFavouritedAt(
+        original.favouritedAt ?? original.createdAt ?? DateTime.now().toUtc(),
+      );
       final result = await _toggleFavouriteWallUseCase(
         ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: false),
       );

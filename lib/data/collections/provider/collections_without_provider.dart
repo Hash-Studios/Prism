@@ -14,7 +14,6 @@ String? _lastCollectionCursorDocId;
 String? _currentCollectionName;
 
 Future<void> getCollections() async {
-  collections = <Map<String, dynamic>>[];
   collections = await firestoreClient.query<Map<String, dynamic>>(
     const FirestoreQuerySpec(
       collection: FirebaseCollections.collections,
@@ -35,6 +34,12 @@ Future<void> getCollectionWithName(String name) async {
   await _loadCollectionPage(sourceTag: 'collections.getCollectionWithName');
 }
 
+/// Reloads the open collection. The walls on screen stay if the reload fails.
+Future<void> refreshCollectionWithName() async {
+  if (_currentCollectionName == null) return;
+  await _loadCollectionPage(sourceTag: 'collections.refreshCollectionWithName', replace: true);
+}
+
 Future<void> seeMoreCollectionWithName() async {
   final String? cursor = _lastCollectionCursorDocId;
   if (!collectionHasMore || cursor == null || cursor.isEmpty) {
@@ -44,7 +49,7 @@ Future<void> seeMoreCollectionWithName() async {
   await _loadCollectionPage(sourceTag: 'collections.seeMoreCollectionWithName', startAfterDocId: cursor);
 }
 
-Future<void> _loadCollectionPage({required String sourceTag, String? startAfterDocId}) async {
+Future<void> _loadCollectionPage({required String sourceTag, String? startAfterDocId, bool replace = false}) async {
   final String? name = _currentCollectionName;
   final rows = await firestoreClient.query<({String docId, Map<String, dynamic> data})>(
     FirestoreQuerySpec(
@@ -63,6 +68,10 @@ Future<void> _loadCollectionPage({required String sourceTag, String? startAfterD
   );
   // The user opened another collection while this page loaded.
   if (name != _currentCollectionName) return;
+  if (replace) {
+    anyCollectionWalls = <Map<String, dynamic>>[];
+    _lastCollectionCursorDocId = null;
+  }
   collectionHasMore = rows.length == _pageSize;
   if (rows.isNotEmpty) {
     _lastCollectionCursorDocId = rows.last.docId;

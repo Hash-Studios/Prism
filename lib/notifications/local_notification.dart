@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -75,10 +74,7 @@ class LocalNotification {
       final AppRouter? launchRouter = router;
       if (launchRouter == null) return;
       // The splash would replace a route pushed now.
-      final bool canRoute = await waitForPushTapStartup(
-        isMounted: () => identical(router, launchRouter),
-        isReady: () => !isStartingUp(launchRouter),
-      );
+      final bool canRoute = await waitForStartupEnd(launchRouter, isMounted: () => identical(router, launchRouter));
       if (canRoute) launchRouter.push(const DownloadRoute());
     } else {
       final Map<String, dynamic>? data = _pushData(payload);
@@ -96,34 +92,6 @@ class LocalNotification {
       // Legacy route-only payload.
     }
     return <String, dynamic>{'route': payload};
-  }
-
-  Future<void> createNotificationChannel(String id, String name, String description, bool playSound) async {
-    if (defaultTargetPlatform != TargetPlatform.android) {
-      return;
-    }
-
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation = flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    if (androidImplementation == null) {
-      return;
-    }
-
-    const String channelGroupId = 'notifications';
-    const AndroidNotificationChannelGroup androidNotificationChannelGroup = AndroidNotificationChannelGroup(
-      channelGroupId,
-      'Notifications',
-      description: 'All Prism Notifications',
-    );
-    await androidImplementation.createNotificationChannelGroup(androidNotificationChannelGroup);
-
-    final androidNotificationChannel = AndroidNotificationChannel(
-      id,
-      name,
-      description: description,
-      playSound: playSound,
-    );
-    await androidImplementation.createNotificationChannel(androidNotificationChannel);
   }
 
   Future<void> createDownloadNotification() async {
@@ -149,6 +117,17 @@ class LocalNotification {
     );
   }
 
+  /// One id per logical push. The same push can arrive twice (user topic and device token), and one id makes the
+  /// second banner replace the first.
+  @visibleForTesting
+  static int pushNotificationId(RemoteMessage message) {
+    final String tag = message.notification?.android?.tag ?? '';
+    final String basis = tag.isNotEmpty
+        ? tag
+        : '${message.notification?.title}${message.notification?.body}${jsonEncode(message.data)}';
+    return basis.hashCode & 0x7fffffff;
+  }
+
   /// Shows a heads-up local notification for a foreground FCM push message.
   Future<void> showPushNotification(RemoteMessage message) async {
     final RemoteNotification? notification = message.notification;
@@ -166,11 +145,13 @@ class LocalNotification {
       channelDescription: resolvedChannelDescription,
       importance: Importance.high,
       priority: Priority.high,
+      tag: message.notification?.android?.tag,
+      onlyAlertOnce: true,
     );
     final NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
 
     await flutterLocalNotificationsPlugin.show(
-      id: notification.hashCode,
+      id: pushNotificationId(message),
       title: notification.title,
       body: notification.body,
       notificationDetails: platformDetails,

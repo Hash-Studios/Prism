@@ -1,4 +1,1 @@
-import 'package:flutter/material.dart';
-
-/// Black or white, whichever reads on top of [background].
-Color onColor(Color background) => background.computeLuminance() > 0.179 ? Colors.black : Colors.white;
+export 'package:Prism/theme/contrast.dart';

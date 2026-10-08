@@ -17,11 +17,13 @@ import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
+import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:firebase_remote_config_platform_interface/firebase_remote_config_platform_interface.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -31,6 +33,8 @@ class _MockPersonalizedFeedBloc extends MockBloc<PersonalizedFeedEvent, Personal
     implements PersonalizedFeedBloc {}
 
 class _MockSaveInterestsUseCase extends Mock implements SaveInterestsUseCase {}
+
+class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
 
 class _FailingClearStore extends TasteSignalStore {
   _FailingClearStore(super.settingsLocal);
@@ -276,6 +280,8 @@ void main() {
     whenListen(bloc, const Stream<PersonalizedFeedState>.empty(), initialState: failedState);
     when(() => bloc.close()).thenAnswer((_) async {});
     getIt.registerSingleton<PersonalizedFeedBloc>(bloc);
+    final _MockWotdBloc wotd = _MockWotdBloc();
+    when(() => wotd.state).thenReturn(WotdState.initial());
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox());
       await getIt.reset();
@@ -293,7 +299,12 @@ void main() {
         home: Scaffold(
           body: Column(
             children: <Widget>[
-              Expanded(child: PersonalizedFeedScreen(onTuneTap: () {})),
+              Expanded(
+                child: BlocProvider<WotdBloc>.value(
+                  value: wotd,
+                  child: PersonalizedFeedScreen(onTuneTap: () {}),
+                ),
+              ),
               Builder(
                 builder: (BuildContext context) => TextButton(
                   onPressed: () => showModalBottomSheet<void>(
@@ -323,7 +334,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
-    verify(() => bloc.add(const PersonalizedFeedEvent.refreshRequested())).called(2);
+    verify(() => bloc.add(const PersonalizedFeedEvent.settingsChanged())).called(2);
   });
 
   testWidgets('settings sheet remains usable on a short screen with keyboard inset', (tester) async {

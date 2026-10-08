@@ -83,6 +83,27 @@ void main() {
       expect(_contrastRatio(bodyColor, theme.colorScheme.surface), greaterThanOrEqualTo(3));
     }
   });
+
+  testWidgets('error and offline states are live regions, the other kinds are not', (tester) async {
+    final handle = tester.ensureSemantics();
+    for (final entry in <GlintStateKind, bool>{
+      GlintStateKind.error: true,
+      GlintStateKind.offline: true,
+      GlintStateKind.empty: false,
+      GlintStateKind.nothingNew: false,
+      GlintStateKind.loading: false,
+    }.entries) {
+      await tester.pumpWidget(host(GlintState(kind: entry.key, title: 'Title')));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Title')),
+        isSemantics(isLiveRegion: entry.value),
+        reason: '${entry.key}',
+      );
+    }
+    handle.dispose();
+  });
 }
 
 double _contrastRatio(Color foreground, Color background) {

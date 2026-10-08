@@ -76,4 +76,59 @@ void main() {
     expect(store.items(), isEmpty);
     expect(find.text('No wallpapers yet'), findsOneWidget);
   });
+
+  testWidgets('the newest home row and the newest lock row show a Current badge', (tester) async {
+    await record('a', 'home', DateTime(2026, 1, 1, 9));
+    await record('b', 'lock', DateTime(2026, 1, 2, 9));
+    await record('c', 'home', DateTime(2026, 1, 3, 9));
+    await tester.pumpWidget(const MaterialApp(home: WallpaperHistoryScreen()));
+    await tester.pump();
+
+    final Iterable<String> current = tester
+        .widgetList<AppliedWallpaperTile>(find.byType(AppliedWallpaperTile))
+        .where((tile) => tile.isCurrent)
+        .map((tile) => tile.item.id);
+    expect(current.toSet(), {'c', 'b'});
+    expect(find.text('Current'), findsNWidgets(2));
+  });
+
+  testWidgets('a both row is current for both screens with one badge', (tester) async {
+    await record('a', 'home', DateTime(2026, 1, 1, 9));
+    await record('b', 'both', DateTime(2026, 1, 2, 9));
+    await tester.pumpWidget(const MaterialApp(home: WallpaperHistoryScreen()));
+    await tester.pump();
+
+    expect(find.text('Current'), findsOneWidget);
+  });
+
+  testWidgets('a long press removes the row and Undo brings it back', (tester) async {
+    await record('a', 'home', DateTime(2026, 1, 1, 9));
+    await record('b', 'lock', DateTime(2026, 1, 2, 9));
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: WallpaperHistoryScreen())));
+    await tester.pump();
+
+    await tester.longPress(find.byKey(const ValueKey('b')).first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(store.items().map((item) => item.id), ['a']);
+    expect(find.text('Removed from history'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(store.items().map((item) => item.id), ['b', 'a']);
+  });
+
+  testWidgets('a swipe removes the row', (tester) async {
+    await record('a', 'home', DateTime(2026, 1, 1, 9));
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: WallpaperHistoryScreen())));
+    await tester.pump();
+
+    await tester.drag(find.byType(AppliedWallpaperTile), const Offset(-400, 0));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(store.items(), isEmpty);
+    expect(find.text('No wallpapers yet'), findsOneWidget);
+  });
 }

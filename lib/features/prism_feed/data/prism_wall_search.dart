@@ -19,6 +19,10 @@ class PrismWallSearch {
   final UserBlockRepository _userBlockRepository;
 
   static const int _minQueryLength = 2;
+
+  /// `array-contains-any` and `whereIn` take at most 30 values: 10 words with 3 spellings each.
+  static const int _maxTokens = 10;
+  static const int _maxFilterValues = 30;
   static const String _failedPrecondition = 'failed-precondition';
 
   /// Never throws. A failed query, such as a missing index, counts as no match.
@@ -81,15 +85,30 @@ class PrismWallSearch {
     }
   }
 
-  List<String> _tagVariants(String query) =>
-      <String>{query.toLowerCase(), query, _titleCase(query)}.toList(growable: false);
+  /// Each word of the query as a tag, in the spellings creators use. The whole phrase fills what is left.
+  List<String> _tagVariants(String query) {
+    final Set<String> variants = <String>{};
+    for (final String token in _tokens(query)) {
+      variants.addAll(<String>[token.toLowerCase(), token, _titleCase(token)]);
+    }
+    for (final String phrase in <String>[query.toLowerCase(), query, _titleCase(query)]) {
+      if (variants.length < _maxFilterValues) variants.add(phrase);
+    }
+    return variants.take(_maxFilterValues).toList(growable: false);
+  }
+
+  List<String> _tokens(String query) =>
+      query.split(RegExp(r'\s+')).where((String word) => word.isNotEmpty).toSet().take(_maxTokens).toList();
 
   /// `walls.category` holds the catalogue's category names, so a known name matches exactly.
-  List<String> _categoryVariants(String query) => <String>{
-    _titleCase(query),
-    for (final definition in category_data.categoryDefinitions)
-      if (definition.name.toLowerCase() == query.toLowerCase()) definition.name,
-  }.toList(growable: false);
+  List<String> _categoryVariants(String query) {
+    final Set<String> words = <String>{query.toLowerCase(), ..._tokens(query).map((String t) => t.toLowerCase())};
+    return <String>{
+      _titleCase(query),
+      for (final definition in category_data.categoryDefinitions)
+        if (words.contains(definition.name.toLowerCase())) definition.name,
+    }.take(_maxFilterValues).toList(growable: false);
+  }
 
   String _titleCase(String value) => value
       .split(RegExp(r'\s+'))

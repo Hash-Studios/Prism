@@ -55,12 +55,13 @@ extension OnboardingV2EventPatterns on OnboardingV2Event {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AuthCompleted value)?  authCompleted,TResult Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult Function( _LoadRetried value)?  loadRetried,TResult Function( _InterestsSkipped value)?  interestsSkipped,TResult Function( _StarterPackSkipped value)?  starterPackSkipped,TResult Function( _InterestToggled value)?  interestToggled,TResult Function( _InterestsConfirmed value)?  interestsConfirmed,TResult Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult Function( _PaywallResultReceived value)?  paywallResultReceived,TResult Function( _StepBack value)?  stepBack,TResult Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AuthCompleted value)?  authCompleted,TResult Function( _GuestBrowseStarted value)?  guestBrowseStarted,TResult Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult Function( _LoadRetried value)?  loadRetried,TResult Function( _InterestsSkipped value)?  interestsSkipped,TResult Function( _StarterPackSkipped value)?  starterPackSkipped,TResult Function( _InterestToggled value)?  interestToggled,TResult Function( _InterestsConfirmed value)?  interestsConfirmed,TResult Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult Function( _PaywallResultReceived value)?  paywallResultReceived,TResult Function( _StepBack value)?  stepBack,TResult Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _AuthCompleted() when authCompleted != null:
-return authCompleted(_that);case _AuthLoadingChanged() when authLoadingChanged != null:
+return authCompleted(_that);case _GuestBrowseStarted() when guestBrowseStarted != null:
+return guestBrowseStarted(_that);case _AuthLoadingChanged() when authLoadingChanged != null:
 return authLoadingChanged(_that);case _LoadRetried() when loadRetried != null:
 return loadRetried(_that);case _InterestsSkipped() when interestsSkipped != null:
 return interestsSkipped(_that);case _StarterPackSkipped() when starterPackSkipped != null:
@@ -94,12 +95,13 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AuthCompleted value)  authCompleted,required TResult Function( _AuthLoadingChanged value)  authLoadingChanged,required TResult Function( _LoadRetried value)  loadRetried,required TResult Function( _InterestsSkipped value)  interestsSkipped,required TResult Function( _StarterPackSkipped value)  starterPackSkipped,required TResult Function( _InterestToggled value)  interestToggled,required TResult Function( _InterestsConfirmed value)  interestsConfirmed,required TResult Function( _CreatorFollowToggled value)  creatorFollowToggled,required TResult Function( _StarterPackConfirmed value)  starterPackConfirmed,required TResult Function( _FirstWallpaperActionRequested value)  firstWallpaperActionRequested,required TResult Function( _FirstWallpaperActionCompleted value)  firstWallpaperActionCompleted,required TResult Function( _FirstWallpaperStepContinued value)  firstWallpaperStepContinued,required TResult Function( _PaywallResultReceived value)  paywallResultReceived,required TResult Function( _StepBack value)  stepBack,required TResult Function( _AiGenerationRequested value)  aiGenerationRequested,required TResult Function( _AiGenerationCompleted value)  aiGenerationCompleted,required TResult Function( _AiGenerationStepContinued value)  aiGenerationStepContinued,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AuthCompleted value)  authCompleted,required TResult Function( _GuestBrowseStarted value)  guestBrowseStarted,required TResult Function( _AuthLoadingChanged value)  authLoadingChanged,required TResult Function( _LoadRetried value)  loadRetried,required TResult Function( _InterestsSkipped value)  interestsSkipped,required TResult Function( _StarterPackSkipped value)  starterPackSkipped,required TResult Function( _InterestToggled value)  interestToggled,required TResult Function( _InterestsConfirmed value)  interestsConfirmed,required TResult Function( _CreatorFollowToggled value)  creatorFollowToggled,required TResult Function( _StarterPackConfirmed value)  starterPackConfirmed,required TResult Function( _FirstWallpaperActionRequested value)  firstWallpaperActionRequested,required TResult Function( _FirstWallpaperActionCompleted value)  firstWallpaperActionCompleted,required TResult Function( _FirstWallpaperStepContinued value)  firstWallpaperStepContinued,required TResult Function( _PaywallResultReceived value)  paywallResultReceived,required TResult Function( _StepBack value)  stepBack,required TResult Function( _AiGenerationRequested value)  aiGenerationRequested,required TResult Function( _AiGenerationCompleted value)  aiGenerationCompleted,required TResult Function( _AiGenerationStepContinued value)  aiGenerationStepContinued,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _AuthCompleted():
-return authCompleted(_that);case _AuthLoadingChanged():
+return authCompleted(_that);case _GuestBrowseStarted():
+return guestBrowseStarted(_that);case _AuthLoadingChanged():
 return authLoadingChanged(_that);case _LoadRetried():
 return loadRetried(_that);case _InterestsSkipped():
 return interestsSkipped(_that);case _StarterPackSkipped():
@@ -132,12 +134,13 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AuthCompleted value)?  authCompleted,TResult? Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult? Function( _LoadRetried value)?  loadRetried,TResult? Function( _InterestsSkipped value)?  interestsSkipped,TResult? Function( _StarterPackSkipped value)?  starterPackSkipped,TResult? Function( _InterestToggled value)?  interestToggled,TResult? Function( _InterestsConfirmed value)?  interestsConfirmed,TResult? Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult? Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult? Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult? Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult? Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult? Function( _PaywallResultReceived value)?  paywallResultReceived,TResult? Function( _StepBack value)?  stepBack,TResult? Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult? Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult? Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AuthCompleted value)?  authCompleted,TResult? Function( _GuestBrowseStarted value)?  guestBrowseStarted,TResult? Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult? Function( _LoadRetried value)?  loadRetried,TResult? Function( _InterestsSkipped value)?  interestsSkipped,TResult? Function( _StarterPackSkipped value)?  starterPackSkipped,TResult? Function( _InterestToggled value)?  interestToggled,TResult? Function( _InterestsConfirmed value)?  interestsConfirmed,TResult? Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult? Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult? Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult? Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult? Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult? Function( _PaywallResultReceived value)?  paywallResultReceived,TResult? Function( _StepBack value)?  stepBack,TResult? Function( _AiGenerationRequested value)?  aiGenerationRequested,TResult? Function( _AiGenerationCompleted value)?  aiGenerationCompleted,TResult? Function( _AiGenerationStepContinued value)?  aiGenerationStepContinued,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _AuthCompleted() when authCompleted != null:
-return authCompleted(_that);case _AuthLoadingChanged() when authLoadingChanged != null:
+return authCompleted(_that);case _GuestBrowseStarted() when guestBrowseStarted != null:
+return guestBrowseStarted(_that);case _AuthLoadingChanged() when authLoadingChanged != null:
 return authLoadingChanged(_that);case _LoadRetried() when loadRetried != null:
 return loadRetried(_that);case _InterestsSkipped() when interestsSkipped != null:
 return interestsSkipped(_that);case _StarterPackSkipped() when starterPackSkipped != null:
@@ -170,11 +173,12 @@ return aiGenerationStepContinued(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  authCompleted,TResult Function( bool isLoading)?  authLoadingChanged,TResult Function()?  loadRetried,TResult Function()?  interestsSkipped,TResult Function()?  starterPackSkipped,TResult Function( String categoryName)?  interestToggled,TResult Function()?  interestsConfirmed,TResult Function( String creatorEmail)?  creatorFollowToggled,TResult Function()?  starterPackConfirmed,TResult Function()?  firstWallpaperActionRequested,TResult Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult Function()?  firstWallpaperStepContinued,TResult Function( bool didPurchase)?  paywallResultReceived,TResult Function()?  stepBack,TResult Function( String targetSize)?  aiGenerationRequested,TResult Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult Function()?  aiGenerationStepContinued,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  authCompleted,TResult Function()?  guestBrowseStarted,TResult Function( bool isLoading)?  authLoadingChanged,TResult Function()?  loadRetried,TResult Function()?  interestsSkipped,TResult Function()?  starterPackSkipped,TResult Function( String categoryName)?  interestToggled,TResult Function()?  interestsConfirmed,TResult Function( String creatorEmail)?  creatorFollowToggled,TResult Function()?  starterPackConfirmed,TResult Function()?  firstWallpaperActionRequested,TResult Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)?  firstWallpaperActionCompleted,TResult Function()?  firstWallpaperStepContinued,TResult Function( bool didPurchase)?  paywallResultReceived,TResult Function()?  stepBack,TResult Function( String targetSize)?  aiGenerationRequested,TResult Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult Function()?  aiGenerationStepContinued,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AuthCompleted() when authCompleted != null:
-return authCompleted();case _AuthLoadingChanged() when authLoadingChanged != null:
+return authCompleted();case _GuestBrowseStarted() when guestBrowseStarted != null:
+return guestBrowseStarted();case _AuthLoadingChanged() when authLoadingChanged != null:
 return authLoadingChanged(_that.isLoading);case _LoadRetried() when loadRetried != null:
 return loadRetried();case _InterestsSkipped() when interestsSkipped != null:
 return interestsSkipped();case _StarterPackSkipped() when starterPackSkipped != null:
@@ -184,7 +188,7 @@ return interestsConfirmed();case _CreatorFollowToggled() when creatorFollowToggl
 return creatorFollowToggled(_that.creatorEmail);case _StarterPackConfirmed() when starterPackConfirmed != null:
 return starterPackConfirmed();case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
 return firstWallpaperActionRequested();case _FirstWallpaperActionCompleted() when firstWallpaperActionCompleted != null:
-return firstWallpaperActionCompleted(_that.success,_that.elapsedMs);case _FirstWallpaperStepContinued() when firstWallpaperStepContinued != null:
+return firstWallpaperActionCompleted(_that.success,_that.elapsedMs,_that.errorCode,_that.target);case _FirstWallpaperStepContinued() when firstWallpaperStepContinued != null:
 return firstWallpaperStepContinued();case _PaywallResultReceived() when paywallResultReceived != null:
 return paywallResultReceived(_that.didPurchase);case _StepBack() when stepBack != null:
 return stepBack();case _AiGenerationRequested() when aiGenerationRequested != null:
@@ -208,11 +212,12 @@ return aiGenerationStepContinued();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  authCompleted,required TResult Function( bool isLoading)  authLoadingChanged,required TResult Function()  loadRetried,required TResult Function()  interestsSkipped,required TResult Function()  starterPackSkipped,required TResult Function( String categoryName)  interestToggled,required TResult Function()  interestsConfirmed,required TResult Function( String creatorEmail)  creatorFollowToggled,required TResult Function()  starterPackConfirmed,required TResult Function()  firstWallpaperActionRequested,required TResult Function( bool success,  int elapsedMs)  firstWallpaperActionCompleted,required TResult Function()  firstWallpaperStepContinued,required TResult Function( bool didPurchase)  paywallResultReceived,required TResult Function()  stepBack,required TResult Function( String targetSize)  aiGenerationRequested,required TResult Function( String? imageUrl,  String? thumbnailUrl)  aiGenerationCompleted,required TResult Function()  aiGenerationStepContinued,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  authCompleted,required TResult Function()  guestBrowseStarted,required TResult Function( bool isLoading)  authLoadingChanged,required TResult Function()  loadRetried,required TResult Function()  interestsSkipped,required TResult Function()  starterPackSkipped,required TResult Function( String categoryName)  interestToggled,required TResult Function()  interestsConfirmed,required TResult Function( String creatorEmail)  creatorFollowToggled,required TResult Function()  starterPackConfirmed,required TResult Function()  firstWallpaperActionRequested,required TResult Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)  firstWallpaperActionCompleted,required TResult Function()  firstWallpaperStepContinued,required TResult Function( bool didPurchase)  paywallResultReceived,required TResult Function()  stepBack,required TResult Function( String targetSize)  aiGenerationRequested,required TResult Function( String? imageUrl,  String? thumbnailUrl)  aiGenerationCompleted,required TResult Function()  aiGenerationStepContinued,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _AuthCompleted():
-return authCompleted();case _AuthLoadingChanged():
+return authCompleted();case _GuestBrowseStarted():
+return guestBrowseStarted();case _AuthLoadingChanged():
 return authLoadingChanged(_that.isLoading);case _LoadRetried():
 return loadRetried();case _InterestsSkipped():
 return interestsSkipped();case _StarterPackSkipped():
@@ -222,7 +227,7 @@ return interestsConfirmed();case _CreatorFollowToggled():
 return creatorFollowToggled(_that.creatorEmail);case _StarterPackConfirmed():
 return starterPackConfirmed();case _FirstWallpaperActionRequested():
 return firstWallpaperActionRequested();case _FirstWallpaperActionCompleted():
-return firstWallpaperActionCompleted(_that.success,_that.elapsedMs);case _FirstWallpaperStepContinued():
+return firstWallpaperActionCompleted(_that.success,_that.elapsedMs,_that.errorCode,_that.target);case _FirstWallpaperStepContinued():
 return firstWallpaperStepContinued();case _PaywallResultReceived():
 return paywallResultReceived(_that.didPurchase);case _StepBack():
 return stepBack();case _AiGenerationRequested():
@@ -245,11 +250,12 @@ return aiGenerationStepContinued();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  authCompleted,TResult? Function( bool isLoading)?  authLoadingChanged,TResult? Function()?  loadRetried,TResult? Function()?  interestsSkipped,TResult? Function()?  starterPackSkipped,TResult? Function( String categoryName)?  interestToggled,TResult? Function()?  interestsConfirmed,TResult? Function( String creatorEmail)?  creatorFollowToggled,TResult? Function()?  starterPackConfirmed,TResult? Function()?  firstWallpaperActionRequested,TResult? Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult? Function()?  firstWallpaperStepContinued,TResult? Function( bool didPurchase)?  paywallResultReceived,TResult? Function()?  stepBack,TResult? Function( String targetSize)?  aiGenerationRequested,TResult? Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult? Function()?  aiGenerationStepContinued,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  authCompleted,TResult? Function()?  guestBrowseStarted,TResult? Function( bool isLoading)?  authLoadingChanged,TResult? Function()?  loadRetried,TResult? Function()?  interestsSkipped,TResult? Function()?  starterPackSkipped,TResult? Function( String categoryName)?  interestToggled,TResult? Function()?  interestsConfirmed,TResult? Function( String creatorEmail)?  creatorFollowToggled,TResult? Function()?  starterPackConfirmed,TResult? Function()?  firstWallpaperActionRequested,TResult? Function( bool success,  int elapsedMs,  String? errorCode,  WallpaperTarget? target)?  firstWallpaperActionCompleted,TResult? Function()?  firstWallpaperStepContinued,TResult? Function( bool didPurchase)?  paywallResultReceived,TResult? Function()?  stepBack,TResult? Function( String targetSize)?  aiGenerationRequested,TResult? Function( String? imageUrl,  String? thumbnailUrl)?  aiGenerationCompleted,TResult? Function()?  aiGenerationStepContinued,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AuthCompleted() when authCompleted != null:
-return authCompleted();case _AuthLoadingChanged() when authLoadingChanged != null:
+return authCompleted();case _GuestBrowseStarted() when guestBrowseStarted != null:
+return guestBrowseStarted();case _AuthLoadingChanged() when authLoadingChanged != null:
 return authLoadingChanged(_that.isLoading);case _LoadRetried() when loadRetried != null:
 return loadRetried();case _InterestsSkipped() when interestsSkipped != null:
 return interestsSkipped();case _StarterPackSkipped() when starterPackSkipped != null:
@@ -259,7 +265,7 @@ return interestsConfirmed();case _CreatorFollowToggled() when creatorFollowToggl
 return creatorFollowToggled(_that.creatorEmail);case _StarterPackConfirmed() when starterPackConfirmed != null:
 return starterPackConfirmed();case _FirstWallpaperActionRequested() when firstWallpaperActionRequested != null:
 return firstWallpaperActionRequested();case _FirstWallpaperActionCompleted() when firstWallpaperActionCompleted != null:
-return firstWallpaperActionCompleted(_that.success,_that.elapsedMs);case _FirstWallpaperStepContinued() when firstWallpaperStepContinued != null:
+return firstWallpaperActionCompleted(_that.success,_that.elapsedMs,_that.errorCode,_that.target);case _FirstWallpaperStepContinued() when firstWallpaperStepContinued != null:
 return firstWallpaperStepContinued();case _PaywallResultReceived() when paywallResultReceived != null:
 return paywallResultReceived(_that.didPurchase);case _StepBack() when stepBack != null:
 return stepBack();case _AiGenerationRequested() when aiGenerationRequested != null:
@@ -329,6 +335,38 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'OnboardingV2Event.authCompleted()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _GuestBrowseStarted implements OnboardingV2Event {
+  const _GuestBrowseStarted();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _GuestBrowseStarted);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'OnboardingV2Event.guestBrowseStarted()';
 }
 
 
@@ -731,11 +769,13 @@ String toString() {
 
 
 class _FirstWallpaperActionCompleted implements OnboardingV2Event {
-  const _FirstWallpaperActionCompleted({required this.success, required this.elapsedMs});
+  const _FirstWallpaperActionCompleted({required this.success, required this.elapsedMs, this.errorCode, this.target});
   
 
  final  bool success;
  final  int elapsedMs;
+ final  String? errorCode;
+ final  WallpaperTarget? target;
 
 /// Create a copy of OnboardingV2Event
 /// with the given fields replaced by the non-null parameter values.
@@ -747,16 +787,16 @@ _$FirstWallpaperActionCompletedCopyWith<_FirstWallpaperActionCompleted> get copy
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FirstWallpaperActionCompleted&&(identical(other.success, success) || other.success == success)&&(identical(other.elapsedMs, elapsedMs) || other.elapsedMs == elapsedMs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FirstWallpaperActionCompleted&&(identical(other.success, success) || other.success == success)&&(identical(other.elapsedMs, elapsedMs) || other.elapsedMs == elapsedMs)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.target, target) || other.target == target));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,success,elapsedMs);
+int get hashCode => Object.hash(runtimeType,success,elapsedMs,errorCode,target);
 
 @override
 String toString() {
-  return 'OnboardingV2Event.firstWallpaperActionCompleted(success: $success, elapsedMs: $elapsedMs)';
+  return 'OnboardingV2Event.firstWallpaperActionCompleted(success: $success, elapsedMs: $elapsedMs, errorCode: $errorCode, target: $target)';
 }
 
 
@@ -767,7 +807,7 @@ abstract mixin class _$FirstWallpaperActionCompletedCopyWith<$Res> implements $O
   factory _$FirstWallpaperActionCompletedCopyWith(_FirstWallpaperActionCompleted value, $Res Function(_FirstWallpaperActionCompleted) _then) = __$FirstWallpaperActionCompletedCopyWithImpl;
 @useResult
 $Res call({
- bool success, int elapsedMs
+ bool success, int elapsedMs, String? errorCode, WallpaperTarget? target
 });
 
 
@@ -784,11 +824,13 @@ class __$FirstWallpaperActionCompletedCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingV2Event
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? success = null,Object? elapsedMs = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? success = null,Object? elapsedMs = null,Object? errorCode = freezed,Object? target = freezed,}) {
   return _then(_FirstWallpaperActionCompleted(
 success: null == success ? _self.success : success // ignore: cast_nullable_to_non_nullable
 as bool,elapsedMs: null == elapsedMs ? _self.elapsedMs : elapsedMs // ignore: cast_nullable_to_non_nullable
-as int,
+as int,errorCode: freezed == errorCode ? _self.errorCode : errorCode // ignore: cast_nullable_to_non_nullable
+as String?,target: freezed == target ? _self.target : target // ignore: cast_nullable_to_non_nullable
+as WallpaperTarget?,
   ));
 }
 
@@ -1916,7 +1958,9 @@ as String?,
 /// @nodoc
 mixin _$OnboardingWallpaperData {
 
- OnboardingWallpaperVm? get wallpaper; FirstWallpaperStatus get status;
+ OnboardingWallpaperVm? get wallpaper; FirstWallpaperStatus get status;/// Why the last action failed. `PHOTO_PERMISSION_DENIED` on iOS means Photos access is off.
+ String? get errorCode;/// The screen the wallpaper was set on (Android).
+ WallpaperTarget? get target;
 /// Create a copy of OnboardingWallpaperData
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1927,16 +1971,16 @@ $OnboardingWallpaperDataCopyWith<OnboardingWallpaperData> get copyWith => _$Onbo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingWallpaperData&&(identical(other.wallpaper, wallpaper) || other.wallpaper == wallpaper)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingWallpaperData&&(identical(other.wallpaper, wallpaper) || other.wallpaper == wallpaper)&&(identical(other.status, status) || other.status == status)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.target, target) || other.target == target));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,wallpaper,status);
+int get hashCode => Object.hash(runtimeType,wallpaper,status,errorCode,target);
 
 @override
 String toString() {
-  return 'OnboardingWallpaperData(wallpaper: $wallpaper, status: $status)';
+  return 'OnboardingWallpaperData(wallpaper: $wallpaper, status: $status, errorCode: $errorCode, target: $target)';
 }
 
 
@@ -1947,7 +1991,7 @@ abstract mixin class $OnboardingWallpaperDataCopyWith<$Res>  {
   factory $OnboardingWallpaperDataCopyWith(OnboardingWallpaperData value, $Res Function(OnboardingWallpaperData) _then) = _$OnboardingWallpaperDataCopyWithImpl;
 @useResult
 $Res call({
- OnboardingWallpaperVm? wallpaper, FirstWallpaperStatus status
+ OnboardingWallpaperVm? wallpaper, FirstWallpaperStatus status, String? errorCode, WallpaperTarget? target
 });
 
 
@@ -1964,11 +2008,13 @@ class _$OnboardingWallpaperDataCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingWallpaperData
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? wallpaper = freezed,Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? wallpaper = freezed,Object? status = null,Object? errorCode = freezed,Object? target = freezed,}) {
   return _then(_self.copyWith(
 wallpaper: freezed == wallpaper ? _self.wallpaper : wallpaper // ignore: cast_nullable_to_non_nullable
 as OnboardingWallpaperVm?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as FirstWallpaperStatus,
+as FirstWallpaperStatus,errorCode: freezed == errorCode ? _self.errorCode : errorCode // ignore: cast_nullable_to_non_nullable
+as String?,target: freezed == target ? _self.target : target // ignore: cast_nullable_to_non_nullable
+as WallpaperTarget?,
   ));
 }
 /// Create a copy of OnboardingWallpaperData
@@ -2065,10 +2111,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( OnboardingWallpaperVm? wallpaper,  FirstWallpaperStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( OnboardingWallpaperVm? wallpaper,  FirstWallpaperStatus status,  String? errorCode,  WallpaperTarget? target)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperData() when $default != null:
-return $default(_that.wallpaper,_that.status);case _:
+return $default(_that.wallpaper,_that.status,_that.errorCode,_that.target);case _:
   return orElse();
 
 }
@@ -2086,10 +2132,10 @@ return $default(_that.wallpaper,_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( OnboardingWallpaperVm? wallpaper,  FirstWallpaperStatus status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( OnboardingWallpaperVm? wallpaper,  FirstWallpaperStatus status,  String? errorCode,  WallpaperTarget? target)  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperData():
-return $default(_that.wallpaper,_that.status);case _:
+return $default(_that.wallpaper,_that.status,_that.errorCode,_that.target);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -2106,10 +2152,10 @@ return $default(_that.wallpaper,_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( OnboardingWallpaperVm? wallpaper,  FirstWallpaperStatus status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( OnboardingWallpaperVm? wallpaper,  FirstWallpaperStatus status,  String? errorCode,  WallpaperTarget? target)?  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperData() when $default != null:
-return $default(_that.wallpaper,_that.status);case _:
+return $default(_that.wallpaper,_that.status,_that.errorCode,_that.target);case _:
   return null;
 
 }
@@ -2121,11 +2167,15 @@ return $default(_that.wallpaper,_that.status);case _:
 
 
 class _OnboardingWallpaperData implements OnboardingWallpaperData {
-  const _OnboardingWallpaperData({this.wallpaper, required this.status});
+  const _OnboardingWallpaperData({this.wallpaper, required this.status, this.errorCode, this.target});
   
 
 @override final  OnboardingWallpaperVm? wallpaper;
 @override final  FirstWallpaperStatus status;
+/// Why the last action failed. `PHOTO_PERMISSION_DENIED` on iOS means Photos access is off.
+@override final  String? errorCode;
+/// The screen the wallpaper was set on (Android).
+@override final  WallpaperTarget? target;
 
 /// Create a copy of OnboardingWallpaperData
 /// with the given fields replaced by the non-null parameter values.
@@ -2137,16 +2187,16 @@ _$OnboardingWallpaperDataCopyWith<_OnboardingWallpaperData> get copyWith => __$O
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingWallpaperData&&(identical(other.wallpaper, wallpaper) || other.wallpaper == wallpaper)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingWallpaperData&&(identical(other.wallpaper, wallpaper) || other.wallpaper == wallpaper)&&(identical(other.status, status) || other.status == status)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.target, target) || other.target == target));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,wallpaper,status);
+int get hashCode => Object.hash(runtimeType,wallpaper,status,errorCode,target);
 
 @override
 String toString() {
-  return 'OnboardingWallpaperData(wallpaper: $wallpaper, status: $status)';
+  return 'OnboardingWallpaperData(wallpaper: $wallpaper, status: $status, errorCode: $errorCode, target: $target)';
 }
 
 
@@ -2157,7 +2207,7 @@ abstract mixin class _$OnboardingWallpaperDataCopyWith<$Res> implements $Onboard
   factory _$OnboardingWallpaperDataCopyWith(_OnboardingWallpaperData value, $Res Function(_OnboardingWallpaperData) _then) = __$OnboardingWallpaperDataCopyWithImpl;
 @override @useResult
 $Res call({
- OnboardingWallpaperVm? wallpaper, FirstWallpaperStatus status
+ OnboardingWallpaperVm? wallpaper, FirstWallpaperStatus status, String? errorCode, WallpaperTarget? target
 });
 
 
@@ -2174,11 +2224,13 @@ class __$OnboardingWallpaperDataCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingWallpaperData
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? wallpaper = freezed,Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? wallpaper = freezed,Object? status = null,Object? errorCode = freezed,Object? target = freezed,}) {
   return _then(_OnboardingWallpaperData(
 wallpaper: freezed == wallpaper ? _self.wallpaper : wallpaper // ignore: cast_nullable_to_non_nullable
 as OnboardingWallpaperVm?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as FirstWallpaperStatus,
+as FirstWallpaperStatus,errorCode: freezed == errorCode ? _self.errorCode : errorCode // ignore: cast_nullable_to_non_nullable
+as String?,target: freezed == target ? _self.target : target // ignore: cast_nullable_to_non_nullable
+as WallpaperTarget?,
   ));
 }
 
@@ -2200,7 +2252,8 @@ $OnboardingWallpaperVmCopyWith<$Res>? get wallpaper {
 /// @nodoc
 mixin _$OnboardingV2State {
 
- OnboardingV2Step get step; LoadStatus get loadStatus; ActionStatus get actionStatus; bool get isAuthLoading; OnboardingInterestsData get interestsData; OnboardingStarterPackData get starterPackData; OnboardingWallpaperData get wallpaperData; OnboardingAiData get aiData; bool get skipInterests; bool get skipStarterPack; OnboardingV2NavRequest? get navRequest;
+ OnboardingV2Step get step; LoadStatus get loadStatus; ActionStatus get actionStatus; bool get isAuthLoading; OnboardingInterestsData get interestsData; OnboardingStarterPackData get starterPackData; OnboardingWallpaperData get wallpaperData; OnboardingAiData get aiData; bool get skipInterests; bool get skipStarterPack;/// iOS guest path: the user browses without an account and only picks interests.
+ bool get isGuest; OnboardingV2NavRequest? get navRequest;
 /// Create a copy of OnboardingV2State
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2211,16 +2264,16 @@ $OnboardingV2StateCopyWith<OnboardingV2State> get copyWith => _$OnboardingV2Stat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingV2State&&(identical(other.step, step) || other.step == step)&&(identical(other.loadStatus, loadStatus) || other.loadStatus == loadStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.isAuthLoading, isAuthLoading) || other.isAuthLoading == isAuthLoading)&&(identical(other.interestsData, interestsData) || other.interestsData == interestsData)&&(identical(other.starterPackData, starterPackData) || other.starterPackData == starterPackData)&&(identical(other.wallpaperData, wallpaperData) || other.wallpaperData == wallpaperData)&&(identical(other.aiData, aiData) || other.aiData == aiData)&&(identical(other.skipInterests, skipInterests) || other.skipInterests == skipInterests)&&(identical(other.skipStarterPack, skipStarterPack) || other.skipStarterPack == skipStarterPack)&&(identical(other.navRequest, navRequest) || other.navRequest == navRequest));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingV2State&&(identical(other.step, step) || other.step == step)&&(identical(other.loadStatus, loadStatus) || other.loadStatus == loadStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.isAuthLoading, isAuthLoading) || other.isAuthLoading == isAuthLoading)&&(identical(other.interestsData, interestsData) || other.interestsData == interestsData)&&(identical(other.starterPackData, starterPackData) || other.starterPackData == starterPackData)&&(identical(other.wallpaperData, wallpaperData) || other.wallpaperData == wallpaperData)&&(identical(other.aiData, aiData) || other.aiData == aiData)&&(identical(other.skipInterests, skipInterests) || other.skipInterests == skipInterests)&&(identical(other.skipStarterPack, skipStarterPack) || other.skipStarterPack == skipStarterPack)&&(identical(other.isGuest, isGuest) || other.isGuest == isGuest)&&(identical(other.navRequest, navRequest) || other.navRequest == navRequest));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,step,loadStatus,actionStatus,isAuthLoading,interestsData,starterPackData,wallpaperData,aiData,skipInterests,skipStarterPack,navRequest);
+int get hashCode => Object.hash(runtimeType,step,loadStatus,actionStatus,isAuthLoading,interestsData,starterPackData,wallpaperData,aiData,skipInterests,skipStarterPack,isGuest,navRequest);
 
 @override
 String toString() {
-  return 'OnboardingV2State(step: $step, loadStatus: $loadStatus, actionStatus: $actionStatus, isAuthLoading: $isAuthLoading, interestsData: $interestsData, starterPackData: $starterPackData, wallpaperData: $wallpaperData, aiData: $aiData, skipInterests: $skipInterests, skipStarterPack: $skipStarterPack, navRequest: $navRequest)';
+  return 'OnboardingV2State(step: $step, loadStatus: $loadStatus, actionStatus: $actionStatus, isAuthLoading: $isAuthLoading, interestsData: $interestsData, starterPackData: $starterPackData, wallpaperData: $wallpaperData, aiData: $aiData, skipInterests: $skipInterests, skipStarterPack: $skipStarterPack, isGuest: $isGuest, navRequest: $navRequest)';
 }
 
 
@@ -2231,7 +2284,7 @@ abstract mixin class $OnboardingV2StateCopyWith<$Res>  {
   factory $OnboardingV2StateCopyWith(OnboardingV2State value, $Res Function(OnboardingV2State) _then) = _$OnboardingV2StateCopyWithImpl;
 @useResult
 $Res call({
- OnboardingV2Step step, LoadStatus loadStatus, ActionStatus actionStatus, bool isAuthLoading, OnboardingInterestsData interestsData, OnboardingStarterPackData starterPackData, OnboardingWallpaperData wallpaperData, OnboardingAiData aiData, bool skipInterests, bool skipStarterPack, OnboardingV2NavRequest? navRequest
+ OnboardingV2Step step, LoadStatus loadStatus, ActionStatus actionStatus, bool isAuthLoading, OnboardingInterestsData interestsData, OnboardingStarterPackData starterPackData, OnboardingWallpaperData wallpaperData, OnboardingAiData aiData, bool skipInterests, bool skipStarterPack, bool isGuest, OnboardingV2NavRequest? navRequest
 });
 
 
@@ -2248,7 +2301,7 @@ class _$OnboardingV2StateCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingV2State
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? loadStatus = null,Object? actionStatus = null,Object? isAuthLoading = null,Object? interestsData = null,Object? starterPackData = null,Object? wallpaperData = null,Object? aiData = null,Object? skipInterests = null,Object? skipStarterPack = null,Object? navRequest = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? step = null,Object? loadStatus = null,Object? actionStatus = null,Object? isAuthLoading = null,Object? interestsData = null,Object? starterPackData = null,Object? wallpaperData = null,Object? aiData = null,Object? skipInterests = null,Object? skipStarterPack = null,Object? isGuest = null,Object? navRequest = freezed,}) {
   return _then(_self.copyWith(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as OnboardingV2Step,loadStatus: null == loadStatus ? _self.loadStatus : loadStatus // ignore: cast_nullable_to_non_nullable
@@ -2260,6 +2313,7 @@ as OnboardingStarterPackData,wallpaperData: null == wallpaperData ? _self.wallpa
 as OnboardingWallpaperData,aiData: null == aiData ? _self.aiData : aiData // ignore: cast_nullable_to_non_nullable
 as OnboardingAiData,skipInterests: null == skipInterests ? _self.skipInterests : skipInterests // ignore: cast_nullable_to_non_nullable
 as bool,skipStarterPack: null == skipStarterPack ? _self.skipStarterPack : skipStarterPack // ignore: cast_nullable_to_non_nullable
+as bool,isGuest: null == isGuest ? _self.isGuest : isGuest // ignore: cast_nullable_to_non_nullable
 as bool,navRequest: freezed == navRequest ? _self.navRequest : navRequest // ignore: cast_nullable_to_non_nullable
 as OnboardingV2NavRequest?,
   ));
@@ -2382,10 +2436,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  bool isGuest,  OnboardingV2NavRequest? navRequest)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OnboardingV2State() when $default != null:
-return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest);case _:
+return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.isGuest,_that.navRequest);case _:
   return orElse();
 
 }
@@ -2403,10 +2457,10 @@ return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoadi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  bool isGuest,  OnboardingV2NavRequest? navRequest)  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingV2State():
-return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest);case _:
+return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.isGuest,_that.navRequest);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -2423,10 +2477,10 @@ return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoadi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  OnboardingV2NavRequest? navRequest)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( OnboardingV2Step step,  LoadStatus loadStatus,  ActionStatus actionStatus,  bool isAuthLoading,  OnboardingInterestsData interestsData,  OnboardingStarterPackData starterPackData,  OnboardingWallpaperData wallpaperData,  OnboardingAiData aiData,  bool skipInterests,  bool skipStarterPack,  bool isGuest,  OnboardingV2NavRequest? navRequest)?  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingV2State() when $default != null:
-return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.navRequest);case _:
+return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoading,_that.interestsData,_that.starterPackData,_that.wallpaperData,_that.aiData,_that.skipInterests,_that.skipStarterPack,_that.isGuest,_that.navRequest);case _:
   return null;
 
 }
@@ -2438,7 +2492,7 @@ return $default(_that.step,_that.loadStatus,_that.actionStatus,_that.isAuthLoadi
 
 
 class _OnboardingV2State implements OnboardingV2State {
-  const _OnboardingV2State({required this.step, required this.loadStatus, required this.actionStatus, required this.isAuthLoading, required this.interestsData, required this.starterPackData, required this.wallpaperData, required this.aiData, required this.skipInterests, required this.skipStarterPack, this.navRequest});
+  const _OnboardingV2State({required this.step, required this.loadStatus, required this.actionStatus, required this.isAuthLoading, required this.interestsData, required this.starterPackData, required this.wallpaperData, required this.aiData, required this.skipInterests, required this.skipStarterPack, required this.isGuest, this.navRequest});
   
 
 @override final  OnboardingV2Step step;
@@ -2451,6 +2505,8 @@ class _OnboardingV2State implements OnboardingV2State {
 @override final  OnboardingAiData aiData;
 @override final  bool skipInterests;
 @override final  bool skipStarterPack;
+/// iOS guest path: the user browses without an account and only picks interests.
+@override final  bool isGuest;
 @override final  OnboardingV2NavRequest? navRequest;
 
 /// Create a copy of OnboardingV2State
@@ -2463,16 +2519,16 @@ _$OnboardingV2StateCopyWith<_OnboardingV2State> get copyWith => __$OnboardingV2S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingV2State&&(identical(other.step, step) || other.step == step)&&(identical(other.loadStatus, loadStatus) || other.loadStatus == loadStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.isAuthLoading, isAuthLoading) || other.isAuthLoading == isAuthLoading)&&(identical(other.interestsData, interestsData) || other.interestsData == interestsData)&&(identical(other.starterPackData, starterPackData) || other.starterPackData == starterPackData)&&(identical(other.wallpaperData, wallpaperData) || other.wallpaperData == wallpaperData)&&(identical(other.aiData, aiData) || other.aiData == aiData)&&(identical(other.skipInterests, skipInterests) || other.skipInterests == skipInterests)&&(identical(other.skipStarterPack, skipStarterPack) || other.skipStarterPack == skipStarterPack)&&(identical(other.navRequest, navRequest) || other.navRequest == navRequest));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingV2State&&(identical(other.step, step) || other.step == step)&&(identical(other.loadStatus, loadStatus) || other.loadStatus == loadStatus)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.isAuthLoading, isAuthLoading) || other.isAuthLoading == isAuthLoading)&&(identical(other.interestsData, interestsData) || other.interestsData == interestsData)&&(identical(other.starterPackData, starterPackData) || other.starterPackData == starterPackData)&&(identical(other.wallpaperData, wallpaperData) || other.wallpaperData == wallpaperData)&&(identical(other.aiData, aiData) || other.aiData == aiData)&&(identical(other.skipInterests, skipInterests) || other.skipInterests == skipInterests)&&(identical(other.skipStarterPack, skipStarterPack) || other.skipStarterPack == skipStarterPack)&&(identical(other.isGuest, isGuest) || other.isGuest == isGuest)&&(identical(other.navRequest, navRequest) || other.navRequest == navRequest));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,step,loadStatus,actionStatus,isAuthLoading,interestsData,starterPackData,wallpaperData,aiData,skipInterests,skipStarterPack,navRequest);
+int get hashCode => Object.hash(runtimeType,step,loadStatus,actionStatus,isAuthLoading,interestsData,starterPackData,wallpaperData,aiData,skipInterests,skipStarterPack,isGuest,navRequest);
 
 @override
 String toString() {
-  return 'OnboardingV2State(step: $step, loadStatus: $loadStatus, actionStatus: $actionStatus, isAuthLoading: $isAuthLoading, interestsData: $interestsData, starterPackData: $starterPackData, wallpaperData: $wallpaperData, aiData: $aiData, skipInterests: $skipInterests, skipStarterPack: $skipStarterPack, navRequest: $navRequest)';
+  return 'OnboardingV2State(step: $step, loadStatus: $loadStatus, actionStatus: $actionStatus, isAuthLoading: $isAuthLoading, interestsData: $interestsData, starterPackData: $starterPackData, wallpaperData: $wallpaperData, aiData: $aiData, skipInterests: $skipInterests, skipStarterPack: $skipStarterPack, isGuest: $isGuest, navRequest: $navRequest)';
 }
 
 
@@ -2483,7 +2539,7 @@ abstract mixin class _$OnboardingV2StateCopyWith<$Res> implements $OnboardingV2S
   factory _$OnboardingV2StateCopyWith(_OnboardingV2State value, $Res Function(_OnboardingV2State) _then) = __$OnboardingV2StateCopyWithImpl;
 @override @useResult
 $Res call({
- OnboardingV2Step step, LoadStatus loadStatus, ActionStatus actionStatus, bool isAuthLoading, OnboardingInterestsData interestsData, OnboardingStarterPackData starterPackData, OnboardingWallpaperData wallpaperData, OnboardingAiData aiData, bool skipInterests, bool skipStarterPack, OnboardingV2NavRequest? navRequest
+ OnboardingV2Step step, LoadStatus loadStatus, ActionStatus actionStatus, bool isAuthLoading, OnboardingInterestsData interestsData, OnboardingStarterPackData starterPackData, OnboardingWallpaperData wallpaperData, OnboardingAiData aiData, bool skipInterests, bool skipStarterPack, bool isGuest, OnboardingV2NavRequest? navRequest
 });
 
 
@@ -2500,7 +2556,7 @@ class __$OnboardingV2StateCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingV2State
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? loadStatus = null,Object? actionStatus = null,Object? isAuthLoading = null,Object? interestsData = null,Object? starterPackData = null,Object? wallpaperData = null,Object? aiData = null,Object? skipInterests = null,Object? skipStarterPack = null,Object? navRequest = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? step = null,Object? loadStatus = null,Object? actionStatus = null,Object? isAuthLoading = null,Object? interestsData = null,Object? starterPackData = null,Object? wallpaperData = null,Object? aiData = null,Object? skipInterests = null,Object? skipStarterPack = null,Object? isGuest = null,Object? navRequest = freezed,}) {
   return _then(_OnboardingV2State(
 step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as OnboardingV2Step,loadStatus: null == loadStatus ? _self.loadStatus : loadStatus // ignore: cast_nullable_to_non_nullable
@@ -2512,6 +2568,7 @@ as OnboardingStarterPackData,wallpaperData: null == wallpaperData ? _self.wallpa
 as OnboardingWallpaperData,aiData: null == aiData ? _self.aiData : aiData // ignore: cast_nullable_to_non_nullable
 as OnboardingAiData,skipInterests: null == skipInterests ? _self.skipInterests : skipInterests // ignore: cast_nullable_to_non_nullable
 as bool,skipStarterPack: null == skipStarterPack ? _self.skipStarterPack : skipStarterPack // ignore: cast_nullable_to_non_nullable
+as bool,isGuest: null == isGuest ? _self.isGuest : isGuest // ignore: cast_nullable_to_non_nullable
 as bool,navRequest: freezed == navRequest ? _self.navRequest : navRequest // ignore: cast_nullable_to_non_nullable
 as OnboardingV2NavRequest?,
   ));

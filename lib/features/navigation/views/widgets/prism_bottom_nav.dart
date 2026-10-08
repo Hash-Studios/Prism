@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -108,7 +109,7 @@ class _TabButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final iconColor = isActive ? cs.onPrimary : cs.secondary.withValues(alpha: 0.4);
+    final iconColor = isActive ? cs.onPrimary : onColor(Theme.of(context).primaryColor).withValues(alpha: 0.7);
 
     return Container(
       alignment: Alignment.center,
@@ -117,6 +118,7 @@ class _TabButton extends StatelessWidget {
         tooltip: tooltip,
         padding: EdgeInsets.zero,
         iconSize: 19,
+        isSelected: isActive,
         onPressed: onPressed,
         icon: Icon(icon, color: iconColor, size: 19),
       ),

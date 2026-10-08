@@ -74,7 +74,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
         await inbox.add(doc);
       }
     } catch (err) {
-      logger.error("Failed to write notification doc to Firestore.", {err, payload});
+      logger.error("Failed to write notification doc to Firestore.", {err, route: payload.data.route});
       // Do not throw: still attempt the FCM push.
     }
   }
@@ -214,7 +214,7 @@ export async function sendToUserByEmail(payload: PersonalPayload, email: string,
   try {
     user = await findUserByEmail(email);
   } catch (err) {
-    logger.warn("Could not resolve the recipient; skipping the personal push.", {email, err});
+    logger.warn("Could not resolve the recipient; skipping the personal push.", {emailHash: emailHash(email), err});
   }
   const data = user?.data();
   return sendToUser(payload, {
@@ -242,4 +242,14 @@ export function emailToTopic(email: string): string {
 
 export function userIdToTopic(uid: string): string {
   return `u_${uid.replace(INVALID_TOPIC_CHARS, "")}`;
+}
+
+/** Topic of the followers of one creator. Unlike the email prefix topic it cannot collide across creators. */
+export function postsTopic(uid: string): string {
+  return `posts_${uid.replace(INVALID_TOPIC_CHARS, "")}`;
+}
+
+/** Short stable id of an email for logs, so a log line never holds the address. */
+export function emailHash(email: string): string {
+  return createHash("sha1").update(email.trim().toLowerCase()).digest("hex").slice(0, 16);
 }

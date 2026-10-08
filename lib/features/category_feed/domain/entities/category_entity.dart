@@ -8,6 +8,7 @@ class CategoryEntity {
     required this.searchType,
     required this.image,
     required this.image2,
+    this.hasPrismWalls = false,
   });
 
   final String name;
@@ -15,4 +16,7 @@ class CategoryEntity {
   final CategorySearchType searchType;
   final String image;
   final String image2;
+
+  /// Prism creator walls exist under this name, so the feed starts with them.
+  final bool hasPrismWalls;
 }

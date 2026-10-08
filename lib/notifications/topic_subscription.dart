@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -22,32 +25,154 @@ String? followersTopicFromEmail(String email) {
   return sanitizedLocalPart;
 }
 
-/// New-post pushes for a creator go to this topic (see onWallApproved).
+/// New-post pushes for a creator go to this topic (see onWallApproved). Older builds and older servers use it.
 String? _creatorPostsTopicFromEmail(String email) {
   final String? base = followersTopicFromEmail(email);
   return base == null ? null : '${base}_posts';
 }
 
+/// The same pushes also go to `posts_<creator uid>` (see onWallApproved). Unlike the email prefix, a uid is unique.
+String? creatorPostsTopicFromUid(String uid) {
+  final String sanitized = uid.trim().replaceAll(_invalidFcmTopicCharacters, '');
+  return sanitized.isEmpty ? null : 'posts_$sanitized';
+}
+
 bool get creatorPostsAlertsEnabled =>
     getIt<SettingsLocalDataSource>().get<bool>(NotificationPrefKeys.posts, defaultValue: true);
 
-/// What the Posts switch controls: every followed creator's posts topic.
+/// Returns the uid for a creator email, null when no such user exists, and throws when the read fails.
+typedef CreatorUidResolver = Future<String?> Function(String email);
+
+const String _creatorUidCacheKey = 'creatorUidByEmail';
+const int _creatorUidResolveBatch = 10;
+
+Future<String?> _resolveCreatorUidFromProfile(String email) async {
+  final PublicProfileEntity? profile = await getIt<PublicProfileRepository>()
+      .watchProfile(email)
+      .first
+      .timeout(const Duration(seconds: 8));
+  return profile?.id;
+}
+
+Map<String, String> _readCreatorUidCache(SettingsLocalDataSource? settings) {
+  if (settings == null) return <String, String>{};
+  try {
+    final Object? decoded = jsonDecode(settings.get<String>(_creatorUidCacheKey, defaultValue: '{}'));
+    if (decoded is Map<String, dynamic>) {
+      return decoded.map((String email, dynamic uid) => MapEntry<String, String>(email, uid.toString()));
+    }
+  } on FormatException {
+    // A broken cache is rebuilt from the next reads.
+  }
+  return <String, String>{};
+}
+
+/// Follows store creator emails only. The uid of each creator comes from [knownUids], then from the local cache, then
+/// from one profile read. Every uid that a read finds is cached, so each creator costs at most one read.
+Future<({Map<String, String> uids, bool complete})> _creatorUids(
+  Iterable<String> emails, {
+  required Map<String, String> knownUids,
+  required SettingsLocalDataSource? settings,
+  required CreatorUidResolver? resolver,
+}) async {
+  final Map<String, String> cache = _readCreatorUidCache(settings)..addAll(knownUids);
+  final Map<String, String> uids = <String, String>{};
+  final List<String> missing = <String>[];
+  for (final String email in emails) {
+    final String uid = cache[email] ?? '';
+    if (uid.isEmpty) {
+      missing.add(email);
+    } else {
+      uids[email] = uid;
+    }
+  }
+  bool complete = true;
+  final CreatorUidResolver? resolve =
+      resolver ?? (getIt.isRegistered<PublicProfileRepository>() ? _resolveCreatorUidFromProfile : null);
+  if (resolve != null) {
+    for (int start = 0; start < missing.length; start += _creatorUidResolveBatch) {
+      final List<String> batch = missing.skip(start).take(_creatorUidResolveBatch).toList();
+      await Future.wait(
+        batch.map((String email) async {
+          try {
+            final String? uid = await resolve(email);
+            if (uid != null && uid.isNotEmpty) uids[email] = uid;
+          } catch (error, stackTrace) {
+            complete = false;
+            logger.w(
+              'Could not resolve a creator uid for the posts topic.',
+              tag: 'Push',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }
+        }),
+      );
+    }
+  }
+  final Map<String, String> learned = <String, String>{
+    for (final MapEntry<String, String> entry in uids.entries)
+      if (cache[entry.key] != entry.value) entry.key: entry.value,
+  };
+  if (settings != null && learned.isNotEmpty) {
+    await settings.set(_creatorUidCacheKey, jsonEncode(<String, String>{...cache, ...learned}));
+  }
+  return (uids: uids, complete: complete);
+}
+
+/// Subscribes to or leaves the posts topics of [creatorEmails]: the legacy `<local>_posts` topic and `posts_<uid>`.
+/// Returns false when a topic call or a uid read failed. Pass [knownUids] (email to uid) when the caller has them.
+Future<bool> _changeCreatorPostsTopics(
+  FirebaseMessaging messaging,
+  Iterable<String> creatorEmails, {
+  required bool subscribed,
+  required String sourceTag,
+  Map<String, String> knownUids = const <String, String>{},
+  SettingsLocalDataSource? settings,
+  CreatorUidResolver? resolver,
+}) async {
+  final Map<String, String> emailByKey = <String, String>{
+    for (final String email in creatorEmails)
+      if (email.trim().isNotEmpty) email.trim().toLowerCase(): email.trim(),
+  };
+  final SettingsLocalDataSource? store =
+      settings ?? (getIt.isRegistered<SettingsLocalDataSource>() ? getIt<SettingsLocalDataSource>() : null);
+  Future<bool> change(String? topic) => topic == null
+      ? Future<bool>.value(true)
+      : _changeTopic(messaging, topic, subscribe: subscribed, sourceTag: sourceTag);
+  final List<bool> results = await Future.wait(<Future<bool>>[
+    ...emailByKey.values.map((String email) => change(_creatorPostsTopicFromEmail(email))),
+    _creatorUids(
+      emailByKey.keys,
+      knownUids: <String, String>{
+        for (final MapEntry<String, String> entry in knownUids.entries) entry.key.trim().toLowerCase(): entry.value,
+      },
+      settings: store,
+      resolver: resolver,
+    ).then((({Map<String, String> uids, bool complete}) found) async {
+      final List<bool> changed = await Future.wait(
+        found.uids.values.map((String uid) => change(creatorPostsTopicFromUid(uid))),
+      );
+      return found.complete && changed.every((bool ok) => ok);
+    }),
+  ]);
+  return results.every((bool ok) => ok);
+}
+
+/// What the Posts switch controls: every followed creator's posts topics.
 Future<void> setCreatorPostsTopics(
   FirebaseMessaging messaging,
   Iterable<String> creatorEmails, {
   required bool subscribed,
   required String sourceTag,
+  Map<String, String> knownUids = const <String, String>{},
 }) async {
-  await Future.wait<void>(
-    creatorEmails.map((String email) async {
-      final String? topic = _creatorPostsTopicFromEmail(email);
-      if (topic == null) return;
-      if (subscribed) {
-        await subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
-      } else {
-        await unsubscribeFromTopicSafely(messaging, topic, sourceTag: sourceTag);
-      }
-    }),
+  await _changeCreatorPostsTopics(
+    messaging,
+    creatorEmails,
+    subscribed: subscribed,
+    sourceTag: sourceTag,
+    knownUids: knownUids,
   );
 }
 
@@ -190,7 +315,7 @@ Future<void> syncPushTopics(
       subscribe(followersTopicFromEmail(email)),
     ],
     if (userId.isNotEmpty && settings.get<bool>(NotificationPrefKeys.posts, defaultValue: true))
-      ...following.map((String creator) => subscribe(_creatorPostsTopicFromEmail(creator))),
+      _changeCreatorPostsTopics(messaging, following, subscribed: true, sourceTag: sourceTag, settings: settings),
   ]);
   if (results.every((bool ok) => ok)) await settings.set(_pushTopicsSyncedKey, syncKey);
 }

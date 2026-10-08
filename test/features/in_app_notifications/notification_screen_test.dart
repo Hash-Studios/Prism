@@ -39,6 +39,7 @@ void main() {
   late _MockDelete delete;
   late _MockMarkAll markAll;
   late _MockRestore restore;
+  late _MockClear clear;
 
   final unread = notification('u1', title: 'Unread title');
   final read = notification('r1', title: 'Read title', read: true, createdAt: DateTime.utc(2023));
@@ -46,7 +47,7 @@ void main() {
   Future<void> pumpScreen(WidgetTester tester) async {
     when(() => fetch(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread, read]));
     getIt.registerSingleton<InAppNotificationsBloc>(
-      InAppNotificationsBloc(fetch, _MockMark(), delete, _MockDeleteMany(), _MockClear(), markAll, restore),
+      InAppNotificationsBloc(fetch, _MockMark(), delete, _MockDeleteMany(), clear, markAll, restore),
     );
     await tester.pumpWidget(const MaterialApp(home: NotificationScreen()));
     await tester.pumpAndSettle();
@@ -60,6 +61,7 @@ void main() {
     delete = _MockDelete();
     markAll = _MockMarkAll();
     restore = _MockRestore();
+    clear = _MockClear();
   });
 
   tearDown(() async {
@@ -109,5 +111,32 @@ void main() {
       () => restore(any(that: isA<RestoreNotificationsParams>().having((p) => p.items.single.id, 'id', 'u1'))),
     ).called(1);
     expect(find.text('Unread title'), findsOneWidget);
+  });
+
+  testWidgets('Clear inbox clears at once with no dialog, and Undo brings every notification back', (tester) async {
+    when(() => clear(const NoParams())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[]));
+    when(() => restore(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread, read]));
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip('Clear inbox'));
+    // The empty state animates for ever, so pumpAndSettle would not finish.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(AlertDialog), findsNothing);
+    verify(() => clear(const NoParams())).called(1);
+    expect(find.text('Inbox cleared'), findsOneWidget);
+    expect(find.text('Unread title'), findsNothing);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    verify(
+      () => restore(
+        any(that: isA<RestoreNotificationsParams>().having((p) => p.items.map((i) => i.id), 'ids', ['u1', 'r1'])),
+      ),
+    ).called(1);
+    expect(find.text('Unread title'), findsOneWidget);
+    expect(find.text('Read title'), findsOneWidget);
   });
 }

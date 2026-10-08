@@ -88,6 +88,7 @@ enums:
       - quick_action_follow_feed
       - quick_action_collections
       - quick_action_downloads
+      - quick_action_wall_of_the_day
       - quick_action_unknown
       - back_tapped
       - clock_overlay_opened
@@ -102,6 +103,7 @@ enums:
       - open_drawer_tapped
       - drawer_fav_walls_tapped
       - drawer_downloads_tapped
+      - drawer_library_tapped
       - drawer_share_prism_tapped
       - drawer_logout_tapped
       - open_downloaded_wallpaper_tapped
@@ -109,6 +111,7 @@ enums:
       - action_chip_tapped
       - contributor_profile_tapped
       - banner_tapped
+      - home_chip_selected
       - carousel_item_opened
       - tile_opened
       - see_more_tapped
@@ -227,6 +230,9 @@ enums:
       - home_pexels_grid
       - home_color_grid
       - home_collections_view_grid
+      - home_latest_grid
+      - home_following_grid
+      - home_popular_grid
       - favourite_walls_grid
   - name: scroll_list_name
     dart_type: ScrollListNameValue
@@ -254,6 +260,14 @@ enums:
       - telegram
       - email
       - external
+  - name: push_kind
+    dart_type: PushKindValue
+    values:
+      - streak_reminder
+      - follower
+      - post
+      - wotd
+      - moderation
 
 events:
   - id: content_report_submit
@@ -293,6 +307,22 @@ events:
         key: result
         type: enum
         enum: BinaryResultValue
+      - name: error_code
+        key: error_code
+        type: string
+        required: false
+      - name: fit
+        key: fit
+        type: string
+        required: false
+      - name: entry_point
+        key: entry_point
+        type: string
+        required: false
+      - name: used_default
+        key: used_default
+        type: bool
+        required: false
   - id: coin_premium_filter_spend_attempt
     fields:
       - name: source_tag
@@ -668,6 +698,9 @@ events:
       - name: provider
         key: provider
         type: string
+      - name: is_favourite
+        key: is_favourite
+        type: bool
   - id: settings_action_tapped
     fields:
       - name: action
@@ -915,6 +948,13 @@ events:
       - name: wallpaper_count
         key: wallpaper_count
         type: int
+      - name: source
+        key: source
+        type: string
+      - name: category
+        key: category
+        type: string
+        required: false
   - id: auto_rotate_disabled
   - id: nav_tab_selected
     fields:
@@ -1200,3 +1240,214 @@ events:
       - name: error_source
         key: error_source
         type: string
+  - id: quick_tile_add_requested
+    fields:
+      - name: tile
+        key: tile
+        type: string
+      - name: result
+        key: result
+        type: string
+  - id: guest_favourites_merged
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: favourite_saved_as_guest
+  - id: streak_rescue_offered
+    fields:
+      - name: streak_count
+        key: streak_count
+        type: int
+  - id: streak_rescue_used
+    fields:
+      - name: result
+        key: result
+        type: string
+  - id: coin_history_opened
+  - id: push_opened
+    fields:
+      - name: kind
+        key: kind
+        type: enum
+        enum: PushKindValue
+  - id: report_problem_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: report_problem_shared
+    fields:
+      - name: result
+        key: result
+        type: string
+  - id: rate_prompt_shown
+    fields:
+      - name: trigger
+        key: trigger
+        type: string
+  - id: rate_prompt_result
+    fields:
+      - name: result
+        key: result
+        type: string
+  - id: settings_row_tapped
+    fields:
+      - name: row
+        key: row
+        type: string
+  - id: data_saver_toggled
+    fields:
+      - name: value
+        key: value
+        type: bool
+  - id: ad_load_result
+    fields:
+      - name: result
+        key: result
+        type: string
+      - name: reason
+        key: reason
+        type: string
+        required: false
+  - id: ad_show_result
+    fields:
+      - name: result
+        key: result
+        type: string
+      - name: reason
+        key: reason
+        type: string
+        required: false
+  - id: ad_consent_result
+    fields:
+      - name: status
+        key: status
+        type: string
+  - id: download_attempt
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: premium
+        key: premium
+        type: bool
+  - id: download_result
+    fields:
+      - name: result
+        key: result
+        type: string
+      - name: reason
+        key: reason
+        type: string
+        required: false
+      - name: stage
+        key: stage
+        type: string
+  - id: upload_metadata_submitted
+    fields:
+      - name: has_title
+        key: has_title
+        type: bool
+      - name: tag_count
+        key: tag_count
+        type: int
+      - name: category
+        key: category
+        type: string
+  - id: follow_result
+    fields:
+      - name: action
+        key: action
+        type: string
+      - name: result
+        key: result
+        type: string
+  - id: upload_stage
+    fields:
+      - name: stage
+        key: stage
+        type: string
+  - id: upload_failed
+    fields:
+      - name: reason
+        key: reason
+        type: string
+  - id: onboarding_started
+  - id: terms_accepted
+  - id: browse_as_guest_tapped
+  - id: onboarding_step_completed
+    fields:
+      - name: step
+        key: step
+        type: string
+  - id: library_tab_changed
+    fields:
+      - name: tab
+        key: tab
+        type: string
+  - id: favourites_exported
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: set_wall_undone
+    fields:
+      - name: wallpaper_target
+        key: wallpaper_target
+        type: enum
+        enum: WallpaperTarget
+      - name: result
+        key: result
+        type: enum
+        enum: BinaryResultValue
+  - id: set_wall_pair
+    fields:
+      - name: home_source
+        key: home_source
+        type: string
+      - name: lock_source
+        key: lock_source
+        type: string
+      - name: result
+        key: result
+        type: string
+  - id: wallpaper_position_opened
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: wallpaper_placement_applied
+    fields:
+      - name: fit
+        key: fit
+        type: string
+      - name: zoomed
+        key: zoomed
+        type: bool
+      - name: dim_bucket
+        key: dim_bucket
+        type: int
+      - name: wallpaper_target
+        key: wallpaper_target
+        type: enum
+        enum: WallpaperTarget
+      - name: result
+        key: result
+        type: enum
+        enum: BinaryResultValue
+  - id: accent_matched_from_wall
+  - id: live_wallpaper_applied
+    fields:
+      - name: style
+        key: style
+        type: string
+      - name: result
+        key: result
+        type: string
+  - id: auto_rotate_run_result
+    fields:
+      - name: result
+        key: result
+        type: enum
+        enum: BinaryResultValue

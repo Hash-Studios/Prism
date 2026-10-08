@@ -25,7 +25,9 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
     }
 
     try {
+      // `nameLower` makes the name match ignore case. Profiles saved before it existed still match `name`.
       final results = await Future.wait([
+        _prefixQuery('nameLower', trimmed.toLowerCase()),
         _prefixQuery('name', trimmed),
         _prefixQuery('usernameLower', trimmed.toLowerCase()),
       ]);

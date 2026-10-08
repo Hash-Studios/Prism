@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -67,6 +68,12 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
 
   @override
   Future<List<String>> listDownloads() async => const <String>[];
+
+  @override
+  Future<List<String>?> loadRemoteUrls(AutoRotateSource source, {String? category}) async => const <String>[];
+
+  @override
+  Future<Set<WallpaperTarget>> supportedTargets() async => WallpaperTarget.values.toSet();
 
   @override
   Future<bool> consumeBatteryTip() async => false;

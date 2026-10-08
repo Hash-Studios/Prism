@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -193,6 +195,14 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       success: result.isSuccess,
       targetName: event.targetName,
     );
+    unawaited(
+      analytics.track(
+        FollowResultEvent(
+          action: event.follow ? 'follow' : 'unfollow',
+          result: result.isSuccess ? 'success' : 'failure',
+        ),
+      ),
+    );
     if (result.isFailure) {
       final PublicProfileState rolledBack = _withFollowApplied(state, event.targetUserEmail, follow: !event.follow);
       emit(
@@ -205,12 +215,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     }
 
     await _syncSessionFollowing(event.targetUserEmail, follow: event.follow);
-    unawaited(_syncPostsTopic(event.targetUserEmail, follow: event.follow));
+    unawaited(_syncPostsTopic(event.targetUserEmail, event.targetUserId, follow: event.follow));
     emit(state.copyWith(followOutcome: outcome));
   }
 
   /// Posts pushes for the creator follow the follow state.
-  Future<void> _syncPostsTopic(String email, {required bool follow}) async {
+  Future<void> _syncPostsTopic(String email, String targetUserId, {required bool follow}) async {
     try {
       if (follow && !creatorPostsAlertsEnabled) return;
       await setCreatorPostsTopics(
@@ -218,6 +228,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         <String>[email],
         subscribed: follow,
         sourceTag: follow ? 'follow.subscribe_posts_topic' : 'unfollow.unsubscribe_posts_topic',
+        knownUids: targetUserId.trim().isEmpty ? const <String, String>{} : <String, String>{email: targetUserId},
       );
     } catch (error, stackTrace) {
       logger.w('Could not sync the posts topic.', error: error, stackTrace: stackTrace);

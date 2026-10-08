@@ -185,7 +185,7 @@ void main() {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     final List<MethodCall> toastCalls = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call);
+      if (call.method == 'showToast') toastCalls.add(call);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -242,7 +242,7 @@ void main() {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     final List<MethodCall> toastCalls = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call);
+      if (call.method == 'showToast') toastCalls.add(call);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -432,7 +432,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -481,7 +481,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -520,7 +520,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -556,7 +556,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -608,7 +608,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));

@@ -56,11 +56,48 @@ void main() {
     expect(result.data!.dark.accentColorValue, 0xff2d6079);
   });
 
-  test('setDarkTheme keeps the AMOLED default accent', () async {
+  test('setDarkTheme gives AMOLED a white default accent', () async {
     final result = await repository.update(darkThemeId: 'kDAMOLED');
 
-    expect(result.data!.dark.accentColorValue, 0xff000000);
+    expect(result.data!.dark.accentColorValue, 0xffffffff);
     expect(store.data['settings.darkThemeID'], 'kDAMOLED');
+  });
+
+  test('a stored black accent on AMOLED reads as the new default and is written back once', () async {
+    await store.set('settings.darkThemeID', 'kDAMOLED');
+    await store.set('settings.darkAccent', 0xff000000);
+
+    final preferences = (await repository.load()).data!;
+
+    expect(preferences.dark.accentColorValue, 0xffffffff);
+    expect(store.data['settings.darkAccent'], 0xffffffff);
+  });
+
+  test('a stored black accent on AMOLED does not carry over to the next dark theme', () async {
+    await store.set('settings.darkThemeID', 'kDAMOLED');
+    await store.set('settings.darkAccent', 0xff000000);
+
+    final result = await repository.update(darkThemeId: 'kDOlive');
+
+    expect(result.data!.dark.accentColorValue, 0xff767b45);
+  });
+
+  test('a custom accent on AMOLED is left alone', () async {
+    await store.set('settings.darkThemeID', 'kDAMOLED');
+    await store.set('settings.darkAccent', 0xff123456);
+
+    expect((await repository.load()).data!.dark.accentColorValue, 0xff123456);
+    expect(store.data['settings.darkAccent'], 0xff123456);
+  });
+
+  test('readSync returns the stored selection without waiting', () async {
+    await store.set('settings.lightThemeID', 'kLCoffee');
+    await store.set('settings.themeMode', 'Light');
+
+    final preferences = repository.readSync();
+
+    expect(preferences.light.themeId, 'kLCoffee');
+    expect(preferences.mode, ThemeMode.light);
   });
 
   test('an unknown theme id falls back to the default accent', () async {

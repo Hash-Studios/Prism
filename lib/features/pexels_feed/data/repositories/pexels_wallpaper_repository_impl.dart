@@ -26,6 +26,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   static const String _curatedPath = '/v1/curated';
   static const String _photosPath = '/v1/photos';
   static const Duration _requestTimeout = Duration(seconds: 10);
+  static const int _perPage = 80;
+
+  /// The home feed ranks 24 items per page from a few queries, so it asks for fewer photos per query.
+  static const String _personalizedKeyPrefix = 'personalized:';
+  static const int _personalizedPerPage = 30;
 
   @override
   bool hasMoreForCategory(String categoryName, {String? paginationKey}) =>
@@ -47,7 +52,12 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       portraitOnly: portraitOnly,
       buildUri: (page) => categoryName == 'Curated'
           ? Uri.https(_host, _curatedPath, <String, String>{'per_page': '24', 'page': page.toString()})
-          : _searchUri(query: categoryName, page: page, portraitOnly: portraitOnly),
+          : _searchUri(
+              query: categoryName,
+              page: page,
+              portraitOnly: portraitOnly,
+              perPage: (paginationKey ?? '').startsWith(_personalizedKeyPrefix) ? _personalizedPerPage : _perPage,
+            ),
     );
   }
 
@@ -73,12 +83,18 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     );
   }
 
-  Uri _searchUri({required String query, required int page, required bool portraitOnly, String? color}) {
+  Uri _searchUri({
+    required String query,
+    required int page,
+    required bool portraitOnly,
+    String? color,
+    int perPage = _perPage,
+  }) {
     return Uri.https(_host, _searchPath, <String, String>{
       'query': query,
       if (portraitOnly) 'orientation': 'portrait',
       'color': ?color,
-      'per_page': '80',
+      'per_page': perPage.toString(),
       'page': page.toString(),
     });
   }

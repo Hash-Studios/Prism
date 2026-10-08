@@ -182,4 +182,13 @@ const List<CategoryDefinition> categoryDefinitions = <CategoryDefinition>[
     secondaryImageUrl:
         'https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
   ),
+  CategoryDefinition(
+    name: 'AMOLED',
+    source: WallpaperSource.wallhaven,
+    searchType: CategorySearchType.search,
+    imageUrl:
+        'https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+    secondaryImageUrl:
+        'https://images.pexels.com/photos/4220967/pexels-photo-4220967.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940',
+  ),
 ];

@@ -25,6 +25,22 @@ List<String> trimSeenKeys(List<String> seen) =>
 abstract class PersonalizedFeedRepository {
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request);
 
+  /// The first page from the disk cache, or null when there is none. Reads at once: it does not wait for the block
+  /// list, so the home feed can paint before any network call.
+  Future<PersonalizedFeedPage?> readCached();
+
   /// Hides [item] for good and teaches the feed to show fewer like it.
   Future<void> lessLikeThis(FeedItemEntity item);
+
+  /// Shows [item] again after [lessLikeThis].
+  Future<void> undoLessLikeThis(FeedItemEntity item);
+
+  /// Counts the wallpapers with these canonical [keys] as shown, so the ranker fades them out.
+  Future<void> recordShown(Iterable<String> keys);
+
+  /// New wallpapers from the creators the user follows. Page [page] holds the pages before it.
+  Future<Result<PersonalizedFeedPage>> fetchFollowing({required int page});
+
+  /// The most viewed wallpapers. One page, no paging.
+  Future<Result<PersonalizedFeedPage>> fetchPopular();
 }

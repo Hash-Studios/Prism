@@ -6,13 +6,11 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
-import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/logger/logger.dart';
@@ -20,6 +18,7 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 String? _authorName(FeedItemEntity wallpaper) => wallpaper.when(
   prism: (_, wall) => wall.core.authorName,
@@ -51,7 +50,6 @@ class SearchGrid extends StatefulWidget {
 
 class _SearchGridState extends State<SearchGrid> {
   final WallpaperSearchService _search = getIt<WallpaperSearchService>();
-  final ShakeController _shake = ShakeController();
   late List<FeedItemEntity> _results = widget.initialResults;
   bool seeMoreLoader = false;
   late bool _hasMore = _hasExternalResults;
@@ -122,12 +120,6 @@ class _SearchGridState extends State<SearchGrid> {
     });
   }
 
-  @override
-  void dispose() {
-    _shake.dispose();
-    super.dispose();
-  }
-
   Future<void> refreshList() async {
     if (!_hasExternalResults) {
       return;
@@ -191,12 +183,6 @@ class _SearchGridState extends State<SearchGrid> {
     );
   }
 
-  void _shareWallpaper(FeedItemEntity wallpaper, int index) {
-    _shake.shake(index);
-    PrismHaptics.impact();
-    unawaited(copyWallpaperLink(wallpaper.id, wallpaper.source, wallpaper.fullUrl, wallpaper.thumbnailUrl));
-  }
-
   @override
   Widget build(BuildContext context) {
     final bool showFooter = _hasMore && _results.length >= 24;
@@ -210,73 +196,64 @@ class _SearchGridState extends State<SearchGrid> {
       },
       child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
+          // The "From Prism" row scrolls sideways inside this list. Only the results list asks for more.
+          if (scrollInfo.depth != 0) return false;
           if (!_loadMoreFailed && isNearFeedEnd(scrollInfo.metrics)) {
             unawaited(_requestNextPage());
           }
           return false;
         },
-        child: PulsePlaceholder(
-          builder: (context, _) => CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: <Widget>[
-              if (widget.prismResults.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper),
-                ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    childAspectRatio: 0.5,
-                  ),
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    if (showFooter && index == _results.length) {
-                      return SeeMoreButton(
-                        seeMoreLoader: seeMoreLoader,
-                        failed: _loadMoreFailed,
-                        func: _requestNextPage,
-                      );
-                    }
-                    final FeedItemEntity wallpaper = _results[index];
-                    return KeyedSubtree(
-                      key: ValueKey<String>(wallpaper.id),
-                      child: Semantics(
-                        button: true,
-                        label: wallpaperSemanticLabel(_authorName(wallpaper)),
-                        child: ShakeOnce(
-                          controller: _shake,
-                          target: index,
-                          child: Stack(
-                            children: [
-                              PrismImageTile(
-                                url: wallpaper.thumbnailUrl,
-                                memCacheHeight: decodeHeight,
-                                heroTag: prismHeroTag(this, index, wallpaper.id),
-                              ),
-                              Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                  highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                  enableFeedback: false,
-                                  onTap: () {
-                                    PrismHaptics.tap();
-                                    _openWallpaper(wallpaper, index);
-                                  },
-                                  onLongPress: () => _shareWallpaper(wallpaper, index),
-                                ),
-                              ),
-                            ],
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+          slivers: <Widget>[
+            if (widget.prismResults.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper),
+              ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, childAspectRatio: 0.5),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  if (showFooter && index == _results.length) {
+                    return SeeMoreButton(seeMoreLoader: seeMoreLoader, failed: _loadMoreFailed, func: _requestNextPage);
+                  }
+                  final FeedItemEntity wallpaper = _results[index];
+                  return KeyedSubtree(
+                    key: ValueKey<String>(wallpaper.id),
+                    child: Semantics(
+                      button: true,
+                      label: wallpaperSemanticLabel(_authorName(wallpaper)),
+                      // The image is the InkWell's child, so its Retry button stays tappable.
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                          enableFeedback: false,
+                          onTap: () {
+                            PrismHaptics.tap();
+                            _openWallpaper(wallpaper, index);
+                          },
+                          onLongPress: () {
+                            PrismHaptics.impact();
+                            unawaited(showWallpaperQuickActions(context, wallpaper));
+                          },
+                          child: PrismImageTile(
+                            url: wallpaper.thumbnailUrl,
+                            fallbackUrl: wallpaper.fullUrl,
+                            memCacheHeight: decodeHeight,
+                            heroTag: prismHeroTag(this, index, wallpaper.id),
                           ),
                         ),
                       ),
-                    );
-                  }, childCount: _results.length + (showFooter ? 1 : 0)),
-                ),
+                    ),
+                  );
+                }, childCount: _results.length + (showFooter ? 1 : 0)),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -315,25 +292,22 @@ class _FromPrismRow extends StatelessWidget {
                   label: wallpaperSemanticLabel(_authorName(wallpaper)),
                   child: AspectRatio(
                     aspectRatio: 0.5,
-                    child: Stack(
-                      children: <Widget>[
-                        PrismImageTile(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        splashColor: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                        highlightColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                        onTap: () {
+                          PrismHaptics.tap();
+                          onOpen(wallpaper, index);
+                        },
+                        child: PrismImageTile(
                           url: wallpaper.thumbnailUrl,
+                          fallbackUrl: wallpaper.fullUrl,
                           memCacheHeight: 400,
                           heroTag: prismHeroTag(results, index, wallpaper.id),
                         ),
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            splashColor: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                            highlightColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
-                            onTap: () {
-                              PrismHaptics.tap();
-                              onOpen(wallpaper, index);
-                            },
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),

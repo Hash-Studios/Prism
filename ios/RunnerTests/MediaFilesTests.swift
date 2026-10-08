@@ -141,4 +141,12 @@ struct MediaFilesTests {
     #expect(try await files.clear())
     #expect(try await !files.clear())
   }
+
+  @Test func downloadsDirectoryIsExcludedFromBackup() async throws {
+    let fixture = try MediaFixture()
+    let files = PrismMediaFiles(downloadsDirectory: fixture.downloads)
+    _ = try await files.list()
+    let values = try fixture.downloads.resourceValues(forKeys: [.isExcludedFromBackupKey])
+    #expect(values.isExcludedFromBackup == true)
+  }
 }

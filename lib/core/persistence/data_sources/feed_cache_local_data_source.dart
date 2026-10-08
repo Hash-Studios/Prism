@@ -9,13 +9,25 @@ class FeedSnapshot {
   final Object? payload;
   final DateTime cachedAtUtc;
   final int ttlHours;
+
+  /// True once the snapshot is older than its TTL. A stale snapshot is still the offline fallback, so reads return it.
+  bool get isStale => DateTime.now().toUtc().difference(cachedAtUtc) > Duration(hours: ttlHours);
+}
+
+/// Feed scopes the user has not opened for this long are removed when the cache first loads.
+const Duration feedCacheMaxAge = Duration(days: 30);
+
+bool _isAbandonedFeedScope(String key, Object? value) {
+  if (value is! Map) return false;
+  final DateTime? cachedAt = DateTime.tryParse((value['cachedAtUtc'] as String?) ?? '')?.toUtc();
+  return cachedAt != null && DateTime.now().toUtc().difference(cachedAt) > feedCacheMaxAge;
 }
 
 @lazySingleton
 class FeedCacheLocalDataSource {
   FeedCacheLocalDataSource();
 
-  final LazyFileCache _cache = LazyFileCache('feed_cache');
+  final LazyFileCache _cache = LazyFileCache('feed_cache', pruneOnLoad: _isAbandonedFeedScope);
 
   Future<FeedSnapshot?> read({required String source, required String scope}) async {
     final raw = await _cache.get(PersistenceKeys.cacheFeed(source, scope));

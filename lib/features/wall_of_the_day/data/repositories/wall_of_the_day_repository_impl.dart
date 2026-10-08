@@ -1,14 +1,19 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/parse_helpers.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_of_the_day/data/wotd_entity_mapper.dart';
 import 'package:Prism/features/wall_of_the_day/data/wotd_firestore_pointer.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
 import 'package:Prism/features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: WallOfTheDayRepository)
@@ -18,6 +23,8 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   final FirestoreClient _firestoreClient;
   final PrismWallpaperRepository _prismWallpaperRepository;
   final UserBlockRepository _userBlockRepository;
+
+  static const String _pastPicksCollection = 'past_picks';
 
   _CachedPick? _cached;
 
@@ -73,6 +80,43 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
     } catch (e) {
       return Result.error(ServerFailure('Failed to fetch Wall of the Day: $e'));
     }
+  }
+
+  @override
+  Future<Result<List<WotdPastPick>>> fetchRecent({int limit = 30}) async {
+    try {
+      final rows = await _firestoreClient.query<({String docId, Map<String, dynamic> data})>(
+        FirestoreQuerySpec(
+          collection: _pastPicksCollection,
+          sourceTag: 'wotd.past_picks',
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'date', descending: true)],
+          limit: limit,
+          dedupeWindowMs: 1000,
+        ),
+        (data, docId) => (docId: docId, data: data),
+      );
+      final List<Result<WotdPastPick?>> resolved = await Future.wait(rows.map(_resolvePick));
+      final Failure? firstFailure = resolved.map((result) => result.failure).nonNulls.firstOrNull;
+      if (firstFailure != null && resolved.every((result) => result.isFailure)) {
+        return Result.error(firstFailure);
+      }
+      return Result.success(resolved.map((result) => result.data).nonNulls.toList(growable: false));
+    } catch (error, stackTrace) {
+      logger.e('[WallOfTheDayRepository] fetchRecent failed', error: error, stackTrace: stackTrace);
+      return Result.error(const ServerFailure("Couldn't load past picks. Check your connection and try again."));
+    }
+  }
+
+  /// Null data means the wall is gone, hidden, not reviewed, or its pointer is malformed.
+  Future<Result<WotdPastPick?>> _resolvePick(({String docId, Map<String, dynamic> data}) row) async {
+    final String wallDocumentId = row.data['wallId']?.toString() ?? '';
+    final DateTime? date = parseDateTime(row.data['date']) ?? DateTime.tryParse(row.docId);
+    if (wallDocumentId.isEmpty || date == null) return Result.success(null);
+    final Result<PrismWallpaper?> wall = await _prismWallpaperRepository.fetchByDocumentId(wallDocumentId);
+    final PrismWallpaper? wallpaper = wall.data;
+    if (wall.isFailure) return Result.error(wall.failure!);
+    if (wallpaper == null || wallpaper.review != true || wallpaper.fullUrl.isEmpty) return Result.success(null);
+    return Result.success(WotdPastPick(date: date, wallpaper: wallpaper));
   }
 
   /// Hides the pick if its creator is on the caller's blocked list.

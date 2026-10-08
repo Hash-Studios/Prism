@@ -64,15 +64,15 @@ String _discoverTileSemanticLabel(_DiscoverTileData tile) {
 }
 
 /// Decodes network thumbs near on-screen size to reduce memory and GPU upload cost.
-ImageProvider? _resizeCachedThumb(BuildContext context, String url, double logicalW, double logicalH) {
+ImageProvider? _resizeCachedThumb(BuildContext context, String url, double logicalH) {
   final String trimmed = url.trim();
   if (trimmed.isEmpty) {
     return null;
   }
   final double dpr = MediaQuery.devicePixelRatioOf(context);
-  final int w = (logicalW * dpr).round().clamp(1, 4096);
   final int h = (logicalH * dpr).round().clamp(1, 4096);
-  return ResizeImage(CachedNetworkImageProvider(trimmed), width: w, height: h);
+  // Height only: setting both sizes would squash the photo, because the default policy ignores the aspect ratio.
+  return ResizeImage(CachedNetworkImageProvider(trimmed), height: h);
 }
 
 const double _kCollectionsTitleBlockHeight = 40;
@@ -270,7 +270,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       final String rawThumb1 = data.thumb1.trim();
       final String rawThumb2 = data.thumb2.trim();
       final String thumbUrl = rawThumb1.isNotEmpty ? rawThumb1 : rawThumb2;
-      final ImageProvider? thumbImage = _resizeCachedThumb(context, thumbUrl, cellWidth, imageDecodeHeight);
+      final ImageProvider? thumbImage = _resizeCachedThumb(context, thumbUrl, imageDecodeHeight);
       final String trimmedName = data.name.trim();
       final String displayTitle = trimmedName.isNotEmpty
           ? trimmedName

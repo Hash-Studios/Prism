@@ -12,7 +12,7 @@ import {
   wotdBucketTopic,
 } from "../wallOfTheDay";
 
-const event = {jobName: "t", scheduleTime: new Date().toISOString()} satisfies ScheduledEvent;
+const scheduled = (at = new Date()) => ({jobName: "t", scheduleTime: at.toISOString()}) satisfies ScheduledEvent;
 const PREMIUM = ["space", "abstract"];
 
 test("bucket topics name the UTC offset in hours and minutes", () => {
@@ -90,6 +90,7 @@ type Harness = {
   updates: Array<Record<string, unknown>>;
   topics: string[];
   deliveries: Record<string, unknown>;
+  inboxIds: string[];
   state: {current?: Record<string, unknown>};
   gateFirstTransaction: () => () => void;
 };
@@ -103,6 +104,7 @@ function harness(t: TestContext, options: {
   wallDoc?: Record<string, unknown>;
   sendFails?: boolean;
   deliveries?: Record<string, unknown>;
+  creator?: {id: string; data: Record<string, unknown>};
   onSend?: (h: Harness) => void;
 }): Harness {
   const state: {current?: Record<string, unknown>} = {current: options.current};
@@ -111,6 +113,7 @@ function harness(t: TestContext, options: {
     updates: [],
     topics: [],
     deliveries: {...options.deliveries},
+    inboxIds: [],
     state,
     gateFirstTransaction: () => () => undefined,
   };
@@ -165,9 +168,20 @@ function harness(t: TestContext, options: {
     if (name === "walls") {
       return {...query(options.walls ?? []), doc: () => ({get: async () => ({data: () => options.wallDoc})})};
     }
-    if (name === "notifications") return {doc: () => ({set: async () => undefined}), add: async () => undefined};
+    if (name === "notifications") {
+      return {
+        doc: (id: string) => ({set: async () => result.inboxIds.push(id)}),
+        add: async () => undefined,
+      };
+    }
+    if (name === "usersv2") {
+      const users = options.creator ? [{id: options.creator.id, data: () => options.creator?.data}] : [];
+      const rows = {limit: () => rows, get: async () => ({empty: users.length === 0, docs: users})};
+      return {where: () => rows};
+    }
     throw new Error(`Unexpected collection ${name}`);
   });
+  t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({})})}));
   t.mock.method(admin.messaging(), "send", async (message: {topic?: string}) => {
     options.onSend?.(result);
     if (options.sendFails) throw new Error("fcm down");
@@ -188,7 +202,7 @@ test("a run that finds today's announced pick does nothing", async (t) => {
     current: {wallId: "w1", date: admin.firestore.Timestamp.now(), pushedAt: admin.firestore.Timestamp.now()},
     deliveries: {wall_of_the_day_utc_p0530: entry("w1", "2026-01-02")},
   });
-  await wallOfTheDay.run(event);
+  await wallOfTheDay.run(scheduled());
   assert.deepEqual(h.sets, []);
   assert.deepEqual(h.topics, []);
 });
@@ -200,7 +214,7 @@ test("a retry after the pick was saved but not announced only sends the push", a
     wallDoc: {title: "Dunes"},
     deliveries: {wall_of_the_day_utc_p0530: entry("w1", "2026-01-02")},
   });
-  await wallOfTheDay.run(event);
+  await wallOfTheDay.run(scheduled());
   assert.deepEqual(h.sets, []);
   assert.deepEqual(h.topics, ["wall_of_the_day"]);
   assert.equal(h.updates.length, 1);
@@ -215,7 +229,7 @@ test("the daily pick skips streak-exclusive and premium walls", async (t) => {
     walls: [wall("excl", {is_streak_exclusive: true}), wall("prem", {collections: ["space"]}), wall("ok")],
     wallDoc: {title: "ok"},
   });
-  await wallOfTheDay.run(event);
+  await wallOfTheDay.run(scheduled());
   assert.equal(h.sets.length, 1);
   assert.equal(h.sets[0].wallId, "ok");
   assert.deepEqual(h.topics, ["wall_of_the_day", "wall_of_the_day_utc_p0530"]);
@@ -224,14 +238,14 @@ test("the daily pick skips streak-exclusive and premium walls", async (t) => {
 test("no eligible wall makes the run fail so the scheduler retries", async (t) => {
   harness(t, {walls: [wall("excl", {is_streak_exclusive: true})]});
   await assert.rejects(async () => {
-    await wallOfTheDay.run(event);
+    await wallOfTheDay.run(scheduled());
   }, /No eligible walls/);
 });
 
 test("a failed push makes the run fail and leaves the pick unannounced", async (t) => {
   const h = harness(t, {current: {wallId: "w1", date: admin.firestore.Timestamp.now()}, sendFails: true});
   await assert.rejects(async () => {
-    await wallOfTheDay.run(event);
+    await wallOfTheDay.run(scheduled());
   }, /push failed/);
   assert.deepEqual(h.updates, []);
 });
@@ -242,7 +256,7 @@ test("the bucket job pushes to the offset where it is 09:00", async (t) => {
     current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
     wallDoc: {title: "Dunes"},
   });
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, ["wall_of_the_day_utc_p0530"]);
 });
 
@@ -252,14 +266,14 @@ test("the bucket job sends both ends of the date line at 21:00 UTC", async (t) =
     current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 17 * 3_600_000)},
     wallDoc: {title: "Dunes"},
   });
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, ["wall_of_the_day_utc_p1200", "wall_of_the_day_utc_m1200"]);
 });
 
 test("the bucket job does not push a stale or missing pick", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T03:30:00Z")});
   const stale = harness(t, {current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 31 * 3_600_000)}});
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(stale.topics, []);
 });
 
@@ -275,16 +289,16 @@ test("same slot, bucket job first: no stale resend, then today's wall reaches +0
     wallDoc: {title: "t"},
     deliveries: {[bucket]: entry("yesterday", "2026-01-01")},
   });
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, []);
 
-  await wallOfTheDay.run(event);
+  await wallOfTheDay.run(scheduled());
   assert.equal(h.sets[0].wallId, "today");
   assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
   assert.equal(deliveredWall(h, bucket), "today");
 
-  await sendWallOfTheDayBuckets.run(event);
-  await wallOfTheDay.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
+  await wallOfTheDay.run(scheduled());
   assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
 });
 
@@ -297,8 +311,8 @@ test("same slot, picker first: the bucket job does not resend today's wall", asy
     wallDoc: {title: "t"},
     deliveries: {[bucket]: entry("yesterday", "2026-01-01")},
   });
-  await wallOfTheDay.run(event);
-  await sendWallOfTheDayBuckets.run(event);
+  await wallOfTheDay.run(scheduled());
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
 });
 
@@ -309,8 +323,8 @@ test("yesterday's delivery of a wall does not block today's pick of the same wal
     wallDoc: {title: "Dunes"},
     deliveries: {[bucket]: entry("x", "2026-01-01")},
   });
-  await sendWallOfTheDayBuckets.run(event);
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, [bucket]);
   assert.equal((h.deliveries[bucket] as {date?: string}).date, "2026-01-02");
 });
@@ -322,7 +336,7 @@ test("a legacy undated marker for the same wall still blocks a resend", async (t
     wallDoc: {title: "Dunes"},
     deliveries: {[bucket]: "x"},
   });
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, []);
 });
 
@@ -332,8 +346,8 @@ test("repeated bucket runs send one wall once per bucket", async (t) => {
     current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
     wallDoc: {title: "Dunes"},
   });
-  await sendWallOfTheDayBuckets.run(event);
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, [bucket]);
   assert.equal(deliveredWall(h, bucket), "w1");
 });
@@ -347,7 +361,7 @@ test("a failed bucket push restores the marker so the retry sends it", async (t)
     sendFails: true,
   });
   await assert.rejects(async () => {
-    await sendWallOfTheDayBuckets.run(event);
+    await sendWallOfTheDayBuckets.run(scheduled());
   }, /bucket push failed/);
   assert.equal(deliveredWall(h, bucket), "w0");
 });
@@ -362,13 +376,13 @@ test("a bucket claim started before the picker committed never resends yesterday
     deliveries: {[bucket]: entry("yesterday", "2026-01-01")},
   });
   const release = h.gateFirstTransaction();
-  const bucketJob = sendWallOfTheDayBuckets.run(event);
-  await wallOfTheDay.run(event);
+  const bucketJob = sendWallOfTheDayBuckets.run(scheduled());
+  await wallOfTheDay.run(scheduled());
   assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
   release();
   await bucketJob;
-  await sendWallOfTheDayBuckets.run(event);
-  await wallOfTheDay.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
+  await wallOfTheDay.run(scheduled());
   assert.deepEqual(h.topics, ["wall_of_the_day", bucket]);
   assert.equal(deliveredWall(h, bucket), "today");
 });
@@ -380,7 +394,7 @@ test("a bucket never moves back to an older pick date", async (t) => {
     wallDoc: {title: "Dunes"},
     deliveries: {[bucket]: entry("w2", "2026-01-03")},
   });
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, []);
   assert.equal(deliveredWall(h, bucket), "w2");
 });
@@ -392,7 +406,7 @@ test("a legacy string marker for another wall is replaced by the current pick", 
     wallDoc: {title: "Dunes"},
     deliveries: {[bucket]: "old"},
   });
-  await sendWallOfTheDayBuckets.run(event);
+  await sendWallOfTheDayBuckets.run(scheduled());
   assert.deepEqual(h.topics, [bucket]);
   assert.equal(deliveredWall(h, bucket), "w1");
 });
@@ -410,7 +424,59 @@ test("a failed send does not roll back a claim that another run has replaced", a
     },
   });
   await assert.rejects(async () => {
-    await sendWallOfTheDayBuckets.run(event);
+    await sendWallOfTheDayBuckets.run(scheduled());
   }, /bucket push failed/);
   assert.deepEqual(h.deliveries[bucket], newer);
+});
+
+test("the creator gets one personal notice with a fixed inbox id when their wall is the pick", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.now()},
+    wallDoc: {title: "Dunes", email: "maker@example.com"},
+    creator: {id: "maker1", data: {email: "maker@example.com"}},
+    deliveries: {[bucket]: entry("w1", "2026-01-02")},
+  });
+  await wallOfTheDay.run(scheduled());
+  assert.deepEqual(h.topics, ["wall_of_the_day", "u_maker1"]);
+  assert.deepEqual(h.inboxIds, ["wotd_2026-01-02", "wotd_creator_2026-01-02"]);
+});
+
+test("a pick without a creator email sends no personal notice", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.now()},
+    wallDoc: {title: "Dunes"},
+    deliveries: {[bucket]: entry("w1", "2026-01-02")},
+  });
+  await wallOfTheDay.run(scheduled());
+  assert.deepEqual(h.topics, ["wall_of_the_day"]);
+  assert.deepEqual(h.inboxIds, ["wotd_2026-01-02"]);
+});
+
+test("a creator notice that cannot be delivered does not fail the public push", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: TODAY_SLOT});
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.now()},
+    wallDoc: {title: "Dunes", email: "maker@example.com"},
+    creator: {id: "maker1", data: {email: "maker@example.com"}},
+    deliveries: {[bucket]: entry("w1", "2026-01-02")},
+    onSend: (state) => {
+      if (state.topics.length > 0) throw new Error("fcm down for the creator");
+    },
+  });
+  await wallOfTheDay.run(scheduled());
+  assert.deepEqual(h.topics, ["wall_of_the_day"]);
+  assert.equal(h.updates.length, 1);
+});
+
+test("a run that starts late still sends to the bucket of its scheduled slot", async (t) => {
+  // The scheduler meant 03:30. The run starts at 03:38, which would round to the 03:45 slot (+05:15).
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T03:38:00Z")});
+  const h = harness(t, {
+    current: {wallId: "w1", date: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+    wallDoc: {title: "Dunes"},
+  });
+  await sendWallOfTheDayBuckets.run(scheduled(new Date("2026-01-02T03:30:00Z")));
+  assert.deepEqual(h.topics, [bucket]);
 });

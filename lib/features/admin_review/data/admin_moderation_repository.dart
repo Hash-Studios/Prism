@@ -2,6 +2,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
@@ -63,11 +64,19 @@ class AdminModerationRepository {
   }
 
   /// onWallApproved writes the artist's inbox entry and push, so approval adds none here.
-  Future<void> approveWall(FirestoreDocument wall) {
-    final List<String> collections = wall.collections;
+  /// A creator can write any `collections` or streak value on a pending wall. Approval therefore files the wall under
+  /// `community` and removes the streak fields, unless the admin passes values.
+  Future<void> approveWall(
+    FirestoreDocument wall, {
+    List<String>? collections,
+    bool? streakExclusive,
+    int? streakShopCoinCost,
+  }) {
     return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
       'review': true,
-      'collections': collections.isEmpty ? <String>['community'] : collections,
+      'collections': collections == null || collections.isEmpty ? <String>['community'] : collections,
+      'is_streak_exclusive': streakExclusive ?? FirestoreSentinels.delete(),
+      'streak_shop_coin_cost': streakShopCoinCost ?? FirestoreSentinels.delete(),
       'reviewedAt': DateTime.now().toUtc(),
       'createdAt': DateTime.now().toUtc(),
     }, sourceTag: 'admin_review.approve_wall');
@@ -127,6 +136,9 @@ class AdminModerationRepository {
     return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
       'review': false,
       'collections': wall.collections,
+      if (wall.payload.containsKey('is_streak_exclusive')) 'is_streak_exclusive': wall.payload['is_streak_exclusive'],
+      if (wall.payload.containsKey('streak_shop_coin_cost'))
+        'streak_shop_coin_cost': wall.payload['streak_shop_coin_cost'],
       if (wall.payload['createdAt'] != null) 'createdAt': wall.payload['createdAt'],
     }, sourceTag: 'admin_review.undo_approve_wall');
   }

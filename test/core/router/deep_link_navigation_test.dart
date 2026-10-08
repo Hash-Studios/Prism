@@ -1,11 +1,15 @@
 import 'dart:convert';
 
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+
+import '../../support/in_memory_local_store.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +20,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
     ) async {
-      toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
     toastMessages.clear();
@@ -38,6 +42,7 @@ void main() {
     final route = await navigation.mapUriToRoute(Uri.parse('https://prismwalls.com/setup/minimal-desk'));
 
     expect(route, isA<HomeTabRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>['Home screen setups are no longer available.']);
   });
 
@@ -46,6 +51,7 @@ void main() {
     final route = await navigation.mapUriToRoute(Uri.parse('prism://setup/minimal-desk'));
 
     expect(route, isA<HomeTabRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>['Home screen setups are no longer available.']);
   });
 
@@ -74,5 +80,30 @@ void main() {
     const DeepLinkNavigation navigation = DeepLinkNavigation();
     final route = await navigation.mapUriToRoute(Uri.parse('https://prismwalls.com/unknown/path'));
     expect(route, isNull);
+  });
+
+  test('a referral link keeps the inviter and opens Rewards instead of Not found', () async {
+    final List<String> inviters = <String>[];
+    final DeepLinkNavigation navigation = DeepLinkNavigation(onReferral: (String id) async => inviters.add(id));
+
+    for (final String link in <String>['https://prismwalls.com/refer/inviter1', 'prism://refer/inviter1']) {
+      expect(await navigation.mapUriToRoute(Uri.parse(link)), isA<RewardsTabRoute>());
+    }
+
+    expect(inviters, <String>['inviter1', 'inviter1']);
+  });
+
+  test('a referral link opened by a guest is saved for sign-in', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+
+    final route = await const DeepLinkNavigation().mapUriToRoute(Uri.parse('https://prismwalls.com/refer/inviter1'));
+
+    expect(route, isA<RewardsTabRoute>());
+    expect(settings.get<String>('pendingReferralInviterId', defaultValue: ''), 'inviter1');
+    await Future<void>.delayed(Duration.zero);
+    expect(toastMessages.single, startsWith('Referral saved. Sign in to claim'));
   });
 }

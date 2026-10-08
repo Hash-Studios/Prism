@@ -17,11 +17,13 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_feed_repository_impl.dart';
+import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
@@ -301,9 +303,17 @@ class _OfflinePexels extends Fake implements PexelsWallpaperRepository {
 
 class _EmptyBlocks extends Fake implements UserBlockRepository {
   bool failNext = false;
+  Set<String> cached = <String>{};
+  bool hangOnWait = false;
+
+  @override
+  Set<String> get cachedBlockedCreatorEmails => cached;
 
   @override
   Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
+    if (hangOnWait && waitForInitialLoad) {
+      return Completer<Set<String>>().future;
+    }
     if (failNext) {
       failNext = false;
       throw StateError('offline');
@@ -572,7 +582,7 @@ void main() {
 
     expect(newSessionResult.data?.items.map((item) => item.id), <String>['new-wall']);
     expect(oldSessionResult.isFailure, isTrue);
-    expect(impressions.recentShows(DateTime.now().toUtc()), hasLength(1));
+    expect(impressions.recentShows(DateTime.now().toUtc()), isEmpty);
   });
 
   test('existing items stay excluded after the seen-key window is trimmed', () async {
@@ -764,7 +774,7 @@ void main() {
     });
   }
 
-  test('cache fallback stops paging after cached items are exhausted', () async {
+  test('a failed later page is an error, not the end of the feed', () async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     final _OneWallFirestore firestore = _OneWallFirestore();
     final _ToggleWallhaven wallhaven = _ToggleWallhaven();
@@ -785,9 +795,9 @@ void main() {
     );
     final first = await repository.fetch(_firstPage);
     expect(_itemIds(first.data!.items), <String>['visible-doc', 'wall-doc']);
-    blocks.failNext = true;
+    firestore.fail = true;
 
-    final exhausted = await repository.fetch(
+    final failed = await repository.fetch(
       FetchPersonalizedFeedRequest(
         page: 2,
         refresh: false,
@@ -795,8 +805,10 @@ void main() {
         existingItems: first.data!.items,
       ),
     );
-    expect(exhausted.data!.items, isEmpty);
-    expect(exhausted.data!.hasMore, isFalse);
+    expect(failed.isFailure, isTrue);
+
+    final retry = await repository.fetch(_firstPage);
+    expect(retry.isFailure, isFalse, reason: 'page one still falls back to the cache while the network is down');
   });
 
   test('user profile lookup failure does not block public feed sources', () async {
@@ -855,6 +867,368 @@ void main() {
 
     expect(firestore.sourceTags, contains('personalized.creator_chunk_1'));
   });
+
+  test('a fetch does not count wallpapers as shown. The screen reports the tiles it builds', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final FeedImpressionStore impressions = FeedImpressionStore(settings);
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _OneWallFirestore(),
+      settings: settings,
+      favourites: _CountingFavourites(),
+      impressions: impressions,
+    );
+
+    await repository.fetch(_firstPage);
+    expect(impressions.recentShows(DateTime.now().toUtc()), isEmpty);
+
+    await repository.recordShown(<String>['https://example.com/wall.jpg']);
+    expect(impressions.recentShows(DateTime.now().toUtc()), <String, int>{'https://example.com/wall.jpg': 1});
+  });
+
+  test('the cached list is capped at 48 items', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final _MemoryFeedCache cache = _MemoryFeedCache();
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _OneWallFirestore(),
+      cache: cache,
+      settings: settings,
+      favourites: _CountingFavourites(),
+    );
+
+    await repository.fetch(
+      FetchPersonalizedFeedRequest(
+        page: 2,
+        refresh: false,
+        seenKeys: const <String>[],
+        existingItems: <FeedItemEntity>[for (int i = 0; i < 60; i++) _prismItem('old-$i')],
+      ),
+    );
+
+    expect((cache.snapshot!.payload! as Map)['items'], hasLength(48));
+  });
+
+  test('a page past the second does not rewrite the cache', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final _MemoryFeedCache cache = _MemoryFeedCache();
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _OneWallFirestore(),
+      cache: cache,
+      settings: settings,
+      favourites: _CountingFavourites(),
+    );
+
+    await repository.fetch(
+      const FetchPersonalizedFeedRequest(
+        page: 3,
+        refresh: false,
+        seenKeys: <String>[],
+        existingItems: <FeedItemEntity>[],
+      ),
+    );
+
+    expect(cache.snapshot, isNull);
+  });
+
+  group('readCached', () {
+    FeedSnapshot snapshot(List<FeedItemEntity> items, {DateTime? at, String? filters}) => FeedSnapshot(
+      cachedAtUtc: at ?? DateTime.now().toUtc(),
+      ttlHours: 2,
+      payload: <String, Object?>{'filters': ?filters, 'items': items.map(encodeFeedItem).toList()},
+    );
+
+    test('is null when nothing is cached', () async {
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      expect(await repository.readCached(), isNull);
+    });
+
+    test('returns at most 24 items with their keys, without waiting for the block list', () async {
+      app_state.prismUser = _signedInUser();
+      final _EmptyBlocks blocks = _EmptyBlocks()..hangOnWait = true;
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[for (int i = 0; i < 40; i++) _prismItem('c$i')]),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+
+      final PersonalizedFeedPage? page = await repository.readCached().timeout(const Duration(seconds: 2));
+
+      expect(page!.items, hasLength(24));
+      expect(page.usedKeys, hasLength(24));
+      expect(page.isStale, isFalse);
+    });
+
+    test('drops blocked creators', () async {
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[
+            _prismItem('keep', email: 'kept@example.com'),
+            _prismItem('drop', email: 'blocked@example.com'),
+          ]),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _EmptyBlocks()..cached = <String>{'blocked@example.com'},
+      );
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['keep']);
+    });
+
+    test('marks a snapshot older than the cache lifetime as stale', () async {
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[
+            _prismItem('old'),
+          ], at: DateTime.now().toUtc().subtract(const Duration(hours: 5))),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      expect((await repository.readCached())!.isStale, isTrue);
+    });
+
+    test('keeps hidden walls out', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final FeedImpressionStore impressions = FeedImpressionStore(settings);
+      final FeedItemEntity hidden = _prismItem('hidden');
+      await impressions.hide(PersonalizedRankingService.canonicalKey(hidden), DateTime.now().toUtc());
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()..snapshot = snapshot(<FeedItemEntity>[hidden, _prismItem('shown')]),
+        settings: settings,
+        favourites: _CountingFavourites(),
+        impressions: impressions,
+      );
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['shown']);
+    });
+
+    test('drops Wallhaven items cached under other content filters', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      final List<FeedItemEntity> items = <FeedItemEntity>[_prismItem('prism'), _wallhavenItem('wh')];
+      final _MemoryFeedCache cache = _MemoryFeedCache()..snapshot = snapshot(items, filters: '100.100');
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: cache,
+        settings: settings,
+        favourites: _CountingFavourites(),
+      );
+      expect(_itemIds((await repository.readCached())!.items), <String>['prism', 'wh']);
+
+      await settings.set('WHpurity', 110);
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['prism']);
+    });
+
+    test('treats a cache without a filter stamp as the default filters', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      app_state.prismUser = _signedInUser();
+      await settings.set('WHcategories', 110);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()..snapshot = snapshot(<FeedItemEntity>[_prismItem('prism'), _wallhavenItem('wh')]),
+        settings: settings,
+        favourites: _CountingFavourites(),
+      );
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['prism']);
+    });
+
+    test('a cache written by a fetch carries the content filters', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      await settings.set('WHpurity', 110);
+      final _MemoryFeedCache cache = _MemoryFeedCache();
+      app_state.prismUser = _signedInUser();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _OneWallFirestore(),
+        cache: cache,
+        settings: settings,
+        favourites: _CountingFavourites(),
+      );
+
+      await repository.fetch(_firstPage);
+
+      expect((cache.snapshot!.payload! as Map)['filters'], '100.110');
+    });
+  });
+
+  group('undoLessLikeThis', () {
+    test('shows a hidden wall again', () async {
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      final FeedImpressionStore impressions = FeedImpressionStore(settings);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _EmptyFirestore(),
+        settings: settings,
+        favourites: _CountingFavourites(),
+        impressions: impressions,
+      );
+      final FeedItemEntity item = _prismItem('x');
+
+      await repository.lessLikeThis(item);
+      expect(impressions.recentShows(DateTime.now().toUtc()), isNotEmpty);
+      await repository.undoLessLikeThis(item);
+
+      expect(impressions.recentShows(DateTime.now().toUtc()), isEmpty);
+    });
+  });
+
+  group('fetchFollowing', () {
+    test('returns the followed creators walls and reports that more may follow', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      final _FollowingFirestore firestore = _FollowingFirestore(rows: 12);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      final result = await repository.fetchFollowing(page: 1);
+
+      expect(result.data!.items, hasLength(12));
+      expect(result.data!.hasMore, isTrue);
+      expect(firestore.limits, <int>[12]);
+    });
+
+    test('has no more pages when the creator has fewer walls than the page limit', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _FollowingFirestore(rows: 3),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      final result = await repository.fetchFollowing(page: 1);
+
+      expect(result.data!.items, hasLength(3));
+      expect(result.data!.hasMore, isFalse);
+    });
+
+    test('is empty without a query when the user follows nobody', () async {
+      app_state.prismUser = _signedInUser();
+      final _FollowingFirestore firestore = _FollowingFirestore(rows: 3);
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      final result = await repository.fetchFollowing(page: 1);
+
+      expect(result.data!.items, isEmpty);
+      expect(firestore.limits, isEmpty);
+    });
+
+    test('hides blocked creators and reports a failed read', () async {
+      app_state.prismUser = _signedInUser(following: const <String>['a@example.com']);
+      final _FollowingFirestore firestore = _FollowingFirestore(rows: 2, email: 'blocked@example.com');
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: _BlockingBlocks(<String>{'blocked@example.com'}),
+      );
+      expect((await repository.fetchFollowing(page: 1)).data!.items, isEmpty);
+
+      firestore.fail = true;
+      expect((await repository.fetchFollowing(page: 1)).isFailure, isTrue);
+    });
+  });
+
+  group('fetchPopular', () {
+    test('resolves the popular list in order and drops walls that no longer exist', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularIds: <String>['CCC', 'AAA', 'ZZZ', 'BBB'],
+        walls: <String>['AAA', 'BBB', 'CCC'],
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      final result = await repository.fetchPopular();
+
+      expect(result.data!.items.map((item) => item.id), <String>['CCC', 'AAA', 'BBB']);
+      expect(result.data!.hasMore, isFalse);
+      expect(firestore.sourceTags, containsAll(<String>['popular.current', 'popular.walls']));
+      expect(firestore.sourceTags, isNot(contains('popular.stats')));
+    });
+
+    test('falls back to the most viewed walls when the list is missing', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        statsIds: <String>['BBB', 'AAA'],
+        walls: <String>['AAA', 'BBB'],
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      final result = await repository.fetchPopular();
+
+      expect(result.data!.items.map((item) => item.id), <String>['BBB', 'AAA']);
+      expect(firestore.sourceTags, contains('popular.stats'));
+    });
+
+    test('falls back when the popular list cannot be read', () async {
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularFails: true,
+        statsIds: <String>['AAA'],
+        walls: <String>['AAA'],
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      expect((await repository.fetchPopular()).data!.items.map((item) => item.id), <String>['AAA']);
+    });
+
+    test('looks walls up ten ids at a time and upper-cases the ids', () async {
+      final List<String> ids = <String>[for (int i = 0; i < 25; i++) 'W${i.toString().padLeft(2, '0')}'];
+      final _PopularFirestore firestore = _PopularFirestore(
+        popularIds: ids.map((id) => id.toLowerCase()).toList(),
+        walls: ids,
+      );
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: firestore,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      final result = await repository.fetchPopular();
+
+      expect(result.data!.items, hasLength(25));
+      expect(firestore.whereInSizes, <int>[10, 10, 5]);
+    });
+
+    test('reports a failure when no source answers', () async {
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _OfflineFirestore(),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+
+      expect((await repository.fetchPopular()).isFailure, isTrue);
+    });
+  });
 }
 
 const FetchPersonalizedFeedRequest _firstPage = FetchPersonalizedFeedRequest(
@@ -873,6 +1247,7 @@ PersonalizedFeedRepository _repository({
   FeedCacheLocalDataSource? cache,
   TasteSignalStore? tasteSignals,
   FeedImpressionStore? impressions,
+  UserBlockRepository? blocks,
 }) {
   return PersonalizedFeedRepositoryImpl(
     firestore,
@@ -880,7 +1255,7 @@ PersonalizedFeedRepository _repository({
     settings,
     wallhaven ?? _EmptyWallhaven(),
     pexels ?? _EmptyPexels(),
-    _EmptyBlocks(),
+    blocks ?? _EmptyBlocks(),
     favourites,
     tasteSignals ?? TasteSignalStore(settings),
     impressions ?? FeedImpressionStore(settings),
@@ -902,3 +1277,125 @@ PrismFavouriteWall _favourite(String id) => PrismFavouriteWall(
     tags: const <String>['nature'],
   ),
 );
+
+FeedItemEntity _prismItem(String id, {String email = 'creator@example.com'}) => FeedItemEntity.prism(
+  id: id,
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(
+      id: id,
+      source: WallpaperSource.prism,
+      fullUrl: 'https://example.com/$id.jpg',
+      thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+      authorEmail: email,
+    ),
+  ),
+);
+
+FeedItemEntity _wallhavenItem(String id) => FeedItemEntity.wallhaven(
+  id: id,
+  wallpaper: WallhavenWallpaper(
+    core: WallpaperCore(
+      id: id,
+      source: WallpaperSource.wallhaven,
+      fullUrl: 'https://example.com/$id.jpg',
+      thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+    ),
+  ),
+);
+
+class _BlockingBlocks extends _EmptyBlocks {
+  _BlockingBlocks(Set<String> blocked) {
+    cached = blocked;
+  }
+
+  @override
+  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async => cached;
+}
+
+/// Answers the creator query with [rows] walls and records the limit it was asked for.
+class _FollowingFirestore extends _EmptyFirestore {
+  _FollowingFirestore({required this.rows, this.email = 'a@example.com'});
+
+  final int rows;
+  final String email;
+  bool fail = false;
+  final List<int> limits = <int>[];
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (!spec.sourceTag.startsWith('personalized.creator_chunk_')) {
+      return <T>[];
+    }
+    if (fail) {
+      throw StateError('offline');
+    }
+    limits.add(spec.limit!);
+    return <T>[
+      for (int i = 0; i < rows; i++)
+        map(<String, dynamic>{
+          'id': 'W$i',
+          'wallpaper_url': 'https://example.com/w$i.jpg',
+          'wallpaper_thumb': 'https://example.com/w$i-thumb.jpg',
+          'wallpaper_provider': 'prism',
+          'review': true,
+          'email': email,
+          'createdAt': '2026-09-01T00:00:00Z',
+        }, 'doc$i'),
+    ];
+  }
+}
+
+class _PopularFirestore extends _EmptyFirestore {
+  _PopularFirestore({
+    this.popularIds = const <String>[],
+    this.statsIds = const <String>[],
+    this.popularFails = false,
+    this.walls = const <String>[],
+  });
+
+  final List<String> popularIds;
+  final List<String> statsIds;
+  final bool popularFails;
+  final List<String> walls;
+  final List<String> sourceTags = <String>[];
+  final List<int> whereInSizes = <int>[];
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    sourceTags.add(sourceTag);
+    if (popularFails) {
+      throw StateError('permission-denied');
+    }
+    return popularIds.isEmpty ? null : map(<String, dynamic>{'wallIds': popularIds}, id);
+  }
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    sourceTags.add(spec.sourceTag);
+    if (spec.sourceTag == 'popular.stats') {
+      return <T>[
+        for (final String id in statsIds) map(<String, dynamic>{'views': 1}, id),
+      ];
+    }
+    final List<Object?> wanted = spec.filters.firstWhere((f) => f.field == 'id').value! as List<Object?>;
+    whereInSizes.add(wanted.length);
+    return <T>[
+      for (final String id in walls)
+        if (wanted.contains(id))
+          map(<String, dynamic>{
+            'id': id,
+            'wallpaper_url': 'https://example.com/$id.jpg',
+            'wallpaper_thumb': 'https://example.com/$id-thumb.jpg',
+            'wallpaper_provider': 'prism',
+            'review': true,
+            'email': 'creator@example.com',
+          }, 'doc-$id'),
+    ];
+  }
+}

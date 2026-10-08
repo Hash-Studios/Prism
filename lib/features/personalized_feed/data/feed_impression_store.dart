@@ -57,6 +57,14 @@ class FeedImpressionStore {
     return _settingsLocal.set(_hiddenKey, json.encode(kept));
   }
 
+  Future<void> unhide(String key) {
+    final List<String> hidden = _readHidden();
+    if (!hidden.remove(key)) {
+      return Future<void>.value();
+    }
+    return _settingsLocal.set(_hiddenKey, json.encode(hidden));
+  }
+
   Future<void> clear() async {
     _revision++;
     await Future.wait<void>(<Future<void>>[_settingsLocal.delete(_key), _settingsLocal.delete(_hiddenKey)]);

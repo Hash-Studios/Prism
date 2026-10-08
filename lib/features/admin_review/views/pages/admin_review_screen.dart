@@ -9,6 +9,7 @@ import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
+import 'package:Prism/features/admin_review/views/widgets/reject_reason_chips.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -373,6 +374,12 @@ class _RejectReasonDialogState extends State<_RejectReasonDialog> {
                   setState(() => _errorMessage = null);
                 }
               },
+            ),
+            const SizedBox(height: 8),
+            RejectReasonChips(
+              controller: _controller,
+              enabled: !_isSaving,
+              onPicked: () => setState(() => _errorMessage = null),
             ),
             if (_errorMessage != null) ...<Widget>[
               const SizedBox(height: 8),

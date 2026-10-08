@@ -1,19 +1,37 @@
 import 'dart:convert';
 
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:http/http.dart' as http;
 
+/// Keeps the inviter of a referral link and claims the reward when the user is signed in.
+Future<void> acceptReferralLink(String inviterId) async {
+  await CoinsService.instance.setPendingReferralInviterId(inviterId);
+  if (app_state.prismUser.loggedIn) {
+    await CoinsService.instance.processPendingReferralIfEligible(inviterUserId: inviterId);
+  } else {
+    toasts.success('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.', haptic: false);
+  }
+}
+
 class DeepLinkNavigation {
-  const DeepLinkNavigation({this.parser = const DeepLinkParser(), this.httpClient});
+  const DeepLinkNavigation({
+    this.parser = const DeepLinkParser(),
+    this.httpClient,
+    this.onReferral = acceptReferralLink,
+  });
 
   final DeepLinkParser parser;
   final http.Client? httpClient;
+  final Future<void> Function(String inviterId) onReferral;
 
   bool isPrismDeepLink(Uri uri) {
     final String host = uri.host.toLowerCase();
@@ -44,7 +62,8 @@ class DeepLinkNavigation {
         toasts.error('Home screen setups are no longer available.', haptic: false);
         return const HomeTabRoute();
       case ReferLinkIntent():
-        return null;
+        await onReferral(action.inviterId);
+        return const RewardsTabRoute();
       case ShortCodeIntent():
         final DeepLinkActionEntity? resolved = await _resolveShortCode(action.code);
         if (resolved == null) {

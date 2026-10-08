@@ -21,6 +21,7 @@ import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
+import 'package:Prism/features/library/views/pages/library_screen.dart';
 import 'package:Prism/features/live_wallpaper/views/pages/live_wallpaper_screen.dart';
 import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
@@ -31,6 +32,7 @@ import 'package:Prism/features/public_profile/views/pages/followers_screen.dart'
 import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
+import 'package:Prism/features/rewards/views/pages/coin_history_page.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
@@ -40,11 +42,13 @@ import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
+import 'package:Prism/features/wall_of_the_day/views/pages/wotd_archive_page.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
 import 'package:Prism/features/wallpaper_history/views/pages/wallpaper_history_screen.dart';
+import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
@@ -119,6 +123,7 @@ class AppRouter extends RootStackRouter {
     // Global routes (pushed over entire shell as full-screen dialogs)
     AutoRoute(path: '/ai', page: AiTabRoute.page),
     AutoRoute(path: '/wallpaper-detail', page: WallpaperDetailRoute.page),
+    AutoRoute(path: '/wotd-archive', page: WotdArchiveRoute.page),
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
     // Standalone path so Edit Profile works when ProfileScreen was opened via
@@ -132,6 +137,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/about', page: AboutRoute.page),
     AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page),
     AutoRoute(path: '/downloads', page: DownloadRoute.page),
+    AutoRoute(path: '/library', page: LibraryRoute.page),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
@@ -150,8 +156,10 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
     AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
     AutoRoute(path: '/wallpaper-history', page: WallpaperHistoryRoute.page),
+    AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),
+    AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page),
     RedirectRoute(path: '/streak', redirectTo: '/rewards'),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),
     RedirectRoute(path: '*', redirectTo: '/not-found'),

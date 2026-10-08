@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/platform/quick_settings_channel.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/env/env.dart';
@@ -71,6 +72,7 @@ class QuickTileConfigService {
     final prefs = await SharedPreferences.getInstance();
     await _setString(prefs, PersistenceKeys.quickTileWotdUrl, url);
     await persistPexelsApiKey();
+    await const QuickSettingsChannel().refreshWotdWidget();
   }
 
   static Future<QuickTileWotdConfig?> loadWotdTileConfig() async {

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -105,14 +106,28 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
     _applyStep(widget.step, animate: false);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _revealCtrl.forward(from: 0);
+      if (!mounted) return;
+      if (context.reduceMotion) {
+        _revealCtrl.value = 1;
+      } else {
+        _revealCtrl.forward(from: 0);
+      }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) {
+      _revealCtrl.value = 1;
+      _blurCtrl.value = 1;
+    }
   }
 
   @override
   void didUpdateWidget(OnboardingStepBackground old) {
     super.didUpdateWidget(old);
-    if (old.step != widget.step) _applyStep(widget.step, animate: true);
+    if (old.step != widget.step) _applyStep(widget.step, animate: !context.reduceMotion);
   }
 
   void _applyStep(OnboardingV2Step step, {required bool animate}) {
@@ -163,7 +178,7 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
           fit: StackFit.expand,
           children: [
             AnimatedOpacity(
-              duration: OnboardingMotion.normal,
+              duration: context.motion(OnboardingMotion.normal),
               opacity: _showFinal ? 0.0 : 1.0,
               child: OnboardingBackground(
                 assetPath: OnboardingAssets.wallpaperPrimary,
@@ -171,7 +186,11 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
                 imageScale: revealScale * (sigma > 0 ? 1.04 : 1.0),
               ),
             ),
-            AnimatedOpacity(duration: OnboardingMotion.normal, opacity: _showFinal ? 1.0 : 0.0, child: child),
+            AnimatedOpacity(
+              duration: context.motion(OnboardingMotion.normal),
+              opacity: _showFinal ? 1.0 : 0.0,
+              child: child,
+            ),
           ],
         );
       },

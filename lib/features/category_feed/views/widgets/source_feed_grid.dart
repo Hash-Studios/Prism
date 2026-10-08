@@ -17,6 +17,7 @@ import 'package:Prism/features/category_feed/views/widgets/category_feed_refresh
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Shared grid body for a single [FeedItemEntity] subtype. Only the item
@@ -28,12 +29,16 @@ class SourceFeedGrid<T extends FeedItemEntity> extends StatefulWidget {
     required this.listName,
     required this.sourceContextPrefix,
     this.itemWrapper,
+    this.includePrism = false,
   });
 
   final AnalyticsSurfaceValue surface;
   final ScrollListNameValue listName;
   final String sourceContextPrefix;
   final Widget Function(BuildContext context, T item, Widget tile)? itemWrapper;
+
+  /// Also shows Prism walls. A category on Wallhaven or Pexels starts with creator walls from Prism.
+  final bool includePrism;
 
   @override
   State<SourceFeedGrid<T>> createState() => _SourceFeedGridState<T>();
@@ -60,11 +65,13 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
   @override
   Widget build(BuildContext context) {
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
-    final List<T> walls = state.items.whereType<T>().toList(growable: false);
+    final List<FeedItemEntity> walls = state.items
+        .where((item) => item is T || (widget.includePrism && item is PrismFeedItem))
+        .toList(growable: false);
 
     if (walls.isEmpty) {
       return state.status == LoadStatus.initial || state.status == LoadStatus.loading
-          ? const LoadingCards()
+          ? const LoadingCards(useFeedLayout: true)
           : RefreshableGlintState(
               kind: GlintStateKind.empty,
               title: 'No wallpapers here yet',
@@ -122,6 +129,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
         },
         child: GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
+          scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
           padding: EdgeInsets.zero,
           itemCount: walls.length + (state.hasMore ? 1 : 0),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -151,11 +159,16 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
                 },
               );
             }
-            final T item = walls[index];
-            final Widget tile = WallpaperTile(item: item, index: index);
+            final FeedItemEntity item = walls[index];
+            final Widget tile = WallpaperTile(
+              item: item,
+              index: index,
+              quickActions: true,
+              sourceContext: widget.includePrism && item is PrismFeedItem ? 'category_prism_first' : null,
+            );
             return KeyedSubtree(
               key: ValueKey<String>(item.id),
-              child: widget.itemWrapper?.call(context, item, tile) ?? tile,
+              child: item is T ? widget.itemWrapper?.call(context, item, tile) ?? tile : tile,
             );
           },
         ),

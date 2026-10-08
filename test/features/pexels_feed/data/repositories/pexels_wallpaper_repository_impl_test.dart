@@ -33,6 +33,22 @@ class _NoFeedCache extends Fake implements FeedCacheLocalDataSource {
 }
 
 void main() {
+  test('the home feed asks Pexels for 30 photos a page and the category grids ask for 80', () async {
+    final List<String> perPage = <String>[];
+    final http.Client client = MockClient((http.Request request) async {
+      perPage.add(request.url.queryParameters['per_page']!);
+      return http.Response('{"page":1,"per_page":30,"total_results":0,"photos":[]}', 200);
+    });
+    final repository = PexelsWallpaperRepositoryImpl(_NoFeedCache());
+
+    await http.runWithClient(() async {
+      await repository.fetchFeed(categoryName: 'Nature', refresh: true, paginationKey: 'personalized:Nature');
+      await repository.fetchFeed(categoryName: 'Nature', refresh: true);
+    }, () => client);
+
+    expect(perPage, <String>['30', '80']);
+  });
+
   test('category and personalized searches keep independent pagination', () async {
     final List<int> pages = <int>[];
     final http.Client client = MockClient((http.Request request) async {

@@ -65,6 +65,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
       state.copyWith(
         status: LoadStatus.loading,
         actionStatus: ActionStatus.inProgress,
+        isFetchingMore: false,
         selectedCategory: event.category,
         items: sameCategory ? state.items : const <FeedItemEntity>[],
         hasMore: sameCategory && state.hasMore,
@@ -73,6 +74,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     );
 
     final result = await _fetchCategoryFeedUseCase(FetchCategoryFeedParams(category: event.category, refresh: true));
+    if (!_isSelected(event.category)) return;
 
     result.fold(
       onSuccess: (page) => emit(
@@ -96,16 +98,20 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     );
   }
 
+  bool _isSelected(CategoryEntity category) =>
+      state.selectedCategory?.name == category.name && state.selectedCategory?.source == category.source;
+
   Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<CategoryFeedState> emit) async {
     if (state.isFetchingMore || !state.hasMore || state.selectedCategory == null) {
       return;
     }
 
+    final CategoryEntity selected = state.selectedCategory!;
     emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress));
 
-    final result = await _fetchCategoryFeedUseCase(
-      FetchCategoryFeedParams(category: state.selectedCategory!, refresh: false),
-    );
+    final result = await _fetchCategoryFeedUseCase(FetchCategoryFeedParams(category: selected, refresh: false));
+    // The user opened another category while this page loaded. Its items must not join the new list.
+    if (!_isSelected(selected)) return;
 
     result.fold(
       onSuccess: (page) {

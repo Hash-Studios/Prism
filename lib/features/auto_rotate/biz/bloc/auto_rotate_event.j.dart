@@ -10,9 +10,11 @@ abstract class AutoRotateEvent with _$AutoRotateEvent {
   const factory AutoRotateEvent.targetChanged(WallpaperTarget target) = _TargetChanged;
   const factory AutoRotateEvent.shuffleChanged(bool shuffle) = _ShuffleChanged;
   const factory AutoRotateEvent.sourceChanged(AutoRotateSource source) = _SourceChanged;
+  const factory AutoRotateEvent.categoryChanged(String category) = _CategoryChanged;
   const factory AutoRotateEvent.chargingOnlyChanged(bool chargingOnly) = _ChargingOnlyChanged;
   const factory AutoRotateEvent.rotateNowPressed() = _RotateNowPressed;
   const factory AutoRotateEvent.favouritesSettled() = _FavouritesSettled;
   const factory AutoRotateEvent.statusRefreshed() = _StatusRefreshed;
   const factory AutoRotateEvent.batteryTipDismissed() = _BatteryTipDismissed;
+  const factory AutoRotateEvent.proLapseAcknowledged() = _ProLapseAcknowledged;
 }

@@ -1,19 +1,23 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {db, REGION} from "./common";
+import {logger} from "firebase-functions/v2";
+import {db, REGION, utcDateString} from "./common";
 
-const WALLPAPER_STATS = "wallpaper_stats";
+export const WALLPAPER_STATS = "wallpaper_stats";
+export const WALLPAPER_STATS_DAILY = "wallpaper_stats_daily";
 const SETUP_STATS = "setup_stats";
 const MAX_ID_LEN = 128;
 const VIEW_COOLDOWN_MS = 60 * 60 * 1000;
 /** Rate docs are only read within the cooldown; the TTL policy on `expireAt` deletes them after this. */
-const RATE_DOC_TTL_MS = 24 * 60 * 60 * 1000;
+export const RATE_DOC_TTL_MS = 24 * 60 * 60 * 1000;
+/** Per-day stats docs only feed the 7 day trending score; the TTL policy on `expireAt` deletes them after this. */
+const DAILY_DOC_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
 interface RecordViewResponse {
   views: number;
 }
 
-function normalizeId(raw: unknown): string {
+export function normalizeId(raw: unknown): string {
   if (typeof raw !== "string") {
     throw new HttpsError("invalid-argument", "id must be a string.");
   }
@@ -40,9 +44,42 @@ const NOT_FOUND = 5;
 const FAILED_PRECONDITION = 9;
 
 /** Another call claimed the same view first: the create found a doc, or the doc changed since it was read. */
-function isLostClaim(err: unknown): boolean {
+export function isLostClaim(err: unknown): boolean {
   const code = (err as {code?: unknown}).code;
   return code === ALREADY_EXISTS || code === NOT_FOUND || code === FAILED_PRECONDITION;
+}
+
+/**
+ * Takes the rate doc for one caller. The create, or the update pinned to the doc version that was read, succeeds
+ * for one concurrent call only. Returns false when another call claimed it first.
+ */
+export async function claimRateDoc(
+  rateRef: admin.firestore.DocumentReference,
+  rateSnap: admin.firestore.DocumentSnapshot,
+  claim: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    if (rateSnap.exists && rateSnap.updateTime) {
+      await rateRef.update(claim, {lastUpdateTime: rateSnap.updateTime});
+    } else {
+      await rateRef.create(claim);
+    }
+    return true;
+  } catch (err) {
+    if (isLostClaim(err)) return false;
+    throw err;
+  }
+}
+
+/** Adds one event to the wallpaper's doc for the UTC day of `nowMs`. The trending job reads these docs. */
+export async function bumpDaily(wallId: string, field: string, nowMs: number): Promise<void> {
+  const day = utcDateString(new Date(nowMs)).replace(/-/g, "");
+  await db.collection(WALLPAPER_STATS_DAILY).doc(`${day}_${wallId}`).set({
+    wallId,
+    day,
+    [field]: admin.firestore.FieldValue.increment(1),
+    expireAt: admin.firestore.Timestamp.fromMillis(nowMs + DAILY_DOC_TTL_MS),
+  }, {merge: true});
 }
 
 /** A missing or numeric counter takes an atomic increment. Any other type is a legacy value and is migrated in a transaction. */
@@ -75,18 +112,13 @@ async function incrementAndReadViews(uid: string, collection: string, docId: str
     lastAt: admin.firestore.Timestamp.fromMillis(now),
     expireAt: admin.firestore.Timestamp.fromMillis(now + RATE_DOC_TTL_MS),
   };
-  // The create, or the update pinned to the doc version that was read, succeeds for one concurrent call only.
-  try {
-    if (rateSnap.exists && rateSnap.updateTime) {
-      await rateRef.update(claim, {lastUpdateTime: rateSnap.updateTime});
-    } else {
-      await rateRef.create(claim);
-    }
-  } catch (err) {
-    if (isLostClaim(err)) return views;
-    throw err;
-  }
+  if (!(await claimRateDoc(rateRef, rateSnap, claim))) return views;
   await bumpViews(statsRef, rawViews);
+  if (collection === WALLPAPER_STATS) {
+    await bumpDaily(docId, "views", now).catch((err: unknown) => {
+      logger.warn("Could not record the daily view.", {err});
+    });
+  }
   return views + 1;
 }
 

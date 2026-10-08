@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show SocketException;
 
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -183,6 +185,34 @@ void main() {
     await tester.pump(const Duration(seconds: 11));
 
     expect((await pending).isFailure, isTrue);
+  });
+
+  group('fetchById failures', () {
+    Future<Result<WallhavenWallpaper?>> fetchWith(http.Client client) {
+      final repository = WallhavenWallpaperRepositoryImpl(_NoFeedCache());
+      return http.runWithClient(() => repository.fetchById('abc123'), () => client);
+    }
+
+    test('a server error tells the user to check the connection and keeps the status in the code', () async {
+      final result = await fetchWith(MockClient((_) async => http.Response('boom', 503, reasonPhrase: 'Unavailable')));
+
+      expect(result.failure!.message, wallpaperLoadFailureMessage);
+      expect(result.failure!.code, 'http_503');
+      expect(result.failure!.message, isNot(contains('503')));
+    });
+
+    test('a thrown network error never reaches the screen as raw text', () async {
+      final result = await fetchWith(MockClient((_) async => throw const SocketException('Failed host lookup')));
+
+      expect(result.failure!.message, wallpaperLoadFailureMessage);
+    });
+
+    test('a wall Wallhaven does not know is a success with no wall, so the screen can say it was not found', () async {
+      final result = await fetchWith(MockClient((_) async => http.Response('{}', 404)));
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data, isNull);
+    });
   });
 }
 

@@ -1,3 +1,5 @@
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -8,6 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/fake_app_analytics.dart';
 import '../../support/fake_firestore_client.dart';
 
 void main() {
@@ -17,8 +20,11 @@ void main() {
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 
   late FakeFirestoreClient firestore;
+  late FakeAppAnalytics analyticsSink;
 
   setUp(() async {
+    analyticsSink = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analyticsSink;
     await getIt.reset();
     firestore = FakeFirestoreClient();
     getIt.registerSingleton<FirestoreClient>(firestore);
@@ -26,13 +32,14 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
     ) async {
-      toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
     toastMessages.clear();
   });
 
   tearDown(() async {
+    AnalyticsRuntime.reset();
     app_state.prismUser.email = '';
     await getIt.reset();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
@@ -41,6 +48,7 @@ void main() {
   test('maps legacy setup notification routes to home and shows a toast', () async {
     final route = await mapper.fromRoute(route: '/setup/legacy-id', sourceTag: 'test');
     expect(route, isA<HomeTabRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>['Home screen setups are no longer available.']);
   });
 
@@ -91,6 +99,7 @@ void main() {
     final route = await mapper.fromRoute(route: 'wall', wallId: 'w1', sourceTag: 'test');
 
     expect(route, isA<WallpaperDetailRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, isEmpty);
   });
 
@@ -100,6 +109,7 @@ void main() {
     final route = await mapper.fromRoute(route: 'wall', wallId: 'w1', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>[unavailable]);
   });
 
@@ -116,6 +126,7 @@ void main() {
     final route = await mapper.fromPayload(<String, dynamic>{'route': 'wall', 'wall_id': 'gone'}, sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>[unavailable]);
   });
 
@@ -123,6 +134,7 @@ void main() {
     final route = await mapper.fromRoute(route: 'wall', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>[unavailable]);
   });
 
@@ -133,6 +145,7 @@ void main() {
     final route = await mapper.fromRoute(route: 'wall', wallId: 'w1', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>[unavailable]);
   });
 
@@ -148,6 +161,7 @@ void main() {
     final route = await mapper.fromRoute(route: 'content_report', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>[unavailable]);
   });
 
@@ -155,6 +169,7 @@ void main() {
     final route = await mapper.fromRoute(route: 'totally_unknown', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>[unavailable]);
   });
 
@@ -162,6 +177,7 @@ void main() {
     final route = await mapper.fromPayload(const <String, dynamic>{}, sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, isEmpty);
   });
 
@@ -176,7 +192,58 @@ void main() {
 
     expect(unknown, isNull);
     expect(missingWall, isNull);
+    await Future<void>.delayed(Duration.zero);
     expect(toastMessages, isEmpty);
+  });
+
+  group('push tap analytics', () {
+    List<PushKindValue?> openedKinds() => analyticsSink.events
+        .whereType<PushOpenedEvent>()
+        .map<PushKindValue?>((PushOpenedEvent event) => event.kind)
+        .toList();
+
+    test('names the kind of every push the server sends', () {
+      expect(
+        NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'streak_reminder'}),
+        PushKindValue.streakReminder,
+      );
+      expect(NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'follower'}), PushKindValue.follower);
+      expect(
+        NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'wall', 'wall_id': 'w1'}),
+        PushKindValue.post,
+      );
+      expect(NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'wall_of_the_day'}), PushKindValue.wotd);
+      expect(
+        NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'content_report'}),
+        PushKindValue.moderation,
+      );
+      expect(
+        NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'wall', 'report_id': 'r1'}),
+        PushKindValue.moderation,
+      );
+      expect(NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'announcement'}), isNull);
+      expect(NotificationRouteMapper.pushKindFor(<String, dynamic>{}), isNull);
+    });
+
+    test('a push tap records push_opened once with its kind', () async {
+      await mapper.fromPayload(<String, dynamic>{'route': 'streak_reminder'}, sourceTag: 'test');
+      await mapper.fromPayload(<String, dynamic>{'route': 'follower', 'profile_identifier': 'ana'}, sourceTag: 'test');
+      await mapper.fromPayload(<String, dynamic>{'route': 'wall_of_the_day'}, sourceTag: 'test');
+
+      expect(openedKinds(), <PushKindValue?>[PushKindValue.streakReminder, PushKindValue.follower, PushKindValue.wotd]);
+    });
+
+    test('an inbox row does not count as a push tap', () async {
+      await mapper.fromRoute(route: 'streak_reminder', sourceTag: 'test');
+
+      expect(openedKinds(), isEmpty);
+    });
+
+    test('trackPushOpened records the tap for a push that opened as a deep link', () {
+      mapper.trackPushOpened(<String, dynamic>{'route': 'follower', 'url': 'https://prismwalls.com/user/ana'});
+
+      expect(openedKinds(), <PushKindValue?>[PushKindValue.follower]);
+    });
   });
 }
 

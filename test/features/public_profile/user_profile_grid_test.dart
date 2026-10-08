@@ -39,7 +39,7 @@ void main() {
   });
 
   for (final thumbnail in <String, String>{
-    'https://th.wallhaven.cc/lg/21/profile.jpg': 'https://th.wallhaven.cc/orig/21/profile.jpg',
+    'https://th.wallhaven.cc/small/21/profile.jpg': 'https://th.wallhaven.cc/lg/21/profile.jpg',
     'https://images.pexels.com/photos/1/tiny.jpg?fit=crop&w=200&h=280':
         'https://images.pexels.com/photos/1/tiny.jpg?fit=max&w=200&h=280',
   }.entries) {

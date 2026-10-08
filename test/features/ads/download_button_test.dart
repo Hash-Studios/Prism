@@ -101,7 +101,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Free with Pro'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 

@@ -3,9 +3,14 @@ part of 'favourite_walls_bloc.j.dart';
 @freezed
 abstract class FavouriteWallsEvent with _$FavouriteWallsEvent {
   const factory FavouriteWallsEvent.started({required String userId, @Default(0) int operationId}) = _Started;
+  const factory FavouriteWallsEvent.synced({required String userId, required List<FavouriteWallEntity> items}) =
+      _Synced;
   const factory FavouriteWallsEvent.refreshRequested({@Default(0) int operationId}) = _RefreshRequested;
-  const factory FavouriteWallsEvent.toggleRequested({required FavouriteWallEntity wall, @Default(0) int operationId}) =
-      _ToggleRequested;
+  const factory FavouriteWallsEvent.toggleRequested({
+    required FavouriteWallEntity wall,
+    bool? desired,
+    @Default(0) int operationId,
+  }) = _ToggleRequested;
   const factory FavouriteWallsEvent.clearRequested({@Default(0) int operationId}) = _ClearRequested;
   const factory FavouriteWallsEvent.sortChanged({required FavouriteSort sort}) = _SortChanged;
   const factory FavouriteWallsEvent.sourceFilterChanged({WallpaperSource? source}) = _SourceFilterChanged;

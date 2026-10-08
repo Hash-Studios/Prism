@@ -24,6 +24,7 @@ class PrismImageTile extends StatefulWidget {
     required this.url,
     this.fallbackUrl,
     this.memCacheHeight,
+    this.memCacheWidth,
     this.heroTag,
     this.borderRadius,
   });
@@ -33,6 +34,7 @@ class PrismImageTile extends StatefulWidget {
   /// Tries the full wallpaper after a thumbnail failure, then offers retry if both fail.
   final String? fallbackUrl;
   final int? memCacheHeight;
+  final int? memCacheWidth;
   final String? heroTag;
   final BorderRadius? borderRadius;
 
@@ -72,11 +74,10 @@ class _PrismImageTileState extends State<PrismImageTile> {
     fadeInCurve: Curves.easeOut,
     fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
     memCacheHeight: widget.memCacheHeight,
+    memCacheWidth: widget.memCacheWidth,
     placeholder: (_, _) => PulseFill(borderRadius: widget.borderRadius),
     errorWidget: (context, _, _) => fallback != null && fallback.isNotEmpty && fallback != url
         ? _image(context, fallback)
-        : widget.fallbackUrl == null
-        ? PulseFill(borderRadius: widget.borderRadius)
         : ColoredBox(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Align(

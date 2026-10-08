@@ -45,6 +45,7 @@ OG_FALLBACK_IMAGE = "https://raw.githubusercontent.com/Hash-Studios/Prism/master
 BROWSER_RENDERING_ACCOUNT_ID = "bc455bbb5c1264123e8565e360dd6da9"
 FIREBASE_PROJECT_ID = "prism-wallpapers"
 FIREBASE_AUTH_DEBUG = "false"
+AI_REQUIRE_CHARGE = "false"
 
 [[kv_namespaces]]
 binding = "LINKS_KV"

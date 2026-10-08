@@ -29,6 +29,7 @@ void main() {
   late CacheMaintenanceService service;
   late _MockImageCache imageCache;
   late _MockImageCache thumbnailCache;
+  late _MockImageCache fullImageCache;
   late _MockNotificationsLocal notifications;
   late _MockFeedCacheLocal feeds;
   late _MockAppIconsLocal icons;
@@ -55,11 +56,13 @@ void main() {
     });
     imageCache = _MockImageCache();
     thumbnailCache = _MockImageCache();
+    fullImageCache = _MockImageCache();
     notifications = _MockNotificationsLocal();
     feeds = _MockFeedCacheLocal();
     icons = _MockAppIconsLocal();
     when(() => imageCache.emptyCache()).thenAnswer((_) async {});
     when(() => thumbnailCache.emptyCache()).thenAnswer((_) async {});
+    when(() => fullImageCache.emptyCache()).thenAnswer((_) async {});
     when(() => notifications.clearAll()).thenAnswer((_) async {});
     when(() => notifications.clearLastFetchAtUtc()).thenAnswer((_) async {});
     when(() => feeds.clearAllFeedCaches()).thenAnswer((_) async {});
@@ -70,6 +73,7 @@ void main() {
       icons,
       imageCache: imageCache,
       thumbnailCache: thumbnailCache,
+      fullImageCache: fullImageCache,
     );
   });
 
@@ -126,6 +130,12 @@ void main() {
     await service.clearTransientCache();
     verify(() => imageCache.emptyCache()).called(2);
     verify(() => thumbnailCache.emptyCache()).called(2);
+  });
+
+  test('clearing cache also empties the full-size wallpaper cache', () async {
+    await service.clearTransientCache();
+
+    verify(() => fullImageCache.emptyCache()).called(1);
   });
 
   test('clearing cache does not create a missing documents directory', () async {

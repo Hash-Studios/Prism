@@ -1,5 +1,8 @@
 import 'dart:math';
 
+/// Length of a new wall `id`. Four characters collided near 1,000 walls; ten gives about 5e14 values.
+const int uploadIdLength = 10;
+
 /// A random upload id of [length] characters: capital letters with one digit at a random position.
 String randomUploadId(int length, {Random? random}) {
   final Random r = random ?? Random();

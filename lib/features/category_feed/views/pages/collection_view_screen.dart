@@ -86,7 +86,9 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
         preferredSize: const Size(double.infinity, 55),
         child: HeadingChipBar(current: title),
       ),
-      body: _isCategoryView ? _CategoryFeedContent(onRetry: _selectCategory) : _buildCollectionContent(),
+      body: _isCategoryView
+          ? _CategoryFeedContent(categoryName: _decodedCategoryName, onRetry: _selectCategory)
+          : _buildCollectionContent(),
     );
   }
 
@@ -95,14 +97,14 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
       future: _collectionFuture,
       builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingCards();
+          return const LoadingCards(useFeedLayout: true);
         }
         if (snapshot.hasError) {
           return RefreshableGlintState(
             kind: GlintStateKind.error,
             title: "Couldn't load this collection",
             body: 'Check your connection and try again.',
-            actionLabel: 'Retry',
+            actionLabel: 'Try again',
             onAction: () => unawaited(_retryCollection()),
             onRefresh: _retryCollection,
           );
@@ -114,23 +116,34 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
 }
 
 class _CategoryFeedContent extends StatelessWidget {
-  const _CategoryFeedContent({required this.onRetry});
+  const _CategoryFeedContent({required this.categoryName, required this.onRetry});
 
+  final String categoryName;
   final Future<void> Function() onRetry;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<CategoryFeedBloc, CategoryFeedState>(
       builder: (context, state) {
+        // The bloc is shared, so until it selects this category it still holds the previous one. A name that is
+        // not in the list falls back to the first category, as `_selectCategory` does.
+        final List<String> names = state.categories.map((category) => category.name.trim().toLowerCase()).toList();
+        final String wanted = categoryName.toLowerCase();
+        final String? expected = names.isEmpty ? null : (names.contains(wanted) ? wanted : names.first);
+        final bool showsThisCategory =
+            expected != null && state.selectedCategory?.name.trim().toLowerCase() == expected;
+        if (!showsThisCategory && !(state.items.isEmpty && state.status == LoadStatus.failure)) {
+          return const LoadingCards(useFeedLayout: true);
+        }
         if (state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading)) {
-          return const LoadingCards();
+          return const LoadingCards(useFeedLayout: true);
         }
         if (state.items.isEmpty && state.status == LoadStatus.failure) {
           return RefreshableGlintState(
             kind: GlintStateKind.error,
             title: "Couldn't load wallpapers",
             body: 'Check your connection and try again.',
-            actionLabel: 'Retry',
+            actionLabel: 'Try again',
             onAction: () => unawaited(onRetry()),
             onRefresh: () {
               PrismHaptics.impact();
