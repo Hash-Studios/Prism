@@ -625,6 +625,55 @@ class HomeTabRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [LiveWallpaperScreen]
+class LiveWallpaperRoute extends PageRouteInfo<LiveWallpaperRouteArgs> {
+  LiveWallpaperRoute({
+    Key? key,
+    String? imageUrl,
+    List<PageRouteInfo>? children,
+  }) : super(
+         LiveWallpaperRoute.name,
+         args: LiveWallpaperRouteArgs(key: key, imageUrl: imageUrl),
+         initialChildren: children,
+       );
+
+  static const String name = 'LiveWallpaperRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<LiveWallpaperRouteArgs>(
+        orElse: () => const LiveWallpaperRouteArgs(),
+      );
+      return LiveWallpaperScreen(key: args.key, imageUrl: args.imageUrl);
+    },
+  );
+}
+
+class LiveWallpaperRouteArgs {
+  const LiveWallpaperRouteArgs({this.key, this.imageUrl});
+
+  final Key? key;
+
+  final String? imageUrl;
+
+  @override
+  String toString() {
+    return 'LiveWallpaperRouteArgs{key: $key, imageUrl: $imageUrl}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! LiveWallpaperRouteArgs) return false;
+    return key == other.key && imageUrl == other.imageUrl;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ imageUrl.hashCode;
+}
+
+/// generated route for
 /// [NotFoundPage]
 class NotFoundRoute extends PageRouteInfo<void> {
   const NotFoundRoute({List<PageRouteInfo>? children})
@@ -946,6 +995,8 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
     Future<void> Function({required String path, required String sha})?
     deleteFileForTesting,
     Future<WallSubmissionResult> Function()? createRecordForTesting,
+    Future<void> Function()? presentPaywallForTesting,
+    DateTime Function()? nowForTesting,
     List<PageRouteInfo>? children,
   }) : super(
          UploadWallRoute.name,
@@ -956,6 +1007,8 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
            uploadFileForTesting: uploadFileForTesting,
            deleteFileForTesting: deleteFileForTesting,
            createRecordForTesting: createRecordForTesting,
+           presentPaywallForTesting: presentPaywallForTesting,
+           nowForTesting: nowForTesting,
          ),
          initialChildren: children,
        );
@@ -973,6 +1026,8 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
         uploadFileForTesting: args.uploadFileForTesting,
         deleteFileForTesting: args.deleteFileForTesting,
         createRecordForTesting: args.createRecordForTesting,
+        presentPaywallForTesting: args.presentPaywallForTesting,
+        nowForTesting: args.nowForTesting,
       );
     },
   );
@@ -986,6 +1041,8 @@ class UploadWallRouteArgs {
     this.uploadFileForTesting,
     this.deleteFileForTesting,
     this.createRecordForTesting,
+    this.presentPaywallForTesting,
+    this.nowForTesting,
   });
 
   final Key? key;
@@ -1002,9 +1059,13 @@ class UploadWallRouteArgs {
 
   final Future<WallSubmissionResult> Function()? createRecordForTesting;
 
+  final Future<void> Function()? presentPaywallForTesting;
+
+  final DateTime Function()? nowForTesting;
+
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting}';
   }
 
   @override
@@ -1191,4 +1252,20 @@ class WallpaperFilterRouteArgs {
 
   @override
   int get hashCode => filePath.hashCode ^ key.hashCode;
+}
+
+/// generated route for
+/// [WallpaperHistoryScreen]
+class WallpaperHistoryRoute extends PageRouteInfo<void> {
+  const WallpaperHistoryRoute({List<PageRouteInfo>? children})
+    : super(WallpaperHistoryRoute.name, initialChildren: children);
+
+  static const String name = 'WallpaperHistoryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const WallpaperHistoryScreen();
+    },
+  );
 }

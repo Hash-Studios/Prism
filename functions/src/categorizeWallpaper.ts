@@ -5,6 +5,16 @@ import {getAdminEmails} from "./adminConfig";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, REGION} from "./common";
 
+/** A wall doc id: a non-empty string without a slash, at most 128 characters. */
+export function parseWallId(raw: unknown): string {
+  const wallId = typeof raw === "string" ? raw.trim() : "";
+  if (!wallId || wallId.length > 128 || wallId.includes("/") || wallId === "." || wallId === ".." ||
+      /^__.*__$/.test(wallId)) {
+    throw new HttpsError("invalid-argument", "wallId must be a valid wallpaper id.");
+  }
+  return wallId;
+}
+
 export const categorizeWallpaper = onCall(
   {
     region: REGION,
@@ -15,11 +25,7 @@ export const categorizeWallpaper = onCall(
       throw new HttpsError("unauthenticated", "Sign in to categorize wallpapers.");
     }
 
-    const {wallId} = request.data;
-
-    if (!wallId) {
-      throw new HttpsError("invalid-argument", "wallId is required.");
-    }
+    const wallId = parseWallId(request.data?.wallId);
 
     const wallDoc = await db.collection("walls").doc(wallId).get();
 

@@ -51,6 +51,10 @@ function requiredText(value: unknown, field: string): string {
   return value.trim();
 }
 
+function optionalReason(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value.trim().slice(0, 200) : fallback;
+}
+
 function requiredDocumentId(value: unknown, field: string): string {
   const id = requiredText(value, field);
   if (id.includes("/") || id === "." || id === "..") {
@@ -207,11 +211,39 @@ function spendAmount(action: string, requested: unknown): number {
   return amount;
 }
 
+/** Response for a repeated spend: the original debit, with no second charge. */
+export function duplicateSpendResponse<T extends Record<string, unknown>>(
+  base: T,
+  original: admin.firestore.DocumentData,
+  balance: number,
+  reason: string,
+): T & {success: true; changed: true; previousBalance: number; currentBalance: number; delta: number; transactionId: string} {
+  const delta = typeof original.delta === "number" ? Math.trunc(original.delta) : 0;
+  return {
+    ...base,
+    success: true,
+    changed: true,
+    previousBalance: typeof original.balanceBefore === "number" ? Math.trunc(original.balanceBefore) : balance,
+    currentBalance: typeof original.balanceAfter === "number" ? Math.trunc(original.balanceAfter) : balance,
+    delta,
+    reason,
+    transactionId: typeof original.id === "string" ? original.id : "",
+  };
+}
+
 function writeTx(
   tx: admin.firestore.Transaction,
-  params: {userId: string; delta: number; previous: number; action: string; sourceTag: string; reason: string},
+  params: {
+    userId: string;
+    delta: number;
+    previous: number;
+    action: string;
+    sourceTag: string;
+    reason: string;
+    fixedId?: string;
+  },
 ): string {
-  const id = transactionId(params.action);
+  const id = params.fixedId ?? transactionId(params.action);
   tx.set(db.collection(TRANSACTIONS).doc(id), coinTransactionDoc({
     id,
     userId: params.userId,
@@ -230,7 +262,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
   const callerUid = uid(request);
   const action = requiredText(request.data?.action, "action");
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
-  const reason = typeof request.data?.reason === "string" ? request.data.reason.trim() : action;
+  const reason = optionalReason(request.data?.reason, action);
   const refundTxId = action === "refund" ? requiredDocumentId(request.data?.transactionId, "transactionId") : "";
   const userRef = db.collection(USERS).doc(callerUid);
   const nowMs = Date.now();
@@ -331,10 +363,16 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
   const callerUid = uid(request);
   const action = requiredText(request.data?.action, "action");
   const sourceTag = requiredText(request.data?.sourceTag, "sourceTag");
-  const reason = typeof request.data?.reason === "string" ? request.data.reason.trim() : action;
+  const reason = optionalReason(request.data?.reason, action);
   const bypass = request.data?.allowPremiumBypass === true;
   const cost = spendAmount(action, request.data?.amount);
+  const rawRequestId = request.data?.requestId;
+  if (rawRequestId != null && !isValidRequestId(rawRequestId)) {
+    throw new HttpsError("invalid-argument", "requestId is invalid.");
+  }
+  const requestId = rawRequestId ?? null;
   const userRef = db.collection(USERS).doc(callerUid);
+  const spendTxRef = requestId ? db.collection(TRANSACTIONS).doc(`spend_${callerUid}_${requestId}`) : null;
   let response = {
     success: false,
     changed: false,
@@ -352,8 +390,13 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     response = {...initialResponse};
     const snap = await tx.get(userRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
+    const spendTxSnap = spendTxRef ? await tx.get(spendTxRef) : null;
     const data = snap.data() ?? {};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
+    if (spendTxSnap?.exists) {
+      response = duplicateSpendResponse(response, spendTxSnap.data() ?? {}, previous, reason);
+      return;
+    }
     if (data.premium === true && bypass) {
       response = {
         ...response,
@@ -377,7 +420,15 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     }
     const current = previous - cost;
     tx.update(userRef, {coins: current});
-    const txId = writeTx(tx, {userId: callerUid, delta: -cost, previous, action, sourceTag, reason});
+    const txId = writeTx(tx, {
+      userId: callerUid,
+      delta: -cost,
+      previous,
+      action,
+      sourceTag,
+      reason,
+      fixedId: spendTxRef?.id,
+    });
     response = {
       ...response,
       transactionId: txId,

@@ -10,6 +10,8 @@ abstract class PrismMediaHostApi {
   DownloadItemsResult listDownloads();
   @async
   OperationResult clearDownloads();
+  @async
+  OperationResult deleteDownload(String path);
 }
 
 class SaveMediaRequest {

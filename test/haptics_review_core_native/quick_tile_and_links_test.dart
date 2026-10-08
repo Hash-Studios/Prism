@@ -1,6 +1,8 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
@@ -10,6 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
+
+import '../support/in_memory_local_store.dart';
 
 class _FailingPreferences extends InMemorySharedPreferencesStore {
   _FailingPreferences() : super.empty();
@@ -33,7 +37,9 @@ void main() {
   final messages = <String>[];
   const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 
-  setUp(() {
+  setUp(() async {
+    await getIt.reset();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
     haptics.clear();
     messages.clear();
     PrismHaptics.enabled = true;
@@ -48,7 +54,8 @@ void main() {
     });
   });
 
-  tearDown(() {
+  tearDown(() async {
+    await getIt.reset();
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
     messenger.setMockMethodCallHandler(toastChannel, null);
     debugDefaultTargetPlatformOverride = null;
@@ -71,7 +78,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
     await tester.pumpAndSettle();
     expect(haptics, isEmpty);
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Lock').first);
     await tester.pumpAndSettle();
 
     expect(messages, <String>['Failed to save settings']);
@@ -79,14 +86,15 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-  testWidgets('successful quick tile save plays success once', (tester) async {
+  testWidgets('quick tile changes save on their own and stay quiet', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
+    expect(find.text('Save'), findsNothing);
+    await tester.tap(find.text('Lock').first);
     await tester.pumpAndSettle();
 
-    expect(messages, <String>['Quick tile settings saved!']);
-    expect(haptics, <String>['HapticFeedbackType.successNotification']);
+    expect(messages, isEmpty);
+    expect((await SharedPreferences.getInstance()).getString('quick_tile.category.target'), 'lock');
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -94,7 +102,7 @@ void main() {
     SharedPreferencesStorePlatform.instance = _RejectedPreferences();
     await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save'));
+    await tester.tap(find.text('Lock').first);
     await tester.pumpAndSettle();
 
     expect(messages, <String>['Failed to save settings']);

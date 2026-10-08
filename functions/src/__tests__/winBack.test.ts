@@ -10,10 +10,11 @@ const DAY = 24 * 60 * 60 * 1000;
 const MIN = 60 * 1000;
 const idle = (ms: number) => winBackStepFor(NOW, NOW - ms, undefined);
 
-test("each step fires at exactly N days and just under N+1 days", () => {
+test("each step fires at exactly N days and just under N+2 days", () => {
   for (const n of WIN_BACK_STEPS) {
     assert.equal(idle(n * DAY), n);
-    assert.equal(idle((n + 1) * DAY - MIN), n);
+    assert.equal(idle((n + 1) * DAY), n);
+    assert.equal(idle((n + 2) * DAY - MIN), n);
   }
 });
 
@@ -23,17 +24,23 @@ test("N days minus 1 minute is the previous step or none", () => {
   assert.equal(idle(30 * DAY - MIN), null);
 });
 
-test("N+1 days is outside the window", () => {
-  assert.equal(idle(4 * DAY), null);
-  assert.equal(idle(8 * DAY), null);
-  assert.equal(idle(15 * DAY), null);
-  assert.equal(idle(31 * DAY), null);
+test("N+2 days is outside the window", () => {
+  assert.equal(idle(5 * DAY), null);
+  assert.equal(idle(9 * DAY), null);
+  assert.equal(idle(16 * DAY), null);
+  assert.equal(idle(32 * DAY), null);
 });
 
-test("0 to 2 days and over 61 days return null", () => {
+test("a day the job missed still gets the push on the next run, once", () => {
+  const last = NOW - 4 * DAY;
+  assert.equal(winBackStepFor(NOW, last, undefined), 3);
+  assert.equal(winBackStepFor(NOW, last, {step: 3, claimAtMs: last}), null);
+});
+
+test("0 to 2 days and over 62 days return null", () => {
   assert.equal(idle(0), null);
   assert.equal(idle(2 * DAY + 23 * 60 * MIN), null);
-  assert.equal(idle(61 * DAY), null);
+  assert.equal(idle(62 * DAY), null);
   assert.equal(idle(90 * DAY), null);
 });
 
@@ -84,19 +91,21 @@ function makeUser(id: string, idleDays: number, extra: Partial<User> & Record<st
   return {...base, ...extra, id, coinState: extra.coinState ?? base.coinState};
 }
 
-function messageCondition(message: admin.messaging.Message): string | undefined {
-  return "condition" in message ? message.condition : undefined;
+function messageTopic(message: admin.messaging.Message): string | undefined {
+  return "topic" in message ? message.topic : undefined;
 }
 
 async function runJob(users: User[], options: {
   failSend?: boolean;
   wall?: boolean;
+  token?: string;
 } = {}) {
   const firestore = admin.firestore();
   const messaging = admin.messaging();
   const loggerDescriptors = ["info", "warn", "error"].map((name) => [name,
     Object.getOwnPropertyDescriptor(logger, name)] as const);
   const firestoreCollection = firestore.collection.bind(firestore);
+  const firestoreDoc = firestore.doc.bind(firestore);
   const messagingSend = messaging.send.bind(messaging);
   const dateNow = Date.now;
   const state = new Map(users.map((u) => [u.id, u]));
@@ -177,6 +186,10 @@ async function runJob(users: User[], options: {
   };
 
   Object.defineProperty(firestore, "collection", {configurable: true, value: collection});
+  Object.defineProperty(firestore, "doc", {
+    configurable: true,
+    value: () => ({get: async () => ({data: () => options.token ? {fcmToken: options.token} : {}})}),
+  });
   Object.defineProperty(messaging, "send", {
     configurable: true,
     value: async (message: admin.messaging.Message) => {
@@ -196,6 +209,7 @@ async function runJob(users: User[], options: {
   } finally {
     Date.now = dateNow;
     Object.defineProperty(firestore, "collection", {configurable: true, value: firestoreCollection});
+    Object.defineProperty(firestore, "doc", {configurable: true, value: firestoreDoc});
     Object.defineProperty(messaging, "send", {configurable: true, value: messagingSend});
     for (const [name, descriptor] of loggerDescriptors) {
       if (descriptor) Object.defineProperty(logger, name, descriptor);
@@ -203,29 +217,38 @@ async function runJob(users: User[], options: {
   }
 }
 
-test("job includes every exact inactivity boundary and excludes its N+1 boundary", async () => {
+test("job includes every exact inactivity boundary and excludes its N+2 boundary", async () => {
   const users = WIN_BACK_STEPS.flatMap((step) => [
     makeUser(`exact-${step}`, step),
-    makeUser(`boundary-${step}`, step + 1),
+    makeUser(`missed-${step}`, step + 1.5),
+    makeUser(`boundary-${step}`, step + 2),
   ]);
   const {sent} = await runJob(users);
-  assert.equal(sent.length, WIN_BACK_STEPS.length);
-  const conditions = new Set(sent.map(messageCondition));
+  assert.equal(sent.length, WIN_BACK_STEPS.length * 2);
+  const topics = new Set(sent.map(messageTopic));
   for (const step of WIN_BACK_STEPS) {
-    assert.ok(conditions.has(`'u_exact-${step}' in topics || 'exact-${step}' in topics`));
-    assert.ok(!conditions.has(`'u_boundary-${step}' in topics || 'boundary-${step}' in topics`));
+    assert.ok(topics.has(`u_exact-${step}`));
+    assert.ok(topics.has(`u_missed-${step}`));
+    assert.ok(!topics.has(`u_boundary-${step}`));
   }
 });
 
-test("job sends one push using the uid/email condition and app payload", async () => {
+test("job sends one push to the uid topic with the app payload", async () => {
   const {sent} = await runJob([makeUser("authoritative", 3.5, {uid: "wrong-uid"})]);
   assert.equal(sent.length, 1);
-  const condition = messageCondition(sent[0]);
-  assert.equal(condition, "'u_authoritative' in topics || 'authoritative' in topics");
+  assert.equal(messageTopic(sent[0]), "u_authoritative");
   assert.equal(sent[0].data?.route, "wall_of_the_day");
   assert.equal(sent[0].data?.channel_id, "wall_of_the_day");
   assert.ok(sent[0].android?.notification?.channelId === "wall_of_the_day");
   assert.equal(sent[0].android?.notification?.tag, "win_back_3");
+});
+
+test("job also pushes to the stored token with the same collapse key", async () => {
+  const {sent} = await runJob([makeUser("tokened", 3.5)], {token: "tok-1"});
+  assert.equal(sent.length, 2);
+  assert.equal(messageTopic(sent[0]), "u_tokened");
+  assert.equal("token" in sent[1] ? sent[1].token : undefined, "tok-1");
+  assert.equal(sent[1].android?.notification?.tag, "win_back_3");
 });
 
 test("fresh activity, deleted users and logged-out users are skipped", async () => {
@@ -279,18 +302,12 @@ test("malformed completed dedupe timestamps do not crash or suppress an eligible
   assert.equal(sent.length, 1);
 });
 
-test("empty or invalid email topic falls back to only the authoritative uid topic", async () => {
-  const {sent} = await runJob([makeUser("uid-only", 3.5, {email: "###@example.com"})]);
-  assert.equal(sent.length, 1);
-  const condition = messageCondition(sent[0]);
-  assert.equal(condition, "'u_uid-only' in topics");
-});
-
-test("legacy topic preserves email case and uses the canonical document uid", async () => {
-  const {sent} = await runJob([makeUser("doc-uid", 3.5, {uid: "wrong", email: "Alice@example.com"})]);
-  assert.equal(sent.length, 1);
-  const condition = messageCondition(sent[0]);
-  assert.equal(condition, "'u_doc-uid' in topics || 'Alice' in topics");
+test("the shared email-prefix topic is never used", async () => {
+  const {sent} = await runJob([
+    makeUser("uid-only", 3.5, {email: "###@example.com"}),
+    makeUser("doc-uid", 3.5, {uid: "wrong", email: "Alice@example.com"}),
+  ]);
+  assert.deepEqual(sent.map(messageTopic).sort(), ["u_doc-uid", "u_uid-only"]);
 });
 
 test("payload carries the current wall details and falls back cleanly without one", async () => {

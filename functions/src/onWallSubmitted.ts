@@ -1,7 +1,7 @@
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
-import {sendNotification, emailToTopic} from "./notificationHelper";
+import {sendToUserByEmail} from "./notificationHelper";
 import {findUserByEmail, REGION, str} from "./common";
 
 /**
@@ -45,16 +45,14 @@ export const onWallSubmitted = onDocumentCreated(
     }
 
     for (const adminEmail of adminEmails) {
-      const adminTopic = emailToTopic(adminEmail);
-      await sendNotification({
+      await sendToUserByEmail({
         title: "New Premium Wall for review! 🎉",
         body: `New post by ${artistName} (${artistEmail}) is up for review.`,
         data: {route: "wall", wall_id: wallId},
         imageUrl: wallThumb || undefined,
         modifier: adminEmail,
         channelId: "posts",
-        fcmTarget: {topic: adminTopic},
-      });
+      }, adminEmail);
     }
 
     logger.info("onWallSubmitted: admin notifications sent.", {

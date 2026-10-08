@@ -1,9 +1,11 @@
-import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -28,7 +30,6 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
   WallpaperTarget _favsTarget = WallpaperTarget.both;
 
   bool _loading = true;
-  bool _saving = false;
 
   @override
   void initState() {
@@ -44,19 +45,20 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
         QuickTileConfigService.loadFavsTileConfig(),
       ).wait;
 
+      final QuickTileSeed config = await QuickTileDefaults.seedMissing(
+        category: catConfig,
+        wotd: wotdConfig,
+        favs: favsConfig,
+      );
+      await QuickTileDefaults.mirrorWallhavenCategories(getIt<SettingsLocalDataSource>());
+
       if (!mounted) return;
       setState(() {
-        if (catConfig != null) {
-          _selectedCategoryName = catConfig.categoryName;
-          _selectedCategorySource = catConfig.source;
-          _categoryTarget = catConfig.target;
-        }
-        if (wotdConfig != null) {
-          _wotdTarget = wotdConfig.target;
-        }
-        if (favsConfig != null) {
-          _favsTarget = favsConfig.target;
-        }
+        _selectedCategoryName = config.category.categoryName;
+        _selectedCategorySource = config.category.source;
+        _categoryTarget = config.category.target;
+        _wotdTarget = config.wotd.target;
+        _favsTarget = config.favs.target;
         _loading = false;
       });
     } catch (e, stackTrace) {
@@ -66,7 +68,6 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
   }
 
   Future<void> _saveAll() async {
-    setState(() => _saving = true);
     try {
       await Future.wait([
         QuickTileConfigService.saveCategoryTileConfig(
@@ -76,15 +77,12 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
         ),
         QuickTileConfigService.saveWotdTileConfig(target: _wotdTarget),
         QuickTileConfigService.saveFavsTileConfig(target: _favsTarget),
+        QuickTileDefaults.mirrorWallhavenCategories(getIt<SettingsLocalDataSource>()),
       ]);
-      if (!mounted) return;
-      toasts.success('Quick tile settings saved!');
     } catch (e, stackTrace) {
       logger.e('Failed to save quick tile settings', error: e, stackTrace: stackTrace);
       if (!mounted) return;
       toasts.error('Failed to save settings');
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -107,26 +105,6 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
           'Quick Tile Settings',
           style: TextStyle(color: theme.colorScheme.secondary, fontWeight: FontWeight.bold, fontFamily: _fontFamily),
         ),
-        actions: [
-          if (!_loading)
-            TextButton(
-              onPressed: _saving ? null : _saveAll,
-              child: AnimatedSwitcher(
-                duration: context.motion(PrismDurations.fast),
-                child: _saving
-                    ? SizedBox.square(
-                        key: const ValueKey('saving'),
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: accentColor),
-                      )
-                    : Text(
-                        'Save',
-                        key: const ValueKey('label'),
-                        style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontFamily: _fontFamily),
-                      ),
-              ),
-            ),
-        ],
       ),
       body: _loading
           ? const GlintState(kind: GlintStateKind.loading, title: 'Loading quick tiles')
@@ -138,7 +116,10 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                   description: 'Tap the tile to apply a random wallpaper from the selected category.',
                   accentColor: accentColor,
                   value: _categoryTarget,
-                  onChanged: (v) => setState(() => _categoryTarget = v),
+                  onChanged: (v) {
+                    setState(() => _categoryTarget = v);
+                    _saveAll();
+                  },
                   beforeTarget: [
                     const _FieldLabel('Category'),
                     const SizedBox(height: 8),
@@ -166,6 +147,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                                 _selectedCategoryName = cat.name;
                                 _selectedCategorySource = cat.source;
                               });
+                              _saveAll();
                             },
                           );
                         },
@@ -180,7 +162,10 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                       "Applies today's curated Wall of the Day. Open Prism once a day to cache the latest URL.",
                   accentColor: accentColor,
                   value: _wotdTarget,
-                  onChanged: (v) => setState(() => _wotdTarget = v),
+                  onChanged: (v) {
+                    setState(() => _wotdTarget = v);
+                    _saveAll();
+                  },
                 ),
                 const Divider(height: 32),
                 _TargetSection(
@@ -189,7 +174,10 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                       'Picks a random wallpaper from your saved favourites. Sign in and favourite some wallpapers first.',
                   accentColor: accentColor,
                   value: _favsTarget,
-                  onChanged: (v) => setState(() => _favsTarget = v),
+                  onChanged: (v) {
+                    setState(() => _favsTarget = v);
+                    _saveAll();
+                  },
                 ),
                 const SizedBox(height: 24),
                 const _FieldLabel('How to add quick tiles'),

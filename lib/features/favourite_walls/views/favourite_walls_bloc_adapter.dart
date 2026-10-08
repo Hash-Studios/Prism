@@ -9,6 +9,8 @@ class FavouriteWallsAdapter {
   FavouriteWallsAdapter(BuildContext context, {required bool listen})
     : _bloc = listen ? context.watch<FavouriteWallsBloc>() : context.read<FavouriteWallsBloc>();
 
+  static int _lastOperationId = 0;
+
   final FavouriteWallsBloc _bloc;
 
   Future<List<FavouriteWallEntity>?> getDataBase({bool forceRefresh = false}) async {
@@ -26,25 +28,31 @@ class FavouriteWallsAdapter {
       return false;
     }
 
-    await _ensureLoaded();
-
-    final completion = _bloc.stream.firstWhere((state) => state.actionStatus != ActionStatus.inProgress);
-    _bloc.add(FavouriteWallsEvent.toggleRequested(wall: wall));
-    await completion;
-    return _bloc.state.actionStatus == ActionStatus.success;
+    return _runAction((int id) => FavouriteWallsEvent.toggleRequested(wall: wall, operationId: id));
   }
 
-  Future<bool> deleteData() async {
-    final userId = app_state.prismUser.id;
-    if (userId.isEmpty) {
+  Future<bool> deleteData() => _runAction((int id) => FavouriteWallsEvent.clearRequested(operationId: id));
+
+  Future<bool> removeWalls(List<String> wallIds) =>
+      _runAction((int id) => FavouriteWallsEvent.removeRequested(wallIds: wallIds, operationId: id));
+
+  Future<bool> restoreWalls(List<FavouriteWallEntity> walls) =>
+      _runAction((int id) => FavouriteWallsEvent.restoreRequested(walls: walls, operationId: id));
+
+  Future<bool> _runAction(FavouriteWallsEvent Function(int operationId) eventFor) async {
+    if (app_state.prismUser.id.isEmpty) {
       return false;
     }
 
     await _ensureLoaded();
-    final completion = _bloc.stream.firstWhere((state) => state.actionStatus != ActionStatus.inProgress);
-    _bloc.add(const FavouriteWallsEvent.clearRequested());
-    await completion;
-    return _bloc.state.actionStatus == ActionStatus.success;
+    return (await _dispatch(eventFor)).actionStatus == ActionStatus.success;
+  }
+
+  Future<FavouriteWallsState> _dispatch(FavouriteWallsEvent Function(int operationId) eventFor) {
+    final int operationId = ++_lastOperationId;
+    final completion = _bloc.stream.firstWhere((state) => state.completedOperationId == operationId);
+    _bloc.add(eventFor(operationId));
+    return completion;
   }
 
   Future<void> _ensureLoaded({bool forceRefresh = false}) async {
@@ -54,14 +62,10 @@ class FavouriteWallsAdapter {
     }
 
     if (_bloc.state.userId != userId || _bloc.state.status == LoadStatus.initial) {
-      _bloc.add(FavouriteWallsEvent.started(userId: userId));
+      await _dispatch((int id) => FavouriteWallsEvent.started(userId: userId, operationId: id));
     } else if (forceRefresh || _bloc.state.status == LoadStatus.failure) {
-      _bloc.add(const FavouriteWallsEvent.refreshRequested());
-    } else {
-      return;
+      await _dispatch((int id) => FavouriteWallsEvent.refreshRequested(operationId: id));
     }
-
-    await _bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
   }
 }
 

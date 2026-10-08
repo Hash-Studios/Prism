@@ -63,6 +63,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   final Random _random = Random();
 
   static const int _cacheTtlHours = 2;
+  static const Duration _poolTimeout = Duration(seconds: 6);
 
   /// Values the `onWallCategorize` Cloud Function writes to `walls.category`.
   static const List<String> _wallCategories = <String>[
@@ -141,6 +142,10 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         if (!isGuest) {
           await _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
         }
+      }
+
+      if (!isGuest) {
+        _following = _followingFromSession() ?? _following;
       }
 
       final DateTime now = DateTime.now().toUtc();
@@ -296,7 +301,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     required void Function() onFailure,
   }) async {
     try {
-      final List<FeedItemEntity> result = await items;
+      final List<FeedItemEntity> result = await items.timeout(_poolTimeout);
       onSuccess?.call();
       return result.map((item) => RankingCandidate(item: item, pool: pool)).toList(growable: false);
     } catch (error) {
@@ -421,13 +426,13 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return PersonalizedInterestsCatalog.defaultSelection(catalog);
   }
 
-  List<String> _resolveFollowing(Map<String, dynamic> userDoc) {
+  List<String>? _followingFromSession() {
     final fromSession = app_state.prismUser.following.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    if (fromSession.isNotEmpty) {
-      return fromSession;
-    }
-    return _toStringList(userDoc['following']);
+    return fromSession.isEmpty ? null : fromSession;
   }
+
+  List<String> _resolveFollowing(Map<String, dynamic> userDoc) =>
+      _followingFromSession() ?? _toStringList(userDoc['following']);
 
   Future<List<FeedItemEntity>> _fetchCreatorItems({required List<String> following, required int page}) async {
     if (following.isEmpty) {
@@ -552,7 +557,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final List<List<RankingCandidate>> results = await Future.wait(
       entries.take(maxQueries).map((entry) async {
         try {
-          final List<FeedItemEntity> items = await _fetchExternalPage(source, entry.query, refresh: refresh);
+          final List<FeedItemEntity> items = await _fetchExternalPage(
+            source,
+            entry.query,
+            refresh: refresh,
+          ).timeout(_poolTimeout);
           succeeded++;
           return items
               .map((item) => RankingCandidate(item: item, pool: pool, extraTerms: <String>[entry.name]))

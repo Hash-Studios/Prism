@@ -38,6 +38,31 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
     await _loadFuture;
   }
 
+  /// The list never shows an email address, only the username.
+  static String _displayName(BlockedUserListRow row) {
+    final String? username = row.blockedUsername?.trim();
+    return username == null || username.isEmpty ? 'Blocked user' : username;
+  }
+
+  Future<void> _confirmUnblock(BlockedUserListRow row, String name) async {
+    PrismHaptics.tap();
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text('Unblock $name?'),
+        content: const Text('Their wallpapers will show in your feeds again.'),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Unblock')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (await unblockUserWithFeedback(context, row.blockedUid)) {
+      await _refresh();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,27 +111,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                   const Divider(height: 1, indent: 16, endIndent: 16),
               itemBuilder: (BuildContext context, int i) {
                 final BlockedUserListRow row = rows[i];
-                final String title = (row.blockedUsername != null && row.blockedUsername!.isNotEmpty)
-                    ? row.blockedUsername!
-                    : row.blockedEmail;
+                final String name = _displayName(row);
                 return ListTile(
-                  title: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
-                  subtitle: Text(
-                    row.blockedEmail,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.65),
-                      fontSize: 12,
-                    ),
-                  ),
-                  trailing: TextButton(
-                    onPressed: () async {
-                      PrismHaptics.tap();
-                      if (await unblockUserWithFeedback(context, row.blockedUid)) {
-                        await _refresh();
-                      }
-                    },
-                    child: const Text('Unblock'),
-                  ),
+                  title: Text(name, style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+                  trailing: TextButton(onPressed: () => _confirmUnblock(row, name), child: const Text('Unblock')),
                 );
               },
             ),

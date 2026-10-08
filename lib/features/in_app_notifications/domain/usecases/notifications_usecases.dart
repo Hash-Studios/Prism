@@ -88,3 +88,33 @@ class DeleteNotificationsByIdsUseCase
     return _repository.deleteByIds(ids: params.ids);
   }
 }
+
+@lazySingleton
+class MarkAllNotificationsAsReadUseCase implements UseCase<List<InAppNotificationEntity>, NoParams> {
+  MarkAllNotificationsAsReadUseCase(this._repository);
+
+  final NotificationsRepository _repository;
+
+  @override
+  Future<Result<List<InAppNotificationEntity>>> call(NoParams params) {
+    return _repository.markAllAsRead();
+  }
+}
+
+class RestoreNotificationsParams {
+  const RestoreNotificationsParams({required this.items});
+
+  final List<InAppNotificationEntity> items;
+}
+
+@lazySingleton
+class RestoreNotificationsUseCase implements UseCase<List<InAppNotificationEntity>, RestoreNotificationsParams> {
+  RestoreNotificationsUseCase(this._repository);
+
+  final NotificationsRepository _repository;
+
+  @override
+  Future<Result<List<InAppNotificationEntity>>> call(RestoreNotificationsParams params) {
+    return _repository.restore(items: params.items);
+  }
+}

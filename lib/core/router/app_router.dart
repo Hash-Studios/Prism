@@ -21,6 +21,7 @@ import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
+import 'package:Prism/features/live_wallpaper/views/pages/live_wallpaper_screen.dart';
 import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
@@ -43,6 +44,7 @@ import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
+import 'package:Prism/features/wallpaper_history/views/pages/wallpaper_history_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
@@ -147,6 +149,8 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
     AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
+    AutoRoute(path: '/wallpaper-history', page: WallpaperHistoryRoute.page),
+    AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),
     RedirectRoute(path: '/streak', redirectTo: '/rewards'),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),

@@ -20,6 +20,8 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
     this._deleteNotificationUseCase,
     this._deleteNotificationsByIdsUseCase,
     this._clearNotificationsUseCase,
+    this._markAllNotificationsAsReadUseCase,
+    this._restoreNotificationsUseCase,
   ) : super(InAppNotificationsState.initial()) {
     on<_Started>(_onStarted);
     on<_LocalReloadRequested>(_onLocalReloadRequested);
@@ -28,6 +30,8 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
     on<_DeleteRequested>(_onDeleteRequested);
     on<_DeleteManyRequested>(_onDeleteManyRequested);
     on<_ClearRequested>(_onClearRequested);
+    on<_MarkAllReadRequested>(_onMarkAllReadRequested);
+    on<_RestoreRequested>(_onRestoreRequested);
   }
 
   final FetchNotificationsUseCase _fetchNotificationsUseCase;
@@ -35,6 +39,8 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
   final DeleteNotificationUseCase _deleteNotificationUseCase;
   final DeleteNotificationsByIdsUseCase _deleteNotificationsByIdsUseCase;
   final ClearNotificationsUseCase _clearNotificationsUseCase;
+  final MarkAllNotificationsAsReadUseCase _markAllNotificationsAsReadUseCase;
+  final RestoreNotificationsUseCase _restoreNotificationsUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<InAppNotificationsState> emit) {
     return _fetch(syncRemote: event.syncRemote, emit: emit);
@@ -71,6 +77,16 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
   Future<void> _onClearRequested(_ClearRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     _apply(await _clearNotificationsUseCase(const NoParams()), emit);
+  }
+
+  Future<void> _onMarkAllReadRequested(_MarkAllReadRequested event, Emitter<InAppNotificationsState> emit) async {
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    _apply(await _markAllNotificationsAsReadUseCase(const NoParams()), emit);
+  }
+
+  Future<void> _onRestoreRequested(_RestoreRequested event, Emitter<InAppNotificationsState> emit) async {
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    _apply(await _restoreNotificationsUseCase(RestoreNotificationsParams(items: event.items)), emit);
   }
 
   /// Publishes the new item list, or the failure. [failLoad] also marks the whole load as failed.

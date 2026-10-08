@@ -12,9 +12,9 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title:
-    "Prism Wallpapers - Premium Android Wallpaper App for Wallpapers, Setups and Collections",
+    "Prism Wallpapers - Premium Wallpaper App for Android and iOS",
   description:
-    "Discover high-quality wallpapers, curated collections, and home screen setups with Prism Wallpapers, a premium wallpaper app for Android. Download on Google Play.",
+    "Discover high-quality wallpapers and curated collections with Prism Wallpapers, a premium wallpaper app for Android and iOS. Download on Google Play or the App Store.",
   alternates: {
     canonical: "/",
   },
@@ -27,9 +27,9 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     title:
-      "Prism Wallpapers - Premium Android Wallpaper App for Wallpapers, Setups and Collections",
+      "Prism Wallpapers - Premium Wallpaper App for Android and iOS",
     description:
-      "Discover high-quality wallpapers, curated collections, and home screen setups with Prism Wallpapers. Built for Android personalization lovers.",
+      "Discover high-quality wallpapers and curated collections with Prism Wallpapers. Built for personalization lovers on Android and iOS.",
     siteName: APP_NAME,
     images: [
       {
@@ -43,9 +43,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title:
-      "Prism Wallpapers - Premium Android Wallpaper App for Wallpapers, Setups and Collections",
+      "Prism Wallpapers - Premium Wallpaper App for Android and iOS",
     description:
-      "Discover high-quality wallpapers, curated collections, and home screen setups with Prism Wallpapers.",
+      "Discover high-quality wallpapers and curated collections with Prism Wallpapers.",
     images: ["/assets/screenshots/screen1.jpg"],
   },
 };

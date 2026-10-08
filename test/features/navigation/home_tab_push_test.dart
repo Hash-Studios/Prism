@@ -36,6 +36,9 @@ class _FeedBloc extends MockBloc<PersonalizedFeedEvent, PersonalizedFeedState> i
 class _Connectivity extends Fake implements ConnectivityService {
   @override
   Future<bool> hasConnection() async => true;
+
+  @override
+  Stream<bool> get onConnectionChange => const Stream<bool>.empty();
 }
 
 const _messaging = MethodChannel('plugins.flutter.io/firebase_messaging');
@@ -51,6 +54,7 @@ void main() {
   late String token;
   final subscribed = <String>[];
   final unsubscribed = <String>[];
+  final quickActionCalls = <MethodCall>[];
 
   setUpAll(() async {
     setupFirebaseCoreMocks();
@@ -63,6 +67,7 @@ void main() {
     token = 'initial-token';
     subscribed.clear();
     unsubscribed.clear();
+    quickActionCalls.clear();
     client = FakeFirestoreClient();
     final store = InMemoryLocalStore();
     final favorites = FavoritesLocalDataSource(store);
@@ -81,7 +86,10 @@ void main() {
       ..registerSingleton<SettingsLocalDataSource>(settings)
       ..registerSingleton<ConnectivityService>(_Connectivity())
       ..registerSingleton<PersonalizedFeedBloc>(feed);
-    messenger.setMockMethodCallHandler(_quickActions, (_) async => null);
+    messenger.setMockMethodCallHandler(_quickActions, (call) async {
+      quickActionCalls.add(call);
+      return null;
+    });
     messenger.setMockMethodCallHandler(_messaging, (call) async {
       if (call.method == 'Messaging#getToken') return <String, String>{'token': token};
       if (call.method == 'Messaging#getAPNSToken') return <String, String>{'token': 'apns'};
@@ -146,4 +154,34 @@ void main() {
 
     expect(subscribed, isEmpty);
   }, variant: _ios);
+
+  testWidgets('iOS shortcuts carry no Android drawable names', (tester) async {
+    await mount(tester);
+
+    final items = quickActionCalls.singleWhere((c) => c.method == 'setShortcutItems').arguments! as List<Object?>;
+    expect(items.map((i) => (i! as Map)['type']), <String>['Personalized_Feed', 'Collections', 'Downloads']);
+    expect(items.map((i) => (i! as Map)['icon']), everyElement(isNull));
+    await tester.pumpWidget(const SizedBox());
+  }, variant: _ios);
+
+  testWidgets('Android shortcuts keep their drawables', (tester) async {
+    await mount(tester);
+
+    final items = quickActionCalls.singleWhere((c) => c.method == 'setShortcutItems').arguments! as List<Object?>;
+    expect(items.map((i) => (i! as Map)['icon']), <String>[
+      '@drawable/ic_feed',
+      '@drawable/ic_collections',
+      '@drawable/ic_downloads',
+    ]);
+    await tester.pumpWidget(const SizedBox());
+    // On a macOS host Platform.isMacOS is true, so topic calls wait for an APNs token with retry timers.
+    await tester.pump(const Duration(seconds: 3));
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.android}));
+
+  test('the For You and Collections shortcuts map to their tabs, others to none', () {
+    expect(quickActionTabIndex('Personalized_Feed'), 0);
+    expect(quickActionTabIndex('Collections'), 3);
+    expect(quickActionTabIndex('Downloads'), isNull);
+    expect(quickActionTabIndex('nope'), isNull);
+  });
 }

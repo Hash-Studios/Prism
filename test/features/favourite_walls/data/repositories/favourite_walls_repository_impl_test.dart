@@ -1,3 +1,4 @@
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart';
@@ -5,6 +6,34 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:flutter_test/flutter_test.dart';
 import '../../../../support/fake_firestore_client.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../support/fav_fixtures.dart';
+
+class _BatchRecorder implements FirestoreBatch {
+  final List<String> deleted = <String>[];
+
+  @override
+  void addDoc(String collection, Map<String, dynamic> data) => throw UnimplementedError();
+
+  @override
+  void updateDoc(String collection, String id, Map<String, dynamic> data) => throw UnimplementedError();
+
+  @override
+  void deleteDoc(String collection, String id) => deleted.add('$collection/$id');
+}
+
+class _BatchingFirestore extends FakeFirestoreClient {
+  final List<List<String>> batches = <List<String>>[];
+  Object? batchError;
+
+  @override
+  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) async {
+    final recorder = _BatchRecorder();
+    await action(recorder);
+    final Object? error = batchError;
+    if (error != null) throw error;
+    batches.add(recorder.deleted);
+  }
+}
 
 void main() {
   test('successful fetch replaces stale IDs only in the fetched account cache', () async {
@@ -39,5 +68,85 @@ void main() {
 
     expect(result.isFailure, isTrue);
     expect(local.isWallFavourite('user_b', 'cached_b'), isTrue);
+  });
+
+  test('clearAll deletes in batches, skips blank ids and updates the local cache', () async {
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final ids = List<String>.generate(450, (i) => 'w$i');
+    for (final id in ids) {
+      await local.setWallFavourite('u', id, true);
+    }
+    final firestore = _BatchingFirestore();
+    final repository = FavouriteWallsRepositoryImpl(firestore, local);
+
+    final result = await repository.clearAll(userId: 'u', wallIds: <String>[...ids, ' ', 'w0']);
+
+    expect(result.isSuccess, isTrue);
+    expect(firestore.batches.map((batch) => batch.length), <int>[400, 50]);
+    expect(firestore.batches.first.first, 'usersv2/u/images/w0');
+    expect(firestore.writes, isEmpty);
+    expect(local.isWallFavourite('u', 'w0'), isFalse);
+    expect(local.isWallFavourite('u', 'w449'), isFalse);
+  });
+
+  test('clearAll failure keeps the local cache and reports an error', () async {
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    await local.setWallFavourite('u', 'w1', true);
+    final firestore = _BatchingFirestore()..batchError = StateError('offline');
+    final repository = FavouriteWallsRepositoryImpl(firestore, local);
+
+    final result = await repository.clearAll(userId: 'u', wallIds: <String>['w1']);
+
+    expect(result.isFailure, isTrue);
+    expect(local.isWallFavourite('u', 'w1'), isTrue);
+  });
+
+  test('toggleFavourite writes favouritedAt and fetch maps it back', () async {
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final firestore = FakeFirestoreClient();
+    final repository = FavouriteWallsRepositoryImpl(firestore, local);
+
+    await repository.toggleFavourite(userId: 'u', wall: prismFav('p1'), currentlyFavourited: false);
+
+    expect(firestore.writes.single.data!['favouritedAt'], isA<DateTime>());
+
+    final stamp = DateTime.utc(2026, 3, 4);
+    final reader = FakeFirestoreClient(
+      onQuery: (_) => <FakeDocRow>[
+        (id: 'd1', data: <String, dynamic>{'id': 'p1', 'provider': 'prism', 'favouritedAt': stamp}),
+      ],
+    );
+    final result = await FavouriteWallsRepositoryImpl(reader, local).fetchFavourites(userId: 'u');
+
+    expect(result.data!.single.favouritedAt, stamp);
+  });
+
+  test('older favourite docs keep a null favourite time and can use createdAt', () async {
+    final createdAt = DateTime.utc(2022, 5, 6);
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final firestore = FakeFirestoreClient(
+      onQuery: (_) => <FakeDocRow>[
+        (id: 'old', data: <String, dynamic>{'id': 'old', 'provider': 'prism', 'createdAt': createdAt}),
+      ],
+    );
+
+    final result = await FavouriteWallsRepositoryImpl(firestore, local).fetchFavourites(userId: 'u');
+
+    expect(result.data!.single.favouritedAt, isNull);
+    expect(result.data!.single.addedAt, createdAt);
+  });
+
+  test('restoring a removed favourite preserves its original favourite time', () async {
+    final stamp = DateTime.utc(2026, 3, 4);
+    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final firestore = FakeFirestoreClient();
+
+    await FavouriteWallsRepositoryImpl(firestore, local).toggleFavourite(
+      userId: 'u',
+      wall: prismFav('p1', favouritedAt: stamp),
+      currentlyFavourited: false,
+    );
+
+    expect(firestore.writes.single.data!['favouritedAt'], stamp);
   });
 }

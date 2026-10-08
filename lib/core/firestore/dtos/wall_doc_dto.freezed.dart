@@ -317,7 +317,7 @@ as bool,
 /// @nodoc
 mixin _$FavouriteWallDocDto {
 
-@FirestoreStringConverter() String get id;@FirestoreStringConverter() String get provider;@FirestoreStringConverter() String get url;@FirestoreStringConverter() String get thumb;@FirestoreStringConverter() String get category;@FirestoreStringConverter() String get views;@FirestoreStringConverter() String get resolution;@FirestoreStringConverter() String get fav;@FirestoreStringConverter() String get size;@FirestoreStringConverter() String get photographer;@FirestoreStringListConverter() List<String> get collections;@FirestoreDateTimeConverter() DateTime? get createdAt;
+@FirestoreStringConverter() String get id;@FirestoreStringConverter() String get provider;@FirestoreStringConverter() String get url;@FirestoreStringConverter() String get thumb;@FirestoreStringConverter() String get category;@FirestoreStringConverter() String get views;@FirestoreStringConverter() String get resolution;@FirestoreStringConverter() String get fav;@FirestoreStringConverter() String get size;@FirestoreStringConverter() String get photographer;@FirestoreStringListConverter() List<String> get collections;@FirestoreDateTimeConverter() DateTime? get createdAt;@FirestoreDateTimeConverter() DateTime? get favouritedAt;
 /// Create a copy of FavouriteWallDocDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -330,16 +330,16 @@ $FavouriteWallDocDtoCopyWith<FavouriteWallDocDto> get copyWith => _$FavouriteWal
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FavouriteWallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.provider, provider) || other.provider == provider)&&(identical(other.url, url) || other.url == url)&&(identical(other.thumb, thumb) || other.thumb == thumb)&&(identical(other.category, category) || other.category == category)&&(identical(other.views, views) || other.views == views)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fav, fav) || other.fav == fav)&&(identical(other.size, size) || other.size == size)&&(identical(other.photographer, photographer) || other.photographer == photographer)&&const DeepCollectionEquality().equals(other.collections, collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FavouriteWallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.provider, provider) || other.provider == provider)&&(identical(other.url, url) || other.url == url)&&(identical(other.thumb, thumb) || other.thumb == thumb)&&(identical(other.category, category) || other.category == category)&&(identical(other.views, views) || other.views == views)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fav, fav) || other.fav == fav)&&(identical(other.size, size) || other.size == size)&&(identical(other.photographer, photographer) || other.photographer == photographer)&&const DeepCollectionEquality().equals(other.collections, collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.favouritedAt, favouritedAt) || other.favouritedAt == favouritedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,provider,url,thumb,category,views,resolution,fav,size,photographer,const DeepCollectionEquality().hash(collections),createdAt);
+int get hashCode => Object.hash(runtimeType,id,provider,url,thumb,category,views,resolution,fav,size,photographer,const DeepCollectionEquality().hash(collections),createdAt,favouritedAt);
 
 @override
 String toString() {
-  return 'FavouriteWallDocDto(id: $id, provider: $provider, url: $url, thumb: $thumb, category: $category, views: $views, resolution: $resolution, fav: $fav, size: $size, photographer: $photographer, collections: $collections, createdAt: $createdAt)';
+  return 'FavouriteWallDocDto(id: $id, provider: $provider, url: $url, thumb: $thumb, category: $category, views: $views, resolution: $resolution, fav: $fav, size: $size, photographer: $photographer, collections: $collections, createdAt: $createdAt, favouritedAt: $favouritedAt)';
 }
 
 
@@ -350,7 +350,7 @@ abstract mixin class $FavouriteWallDocDtoCopyWith<$Res>  {
   factory $FavouriteWallDocDtoCopyWith(FavouriteWallDocDto value, $Res Function(FavouriteWallDocDto) _then) = _$FavouriteWallDocDtoCopyWithImpl;
 @useResult
 $Res call({
-@FirestoreStringConverter() String id,@FirestoreStringConverter() String provider,@FirestoreStringConverter() String url,@FirestoreStringConverter() String thumb,@FirestoreStringConverter() String category,@FirestoreStringConverter() String views,@FirestoreStringConverter() String resolution,@FirestoreStringConverter() String fav,@FirestoreStringConverter() String size,@FirestoreStringConverter() String photographer,@FirestoreStringListConverter() List<String> collections,@FirestoreDateTimeConverter() DateTime? createdAt
+@FirestoreStringConverter() String id,@FirestoreStringConverter() String provider,@FirestoreStringConverter() String url,@FirestoreStringConverter() String thumb,@FirestoreStringConverter() String category,@FirestoreStringConverter() String views,@FirestoreStringConverter() String resolution,@FirestoreStringConverter() String fav,@FirestoreStringConverter() String size,@FirestoreStringConverter() String photographer,@FirestoreStringListConverter() List<String> collections,@FirestoreDateTimeConverter() DateTime? createdAt,@FirestoreDateTimeConverter() DateTime? favouritedAt
 });
 
 
@@ -367,7 +367,7 @@ class _$FavouriteWallDocDtoCopyWithImpl<$Res>
 
 /// Create a copy of FavouriteWallDocDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? provider = null,Object? url = null,Object? thumb = null,Object? category = null,Object? views = null,Object? resolution = null,Object? fav = null,Object? size = null,Object? photographer = null,Object? collections = null,Object? createdAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? provider = null,Object? url = null,Object? thumb = null,Object? category = null,Object? views = null,Object? resolution = null,Object? fav = null,Object? size = null,Object? photographer = null,Object? collections = null,Object? createdAt = freezed,Object? favouritedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,provider: null == provider ? _self.provider : provider // ignore: cast_nullable_to_non_nullable
@@ -381,6 +381,7 @@ as String,size: null == size ? _self.size : size // ignore: cast_nullable_to_non
 as String,photographer: null == photographer ? _self.photographer : photographer // ignore: cast_nullable_to_non_nullable
 as String,collections: null == collections ? _self.collections : collections // ignore: cast_nullable_to_non_nullable
 as List<String>,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,favouritedAt: freezed == favouritedAt ? _self.favouritedAt : favouritedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }
@@ -466,10 +467,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String provider, @FirestoreStringConverter()  String url, @FirestoreStringConverter()  String thumb, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String views, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String fav, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String photographer, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String provider, @FirestoreStringConverter()  String url, @FirestoreStringConverter()  String thumb, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String views, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String fav, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String photographer, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt, @FirestoreDateTimeConverter()  DateTime? favouritedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FavouriteWallDocDto() when $default != null:
-return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_that.views,_that.resolution,_that.fav,_that.size,_that.photographer,_that.collections,_that.createdAt);case _:
+return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_that.views,_that.resolution,_that.fav,_that.size,_that.photographer,_that.collections,_that.createdAt,_that.favouritedAt);case _:
   return orElse();
 
 }
@@ -487,10 +488,10 @@ return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String provider, @FirestoreStringConverter()  String url, @FirestoreStringConverter()  String thumb, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String views, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String fav, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String photographer, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String provider, @FirestoreStringConverter()  String url, @FirestoreStringConverter()  String thumb, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String views, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String fav, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String photographer, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt, @FirestoreDateTimeConverter()  DateTime? favouritedAt)  $default,) {final _that = this;
 switch (_that) {
 case _FavouriteWallDocDto():
-return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_that.views,_that.resolution,_that.fav,_that.size,_that.photographer,_that.collections,_that.createdAt);case _:
+return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_that.views,_that.resolution,_that.fav,_that.size,_that.photographer,_that.collections,_that.createdAt,_that.favouritedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -507,10 +508,10 @@ return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String provider, @FirestoreStringConverter()  String url, @FirestoreStringConverter()  String thumb, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String views, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String fav, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String photographer, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String provider, @FirestoreStringConverter()  String url, @FirestoreStringConverter()  String thumb, @FirestoreStringConverter()  String category, @FirestoreStringConverter()  String views, @FirestoreStringConverter()  String resolution, @FirestoreStringConverter()  String fav, @FirestoreStringConverter()  String size, @FirestoreStringConverter()  String photographer, @FirestoreStringListConverter()  List<String> collections, @FirestoreDateTimeConverter()  DateTime? createdAt, @FirestoreDateTimeConverter()  DateTime? favouritedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _FavouriteWallDocDto() when $default != null:
-return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_that.views,_that.resolution,_that.fav,_that.size,_that.photographer,_that.collections,_that.createdAt);case _:
+return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_that.views,_that.resolution,_that.fav,_that.size,_that.photographer,_that.collections,_that.createdAt,_that.favouritedAt);case _:
   return null;
 
 }
@@ -522,7 +523,7 @@ return $default(_that.id,_that.provider,_that.url,_that.thumb,_that.category,_th
 @JsonSerializable()
 
 class _FavouriteWallDocDto implements FavouriteWallDocDto {
-  const _FavouriteWallDocDto({@FirestoreStringConverter() this.id = '', @FirestoreStringConverter() this.provider = '', @FirestoreStringConverter() this.url = '', @FirestoreStringConverter() this.thumb = '', @FirestoreStringConverter() this.category = '', @FirestoreStringConverter() this.views = '', @FirestoreStringConverter() this.resolution = '', @FirestoreStringConverter() this.fav = '', @FirestoreStringConverter() this.size = '', @FirestoreStringConverter() this.photographer = '', @FirestoreStringListConverter() final  List<String> collections = const <String>[], @FirestoreDateTimeConverter() this.createdAt}): _collections = collections;
+  const _FavouriteWallDocDto({@FirestoreStringConverter() this.id = '', @FirestoreStringConverter() this.provider = '', @FirestoreStringConverter() this.url = '', @FirestoreStringConverter() this.thumb = '', @FirestoreStringConverter() this.category = '', @FirestoreStringConverter() this.views = '', @FirestoreStringConverter() this.resolution = '', @FirestoreStringConverter() this.fav = '', @FirestoreStringConverter() this.size = '', @FirestoreStringConverter() this.photographer = '', @FirestoreStringListConverter() final  List<String> collections = const <String>[], @FirestoreDateTimeConverter() this.createdAt, @FirestoreDateTimeConverter() this.favouritedAt}): _collections = collections;
   factory _FavouriteWallDocDto.fromJson(Map<String, dynamic> json) => _$FavouriteWallDocDtoFromJson(json);
 
 @override@JsonKey()@FirestoreStringConverter() final  String id;
@@ -543,6 +544,7 @@ class _FavouriteWallDocDto implements FavouriteWallDocDto {
 }
 
 @override@FirestoreDateTimeConverter() final  DateTime? createdAt;
+@override@FirestoreDateTimeConverter() final  DateTime? favouritedAt;
 
 /// Create a copy of FavouriteWallDocDto
 /// with the given fields replaced by the non-null parameter values.
@@ -557,16 +559,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FavouriteWallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.provider, provider) || other.provider == provider)&&(identical(other.url, url) || other.url == url)&&(identical(other.thumb, thumb) || other.thumb == thumb)&&(identical(other.category, category) || other.category == category)&&(identical(other.views, views) || other.views == views)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fav, fav) || other.fav == fav)&&(identical(other.size, size) || other.size == size)&&(identical(other.photographer, photographer) || other.photographer == photographer)&&const DeepCollectionEquality().equals(other._collections, _collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FavouriteWallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.provider, provider) || other.provider == provider)&&(identical(other.url, url) || other.url == url)&&(identical(other.thumb, thumb) || other.thumb == thumb)&&(identical(other.category, category) || other.category == category)&&(identical(other.views, views) || other.views == views)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fav, fav) || other.fav == fav)&&(identical(other.size, size) || other.size == size)&&(identical(other.photographer, photographer) || other.photographer == photographer)&&const DeepCollectionEquality().equals(other._collections, _collections)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.favouritedAt, favouritedAt) || other.favouritedAt == favouritedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,provider,url,thumb,category,views,resolution,fav,size,photographer,const DeepCollectionEquality().hash(_collections),createdAt);
+int get hashCode => Object.hash(runtimeType,id,provider,url,thumb,category,views,resolution,fav,size,photographer,const DeepCollectionEquality().hash(_collections),createdAt,favouritedAt);
 
 @override
 String toString() {
-  return 'FavouriteWallDocDto(id: $id, provider: $provider, url: $url, thumb: $thumb, category: $category, views: $views, resolution: $resolution, fav: $fav, size: $size, photographer: $photographer, collections: $collections, createdAt: $createdAt)';
+  return 'FavouriteWallDocDto(id: $id, provider: $provider, url: $url, thumb: $thumb, category: $category, views: $views, resolution: $resolution, fav: $fav, size: $size, photographer: $photographer, collections: $collections, createdAt: $createdAt, favouritedAt: $favouritedAt)';
 }
 
 
@@ -577,7 +579,7 @@ abstract mixin class _$FavouriteWallDocDtoCopyWith<$Res> implements $FavouriteWa
   factory _$FavouriteWallDocDtoCopyWith(_FavouriteWallDocDto value, $Res Function(_FavouriteWallDocDto) _then) = __$FavouriteWallDocDtoCopyWithImpl;
 @override @useResult
 $Res call({
-@FirestoreStringConverter() String id,@FirestoreStringConverter() String provider,@FirestoreStringConverter() String url,@FirestoreStringConverter() String thumb,@FirestoreStringConverter() String category,@FirestoreStringConverter() String views,@FirestoreStringConverter() String resolution,@FirestoreStringConverter() String fav,@FirestoreStringConverter() String size,@FirestoreStringConverter() String photographer,@FirestoreStringListConverter() List<String> collections,@FirestoreDateTimeConverter() DateTime? createdAt
+@FirestoreStringConverter() String id,@FirestoreStringConverter() String provider,@FirestoreStringConverter() String url,@FirestoreStringConverter() String thumb,@FirestoreStringConverter() String category,@FirestoreStringConverter() String views,@FirestoreStringConverter() String resolution,@FirestoreStringConverter() String fav,@FirestoreStringConverter() String size,@FirestoreStringConverter() String photographer,@FirestoreStringListConverter() List<String> collections,@FirestoreDateTimeConverter() DateTime? createdAt,@FirestoreDateTimeConverter() DateTime? favouritedAt
 });
 
 
@@ -594,7 +596,7 @@ class __$FavouriteWallDocDtoCopyWithImpl<$Res>
 
 /// Create a copy of FavouriteWallDocDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? provider = null,Object? url = null,Object? thumb = null,Object? category = null,Object? views = null,Object? resolution = null,Object? fav = null,Object? size = null,Object? photographer = null,Object? collections = null,Object? createdAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? provider = null,Object? url = null,Object? thumb = null,Object? category = null,Object? views = null,Object? resolution = null,Object? fav = null,Object? size = null,Object? photographer = null,Object? collections = null,Object? createdAt = freezed,Object? favouritedAt = freezed,}) {
   return _then(_FavouriteWallDocDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,provider: null == provider ? _self.provider : provider // ignore: cast_nullable_to_non_nullable
@@ -608,6 +610,7 @@ as String,size: null == size ? _self.size : size // ignore: cast_nullable_to_non
 as String,photographer: null == photographer ? _self.photographer : photographer // ignore: cast_nullable_to_non_nullable
 as String,collections: null == collections ? _self._collections : collections // ignore: cast_nullable_to_non_nullable
 as List<String>,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,favouritedAt: freezed == favouritedAt ? _self.favouritedAt : favouritedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
 }

@@ -1,4 +1,4 @@
-export {wallOfTheDay} from "./wallOfTheDay";
+export {wallOfTheDay, sendWallOfTheDayBuckets} from "./wallOfTheDay";
 export {claimDailyStreak, sendStreakReminders} from "./streak";
 export {sendWinBackPushes} from "./winBack";
 export {onWallApproved} from "./onWallApproved";

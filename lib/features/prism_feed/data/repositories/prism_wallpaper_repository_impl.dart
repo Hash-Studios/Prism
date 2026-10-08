@@ -93,11 +93,13 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
 
       _lastDocId = traversedRows.isEmpty ? null : traversedRows.last.docId;
       _hasMore = hasMoreSourceRows;
-      await _writeCache(rows: traversedRows, hasMore: _hasMore, lastDocId: _lastDocId);
+      if (refresh) {
+        await _writeCache(rows: traversedRows, hasMore: _hasMore, lastDocId: _lastDocId);
+      }
       logger.i('[PrismWallpaperRepository] fetchFeed success', fields: <String, Object?>{'count': visibleWalls.length});
       return Result.success(visibleWalls);
     } catch (error, stackTrace) {
-      final cached = await _readCached();
+      final cached = refresh ? await _readCached() : null;
       if (cached != null) {
         logger.w(
           '[PrismWallpaperRepository] remote fetch failed; returning cached snapshot',

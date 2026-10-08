@@ -58,7 +58,7 @@ void main() {
     });
   }
 
-  testWidgets('a finished empty collection shows no tile or See more button', (tester) async {
+  testWidgets('a finished empty collection shows an empty state, no tile and no See more button', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     anyCollectionWalls = <Map<String, dynamic>>[];
@@ -70,8 +70,28 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
 
-    expect(tester.widget<GridView>(find.byType(GridView)).childrenDelegate.estimatedChildCount, 0);
+    expect(find.byType(GridView), findsNothing);
+    expect(find.text('No wallpapers in this collection yet'), findsOneWidget);
     expect(find.text('See more'), findsNothing);
+  });
+
+  testWidgets('See more depends on hasMore only, even with fewer than 24 walls', (tester) async {
+    final originalWalls = anyCollectionWalls;
+    final originalHasMore = collectionHasMore;
+    anyCollectionWalls = <Map<String, dynamic>>[
+      <String, dynamic>{'id': '', 'wallpaper_thumb': '', 'wallpaper_url': ''},
+    ];
+    collectionHasMore = true;
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(() {
+      anyCollectionWalls = originalWalls;
+      collectionHasMore = originalHasMore;
+      AnalyticsRuntime.reset();
+    });
+
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+
+    expect(find.text('See more'), findsOneWidget);
   });
 
   testWidgets('malformed collection placeholders have square corners', (tester) async {
@@ -117,7 +137,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 16));
 
     expect(tester.widget<GridView>(find.byType(GridView)).childrenDelegate.estimatedChildCount, 25);
-    await tester.scrollUntilVisible(find.text('See more'), 300);
     expect(tester.takeException(), isNull);
   });
 

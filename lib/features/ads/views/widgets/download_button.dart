@@ -7,12 +7,14 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
@@ -30,6 +32,7 @@ class DownloadButton extends StatefulWidget {
     this.contentId,
     this.sourceContext,
     this.onDownloaded,
+    this.label,
     super.key,
   });
 
@@ -38,6 +41,9 @@ class DownloadButton extends StatefulWidget {
   final String? contentId;
   final String? sourceContext;
   final VoidCallback? onDownloaded;
+
+  /// Text shown beside the circle. It sits inside the same tap target, so tapping it starts the download.
+  final String? label;
 
   @override
   State<DownloadButton> createState() => _DownloadButtonState();
@@ -51,11 +57,16 @@ class _DownloadButtonState extends State<DownloadButton> {
 
   @override
   Widget build(BuildContext context) {
-    return CircularMenuButton(
-      label: 'Download',
+    final ThemeData theme = Theme.of(context);
+    final String? label = widget.label;
+    final Widget icon = Icon(JamIcons.download, color: theme.colorScheme.secondary, size: 20);
+    if (label == null) {
+      return CircularMenuButton(label: 'Download', onTap: _handleTap, isLoading: isLoading, child: icon);
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _handleTap,
-      isLoading: isLoading,
-      child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
+      child: PrimaryActionPill(icon: JamIcons.download, label: label, semanticLabel: 'Download', isLoading: isLoading),
     );
   }
 
@@ -269,14 +280,22 @@ class _DownloadButtonState extends State<DownloadButton> {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
-          toasts.error("Couldn't download! Please retry.");
+          if (isPhotosPermissionDenied(result.errorCode)) {
+            if (mounted) showPhotosPermissionDenied(context);
+          } else {
+            toasts.error("Couldn't download! Please retry.");
+          }
           return false;
         }
       } else {
         final DownloadRequest request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
         final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
-          toasts.error(result.message ?? "Couldn't download! Please retry.");
+          if (isPhotosPermissionDenied(result.errorCode)) {
+            if (mounted) showPhotosPermissionDenied(context);
+          } else {
+            toasts.error(result.message ?? "Couldn't download! Please retry.");
+          }
           return false;
         }
       }
@@ -311,6 +330,13 @@ class _DownloadButtonState extends State<DownloadButton> {
       onDownloaded?.call();
     } catch (e, stackTrace) {
       logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
+    }
+    if (mounted) {
+      try {
+        await showIosSetWallpaperGuide(context);
+      } catch (e, stackTrace) {
+        logger.w('iOS wallpaper guide failed after media was saved', error: e, stackTrace: stackTrace);
+      }
     }
     if (mounted) {
       try {

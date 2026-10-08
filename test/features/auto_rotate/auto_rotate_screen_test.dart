@@ -258,4 +258,107 @@ void main() {
 
     verifyNever(() => autoRotateBloc.add(const AutoRotateEvent.started(favouriteUrls: <String>[], isPro: false)));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  group('controls', () {
+    AutoRotateState proState({
+      AutoRotateConfig config = const AutoRotateConfig(enabled: true),
+      AutoRotateStatus status = const AutoRotateStatus(isRunning: true),
+      int favouriteCount = 3,
+      int downloadCount = 0,
+      bool starting = false,
+      bool sourcesCapped = false,
+      bool showBatteryTip = false,
+    }) => AutoRotateState.initial().copyWith(
+      loaded: true,
+      isPro: true,
+      config: config,
+      status: status,
+      favouriteCount: favouriteCount,
+      downloadCount: downloadCount,
+      starting: starting,
+      sourcesCapped: sourcesCapped,
+      showBatteryTip: showBatteryTip,
+    );
+
+    Future<void> pumpControls(WidgetTester tester, AutoRotateState state) async {
+      tester.view.physicalSize = const Size(900, 3000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      when(() => autoRotateBloc.state).thenReturn(state);
+      await pumpScreen(tester);
+      await tester.pump();
+    }
+
+    testWidgets('shows a preparing row and a switch that stays on while starting', (tester) async {
+      await pumpControls(
+        tester,
+        proState(config: const AutoRotateConfig(), status: const AutoRotateStatus(), starting: true),
+      );
+
+      expect(find.text('Preparing 3 wallpapers'), findsOneWidget);
+      expect(
+        tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Auto-rotate wallpapers')).value,
+        isTrue,
+      );
+      expect(
+        tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Auto-rotate wallpapers')).onChanged,
+        isNull,
+      );
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('shows cached of total and the cap note', (tester) async {
+      await pumpControls(
+        tester,
+        proState(
+          favouriteCount: 100,
+          sourcesCapped: true,
+          status: const AutoRotateStatus(isRunning: true, cachedCount: 40, totalCount: 100),
+        ),
+      );
+
+      expect(find.text('Downloaded 40 of 100 wallpapers'), findsOneWidget);
+      expect(find.textContaining('Using your first 100'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('lets the user switch the source and the charging option', (tester) async {
+      await pumpControls(tester, proState());
+
+      await tester.tap(find.text('Downloads'));
+      await tester.tap(find.text('Only while charging'));
+
+      verify(() => autoRotateBloc.add(const AutoRotateEvent.sourceChanged(AutoRotateSource.downloads))).called(1);
+      verify(() => autoRotateBloc.add(const AutoRotateEvent.chargingOnlyChanged(true))).called(1);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('has no active hours control', (tester) async {
+      await pumpControls(tester, proState());
+
+      expect(find.text('Active hours'), findsNothing);
+      expect(find.text('From'), findsNothing);
+      expect(find.text('Until'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('keeps the controls with a notice when the source has too few wallpapers', (tester) async {
+      await pumpControls(
+        tester,
+        proState(config: const AutoRotateConfig(), status: const AutoRotateStatus(), favouriteCount: 1),
+      );
+
+      expect(find.text('Favourite at least 2 wallpapers to rotate them.'), findsOneWidget);
+      expect(find.text('Downloads'), findsOneWidget);
+      expect(
+        tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Auto-rotate wallpapers')).onChanged,
+        isNull,
+      );
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('shows the battery tip once and lets the user dismiss it', (tester) async {
+      await pumpControls(tester, proState(showBatteryTip: true));
+
+      expect(find.textContaining('set battery use for Prism to Unrestricted'), findsOneWidget);
+      await tester.tap(find.text('Got it'));
+
+      verify(() => autoRotateBloc.add(const AutoRotateEvent.batteryTipDismissed())).called(1);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  });
 }

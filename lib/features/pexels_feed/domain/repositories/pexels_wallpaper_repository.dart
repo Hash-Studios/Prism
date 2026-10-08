@@ -7,6 +7,7 @@ abstract class PexelsWallpaperRepository {
     required bool refresh,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
   });
 
   /// Wallpapers matching a colour. [hex] is six hex digits, with or without a leading `#`.

@@ -29,7 +29,7 @@ void main() {
     expect(light.accentColorValue, 0xffe57697);
     expect(dark.themeId, 'kDMaterial Dark');
     expect(dark.accentColorValue, 0xffe57697);
-    expect(preferences.mode, ThemeMode.dark);
+    expect(preferences.mode, ThemeMode.system);
   });
 
   test('setLightTheme stores the theme id and its default accent', () async {
@@ -39,6 +39,21 @@ void main() {
     expect(result.data!.light.accentColorValue, 0xffc19439);
     expect(store.data['settings.lightThemeID'], 'kLCoffee');
     expect(store.data['settings.lightAccent'], 0xffc19439);
+  });
+
+  test('changing the theme keeps an accent the user picked', () async {
+    await repository.update(lightAccentColorValue: 0xff123456);
+    final result = await repository.update(lightThemeId: 'kLCoffee');
+
+    expect(result.data!.light.themeId, 'kLCoffee');
+    expect(result.data!.light.accentColorValue, 0xff123456);
+  });
+
+  test('changing the theme resets an accent that still equals the old theme default', () async {
+    await repository.update(darkThemeId: 'kDOlive');
+    final result = await repository.update(darkThemeId: 'kDSky');
+
+    expect(result.data!.dark.accentColorValue, 0xff2d6079);
   });
 
   test('setDarkTheme keeps the AMOLED default accent', () async {

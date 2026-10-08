@@ -35,6 +35,21 @@ class ProfileDrawer extends StatelessWidget {
     );
   }
 
+  Future<bool> _confirmLogout(BuildContext context) async {
+    final bool? ok = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text('You can sign in again at any time.'),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Log out')),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
   // ── Builder helpers ──────────────────────────────────────────────────────
 
   Widget _header(BuildContext context) {
@@ -210,6 +225,7 @@ class ProfileDrawer extends StatelessWidget {
               context: context,
               onTap: () async {
                 _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
+                if (!await _confirmLogout(context)) return;
                 // Finish signing out before the restart, or the restarted app still sees the old
                 // session and stays on the splash screen. The restart closes this drawer.
                 if (!await globalGoogleAuth.signOutGoogle()) {

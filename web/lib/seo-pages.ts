@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { APP_NAME, SITE_URL } from "@/lib/site-config";
 
 export type SeoRouteContent = {
-  slug: "4k-wallpapers" | "amoled-wallpapers" | "home-screen-setups" | "collections";
+  slug: "4k-wallpapers" | "amoled-wallpapers" | "collections";
   navLabel: string;
   title: string;
   description: string;
@@ -22,11 +22,11 @@ export const seoRouteContent: Record<SeoRouteContent["slug"], SeoRouteContent> =
       "Browse premium 4K wallpapers for Android with Prism Wallpapers. Discover high-resolution styles, curated collections, and personalization-focused browsing.",
     h1: "4K wallpapers for Android, curated with a premium feel",
     intro:
-      "Prism Wallpapers helps you discover clean, high-resolution looks built for modern Android screens. Explore visual styles faster with curated paths and setup-friendly context.",
+      "Prism Wallpapers helps you discover clean, high-resolution looks built for modern Android screens. Explore visual styles faster with curated paths.",
     bullets: [
       "Discover high-resolution wallpapers that stay crisp across devices.",
       "Explore curated 4K collections instead of random low-signal feeds.",
-      "Move from wallpaper discovery to full personalization with setups.",
+      "Go from wallpaper discovery to a finished home screen faster.",
     ],
     sectionTitle: "Why Prism for 4K wallpaper discovery",
     sectionBody:
@@ -40,7 +40,7 @@ export const seoRouteContent: Record<SeoRouteContent["slug"], SeoRouteContent> =
       "Find AMOLED-friendly wallpapers with Prism Wallpapers. Explore dark, high-contrast styles and curated collections for Android personalization lovers.",
     h1: "AMOLED wallpapers that look clean, bold, and intentional",
     intro:
-      "Prism makes it easy to browse dark and contrast-rich wallpapers that pair well with AMOLED displays, while still giving you setup inspiration and curated personalization flows.",
+      "Prism makes it easy to browse dark and contrast-rich wallpapers that pair well with AMOLED displays, while still giving you curated personalization flows.",
     bullets: [
       "Browse deep-tone wallpapers made for AMOLED visual impact.",
       "Explore curated aesthetics, not only individual images.",
@@ -48,25 +48,7 @@ export const seoRouteContent: Record<SeoRouteContent["slug"], SeoRouteContent> =
     ],
     sectionTitle: "A better AMOLED browsing experience",
     sectionBody:
-      "Prism is designed for people who care about how their phone feels daily. The app combines style discovery, setup context, and premium browsing polish.",
-  },
-  "home-screen-setups": {
-    slug: "home-screen-setups",
-    navLabel: "Home Screen Setups",
-    title: `Home Screen Setups App for Android | ${APP_NAME}`,
-    description:
-      "Explore home screen setup inspiration with Prism Wallpapers. Discover wallpapers, setup ideas, and personalization-first Android browsing in one app.",
-    h1: "Home screen setup inspiration, not just isolated wallpapers",
-    intro:
-      "Prism helps Android users move beyond standalone wallpaper browsing by surfacing setup ideas that make complete home screens feel more cohesive and expressive.",
-    bullets: [
-      "See setup context so wallpapers feel more actionable.",
-      "Discover aesthetic directions faster with curated inspiration.",
-      "Build a complete phone look with less trial and error.",
-    ],
-    sectionTitle: "Designed for personalization lovers",
-    sectionBody:
-      "Prism is built for people who enjoy the craft of personalization. It blends wallpapers, setups, and collections into one premium Android experience.",
+      "Prism is designed for people who care about how their phone feels daily. The app combines style discovery and premium browsing polish.",
   },
   collections: {
     slug: "collections",
@@ -79,7 +61,7 @@ export const seoRouteContent: Record<SeoRouteContent["slug"], SeoRouteContent> =
       "Prism replaces endless random browsing with structured, visual collections so you can discover wallpapers by style, mood, and personalization intent.",
     bullets: [
       "Navigate curated categories designed for faster discovery.",
-      "Find wallpapers that align with your overall setup style.",
+      "Find wallpapers that match your overall home screen style.",
       "Turn quick inspiration into a polished daily home screen.",
     ],
     sectionTitle: "Collections with editorial quality",
@@ -91,7 +73,6 @@ export const seoRouteContent: Record<SeoRouteContent["slug"], SeoRouteContent> =
 export const seoRouteOrder: SeoRouteContent["slug"][] = [
   "4k-wallpapers",
   "amoled-wallpapers",
-  "home-screen-setups",
   "collections",
 ];
 

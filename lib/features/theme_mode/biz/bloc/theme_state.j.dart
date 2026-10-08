@@ -16,6 +16,6 @@ abstract class ThemeState with _$ThemeState {
     actionStatus: ActionStatus.idle,
     light: ThemeSelection(themeId: prismDefaultLightThemeId, accentColorValue: prismDefaultAccentValue),
     dark: ThemeSelection(themeId: prismDefaultDarkThemeId, accentColorValue: prismDefaultAccentValue),
-    mode: ThemeMode.dark,
+    mode: ThemeMode.system,
   );
 }

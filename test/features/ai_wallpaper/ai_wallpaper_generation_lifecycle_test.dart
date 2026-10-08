@@ -34,6 +34,9 @@ class _FakeConnectivityService implements ConnectivityService {
 
   @override
   Future<bool> hasConnection() => check?.call() ?? Future<bool>.value(true);
+
+  @override
+  Stream<bool> get onConnectionChange => const Stream<bool>.empty();
 }
 
 class _FakeFunctionsPlatform extends FirebaseFunctionsPlatform {
@@ -669,5 +672,162 @@ void main() {
     expect(refunds, 0);
     expect(recorder.events.whereType<AiGenerateFailedEvent>(), isEmpty);
     expect(app_state.prismUser.coins, 90);
+  });
+
+  Map<String, Object> coinReply(String name, {bool refundChanged = true}) => <String, Object>{
+    'success': name != 'awardCoins' || refundChanged,
+    'changed': name != 'awardCoins' || refundChanged,
+    'currentBalance': name == 'awardCoins' ? 100 : 90,
+    'delta': name == 'awardCoins' ? 10 : -10,
+    'transactionId': 'reservation-1',
+  };
+
+  List<String> toastMessages(List<MethodCall> calls) =>
+      calls.map((call) => (call.arguments as Map<Object?, Object?>)['msg']! as String).toList();
+
+  testWidgets('a failed generation says the coins were refunded', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => throw StateError('provider failed')),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(toastMessages(toastCalls), contains('Something went wrong. Try again. Coins refunded.'));
+  });
+
+  testWidgets('a failed generation whose refund did not land says the refund is pending and keeps it', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async {
+        if (name == 'awardCoins') throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+        return coinReply(name);
+      },
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => throw StateError('provider failed')),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(toastMessages(toastCalls), contains('Something went wrong. Try again. Refund pending.'));
+    expect(
+      getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''),
+      contains('reservation-1'),
+    );
+  });
+
+  testWidgets('a failed generation that charged no coins does not mention a refund', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 100,
+        'delta': 0,
+        'transactionId': 'reservation-1',
+      },
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => throw StateError('provider failed')),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(toastMessages(toastCalls), contains('Something went wrong. Try again.'));
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+  });
+
+  testWidgets('a charge with no reply queues a refund and tells the user', (tester) async {
+    final toastCalls = <MethodCall>[];
+    var generations = 0;
+    await setUpPage(
+      tester,
+      (name, parameters) async {
+        if (name == 'spendCoins') throw FirebaseFunctionsException(code: 'unavailable', message: 'no reply');
+        return coinReply(name);
+      },
+      repository: _FakeAiGenerationRepository(
+        _record(),
+        generation: () async {
+          generations++;
+          return _record();
+        },
+      ),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(generations, 0);
+    expect(toastMessages(toastCalls), contains("Couldn't confirm the charge. Any coins taken will be refunded."));
+    expect(
+      getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''),
+      contains('spend_${app_state.prismUser.id}_'),
+    );
+  });
+
+  testWidgets('free users see the watermark note and Pro users do not', (tester) async {
+    await setUpPage(tester, (name, parameters) async => <String, Object>{});
+    expect(find.text('Free images carry a Prism watermark. Pro removes it.'), findsOneWidget);
+
+    app_state.prismUser.premium = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record()), key: UniqueKey()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Free images carry a Prism watermark. Pro removes it.'), findsNothing);
+  });
+
+  testWidgets('the description field stops at 160 characters and shows a counter', (tester) async {
+    await setUpPage(tester, (name, parameters) async => <String, Object>{});
+    final field = tester.widget<TextField>(find.byType(TextField).first);
+    expect(field.maxLength, 160);
+
+    await tester.enterText(find.byType(TextField).first, 'x' * 200);
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField).first).controller!.text.length, 160);
+    expect(find.text('160/160'), findsOneWidget);
+  });
+
+  testWidgets('a refinement is charged at the parent generation tier, not the selected tier', (tester) async {
+    final spends = <Map<String, Object?>>[];
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'spendCoins') spends.add(Map<String, Object?>.from(parameters as Map<Object?, Object?>));
+      return coinReply(name);
+    }, repository: _FakeAiGenerationRepository(_record(), variation: () async => _record(id: 'variation-1')));
+    await tester.ensureVisible(find.text('Quality'));
+    await tester.tap(find.text('Quality'));
+    await tester.pump();
+    await tester.tap(find.text('Refine'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'warmer palette');
+    await tester.tap(find.text('Generate refinement'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(spends, hasLength(1));
+    expect(spends.single['amount'], AiQualityTier.fast.coinCost);
   });
 }

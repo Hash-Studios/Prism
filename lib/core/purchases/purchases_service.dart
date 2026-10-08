@@ -35,11 +35,27 @@ class SubscriptionConversionContext {
 /// Singleton service that owns all RevenueCat SDK interactions.
 /// Use [checkAndPersistPremium] to sync premium status; use [prismUser.premium] as the single source of truth.
 class PurchasesService {
-  PurchasesService._();
+  PurchasesService._()
+    : _addCustomerInfoListener = Purchases.addCustomerInfoUpdateListener,
+      _syncSubscriptionOverride = null,
+      _syncRetryBackoff = const Duration(seconds: 2);
+
+  @visibleForTesting
+  PurchasesService.forTesting({
+    required void Function(CustomerInfoUpdateListener listener) addCustomerInfoListener,
+    Future<void> Function()? syncSubscription,
+    Duration syncRetryBackoff = Duration.zero,
+  }) : _addCustomerInfoListener = addCustomerInfoListener,
+       _syncSubscriptionOverride = syncSubscription,
+       _syncRetryBackoff = syncRetryBackoff;
 
   static final PurchasesService instance = PurchasesService._();
 
+  final void Function(CustomerInfoUpdateListener listener) _addCustomerInfoListener;
+  final Future<void> Function()? _syncSubscriptionOverride;
+  final Duration _syncRetryBackoff;
   bool _configured = false;
+  bool _customerInfoListenerRegistered = false;
   String _configuredUserId = '';
 
   /// Skip redundant Firestore subscription updates when state unchanged (co-ordinate with coin sync / reduce usersv2 writes).
@@ -74,6 +90,23 @@ class PurchasesService {
     await Purchases.configure(configuration);
     _configured = true;
     _configuredUserId = userId;
+    registerCustomerInfoListener();
+  }
+
+  /// Keeps premium in step with store changes (renewal, expiry, refund, purchase on another device) while the app
+  /// is open. Safe to call more than once.
+  @visibleForTesting
+  void registerCustomerInfoListener() {
+    if (_customerInfoListenerRegistered) return;
+    _customerInfoListenerRegistered = true;
+    _addCustomerInfoListener((CustomerInfo info) {
+      unawaited(
+        _applyCustomerInfo(info).catchError((Object error, StackTrace stackTrace) {
+          logger.w('Unable to apply a customer info update.', error: error, stackTrace: stackTrace);
+          return app_state.prismUser.premium;
+        }),
+      );
+    });
   }
 
   /// Configures RevenueCat early in app startup (before runApp) so the singleton
@@ -159,17 +192,37 @@ class PurchasesService {
         now.difference(_lastPersistSubscriptionTime!) < _subscriptionPersistThrottle) {
       return;
     }
-    try {
-      // The server owns `premium`/`subscriptionTier`; it derives them itself, so this callable takes no payload.
-      await appFunctions
-          .httpsCallable('syncSubscription', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)))
-          .call<dynamic>();
-      _lastPersistedPremium = isPremium;
-      _lastPersistedTier = tier.name;
-      _lastPersistSubscriptionTime = now;
-    } catch (error, stackTrace) {
-      logger.w('Unable to persist subscription state to Firestore.', error: error, stackTrace: stackTrace);
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        await _callSyncSubscription();
+        _lastPersistedPremium = isPremium;
+        _lastPersistedTier = tier.name;
+        _lastPersistSubscriptionTime = now;
+        return;
+      } catch (error, stackTrace) {
+        if (attempt == 0) {
+          await Future<void>.delayed(_syncRetryBackoff);
+          continue;
+        }
+        logger.w('Unable to persist subscription state to Firestore.', error: error, stackTrace: stackTrace);
+        analytics.track(
+          SubscriptionEntitlementRefreshEvent(
+            result: SubscriptionEntitlementRefreshResultValue.failure,
+            errorCode: 'sync_subscription',
+            errorMessage: '$error',
+          ),
+        );
+      }
     }
+  }
+
+  Future<void> _callSyncSubscription() {
+    final Future<void> Function()? override = _syncSubscriptionOverride;
+    if (override != null) return override();
+    // The server owns `premium`/`subscriptionTier`; it derives them itself, so this callable takes no payload.
+    return appFunctions
+        .httpsCallable('syncSubscription', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)))
+        .call<dynamic>();
   }
 
   Future<void> _syncAnalyticsSubscriptionState({required bool isPremium, required SubscriptionTier tier}) async {
@@ -211,34 +264,10 @@ class PurchasesService {
   /// Checks canonical + grandfathered paid entitlements; updates local user state in local persistence.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
   Future<bool> checkAndPersistPremium({SubscriptionConversionContext? conversionContext}) async {
-    await ensureConfigured(app_state.prismUser.id);
-
     try {
-      final bool wasPremium = app_state.prismUser.premium;
+      await ensureConfigured(app_state.prismUser.id);
       final info = await Purchases.getCustomerInfo();
-      final SubscriptionTier tier = tierFromCustomerInfo(info);
-      final bool isPremium = tier.isPaid;
-
-      app_state.prismUser.premium = isPremium;
-      app_state.prismUser.subscriptionTier = tier.name;
-      app_state.persistPrismUser();
-      await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
-      await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
-      if (!wasPremium && isPremium) {
-        await _logSubscriptionConversion(tier: tier, conversionContext: conversionContext);
-      }
-      analytics.track(
-        SubscriptionEntitlementRefreshEvent(
-          result: SubscriptionEntitlementRefreshResultValue.success,
-          subscriptionTier: tier.name,
-          isPremium: isPremium ? 1 : 0,
-          activeEntitlements: info.entitlements.active.keys.join(','),
-        ),
-      );
-      if (kDebugMode) {
-        logger.d('Premium status: $isPremium');
-      }
-      return isPremium;
+      return await _applyCustomerInfo(info, conversionContext: conversionContext);
     } on PlatformException catch (e) {
       analytics.track(
         SubscriptionEntitlementRefreshEvent(
@@ -249,12 +278,56 @@ class PurchasesService {
       );
       logger.d('checkAndPersistPremium failed: $e');
       return app_state.prismUser.premium;
+    } catch (error, stackTrace) {
+      analytics.track(
+        SubscriptionEntitlementRefreshEvent(
+          result: SubscriptionEntitlementRefreshResultValue.failure,
+          errorCode: 'unknown',
+          errorMessage: '$error',
+        ),
+      );
+      logger.w('checkAndPersistPremium failed.', error: error, stackTrace: stackTrace);
+      return app_state.prismUser.premium;
     }
+  }
+
+  Future<bool> _applyCustomerInfo(CustomerInfo info, {SubscriptionConversionContext? conversionContext}) async {
+    final bool wasPremium = app_state.prismUser.premium;
+    final SubscriptionTier tier = tierFromCustomerInfo(info);
+    final bool isPremium = tier.isPaid;
+
+    app_state.prismUser.premium = isPremium;
+    app_state.prismUser.subscriptionTier = tier.name;
+    app_state.persistPrismUser();
+    await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
+    await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
+    if (!wasPremium && isPremium) {
+      await _logSubscriptionConversion(tier: tier, conversionContext: conversionContext);
+    }
+    analytics.track(
+      SubscriptionEntitlementRefreshEvent(
+        result: SubscriptionEntitlementRefreshResultValue.success,
+        subscriptionTier: tier.name,
+        isPremium: isPremium ? 1 : 0,
+        activeEntitlements: info.entitlements.active.keys.join(','),
+      ),
+    );
+    if (kDebugMode) {
+      logger.d('Premium status: $isPremium');
+    }
+    return isPremium;
   }
 
   /// Restores store purchases and applies them to this account. Returns whether premium is now active.
   Future<bool> restore() async {
-    await Purchases.restorePurchases();
+    try {
+      await ensureConfigured(app_state.prismUser.id);
+      await Purchases.restorePurchases();
+    } catch (error, stackTrace) {
+      // The caller tells the user; "no purchases found" would be wrong when the store call itself failed.
+      logger.w('restorePurchases failed.', error: error, stackTrace: stackTrace);
+      rethrow;
+    }
     return checkAndPersistPremium();
   }
 

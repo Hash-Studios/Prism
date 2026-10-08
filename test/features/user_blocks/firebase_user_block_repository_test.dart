@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'dart:async';
 
 import 'package:Prism/auth/user_model.dart';
@@ -5,6 +7,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/data/user_blocks/firebase_user_block_repository.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -55,6 +58,39 @@ void main() {
     expect(await repo.getBlockedCreatorEmails(waitForInitialLoad: true), <String>{'bad@x.com', 'b@x.com'});
     expect(client.watchSpecs.single.collection, 'usersv2/me/blockedUsers');
     expect(repo.cachedBlockedCreatorEmails, <String>{'bad@x.com', 'b@x.com'});
+  });
+
+  test('a stream error keeps the last known set and ends the initial wait', () async {
+    final repo = FirebaseUserBlockRepository(session, client);
+    sessionUsers.add(profileUser(id: 'me'));
+    await pumpEventQueue();
+
+    client.snapshots.addError(StateError('permission-denied'));
+
+    expect(await repo.getBlockedCreatorEmails(waitForInitialLoad: true), isEmpty);
+
+    client.snapshots.add(<FakeDocRow>[_blocked('u1', 'bad@x.com')]);
+    await pumpEventQueue();
+    client.snapshots.addError(StateError('unavailable'));
+    await pumpEventQueue();
+
+    expect(repo.cachedBlockedCreatorEmails, <String>{'bad@x.com'});
+  });
+
+  test('waiting for the initial load gives up after 3 seconds and returns the cached set', () {
+    fakeAsync((async) {
+      final repo = FirebaseUserBlockRepository(session, client);
+      sessionUsers.add(profileUser(id: 'me'));
+      async.flushMicrotasks();
+
+      Set<String>? result;
+      unawaited(repo.getBlockedCreatorEmails(waitForInitialLoad: true).then((value) => result = value));
+      async.elapse(const Duration(seconds: 2));
+      expect(result, isNull);
+      async.elapse(const Duration(seconds: 2));
+
+      expect(result, isEmpty);
+    });
   });
 
   test('signing out clears the set', () async {

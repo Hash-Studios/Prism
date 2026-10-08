@@ -1,8 +1,11 @@
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/creator_card.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_fade_mask.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_load_failure.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_skip_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -14,7 +17,7 @@ class F2StarterPackPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
-      buildWhen: (prev, curr) => prev.starterPackData != curr.starterPackData,
+      buildWhen: (prev, curr) => prev.starterPackData != curr.starterPackData || prev.loadStatus != curr.loadStatus,
       builder: (context, state) {
         final creators = state.starterPackData.creators;
         final selectedEmails = state.starterPackData.selectedEmails;
@@ -30,12 +33,18 @@ class F2StarterPackPage extends StatelessWidget {
                   right: OnboardingLayout.creatorsX * sx,
                   height: OnboardingLayout.tilesHeight * sy,
                   child: creators.isEmpty
-                      ? const Center(
-                          child: SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          ),
-                        )
+                      ? (state.loadStatus == LoadStatus.loading || state.loadStatus == LoadStatus.initial)
+                            ? const Center(
+                                child: SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
+                              )
+                            : OnboardingLoadFailure(
+                                message: 'We could not load creators.',
+                                onRetry: () =>
+                                    context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.loadRetried()),
+                              )
                       : OnboardingFadeMask(
                           stops: const [0.0, 0.08, 0.82, 1.0],
                           child: ListView.separated(
@@ -58,6 +67,12 @@ class F2StarterPackPage extends StatelessWidget {
                             },
                           ),
                         ),
+                ),
+                OnboardingSkipButton(
+                  sx: sx,
+                  sy: sy,
+                  color: OnboardingColors.textPrimary,
+                  onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.starterPackSkipped()),
                 ),
               ],
             );

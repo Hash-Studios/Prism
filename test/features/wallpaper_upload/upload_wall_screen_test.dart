@@ -5,11 +5,13 @@ import 'dart:io';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_app_analytics.dart';
@@ -315,6 +317,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('keeps uploaded files when a retry after an unconfirmed save reports the quota', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    var saveCalls = 0;
+    final deletedFiles = <String>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          uploadFileForTesting: ({required isThumbnail}) async => isThumbnail
+              ? const GitHubContent(
+                  downloadUrl: 'https://example.test/thumb.png',
+                  path: 'thumb_pixel.png',
+                  sha: 'thumb-sha',
+                )
+              : const GitHubContent(downloadUrl: 'https://example.test/wall.png', path: 'pixel.png', sha: 'wall-sha'),
+          deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
+          createRecordForTesting: () async {
+            saveCalls++;
+            if (saveCalls == 1) throw StateError('network response was lost');
+            return wall_store.WallSubmissionResult.quotaExceeded;
+          },
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.tap(find.text('Submit for review'));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry submit'), findsOneWidget);
+
+    await tester.tap(find.text('Retry submit'));
+    await tester.pumpAndSettle();
+
+    expect(saveCalls, 2);
+    expect(deletedFiles, isEmpty);
+    expect(find.text('Submission did not finish'), findsOneWidget);
+    expect(find.text('Upload limit reached'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('keeps the quota screen open when file cleanup fails and lets Back retry cleanup', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
@@ -362,7 +406,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('keeps an uncertain save visible and offers status check, not retry', (tester) async {
+  testWidgets('keeps an uncertain save visible and offers status check and a safe retry', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
     final recorder = FakeAppAnalytics();
@@ -395,7 +439,7 @@ void main() {
 
     expect(find.text('Submission did not finish'), findsOneWidget);
     expect(find.text('Check review status'), findsOneWidget);
-    expect(find.text('Retry submission'), findsNothing);
+    expect(find.text('Retry submit'), findsOneWidget);
     expect(saveCalls, 1);
     expect(recorder.events.whereType<UploadWallpaperEvent>(), isEmpty);
     expect(tester.takeException(), isNull);
@@ -632,6 +676,7 @@ void main() {
                     builder: (_) => UploadWallScreen(
                       image: image,
                       prepareImageForTesting: () async {},
+                      nowForTesting: () => DateTime.fromMillisecondsSinceEpoch(1700000000000),
                       uploadFileForTesting: ({required isThumbnail}) async =>
                           const GitHubContent(downloadUrl: null, path: null, sha: 'wall-sha'),
                       deleteFileForTesting: ({required path, required sha}) async => deletedFiles.add(path),
@@ -655,7 +700,7 @@ void main() {
     expect(find.text('Discard this upload?'), findsOneWidget);
     await tester.tap(find.text('Discard upload'));
     await tester.pumpAndSettle();
-    expect(deletedFiles, ['pixel.png']);
+    expect(deletedFiles, ['${app_state.prismUser.id}_1700000000000_pixel.png']);
     expect(routeResult, isNull);
     expect(tester.takeException(), isNull);
   });
@@ -677,6 +722,7 @@ void main() {
                     builder: (_) => UploadWallScreen(
                       image: image,
                       prepareImageForTesting: () async {},
+                      nowForTesting: () => DateTime.fromMillisecondsSinceEpoch(1700000000000),
                       uploadFileForTesting: ({required isThumbnail}) async => isThumbnail
                           ? const GitHubContent(downloadUrl: null, path: null, sha: 'thumb-sha')
                           : const GitHubContent(
@@ -705,7 +751,7 @@ void main() {
     expect(find.text('Discard this upload?'), findsOneWidget);
     await tester.tap(find.text('Discard upload'));
     await tester.pumpAndSettle();
-    expect(deletedFiles, ['pixel.png', 'thumb_pixel.png']);
+    expect(deletedFiles, ['pixel.png', 'thumb_${app_state.prismUser.id}_1700000000000_pixel.png']);
     expect(routeResult, isNull);
     expect(tester.takeException(), isNull);
   });
@@ -823,6 +869,133 @@ void main() {
     expect(deletedFiles, ['pixel.png', 'thumb_pixel.png']);
     expect(routeResult, isNull);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Retry submit reuses the uploaded files and submits once the save works', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    var uploadCalls = 0;
+    var saveCalls = 0;
+
+    await pumpRoutedUpload(
+      tester,
+      () => UploadWallRoute(
+        image: image,
+        prepareImageForTesting: () async {},
+        uploadFileForTesting: ({required isThumbnail}) async {
+          uploadCalls++;
+          return isThumbnail
+              ? const GitHubContent(
+                  downloadUrl: 'https://example.test/thumb.png',
+                  path: 'thumb_pixel.png',
+                  sha: 'thumb-sha',
+                )
+              : const GitHubContent(downloadUrl: 'https://example.test/wall.png', path: 'pixel.png', sha: 'wall-sha');
+        },
+        createRecordForTesting: () async {
+          if (saveCalls++ == 0) throw StateError('network response was lost');
+          return wall_store.WallSubmissionResult.submitted;
+        },
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Submit for review'));
+    await tester.pumpAndSettle();
+    expect(find.text('Retry submit'), findsOneWidget);
+    expect(uploadCalls, 2);
+
+    await tester.tap(find.text('Retry submit'));
+    await tester.pumpAndSettle();
+
+    expect(saveCalls, 2);
+    expect(uploadCalls, 2);
+    expect(find.text('review-stub'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a weekly limit error from the server explains it and shows the paywall', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    var paywalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          uploadFileForTesting: ({required isThumbnail}) async => throw FirebaseFunctionsException(
+            code: 'resource-exhausted',
+            message: 'Free weekly wallpaper upload limit reached.',
+          ),
+          presentPaywallForTesting: () async => paywalls++,
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.tap(find.text('Submit for review'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Upload did not finish'), findsOneWidget);
+    expect(find.text('You reached this week’s free upload limit.'), findsOneWidget);
+    expect(paywalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a too large server error shows its own message without the paywall', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    var paywalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          uploadFileForTesting: ({required isThumbnail}) async =>
+              throw FirebaseFunctionsException(code: 'invalid-argument', message: 'File is too large.'),
+          presentPaywallForTesting: () async => paywalls++,
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.tap(find.text('Submit for review'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('This image is over 15 MB. Choose a smaller one.'), findsOneWidget);
+    expect(paywalls, 0);
+  });
+
+  testWidgets('an image over 15 MB is refused before any upload starts', (tester) async {
+    await setViewport(tester);
+    final tempDirectory = (await tester.runAsync(() => Directory.systemTemp.createTemp('prism-upload-big-')))!;
+    addTearDown(() => tester.runAsync(() => tempDirectory.delete(recursive: true)));
+    final image = File('${tempDirectory.path}/big.jpg');
+    await tester.runAsync(() => image.writeAsBytes(List<int>.filled(15 * 1024 * 1024 + 1, 0)));
+    var uploadCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(
+          image: image,
+          uploadFileForTesting: ({required isThumbnail}) async {
+            uploadCalls++;
+            return const GitHubContent(downloadUrl: 'u', path: 'p', sha: 's');
+          },
+        ),
+      ),
+    );
+    for (var i = 0; i < 50 && find.text('Image could not be prepared').evaluate().isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    expect(find.text('Image could not be prepared'), findsOneWidget);
+    expect(find.text('This image is over 15 MB. Choose a smaller one.'), findsOneWidget);
+    expect(find.text('Choose another image'), findsOneWidget);
+    expect(find.text('Submit for review'), findsNothing);
+    expect(uploadCalls, 0);
   });
 }
 

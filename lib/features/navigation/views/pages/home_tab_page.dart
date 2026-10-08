@@ -20,9 +20,27 @@ import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:quick_actions/quick_actions.dart';
+
+const int _homeTabIndex = 0;
+const int _collectionTabIndex = 3;
+
+@visibleForTesting
+int? quickActionTabIndex(String shortcutType) => switch (shortcutType) {
+  'Personalized_Feed' => _homeTabIndex,
+  'Collections' => _collectionTabIndex,
+  _ => null,
+};
+
+@visibleForTesting
+List<ShortcutItem> prismShortcutItems({required bool android}) => <ShortcutItem>[
+  ShortcutItem(type: 'Personalized_Feed', localizedTitle: 'For You', icon: android ? '@drawable/ic_feed' : null),
+  ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: android ? '@drawable/ic_collections' : null),
+  ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: android ? '@drawable/ic_downloads' : null),
+];
 
 @RoutePage()
 class HomeTabPage extends StatefulWidget {
@@ -38,6 +56,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
   StreamSubscription<String>? _fcmTokenSubscription;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   Future<void> _ensureDefaultTopicSubscriptions() {
     final user = app_state.prismUser;
@@ -83,6 +102,18 @@ class _HomeTabPageState extends State<HomeTabPage> {
     _hasHandledQuickActionInvocation = true;
   }
 
+  void _openQuickAction(String shortcutType) {
+    if (!mounted) return;
+    if (shortcutType == 'Downloads') {
+      context.router.push(const DownloadRoute());
+      return;
+    }
+    final int? tabIndex = quickActionTabIndex(shortcutType);
+    if (tabIndex == null) return;
+    context.router.root.popUntilRouteWithName(DashboardRoute.name);
+    context.tabsRouter.setActiveIndex(tabIndex);
+  }
+
   Future<void> checkConnection() async {
     final bool isOnline = await getIt<ConnectivityService>().hasConnection();
     if (!mounted) return;
@@ -112,21 +143,18 @@ class _HomeTabPageState extends State<HomeTabPage> {
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       _trackQuickActionInvocation(shortcutType);
-      if (shortcutType == 'Downloads') {
-        context.router.push(const DownloadRoute());
-      }
+      _openQuickAction(shortcutType);
     });
 
-    quickActions.setShortcutItems(<ShortcutItem>[
-      const ShortcutItem(type: 'Personalized_Feed', localizedTitle: 'For You', icon: '@drawable/ic_feed'),
-      const ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
-      const ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
-    ]);
+    quickActions.setShortcutItems(prismShortcutItems(android: defaultTargetPlatform == TargetPlatform.android));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _showChangelogCheck();
     });
     unawaited(saveFavToLocal());
     unawaited(checkConnection());
+    _connectivitySubscription = getIt<ConnectivityService>().onConnectionChange.listen((bool isOnline) {
+      if (mounted) setState(() => _isOnline = isOnline);
+    });
     unawaited(_ensureDefaultTopicSubscriptions());
     // On iOS the FCM token can arrive after launch, once APNs answers. Sync again then.
     _fcmTokenSubscription = FirebaseMessaging.instance.onTokenRefresh.listen(
@@ -143,6 +171,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   @override
   void dispose() {
     unawaited(_fcmTokenSubscription?.cancel());
+    unawaited(_connectivitySubscription?.cancel());
     super.dispose();
   }
 
@@ -158,7 +187,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
       body: Stack(
         children: <Widget>[
           PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
-          if (!_isOnline) const ConnectivityWidget(),
+          ConnectivityWidget(offline: !_isOnline),
         ],
       ),
     );
