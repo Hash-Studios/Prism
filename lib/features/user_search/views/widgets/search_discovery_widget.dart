@@ -80,15 +80,16 @@ class _RecentSearches extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.only(right: 12),
           child: Row(
             children: <Widget>[
-              Expanded(child: Text('Recent searches', style: theme.textTheme.labelLarge)),
+              const Expanded(
+                child: _SectionHeader(label: 'Recent searches', icon: JamIcons.history),
+              ),
               TextButton(onPressed: onClear, child: const Text('Clear')),
             ],
           ),

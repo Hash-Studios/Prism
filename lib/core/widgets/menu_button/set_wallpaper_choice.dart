@@ -15,7 +15,12 @@ enum SetChoiceKind {
 
 /// What the user picked in the set sheet.
 class SetWallpaperChoice {
-  const SetWallpaperChoice(this.target, {this.fit = WallpaperFit.fill, this.kind = SetChoiceKind.apply});
+  const SetWallpaperChoice(
+    this.target, {
+    this.fit = WallpaperFit.fill,
+    this.useSystemCropper = false,
+    this.kind = SetChoiceKind.apply,
+  });
 
   const SetWallpaperChoice.adjust() : this(WallpaperTarget.both, kind: SetChoiceKind.adjust);
 
@@ -24,6 +29,9 @@ class SetWallpaperChoice {
 
   final WallpaperTarget target;
   final WallpaperFit fit;
+
+  /// Opens the Android system cropper first, so the user picks the exact area.
+  final bool useSystemCropper;
   final SetChoiceKind kind;
 }
 

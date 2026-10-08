@@ -267,4 +267,50 @@ void main() {
     expect(index.has('https://example.com/delete_me.png'), isFalse);
     expect(index.has('https://example.com/keep_me.png'), isTrue);
   });
+
+  testWidgets('deleting one download words the dialog in the singular', (tester) async {
+    final File a = makeFile('a.png');
+    final File b = makeFile('b.png');
+    onList = () async => DownloadItemsResult(success: true, items: <String>[a.path, b.path]);
+    await pumpScreen(tester);
+
+    await tester.longPress(find.byType(InkWell).first);
+    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('It is removed from this device. You can download it again later.'), findsOneWidget);
+  });
+
+  testWidgets('deleting many downloads words the dialog in the plural', (tester) async {
+    final File a = makeFile('a.png');
+    final File b = makeFile('b.png');
+    onList = () async => DownloadItemsResult(success: true, items: <String>[a.path, b.path]);
+    await pumpScreen(tester);
+
+    await tester.longPress(find.byType(InkWell).first);
+    await tester.pump();
+    await tester.tap(find.descendant(of: find.byType(GridView), matching: find.byType(InkWell)).last);
+    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete 2 downloads?'), findsOneWidget);
+    expect(find.text('They are removed from this device. You can download them again later.'), findsOneWidget);
+  });
+
+  testWidgets('the download count uses the secondary colour, not the hint colour', (tester) async {
+    onList = () async => DownloadItemsResult(success: true, items: <String>[makeFile('a.png').path]);
+    final ThemeData theme = ThemeData.dark().copyWith(
+      colorScheme: const ColorScheme.dark(secondary: Colors.orange),
+      hintColor: Colors.purple,
+    );
+    await tester.pumpWidget(MaterialApp(theme: theme, home: DownloadScreen()));
+    await tester.pump();
+    await tester.pump();
+
+    final Color? color = tester.widget<Text>(find.text('1 download')).style?.color;
+    expect(color, Colors.orange.withValues(alpha: 0.6));
+    expect(color, isNot(theme.hintColor));
+  });
 }

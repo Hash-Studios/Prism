@@ -179,12 +179,71 @@ void main() {
       expect(result.errorCode, 'boom');
     });
 
-    test('every apply goes out as a file path with the direct strategy first, never the system cropper', () async {
+    test(
+      'every apply goes out as a file path with the direct strategy first unless the cropper is asked for',
+      () async {
+        final _FakeClient client = _FakeClient([aw.WallpaperOperationStatus.failed]);
+        aw.AsyncWallpaper.debugSetClient(client);
+        await WallpaperService.setWallpaper('/tmp/wall.png', WallpaperTarget.home, recordHistory: false);
+        expect(client.requests.first.strategy, aw.WallpaperApplyStrategy.direct);
+        expect(client.requests.map((r) => r.strategy), isNot(contains(aw.WallpaperApplyStrategy.systemCropper)));
+      },
+    );
+
+    test('the system cropper gets a content URI and is not retried', () async {
+      const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+      final List<Object?> cropArguments = <Object?>[];
+      messenger.setMockMethodCallHandler(cropChannel, (MethodCall call) async {
+        cropArguments.add(call.arguments);
+        return 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.png';
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(cropChannel, null));
       final _FakeClient client = _FakeClient([aw.WallpaperOperationStatus.failed]);
       aw.AsyncWallpaper.debugSetClient(client);
-      await WallpaperService.setWallpaper('/tmp/wall.png', WallpaperTarget.home, recordHistory: false);
-      expect(client.requests.first.strategy, aw.WallpaperApplyStrategy.direct);
-      expect(client.requests.map((r) => r.strategy), isNot(contains(aw.WallpaperApplyStrategy.systemCropper)));
+      await WallpaperService.setWallpaper(
+        '/tmp/wall.png',
+        WallpaperTarget.home,
+        useSystemCropper: true,
+        recordHistory: false,
+      );
+      expect(cropArguments, ['/tmp/wall.png']);
+      expect(client.requests, hasLength(1));
+      expect(client.requests.single.strategy, aw.WallpaperApplyStrategy.systemCropper);
+      // The plugin refuses the cropper for a file path, so every crop failed before.
+      expect(
+        client.requests.single.source.contentUri,
+        'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.png',
+      );
+      expect(client.requests.single.source.filePath, isNull);
+    });
+
+    test('a missing or null crop URI becomes a retryable failure', () async {
+      const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+      addTearDown(() => messenger.setMockMethodCallHandler(cropChannel, null));
+      final _FakeClient client = _FakeClient([aw.WallpaperOperationStatus.applied]);
+      aw.AsyncWallpaper.debugSetClient(client);
+
+      messenger.setMockMethodCallHandler(cropChannel, null);
+      final WallpaperSetResult missingPlugin = await WallpaperService.setWallpaper(
+        '/tmp/wall.png',
+        WallpaperTarget.home,
+        useSystemCropper: true,
+        recordHistory: false,
+      );
+      expect(missingPlugin.status, WallpaperSetStatus.failed);
+      expect(missingPlugin.canRetry, isTrue);
+      expect(client.requests, isEmpty);
+
+      messenger.setMockMethodCallHandler(cropChannel, (_) async => null);
+      final WallpaperSetResult nullUri = await WallpaperService.setWallpaper(
+        '/tmp/wall.png',
+        WallpaperTarget.home,
+        useSystemCropper: true,
+        recordHistory: false,
+      );
+      expect(nullUri.status, WallpaperSetStatus.failed);
+      expect(nullUri.canRetry, isTrue);
+      expect(client.requests, isEmpty);
     });
 
     test('fit maps to the plugin scale mode', () async {

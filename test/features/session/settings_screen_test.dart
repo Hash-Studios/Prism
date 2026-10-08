@@ -272,6 +272,20 @@ void main() {
     expect(find.text('Lock screen'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('the default action sheet title uses the secondary colour', (tester) async {
+    useTallSurface(tester);
+    final ThemeData theme = ThemeData.dark().copyWith(
+      colorScheme: const ColorScheme.dark(secondary: Colors.orange),
+      textTheme: ThemeData.dark().textTheme.copyWith(titleMedium: const TextStyle(color: Color(0xFF2F2F2F))),
+    );
+    await tester.pumpWidget(MaterialApp(theme: theme, home: const SettingsScreen()));
+    await tester.tap(find.text('Default action for Set'));
+    await tester.pumpAndSettle();
+
+    final Finder title = find.descendant(of: find.byType(BottomSheet), matching: find.text('Default action for Set'));
+    expect(tester.widget<Text>(title).style?.color, Colors.orange);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   test('anime wallpapers map to 110 and any value from 110 reads as on', () {
     expect(categoriesForAnime(true), 110);
     expect(categoriesForAnime(false), 100);

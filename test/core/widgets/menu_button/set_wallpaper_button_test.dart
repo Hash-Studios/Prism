@@ -208,14 +208,13 @@ void main() {
     expect(find.text('Both'), findsNothing);
   });
 
-  testWidgets('Fit whole image changes the request and Crop and position is gone', (tester) async {
+  testWidgets('Fit whole image changes the request, and Crop and position opens the system cropper', (tester) async {
     final _Client client = _Client(status: aw.WallpaperOperationStatus.awaitingUserConfirmation);
     aw.AsyncWallpaper.debugSetClient(client);
     await pumpButton(tester);
 
     await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
     await tester.pumpAndSettle();
-    expect(find.text('Crop and position...'), findsNothing);
     await tester.tap(find.text('Fit whole image'));
     await tester.pump();
     await tester.tap(find.text('Home Screen'));
@@ -223,6 +222,26 @@ void main() {
     expect(client.requests.last.scaleMode, aw.WallpaperScaleMode.fitCenter);
     expect(client.requests.last.strategy, aw.WallpaperApplyStrategy.direct);
     expect(find.text('Confirm the wallpaper in the system preview.'), findsOneWidget);
+
+    // The system cropper reads a content URI, which MainActivity makes through this channel.
+    const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      cropChannel,
+      (MethodCall call) async => 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.jpg',
+    );
+    addTearDown(
+      () =>
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null),
+    );
+    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Crop and position...'));
+    await tester.pump();
+    await tester.tap(find.text('Both'));
+    await tester.pumpAndSettle();
+    expect(client.requests.last.strategy, aw.WallpaperApplyStrategy.systemCropper);
+    expect(client.requests.last.target, aw.WallpaperTarget.both);
+    expect(client.requests.last.source.contentUri, startsWith('content://'));
   });
 
   testWidgets('a failed set shows Try again and tracks a failure', (tester) async {

@@ -66,6 +66,8 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       if (portraitOnly) 'ratios': 'portrait',
       'atleast': ?minResolution,
       'sorting': ?sorting,
+      // The toplist covers only the last month by default, so most searches came back empty. 1y is the widest range.
+      if (sorting == 'toplist') 'topRange': '1y',
     });
 
     try {

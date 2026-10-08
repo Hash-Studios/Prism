@@ -120,6 +120,16 @@
                 android:resource="@style/NormalTheme" />
         </activity>
 
+        <provider
+            android:name=".WallpaperCropFileProvider"
+            android:authorities="${applicationId}.wallpaper_crop"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/wallpaper_crop_paths" />
+        </provider>
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification" />

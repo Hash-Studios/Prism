@@ -13,7 +13,7 @@ The user sets a wallpaper on the home screen, the lock screen, or both. The app 
 
 | Platform | Behavior |
 |---|---|
-| Android | Full set flow: set sheet, Position studio, Undo, different wallpaper for the lock screen, default Set target. |
+| Android | Full set flow: set sheet, Crop and position, Position studio, Undo, different wallpaper for the lock screen, default Set target. |
 | iOS | iOS does not let apps change the wallpaper. `hideSetWallpaperUi` hides Set UI. The user saves to Photos and finishes in Photos. |
 
 ## Free and Pro
@@ -29,6 +29,7 @@ The sheet has these parts, from the top:
 - The wallpaper thumbnail, the title "Set Wallpaper as", and warning chips. The chips are "Low resolution for your screen" and "Landscape wallpaper: the sides will be cropped". The chips show only when they apply.
 - Target buttons: Home Screen, Lock Screen, Both. The sheet hides Lock Screen and Both when `getCapabilities()` says the device cannot set them.
 - **Fit** choice: Fill screen (center crop) or Fit whole image (fit center).
+- **Crop and position...** switch (Android only). It uses the system cropper. When it is on, the Fit choice is disabled and the next target tap opens the system editor. Prism gives the cropper a `content://` URI, not a file path (see "Crop and position" below).
 - **Adjust position and preview**: opens the Position studio (see `docs/features/position-studio.md`).
 - **Different wallpaper for lock screen**: shows only when the device can set both the home screen and the lock screen. See "Different wallpaper for lock screen" below.
 - **Always use this**: when on, the target the user taps becomes the saved default (`PersistenceKeys.defaultApplyTarget`). The next tap on Set skips the sheet.
@@ -36,7 +37,12 @@ The sheet has these parts, from the top:
 
 The editor opens the same sheet without the thumbnail, the studio row, and the pair row.
 
-Crop and position (the system cropper) is gone. The plugin accepts it only for a `content://` source, and Prism always passes a file path, so it always failed. The Position studio replaces it.
+### Crop and position and the Position studio
+
+The sheet has two ways to choose the area. They are different tools:
+
+- **Crop and position...** opens the Android system cropper. The plugin accepts the cropper only for a `content://` source. `MainActivity` has the `prism/wallpaper_crop` channel. Its `contentUri` method copies the image to the cache folder `wallpaper_crop` and returns a `FileProvider` URI (`WallpaperCropFileProvider`, authority `${applicationId}.wallpaper_crop`). `WallpaperService.setWallpaper(useSystemCropper: true)` passes that URI with the `systemCropper` strategy. It does not retry, and a missing URI is a retryable failure.
+- **Adjust position and preview** opens the Position studio (Prism's own editor with pan, zoom and dim).
 
 ### Default target
 
@@ -146,10 +152,11 @@ Set button -> SetWallpaperFlow.run -> (default target or set sheet)
 
 ## How to test
 
-1. On Android, set Settings > **Default action for Set** to Ask every time. Open a wallpaper. Tap **Set**. Make sure the sheet shows the thumbnail, Home Screen, Lock Screen, Both, Fit, Adjust position and preview, Different wallpaper for lock screen, and Always use this. Make sure it has no Crop and position.
+1. On Android, set Settings > **Default action for Set** to Ask every time. Open a wallpaper. Tap **Set**. Make sure the sheet shows the thumbnail, Home Screen, Lock Screen, Both, Fit, Crop and position, Adjust position and preview, Different wallpaper for lock screen, and Always use this.
 2. Pick Both with Fill screen. Make sure the snackbar says "Wallpaper set" and has **Undo**.
 3. Set another wallpaper to Home. Tap **Undo**. Make sure the home screen shows the earlier wallpaper again and the history list lost the new row.
 4. Change Fit to Fit whole image. Set again. Make sure the whole image shows with bars.
+4a. Turn on Crop and position. Pick Home Screen. Make sure the system editor opens with the wallpaper. Confirm the crop. Make sure the home screen shows the chosen area.
 5. Tick **Always use this** and pick Lock Screen. Tap Set on another wallpaper. Make sure it applies at once to the lock screen. Make sure the tune button shows next to Set.
 6. Tap the tune button. Make sure the sheet opens and nothing is set. Long press Set. Make sure the sheet opens.
 7. Turn on airplane mode. Tap Set on a new wallpaper. Make sure the snackbar says "Timed out. Check your connection and try again." and shows **Try again**. Press Back. Turn off airplane mode. Tap **Try again**. Make sure the wallpaper is set.
