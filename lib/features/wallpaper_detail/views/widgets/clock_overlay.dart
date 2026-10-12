@@ -161,7 +161,16 @@ class _ClockOverlayState extends State<ClockOverlay> {
         children: <Widget>[
           Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
           Positioned.fill(
-            child: lock ? LockPreviewLayer(textColor: textColor) : HomePreviewLayer(textColor: textColor),
+            child: AnimatedSwitcher(
+              duration: context.motion(const Duration(milliseconds: 160)),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeOut.flipped,
+              layoutBuilder: (current, previous) =>
+                  Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
+              child: lock
+                  ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
+                  : HomePreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor),
+            ),
           ),
           Semantics(
             button: true,
@@ -187,7 +196,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
   }
 }
 
-/// Lock and Home as a glass pill. The selected segment is marked by a light indicator that slides across.
+/// Lock and Home as a glass pill. The selected segment is marked by a solid light indicator that slides across.
+/// Both segments are as wide as the wider label, never under 84, so large text grows the pill instead of clipping.
 class _ModeToggle extends StatelessWidget {
   const _ModeToggle({required this.mode, required this.onChanged});
 
@@ -195,45 +205,67 @@ class _ModeToggle extends StatelessWidget {
   final ValueChanged<ClockPreviewMode> onChanged;
 
   static const double _height = 48;
-  static const double _segmentWidth = 84;
+  static const double _minSegmentWidth = 84;
   static const double _inset = 4;
+  static const Curve _slide = Cubic(0.23, 1, 0.32, 1);
+  static const Duration _slideDuration = Duration(milliseconds: 180);
 
   @override
   Widget build(BuildContext context) {
-    return PrismGlass(
-      borderRadius: _height / 2,
-      glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.3),
-      child: SizedBox(
-        width: _segmentWidth * ClockPreviewMode.values.length,
-        height: _height,
-        child: Stack(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(_inset),
-              child: AnimatedAlign(
-                alignment: mode == ClockPreviewMode.lock
-                    ? AlignmentDirectional.centerStart
-                    : AlignmentDirectional.centerEnd,
-                duration: context.motion(const Duration(milliseconds: 200)),
-                curve: Curves.easeOutCubic,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: PrismColors.onPrimary.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(_height / 2 - _inset),
-                  ),
-                  child: const SizedBox(width: _segmentWidth - 2 * _inset, height: _height - 2 * _inset),
+    final Duration duration = context.motion(_slideDuration);
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.5,
+      child: PrismGlass(
+        borderRadius: _height / 2,
+        thickness: 16,
+        glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.6),
+        child: SizedBox(
+          height: _height,
+          child: Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double segment = constraints.maxWidth / ClockPreviewMode.values.length;
+                    return Stack(
+                      children: <Widget>[
+                        AnimatedPositionedDirectional(
+                          duration: duration,
+                          curve: _slide,
+                          start: segment * mode.index + _inset,
+                          top: _inset,
+                          bottom: _inset,
+                          width: segment - 2 * _inset,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: PrismColors.onPrimary.withValues(alpha: 0.92),
+                              borderRadius: BorderRadius.circular(_height / 2 - _inset),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
-            ),
-            Row(
-              children: <Widget>[
-                for (final ClockPreviewMode value in ClockPreviewMode.values)
-                  Expanded(
-                    child: _Segment(label: value.label, selected: value == mode, onTap: () => onChanged(value)),
-                  ),
-              ],
-            ),
-          ],
+              IntrinsicWidth(
+                child: Row(
+                  children: <Widget>[
+                    for (final ClockPreviewMode value in ClockPreviewMode.values)
+                      Expanded(
+                        child: _Segment(
+                          label: value.label,
+                          selected: value == mode,
+                          duration: duration,
+                          curve: _slide,
+                          onTap: () => onChanged(value),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -241,10 +273,18 @@ class _ModeToggle extends StatelessWidget {
 }
 
 class _Segment extends StatelessWidget {
-  const _Segment({required this.label, required this.selected, required this.onTap});
+  const _Segment({
+    required this.label,
+    required this.selected,
+    required this.duration,
+    required this.curve,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
+  final Duration duration;
+  final Curve curve;
   final VoidCallback onTap;
 
   @override
@@ -260,15 +300,21 @@ class _Segment extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Center(
-          child: PressScale(
-            child: AnimatedDefaultTextStyle(
-              duration: context.motion(const Duration(milliseconds: 200)),
-              curve: Curves.easeOutCubic,
-              style: PrismTextStyles.rowTitle(
-                context,
-              ).copyWith(color: PrismColors.onPrimary.withValues(alpha: selected ? 1 : 0.72)),
-              child: Text(label),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: _ModeToggle._minSegmentWidth),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: PressScale(
+                child: AnimatedDefaultTextStyle(
+                  duration: duration,
+                  curve: curve,
+                  style: PrismTextStyles.rowTitle(
+                    context,
+                  ).copyWith(color: selected ? Colors.black87 : PrismColors.onPrimary.withValues(alpha: 0.88)),
+                  child: Text(label),
+                ),
+              ),
             ),
           ),
         ),

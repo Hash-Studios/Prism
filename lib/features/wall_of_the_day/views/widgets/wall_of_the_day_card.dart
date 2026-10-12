@@ -126,14 +126,14 @@ class _BottomScrim extends StatelessWidget {
         alignment: Alignment.bottomCenter,
         child: FractionallySizedBox(
           widthFactor: 1,
-          heightFactor: 0.45,
+          heightFactor: 0.6,
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [scrim.withValues(alpha: 0), scrim.withValues(alpha: 0.2), scrim.withValues(alpha: 0.55)],
-                stops: const [0, 0.5, 1],
+                colors: [scrim.withValues(alpha: 0), scrim.withValues(alpha: 0.3), scrim.withValues(alpha: 0.65)],
+                stops: const [0, 0.45, 1],
               ),
             ),
           ),
@@ -153,36 +153,39 @@ class _Caption extends StatelessWidget {
     final List<Shadow> shadows = [
       Shadow(color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.4), blurRadius: 6),
     ];
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'WALL OF THE DAY',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: PrismTextStyles.eyebrow(
-            context,
-          ).copyWith(color: PrismColors.onPrimary.withValues(alpha: 0.82), shadows: shadows),
-        ),
-        if (photographer.isNotEmpty) ...[
-          const SizedBox(height: 2),
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.5,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
-            'by $photographer',
+            'WALL OF THE DAY',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: PrismFonts.fraunces,
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
-              fontVariations: const [FontVariation('wght', 500)],
-              height: 1.2,
-              color: PrismColors.onPrimary,
-              shadows: shadows,
-            ),
+            style: PrismTextStyles.eyebrow(
+              context,
+            ).copyWith(color: PrismColors.onPrimary.withValues(alpha: 0.94), shadows: shadows),
           ),
+          if (photographer.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              'by $photographer',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: PrismFonts.fraunces,
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                fontVariations: const [FontVariation('wght', 500)],
+                height: 1.2,
+                color: PrismColors.onPrimary,
+                shadows: shadows,
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -209,26 +212,30 @@ class _PastPicksPill extends StatelessWidget {
             child: Center(
               widthFactor: 1,
               heightFactor: 1,
-              child: PrismGlass(
-                borderRadius: 18,
-                glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.3),
-                child: SizedBox(
-                  height: 36,
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 14, end: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Past picks',
-                          maxLines: 1,
-                          style: PrismTextStyles.caption(
-                            context,
-                          ).copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: PrismColors.onPrimary),
-                        ),
-                        const SizedBox(width: 2),
-                        const Icon(Icons.chevron_right_rounded, size: 18, color: PrismColors.onPrimary),
-                      ],
+              child: MediaQuery.withClampedTextScaling(
+                maxScaleFactor: 1.5,
+                child: PrismGlass(
+                  borderRadius: 18,
+                  thickness: 16,
+                  glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.4),
+                  child: SizedBox(
+                    height: 36,
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 14, end: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Past picks',
+                            maxLines: 1,
+                            style: PrismTextStyles.caption(
+                              context,
+                            ).copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: PrismColors.onPrimary),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.chevron_right_rounded, size: 18, color: PrismColors.onPrimary),
+                        ],
+                      ),
                     ),
                   ),
                 ),
