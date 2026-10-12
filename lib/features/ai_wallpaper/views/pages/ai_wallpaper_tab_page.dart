@@ -610,7 +610,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _saving = true;
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
-      final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
+      final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link), isLocalFile: false);
       final result = await PrismMediaHostApi().enqueueDownload(request);
       if (result.success) {
         toasts.success(wallpaperSavedMessage);
@@ -1386,7 +1386,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         const SizedBox(height: _AiGenSpace.xs),
         Wrap(
           spacing: 8,
-          runSpacing: 6,
           children: scenes.map((scene) {
             final short = scene.length > 28 ? '${scene.substring(0, 28)}…' : scene;
             return ActionChip(

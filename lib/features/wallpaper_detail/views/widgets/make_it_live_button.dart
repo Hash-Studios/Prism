@@ -1,3 +1,4 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -94,7 +95,8 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
     if (!_supported) return const SizedBox.shrink();
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    return Semantics(
+    final double glassAlpha = theme.brightness == Brightness.light ? 0.65 : 0.6;
+    final Widget chip = Semantics(
       button: true,
       label: 'Make it live',
       excludeSemantics: true,
@@ -111,7 +113,8 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
                 height: MakeItLiveChip.pillHeight,
                 child: PrismGlass(
                   borderRadius: MakeItLiveChip.pillHeight / 2,
-                  glassColor: theme.primaryColor.withValues(alpha: 0.5),
+                  thickness: 16,
+                  glassColor: theme.primaryColor.withValues(alpha: glassAlpha),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
@@ -135,6 +138,13 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
           ),
         ),
       ),
+    );
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: context.motion(const Duration(milliseconds: 160)),
+      curve: Curves.easeOut,
+      builder: (BuildContext context, double opacity, Widget? child) => Opacity(opacity: opacity, child: child),
+      child: MediaQuery.withClampedTextScaling(maxScaleFactor: 1.5, child: chip),
     );
   }
 }

@@ -27,6 +27,7 @@ import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -99,22 +100,36 @@ void main() {
     AnalyticsRuntime.reset();
   });
 
-  void useDeviceWithHomeIndicator(WidgetTester tester) {
+  void useDeviceWithHomeIndicator(WidgetTester tester, {double side = 0}) {
     tester.view.physicalSize = const Size(_screenWidth * 3, _screenHeight * 3);
     tester.view.devicePixelRatio = 3;
-    tester.view.padding = const FakeViewPadding(top: 47 * 3, bottom: _safeBottom * 3);
-    tester.view.viewPadding = const FakeViewPadding(top: 47 * 3, bottom: _safeBottom * 3);
+    final FakeViewPadding padding = FakeViewPadding(
+      left: side * 3,
+      top: 47 * 3,
+      right: side * 3,
+      bottom: _safeBottom * 3,
+    );
+    tester.view.padding = padding;
+    tester.view.viewPadding = padding;
     addTearDown(tester.view.reset);
   }
 
-  Future<void> pumpDetail(WidgetTester tester, WallpaperDetailLoaded state, {GlobalKey? boundary}) async {
-    useDeviceWithHomeIndicator(tester);
+  Future<void> pumpDetail(
+    WidgetTester tester,
+    WallpaperDetailLoaded state, {
+    GlobalKey? boundary,
+    ThemeData? theme,
+    double side = 0,
+  }) async {
+    useDeviceWithHomeIndicator(tester, side: side);
     final bloc = _MockWallpaperDetailBloc();
     whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
     await tester.pumpWidget(
       RepaintBoundary(
         key: boundary,
         child: MaterialApp(
+          theme: theme,
+          themeAnimationDuration: Duration.zero,
           home: BlocProvider<WallpaperDetailBloc>.value(
             value: bloc,
             child: WallpaperDetailScreen(entity: state.entity),
@@ -240,6 +255,160 @@ void main() {
 
       expect(open, greaterThan(collapsed));
     });
+
+    testWidgets('light themes tint the glass more than dark ones, closed and open, so dark icons stay readable', (
+      tester,
+    ) async {
+      double alpha(WidgetTester tester) => tester.widget<PrismGlass>(find.byType(PrismGlass)).glassColor!.a;
+      final List<(Brightness, double, double)> expected = <(Brightness, double, double)>[
+        (Brightness.dark, 0.5, 0.6),
+        (Brightness.light, 0.55, 0.7),
+      ];
+      for (final (Brightness brightness, double dock, double open) in expected) {
+        await pumpDetail(tester, loaded(), theme: ThemeData(brightness: brightness));
+
+        expect(alpha(tester), closeTo(dock, 0.001), reason: '$brightness closed');
+        await openPanel(tester);
+        expect(alpha(tester), closeTo(open, 0.001), reason: '$brightness open');
+        await tester.pumpWidget(const SizedBox());
+      }
+    });
+
+    testWidgets('the glass and the action bar keep clear of a side safe area, the wallpaper does not', (tester) async {
+      await pumpDetail(tester, loaded(), side: 44);
+
+      final Rect glass = tester.getRect(find.byType(PrismGlass));
+      expect(glass.left, 54);
+      expect(glass.right, _screenWidth - 54);
+      expect(tester.getRect(find.byType(WallpaperActionBar)).left, 54);
+      expect(tester.getRect(find.byType(WallpaperActionBar)).right, _screenWidth - 54);
+      expect(tester.getRect(_wallpaper().first), const Rect.fromLTWH(0, 0, _screenWidth, _screenHeight));
+
+      await openPanel(tester);
+      expect(tester.getRect(find.byType(PrismGlass)).left, 54);
+      expect(tester.getRect(find.byType(PrismGlass)).right, _screenWidth - 54);
+    });
+
+    testWidgets('the Set pill and the swatches start on the same line as the panel text, 24 px inside the glass', (
+      tester,
+    ) async {
+      await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
+      await openPanel(tester);
+
+      final Rect glass = tester.getRect(find.byType(PrismGlass));
+      final Rect swatch = tester.getRect(
+        find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Original wallpaper colors'),
+      );
+      expect(tester.getRect(find.byType(SetWallpaperButton)).left, glass.left + 24);
+      expect(swatch.left, glass.left + 24);
+      expect(tester.getRect(find.text('Wallpaper by Akshay')).left, glass.left + 24);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    group('handle', () {
+      testWidgets('one chevron turns over as the panel opens, and fades to 70 percent of the text colour', (
+        tester,
+      ) async {
+        await pumpDetail(
+          tester,
+          loaded(),
+          theme: ThemeData(colorScheme: const ColorScheme.light(secondary: Colors.black)),
+        );
+        final Finder chevron = find.byIcon(JamIcons.chevron_up);
+        double turn() => tester
+            .widget<Transform>(find.ancestor(of: chevron, matching: find.byType(Transform)).first)
+            .transform
+            .storage[0];
+
+        expect(chevron, findsOneWidget);
+        expect(turn(), closeTo(1, 0.001));
+        expect(tester.widget<Icon>(chevron).color!.a, closeTo(0.7, 0.001));
+
+        await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        final double midway = turn();
+        await tester.pumpAndSettle();
+
+        expect(midway, inExclusiveRange(-1, 1));
+        expect(chevron, findsOneWidget);
+        expect(turn(), closeTo(-1, 0.001));
+      });
+
+      testWidgets('its touch target is 96 by 48 and the dock stays 102 tall', (tester) async {
+        final SemanticsHandle semantics = tester.ensureSemantics();
+        await pumpDetail(tester, loaded());
+
+        final Rect target = tester.getSemantics(find.bySemanticsLabel('Expand wallpaper details')).rect;
+        expect(target.size, const Size(96, 48));
+        expect(tester.getSize(find.byType(PrismGlass)).height, 36 + WallpaperActionBar.height);
+
+        final Offset chevron = tester.getCenter(find.byIcon(JamIcons.chevron_up));
+        await tester.tapAt(chevron + const Offset(40, 0));
+        await tester.pumpAndSettle();
+
+        expect(tester.getSize(find.byType(PrismGlass)).height, closeTo(_screenHeight * 0.55, 0.01));
+        semantics.dispose();
+      });
+    });
+
+    testWidgets('panel content fades out over the 24 px above the action bar instead of ending in a hard edge', (
+      tester,
+    ) async {
+      await pumpDetail(tester, loaded());
+      await openPanel(tester);
+      final Finder maskFinder = find.byWidgetPredicate((w) => w is ShaderMask && w.blendMode == BlendMode.dstIn);
+      final Size size = tester.getSize(maskFinder);
+      final Shader shader = tester.widget<ShaderMask>(maskFinder).shaderCallback(Offset.zero & size);
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      Canvas(recorder).drawRect(Offset.zero & size, Paint()..shader = shader);
+      final ui.Image image = (await tester.runAsync(
+        () => recorder.endRecording().toImage(size.width.ceil(), size.height.ceil()),
+      ))!;
+      final ByteData pixels = (await tester.runAsync<ByteData?>(() => image.toByteData()))!;
+      int alphaAt(double y) => pixels.getUint8((y.toInt() * image.width + 10) * 4 + 3);
+      final double barTop = size.height - WallpaperActionBar.height;
+
+      expect(alphaAt(barTop - 30), 255);
+      expect(alphaAt(barTop - 12), inInclusiveRange(110, 145));
+      expect(alphaAt(barTop - 1), lessThan(15));
+      expect(alphaAt(barTop + 2), 0);
+    });
+
+    group('shadow', () {
+      testWidgets('lifts the glass off the wallpaper below it and fades out before it reaches the area above', (
+        tester,
+      ) async {
+        final GlobalKey boundary = GlobalKey();
+        await pumpDetail(
+          tester,
+          loaded(),
+          boundary: boundary,
+          theme: ThemeData(brightness: Brightness.dark, primaryColor: const Color(0xFF808080)),
+        );
+        final RenderRepaintBoundary render = boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final ui.Image image = (await tester.runAsync(() => render.toImage()))!;
+        final ByteData pixels = (await tester.runAsync<ByteData?>(() => image.toByteData()))!;
+        int redAt(double x, double y) => pixels.getUint8(((y.toInt() * image.width) + x.toInt()) * 4);
+        final Rect glass = tester.getRect(find.byType(PrismGlass));
+        final int wallpaper = redAt(2, 300);
+
+        expect(redAt(glass.center.dx, glass.bottom + 4), lessThan(wallpaper - 20), reason: 'below the glass');
+        expect(redAt(glass.center.dx, glass.top - 40), wallpaper, reason: 'well above it');
+      });
+
+      testWidgets('is painted around the glass only, so it never darkens what the glass blurs', (tester) async {
+        await pumpDetail(tester, loaded());
+        final ClipPath clip = tester.widget<ClipPath>(
+          find.byWidgetPredicate((w) => w is ClipPath && w.child is DecoratedBox),
+        );
+        final Path outside = clip.clipper!.getClip(const Size(340, 102));
+
+        expect(outside.contains(const Offset(170, 51)), isFalse, reason: 'inside the glass');
+        expect(outside.contains(const Offset(170, 120)), isTrue, reason: 'below the glass');
+        expect(outside.contains(const Offset(-20, 51)), isTrue, reason: 'beside the glass');
+        expect(outside.contains(const Offset(4, 4)), isTrue, reason: 'in the rounded corner');
+      });
+    });
   });
 
   group('colour variations', () {
@@ -343,6 +512,25 @@ void main() {
 
       expect(copied, '#009688');
       await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('tapping a swatch plays a selection haptic, like a tap on the wallpaper', (tester) async {
+      final List<Object?> played = <Object?>[];
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
+        played.add(call.arguments);
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null));
+      await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
+      await openPanel(tester);
+
+      await tester.tap(find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Accent color'));
+      await tester.tap(
+        find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Original wallpaper colors'),
+      );
+
+      expect(played, <String>['selection', 'selection']);
     });
 
     testWidgets('with no palette a tap leaves the original wallpaper', (tester) async {

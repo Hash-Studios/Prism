@@ -72,6 +72,7 @@ void main() {
         final request = requests.single! as DownloadRequest;
         expect(request.link, source.key);
         expect(request.filenameWithoutExtension, 'wall');
+        expect(request.isLocalFile, isFalse);
       }
     });
   }

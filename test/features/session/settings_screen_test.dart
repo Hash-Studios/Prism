@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/auth/badge_model.dart' as prism;
 import 'package:Prism/auth/transaction_model.dart';
@@ -703,6 +704,27 @@ void main() {
       expect(LowDataMode.enabled.value, isTrue);
       expect(getIt<SettingsLocalDataSource>().get<bool>(LowDataMode.settingsKey, defaultValue: false), isTrue);
       expect(tester.widget<SwitchListTile>(tile).value, isTrue);
+    });
+
+    testWidgets('the cache size counts tinted wallpapers', (tester) async {
+      const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
+      final temp = Directory.systemTemp.createTempSync('prism_settings_temp');
+      File('${temp.path}/prism_tint/1_0.png')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(List<int>.filled(2048, 7));
+      messenger.setMockMethodCallHandler(pathChannel, (_) async => temp.path);
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(pathChannel, null);
+        temp.deleteSync(recursive: true);
+      });
+
+      await pumpSettings(tester);
+      for (var i = 0; i < 40 && find.text('Clear locally cached images').evaluate().isNotEmpty; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+        await tester.pump(const Duration(milliseconds: 25));
+      }
+
+      expect(find.text('2 KB of cached images'), findsOneWidget);
     });
 
     testWidgets('Clear cache asks first, with the size, and Cancel keeps the cache', (tester) async {

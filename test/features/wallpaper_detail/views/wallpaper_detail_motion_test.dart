@@ -152,5 +152,68 @@ void main() {
 
       expect(shownFilter(tester), isNull);
     });
+
+    testWidgets('moving from one colour to another turns the hue round instead of fading through grey', (tester) async {
+      final Color red = const HSLColor.fromAHSL(1, 0, 1, 0.5).toColor();
+      final Color green = const HSLColor.fromAHSL(1, 160, 1, 0.5).toColor();
+      WallpaperDetailLoaded picked(Color color) => tinted.copyWith(colors: <Color>[color], accent: color);
+      final states = await pumpUntinted(tester, reduceMotion: false);
+      states.add(picked(red));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      states.add(picked(green));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 110));
+
+      final double eased = Curves.easeOutCubic.transform(0.5);
+      expect(shownFilter(tester), ColorFilter.mode(lerpHueTint(red, green, eased)!, BlendMode.hue));
+      expect(shownFilter(tester), isNot(ColorFilter.mode(Color.lerp(red, green, eased)!, BlendMode.hue)));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(shownFilter(tester), ColorFilter.mode(green, BlendMode.hue));
+    });
+  });
+
+  group('lerpHueTint', () {
+    HSLColor hsl(Color? color) => HSLColor.fromColor(color!);
+
+    test('blends the hue round the colour wheel and keeps the colour full', () {
+      final Color red = const HSLColor.fromAHSL(1, 0, 1, 0.5).toColor();
+      final Color green = const HSLColor.fromAHSL(1, 160, 1, 0.5).toColor();
+
+      final Color? midway = lerpHueTint(red, green, 0.5);
+
+      expect(hsl(midway).hue, closeTo(80, 0.5));
+      expect(hsl(midway).saturation, closeTo(1, 0.01));
+      expect(hsl(midway).lightness, closeTo(0.5, 0.01));
+      expect([midway!.r, midway.g, midway.b], [closeTo(0.667, 0.01), closeTo(1, 0.01), closeTo(0, 0.01)]);
+    });
+
+    test('takes the short way over the 0 degree seam', () {
+      final Color magenta = const HSLColor.fromAHSL(1, 350, 1, 0.5).toColor();
+      final Color orange = const HSLColor.fromAHSL(1, 30, 1, 0.5).toColor();
+
+      expect(hsl(lerpHueTint(magenta, orange, 0.5)).hue, closeTo(10, 0.5));
+      expect(hsl(lerpHueTint(orange, magenta, 0.25)).hue, closeTo(20, 0.5));
+    });
+
+    test('starts at the first colour and ends on the second', () {
+      const Color from = Color(0xFF3366CC);
+      const Color to = Color(0xFFCC6633);
+
+      expect(lerpHueTint(from, to, 0), from);
+      expect(lerpHueTint(from, to, 1), to);
+    });
+
+    test('with no tint at one end the other colour fades in or out, and its hue stays', () {
+      const Color teal = Color(0xFF008080);
+
+      expect(lerpHueTint(null, teal, 0.25)!.a, closeTo(0.25, 0.01));
+      expect(hsl(lerpHueTint(null, teal, 0.25)).hue, closeTo(180, 0.5));
+      expect(lerpHueTint(teal, null, 0.25)!.a, closeTo(0.75, 0.01));
+      expect(lerpHueTint(null, null, 0.5), isNull);
+    });
   });
 }

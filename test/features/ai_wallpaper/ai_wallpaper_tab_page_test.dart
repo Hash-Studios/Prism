@@ -126,6 +126,9 @@ void main() {
     expect(tester.getSize(find.descendant(of: chip, matching: find.byType(Ink))).height, 36);
     final RichText label = tester.widget<RichText>(find.descendant(of: chip, matching: find.byType(RichText)));
     expect(label.text.style?.fontSize, 14);
+    final List<double> tops = <double>[for (int i = 0; i < 3; i++) tester.getTopLeft(find.byType(ActionChip).at(i)).dy];
+    expect(tops[1] - tops[0], 48);
+    expect(tops[2] - tops[1], 48);
   });
 
   testWidgets('AI share is single-flight, reports the chosen image and records tap and success', (tester) async {

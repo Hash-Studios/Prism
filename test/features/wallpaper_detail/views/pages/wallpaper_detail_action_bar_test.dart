@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -15,6 +17,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -71,8 +74,14 @@ Future<Uint8List> _redAndBluePng() async {
 void main() {
   setUpAll(() => registerFallbackValue(const SelectAccentColor(color: Colors.black)));
 
+  late DownloadedWallIndex downloaded;
+
   setUp(() {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    downloaded = DownloadedWallIndex(settings);
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
+    getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(settings));
+    getIt.registerSingleton<DownloadedWallIndex>(downloaded);
   });
 
   tearDown(() => getIt.reset());
@@ -165,6 +174,31 @@ void main() {
 
     verify(() => bloc.add(const SelectAccentColor(color: Colors.teal))).called(1);
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
+
+  testWidgets('every button in the bar shrinks to 0.96 under the finger, not twice over', (tester) async {
+    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    Finder glyph(Type button) => find.descendant(of: find.byType(button), matching: find.byType(Icon)).first;
+    final Map<String, Finder> buttons = <String, Finder>{
+      'Set': find.byType(SetWallpaperButton),
+      'Download': glyph(DownloadButton),
+      'Favourite': glyph(FavouriteWallpaperButton),
+      'Share': glyph(ShareButton),
+      'Edit': glyph(EditButton),
+    };
+
+    for (final MapEntry<String, Finder> button in buttons.entries) {
+      final double width = tester.getSize(button.value).width;
+      final TestGesture finger = await tester.startGesture(tester.getCenter(button.value));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      final double shown = tester.getBottomRight(button.value).dx - tester.getTopLeft(button.value).dx;
+      await finger.cancel();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(shown / width, closeTo(0.96, 0.002), reason: button.key);
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('dragging the collapsed handle opens the panel without moving the action bar', (tester) async {
     await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
@@ -260,7 +294,7 @@ void main() {
 
     List<Future<String> Function()?> preparers(WidgetTester tester) => <Future<String> Function()?>[
       tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton)).prepareSource,
-      tester.widget<DownloadButton>(find.byType(DownloadButton)).prepareSource,
+      tester.widget<DownloadButton>(find.byType(DownloadButton)).variant?.prepare,
       tester.widget<EditButton>(find.byType(EditButton)).prepareSource,
     ];
 
@@ -298,6 +332,43 @@ void main() {
         expect(hues, hasLength(2));
         expect(hues, everyElement(closeTo(120, 10)));
       }
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a tinted download is its own variation, named and remembered by its colour', (tester) async {
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          entity: _prism(),
+          paletteLoading: false,
+          colors: const <Color>[Color(0xFF00FF00)],
+          accent: const Color(0xFF00FF00),
+          colorChanged: true,
+        ),
+      );
+      const String url = 'https://img.test/full.jpg';
+      final DownloadButton button = tester.widget<DownloadButton>(find.byType(DownloadButton));
+
+      expect(button.variant!.key, 'tint-00ff00');
+      expect(button.variant!.identityOf(url), 'full_tint-00ff00.png');
+
+      button.onDownloaded!();
+      await tester.pump();
+
+      expect(downloaded.has('full_tint-00ff00.png'), isTrue);
+      expect(downloaded.has(url), isFalse);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('with the original showing, a download is remembered under the wallpaper link', (tester) async {
+      await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+      const String url = 'https://img.test/full.jpg';
+      final DownloadButton button = tester.widget<DownloadButton>(find.byType(DownloadButton));
+
+      expect(button.variant, isNull);
+      button.onDownloaded!();
+      await tester.pump();
+
+      expect(downloaded.has(url), isTrue);
+      expect(downloaded.has('full_tint-00ff00.png'), isFalse);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('with the original showing, each action uses the wallpaper as it is', (tester) async {

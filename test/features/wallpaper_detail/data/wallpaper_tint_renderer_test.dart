@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -13,6 +14,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
+
+class _PartialWriteFile extends Fake implements File {
+  _PartialWriteFile(this._real);
+
+  final File _real;
+
+  @override
+  String get path => _real.path;
+
+  @override
+  Future<File> writeAsBytes(List<int> bytes, {FileMode mode = FileMode.write, bool flush = false}) async {
+    await _real.writeAsBytes(<int>[1, 2, 3]);
+    throw const FileSystemException('No space left on device');
+  }
+
+  @override
+  Future<FileSystemEntity> delete({bool recursive = false}) => _real.delete(recursive: recursive);
+}
 
 const Color _green = Color(0xFF00FF00);
 const Color _magenta = Color(0xFFFF00FF);
@@ -33,6 +52,35 @@ Future<Uint8List> _redAndBluePng() async {
     image.dispose();
   }
 }
+
+Future<Uint8List> _solidPng(int width, int height) async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  Canvas(
+    recorder,
+  ).drawRect(Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()), Paint()..color = const Color(0xFF3366CC));
+  final ui.Image image = await rasterizePicture(recorder.endRecording(), width, height);
+  try {
+    return (await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+  } finally {
+    image.dispose();
+  }
+}
+
+Future<({int width, int height})> _sizeOf(Uint8List png) async {
+  final ui.Codec codec = await ui.instantiateImageCodec(png);
+  try {
+    final ui.Image image = (await codec.getNextFrame()).image;
+    try {
+      return (width: image.width, height: image.height);
+    } finally {
+      image.dispose();
+    }
+  } finally {
+    codec.dispose();
+  }
+}
+
+Color _tint(int index) => Color(0xFF000000 | (index * 0x2A0B13 & 0xFFFFFF));
 
 Future<List<Color>> _pixels(Uint8List png) async {
   final ui.Codec codec = await ui.instantiateImageCodec(png);
@@ -88,10 +136,11 @@ void main() {
     late Directory directory;
     late File source;
 
-    setUp(() {
+    setUp(() async {
       directory = Directory.systemTemp.createTempSync('tint_renderer_test_');
       source = File('${directory.path}/wall.png');
       messenger.setMockMethodCallHandler(pathChannel, (_) async => directory.path);
+      await clearTintedWallpapers();
     });
 
     tearDown(() {
@@ -164,6 +213,161 @@ void main() {
         final String path = await renderTintedWallpaper(source: source.path, tint: _green);
 
         expect(File(path).existsSync(), isTrue);
+      });
+    });
+
+    testWidgets('the first render of a run deletes files an earlier run left and later renders keep theirs', (
+      tester,
+    ) async {
+      await tester.runAsync(() async {
+        source.writeAsBytesSync(await _redAndBluePng());
+        final File stale = File('${directory.path}/prism_tint/stale.png')..createSync(recursive: true);
+        stale.writeAsBytesSync(<int>[1, 2, 3]);
+
+        final String first = await renderTintedWallpaper(source: source.path, tint: _green);
+
+        expect(stale.existsSync(), isFalse);
+        expect(File(first).existsSync(), isTrue);
+
+        final String second = await renderTintedWallpaper(source: source.path, tint: _magenta);
+
+        expect(File(first).existsSync(), isTrue);
+        expect(File(second).existsSync(), isTrue);
+      });
+    });
+
+    testWidgets('keeps the last 6 renders and deletes the file of the oldest when a 7th is made', (tester) async {
+      await tester.runAsync(() async {
+        source.writeAsBytesSync(await _redAndBluePng());
+        final List<String> paths = <String>[];
+        for (int i = 0; i < 7; i++) {
+          paths.add(await renderTintedWallpaper(source: source.path, tint: _tint(i)));
+        }
+
+        expect(File(paths[0]).existsSync(), isFalse);
+        expect(paths.skip(1).map((String path) => File(path).existsSync()), everyElement(isTrue));
+        expect(Directory('${directory.path}/prism_tint').listSync(), hasLength(6));
+      });
+    });
+
+    testWidgets('a render used again is kept past newer ones and the least recent one goes', (tester) async {
+      await tester.runAsync(() async {
+        source.writeAsBytesSync(await _redAndBluePng());
+        final List<String> paths = <String>[
+          for (int i = 0; i < 6; i++) await renderTintedWallpaper(source: source.path, tint: _tint(i)),
+        ];
+
+        final String again = await renderTintedWallpaper(source: source.path, tint: _tint(0));
+        await renderTintedWallpaper(source: source.path, tint: _tint(6));
+
+        expect(again, paths[0]);
+        expect(File(paths[0]).existsSync(), isTrue);
+        expect(File(paths[1]).existsSync(), isFalse);
+        expect(File(paths[2]).existsSync(), isTrue);
+      });
+    });
+
+    testWidgets('an evicted tint renders again into a new file', (tester) async {
+      await tester.runAsync(() async {
+        source.writeAsBytesSync(await _redAndBluePng());
+        final String first = await renderTintedWallpaper(source: source.path, tint: _tint(0));
+        for (int i = 1; i < 7; i++) {
+          await renderTintedWallpaper(source: source.path, tint: _tint(i));
+        }
+
+        final String again = await renderTintedWallpaper(source: source.path, tint: _tint(0));
+
+        expect(again, isNot(first));
+        expect(File(again).existsSync(), isTrue);
+      });
+    });
+
+    testWidgets('clearTintedWallpapers deletes the files and the next render makes a new one', (tester) async {
+      await tester.runAsync(() async {
+        source.writeAsBytesSync(await _redAndBluePng());
+        final String first = await renderTintedWallpaper(source: source.path, tint: _green);
+
+        await clearTintedWallpapers();
+
+        expect(File(first).existsSync(), isFalse);
+        expect(Directory('${directory.path}/prism_tint').existsSync(), isFalse);
+        final String again = await renderTintedWallpaper(source: source.path, tint: _green);
+        expect(File(again).existsSync(), isTrue);
+      });
+    });
+
+    testWidgets('a write that fails leaves no partial file and the next render works', (tester) async {
+      await tester.runAsync(() async {
+        source.writeAsBytesSync(await _redAndBluePng());
+        final Zone realIo = Zone.current;
+
+        await IOOverrides.runZoned(
+          () async {
+            await expectLater(
+              renderTintedWallpaper(source: source.path, tint: _green),
+              throwsA(isA<FileSystemException>()),
+            );
+          },
+          createFile: (String path) {
+            final File real = realIo.run(() => File(path));
+            return path.contains('/prism_tint/') ? _PartialWriteFile(real) : real;
+          },
+        );
+
+        expect(Directory('${directory.path}/prism_tint').listSync(), isEmpty);
+        final String path = await renderTintedWallpaper(source: source.path, tint: _green);
+        expect(File(path).existsSync(), isTrue);
+      });
+    });
+
+    testWidgets('a source above the cap is decoded at the capped size', (tester) async {
+      await tester.runAsync(() async {
+        final Uint8List wide = await _solidPng(5000, 2);
+
+        final ui.Image capped = await decodeForTint(wide);
+        final ui.Image roomy = await decodeForTint(wide, deviceLongSidePx: 6000);
+
+        expect((width: capped.width, height: capped.height), (width: 4096, height: 2));
+        expect((width: roomy.width, height: roomy.height), (width: 5000, height: 2));
+        capped.dispose();
+        roomy.dispose();
+      });
+    });
+
+    testWidgets('a source above the cap is written at the capped size', (tester) async {
+      await tester.runAsync(() async {
+        source.writeAsBytesSync(await _solidPng(5000, 2));
+
+        final String path = await renderTintedWallpaper(source: source.path, tint: _green);
+
+        expect(await _sizeOf(await File(path).readAsBytes()), (width: 4096, height: 2));
+      });
+    });
+
+    testWidgets('two tints render one after the other, the second source is not fetched before the first is done', (
+      tester,
+    ) async {
+      await tester.runAsync(() async {
+        source.writeAsBytesSync(await _redAndBluePng());
+        final _MockCacheManager cache = _MockCacheManager();
+        final Completer<void> firstFetched = Completer<void>();
+        when(() => cache.getSingleFile(any())).thenAnswer((Invocation call) async {
+          if (call.positionalArguments.single == 'https://img.test/a.png') await firstFetched.future;
+          return const LocalFileSystem().file(source.path);
+        });
+        PrismFullImageCache.testOverride = cache;
+
+        final Future<String> first = renderTintedWallpaper(source: 'https://img.test/a.png', tint: _green);
+        final Future<String> second = renderTintedWallpaper(source: 'https://img.test/b.png', tint: _magenta);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+
+        verify(() => cache.getSingleFile('https://img.test/a.png')).called(1);
+        verifyNever(() => cache.getSingleFile('https://img.test/b.png'));
+
+        firstFetched.complete();
+        await Future.wait(<Future<String>>[first, second]);
+
+        verify(() => cache.getSingleFile('https://img.test/b.png')).called(1);
       });
     });
 

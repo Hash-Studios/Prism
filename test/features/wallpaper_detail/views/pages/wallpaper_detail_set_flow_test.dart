@@ -271,7 +271,7 @@ void main() {
     final Finder fade = find.byWidgetPredicate((widget) => widget is Opacity && widget.child is MakeItLiveChip);
 
     expect(tester.getRect(panelGlass).top - tester.getRect(pill).bottom, 12);
-    expect(tester.getRect(pill).left, 10);
+    expect(tester.getRect(pill).left, 34);
     expect(tester.widget<Opacity>(fade).opacity, 1);
 
     await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
@@ -285,6 +285,29 @@ void main() {
     expect(tester.widget<Opacity>(fade).opacity, 0);
     await tester.tap(pill, warnIfMissed: false);
     await tester.pump();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the Live chip and the glass keep clear of a side safe area, and the wallpaper stays full screen', (
+    tester,
+  ) async {
+    aw.AsyncWallpaper.debugSetClient(_Client(live: true));
+    tester.view.physicalSize = const Size(844 * 3, 390 * 3);
+    tester.view.devicePixelRatio = 3;
+    tester.view.padding = const FakeViewPadding(left: 47 * 3, right: 47 * 3, bottom: 21 * 3);
+    tester.view.viewPadding = const FakeViewPadding(left: 47 * 3, right: 47 * 3, bottom: 21 * 3);
+    addTearDown(tester.view.reset);
+    await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final Rect glass = tester.getRect(find.byType(PrismGlass).last);
+    expect(glass.left, 57);
+    expect(glass.right, 844 - 57);
+    expect(
+      tester.getRect(find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(PrismGlass))).left,
+      81,
+    );
+    expect(tester.getRect(find.byType(SetWallpaperButton)).left, 81);
+    expect(tester.getRect(find.byType(SetWallpaperButton)).left, greaterThan(glass.left));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('no Live chip on iOS, where nothing can be set from the app', (tester) async {

@@ -25,7 +25,7 @@ class WallpaperActionBar extends StatelessWidget {
     return SizedBox(
       height: height,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        padding: const EdgeInsets.fromLTRB(24, 0, 16, 12),
         child: LayoutBuilder(
           builder: (context, constraints) => FittedBox(
             fit: BoxFit.scaleDown,
