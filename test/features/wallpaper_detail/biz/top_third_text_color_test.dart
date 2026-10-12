@@ -37,4 +37,24 @@ void main() {
       image.dispose();
     });
   });
+
+  testWidgets('a red top third shown in blue gets white text, and black text without the tint', (tester) async {
+    await tester.runAsync(() async {
+      final ui.Image image = await _split(const Color(0xFFFF0000), const Color(0xFF000000));
+      expect(await textColorForTopThird(image), const Color(0xFF000000));
+      expect(await textColorForTopThird(image, tint: const Color(0xFF0000FF)), const Color(0xFFFFFFFF));
+      image.dispose();
+    });
+  });
+
+  testWidgets('the tint does not dispose the image it was given', (tester) async {
+    await tester.runAsync(() async {
+      final ui.Image image = await _split(const Color(0xFFFF0000), const Color(0xFF000000));
+      await textColorForTopThird(image, tint: const Color(0xFF0000FF));
+
+      expect(image.debugDisposed, isFalse);
+      expect(await textColorForTopThird(image), const Color(0xFF000000));
+      image.dispose();
+    });
+  });
 }

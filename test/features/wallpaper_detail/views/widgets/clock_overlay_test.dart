@@ -644,9 +644,13 @@ void main() {
     setUp(() => directory = Directory.systemTemp.createTempSync('clock_overlay_test_'));
     tearDown(() => directory.deleteSync(recursive: true));
 
-    Future<Color> sampledClockColor(WidgetTester tester, Color wall) async {
+    Future<Color> sampledClockColor(WidgetTester tester, Color wall, {Color? tint}) async {
       final File file = (await tester.runAsync(() => _solidPng(directory, wall)))!;
-      await tester.pumpWidget(MaterialApp(home: ClockOverlay(link: file.path, file: true)));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ClockOverlay(link: file.path, file: true, tint: tint),
+        ),
+      );
       await tester.tap(find.text('Lock'));
       await tester.pumpAndSettle();
       final Finder clock = find.textContaining(RegExp(r'^\d{1,2}:\d{2}$'));
@@ -665,6 +669,18 @@ void main() {
 
     testWidgets('is black over a bright wall', (tester) async {
       expect(await sampledClockColor(tester, const Color(0xFFF2F2F2)), Colors.black);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('is black over a red wall', (tester) async {
+      expect(await sampledClockColor(tester, const Color(0xFFFF0000)), Colors.black);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('follows the tint: the red wall shown in blue gets white text', (tester) async {
+      expect(await sampledClockColor(tester, const Color(0xFFFF0000), tint: const Color(0xFF0000FF)), Colors.white);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('follows the tint: the bright wall shown in blue keeps black text', (tester) async {
+      expect(await sampledClockColor(tester, const Color(0xFFF2F2F2), tint: const Color(0xFF0000FF)), Colors.black);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 }

@@ -84,7 +84,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
   }
 
   Future<void> _applySample(ui.Image image) async {
-    final Color color = await textColorForTopThird(image);
+    final Color color = await textColorForTopThird(image, tint: widget.tint);
     if (mounted) setState(() => _textColor = color);
   }
 
