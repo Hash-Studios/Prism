@@ -130,7 +130,7 @@ test("config is off without the flag or an identity email, and numbers are clamp
   const off = parseStudioConfig(undefined);
   assert.equal(off.generationEnabled, false);
   assert.deepEqual([off.dailyCandidates, off.maxCandidatesPerDay, off.width, off.height], [10, 30, 1440, 3200]);
-  assert.equal(off.model, "fal-ai/bytedance/seedream/v4.5/text-to-image");
+  assert.equal(off.model, "openai/gpt-image-2.5/sunburst/text-to-image");
   const identity = {by: "Prism Studio", email: "studio@example.com", userPhoto: "https://p/s.png"};
   assert.equal(parseStudioConfig({generationEnabled: true, identity}).generationEnabled, true);
   assert.deepEqual(parseStudioConfig({generationEnabled: true, identity}).identity, identity);

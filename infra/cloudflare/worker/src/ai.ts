@@ -1960,6 +1960,21 @@ interface StudioGenerateRequest {
 
 // Models the internal studio pipeline may call. Adding a model is one entry here.
 const STUDIO_MODELS: Record<string, StudioModel> = {
+  // Default studio model: first on the LMArena and Artificial Analysis image boards (Oct 2026), exact phone sizes.
+  'openai/gpt-image-2.5/sunburst/text-to-image': {
+    costUsd: 0.07,
+    imageSize: gptImageSize,
+    // GPT Image 2.5 has no seed input.
+    buildBody: (prompt, width, height) => ({
+      prompt,
+      image_size: { width, height },
+      quality: 'high',
+      num_images: 1,
+      output_format: 'png',
+      background: 'opaque',
+      enable_safety_checker: true,
+    }),
+  },
   'fal-ai/bytedance/seedream/v4.5/text-to-image': {
     costUsd: 0.04,
     imageSize: seedreamImageSize,
@@ -2862,6 +2877,26 @@ export function seedreamImageSize(width: number, height: number): { width: numbe
     }
   }
   return size;
+}
+
+// fal GPT Image 2.5: both edges a multiple of 16, at most 3840, aspect at most 3:1, 655,360 to 8,294,400 pixels.
+const GPT_IMAGE_MIN_PIXELS = 655360;
+const GPT_IMAGE_MAX_PIXELS = 8294400;
+const GPT_IMAGE_MAX_EDGE = 3840;
+const GPT_IMAGE_MAX_ASPECT = 3;
+
+export function gptImageSize(width: number, height: number): { width: number; height: number } {
+  let long = Math.max(width, height);
+  let short = Math.max(Math.min(width, height), long / GPT_IMAGE_MAX_ASPECT);
+  // One factor for both edges keeps the aspect ratio inside the pixel and edge limits.
+  const scale = Math.min(
+    Math.max(1, Math.sqrt(GPT_IMAGE_MIN_PIXELS / (long * short))),
+    Math.sqrt(GPT_IMAGE_MAX_PIXELS / (long * short)),
+    GPT_IMAGE_MAX_EDGE / long,
+  );
+  long = Math.min(GPT_IMAGE_MAX_EDGE, Math.max(16, Math.round((long * scale) / 16) * 16));
+  short = Math.min(long, Math.max(16, Math.round((short * scale) / 16) * 16));
+  return width >= height ? { width: long, height: short } : { width: short, height: long };
 }
 
 function roundUpToMultipleOf8(value: number): number {

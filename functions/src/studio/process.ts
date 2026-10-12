@@ -5,7 +5,7 @@ import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db, int, REGION, str} from "../common";
 import {loadStudioConfig, type StudioIdentity} from "./config";
-import {annotateWithVision, type KnownHash, runGates, type VisionAnnotate} from "./gates";
+import {annotateWithVision, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
 import {randomWallId, type Rng} from "./ids";
 import {STUDIO_SERIES} from "./series";
 
@@ -188,9 +188,9 @@ export async function renderWallpaper(bytes: Buffer): Promise<{wall: Buffer; thu
   return {wall, thumb, width: info.width, height: info.height};
 }
 
-async function loadKnownHashes(): Promise<KnownHash[]> {
-  const snap = await db.collection("studioHashes").select("hash", "wallId").get();
-  return snap.docs.map((d) => ({hash: str(d.data().hash), wallId: str(d.data().wallId)}));
+async function loadKnownSignatures(): Promise<KnownSignature[]> {
+  const snap = await db.collection("studioSignatures").select("signature", "wallId").get();
+  return snap.docs.map((d) => ({signature: str(d.data().signature), wallId: str(d.data().wallId)}));
 }
 
 /**
@@ -222,18 +222,18 @@ async function claimCandidate(ref: admin.firestore.DocumentReference, nowMs: num
 }
 
 /**
- * Creates the pending wall, its hash doc and the candidate's pending_review state in one transaction. Null when the
+ * Creates the pending wall, its signature doc and the candidate's pending_review state in one transaction. Null when the
  * candidate is no longer held by this attempt.
  */
 async function publishWall(params: {
   ref: admin.firestore.DocumentReference;
   attempts: number;
   wall: admin.firestore.DocumentData;
-  hash: string;
+  signature: string;
   candidateUpdate: admin.firestore.DocumentData;
   rng: Rng;
 }): Promise<string | null> {
-  const {ref, attempts, wall, hash, rng} = params;
+  const {ref, attempts, wall, signature, rng} = params;
   for (let i = 0; i < PUBLISH_TRIES; i++) {
     const wallId = randomWallId(rng);
     const wallRef = db.collection("walls").doc(wallId);
@@ -243,7 +243,7 @@ async function publishWall(params: {
       if ((await tx.get(wallRef)).exists) return "taken";
       const now = admin.firestore.FieldValue.serverTimestamp();
       tx.create(wallRef, {...wall, id: wallId});
-      tx.create(db.collection("studioHashes").doc(ref.id), {hash, wallId, candidateId: ref.id, createdAt: now});
+      tx.create(db.collection("studioSignatures").doc(ref.id), {signature, wallId, candidateId: ref.id, createdAt: now});
       tx.update(ref, {...params.candidateUpdate, status: "pending_review", wallId, updatedAt: now,
         lastError: admin.firestore.FieldValue.delete()});
       return "published";
@@ -263,7 +263,6 @@ function wallRecord(params: {
   wallUrl: string;
   thumbUrl: string;
   rendered: {wall: Buffer; width: number; height: number};
-  hash: string;
 }): admin.firestore.DocumentData {
   const {identity, candidate, image, rendered} = params;
   const series = STUDIO_SERIES.find((s) => s.id === candidate.seriesId);
@@ -292,7 +291,6 @@ function wallRecord(params: {
     seriesId: str(candidate.seriesId),
     studioCandidateId: params.candidateId,
     studioRunId: params.runId,
-    pHash: params.hash,
   };
 }
 
@@ -331,7 +329,7 @@ export async function processCandidate(runId: string, candidateId: string, deps:
     }
     image = await generate(deps, candidateId, candidate);
     const bytes = await download(image.imageUrl);
-    const gates = await runGates(bytes, {annotate: deps.annotate, knownHashes: loadKnownHashes});
+    const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures});
     if (!gates.passed) {
       await ref.update({
         status: "rejected",
@@ -351,9 +349,9 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       ref,
       attempts,
       wall: wallRecord({
-        identity: config.identity, candidate, runId, candidateId, image, wallUrl, thumbUrl, rendered, hash: gates.hash,
+        identity: config.identity, candidate, runId, candidateId, image, wallUrl, thumbUrl, rendered,
       }),
-      hash: gates.hash,
+      signature: gates.signature,
       candidateUpdate: {gates: {passed: true, reasons: [], details: gates.details}, worker: image},
       rng: deps.rng,
     });

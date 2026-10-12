@@ -30,7 +30,7 @@ Backend only. The walls work on Android and iOS, for free and Pro users, like ot
 3. `processStudioCandidate` runs once for each candidate doc. It calls `POST /api/ai/studio/generations` on the worker. The worker calls fal and stores the image in R2 at `ai/studio/raw/<id>.<ext>`.
 4. The function runs the checks. A rejected image is deleted from R2.
 5. A passed image becomes a JPEG (quality 90) and a thumbnail the same size the app makes for uploads. The worker stores both at `ai/studio/<id>.jpg` and `ai/studio/thumb_<id>.jpg`.
-6. In one transaction the function creates `walls/{id}` with `review: false`, `studioHashes/{candidateId}`, and sets the candidate to `pending_review`.
+6. In one transaction the function creates `walls/{id}` with `review: false`, `studioSignatures/{candidateId}`, and sets the candidate to `pending_review`.
 7. An admin approves or rejects in the swipe review screen.
 
 ### Checks
@@ -41,15 +41,25 @@ Backend only. The walls work on Android and iOS, for free and Pro users, like ot
 | Safety | Vision SafeSearch adult, racy, violence or medical is `POSSIBLE` or higher |
 | Text | Vision finds a word with 3 or more letters or digits |
 | Logo | Vision finds a logo with score 0.5 or higher |
-| Duplicate | dHash distance 6 or less to any Studio wall |
+| Duplicate | Correlation 0.93 or higher with any Studio wall. The signature is a 16x36 grey thumbnail. |
 
 All values go into the candidate doc (`gates.details`), so the limits can be tuned.
+
+A 64-bit dHash was tried first. It called different After Dark walls the same, because their black areas give the same bits. Correlation looks only at how each image varies, and the small thumbnail averages away the dark grain. On test images, near copies (JPEG, tint, 2% crop) scored 0.97 or higher. Different scenes scored 0.84 or lower.
 
 ### Pushes
 
 - `onWallSubmitted` and `onWallApproved` send nothing for a Studio wall. There is no admin push, no "Your wallpaper is live" push and no follower push.
 - A wall counts as a Studio wall only when `origin` is `studio` and its candidate doc points back at the same wall id. A user cannot fake this, because clients cannot write `studioRuns`.
 - A rejection writes the usual "Wallpaper Rejected" notice to the Studio account. Nobody uses that account on a device, so no push arrives.
+
+### Model
+
+The default is GPT Image 2.5 Sunburst on fal at `high` quality, about $0.07 for one 1440x3200 image. It was first on the LMArena and Artificial Analysis image boards in October 2026, and it makes the exact phone size with no crop or upscale. It has no seed input.
+
+The worker also allows Seedream 4.5 ($0.04) and Seedream 5 Lite ($0.035) as cheaper options. To change the model, set `studioConfig/current.model`. A model must be in `STUDIO_MODELS` in `infra/cloudflare/worker/src/ai.ts`.
+
+No visual test of the models was run yet. Compare the first week of candidates before you commit to one model.
 
 ### Spend
 
@@ -61,14 +71,14 @@ All values go into the candidate doc (`gates.details`), so the limits can be tun
 
 | Collection | Holds |
 |---|---|
-| `studioConfig/current` | `generationEnabled`, `dailyCandidates` (10), `maxCandidatesPerDay` (30), `model`, `width` (1440), `height` (3200), `seriesWeights`, `identity {by, email, userPhoto}` |
+| `studioConfig/current` | `generationEnabled`, `dailyCandidates` (10), `maxCandidatesPerDay` (30), `model` (`openai/gpt-image-2.5/sunburst/text-to-image`), `width` (1440), `height` (3200), `seriesWeights`, `identity {by, email, userPhoto}` |
 | `studioRuns/{runId}` | One run: source, day, count, model, size |
 | `studioRuns/{runId}/candidates/{id}` | Prompt, status (`queued`, `generating`, `rejected`, `failed`, `pending_review`), attempts, worker answer, check results, wall id |
 | `studioDaily/{yyyy-mm-dd}` | Candidates made that day |
 | `studioSubjectUse/{subjectId}` | When a subject was last used |
-| `studioHashes/{candidateId}` | dHash of each Studio wall |
+| `studioSignatures/{candidateId}` | Image signature of each Studio wall (base64 16x36 grey thumbnail) |
 
-New wall fields: `origin`, `seriesId`, `studioCandidateId`, `studioRunId`, `pHash`. The usual AI fields are also set: `isAiGenerated`, `aiProvider`, `aiModel`, `aiPrompt`.
+New wall fields: `origin`, `seriesId`, `studioCandidateId`, `studioRunId`. The usual AI fields are also set: `isAiGenerated`, `aiProvider`, `aiModel`, `aiPrompt`.
 
 Clients cannot read or write the Studio collections. The last rule in `firestore.rules` denies them.
 
