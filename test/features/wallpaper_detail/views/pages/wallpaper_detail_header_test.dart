@@ -196,6 +196,7 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Live'), findsOneWidget);
       expect(tester.getSize(find.byType(PrismGlass)).height, 32);
@@ -232,6 +233,79 @@ void main() {
 
       expect(pressed, closeTo(0.96, 0.001));
       expect(scale(), 1);
+    });
+
+    Future<void> pumpChip(
+      WidgetTester tester, {
+      double textScale = 1,
+      bool reduceMotion = false,
+      Brightness brightness = Brightness.dark,
+    }) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          themeAnimationDuration: Duration.zero,
+          theme: ThemeData(brightness: brightness, primaryColor: const Color(0xFF204060)),
+          builder: (BuildContext context, Widget? child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale), disableAnimations: reduceMotion),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: MakeItLiveChip(onPressed: () {}, supportProbe: () async => true),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    double chipOpacity(WidgetTester tester) => tester
+        .widget<Opacity>(find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(Opacity)).first)
+        .opacity;
+
+    testWidgets('fades in over 160 ms when the probe answers, instead of popping in', (tester) async {
+      await pumpChip(tester);
+      final double first = chipOpacity(tester);
+
+      await tester.pump(const Duration(milliseconds: 80));
+      final double midway = chipOpacity(tester);
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(first, 0);
+      expect(midway, inExclusiveRange(0.3, 0.95));
+      expect(chipOpacity(tester), 1);
+    });
+
+    testWidgets('shows at once when the device asks for less motion', (tester) async {
+      await pumpChip(tester, reduceMotion: true);
+
+      expect(chipOpacity(tester), 1);
+    });
+
+    testWidgets('its label scales with the system text only up to 1.5 times, and the pill follows the label', (
+      tester,
+    ) async {
+      final Map<double, Size> pill = <double, Size>{};
+      for (final double scale in <double>[1, 1.5, 2]) {
+        await pumpChip(tester, textScale: scale);
+        await tester.pump(const Duration(milliseconds: 200));
+        pill[scale] = tester.getSize(find.byType(PrismGlass));
+      }
+
+      expect(pill[1.5]!.width, greaterThan(pill[1]!.width));
+      expect(pill[2], pill[1.5]);
+      expect(pill[2]!.height, 32);
+    });
+
+    testWidgets('the glass is stronger on a light theme, where dark icons sit on a pale tint', (tester) async {
+      await pumpChip(tester);
+      final double dark = tester.widget<PrismGlass>(find.byType(PrismGlass)).glassColor!.a;
+      await pumpChip(tester, brightness: Brightness.light);
+      final PrismGlass light = tester.widget<PrismGlass>(find.byType(PrismGlass));
+
+      expect(dark, closeTo(0.6, 0.001));
+      expect(light.glassColor!.a, closeTo(0.65, 0.001));
+      expect(light.thickness, 16);
     });
 
     testWidgets('stays hidden when the device does not support live wallpapers', (tester) async {
