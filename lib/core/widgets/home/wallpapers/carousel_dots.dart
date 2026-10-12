@@ -1,3 +1,4 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:flutter/material.dart';
 
 class CarouselDots extends StatelessWidget {
@@ -13,16 +14,17 @@ class CarouselDots extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List<Widget>.generate(count, (i) {
+          final bool active = current == i;
           return AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
+            duration: context.motion(const Duration(milliseconds: 250)),
             curve: Curves.easeOutCubic,
-            width: 6.0,
+            width: active ? 16.0 : 6.0,
             height: 6.0,
             margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(500),
-              color: current == i ? Colors.white : Colors.white38,
-              boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 1))],
+              color: active ? Colors.white : Colors.white54,
+              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3, offset: Offset(0, 1))],
             ),
           );
         }),

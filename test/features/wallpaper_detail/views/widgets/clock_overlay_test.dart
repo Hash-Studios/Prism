@@ -8,6 +8,7 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 // ignore: depend_on_referenced_packages
 import 'package:file/file.dart' as pkg_file;
@@ -17,9 +18,14 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-Widget _withMedia(BuildContext context, Widget? child, EdgeInsets safeArea, bool reduceMotion) {
+Widget _withMedia(BuildContext context, Widget? child, EdgeInsets safeArea, bool reduceMotion, double textScale) {
   return MediaQuery(
-    data: MediaQuery.of(context).copyWith(padding: safeArea, viewPadding: safeArea, disableAnimations: reduceMotion),
+    data: MediaQuery.of(context).copyWith(
+      padding: safeArea,
+      viewPadding: safeArea,
+      disableAnimations: reduceMotion,
+      textScaler: TextScaler.linear(textScale),
+    ),
     child: child!,
   );
 }
@@ -28,10 +34,11 @@ Future<void> _openPreview(
   WidgetTester tester, {
   EdgeInsets safeArea = EdgeInsets.zero,
   bool reduceMotion = false,
+  double textScale = 1,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
-      builder: (context, child) => _withMedia(context, child, safeArea, reduceMotion),
+      builder: (context, child) => _withMedia(context, child, safeArea, reduceMotion, textScale),
       home: Builder(
         builder: (context) => TextButton(
           onPressed: () => Navigator.push(
@@ -75,6 +82,15 @@ Future<void> _settleImages(WidgetTester tester) async {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
   }
+}
+
+Future<Color> _pixelAt(WidgetTester tester, RenderRepaintBoundary boundary, Offset point) async {
+  final ui.Image shot = (await tester.runAsync(boundary.toImage))!;
+  final ByteData data = (await tester.runAsync(() async => (await shot.toByteData())!))!;
+  final int offset = (point.dy.round() * shot.width + point.dx.round()) * 4;
+  final Color pixel = Color.fromARGB(255, data.getUint8(offset), data.getUint8(offset + 1), data.getUint8(offset + 2));
+  shot.dispose();
+  return pixel;
 }
 
 void main() {
@@ -361,7 +377,20 @@ void main() {
   });
 
   group('Lock and Home toggle', () {
-    Finder indicator() => find.descendant(of: find.byType(AnimatedAlign), matching: find.byType(DecoratedBox));
+    Finder indicator() =>
+        find.descendant(of: find.byType(AnimatedPositionedDirectional), matching: find.byType(DecoratedBox));
+
+    double layerOpacity(WidgetTester tester, Type layer) => tester
+        .widget<FadeTransition>(find.ancestor(of: find.byType(layer), matching: find.byType(FadeTransition)).first)
+        .opacity
+        .value;
+
+    Color labelColor(WidgetTester tester, String label) => tester
+        .widget<DefaultTextStyle>(find.ancestor(of: find.text(label), matching: find.byType(DefaultTextStyle)).first)
+        .style
+        .color!;
+
+    double pillWidth(WidgetTester tester) => tester.getSize(find.byType(PrismGlass)).width;
 
     testWidgets('a tap swaps the layer and never closes the preview', (tester) async {
       await _openPreview(tester);
@@ -384,6 +413,34 @@ void main() {
       expect(find.byType(ClockOverlay), findsOneWidget);
     }, variant: TargetPlatformVariant.all());
 
+    testWidgets('the two layers cross-fade for 160 ms and then only the new one is left', (tester) async {
+      await _openPreview(tester);
+
+      await tester.tap(find.text('Lock'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+
+      expect(find.byType(HomePreviewLayer), findsOneWidget);
+      expect(find.byType(LockPreviewLayer), findsOneWidget);
+      expect(layerOpacity(tester, LockPreviewLayer), inExclusiveRange(0, 1));
+      expect(layerOpacity(tester, HomePreviewLayer), inExclusiveRange(0, 1));
+
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(HomePreviewLayer), findsNothing);
+      expect(layerOpacity(tester, LockPreviewLayer), 1);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('the layers swap without a fade when the system asks for less motion', (tester) async {
+      await _openPreview(tester, reduceMotion: true);
+
+      await tester.tap(find.text('Lock'));
+      await tester.pump();
+
+      expect(find.byType(HomePreviewLayer), findsNothing);
+      expect(find.byType(LockPreviewLayer), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
     testWidgets('the selected segment is announced as selected', (tester) async {
       final SemanticsHandle handle = tester.ensureSemantics();
       await _openPreview(tester);
@@ -402,7 +459,9 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('the indicator slides to the tapped segment', (tester) async {
+    testWidgets('the indicator slides to the tapped segment in 180 ms and covers most of the way by half time', (
+      tester,
+    ) async {
       await _openPreview(tester);
       await tester.tap(find.text('Lock'));
       await tester.pumpAndSettle();
@@ -410,13 +469,15 @@ void main() {
 
       await tester.tap(find.text('Home'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 90));
       final double midX = tester.getCenter(indicator()).dx;
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 90));
       final double homeX = tester.getCenter(indicator()).dx;
+      await tester.pumpAndSettle();
 
-      expect(homeX - lockX, 84);
-      expect(midX, inExclusiveRange(lockX, homeX));
+      expect(homeX - lockX, pillWidth(tester) / 2);
+      expect(tester.getCenter(indicator()).dx, homeX);
+      expect((midX - lockX) / (homeX - lockX), inExclusiveRange(0.9, 1));
     });
 
     testWidgets('the indicator jumps when the system asks for less motion', (tester) async {
@@ -428,7 +489,30 @@ void main() {
       await tester.tap(find.text('Home'));
       await tester.pump();
 
-      expect(tester.getCenter(indicator()).dx, lockX + 84);
+      expect(tester.getCenter(indicator()).dx, lockX + pillWidth(tester) / 2);
+    });
+
+    testWidgets('the selected label is dark and the other is light', (tester) async {
+      await _openPreview(tester);
+
+      await tester.tap(find.text('Lock'));
+      await tester.pumpAndSettle();
+      expect(labelColor(tester, 'Lock'), Colors.black87);
+      expect(labelColor(tester, 'Home'), Colors.white.withValues(alpha: 0.88));
+
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      expect(labelColor(tester, 'Home'), Colors.black87);
+      expect(labelColor(tester, 'Lock'), Colors.white.withValues(alpha: 0.88));
+    });
+
+    testWidgets('the glass is a 60 percent scrim with the thin 16 refraction of a small pill', (tester) async {
+      await _openPreview(tester);
+
+      final PrismGlass glass = tester.widget<PrismGlass>(find.byType(PrismGlass));
+
+      expect(glass.thickness, 16);
+      expect(glass.glassColor!.a, closeTo(0.6, 0.001));
     });
 
     testWidgets('the pill is 48 tall, 24 above the bottom safe area, and the whole height taps', (tester) async {
@@ -445,6 +529,113 @@ void main() {
       expect(find.byType(LockPreviewLayer), findsOneWidget);
       expect(find.byType(ClockOverlay), findsOneWidget);
     });
+
+    group('text size', () {
+      Future<void> openAt(WidgetTester tester, double textScale) async {
+        await tester.pumpWidget(const SizedBox());
+        await _openPreview(tester, textScale: textScale);
+      }
+
+      testWidgets('each segment is at least 84 wide', (tester) async {
+        await _openPreview(tester);
+
+        expect(pillWidth(tester), greaterThanOrEqualTo(2 * 84));
+      });
+
+      testWidgets('larger text widens the pill, keeps it 48 tall, and stops growing past 1.5x', (tester) async {
+        await openAt(tester, 1);
+        final double normal = pillWidth(tester);
+        await openAt(tester, 1.5);
+        final double large = pillWidth(tester);
+        await openAt(tester, 2);
+
+        expect(large, greaterThan(normal));
+        expect(pillWidth(tester), large);
+        expect(tester.getSize(find.byType(PrismGlass)).height, 48);
+        expect(tester.renderObject<RenderParagraph>(find.text('Home')).textScaler.scale(10), 15);
+      });
+
+      testWidgets('at 2x text both labels sit inside their own half of the pill', (tester) async {
+        await openAt(tester, 2);
+
+        final Rect pill = tester.getRect(find.byType(PrismGlass));
+        final Rect lock = tester.getRect(find.text('Lock'));
+        final Rect home = tester.getRect(find.text('Home'));
+
+        expect(tester.takeException(), isNull);
+        expect(lock.left, greaterThan(pill.left));
+        expect(lock.right, lessThan(pill.center.dx));
+        expect(home.left, greaterThan(pill.center.dx));
+        expect(home.right, lessThan(pill.right));
+      });
+    });
+  });
+
+  group('toggle over a bright wall', () {
+    late Directory directory;
+
+    setUp(() => directory = Directory.systemTemp.createTempSync('clock_overlay_toggle_'));
+    tearDown(() => directory.deleteSync(recursive: true));
+
+    testWidgets('the selected label reads on a solid light indicator', (tester) async {
+      final File file = (await tester.runAsync(() => _solidPng(directory, const Color(0xFFFFFFFF))))!;
+      final GlobalKey boundary = GlobalKey();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RepaintBoundary(
+            key: boundary,
+            child: ClockOverlay(link: file.path, file: true),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Lock'));
+      await _settleImages(tester);
+      await tester.pumpAndSettle();
+
+      final Rect indicator = tester.getRect(
+        find.descendant(of: find.byType(AnimatedPositionedDirectional), matching: find.byType(DecoratedBox)),
+      );
+      final Color pixel = await _pixelAt(
+        tester,
+        boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary,
+        indicator.bottomLeft + const Offset(14, -5),
+      );
+      final Color label = tester
+          .widget<DefaultTextStyle>(find.ancestor(of: find.text('Lock'), matching: find.byType(DefaultTextStyle)).first)
+          .style
+          .color!;
+
+      expect(contrastRatio(Color.alphaBlend(label, pixel), pixel), greaterThan(7));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('the unselected label reads on the glass over a near white wall', (tester) async {
+      final File file = (await tester.runAsync(() => _solidPng(directory, const Color(0xFFFAFAFA))))!;
+      final GlobalKey boundary = GlobalKey();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RepaintBoundary(
+            key: boundary,
+            child: ClockOverlay(link: file.path, file: true),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Lock'));
+      await _settleImages(tester);
+      await tester.pumpAndSettle();
+
+      final Rect pill = tester.getRect(find.byType(PrismGlass));
+      final Color pixel = await _pixelAt(
+        tester,
+        boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary,
+        Offset(pill.center.dx + 6, pill.center.dy),
+      );
+      final Color label = tester
+          .widget<DefaultTextStyle>(find.ancestor(of: find.text('Home'), matching: find.byType(DefaultTextStyle)).first)
+          .style
+          .color!;
+
+      expect(contrastRatio(Color.alphaBlend(label, pixel), pixel), greaterThan(4));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 
   group('clock text colour', () {
@@ -453,20 +644,27 @@ void main() {
     setUp(() => directory = Directory.systemTemp.createTempSync('clock_overlay_test_'));
     tearDown(() => directory.deleteSync(recursive: true));
 
-    Future<Color?> clockColor(WidgetTester tester, Color wall) async {
+    Future<Color> sampledClockColor(WidgetTester tester, Color wall) async {
       final File file = (await tester.runAsync(() => _solidPng(directory, wall)))!;
       await tester.pumpWidget(MaterialApp(home: ClockOverlay(link: file.path, file: true)));
       await tester.tap(find.text('Lock'));
-      await _settleImages(tester);
-      return tester.widget<Text>(find.textContaining(RegExp(r'^\d{1,2}:\d{2}$'))).style?.color;
+      await tester.pumpAndSettle();
+      final Finder clock = find.textContaining(RegExp(r'^\d{1,2}:\d{2}$'));
+      final Color beforeSample = Theme.of(tester.element(clock)).colorScheme.secondary;
+      final Stopwatch waited = Stopwatch()..start();
+      while (tester.widget<Text>(clock).style!.color == beforeSample && waited.elapsed < const Duration(seconds: 30)) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      return tester.widget<Text>(clock).style!.color!;
     }
 
     testWidgets('is white over a dark wall', (tester) async {
-      expect(await clockColor(tester, const Color(0xFF0A0A12)), Colors.white);
+      expect(await sampledClockColor(tester, const Color(0xFF0A0A12)), Colors.white);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('is black over a bright wall', (tester) async {
-      expect(await clockColor(tester, const Color(0xFFF2F2F2)), Colors.black);
+      expect(await sampledClockColor(tester, const Color(0xFFF2F2F2)), Colors.black);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 }
