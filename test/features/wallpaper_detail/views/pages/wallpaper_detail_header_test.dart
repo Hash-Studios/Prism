@@ -4,6 +4,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
@@ -183,7 +184,9 @@ void main() {
   });
 
   group('Live chip', () {
-    testWidgets('shows a tappable Live chip on the image when the device supports live wallpapers', (tester) async {
+    testWidgets('shows a tappable glass Live pill with a 48 px touch target when the device supports live walls', (
+      tester,
+    ) async {
       var opened = 0;
       await tester.pumpWidget(
         MaterialApp(
@@ -195,9 +198,40 @@ void main() {
       await tester.pump();
 
       expect(find.text('Live'), findsOneWidget);
-      expect(tester.getSize(find.byType(ConstrainedBox).first).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(find.byType(PrismGlass)).height, 32);
+      final Size target = tester.getSize(
+        find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(GestureDetector)),
+      );
+      expect(target.height, 48);
+      expect(target.width, inInclusiveRange(48, 150));
       await tester.tap(find.bySemanticsLabel('Make it live'));
       expect(opened, 1);
+    });
+
+    testWidgets('shrinks a little under the finger', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MakeItLiveChip(onPressed: () {}, supportProbe: () async => true),
+          ),
+        ),
+      );
+      await tester.pump();
+      double scale() => tester
+          .widget<Transform>(find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(Transform)).first)
+          .transform
+          .storage[0];
+
+      final TestGesture finger = await tester.startGesture(tester.getCenter(find.byType(PrismGlass)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      final double pressed = scale();
+      await finger.up();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(pressed, closeTo(0.96, 0.001));
+      expect(scale(), 1);
     });
 
     testWidgets('stays hidden when the device does not support live wallpapers', (tester) async {

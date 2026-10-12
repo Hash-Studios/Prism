@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' show min;
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -29,6 +29,7 @@ import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
+import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -42,6 +43,7 @@ import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.da
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
@@ -53,6 +55,8 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -100,8 +104,21 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   static const double _sheetHPad = 24.0;
-  static const double _panelTopRadius = 24.0;
+
+  /// The glass floats this far from the left, right and bottom (the safe area comes on top of the bottom inset).
+  static const double _panelInset = 10.0;
+
+  /// Concentric with the 46 px Set pill, which sits 16 px inside the glass corner.
+  static const double _panelRadius = 40.0;
   static const double _panelMaxFraction = 0.55;
+
+  /// Glass tint as a share of the theme primary colour. The default is 0.2. The dock holds icon buttons and the open
+  /// panel holds text, so both need more to stay readable over a bright wallpaper.
+  static const double _dockGlassAlpha = 0.4;
+  static const double _openGlassAlpha = 0.6;
+
+  /// Gap between the Live chip and the top edge of the glass.
+  static const double _chipGap = 12.0;
   static const double _chromePad = 8.0;
   static const double _minInteractiveTarget = 48.0;
   static const double _handleHeight = 36.0;
@@ -364,93 +381,103 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     );
   }
 
-  double _collapsedPanelHeight(BuildContext context) =>
-      _handleHeight + WallpaperActionBar.height + MediaQuery.paddingOf(context).bottom;
+  _PanelGeometry _panelGeometry(BuildContext context) => _PanelGeometry(
+    collapsed: _handleHeight + WallpaperActionBar.height,
+    open: MediaQuery.sizeOf(context).height * _panelMaxFraction,
+    bottom: MediaQuery.paddingOf(context).bottom + _panelInset,
+  );
 
   Widget _buildPanelStack(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
-    final double collapsedHeight = _collapsedPanelHeight(context);
+    final _PanelGeometry geometry = _panelGeometry(context);
     final Widget panel = SlidingUpPanel(
       onPanelOpened: () => _handlePanelOpened(context, state),
       onPanelClosed: () => _handlePanelClosed(context, state),
       onPanelSlide: (double position) => _panelPosition.value = position,
       // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(_panelTopRadius),
-        topRight: Radius.circular(_panelTopRadius),
-      ),
+      borderRadius: BorderRadius.circular(_panelRadius),
       boxShadow: const [],
-      minHeight: collapsedHeight,
+      margin: EdgeInsets.fromLTRB(_panelInset, 0, _panelInset, geometry.bottom),
+      minHeight: geometry.collapsed,
       parallaxEnabled: true,
       parallaxOffset: 0,
       color: Colors.transparent,
-      maxHeight: MediaQuery.of(context).size.height * _panelMaxFraction,
+      maxHeight: geometry.open,
       controller: panelController,
-      panel: _buildInfoPanel(context, state),
-      body: Padding(
-        padding: EdgeInsets.only(bottom: collapsedHeight),
-        child: _buildImageBody(context, paletteLoading, state),
-      ),
+      panel: _buildInfoPanel(context, state, geometry),
+      body: _buildImageBody(context, paletteLoading, state, geometry),
     );
     return Stack(
       children: [
         Positioned.fill(child: panel),
-        Positioned(left: 0, right: 0, bottom: 0, child: _buildActionBar(context, state)),
+        Positioned(
+          left: _panelInset,
+          right: _panelInset,
+          bottom: geometry.bottom,
+          child: _buildActionBar(context, state),
+        ),
       ],
     );
   }
 
-  Widget _buildInfoPanel(BuildContext context, WallpaperDetailLoaded state) {
+  /// The panel child is laid out at its open height and the sliding panel clips it to the visible height, so the
+  /// glass is drawn here at the visible height itself. Its rounded bottom then shows in every position.
+  Widget _buildInfoPanel(BuildContext context, WallpaperDetailLoaded state, _PanelGeometry geometry) {
     final entity = state.entity;
-    final theme = Theme.of(context);
-    final surface = Color.alphaBlend(
-      theme.colorScheme.secondary.withValues(alpha: 0.06),
-      theme.primaryColor,
-    ).withValues(alpha: 0.85);
+    final Color primary = Theme.of(context).primaryColor;
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(_panelTopRadius)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: DecoratedBox(
-          decoration: BoxDecoration(color: surface),
-          child: SizedBox(
-            height: MediaQuery.sizeOf(context).height * _panelMaxFraction,
-            width: MediaQuery.sizeOf(context).width,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCollapseHandle(context, state),
-                _fadeWithPanel(_buildColorBar(context, state)),
-                Expanded(
-                  flex: 8,
-                  child: _fadeWithPanel(
-                    SingleChildScrollView(
-                      child: NotificationListener<ScrollNotification>(
-                        onNotification: (notification) {
-                          if (notification is ScrollStartNotification) {
-                            context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
-                          } else if (notification is ScrollEndNotification) {
-                            Future.delayed(const Duration(milliseconds: 200), () {
-                              if (!context.mounted) return;
-                              context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
-                            });
-                          }
-                          return false;
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [_buildMetadataRow(context, entity, state), ..._buildPanelExtras(context, state)],
-                        ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ValueListenableBuilder<double>(
+          valueListenable: _panelPosition,
+          builder: (BuildContext context, double position, Widget? _) => Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            height: geometry.heightAt(position),
+            child: PrismGlass(
+              borderRadius: _panelRadius,
+              glassColor: primary.withValues(alpha: lerpDouble(_dockGlassAlpha, _openGlassAlpha, position)),
+              child: const SizedBox.expand(),
+            ),
+          ),
+        ),
+        ClipRect(
+          clipper: _AboveActionBarClipper(position: _panelPosition, geometry: geometry),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildCollapseHandle(context, state),
+              _fadeWithPanel(_buildColorBar(context, state)),
+              Expanded(
+                flex: 8,
+                child: _fadeWithPanel(
+                  SingleChildScrollView(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollStartNotification) {
+                          context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
+                        } else if (notification is ScrollEndNotification) {
+                          Future.delayed(const Duration(milliseconds: 200), () {
+                            if (!context.mounted) return;
+                            context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
+                          });
+                        }
+                        return false;
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [_buildMetadataRow(context, entity, state), ..._buildPanelExtras(context, state)],
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: WallpaperActionBar.height + MediaQuery.paddingOf(context).bottom),
-              ],
-            ),
+              ),
+              const SizedBox(height: WallpaperActionBar.height),
+            ],
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -547,9 +574,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     required VoidCallback? onTap,
     required VoidCallback? onLongPress,
   }) {
+    final secondary = Theme.of(context).colorScheme.secondary;
     final label = color == null ? 'Original wallpaper colors' : 'Accent color';
-    final placeholder = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1);
+    final placeholder = color ?? secondary.withValues(alpha: 0.1);
     final hint = color == null ? null : 'Long press to copy hex color';
+    final BlendMode? blendMode = color == null ? null : BlendMode.hue;
     return Semantics(
       button: onTap != null,
       selected: isSelected,
@@ -562,15 +591,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (color != null)
-              Container(color: color)
-            else if (localFile != null)
+            if (localFile != null)
               Image.file(
                 localFile,
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(color: placeholder),
+                color: color,
+                colorBlendMode: blendMode,
+                errorBuilder: (_, _, _) => ColoredBox(color: placeholder),
               )
             else if (thumbnailUrl.isNotEmpty)
               CachedNetworkImage(
@@ -580,11 +609,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 height: double.infinity,
                 fit: BoxFit.cover,
                 memCacheWidth: 240,
-                placeholder: (_, u) => Container(color: placeholder),
-                errorWidget: (_, u, e) => Container(color: placeholder),
+                color: color,
+                colorBlendMode: blendMode,
+                placeholder: (_, u) => ColoredBox(color: placeholder),
+                errorWidget: (_, u, e) => ColoredBox(color: placeholder),
               )
             else
-              Container(color: placeholder),
+              ColoredBox(color: placeholder),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                height: 8,
+                width: double.infinity,
+                child: ColoredBox(color: color ?? secondary),
+              ),
+            ),
             AnimatedOpacity(
               duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
               opacity: isSelected ? 1.0 : 0.0,
@@ -924,10 +963,17 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final entity = state.entity;
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(entity);
+    final String source = widget.localFile?.path ?? url;
+    final Color? tint = state.tint;
+    final double deviceLongSidePx = _screenPixels(context).longestSide;
+    final Future<String> Function()? prepareSource = tint == null
+        ? null
+        : () => renderTintedWallpaper(source: source, tint: tint, deviceLongSidePx: deviceLongSidePx);
     Widget downloadButton({String? label}) => PressScale(
       child: DownloadButton(
         label: label,
         link: url,
+        prepareSource: prepareSource,
         isPremiumContent: isPremiumFeedItem(entity, app_state.premiumCollections),
         contentId: entity.id,
         sourceContext: _getSourceContext(state),
@@ -947,7 +993,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             child: PressScale(
               child: SetWallpaperButton(
                 label: 'Set',
-                url: widget.localFile?.path ?? url,
+                url: source,
+                prepareSource: prepareSource,
                 thumbnailUrl: entity.thumbnailUrl,
                 promptNotificationPermissionOnSuccess: true,
                 entryPoint: 'wallpaper_detail',
@@ -987,7 +1034,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
         WallpaperBarAction(
           label: 'Edit',
-          child: PressScale(child: EditButton(url: entity.fullUrl)),
+          child: PressScale(
+            child: EditButton(url: entity.fullUrl, prepareSource: prepareSource),
+          ),
         ),
       ],
     );
@@ -1104,7 +1153,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     ];
   }
 
-  Widget _buildImageBody(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
+  Widget _buildImageBody(
+    BuildContext context,
+    bool paletteLoading,
+    WallpaperDetailLoaded state,
+    _PanelGeometry geometry,
+  ) {
     final entity = state.entity;
     final topPad = _topOverlayPadding(context);
     return Stack(
@@ -1178,6 +1232,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                           link: widget.localFile?.path ?? entity.fullUrl,
                           file: widget.localFile != null,
                           thumbnailUrl: entity.thumbnailUrl,
+                          tint: state.tint,
                         ),
                       );
                     },
@@ -1192,11 +1247,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           ),
         ),
         if (!hideSetWallpaperUi && entity.fullUrl.trim().isNotEmpty)
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(_chromePad),
-              child: MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)),
+          ValueListenableBuilder<double>(
+            valueListenable: _panelPosition,
+            child: MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)),
+            builder: (BuildContext context, double position, Widget? chip) => Positioned(
+              left: _panelInset,
+              bottom:
+                  geometry.bottom +
+                  geometry.heightAt(position) +
+                  _chipGap -
+                  (MakeItLiveChip.hitSize - MakeItLiveChip.pillHeight) / 2,
+              child: IgnorePointer(
+                ignoring: position > 0,
+                child: Opacity(opacity: (1 - position * 2).clamp(0.0, 1.0), child: chip),
+              ),
             ),
           ),
       ],
@@ -1286,7 +1350,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       }
     }
 
-    return SizedBox.expand(child: imageLayer);
+    return SizedBox.expand(
+      child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: imageLayer),
+    );
   }
 
   Color _chromeColor(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
@@ -1300,5 +1366,84 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final now = DateTime.now();
     if (now.difference(local).inDays < 7) return timeago.format(local);
     return DateFormat(local.year == now.year ? 'd MMM' : 'd MMM y').format(local);
+  }
+}
+
+/// Where the glass sits on the screen and how tall it is at each panel position.
+class _PanelGeometry extends Equatable {
+  const _PanelGeometry({required this.collapsed, required this.open, required this.bottom});
+
+  /// Glass height with the panel closed and open.
+  final double collapsed;
+  final double open;
+
+  /// Distance from the screen bottom to the glass bottom: the safe area plus the inset.
+  final double bottom;
+
+  double heightAt(double position) => collapsed + (open - collapsed) * position;
+
+  @override
+  List<Object?> get props => [collapsed, open, bottom];
+}
+
+/// Keeps the panel content above the action bar while the glass grows or shrinks under it.
+class _AboveActionBarClipper extends CustomClipper<Rect> {
+  _AboveActionBarClipper({required this.position, required this.geometry}) : super(reclip: position);
+
+  final ValueListenable<double> position;
+  final _PanelGeometry geometry;
+
+  @override
+  Rect getClip(Size size) =>
+      Rect.fromLTWH(0, 0, size.width, geometry.heightAt(position.value) - WallpaperActionBar.height);
+
+  @override
+  bool shouldReclip(_AboveActionBarClipper oldClipper) => oldClipper.geometry != geometry;
+}
+
+/// Shows [child] with the hue of [tint]. A new tint slides over from the one on screen, and no tint fades the hue out.
+class _HueTint extends StatefulWidget {
+  const _HueTint({required this.tint, required this.duration, required this.child});
+
+  final Color? tint;
+  final Duration duration;
+  final Widget child;
+
+  @override
+  State<_HueTint> createState() => _HueTintState();
+}
+
+class _HueTintState extends State<_HueTint> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: widget.duration)..value = 1;
+  late ColorTween _tween = ColorTween(begin: widget.tint, end: widget.tint);
+
+  Color? get _shown => _tween.transform(Curves.easeOutCubic.transform(_controller.value));
+
+  @override
+  void didUpdateWidget(_HueTint oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tint == widget.tint) return;
+    _tween = ColorTween(begin: _shown, end: widget.tint);
+    _controller
+      ..duration = widget.duration
+      ..forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (BuildContext context, Widget? child) {
+        final Color? tint = _shown;
+        return tint == null ? child! : ColorFiltered(colorFilter: ColorFilter.mode(tint, BlendMode.hue), child: child);
+      },
+    );
   }
 }

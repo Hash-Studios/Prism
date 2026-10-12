@@ -4,10 +4,12 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -159,6 +161,31 @@ void main() {
       await tester.pumpWidget(_host(WallpaperTagChips(tags: const <String>[], onTagTap: (_) {})));
 
       expect(find.byType(ActionChip), findsNothing);
+    });
+
+    testWidgets('tags are 36 px tonal pills that stay translucent over a glass panel', (tester) async {
+      final PrismThemeOption frost = prismLightThemes.first;
+      final ThemeData theme = withPrismAccent(frost.theme, frost.defaultAccentValue);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: ColoredBox(
+              color: theme.primaryColor.withValues(alpha: 0.2),
+              child: WallpaperTagChips(tags: const <String>['space', 'stars'], onTagTap: (_) {}),
+            ),
+          ),
+        ),
+      );
+
+      for (final String tag in <String>['space', 'stars']) {
+        final Finder surface = find.descendant(of: find.widgetWithText(ActionChip, tag), matching: find.byType(Ink));
+        final ShapeDecoration decoration = tester.widget<Ink>(surface).decoration! as ShapeDecoration;
+        expect(decoration.shape, isA<StadiumBorder>(), reason: tag);
+        expect(decoration.color!.a, lessThan(0.2), reason: tag);
+        expect(tester.getSize(surface).height, 36, reason: tag);
+        expect(tester.getSize(find.widgetWithText(ActionChip, tag)).height, 48, reason: tag);
+      }
     });
   });
 
