@@ -10,11 +10,11 @@ class WallpaperBarAction {
 }
 
 /// Compact row of actions: a primary action that carries its own label, then plain icon actions.
-/// It paints no surface of its own. It stays pinned above the details panel, which supplies the surface under it.
+/// It paints no surface of its own. It sits on the glass details panel, and the screen places it above the safe area.
 class WallpaperActionBar extends StatelessWidget {
   const WallpaperActionBar({required this.primary, required this.actions, super.key});
 
-  /// Height of the row, without the bottom safe area.
+  /// Height of the row, including the space under the buttons.
   static const double height = 66;
 
   final WallpaperBarAction primary;
@@ -22,26 +22,23 @@ class WallpaperActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: SizedBox(
-        height: height,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: LayoutBuilder(
-            builder: (context, constraints) => FittedBox(
-              fit: BoxFit.scaleDown,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                child: FlatMenuButtons(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Tooltip(message: primary.label, triggerMode: TooltipTriggerMode.manual, child: primary.child),
-                      for (final WallpaperBarAction action in actions)
-                        Tooltip(message: action.label, child: action.child),
-                    ],
-                  ),
+    return SizedBox(
+      height: height,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        child: LayoutBuilder(
+          builder: (context, constraints) => FittedBox(
+            fit: BoxFit.scaleDown,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: FlatMenuButtons(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Tooltip(message: primary.label, triggerMode: TooltipTriggerMode.manual, child: primary.child),
+                    for (final WallpaperBarAction action in actions)
+                      Tooltip(message: action.label, child: action.child),
+                  ],
                 ),
               ),
             ),

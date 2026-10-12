@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -15,7 +18,9 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -41,6 +46,27 @@ FeedItemEntity _prism({List<String> collections = const <String>[], int? width, 
     tags: const <String>['space', 'stars'],
   ),
 );
+
+Future<List<double>> _hues(Uint8List png) async {
+  final ui.Codec codec = await ui.instantiateImageCodec(png);
+  final ui.Image image = (await codec.getNextFrame()).image;
+  final ByteData data = (await image.toByteData())!;
+  return <double>[
+    for (int x = 0; x < image.width; x++)
+      HSVColor.fromColor(
+        Color.fromARGB(255, data.getUint8(x * 4), data.getUint8(x * 4 + 1), data.getUint8(x * 4 + 2)),
+      ).hue,
+  ];
+}
+
+Future<Uint8List> _redAndBluePng() async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  Canvas(recorder)
+    ..drawRect(const Rect.fromLTWH(0, 0, 1, 1), Paint()..color = const Color(0xFFFF0000))
+    ..drawRect(const Rect.fromLTWH(1, 0, 1, 1), Paint()..color = const Color(0xFF0000FF));
+  final ui.Image image = await recorder.endRecording().toImage(2, 1);
+  return (await image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+}
 
 void main() {
   setUpAll(() => registerFallbackValue(const SelectAccentColor(color: Colors.black)));
@@ -80,7 +106,10 @@ void main() {
     for (final String tooltip in <String>['Set as wallpaper', 'Download', 'Favourite', 'Share', 'Edit']) {
       expect(find.byTooltip(tooltip), findsOneWidget, reason: tooltip);
     }
-    expect(tester.getRect(find.byType(SetWallpaperButton)).bottom, lessThanOrEqualTo(tester.view.physicalSize.height));
+    expect(
+      tester.getRect(find.byType(SetWallpaperButton)).bottom,
+      lessThanOrEqualTo(tester.view.physicalSize.height / tester.view.devicePixelRatio),
+    );
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the action bar stays at the bottom when the details panel opens', (tester) async {
@@ -176,7 +205,7 @@ void main() {
     expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).isPremiumContent, isFalse);
   });
 
-  testWidgets('choosing an accent does not tint the wallpaper', (tester) async {
+  testWidgets('a colour picked on the colour bar tints the wallpaper with its hue', (tester) async {
     await pumpDetail(
       tester,
       WallpaperDetailLoaded(
@@ -187,8 +216,103 @@ void main() {
         colorChanged: true,
       ),
     );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final Finder tinted = find.ancestor(
+      of: find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl.endsWith('thumb.jpg')),
+      matching: find.byType(ColorFiltered),
+    );
+    expect(tinted, findsOneWidget);
+    expect(tester.widget<ColorFiltered>(tinted).colorFilter, const ColorFilter.mode(Colors.teal, BlendMode.hue));
+  });
+
+  testWidgets('the original wallpaper has no colour filter, even with an accent on the chrome', (tester) async {
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        entity: _prism(),
+        paletteLoading: false,
+        colors: const <Color>[Colors.teal],
+        accent: Colors.teal,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(ColorFiltered), findsNothing);
+  });
+
+  group('colour variation as the source of Set, Download and Edit', () {
+    const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
+    late Directory directory;
+
+    setUp(() {
+      directory = Directory.systemTemp.createTempSync('detail_tint');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        pathChannel,
+        (_) async => directory.path,
+      );
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(pathChannel, null);
+      directory.deleteSync(recursive: true);
+    });
+
+    List<Future<String> Function()?> preparers(WidgetTester tester) => <Future<String> Function()?>[
+      tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton)).prepareSource,
+      tester.widget<DownloadButton>(find.byType(DownloadButton)).prepareSource,
+      tester.widget<EditButton>(find.byType(EditButton)).prepareSource,
+    ];
+
+    testWidgets('with a colour picked, each action renders this wallpaper in that hue', (tester) async {
+      final File source = File('${directory.path}/wall.png');
+      await tester.runAsync(() async => source.writeAsBytes(await _redAndBluePng()));
+      final FeedItemEntity entity = FeedItemEntity.prism(
+        id: 'prism-1',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'prism-1',
+            source: WallpaperSource.prism,
+            fullUrl: source.path,
+            thumbnailUrl: 'https://img.test/thumb.jpg',
+          ),
+        ),
+      );
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          entity: entity,
+          paletteLoading: false,
+          colors: const <Color>[Color(0xFF00FF00)],
+          accent: const Color(0xFF00FF00),
+          colorChanged: true,
+        ),
+      );
+
+      for (final Future<String> Function()? prepare in preparers(tester)) {
+        final List<double> hues = (await tester.runAsync(() async {
+          final String path = await prepare!();
+          return _hues(await File(path).readAsBytes());
+        }))!;
+
+        expect(hues, hasLength(2));
+        expect(hues, everyElement(closeTo(120, 10)));
+      }
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('with the original showing, each action uses the wallpaper as it is', (tester) async {
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          entity: _prism(),
+          paletteLoading: false,
+          colors: const <Color>[Colors.teal],
+          accent: Colors.teal,
+        ),
+      );
+
+      expect(preparers(tester), everyElement(isNull));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 
   testWidgets('a wall smaller than the screen shows the low resolution note', (tester) async {

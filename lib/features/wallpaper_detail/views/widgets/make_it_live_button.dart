@@ -1,3 +1,5 @@
+import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:flutter/material.dart';
 
@@ -51,9 +53,15 @@ class _MakeItLiveButtonState extends State<MakeItLiveButton> {
   }
 }
 
-/// Small "Live" chip over the wallpaper. It opens Make it live and appears only when the device can run it.
+/// Small glass "Live" pill over the wallpaper. It opens Make it live and appears only when the device can run it.
 class MakeItLiveChip extends StatefulWidget {
   const MakeItLiveChip({required this.onPressed, this.supportProbe = _deviceSupportsOpenGlLive, super.key});
+
+  /// Height and minimum width of the touch target.
+  static const double hitSize = 48;
+
+  /// Height of the glass pill inside the touch target.
+  static const double pillHeight = 32;
 
   final VoidCallback onPressed;
   final Future<bool> Function() supportProbe;
@@ -93,29 +101,34 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onPressed,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          child: Center(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: theme.primaryColor.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(Icons.motion_photos_on_outlined, size: 16, color: scheme.secondary),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Live',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: scheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
+        child: PressScale(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: MakeItLiveChip.hitSize, minHeight: MakeItLiveChip.hitSize),
+            child: Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: SizedBox(
+                height: MakeItLiveChip.pillHeight,
+                child: PrismGlass(
+                  borderRadius: MakeItLiveChip.pillHeight / 2,
+                  glassColor: theme.primaryColor.withValues(alpha: 0.5),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(Icons.motion_photos_on_outlined, size: 16, color: scheme.secondary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Live',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: scheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
