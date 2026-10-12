@@ -233,14 +233,23 @@ abstract final class PrismChip {
   static const double restFillAlpha = 0.08;
 
   /// Alpha of the foreground colour for the fill of a disabled chip.
-  static const double disabledFillAlpha = 0.04;
+  static const double disabledFillAlpha = 0.08;
 
   /// Alpha of the label of a disabled chip.
-  static const double disabledLabelAlpha = 0.38;
+  static const double disabledLabelAlpha = 0.5;
+
+  /// The avatar box is 24 px wide for a 16 px icon, so the icon keeps clear of the rounded end.
+  static const BoxConstraints avatarConstraints = BoxConstraints.tightFor(width: 24, height: 16);
 
   /// Contrast an unselected label must reach against its fill. A theme foreground that is weaker is darkened
   /// (or lightened) until it does.
   static const double minLabelContrast = 4.5;
+}
+
+/// Secondary text in the theme foreground colour that sits on the page, such as an unselected tab or a count line.
+abstract final class PrismInk {
+  /// Alpha of secondary text. A theme whose ink falls under [PrismChip.minLabelContrast] at this alpha keeps full ink.
+  static const double softAlpha = 0.8;
 }
 
 /// Icon data constants so individual widgets don't scatter icon literals.

@@ -11,6 +11,7 @@ import 'package:Prism/features/library/views/widgets/recently_set_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -38,7 +39,7 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProviderStateMixin {
   static const TextStyle _tabLabelStyle = TextStyle(
     fontFamily: PrismFonts.proximaNova,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: FontWeight.w600,
   );
 
@@ -96,15 +97,18 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         ),
         title: Text('Library', style: theme.textTheme.displaySmall?.copyWith(color: scheme.secondary)),
         actions: const [OfflineChip(), SizedBox(width: 12)],
-        bottom: TabBar(
-          controller: _controller,
-          labelColor: scheme.secondary,
-          unselectedLabelColor: scheme.secondary.withValues(alpha: 0.7),
-          labelStyle: _tabLabelStyle,
-          unselectedLabelStyle: _tabLabelStyle,
-          indicatorColor: scheme.secondary,
-          dividerColor: scheme.secondary.withValues(alpha: 0.08),
-          tabs: [for (final LibraryTab tab in _tabs) Tab(text: tab.label)],
+        bottom: _ClampedTabBar(
+          TabBar(
+            controller: _controller,
+            labelColor: prismReadableInk(theme),
+            unselectedLabelColor: prismSoftInk(theme),
+            labelStyle: _tabLabelStyle,
+            unselectedLabelStyle: _tabLabelStyle,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+            indicatorColor: prismReadableInk(theme),
+            dividerColor: scheme.secondary.withValues(alpha: 0.08),
+            tabs: [for (final LibraryTab tab in _tabs) Tab(text: tab.label)],
+          ),
         ),
       ),
       body: SafeArea(
@@ -116,6 +120,18 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
       ),
     );
   }
+}
+
+class _ClampedTabBar extends StatelessWidget implements PreferredSizeWidget {
+  const _ClampedTabBar(this.tabBar);
+
+  final TabBar tabBar;
+
+  @override
+  Size get preferredSize => tabBar.preferredSize;
+
+  @override
+  Widget build(BuildContext context) => MediaQuery.withClampedTextScaling(maxScaleFactor: 1.5, child: tabBar);
 }
 
 class _KeepAlive extends StatefulWidget {
