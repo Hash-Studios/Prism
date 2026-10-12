@@ -19,6 +19,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -46,6 +47,7 @@ class DownloadButton extends StatefulWidget {
     this.wallpaperTitle,
     this.creatorName,
     this.onOpenDownloads,
+    this.prepareSource,
     super.key,
   });
 
@@ -66,6 +68,11 @@ class DownloadButton extends StatefulWidget {
   @visibleForTesting
   final VoidCallback? onOpenDownloads;
 
+  /// Makes the image to save, such as a colour variation, and returns its local path. It runs once per tap, before the
+  /// coin gate, and the path replaces [link] for the save. If it throws, the user is told and nothing is charged.
+  /// The save then skips the "already in Downloads" check, which compares names of [link].
+  final Future<String> Function()? prepareSource;
+
   @override
   State<DownloadButton> createState() => _DownloadButtonState();
 }
@@ -77,6 +84,7 @@ enum _GuestProChoice { signIn, pro }
 class _DownloadButtonState extends State<DownloadButton> {
   bool isLoading = false;
   bool _saved = false;
+  String? _preparedSource;
   String? _failureReason;
   String _failureStage = 'download';
 
@@ -119,7 +127,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     final bool pro = app_state.prismUser.premium;
     final String text;
     final String semantics;
-    if (_saved) {
+    if (_saved && widget.prepareSource == null) {
       text = 'Saved';
       semantics = 'Saved. Already in Downloads';
     } else if (pro) {
@@ -156,7 +164,14 @@ class _DownloadButtonState extends State<DownloadButton> {
       setState(() => isLoading = true);
     }
     try {
-      if (!await _confirmDownloadAgain(link)) return;
+      _preparedSource = null;
+      final Future<String> Function()? prepare = widget.prepareSource;
+      if (prepare == null) {
+        if (!await _confirmDownloadAgain(link)) return;
+      } else {
+        _preparedSource = await runPrepareSource(prepare);
+        if (_preparedSource == null || !mounted) return;
+      }
       _failureReason = null;
       _failureStage = 'download';
       _track(DownloadAttemptEvent(source: _sourceLabel, premium: widget.isPremiumContent));
@@ -502,11 +517,16 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.error('No download link available.');
       return false;
     }
+    final String saveLink = _preparedSource ?? link;
 
     try {
-      final Uri? source = Uri.tryParse(link);
-      if (link.startsWith('/') || source?.scheme == 'file') {
-        final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
+      final Uri? source = Uri.tryParse(saveLink);
+      if (saveLink.startsWith('/') || source?.scheme == 'file') {
+        final SaveMediaRequest request = SaveMediaRequest(
+          link: saveLink,
+          isLocalFile: true,
+          kind: SaveMediaKind.wallpaper,
+        );
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
           _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'save_failed';
@@ -518,7 +538,10 @@ class _DownloadButtonState extends State<DownloadButton> {
           return false;
         }
       } else {
-        final DownloadRequest request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
+        final DownloadRequest request = DownloadRequest(
+          link: saveLink,
+          filenameWithoutExtension: downloadBaseName(saveLink),
+        );
         final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
           _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'enqueue_failed';
@@ -558,7 +581,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
     }
 
-    if (mounted) setState(() => _saved = true);
+    if (mounted && _preparedSource == null) setState(() => _saved = true);
     final String contentId = widget.contentId?.trim() ?? '';
     if (contentId.isNotEmpty) {
       try {
