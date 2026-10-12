@@ -91,6 +91,7 @@ Clients cannot read or write the Studio collections. The last rule in `firestore
 4. Write `studioConfig/current` with `generationEnabled: false` and `identity`.
 5. Deploy the functions: `processStudioCandidate`, `planStudioBatch`, `runStudioBatch`, `onWallApproved`, `onWallSubmitted`.
 6. Set `generationEnabled: true`. Test with `cd functions && npm run studio:run -- --count 1`.
+7. After a few Studio walls are live, add the account to the onboarding starter pack. In Remote Config, add `{"email": "<studio email>", "rank": 0}` to `onboarding_starter_pack_v1` and keep the other entries. The 3 lowest ranks are ticked by default, and the card shows the last 5 walls of each creator.
 
 ## Limits
 
