@@ -2300,12 +2300,10 @@ class FalProviderAdapter implements AiProviderAdapter {
       throw new Error('FAL_API_KEY missing');
     }
     const endpoint = `https://fal.run/${params.model}`;
-    const { width: rawWidth, height: rawHeight } = parseSize(params.targetSize);
-    const isSeedream = params.model.includes('seedream');
-    // Seedream requires dimensions between 1920–4096; scale up if below minimum.
-    const SEEDREAM_MIN = 1920;
-    const width = isSeedream ? Math.max(rawWidth, SEEDREAM_MIN) : rawWidth;
-    const height = isSeedream ? Math.max(rawHeight, SEEDREAM_MIN) : rawHeight;
+    const requestedSize = parseSize(params.targetSize);
+    const { width, height } = params.model.includes('seedream')
+      ? seedreamImageSize(requestedSize.width, requestedSize.height)
+      : requestedSize;
     const requestBody = {
       prompt: `${params.prompt}, ${params.stylePreset} style`,
       image_size: { width, height },
@@ -2433,6 +2431,33 @@ function parseSize(raw: string): { width: number; height: number } {
     width: Number.parseInt(match[1], 10),
     height: Number.parseInt(match[2], 10),
   };
+}
+
+// fal Seedream needs at least 2560x1440 total pixels and at most 4096 on each edge.
+const SEEDREAM_MIN_PIXELS = 2560 * 1440;
+const SEEDREAM_MAX_EDGE = 4096;
+
+export function seedreamImageSize(width: number, height: number): { width: number; height: number } {
+  // One factor for both edges keeps the requested aspect ratio.
+  const scale = Math.min(
+    Math.max(1, Math.sqrt(SEEDREAM_MIN_PIXELS / (width * height))),
+    SEEDREAM_MAX_EDGE / Math.max(width, height),
+  );
+  const size = { width: roundUpToMultipleOf8(width * scale), height: roundUpToMultipleOf8(height * scale) };
+  if (size.width * size.height < SEEDREAM_MIN_PIXELS) {
+    // Past about 1:4.5 the edge cap blocks the pixel minimum; widen the short edge so fal still accepts the size.
+    if (size.width <= size.height) {
+      size.width = roundUpToMultipleOf8(SEEDREAM_MIN_PIXELS / size.height);
+    } else {
+      size.height = roundUpToMultipleOf8(SEEDREAM_MIN_PIXELS / size.width);
+    }
+  }
+  return size;
+}
+
+function roundUpToMultipleOf8(value: number): number {
+  // The small offset stops float noise such as 1440.0000000002 from adding a whole step.
+  return Math.ceil(value / 8 - 1e-9) * 8;
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
