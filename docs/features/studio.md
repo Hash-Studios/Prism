@@ -63,6 +63,7 @@ No visual test of the models was run yet. Compare the first week of candidates b
 
 ### Spend
 
+- The worker calls fal with `STUDIO_FAL_API_KEY` if it is set, so Studio can use its own fal account. Without it, Studio uses `FAL_API_KEY`, the key of the AI tab.
 - The worker has a separate Studio budget: `STUDIO_DAILY_BUDGET_USD` (2) and `STUDIO_MONTHLY_BUDGET_USD` (60) in `wrangler.toml`. Over the budget it returns 429 `budget_exhausted` and does not call fal.
 - `studioConfig/current.maxCandidatesPerDay` (30 at most) limits all runs of one UTC day.
 - A candidate is tried at most 3 times.

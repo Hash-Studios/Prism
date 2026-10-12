@@ -12,6 +12,7 @@ export interface AiEnvBindings {
   FIREBASE_AUTH_DEBUG?: string;
   AI_REQUIRE_CHARGE?: string;
   STUDIO_SECRET?: string;
+  STUDIO_FAL_API_KEY?: string;
   STUDIO_DAILY_BUDGET_USD?: string;
   STUDIO_MONTHLY_BUDGET_USD?: string;
 }
@@ -2036,6 +2037,11 @@ async function handleStudioRequest(request: Request, pathname: string, env: AiEn
   return aiError('invalid_request', 404, 'Unsupported studio endpoint');
 }
 
+// Studio can bill its own fal account. Without STUDIO_FAL_API_KEY it uses the consumer key.
+function studioFalKey(env: AiEnvBindings): string | undefined {
+  return isNonEmptyString(env.STUDIO_FAL_API_KEY) ? env.STUDIO_FAL_API_KEY : env.FAL_API_KEY;
+}
+
 async function isStudioSecretValid(provided: string | null, secret: string): Promise<boolean> {
   if (provided == null) {
     return false;
@@ -2067,7 +2073,7 @@ async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promi
   if (!Object.hasOwn(STUDIO_MODELS, parsed.model)) {
     return aiError('invalid_request', 400, 'Unsupported studio model');
   }
-  if (!isNonEmptyString(env.FAL_API_KEY)) {
+  if (!isNonEmptyString(studioFalKey(env))) {
     return aiError('service_disabled', 503, 'FAL_API_KEY missing');
   }
 
@@ -2158,7 +2164,7 @@ async function runStudioGeneration(
     const response = await fetchWithTimeout(`https://fal.run/${request.model}`, {
       method: 'POST',
       headers: {
-        Authorization: `Key ${env.FAL_API_KEY}`,
+        Authorization: `Key ${studioFalKey(env)}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(falBody),
