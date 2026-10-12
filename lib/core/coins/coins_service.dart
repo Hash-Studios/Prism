@@ -9,6 +9,7 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/downloaded_link_lookup.dart';
+import 'package:Prism/core/coins/pending_download.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -273,13 +274,14 @@ class CoinsService with WidgetsBindingObserver {
   static const String _pendingReferralInviterPrefKey = 'pendingReferralInviterId';
   // The queue first held only AI refunds. The storage key stays so entries written by older builds still load.
   static const String _pendingRefundsPrefKey = 'pendingAiRefunds';
-  static const String _pendingDownloadPrefKey = 'pendingDownloadMarker';
+  static const String _pendingDownloadsPrefKey = 'pendingDownloads_v2';
+  // The first ledger design held one entry under this key. Reads still merge it and the next write removes it.
+  static const String _legacyPendingDownloadPrefKey = 'pendingDownloadMarker';
   static const Duration _refundWindow = Duration(minutes: 10);
   static const String _spendTransactionPrefix = 'spend_';
   static const String _awardTransactionPrefix = 'award_';
   static const int _maxLabelLength = 60;
   static const Duration _pendingRewardWindow = Duration(hours: 24);
-  static const Duration _abandonedDownloadAfter = Duration(minutes: 2);
   static const String _streakReminderEnabledField = 'streakReminderEnabled';
   static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
   static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
@@ -288,6 +290,13 @@ class CoinsService with WidgetsBindingObserver {
   bool _refundQueueHeld = false;
   bool _pendingRetryInFlight = false;
   Timer? _pendingRetryTimer;
+  Timer? _downloadRecoveryTimer;
+  bool _downloadRecoveryInFlight = false;
+
+  /// Ids of paid downloads whose tap still runs in this process. Recovery skips them, because the native save may
+  /// still finish, for example while the Photos permission dialog stays open. The set is empty after a restart, so
+  /// recovery then treats every stored entry as abandoned.
+  final Set<String> _liveDownloadTxIds = <String>{};
   StreamSubscription<bool>? _connectivitySubscription;
   bool _observingLifecycle = false;
 
@@ -295,11 +304,12 @@ class CoinsService with WidgetsBindingObserver {
   @visibleForTesting
   Duration pendingRetryInterval = const Duration(seconds: 30);
 
+  /// How old a paid download must be before recovery counts it as abandoned and refunds it.
+  @visibleForTesting
+  Duration abandonedDownloadAfter = const Duration(minutes: 2);
+
   /// Answers whether a link is already in the Downloads index. Tests replace it.
   DownloadedLinkCheck isLinkDownloaded = isLinkInDownloadedIndex;
-
-  /// Answers whether a link was saved at or after a time. Recovery of a paid download asks it with the marker time.
-  DownloadedSinceCheck wasDownloadedSince = isLinkInDownloadedIndexSince;
   int? _adsRemaining;
   String _adsRemainingDay = '';
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
@@ -423,7 +433,6 @@ class CoinsService with WidgetsBindingObserver {
     _applyLocalBalance(parseIntOr(data['coins']), delta: 0);
     _syncStreakFromUserData(data);
     startPendingRetryWatch();
-    await refundAbandonedDownload();
     await retryPendingRefunds();
   }
 
@@ -566,13 +575,19 @@ class CoinsService with WidgetsBindingObserver {
 
     final String userId = app_state.prismUser.id;
     final String? requestId = pendingDownloadLink == null ? null : _newRequestId();
-    if (pendingDownloadLink != null && requestId != null) {
-      await _writePendingDownload(
-        userId: userId,
-        transactionId: 'spend_${userId}_$requestId',
-        link: pendingDownloadLink,
-        action: action,
-      );
+    final String? pendingTxId = requestId == null ? null : '$_spendTransactionPrefix${userId}_$requestId';
+    if (pendingDownloadLink != null && pendingTxId != null) {
+      await _updatePendingDownloads('coins.download.ledger_write', (Map<String, PendingDownload> ledger) {
+        ledger[pendingTxId] = PendingDownload(
+          txId: pendingTxId,
+          userId: userId,
+          link: pendingDownloadLink,
+          action: action.name,
+          at: DateTime.now().millisecondsSinceEpoch,
+        );
+        _liveDownloadTxIds.add(pendingTxId);
+        return true;
+      });
     }
     final CoinMutationResult result = await _callCoinMutation(
       callableName: 'spendCoins',
@@ -594,7 +609,12 @@ class CoinsService with WidgetsBindingObserver {
         reason: _failedRefundReason(action),
       );
     }
-    if (pendingDownloadLink != null && !(result.success && result.changed)) await clearPendingDownload();
+    if (pendingTxId != null && !(result.success && result.changed)) {
+      await _updatePendingDownloads('coins.download.ledger_remove', (Map<String, PendingDownload> ledger) {
+        _liveDownloadTxIds.remove(pendingTxId);
+        return ledger.remove(pendingTxId) != null;
+      });
+    }
     if (result.changed) _logSpend(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
     return result;
   }
@@ -817,6 +837,7 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   Future<void> _retryPendingEntries() async {
+    await refundAbandonedDownload();
     final String userId = app_state.prismUser.id;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
     final List<Map<String, dynamic>> snapshot = <Map<String, dynamic>>[];
@@ -858,7 +879,7 @@ class CoinsService with WidgetsBindingObserver {
 
   void _schedulePendingRetry() {
     if (_pendingRetryTimer?.isActive ?? false) return;
-    if (_readPendingEntries().isEmpty) return;
+    if (_readPendingEntries().isEmpty && !_hasAbandonedDownloads()) return;
     _pendingRetryTimer = Timer(pendingRetryInterval, () {
       _pendingRetryTimer = null;
       unawaited(retryPendingRefunds());
@@ -893,80 +914,183 @@ class CoinsService with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) unawaited(retryPendingRefunds());
   }
 
-  Future<void> _writePendingDownload({
-    required String userId,
-    required String transactionId,
-    required String link,
-    required CoinSpendAction action,
-  }) async {
+  Map<String, PendingDownload> _readPendingDownloads() {
+    final Map<String, PendingDownload> ledger = <String, PendingDownload>{};
+    if (!_settings.isOpen) return ledger;
+    final String legacy = _settings.get<String>(_legacyPendingDownloadPrefKey, defaultValue: '');
+    if (legacy.isNotEmpty) {
+      try {
+        final PendingDownload? migrated = PendingDownload.fromJson(jsonDecode(legacy));
+        if (migrated != null) ledger[migrated.txId] = migrated;
+      } on FormatException {
+        // An unreadable marker holds nothing to refund. The next write removes it.
+      }
+    }
+    for (final PendingDownload entry in PendingDownload.decodeList(
+      _settings.get<String>(_pendingDownloadsPrefKey, defaultValue: ''),
+    )) {
+      ledger[entry.txId] = entry;
+    }
+    return ledger;
+  }
+
+  Future<void> _writePendingDownloads(Map<String, PendingDownload> ledger) async {
+    if (ledger.isEmpty) {
+      await _settings.delete(_pendingDownloadsPrefKey);
+    } else {
+      await _settings.set(_pendingDownloadsPrefKey, PendingDownload.encodeList(ledger.values));
+    }
+    await _settings.delete(_legacyPendingDownloadPrefKey);
+  }
+
+  /// Runs [change] on the ledger under the queue lock and saves the result when [change] returns true or an old
+  /// marker still waits to move. Failures are logged and never reach the download.
+  Future<void> _updatePendingDownloads(
+    String sourceTag,
+    bool Function(Map<String, PendingDownload> ledger) change,
+  ) async {
     try {
       if (!_settings.isOpen) return;
-      await _settings.set(
-        _pendingDownloadPrefKey,
-        jsonEncode(<String, dynamic>{
-          'userId': userId,
-          'txId': transactionId,
-          'link': link,
-          'action': action.name,
-          'at': DateTime.now().millisecondsSinceEpoch,
-        }),
-      );
+      await _withRefundQueueLock(() async {
+        final Map<String, PendingDownload> ledger = _readPendingDownloads();
+        final bool hasLegacyMarker = _settings.get<String>(_legacyPendingDownloadPrefKey, defaultValue: '').isNotEmpty;
+        if (change(ledger) || hasLegacyMarker) await _writePendingDownloads(ledger);
+      });
+      _scheduleDownloadRecovery();
     } catch (error, stackTrace) {
-      logCoinError(sourceTag: 'coins.download.marker_write', error: error, stackTrace: stackTrace);
+      logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
     }
   }
 
-  /// Drops the marker that [spend] writes for a download. Call it once the download finished or was handled.
-  Future<void> clearPendingDownload() async {
-    try {
-      if (_settings.isOpen) await _settings.delete(_pendingDownloadPrefKey);
-    } catch (error, stackTrace) {
-      logCoinError(sourceTag: 'coins.download.marker_clear', error: error, stackTrace: stackTrace);
+  /// Mark and clear name a download by its link and pick the newest matching entry. The button blocks overlapping
+  /// taps of one link, so the newest entry is the payment of the download that is running.
+  String? _newestPendingDownloadTxId(Map<String, PendingDownload> ledger, String link, {bool unsavedOnly = false}) {
+    final String userId = app_state.prismUser.id;
+    for (final PendingDownload entry in ledger.values.toList().reversed) {
+      if (entry.userId == userId && entry.link == link && !(unsavedOnly && entry.saved)) return entry.txId;
     }
+    return null;
   }
 
-  /// Refunds a download that was paid but never finished, for example when the app closed mid-download.
+  /// Marks the newest unsaved download of the signed-in user for [link] as saved. Call it as soon as the native
+  /// save or enqueue reports success, so a crash from here on never leads to a refund.
+  Future<void> markPendingDownloadSaved(String link) =>
+      _updatePendingDownloads('coins.download.ledger_mark', (Map<String, PendingDownload> ledger) {
+        final String? txId = _newestPendingDownloadTxId(ledger, link, unsavedOnly: true);
+        if (txId == null) return false;
+        ledger[txId] = ledger[txId]!.asSaved();
+        _liveDownloadTxIds.remove(txId);
+        return true;
+      });
+
+  /// Drops the newest download entry of the signed-in user for [link]. Call it once the download finished or its
+  /// refund was confirmed.
+  Future<void> clearPendingDownload(String link) =>
+      _updatePendingDownloads('coins.download.ledger_clear', (Map<String, PendingDownload> ledger) {
+        final String? txId = _newestPendingDownloadTxId(ledger, link);
+        if (txId == null) return false;
+        _liveDownloadTxIds.remove(txId);
+        return ledger.remove(txId) != null;
+      });
+
+  /// Ends the running status of the newest download entry of the signed-in user for [link] and starts a recovery
+  /// pass. Call it when the tap that paid for the entry ends with no confirmed save and no confirmed refund. The
+  /// stored entry stays, so recovery refunds it once it is older than [abandonedDownloadAfter].
+  Future<void> releasePendingDownload(String link) async {
+    bool released = false;
+    await _updatePendingDownloads('coins.download.ledger_release', (Map<String, PendingDownload> ledger) {
+      final String? txId = _newestPendingDownloadTxId(ledger, link);
+      released = txId != null && _liveDownloadTxIds.remove(txId);
+      return false;
+    });
+    if (released) await refundAbandonedDownload();
+  }
+
+  /// Refunds the paid downloads that never finished, for example when the app closed mid-download. An entry waits
+  /// [abandonedDownloadAfter] after its payment and is skipped while its tap still runs. A refund that may succeed on a later try keeps its entry for the
+  /// retry loop.
   Future<void> refundAbandonedDownload() async {
+    if (_downloadRecoveryInFlight) return;
+    _downloadRecoveryInFlight = true;
     try {
-      await _refundAbandonedDownload();
+      await _recoverPendingDownloads();
     } catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.download.abandoned_refund', error: error, stackTrace: stackTrace);
+    } finally {
+      _downloadRecoveryInFlight = false;
+      _scheduleDownloadRecovery();
+      _schedulePendingRetry();
     }
   }
 
-  Future<void> _refundAbandonedDownload() async {
+  Future<void> _recoverPendingDownloads() async {
     if (!_canMutateCoins() || !_settings.isOpen) return;
-    final String raw = _settings.get<String>(_pendingDownloadPrefKey, defaultValue: '');
-    if (raw.isEmpty) return;
-    final Map<String, dynamic> marker;
-    try {
-      marker = toJsonMap(jsonDecode(raw));
-    } catch (_) {
-      await clearPendingDownload();
-      return;
+    final String userId = app_state.prismUser.id;
+    final List<PendingDownload> snapshot = <PendingDownload>[];
+    await _updatePendingDownloads('coins.download.ledger_read', (Map<String, PendingDownload> ledger) {
+      snapshot.addAll(ledger.values.where((PendingDownload entry) => !_liveDownloadTxIds.contains(entry.txId)));
+      return false;
+    });
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    final Set<String> resolved = <String>{};
+    for (final PendingDownload entry in snapshot) {
+      if (entry.userId != userId) continue;
+      if (entry.saved) {
+        resolved.add(entry.txId);
+        continue;
+      }
+      if (entry.remaining(nowMs, abandonedDownloadAfter) > Duration.zero) continue;
+      if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
+      final CoinMutationResult refund = await refundSpend(
+        CoinSpendAction.values.asNameMap()[entry.action] ?? CoinSpendAction.wallpaperDownload,
+        sourceTag: 'coins.download.abandoned_refund',
+        transactionId: entry.txId,
+        reason: 'download_failed_refund',
+      );
+      if (refund.changed) toasts.info('Your last download did not finish. Coins returned.');
+      if (refund.changed || !_isRetryableRefundFailure(refund)) resolved.add(entry.txId);
+      if (app_state.prismUser.id != userId) break;
     }
-    final String transactionId = marker['txId']?.toString() ?? '';
-    final String link = marker['link']?.toString() ?? '';
-    if (transactionId.isEmpty || link.isEmpty) {
-      await clearPendingDownload();
-      return;
+    if (resolved.isEmpty) return;
+    await _updatePendingDownloads('coins.download.ledger_remove', (Map<String, PendingDownload> ledger) {
+      final int before = ledger.length;
+      ledger.removeWhere((String txId, PendingDownload _) => resolved.contains(txId));
+      return ledger.length != before;
+    });
+  }
+
+  /// Wakes the recovery when the soonest unsaved entry of the signed-in user comes of age. Entries that are of age
+  /// already belong to the retry loop, so they never arm this timer.
+  void _scheduleDownloadRecovery() {
+    _downloadRecoveryTimer?.cancel();
+    _downloadRecoveryTimer = null;
+    if (!_canMutateCoins()) return;
+    final String userId = app_state.prismUser.id;
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    Duration? soonest;
+    for (final PendingDownload entry in _readPendingDownloads().values) {
+      if (entry.userId != userId || entry.saved) continue;
+      final Duration wait = entry.remaining(nowMs, abandonedDownloadAfter);
+      if (wait > Duration.zero && (soonest == null || wait < soonest)) soonest = wait;
     }
-    if (marker['userId']?.toString() != app_state.prismUser.id) return;
-    final int paidAt = parseIntOr(marker['at']);
-    final int ageMs = DateTime.now().millisecondsSinceEpoch - paidAt;
-    if (ageMs < _abandonedDownloadAfter.inMilliseconds) return;
-    if (wasDownloadedSince(link, paidAt)) {
-      await clearPendingDownload();
-      return;
-    }
-    final CoinMutationResult refund = await refundSpend(
-      CoinSpendAction.values.asNameMap()[marker['action']?.toString()] ?? CoinSpendAction.wallpaperDownload,
-      sourceTag: 'coins.download.abandoned_refund',
-      transactionId: transactionId,
-      reason: 'download_failed_refund',
+    if (soonest == null) return;
+    _downloadRecoveryTimer = Timer(soonest, () {
+      _downloadRecoveryTimer = null;
+      unawaited(refundAbandonedDownload());
+    });
+  }
+
+  bool _hasAbandonedDownloads() {
+    if (!_canMutateCoins()) return false;
+    final String userId = app_state.prismUser.id;
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    return _readPendingDownloads().values.any(
+      (PendingDownload entry) =>
+          entry.userId == userId &&
+          !entry.saved &&
+          !_liveDownloadTxIds.contains(entry.txId) &&
+          entry.remaining(nowMs, abandonedDownloadAfter) == Duration.zero,
     );
-    if (refund.changed) toasts.info('Your last download did not finish. Coins returned.');
-    if (refund.changed || !_isRetryableRefundFailure(refund)) await clearPendingDownload();
   }
 
   void commitAiGenerationReservation({

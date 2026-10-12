@@ -87,6 +87,10 @@ class _DownloadButtonState extends State<DownloadButton> {
   bool _saved = false;
   String? _preparedSource;
   String _identity = '';
+
+  /// True once this tap really charged coins. Only then does the tap own a ledger entry to mark and clear, so a
+  /// refused or cancelled tap never touches the entry of an earlier payment for the same link.
+  bool _paidThisAttempt = false;
   VoidCallback? _onDownloaded;
   String? _failureReason;
   String _failureStage = 'download';
@@ -177,6 +181,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       _preparedSource = null;
       final DownloadVariant? variant = widget.variant;
       _identity = variant?.identityOf(link) ?? link;
+      _paidThisAttempt = false;
       _onDownloaded = widget.onDownloaded;
       if (!await _confirmDownloadAgain(_identity)) return;
       if (variant != null) {
@@ -191,12 +196,15 @@ class _DownloadButtonState extends State<DownloadButton> {
         return;
       }
       final CoinGateResult result = await _gatedDownload();
-      if (result != CoinGateResult.failedNotRefunded) await CoinsService.instance.clearPendingDownload();
+      if (_paidThisAttempt && result != CoinGateResult.failedNotRefunded) {
+        await CoinsService.instance.clearPendingDownload(_identity);
+      }
       _trackGateResult(result);
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
       }
+      if (_paidThisAttempt) await CoinsService.instance.releasePendingDownload(_identity);
     }
   }
 
@@ -508,6 +516,9 @@ class _DownloadButtonState extends State<DownloadButton> {
         upgradeSource: 'download_low_balance_upgrade',
         precheckBalance: true,
         repromptOnNudgeSpendInsufficient: false,
+        onSpent: (String spendTag, CoinMutationResult spent) {
+          _paidThisAttempt = true;
+        },
         isMounted: () => mounted,
         perform: _performDownload,
         choose: _chooseLowBalanceAction,
@@ -581,6 +592,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.error('Something went wrong!');
       return false;
     }
+
+    if (_paidThisAttempt) await CoinsService.instance.markPendingDownloadSaved(_identity);
 
     try {
       analytics.track(
