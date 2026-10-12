@@ -9,6 +9,7 @@ import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
 import 'package:Prism/features/library/views/widgets/recently_set_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,12 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProviderStateMixin {
+  static const TextStyle _tabLabelStyle = TextStyle(
+    fontFamily: PrismFonts.proximaNova,
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+  );
+
   late final List<LibraryTab> _tabs = <LibraryTab>[
     LibraryTab.favourites,
     LibraryTab.downloads,
@@ -92,8 +99,11 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
         bottom: TabBar(
           controller: _controller,
           labelColor: scheme.secondary,
-          unselectedLabelColor: theme.hintColor,
+          unselectedLabelColor: scheme.secondary.withValues(alpha: 0.7),
+          labelStyle: _tabLabelStyle,
+          unselectedLabelStyle: _tabLabelStyle,
           indicatorColor: scheme.secondary,
+          dividerColor: scheme.secondary.withValues(alpha: 0.08),
           tabs: [for (final LibraryTab tab in _tabs) Tab(text: tab.label)],
         ),
       ),

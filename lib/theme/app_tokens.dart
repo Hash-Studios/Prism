@@ -215,6 +215,34 @@ abstract final class PrismTextStyles {
   );
 }
 
+/// Metrics of the app-wide chip theme built by `withPrismChipTheme` in `theme.dart`.
+abstract final class PrismChip {
+  static const double fontSize = 14;
+
+  /// Line height factor. It fixes the label at 18 px, so the chip is 36 px high with [padding].
+  static const double labelHeight = 1.3;
+
+  static const double iconSize = 16;
+
+  /// Around the label and the icon. With [labelPadding] a chip has 14 px at each end. A chip that sets its own
+  /// padding keeps this label padding, so its text never touches the rounded end.
+  static const EdgeInsets padding = EdgeInsets.symmetric(horizontal: 6, vertical: 9);
+  static const EdgeInsets labelPadding = EdgeInsets.symmetric(horizontal: 8);
+
+  /// Alpha of the foreground colour for the fill of an unselected chip.
+  static const double restFillAlpha = 0.08;
+
+  /// Alpha of the foreground colour for the fill of a disabled chip.
+  static const double disabledFillAlpha = 0.04;
+
+  /// Alpha of the label of a disabled chip.
+  static const double disabledLabelAlpha = 0.38;
+
+  /// Contrast an unselected label must reach against its fill. A theme foreground that is weaker is darkened
+  /// (or lightened) until it does.
+  static const double minLabelContrast = 4.5;
+}
+
 /// Icon data constants so individual widgets don't scatter icon literals.
 ///
 /// Centralising icon choices makes it easy to swap an icon app-wide or audit

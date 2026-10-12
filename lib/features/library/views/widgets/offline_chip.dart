@@ -42,17 +42,9 @@ class _OfflineChipState extends State<OfflineChip> {
   @override
   Widget build(BuildContext context) {
     if (!_offline) return const SizedBox.shrink();
-    final ThemeData theme = Theme.of(context);
     return Semantics(
       label: 'Offline',
-      child: Chip(
-        avatar: Icon(Icons.cloud_off_rounded, size: 16, color: theme.colorScheme.secondary),
-        label: Text('Offline', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.secondary)),
-        visualDensity: VisualDensity.compact,
-        backgroundColor: theme.colorScheme.secondary.withValues(alpha: 0.12),
-        side: BorderSide.none,
-        padding: EdgeInsets.zero,
-      ),
+      child: const Chip(avatar: Icon(Icons.cloud_off_rounded), label: Text('Offline')),
     );
   }
 }

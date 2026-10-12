@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -74,14 +75,16 @@ class AppliedWallpaperTile extends StatelessWidget {
                         left: 8,
                         top: 8,
                         child: DecoratedBox(
-                          decoration: BoxDecoration(color: scheme.error, borderRadius: BorderRadius.circular(999)),
+                          decoration: ShapeDecoration(color: scheme.primary, shape: const StadiumBorder()),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             child: Text(
                               'Current',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: onColor(scheme.error),
-                                fontWeight: FontWeight.bold,
+                              style: TextStyle(
+                                fontFamily: PrismFonts.proximaNova,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: onColor(scheme.primary),
                               ),
                             ),
                           ),

@@ -14,7 +14,6 @@ class RejectReasonChips extends StatelessWidget {
   Widget build(BuildContext context) {
     return Wrap(
       spacing: 8,
-      runSpacing: 4,
       children: <Widget>[
         for (final RejectReason reason in rejectReasons)
           ActionChip(

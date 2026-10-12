@@ -10,7 +10,10 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
+import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -81,6 +84,7 @@ void main() {
     WidgetTester tester, {
     LibraryTab initialTab = LibraryTab.favourites,
     Widget Function(Widget screen)? wrap,
+    ThemeData? theme,
   }) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
@@ -92,7 +96,7 @@ void main() {
       child: LibraryScreen(initialTab: initialTab),
     );
     if (wrap != null) home = wrap(home);
-    await tester.pumpWidget(MaterialApp(home: home));
+    await tester.pumpWidget(MaterialApp(theme: theme, home: home));
     await settle(tester);
   }
 
@@ -136,6 +140,21 @@ void main() {
     expect(tabEvents().map((event) => event.tab), <String>['downloads', 'history']);
     expect(tabEvents().first.toWireParameters(), <String, Object?>{'tab': 'downloads'});
   });
+
+  for (final PrismThemeOption option in <PrismThemeOption>[prismLightThemes.first, prismDarkThemes[1]]) {
+    testWidgets('${option.label}: the tab you are not on is still readable', (tester) async {
+      final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+      await pumpLibrary(tester, theme: theme);
+
+      final Color label = tester
+          .widget<RichText>(find.descendant(of: find.widgetWithText(Tab, 'Downloads'), matching: find.byType(RichText)))
+          .text
+          .style!
+          .color!;
+
+      expect(contrastRatio(Color.alphaBlend(label, theme.primaryColor), theme.primaryColor), greaterThanOrEqualTo(4.5));
+    });
+  }
 
   testWidgets('initialTab opens that tab without tracking a change', (tester) async {
     await pumpLibrary(tester, initialTab: LibraryTab.downloads);

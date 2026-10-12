@@ -98,11 +98,10 @@ class _RecentSearches extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Wrap(
             spacing: 8,
-            runSpacing: 4,
             children: <Widget>[
               for (final String query in searches)
                 ActionChip(
-                  avatar: const Icon(Icons.history_rounded, size: 16),
+                  avatar: const Icon(Icons.history_rounded),
                   label: Text(query),
                   onPressed: onPressed == null
                       ? null

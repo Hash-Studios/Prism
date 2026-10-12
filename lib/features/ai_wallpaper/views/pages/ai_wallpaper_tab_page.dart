@@ -1390,7 +1390,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           children: scenes.map((scene) {
             final short = scene.length > 28 ? '${scene.substring(0, 28)}…' : scene;
             return ActionChip(
-              label: Text(short, style: const TextStyle(fontSize: 12)),
+              label: Text(short),
               tooltip: 'Use this scene in your description (editable)',
               onPressed: loading
                   ? null
@@ -1401,7 +1401,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                         TextPosition(offset: _promptController.text.length),
                       );
                     }),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
             );
           }).toList(),
         ),

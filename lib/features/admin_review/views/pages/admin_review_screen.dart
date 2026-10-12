@@ -843,9 +843,15 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
               runSpacing: 8,
               children: _Audience.values.map((_Audience opt) {
                 return ChoiceChip(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[Icon(opt.icon, size: 16), const SizedBox(width: 4), Text(opt.label)],
+                  label: Builder(
+                    builder: (BuildContext context) => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(opt.icon, size: 16, color: DefaultTextStyle.of(context).style.color),
+                        const SizedBox(width: 4),
+                        Text(opt.label),
+                      ],
+                    ),
                   ),
                   selected: opt == _audience,
                   onSelected: (_) {

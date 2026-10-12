@@ -16,6 +16,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -100,6 +101,33 @@ AiGenerationRecord _record({
 const AiSubmissionMetadata _emptyMetadata = (title: '', description: '', category: '', tags: <String>[]);
 
 void main() {
+  testWidgets('the starting-point chips use the app chip size and label', (tester) async {
+    tester.view.physicalSize = const Size(400, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: withPrismChipTheme(ThemeData()),
+        home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ActionChip), findsNWidgets(3));
+    final Finder chip = find.byType(ActionChip).first;
+    expect(tester.getSize(find.descendant(of: chip, matching: find.byType(Ink))).height, 36);
+    final RichText label = tester.widget<RichText>(find.descendant(of: chip, matching: find.byType(RichText)));
+    expect(label.text.style?.fontSize, 14);
+  });
+
   testWidgets('AI share is single-flight, reports the chosen image and records tap and success', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
