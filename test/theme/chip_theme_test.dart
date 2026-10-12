@@ -1,6 +1,7 @@
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -114,11 +115,77 @@ void main() {
     expect(_surface(tester).color, const Color(_violet));
   });
 
-  testWidgets('a disabled chip dims its label', (tester) async {
+  testWidgets('a disabled chip has the rest fill and a label at half strength', (tester) async {
     final ThemeData theme = themes['Frost White']!;
     await _pump(tester, theme, selected: false, chip: const ChoiceChip(label: Text('Latest'), selected: false));
 
-    expect(_labelColor(tester).a, lessThan(0.5));
+    expect(_surface(tester).color, const Color(0xFF2F2F2F).withValues(alpha: 0.08));
+    expect(_labelColor(tester), const Color(0xFF2F2F2F).withValues(alpha: 0.5));
+  });
+
+  testWidgets('an avatar gets a 24 px wide box, so the icon keeps clear of the rounded end', (tester) async {
+    final ThemeData theme = themes['Frost White']!;
+    await _pump(tester, theme, selected: false, chip: const ActionChip(label: Text('Latest')));
+    final double plain = tester.getSize(find.byType(ActionChip)).width;
+    await _pump(
+      tester,
+      theme,
+      selected: false,
+      chip: const ActionChip(avatar: Icon(Icons.history_rounded), label: Text('Latest')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(find.byType(ActionChip)).width - plain, 24);
+    expect(tester.getSize(find.byIcon(Icons.history_rounded)), const Size(16, 16));
+  });
+
+  group('readable ink', () {
+    const Map<String, Color> inkByTheme = <String, Color>{
+      'Rose': Color(0xFF4B342D),
+      'Cotton Blue': Color(0xFF202836),
+      'Coffee': Color(0xFF785C23),
+      'Frost White': Color(0xFF2F2F2F),
+      'AMOLED': Color(0xFFFFFFFF),
+    };
+
+    for (final MapEntry<String, Color> entry in inkByTheme.entries) {
+      test('${entry.key}: the ink is ${entry.value.toARGB32().toRadixString(16)} and reads on the page', () {
+        final PrismThemeOption option = <PrismThemeOption>[
+          ...prismLightThemes,
+          ...prismDarkThemes,
+        ].firstWhere((PrismThemeOption o) => o.label == entry.key);
+        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+
+        expect(prismReadableInk(theme).toARGB32(), entry.value.toARGB32());
+        expect(contrastRatio(prismReadableInk(theme), theme.primaryColor), greaterThanOrEqualTo(4.5));
+      });
+    }
+
+    test('a theme with a strong foreground softens the secondary ink to 80 percent', () {
+      final ThemeData theme = themes['Frost White']!;
+
+      expect(prismSoftInk(theme), const Color(0xFF2F2F2F).withValues(alpha: 0.8));
+    });
+
+    test('a theme with a weak foreground keeps full ink, because 80 percent would read under 4.5:1', () {
+      final PrismThemeOption rose = prismLightThemes.firstWhere((PrismThemeOption o) => o.label == 'Rose');
+      final ThemeData theme = withPrismAccent(rose.theme, rose.defaultAccentValue);
+      final Color soft = const Color(0xFF4B342D).withValues(alpha: 0.8);
+
+      expect(contrastRatio(Color.alphaBlend(soft, theme.primaryColor), theme.primaryColor), lessThan(4.5));
+      expect(prismSoftInk(theme).toARGB32(), 0xFF4B342D);
+    });
+
+    for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
+      test('${option.label}: the soft ink reads on the page at 4.5:1', () {
+        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+
+        expect(
+          contrastRatio(Color.alphaBlend(prismSoftInk(theme), theme.primaryColor), theme.primaryColor),
+          greaterThanOrEqualTo(4.5),
+        );
+      });
+    }
   });
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {

@@ -21,23 +21,26 @@ class HomeChipRailDelegate extends SliverPersistentHeaderDelegate {
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Material(
       color: Theme.of(context).primaryColor,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        children: <Widget>[
-          for (final HomeFeedChip chip in HomeFeedChip.values)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: ChoiceChip(
-                label: Text(chip.label),
-                selected: chip == selected,
-                onSelected: (_) {
-                  PrismHaptics.tap();
-                  onSelected(chip);
-                },
+      child: MediaQuery.withClampedTextScaling(
+        maxScaleFactor: 1.5,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          children: <Widget>[
+            for (final HomeFeedChip chip in HomeFeedChip.values)
+              Padding(
+                padding: EdgeInsetsDirectional.only(end: chip == HomeFeedChip.values.last ? 0 : 8),
+                child: ChoiceChip(
+                  label: Text(chip.label),
+                  selected: chip == selected,
+                  onSelected: (_) {
+                    PrismHaptics.tap();
+                    onSelected(chip);
+                  },
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

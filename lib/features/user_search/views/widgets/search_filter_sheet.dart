@@ -102,7 +102,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               onChanged: (value) => setState(() => _portraitOnly = value),
             ),
             const SizedBox(height: 8),
-            Text('Min resolution', style: heading.copyWith(fontSize: 14)),
+            Text('Min resolution', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -116,7 +116,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               ],
             ),
             const SizedBox(height: 16),
-            Text('Sort', style: heading.copyWith(fontSize: 14)),
+            Text('Sort', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

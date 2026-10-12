@@ -68,6 +68,36 @@ void main() {
     expect(fillOf('Popular'), isNot(theme.colorScheme.primary));
   });
 
+  testWidgets('at 2x text the labels grow to 1.5x only, so the chips stay inside the 56 px rail', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpRail(tester);
+
+    final RichText label = tester.widget<RichText>(
+      find.descendant(of: find.widgetWithText(ChoiceChip, 'For you'), matching: find.byType(RichText)),
+    );
+    final Finder band = find.descendant(of: find.byType(SliverPersistentHeader), matching: find.byType(Material)).first;
+
+    expect(label.textScaler.scale(14), 21);
+    expect(tester.getSize(band).height, 56);
+    expect(tester.getSize(find.widgetWithText(ChoiceChip, 'For you')).height, 48);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the last chip ends 16 px from the screen edge once the rail is scrolled to the end', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpRail(tester);
+
+    await tester.drag(find.byType(ListView), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopRight(find.widgetWithText(ChoiceChip, 'Popular')).dx, 360 - 16);
+  });
+
   testWidgets('tapping a chip reports it', (tester) async {
     HomeFeedChip? picked;
     await pumpRail(tester, onSelected: (chip) => picked = chip);

@@ -31,6 +31,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -333,9 +334,11 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
                   onChanged: (value) => bloc.add(FavouriteWallsEvent.queryChanged(query: value)),
+                  style: PrismTextStyles.fieldInput(context).copyWith(color: prismReadableInk(theme)),
                   decoration: InputDecoration(
                     isDense: true,
                     hintText: 'Search by creator or category',
+                    hintStyle: PrismTextStyles.fieldInput(context).copyWith(color: prismSoftInk(theme)),
                     prefixIcon: Icon(JamIcons.search, size: 18, color: theme.hintColor),
                     suffixIcon: state.query.isEmpty
                         ? null
@@ -405,7 +408,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
               padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
               child: Text(
                 state.items.length == 1 ? '1 favourite' : '${state.items.length} favourites',
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.7)),
+                style: theme.textTheme.bodyMedium?.copyWith(color: prismSoftInk(theme)),
               ),
             ),
           ),

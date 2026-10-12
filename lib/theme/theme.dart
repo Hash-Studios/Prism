@@ -41,6 +41,20 @@ Color _legibleLabel(Color foreground, Color page) {
   return extreme;
 }
 
+/// The theme foreground ([ColorScheme.secondary]) as text on the page, darkened or lightened until it reaches
+/// [PrismChip.minLabelContrast]. Chip labels, the library tabs and the count line use it.
+Color prismReadableInk(ThemeData theme) => _legibleLabel(theme.colorScheme.secondary, theme.primaryColor);
+
+/// [prismReadableInk] at [PrismInk.softAlpha], for text one level below the main text. It stays at full ink when
+/// the softer one would fall under [PrismChip.minLabelContrast] on the page.
+Color prismSoftInk(ThemeData theme) {
+  final Color ink = prismReadableInk(theme);
+  final Color soft = ink.withValues(alpha: PrismInk.softAlpha);
+  final bool reads =
+      contrastRatio(Color.alphaBlend(soft, theme.primaryColor), theme.primaryColor) >= PrismChip.minLabelContrast;
+  return reads ? soft : ink;
+}
+
 /// Gives every chip the same look: a pill with a tonal fill of the foreground colour, and the accent fill when
 /// selected. Run it after anything that changes the accent, because it reads the accent from [ThemeData.colorScheme].
 ThemeData withPrismChipTheme(ThemeData base) {
@@ -48,7 +62,7 @@ ThemeData withPrismChipTheme(ThemeData base) {
   final Color foreground = scheme.secondary;
   final Color accent = scheme.primary;
   final Color onAccent = onColor(accent);
-  final Color label = _legibleLabel(foreground, base.primaryColor);
+  final Color label = prismReadableInk(base);
   return base.copyWith(
     chipTheme: ChipThemeData(
       shape: const StadiumBorder(),
@@ -79,6 +93,7 @@ ThemeData withPrismChipTheme(ThemeData base) {
         }),
       ),
       iconTheme: IconThemeData(color: label, size: PrismChip.iconSize),
+      avatarBoxConstraints: PrismChip.avatarConstraints,
       deleteIconColor: label,
     ),
   );

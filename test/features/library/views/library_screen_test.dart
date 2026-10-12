@@ -17,6 +17,7 @@ import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -141,20 +142,86 @@ void main() {
     expect(tabEvents().first.toWireParameters(), <String, Object?>{'tab': 'downloads'});
   });
 
-  for (final PrismThemeOption option in <PrismThemeOption>[prismLightThemes.first, prismDarkThemes[1]]) {
-    testWidgets('${option.label}: the tab you are not on is still readable', (tester) async {
+  // The expected colours are the theme foreground made readable on the page: the weak foregrounds of Rose,
+  // Cotton Blue and Coffee are darkened, and they keep full ink for the tab you are not on.
+  const Map<String, ({int selected, int unselected})> tabInk = <String, ({int selected, int unselected})>{
+    'Frost White': (selected: 0xFF2F2F2F, unselected: 0xCC2F2F2F),
+    'Rose': (selected: 0xFF4B342D, unselected: 0xFF4B342D),
+    'Cotton Blue': (selected: 0xFF202836, unselected: 0xFF202836),
+    'Coffee': (selected: 0xFF785C23, unselected: 0xFF785C23),
+    'AMOLED': (selected: 0xFFFFFFFF, unselected: 0xCCFFFFFF),
+  };
+
+  for (final MapEntry<String, ({int selected, int unselected})> entry in tabInk.entries) {
+    testWidgets('${entry.key}: both tab labels are 16 px and read on the page', (tester) async {
+      final PrismThemeOption option = <PrismThemeOption>[
+        ...prismLightThemes,
+        ...prismDarkThemes,
+      ].firstWhere((PrismThemeOption o) => o.label == entry.key);
       final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
       await pumpLibrary(tester, theme: theme);
 
-      final Color label = tester
-          .widget<RichText>(find.descendant(of: find.widgetWithText(Tab, 'Downloads'), matching: find.byType(RichText)))
+      TextStyle labelOf(String tab) => tester
+          .widget<RichText>(find.descendant(of: find.widgetWithText(Tab, tab), matching: find.byType(RichText)))
           .text
-          .style!
-          .color!;
+          .style!;
+      final TextStyle selected = labelOf('Favourites');
+      final TextStyle unselected = labelOf('Downloads');
 
-      expect(contrastRatio(Color.alphaBlend(label, theme.primaryColor), theme.primaryColor), greaterThanOrEqualTo(4.5));
+      expect(selected.color!.toARGB32(), entry.value.selected);
+      expect(unselected.color!.toARGB32(), entry.value.unselected);
+      expect(selected.fontSize, 16);
+      expect(unselected.fontSize, 16);
+      for (final TextStyle label in <TextStyle>[selected, unselected]) {
+        expect(
+          contrastRatio(Color.alphaBlend(label.color!, theme.primaryColor), theme.primaryColor),
+          greaterThanOrEqualTo(4.5),
+        );
+      }
     });
   }
+
+  group('tab labels and the system text size', () {
+    double labelScale(WidgetTester tester, String tab) => tester
+        .widget<RichText>(find.descendant(of: find.widgetWithText(Tab, tab), matching: find.byType(RichText)))
+        .textScaler
+        .scale(16);
+
+    testWidgets('follow it below 1.5x', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.25;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pumpLibrary(tester);
+
+      expect(labelScale(tester, 'Favourites'), 20);
+      expect(labelScale(tester, 'Downloads'), 20);
+    });
+
+    testWidgets('get all of the tab but 4 px each side, so "Downloads" has room at large text', (tester) async {
+      await pumpLibrary(tester);
+
+      final double slot = tester.getSize(find.byType(TabBar)).width / 3;
+      final double room = tester
+          .renderObject<RenderParagraph>(
+            find.descendant(of: find.widgetWithText(Tab, 'Downloads'), matching: find.byType(RichText)),
+          )
+          .constraints
+          .maxWidth;
+
+      expect(slot, 130);
+      expect(room, 122);
+    });
+
+    testWidgets('stop growing at 1.5x', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pumpLibrary(tester);
+
+      expect(labelScale(tester, 'Favourites'), 24);
+      expect(labelScale(tester, 'Downloads'), 24);
+      expect(labelScale(tester, 'History'), 24);
+      expect(tester.getSize(find.byType(TabBar)).height, 48);
+    });
+  });
 
   testWidgets('initialTab opens that tab without tracking a change', (tester) async {
     await pumpLibrary(tester, initialTab: LibraryTab.downloads);
