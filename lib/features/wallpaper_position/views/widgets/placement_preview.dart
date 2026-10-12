@@ -27,6 +27,7 @@ class PlacementPreview extends StatefulWidget {
     required this.placement,
     required this.syncToken,
     required this.controller,
+    required this.statusBarInset,
     required this.onMoved,
   });
 
@@ -34,6 +35,9 @@ class PlacementPreview extends StatefulWidget {
   final WallpaperPlacement placement;
   final int syncToken;
   final TransformationController controller;
+
+  /// Height of the device status bar. The app bar above the frame hides it from the layer, so the caller passes it.
+  final double statusBarInset;
 
   /// Called when a gesture ends, with where the wall ended up.
   final void Function(double dx, double dy, double zoom) onMoved;
@@ -71,6 +75,7 @@ class _PlacementPreviewState extends State<PlacementPreview> {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final WallpaperPlacement placement = widget.placement;
     final Color layerText = onColor(widget.source.dominantColor);
+    final MediaQueryData media = MediaQuery.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: DecoratedBox(
@@ -102,9 +107,12 @@ class _PlacementPreviewState extends State<PlacementPreview> {
                     child: ColoredBox(color: Colors.black.withValues(alpha: placement.dim)),
                   ),
                 IgnorePointer(
-                  child: placement.previewMode == PlacementPreviewMode.lock
-                      ? LockPreviewLayer(textColor: layerText)
-                      : HomePreviewLayer(textColor: layerText),
+                  child: MediaQuery(
+                    data: media.copyWith(viewPadding: media.viewPadding.copyWith(top: widget.statusBarInset)),
+                    child: placement.previewMode == PlacementPreviewMode.lock
+                        ? LockPreviewLayer(textColor: layerText)
+                        : HomePreviewLayer(textColor: layerText),
+                  ),
                 ),
               ],
             );

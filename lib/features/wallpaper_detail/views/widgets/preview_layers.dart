@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -24,6 +26,24 @@ double _layerScale(BuildContext context, BoxConstraints constraints) {
   return constraints.maxWidth / screenWidth;
 }
 
+/// Height of the status bar as the layer draws it. It scales with the frame, like the text.
+double _statusBarInset(BuildContext context, double scale) => MediaQuery.viewPaddingOf(context).top * scale;
+
+/// Centres [child] in the top third of the space below the status bar.
+Widget _topThird(BoxConstraints constraints, double inset, Widget child) {
+  return Align(
+    alignment: Alignment.topCenter,
+    child: Padding(
+      padding: EdgeInsets.only(top: inset),
+      child: SizedBox(
+        height: constraints.maxHeight.isFinite ? math.max(0.0, constraints.maxHeight - inset) / 3 : null,
+        width: constraints.maxWidth,
+        child: Center(child: child),
+      ),
+    ),
+  );
+}
+
 /// The clock and date of a lock screen, drawn over a wallpaper. It fills the space it gets.
 class LockPreviewLayer extends StatelessWidget {
   const LockPreviewLayer({super.key, required this.textColor, this.now});
@@ -41,11 +61,12 @@ class LockPreviewLayer extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double scale = _layerScale(context, constraints);
+        final double inset = _statusBarInset(context, scale);
         if (defaultTargetPlatform == TargetPlatform.iOS) {
           return Align(
             alignment: Alignment.topCenter,
             child: Padding(
-              padding: EdgeInsets.only(top: 24 * scale),
+              padding: EdgeInsets.only(top: inset + 24 * scale),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -73,39 +94,34 @@ class LockPreviewLayer extends StatelessWidget {
             ),
           );
         }
-        return Align(
-          alignment: Alignment.topCenter,
-          child: SizedBox(
-            height: constraints.maxHeight.isFinite ? constraints.maxHeight / 3 : null,
-            width: constraints.maxWidth,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    clock,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: textColor,
-                      fontFamily: 'Roboto',
-                      fontSize: 72 * scale,
-                      fontWeight: FontWeight.w200,
-                    ),
-                  ),
-                  SizedBox(height: 5 * scale),
-                  Text(
-                    "${DateFormat('EEEE').format(time)}, ${DateFormat('MMMM').format(time)} ${time.day}",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: textColor,
-                      fontFamily: 'Roboto',
-                      fontSize: 20 * scale,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+        return _topThird(
+          constraints,
+          inset,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                clock,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textColor,
+                  fontFamily: 'Roboto',
+                  fontSize: 72 * scale,
+                  fontWeight: FontWeight.w200,
+                ),
               ),
-            ),
+              SizedBox(height: 5 * scale),
+              Text(
+                "${DateFormat('EEEE').format(time)}, ${DateFormat('MMMM').format(time)} ${time.day}",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textColor,
+                  fontFamily: 'Roboto',
+                  fontSize: 20 * scale,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -131,45 +147,40 @@ class HomePreviewLayer extends StatelessWidget {
         final double iconWidth = constraints.maxWidth * 0.14;
         return Stack(
           children: <Widget>[
-            Align(
-              alignment: Alignment.topCenter,
-              child: SizedBox(
-                height: constraints.maxHeight.isFinite ? constraints.maxHeight / 3 : null,
-                width: constraints.maxWidth,
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        "${DateFormat('EEEE').format(time)},",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'Roboto',
-                          fontSize: 25 * scale,
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
-                      SizedBox(height: 5 * scale),
-                      Text(
-                        "${DateFormat('MMMM').format(time)} ${time.day}${ordinalSuffix(time.day)}",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'Roboto',
-                          fontSize: 25 * scale,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+            _topThird(
+              constraints,
+              _statusBarInset(context, scale),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    "${DateFormat('EEEE').format(time)},",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: textColor,
+                      fontFamily: 'Roboto',
+                      fontSize: 25 * scale,
+                      fontWeight: FontWeight.w300,
+                    ),
                   ),
-                ),
+                  SizedBox(height: 5 * scale),
+                  Text(
+                    "${DateFormat('MMMM').format(time)} ${time.day}${ordinalSuffix(time.day)}",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: textColor,
+                      fontFamily: 'Roboto',
+                      fontSize: 25 * scale,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
             Positioned(
               left: 0,
               right: 0,
-              bottom: 100 * scale,
+              bottom: (MediaQuery.viewPaddingOf(context).bottom + 100) * scale,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
