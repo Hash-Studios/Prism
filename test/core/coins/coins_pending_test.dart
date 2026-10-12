@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/downloaded_link_lookup.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+import '../../support/in_memory_local_store.dart';
 
 const Map<String, Object> _spent = <String, Object>{
   'success': true,
@@ -29,6 +31,25 @@ const Map<String, Object> _refunded = <String, Object>{
   'currentBalance': 100,
   'delta': 5,
 };
+
+class _FlakySettings extends SettingsLocalDataSource {
+  _FlakySettings() : super(InMemoryLocalStore());
+
+  bool failSets = false;
+  bool failDeletes = false;
+
+  @override
+  Future<void> set(String key, Object? value) {
+    if (failSets) throw StateError('write failed');
+    return super.set(key, value);
+  }
+
+  @override
+  Future<void> delete(String key) {
+    if (failDeletes) throw StateError('delete failed');
+    return super.delete(key);
+  }
+}
 
 const String _queueKey = 'pendingAiRefunds';
 const String _ledgerKey = 'pendingDownloads_v2';
@@ -59,6 +80,7 @@ void main() {
     await settings.delete(_legacyMarkerKey);
     service.pendingRetryInterval = const Duration(seconds: 30);
     service.abandonedDownloadAfter = const Duration(minutes: 2);
+    service.isLinkDownloaded = isLinkInDownloadedIndex;
   });
 
   String stored(String key) => getIt<SettingsLocalDataSource>().get<String>(key, defaultValue: '');
@@ -215,6 +237,23 @@ void main() {
       expect(stored(_queueKey), isEmpty);
     });
 
+    test('a queued refund stays queued when the account changes during its retry', () async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await getIt<SettingsLocalDataSource>().set(
+        _queueKey,
+        '[{"userId":"${app_state.prismUser.id}","kind":"refund","transactionId":"spend_tx_queued",'
+        '"action":"aiGeneration","reason":"ai_generation_failed_refund","atMs":$now}]',
+      );
+      backend.onCall = (name, parameters) async {
+        app_state.prismUser = app_constants.createGuestPrismUser();
+        return _refunded;
+      };
+
+      await service.retryPendingRefunds();
+
+      expect(stored(_queueKey), contains('spend_tx_queued'));
+    });
+
     test('a reward older than 24 hours is dropped without a call', () async {
       final old = DateTime.now().subtract(const Duration(hours: 25)).millisecondsSinceEpoch;
       await getIt<SettingsLocalDataSource>().set(
@@ -344,8 +383,8 @@ void main() {
     test('two paid downloads that both end with an unconfirmed refund are both refunded once their taps end', () async {
       final txIdA = await pay(linkA);
       final txIdB = await pay(linkB);
-      await service.releasePendingDownload(linkA);
-      await service.releasePendingDownload(linkB);
+      await service.releasePendingDownload(txIdA);
+      await service.releasePendingDownload(txIdB);
       service.abandonedDownloadAfter = Duration.zero;
       final refunds = recordRefunds();
 
@@ -356,11 +395,11 @@ void main() {
     });
 
     test('a download that fails while another one saves is still refunded once its tap ends', () async {
-      await pay(linkA);
+      final txIdA = await pay(linkA);
       final txIdB = await pay(linkB);
-      await service.markPendingDownloadSaved(linkA);
-      await service.clearPendingDownload(linkA);
-      await service.releasePendingDownload(linkB);
+      await service.markPendingDownloadSaved(txIdA);
+      await service.clearPendingDownload(txIdA);
+      await service.releasePendingDownload(txIdB);
       service.abandonedDownloadAfter = Duration.zero;
       final refunds = recordRefunds();
 
@@ -371,19 +410,19 @@ void main() {
     });
 
     test('finishing one download leaves the entry of the other one in the ledger', () async {
-      await pay(linkA);
+      final txIdA = await pay(linkA);
       final txIdB = await pay(linkB);
 
-      await service.markPendingDownloadSaved(linkA);
-      await service.clearPendingDownload(linkA);
+      await service.markPendingDownloadSaved(txIdA);
+      await service.clearPendingDownload(txIdA);
 
       expect(ledger().map((e) => e['txId']), <Object?>[txIdB]);
       expect(ledger().single['saved'], isFalse);
     });
 
     test('a download that saved before the app died is not refunded', () async {
-      await pay(linkA);
-      await service.markPendingDownloadSaved(linkA);
+      final txId = await pay(linkA);
+      await service.markPendingDownloadSaved(txId);
       service.abandonedDownloadAfter = Duration.zero;
       final refunds = recordRefunds();
 
@@ -467,7 +506,7 @@ void main() {
     test('a download of this session whose refund never confirmed is refunded once it comes of age', () async {
       service.abandonedDownloadAfter = const Duration(milliseconds: 300);
       final txId = await pay(linkA);
-      await service.releasePendingDownload(linkA);
+      await service.releasePendingDownload(txId);
       final refunds = recordRefunds();
 
       await Future<void>.delayed(const Duration(milliseconds: 600));
@@ -496,19 +535,19 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       expect(refunds, isEmpty);
 
-      await service.releasePendingDownload(linkA);
+      await service.releasePendingDownload(txId);
 
       expect(txIds(refunds), <Object?>[txId]);
       expect(ledger(), isEmpty);
     });
 
-    test('releasing one link leaves the running download of another link alone', () async {
+    test('releasing one download leaves the running download of another one alone', () async {
       service.abandonedDownloadAfter = Duration.zero;
       final txIdA = await pay(linkA);
       final txIdB = await pay(linkB);
       final refunds = recordRefunds();
 
-      await service.releasePendingDownload(linkA);
+      await service.releasePendingDownload(txIdA);
       await service.refundAbandonedDownload();
 
       expect(txIds(refunds), <Object?>[txIdA]);
@@ -517,11 +556,11 @@ void main() {
 
     test('releasing a download that already saved refunds nothing and keeps the stored entry', () async {
       service.abandonedDownloadAfter = Duration.zero;
-      await pay(linkA);
+      final txId = await pay(linkA);
       final refunds = recordRefunds();
-      await service.markPendingDownloadSaved(linkA);
+      await service.markPendingDownloadSaved(txId);
 
-      await service.releasePendingDownload(linkA);
+      await service.releasePendingDownload(txId);
 
       expect(refunds, isEmpty);
       expect(ledger().single['saved'], isTrue);
@@ -541,11 +580,11 @@ void main() {
 
     test('a download that saves before it comes of age is never refunded by the timer', () async {
       service.abandonedDownloadAfter = const Duration(milliseconds: 300);
-      await pay(linkA);
+      final txId = await pay(linkA);
       final refunds = recordRefunds();
 
-      await service.markPendingDownloadSaved(linkA);
-      await service.clearPendingDownload(linkA);
+      await service.markPendingDownloadSaved(txId);
+      await service.clearPendingDownload(txId);
       await Future<void>.delayed(const Duration(milliseconds: 600));
 
       expect(refunds, isEmpty);
@@ -663,6 +702,7 @@ void main() {
         'action': 'wallpaperDownload',
         'at': ledger().single['at'],
         'saved': false,
+        'legacy': true,
       });
     });
 
@@ -673,6 +713,70 @@ void main() {
       await service.refundAbandonedDownload();
 
       expect(txIds(refunds), <Object?>['spend_tx_legacy']);
+    });
+
+    test('a legacy marker whose link is in the Downloads index is dropped without a refund', () async {
+      service.isLinkDownloaded = (link) => link == linkA;
+      await seedLegacyMarker(at: msAgo(const Duration(minutes: 3)));
+      final refunds = recordRefunds();
+
+      await service.refundAbandonedDownload();
+
+      expect(refunds, isEmpty);
+      expect(stored(_legacyMarkerKey), isEmpty);
+      expect(ledger(), isEmpty);
+    });
+
+    test('a legacy marker whose link is not in the Downloads index is refunded', () async {
+      service.isLinkDownloaded = (link) => link == linkB;
+      await seedLegacyMarker(at: msAgo(const Duration(minutes: 3)));
+      final refunds = recordRefunds();
+
+      await service.refundAbandonedDownload();
+
+      expect(txIds(refunds), <Object?>['spend_tx_legacy']);
+      expect(ledger(), isEmpty);
+    });
+
+    test('a legacy marker that waits for its grace period is still judged by the index when it comes of age', () async {
+      service.abandonedDownloadAfter = const Duration(milliseconds: 300);
+      await seedLegacyMarker(at: msAgo(const Duration(milliseconds: 100)));
+      final refunds = recordRefunds();
+      await service.refundAbandonedDownload();
+      service.isLinkDownloaded = (link) => link == linkA;
+
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+
+      expect(refunds, isEmpty);
+      expect(ledger(), isEmpty);
+    });
+
+    test('an entry written by this build never consults the Downloads index', () async {
+      service.isLinkDownloaded = (_) => true;
+      await seed(<Map<String, Object?>>[entry(txId: 'spend_tx_new')]);
+      final refunds = recordRefunds();
+
+      await service.refundAbandonedDownload();
+
+      expect(txIds(refunds), <Object?>['spend_tx_new']);
+      expect(ledger(), isEmpty);
+    });
+
+    test('a time that is infinite or text never breaks the other entries', () async {
+      final user = app_state.prismUser.id;
+      String raw(String txId, String at) =>
+          '{"txId":"$txId","userId":"$user","link":"$linkA","action":"wallpaperDownload","at":$at,"saved":false}';
+      await getIt<SettingsLocalDataSource>().set(
+        _ledgerKey,
+        '[${raw('infinite', '1e309')},${raw('negative_infinite', '-1e309')},${raw('text', '"x"')},'
+        '${raw('normal', '${msAgo(const Duration(minutes: 3))}')}]',
+      );
+      final refunds = recordRefunds();
+
+      await service.refundAbandonedDownload();
+
+      expect(txIds(refunds), unorderedEquals(<Object?>['infinite', 'negative_infinite', 'text', 'normal']));
+      expect(ledger(), isEmpty);
     });
 
     test('an entry whose time is not a number is refunded', () async {
@@ -716,7 +820,7 @@ void main() {
       service.abandonedDownloadAfter = const Duration(milliseconds: 300);
       final userId = app_state.prismUser.id;
       final txId = await pay(linkA);
-      await service.releasePendingDownload(linkA);
+      await service.releasePendingDownload(txId);
       final refunds = recordRefunds();
       app_state.prismUser = app_constants.createGuestPrismUser();
 
@@ -731,39 +835,159 @@ void main() {
       expect(txIds(refunds), <Object?>[txId]);
     });
 
-    test('mark and clear act on the newest entry for the link', () async {
+    test('a sign-out during the refund call keeps the entry for the next sign-in', () async {
+      final userId = app_state.prismUser.id;
+      await seed(<Map<String, Object?>>[entry(txId: 'spend_tx_signed_out')]);
+      backend.onCall = (name, parameters) async {
+        app_state.prismUser = app_constants.createGuestPrismUser();
+        return _refunded;
+      };
+
+      await service.refundAbandonedDownload();
+
+      expect(ledger().map((e) => e['txId']), <Object?>['spend_tx_signed_out']);
+
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = userId
+        ..loggedIn = true;
+      final refunds = recordRefunds();
+      await service.refundAbandonedDownload();
+
+      expect(txIds(refunds), <Object?>['spend_tx_signed_out']);
+      expect(ledger(), isEmpty);
+    });
+
+    test('mark and clear act only on the entry of the given txId, whatever its link', () async {
       await seed(<Map<String, Object?>>[
         entry(txId: 'older'),
         entry(txId: 'newer'),
         entry(txId: 'other_link', link: linkB),
       ]);
 
-      await service.markPendingDownloadSaved(linkA);
-      expect(ledger().map((e) => '${e['txId']}:${e['saved']}'), <String>[
-        'older:false',
-        'newer:true',
-        'other_link:false',
-      ]);
-
-      await service.markPendingDownloadSaved(linkA);
+      await service.markPendingDownloadSaved('older');
       expect(ledger().map((e) => '${e['txId']}:${e['saved']}'), <String>[
         'older:true',
-        'newer:true',
+        'newer:false',
         'other_link:false',
       ]);
 
-      await service.clearPendingDownload(linkA);
+      await service.clearPendingDownload('newer');
       expect(ledger().map((e) => e['txId']), <Object?>['older', 'other_link']);
     });
 
-    test('mark and clear leave another account entry for the same link alone', () async {
-      await seed(<Map<String, Object?>>[entry(txId: 'theirs', userId: 'someone-else')]);
+    test('mark, clear and release act on the entry of an account that is no longer signed in', () async {
+      await seed(<Map<String, Object?>>[
+        entry(txId: 'theirs_marked', userId: 'someone-else'),
+        entry(txId: 'theirs_cleared', userId: 'someone-else'),
+      ]);
 
-      await service.markPendingDownloadSaved(linkA);
-      await service.clearPendingDownload(linkA);
+      await service.markPendingDownloadSaved('theirs_marked');
+      await service.clearPendingDownload('theirs_cleared');
 
-      expect(ledger().single['txId'], 'theirs');
-      expect(ledger().single['saved'], isFalse);
+      expect(ledger().map((e) => '${e['txId']}:${e['userId']}:${e['saved']}'), <String>[
+        'theirs_marked:someone-else:true',
+      ]);
+    });
+
+    test('an unknown txId changes nothing', () async {
+      await seed(<Map<String, Object?>>[entry(txId: 'known')]);
+      final before = stored(_ledgerKey);
+
+      await service.markPendingDownloadSaved('unknown');
+      await service.clearPendingDownload('unknown');
+      await service.releasePendingDownload('unknown');
+
+      expect(stored(_ledgerKey), before);
+    });
+
+    test('a charged spend hands back the ledger txId, an uncharged one hands back none', () async {
+      final requestIds = <String>[];
+      backend.onCall = (name, parameters) async {
+        requestIds.add(parameters['requestId'] as String);
+        return _spent;
+      };
+      final charged = await service.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: linkA);
+      final untracked = await service.spend(CoinSpendAction.wallpaperDownload);
+      backend.onCall = (name, parameters) async => <String, Object>{
+        'success': false,
+        'changed': false,
+        'insufficientBalance': true,
+        'previousBalance': 1,
+        'currentBalance': 1,
+        'delta': 0,
+      };
+      final refused = await service.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: linkB);
+
+      expect(charged.pendingDownloadTxId, 'spend_${app_state.prismUser.id}_${requestIds.first}');
+      expect(charged.pendingDownloadTxId, ledger().single['txId']);
+      expect(charged.transactionId, 'spend_tx');
+      expect(untracked.pendingDownloadTxId, isEmpty);
+      expect(refused.pendingDownloadTxId, isEmpty);
+    });
+
+    group('when the ledger cannot be written', () {
+      late _FlakySettings flaky;
+      late SettingsLocalDataSource original;
+
+      setUp(() {
+        original = getIt<SettingsLocalDataSource>();
+        flaky = _FlakySettings();
+        getIt.unregister<SettingsLocalDataSource>();
+        getIt.registerSingleton<SettingsLocalDataSource>(flaky);
+      });
+      tearDown(() {
+        getIt.unregister<SettingsLocalDataSource>();
+        getIt.registerSingleton<SettingsLocalDataSource>(original);
+      });
+
+      test('a failing saved write keeps the download live, so recovery does not refund it in this session', () async {
+        final txId = await pay(linkA);
+        flaky.failSets = true;
+        await service.markPendingDownloadSaved(txId);
+        flaky.failSets = false;
+        service.abandonedDownloadAfter = Duration.zero;
+        final refunds = recordRefunds();
+
+        await service.refundAbandonedDownload();
+
+        expect(refunds, isEmpty);
+        expect(ledger().single['saved'], isFalse);
+
+        await service.markPendingDownloadSaved(txId);
+        await service.refundAbandonedDownload();
+
+        expect(refunds, isEmpty);
+        expect(ledger(), isEmpty);
+      });
+
+      test('a failing clear write keeps the download live, so recovery does not refund it in this session', () async {
+        final txIdA = await pay(linkA);
+        final txIdB = await pay(linkB);
+        await service.releasePendingDownload(txIdB);
+        flaky.failSets = true;
+        await service.clearPendingDownload(txIdA);
+        flaky.failSets = false;
+        service.abandonedDownloadAfter = Duration.zero;
+        final refunds = recordRefunds();
+
+        await service.refundAbandonedDownload();
+
+        expect(txIds(refunds), <Object?>[txIdB]);
+        expect(ledger().map((e) => e['txId']), <Object?>[txIdA]);
+      });
+
+      test('a failing delete keeps the download live as well', () async {
+        final txId = await pay(linkA);
+        flaky.failDeletes = true;
+        await service.clearPendingDownload(txId);
+        flaky.failDeletes = false;
+        service.abandonedDownloadAfter = Duration.zero;
+        final refunds = recordRefunds();
+
+        await service.refundAbandonedDownload();
+
+        expect(refunds, isEmpty);
+      });
     });
   });
 }

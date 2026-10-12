@@ -281,35 +281,38 @@ void main() {
     );
   });
 
-  test('an account switch during a refund retry stops the retry and keeps the unsent refunds', () async {
-    final accountA = app_state.prismUser.id;
-    final settings = getIt<SettingsLocalDataSource>();
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await settings.set(
-      'pendingAiRefunds',
-      '[{"userId":"$accountA","transactionId":"tx-1","atMs":$now},'
-          '{"userId":"$accountA","transactionId":"tx-2","atMs":$now}]',
-    );
-    final refunded = <String>[];
-    backend.onCall = (name, parameters) async {
-      refunded.add(parameters['transactionId'] as String);
-      app_state.prismUser.id = 'user-b';
-      return <String, Object>{
-        'success': true,
-        'changed': true,
-        'previousBalance': 90,
-        'currentBalance': 100,
-        'delta': 10,
+  test(
+    'an account switch during a refund retry stops the retry and keeps every refund it did not see settle',
+    () async {
+      final accountA = app_state.prismUser.id;
+      final settings = getIt<SettingsLocalDataSource>();
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await settings.set(
+        'pendingAiRefunds',
+        '[{"userId":"$accountA","transactionId":"tx-1","atMs":$now},'
+            '{"userId":"$accountA","transactionId":"tx-2","atMs":$now}]',
+      );
+      final refunded = <String>[];
+      backend.onCall = (name, parameters) async {
+        refunded.add(parameters['transactionId'] as String);
+        app_state.prismUser.id = 'user-b';
+        return <String, Object>{
+          'success': true,
+          'changed': true,
+          'previousBalance': 90,
+          'currentBalance': 100,
+          'delta': 10,
+        };
       };
-    };
 
-    await service.retryPendingRefunds();
+      await service.retryPendingRefunds();
 
-    expect(refunded, <String>['tx-1']);
-    final stored = settings.get<String>('pendingAiRefunds', defaultValue: '');
-    expect(stored, isNot(contains('tx-1')));
-    expect(stored, contains('tx-2'));
-  });
+      expect(refunded, <String>['tx-1']);
+      final stored = settings.get<String>('pendingAiRefunds', defaultValue: '');
+      expect(stored, contains('tx-1'));
+      expect(stored, contains('tx-2'));
+    },
+  );
 
   test('a definite spend failure does not queue a refund', () async {
     backend.onCall = (name, parameters) async =>

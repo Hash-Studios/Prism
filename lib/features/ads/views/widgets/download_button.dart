@@ -88,9 +88,10 @@ class _DownloadButtonState extends State<DownloadButton> {
   String? _preparedSource;
   String _identity = '';
 
-  /// True once this tap really charged coins. Only then does the tap own a ledger entry to mark and clear, so a
-  /// refused or cancelled tap never touches the entry of an earlier payment for the same link.
-  bool _paidThisAttempt = false;
+  /// The ledger id of the payment this tap made, or null when it paid nothing. Only a tap that paid marks an entry,
+  /// and only its own, so no other tap or button of the same wallpaper can settle it. The coin gate settles the entry
+  /// itself once the tap ends.
+  String? _paidTxId;
   VoidCallback? _onDownloaded;
   String? _failureReason;
   String _failureStage = 'download';
@@ -181,7 +182,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       _preparedSource = null;
       final DownloadVariant? variant = widget.variant;
       _identity = variant?.identityOf(link) ?? link;
-      _paidThisAttempt = false;
+      _paidTxId = null;
       _onDownloaded = widget.onDownloaded;
       if (!await _confirmDownloadAgain(_identity)) return;
       if (variant != null) {
@@ -196,15 +197,11 @@ class _DownloadButtonState extends State<DownloadButton> {
         return;
       }
       final CoinGateResult result = await _gatedDownload();
-      if (_paidThisAttempt && result != CoinGateResult.failedNotRefunded) {
-        await CoinsService.instance.clearPendingDownload(_identity);
-      }
       _trackGateResult(result);
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
       }
-      if (_paidThisAttempt) await CoinsService.instance.releasePendingDownload(_identity);
     }
   }
 
@@ -516,9 +513,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         upgradeSource: 'download_low_balance_upgrade',
         precheckBalance: true,
         repromptOnNudgeSpendInsufficient: false,
-        onSpent: (String spendTag, CoinMutationResult spent) {
-          _paidThisAttempt = true;
-        },
+        onPaid: (String txId) => _paidTxId = txId,
         isMounted: () => mounted,
         perform: _performDownload,
         choose: _chooseLowBalanceAction,
@@ -593,7 +588,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       return false;
     }
 
-    if (_paidThisAttempt) await CoinsService.instance.markPendingDownloadSaved(_identity);
+    final String? paidTxId = _paidTxId;
+    if (paidTxId != null) await CoinsService.instance.markPendingDownloadSaved(paidTxId);
 
     try {
       analytics.track(
