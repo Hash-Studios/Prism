@@ -9,6 +9,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
+import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -346,6 +348,42 @@ void main() {
 
     expect(repository.lastRejectReason, rejectReasons[1].text);
     await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('an audience chip icon takes the colour of its chip label, selected or not', (WidgetTester tester) async {
+    const Color accent = Color(0xFFE57373);
+    final ThemeData theme = withPrismChipTheme(
+      ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFF101010),
+        colorScheme: const ColorScheme.dark(primary: accent, secondary: Color(0xFFD8D8D8)),
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: AdminReviewScreen(repository: _FakeAdminReviewRepository()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Notifications'));
+    await tester.pumpAndSettle();
+
+    Color? iconColor(IconData icon) => tester
+        .widget<RichText>(find.descendant(of: find.byIcon(icon), matching: find.byType(RichText)))
+        .text
+        .style
+        ?.color;
+    Color? labelColor(String label) => tester
+        .widget<RichText>(find.descendant(of: find.text(label), matching: find.byType(RichText)))
+        .text
+        .style
+        ?.color;
+
+    expect(iconColor(Icons.people), onColor(accent));
+    expect(labelColor('All users'), onColor(accent));
+    expect(iconColor(Icons.star), labelColor('Premium users'));
+    expect(iconColor(Icons.star), isNot(onColor(accent)));
   });
 
   testWidgets('a successful wallpaper rejection uses success outcome feedback', (WidgetTester tester) async {

@@ -17,6 +17,9 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -67,12 +70,13 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
-  Future<void> pumpGrid(WidgetTester tester) {
+  Future<void> pumpGrid(WidgetTester tester, {ThemeData? theme}) {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     return tester.pumpWidget(
       MaterialApp(
+        theme: theme,
         home: BlocProvider<FavouriteWallsBloc>.value(
           value: bloc,
           child: const Scaffold(body: FavouriteGrid()),
@@ -134,11 +138,85 @@ void main() {
       return bloc;
     }
 
-    Future<void> pumpLoaded(WidgetTester tester) async {
-      await pumpGrid(tester);
+    Future<void> pumpLoaded(WidgetTester tester, {ThemeData? theme}) async {
+      await pumpGrid(tester, theme: theme);
       await tester.pump();
       await tester.pump();
     }
+
+    // Rose, Cotton Blue and Coffee have a weak foreground. Their count line is darkened to a readable ink and
+    // keeps full ink, because 80 percent of it would read under 4.5:1.
+    const Map<String, ({int count, int chip})> inkByTheme = <String, ({int count, int chip})>{
+      'Frost White': (count: 0xCC2F2F2F, chip: 0xFF2F2F2F),
+      'Rose': (count: 0xFF4B342D, chip: 0xFF4B342D),
+      'Cotton Blue': (count: 0xFF202836, chip: 0xFF202836),
+      'Coffee': (count: 0xFF785C23, chip: 0xFF785C23),
+      'AMOLED': (count: 0xCCFFFFFF, chip: 0xFFFFFFFF),
+    };
+
+    for (final MapEntry<String, ({int count, int chip})> entry in inkByTheme.entries) {
+      testWidgets('${entry.key}: the source chips and the count line read on the page', (tester) async {
+        final PrismThemeOption option = <PrismThemeOption>[
+          ...prismLightThemes,
+          ...prismDarkThemes,
+        ].firstWhere((PrismThemeOption o) => o.label == entry.key);
+        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+        createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+        await pumpLoaded(tester, theme: theme);
+
+        Color colorOf(Finder text) =>
+            tester.widget<RichText>(find.descendant(of: text, matching: find.byType(RichText))).text.style!.color!;
+        final Color count = colorOf(find.text('2 favourites'));
+        final Color chip = colorOf(find.text('Prism'));
+
+        expect(count.toARGB32(), entry.value.count);
+        expect(chip.toARGB32(), entry.value.chip);
+        expect(
+          contrastRatio(Color.alphaBlend(count, theme.primaryColor), theme.primaryColor),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(tester.getSize(find.widgetWithText(ChoiceChip, 'Prism')).height, 48);
+      });
+    }
+
+    for (final MapEntry<String, ({int count, int chip})> entry in inkByTheme.entries) {
+      testWidgets('${entry.key}: the search field types and hints in 15 px body text that reads on the page', (
+        tester,
+      ) async {
+        final PrismThemeOption option = <PrismThemeOption>[
+          ...prismLightThemes,
+          ...prismDarkThemes,
+        ].firstWhere((PrismThemeOption o) => o.label == entry.key);
+        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+        createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+        await pumpLoaded(tester, theme: theme);
+
+        final TextStyle typed = tester.widget<EditableText>(find.byType(EditableText)).style;
+        final TextStyle hint = tester.widget<Text>(find.text('Search by creator or category')).style!;
+
+        expect(typed.fontSize, 15);
+        expect(typed.fontFamily, 'Proxima Nova');
+        expect(typed.color!.toARGB32(), entry.value.chip);
+        expect(hint.fontSize, 15);
+        expect(hint.fontFamily, 'Proxima Nova');
+        expect(hint.color!.toARGB32(), entry.value.count);
+      });
+    }
+
+    testWidgets('at 2x text the source chips still fit their 48 px row', (tester) async {
+      createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pumpLoaded(tester);
+
+      final RichText label = tester.widget<RichText>(
+        find.descendant(of: find.widgetWithText(ChoiceChip, 'Prism'), matching: find.byType(RichText)),
+      );
+
+      expect(label.textScaler.scale(14), 28);
+      expect(tester.getSize(find.widgetWithText(ChoiceChip, 'Prism')).height, 48);
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('filter chips and search narrow the grid and clear filters restores it', (tester) async {
       createBlocWith(<FavouriteWallEntity>[

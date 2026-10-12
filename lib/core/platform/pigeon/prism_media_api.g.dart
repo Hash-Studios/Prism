@@ -139,14 +139,16 @@ class SaveMediaRequest {
 }
 
 class DownloadRequest {
-  DownloadRequest({required this.link, required this.filenameWithoutExtension});
+  DownloadRequest({required this.link, required this.filenameWithoutExtension, required this.isLocalFile});
 
   String link;
 
   String filenameWithoutExtension;
 
+  bool isLocalFile;
+
   List<Object?> _toList() {
-    return <Object?>[link, filenameWithoutExtension];
+    return <Object?>[link, filenameWithoutExtension, isLocalFile];
   }
 
   Object encode() {
@@ -155,7 +157,11 @@ class DownloadRequest {
 
   static DownloadRequest decode(Object result) {
     result as List<Object?>;
-    return DownloadRequest(link: result[0]! as String, filenameWithoutExtension: result[1]! as String);
+    return DownloadRequest(
+      link: result[0]! as String,
+      filenameWithoutExtension: result[1]! as String,
+      isLocalFile: result[2]! as bool,
+    );
   }
 
   @override
@@ -167,7 +173,9 @@ class DownloadRequest {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(link, other.link) && _deepEquals(filenameWithoutExtension, other.filenameWithoutExtension);
+    return _deepEquals(link, other.link) &&
+        _deepEquals(filenameWithoutExtension, other.filenameWithoutExtension) &&
+        _deepEquals(isLocalFile, other.isLocalFile);
   }
 
   @override
@@ -176,7 +184,7 @@ class DownloadRequest {
 
   @override
   String toString() {
-    return 'DownloadRequest(link: $link, filenameWithoutExtension: $filenameWithoutExtension)';
+    return 'DownloadRequest(link: $link, filenameWithoutExtension: $filenameWithoutExtension, isLocalFile: $isLocalFile)';
   }
 }
 

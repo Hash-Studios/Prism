@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -13,7 +14,12 @@ import 'package:path_provider/path_provider.dart';
 
 class EditButton extends StatefulWidget {
   final String? url;
-  const EditButton({required this.url, super.key});
+
+  /// Makes the image to edit, such as a colour variation, and returns its local path. The editor opens on that path
+  /// and [url] is not fetched. If it throws, the user is told and the editor does not open.
+  final Future<String> Function()? prepareSource;
+
+  const EditButton({required this.url, this.prepareSource, super.key});
 
   @override
   _EditButtonState createState() => _EditButtonState();
@@ -52,6 +58,16 @@ class _EditButtonState extends State<EditButton> {
       isLoading = true;
     });
     toasts.success('Loading Wallpaper', haptic: false);
+    final Future<String> Function()? prepare = widget.prepareSource;
+    if (prepare != null) {
+      final String? prepared = await runPrepareSource(prepare);
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
+      if (prepared != null) await context.router.push(WallpaperFilterRoute(filePath: prepared));
+      return;
+    }
     Directory? sessionDirectory;
     try {
       final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));

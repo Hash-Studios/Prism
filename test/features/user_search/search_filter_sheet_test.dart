@@ -1,5 +1,6 @@
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -55,6 +56,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(result, const SearchFilters(minResolution: '1440x2560', sort: SearchSort.toplist));
+  });
+
+  testWidgets('the Min resolution and Sort headings are 13 px w500, one step below the 14 px w600 chip labels', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: withPrismChipTheme(ThemeData()),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showSearchFilterSheet(context, const SearchFilters()),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    TextStyle styleOf(String text) =>
+        tester.widget<RichText>(find.descendant(of: find.text(text), matching: find.byType(RichText))).text.style!;
+    for (final String heading in <String>['Min resolution', 'Sort']) {
+      expect(styleOf(heading).fontSize, 13, reason: heading);
+      expect(styleOf(heading).fontWeight, FontWeight.w500, reason: heading);
+    }
+    expect(styleOf('1440p').fontSize, 14);
+    expect(styleOf('1440p').fontWeight, FontWeight.w600);
+    expect(styleOf('Filters').fontSize, 20);
   });
 
   testWidgets('the sheet opens on the root navigator, above a nested tab navigator', (tester) async {

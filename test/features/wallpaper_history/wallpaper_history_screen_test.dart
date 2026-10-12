@@ -92,6 +92,22 @@ void main() {
     expect(find.text('Current'), findsNWidgets(2));
   });
 
+  testWidgets('the Current badge is an accent pill with a label that reads on the accent', (tester) async {
+    await record('a', 'home', DateTime(2026, 1, 1, 9));
+    final ThemeData theme = ThemeData(colorScheme: const ColorScheme.light(primary: Color(0xFFE57697)));
+    await tester.pumpWidget(MaterialApp(theme: theme, home: const WallpaperHistoryScreen()));
+    await tester.pump();
+
+    final DecoratedBox badge = tester.widget<DecoratedBox>(
+      find.ancestor(of: find.text('Current'), matching: find.byType(DecoratedBox)).first,
+    );
+    final ShapeDecoration decoration = badge.decoration as ShapeDecoration;
+
+    expect(decoration.shape, isA<StadiumBorder>());
+    expect(decoration.color, const Color(0xFFE57697));
+    expect(tester.widget<Text>(find.text('Current')).style!.color, Colors.black);
+  });
+
   testWidgets('a both row is current for both screens with one badge', (tester) async {
     await record('a', 'home', DateTime(2026, 1, 1, 9));
     await record('b', 'both', DateTime(2026, 1, 2, 9));

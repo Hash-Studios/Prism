@@ -132,6 +132,19 @@ void main() {
     verify(() => thumbnailCache.emptyCache()).called(2);
   });
 
+  test('clearing cache deletes tinted wallpapers and keeps the other temp folders', () async {
+    final tinted = File('${root.path}/temp/prism_tint/1_0.png')..createSync(recursive: true);
+    tinted.writeAsBytesSync(<int>[1, 2, 3]);
+    final editing = File('${root.path}/temp/prism_edit/source_active/source.img')..createSync(recursive: true);
+    editing.writeAsStringSync('keep these bytes');
+
+    await service.clearTransientCache();
+
+    expect(tinted.existsSync(), isFalse);
+    expect(Directory('${root.path}/temp/prism_tint').existsSync(), isFalse);
+    expect(editing.readAsStringSync(), 'keep these bytes');
+  });
+
   test('clearing cache also empties the full-size wallpaper cache', () async {
     await service.clearTransientCache();
 
