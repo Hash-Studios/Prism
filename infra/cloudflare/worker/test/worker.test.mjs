@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { test } from 'node:test';
-import { AiQuotaCoordinator, seedreamImageSize } from '../src/ai.ts';
+import { AiQuotaCoordinator, gptImageSize, seedreamImageSize } from '../src/ai.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
 
@@ -1059,6 +1059,44 @@ test('studio generation with v5 lite sends no seed and falls back to the request
   assert.deepEqual(stats.falRequest.body.image_size, seedreamImageSize(944, 2048));
   assert.deepEqual({ width: body.width, height: body.height }, seedreamImageSize(944, 2048));
   assert.equal(body.seed, null);
+});
+
+test('GPT Image sizes are multiples of 16 inside the fal limits and keep the phone aspect', () => {
+  assert.deepEqual(gptImageSize(1440, 3200), { width: 1440, height: 3200 });
+  assert.deepEqual(gptImageSize(944, 2048), { width: 944, height: 2048 });
+  assert.deepEqual(gptImageSize(3200, 1440), { width: 3200, height: 1440 });
+  const inputs = [[1440, 3200], [1179, 2556], [512, 512], [4096, 4096], [512, 4096], [3000, 3000], [1081, 2401]];
+  for (const [width, height] of inputs) {
+    const size = gptImageSize(width, height);
+    const label = `${width}x${height} -> ${size.width}x${size.height}`;
+    assert.equal(size.width % 16, 0, label);
+    assert.equal(size.height % 16, 0, label);
+    assert.ok(Math.max(size.width, size.height) <= 3840, label);
+    assert.ok(Math.max(size.width, size.height) / Math.min(size.width, size.height) <= 3.0001, label);
+    const pixels = size.width * size.height;
+    assert.ok(pixels >= 655360 && pixels <= 8294400, label);
+  }
+});
+
+test('studio generation with GPT Image 2.5 sends high quality, no seed and the exact phone size', async () => {
+  const env = studioEnv();
+  const stats = {};
+  const restore = mockFal({ stats });
+  let body;
+  try {
+    const response = await postStudioGeneration(env, {
+      model: 'openai/gpt-image-2.5/sunburst/text-to-image', width: 1440, height: 3200,
+    });
+    assert.equal(response.status, 200);
+    body = await response.json();
+  } finally {
+    restore();
+  }
+  assert.equal(stats.falRequest.url, 'https://fal.run/openai/gpt-image-2.5/sunburst/text-to-image');
+  assert.equal('seed' in stats.falRequest.body, false);
+  assert.equal(stats.falRequest.body.quality, 'high');
+  assert.deepEqual(stats.falRequest.body.image_size, { width: 1440, height: 3200 });
+  assert.equal(body.costUsd, 0.07);
 });
 
 test('a repeated studio id returns the stored result once and a running id gets 409 until it goes stale', async () => {

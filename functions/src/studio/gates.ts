@@ -7,8 +7,11 @@ export const STUDIO_MIN_LONG_EDGE = 3000;
 /** Height / width. */
 export const STUDIO_MIN_ASPECT = 2.0;
 export const STUDIO_MAX_ASPECT = 2.4;
-/** Two dHashes this close or closer are the same picture. */
-export const STUDIO_DUPLICATE_MAX_DISTANCE = 6;
+/** An image at least this similar to a Studio wall (correlation of the grey thumbnails) is a duplicate. */
+export const STUDIO_DUPLICATE_MIN_SIMILARITY = 0.93;
+/** The grey thumbnail behind a signature. 16x36 keeps the shape of a 1440x3200 wallpaper. */
+export const STUDIO_SIGNATURE_WIDTH = 16;
+export const STUDIO_SIGNATURE_HEIGHT = 36;
 /** A safe search category at this likelihood or above rejects the image. */
 export const STUDIO_SAFE_SEARCH_REJECT_AT = "POSSIBLE";
 export const STUDIO_SAFE_SEARCH_CATEGORIES = ["adult", "racy", "violence", "medical"] as const;
@@ -19,19 +22,19 @@ export const STUDIO_LOGO_MIN_SCORE = 0.5;
 export const STUDIO_VISION_LONG_EDGE = 1600;
 
 const LIKELIHOODS = ["UNKNOWN", "VERY_UNLIKELY", "UNLIKELY", "POSSIBLE", "LIKELY", "VERY_LIKELY"];
-const HASH = /^[0-9a-f]{16}$/;
+const SIGNATURE_BYTES = STUDIO_SIGNATURE_WIDTH * STUDIO_SIGNATURE_HEIGHT;
 const LETTER_OR_DIGIT = new RegExp("[\\p{L}\\p{N}]", "gu");
 
 export interface GateResult {
   passed: boolean;
   reasons: string[];
   details: Record<string, unknown>;
-  /** dHash of the image, empty when it does not decode. */
-  hash: string;
+  /** Signature of the image, empty when it does not decode. */
+  signature: string;
 }
 
-export interface KnownHash {
-  hash: string;
+export interface KnownSignature {
+  signature: string;
   wallId: string;
 }
 
@@ -64,43 +67,52 @@ export function sizeCheck(width: number, height: number): {reasons: string[]; de
   return {reasons, details: {width, height, aspect: Math.round(aspect * 1000) / 1000}};
 }
 
-/** 64-bit difference hash as 16 hex characters: each bit says whether a pixel is brighter than its right neighbour. */
-export async function dHash(bytes: Buffer): Promise<string> {
-  const {data, info} = await sharp(bytes).resize(9, 8, {fit: "fill"}).grayscale().raw()
-    .toBuffer({resolveWithObject: true});
-  let hex = "";
-  for (let y = 0; y < 8; y++) {
-    let row = 0;
-    for (let x = 0; x < 8; x++) {
-      const at = (y * 9 + x) * info.channels;
-      row = (row << 1) | (data[at] > data[at + info.channels] ? 1 : 0);
-    }
-    hex += row.toString(16).padStart(2, "0");
-  }
-  return hex;
+/**
+ * The signature of an image: a 16x36 grey thumbnail as base64. A 64-bit dHash called different AMOLED walls the same,
+ * because their black areas give the same bits. Correlation of thumbnails looks only at how the image varies.
+ */
+export async function imageSignature(bytes: Buffer): Promise<string> {
+  const {data, info} = await sharp(bytes).flatten().resize(STUDIO_SIGNATURE_WIDTH, STUDIO_SIGNATURE_HEIGHT, {fit: "fill"})
+    .grayscale().raw().toBuffer({resolveWithObject: true});
+  const grey = Buffer.alloc(SIGNATURE_BYTES);
+  for (let i = 0; i < SIGNATURE_BYTES; i++) grey[i] = data[i * info.channels];
+  return grey.toString("base64");
 }
 
-/** Bits that differ between two 16-character hex hashes. */
-export function hammingDistance(a: string, b: string): number {
-  if (!HASH.test(a) || !HASH.test(b)) throw new Error("hammingDistance: hashes must be 16 hex characters.");
-  let distance = 0;
-  for (let i = 0; i < a.length; i++) {
-    let x = parseInt(a[i], 16) ^ parseInt(b[i], 16);
-    for (; x > 0; x >>= 1) distance += x & 1;
+/** Pearson correlation of two signatures, from -1 to 1. 0 when one is flat or is not a signature. */
+export function signatureSimilarity(a: string, b: string): number {
+  const x = Buffer.from(a, "base64");
+  const y = Buffer.from(b, "base64");
+  if (x.length !== SIGNATURE_BYTES || y.length !== SIGNATURE_BYTES) return 0;
+  const meanX = x.reduce((sum, v) => sum + v, 0) / SIGNATURE_BYTES;
+  const meanY = y.reduce((sum, v) => sum + v, 0) / SIGNATURE_BYTES;
+  let cov = 0;
+  let varX = 0;
+  let varY = 0;
+  for (let i = 0; i < SIGNATURE_BYTES; i++) {
+    const dx = x[i] - meanX;
+    const dy = y[i] - meanY;
+    cov += dx * dy;
+    varX += dx * dx;
+    varY += dy * dy;
   }
-  return distance;
+  return varX === 0 || varY === 0 ? 0 : cov / Math.sqrt(varX * varY);
 }
 
-export function duplicateCheck(hash: string, known: KnownHash[]): {reasons: string[]; details: Record<string, unknown>} {
-  let nearest: {distance: number; wallId: string} | null = null;
+export function duplicateCheck(
+  signature: string, known: KnownSignature[],
+): {reasons: string[]; details: Record<string, unknown>} {
+  let nearest: {similarity: number; wallId: string} | null = null;
   for (const other of known) {
-    if (!HASH.test(other.hash)) continue;
-    const distance = hammingDistance(hash, other.hash);
-    if (nearest === null || distance < nearest.distance) nearest = {distance, wallId: other.wallId};
+    const similarity = signatureSimilarity(signature, other.signature);
+    if (nearest === null || similarity > nearest.similarity) nearest = {similarity, wallId: other.wallId};
   }
   return {
-    reasons: nearest !== null && nearest.distance <= STUDIO_DUPLICATE_MAX_DISTANCE ? ["duplicate"] : [],
-    details: {hash, nearestDistance: nearest?.distance ?? null, nearestWallId: nearest?.wallId ?? null},
+    reasons: nearest !== null && nearest.similarity >= STUDIO_DUPLICATE_MIN_SIMILARITY ? ["duplicate"] : [],
+    details: {
+      nearestSimilarity: nearest === null ? null : Math.round(nearest.similarity * 1000) / 1000,
+      nearestWallId: nearest?.wallId ?? null,
+    },
   };
 }
 
@@ -144,27 +156,29 @@ export const annotateWithVision: VisionAnnotate = async (jpeg) => {
 
 /**
  * Size, duplicate and Vision checks of one generated image. Every check runs, so the details hold all values for
- * calibration. An image that does not decode is rejected with "undecodable". Vision and hash lookup errors throw.
+ * calibration. An image that does not decode is rejected with "undecodable". Vision and signature lookup errors throw.
  */
 export async function runGates(
   bytes: Buffer,
-  deps: {annotate: VisionAnnotate; knownHashes: () => Promise<KnownHash[]>},
+  deps: {annotate: VisionAnnotate; knownSignatures: () => Promise<KnownSignature[]>},
 ): Promise<GateResult> {
   let width = 0;
   let height = 0;
-  let hash = "";
+  let signature = "";
   try {
     const meta = await sharp(bytes).metadata();
     width = meta.width ?? 0;
     height = meta.height ?? 0;
-    hash = await dHash(bytes);
+    signature = await imageSignature(bytes);
   } catch {
     // The reasons below say it.
   }
-  if (!width || !height || hash === "") return {passed: false, reasons: ["undecodable"], details: {}, hash: ""};
+  if (!width || !height || signature === "") {
+    return {passed: false, reasons: ["undecodable"], details: {}, signature: ""};
+  }
 
   const size = sizeCheck(width, height);
-  const duplicate = duplicateCheck(hash, await deps.knownHashes());
+  const duplicate = duplicateCheck(signature, await deps.knownSignatures());
   const visionJpeg = await sharp(bytes)
     .resize({width: STUDIO_VISION_LONG_EDGE, height: STUDIO_VISION_LONG_EDGE, fit: "inside", withoutEnlargement: true})
     .jpeg({quality: 85})
@@ -175,6 +189,6 @@ export async function runGates(
     passed: reasons.length === 0,
     reasons,
     details: {size: size.details, duplicate: duplicate.details, vision: vision.details},
-    hash,
+    signature,
   };
 }

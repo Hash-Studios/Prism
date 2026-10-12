@@ -4,11 +4,11 @@ import * as admin from "firebase-admin";
 import sharp from "sharp";
 import {onWallApproved} from "../onWallApproved";
 import {onWallSubmitted} from "../onWallSubmitted";
-import type {VisionResult} from "../studio/gates";
+import {imageSignature, type VisionResult} from "../studio/gates";
 import {randomWallId} from "../studio/ids";
 import {humanSize, isStudioWall, processCandidate, type StudioProcessDeps, thumbSize} from "../studio/process";
 import {type Doc, installFakeDb} from "./fakeDb";
-import {flatPng, seededRng} from "./studioTestUtil";
+import {flatPng, gradientPng, seededRng} from "./studioTestUtil";
 
 const BASE = "https://worker.test";
 const RUN = "d20261012";
@@ -81,7 +81,7 @@ function setup(t: TestContext, opts: {
 const walls = (store: Map<string, Doc>) => [...store.entries()].filter(([path]) => path.startsWith("walls/"));
 const workerError = (status: number, error: string) => () => Response.json({error, message: "x"}, {status});
 
-test("a clean candidate becomes a pending wall with the app's fields, a hash doc and two uploads", async (t) => {
+test("a clean candidate becomes a pending wall with the app's fields, a signature doc and two uploads", async (t) => {
   const {store, calls, run, cand} = setup(t);
   await run();
 
@@ -117,12 +117,12 @@ test("a clean candidate becomes a pending wall with the app's fields, a hash doc
     resolution: "1440x3200", title: "Eclipse · Ember", category: "Space", desc: "After Dark by Prism Studio",
     review: false, collections: ["community"], tags: ["amoled", "dark", "eclipse"], isAiGenerated: true,
     aiProvider: "fal", aiModel: "fal-ai/model-v2", aiPrompt: "an eclipse, ember light", origin: "studio",
-    seriesId: "after-dark", studioCandidateId: CAND, studioRunId: RUN, pHash: "0000000000000000",
+    seriesId: "after-dark", studioCandidateId: CAND, studioRunId: RUN,
   });
 
-  const hash = store.get(`studioHashes/${CAND}`);
-  assert.deepEqual({...hash, createdAt: undefined}, {hash: "0000000000000000", wallId, candidateId: CAND,
-    createdAt: undefined});
+  const signature = store.get(`studioSignatures/${CAND}`);
+  assert.deepEqual({...signature, createdAt: undefined}, {signature: await imageSignature(wallpaper), wallId,
+    candidateId: CAND, createdAt: undefined});
   const done = cand();
   assert.equal(done.status, "pending_review");
   assert.equal(done.wallId, wallId);
@@ -158,7 +158,11 @@ test("a gate failure rejects the candidate, deletes the raw image and makes no w
 });
 
 test("a near copy of an earlier Studio wall is rejected as a duplicate", async (t) => {
-  const {run, cand} = setup(t, {seed: {"studioHashes/old": {hash: "0000000000000003", wallId: "OLDWALL1AB"}}});
+  const earlier = await gradientPng(1440, 3200);
+  const {run, cand} = setup(t, {
+    image: async () => sharp(earlier).jpeg({quality: 70}).toBuffer(),
+    seed: {"studioSignatures/old": {signature: await imageSignature(earlier), wallId: "OLDWALL1AB"}},
+  });
   await run();
   assert.equal(cand().status, "rejected");
   assert.deepEqual(cand().reasons, ["duplicate"]);

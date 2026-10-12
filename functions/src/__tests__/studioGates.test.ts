@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import sharp from "sharp";
 import {
-  dHash,
   duplicateCheck,
-  hammingDistance,
+  imageSignature,
   likelihoodRank,
   runGates,
+  signatureSimilarity,
   sizeCheck,
   visionCheck,
   type VisionResult,
@@ -65,34 +65,64 @@ test("a logo with score 0.5 or more rejects", () => {
   assert.deepEqual(visionCheck({...clean, logoAnnotations: [{description: "Brand", score: null}]}).reasons, []);
 });
 
-test("hamming distance counts differing bits of two 16-hex hashes", () => {
-  assert.equal(hammingDistance("0000000000000000", "0000000000000000"), 0);
-  assert.equal(hammingDistance("0000000000000000", "ffffffffffffffff"), 64);
-  assert.equal(hammingDistance("0000000000000001", "0000000000000003"), 1);
-  assert.equal(hammingDistance("f0f0f0f0f0f0f0f0", "0f0f0f0f0f0f0f0f"), 64);
-  assert.throws(() => hammingDistance("abc", "0000000000000000"));
+/** A near-black AMOLED wall with faint grain and one lit subject, like the After Dark series. */
+function darkWall(subject: string, grainSeed = 7): Promise<Buffer> {
+  let state = grainSeed;
+  const next = () => (state = (state * 1103515245 + 12345) % 2147483648) / 2147483648;
+  let grain = "";
+  for (let i = 0; i < 300; i++) {
+    const v = Math.floor(next() * 14);
+    grain += `<circle cx='${next() * 1440}' cy='${next() * 3200}' r='${20 + next() * 80}' fill='rgb(${v},${v},${v + 3})'/>`;
+  }
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='1440' height='3200'>" +
+    `<rect width='100%' height='100%' fill='#050507'/>${grain}${subject}</svg>`;
+  return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+const LIGHTHOUSE = "<rect x='690' y='1400' width='60' height='700' fill='#eee'/>" +
+  "<polygon points='720,1450 1440,1200 1440,1350' fill='#ffd27f' opacity='0.6'/>";
+const JELLYFISH = "<ellipse cx='760' cy='1450' rx='200' ry='140' fill='#a26bff'/>" +
+  "<rect x='600' y='1500' width='12' height='500' fill='#a26bff'/><rect x='760' y='1500' width='12' height='600' fill='#a26bff'/>";
+
+test("a signature survives a JPEG round trip, a tint and a small crop", async () => {
+  const wall = await darkWall(LIGHTHOUSE);
+  const signature = await imageSignature(wall);
+  assert.equal(Buffer.from(signature, "base64").length, 16 * 36);
+  const copies = [
+    await sharp(wall).jpeg({quality: 60}).toBuffer(),
+    await sharp(wall).modulate({brightness: 1.08, saturation: 1.2, hue: 12}).png().toBuffer(),
+    await sharp(wall).extract({left: 14, top: 32, width: 1412, height: 3136}).resize(1440, 3200).png().toBuffer(),
+  ];
+  for (const copy of copies) assert.ok(signatureSimilarity(signature, await imageSignature(copy)) >= 0.93);
 });
 
-test("dHash is 16 hex characters, stable through a JPEG round trip, and far from a mirrored image", async () => {
-  const left = await gradientPng(90, 160, true);
-  const right = await gradientPng(90, 160, false);
-  const hash = await dHash(left);
-  assert.match(hash, /^[0-9a-f]{16}$/);
-  assert.equal(await dHash(left), hash);
-  const jpeg = await sharp(left).resize(45, 80).jpeg({quality: 60}).toBuffer();
-  assert.ok(hammingDistance(hash, await dHash(jpeg)) <= 6);
-  assert.ok(hammingDistance(hash, await dHash(right)) > 6);
-  assert.equal(await dHash(await flatPng(40, 40)), "0000000000000000");
+test("two different dark walls are not duplicates (a 64-bit dHash called them the same)", async () => {
+  const lighthouse = await imageSignature(await darkWall(LIGHTHOUSE));
+  const jellyfish = await imageSignature(await darkWall(JELLYFISH));
+  assert.ok(signatureSimilarity(lighthouse, jellyfish) < 0.93);
+  const left = await imageSignature(await gradientPng(90, 160, true));
+  const right = await imageSignature(await gradientPng(90, 160, false));
+  assert.ok(signatureSimilarity(left, right) < 0);
 });
 
-test("a hash within distance 6 of a known one is a duplicate; the nearest one is recorded", () => {
-  const known = [{hash: "ffffffffffffffff", wallId: "FAR"}, {hash: "000000000000003f", wallId: "NEAR"},
-    {hash: "bad", wallId: "SKIP"}];
-  assert.deepEqual(duplicateCheck("0000000000000000", known),
-    {reasons: ["duplicate"], details: {hash: "0000000000000000", nearestDistance: 6, nearestWallId: "NEAR"}});
-  assert.deepEqual(duplicateCheck("0000000000000000", [{hash: "000000000000007f", wallId: "W"}]).reasons, []);
-  assert.deepEqual(duplicateCheck("0000000000000000", []).details,
-    {hash: "0000000000000000", nearestDistance: null, nearestWallId: null});
+test("a flat image or a bad signature has similarity 0", async () => {
+  const flat = await imageSignature(await flatPng(40, 40));
+  const wall = await imageSignature(await darkWall(LIGHTHOUSE));
+  assert.equal(signatureSimilarity(flat, wall), 0);
+  assert.equal(signatureSimilarity("bad", wall), 0);
+});
+
+test("the most similar known wall decides a duplicate and is recorded", async () => {
+  const lighthouse = await imageSignature(await darkWall(LIGHTHOUSE));
+  const copy = await imageSignature(await sharp(await darkWall(LIGHTHOUSE)).jpeg({quality: 70}).toBuffer());
+  const jellyfish = await imageSignature(await darkWall(JELLYFISH));
+  const known = [{signature: jellyfish, wallId: "FAR"}, {signature: copy, wallId: "NEAR"},
+    {signature: "bad", wallId: "SKIP"}];
+  const result = duplicateCheck(lighthouse, known);
+  assert.deepEqual(result.reasons, ["duplicate"]);
+  assert.equal(result.details.nearestWallId, "NEAR");
+  assert.deepEqual(duplicateCheck(lighthouse, [{signature: jellyfish, wallId: "W"}]).reasons, []);
+  assert.deepEqual(duplicateCheck(lighthouse, []).details, {nearestSimilarity: null, nearestWallId: null});
 });
 
 test("runGates passes a clean wallpaper and sends Vision one downscaled JPEG", async () => {
@@ -102,21 +132,22 @@ test("runGates passes a clean wallpaper and sends Vision one downscaled JPEG", a
       sent.push(jpeg);
       return clean;
     },
-    knownHashes: async () => [{hash: "ffffffffffffffff", wallId: "W1"}],
+    knownSignatures: async () => [{signature: await imageSignature(await darkWall(JELLYFISH)), wallId: "W1"}],
   });
   assert.equal(result.passed, true);
   assert.deepEqual(result.reasons, []);
-  assert.equal(result.hash, "0000000000000000");
-  assert.deepEqual(result.details.duplicate, {hash: "0000000000000000", nearestDistance: 64, nearestWallId: "W1"});
+  assert.equal(result.signature, await imageSignature(await flatPng(1440, 3200)));
+  assert.deepEqual(result.details.duplicate, {nearestSimilarity: 0, nearestWallId: "W1"});
   assert.equal(sent.length, 1);
   const meta = await sharp(sent[0]).metadata();
   assert.deepEqual([meta.format, meta.width, meta.height], ["jpeg", 720, 1600]);
 });
 
 test("runGates runs every check and lists all reasons", async () => {
-  const result = await runGates(await flatPng(720, 1600), {
+  const small = await sharp(await darkWall(LIGHTHOUSE)).resize(720, 1600).png().toBuffer();
+  const result = await runGates(small, {
     annotate: async () => ({...clean, logoAnnotations: [{description: "X", score: 0.9}]}),
-    knownHashes: async () => [{hash: "0000000000000001", wallId: "W1"}],
+    knownSignatures: async () => [{signature: await imageSignature(await darkWall(LIGHTHOUSE)), wallId: "W1"}],
   });
   assert.equal(result.passed, false);
   assert.deepEqual(result.reasons, ["too_small", "duplicate", "logo"]);
@@ -129,11 +160,11 @@ test("runGates rejects bytes that do not decode without calling Vision", async (
       calls++;
       return clean;
     },
-    knownHashes: async () => [],
+    knownSignatures: async () => [],
   });
-  assert.deepEqual(result, {passed: false, reasons: ["undecodable"], details: {}, hash: ""});
+  assert.deepEqual(result, {passed: false, reasons: ["undecodable"], details: {}, signature: ""});
   assert.equal(calls, 0);
   const truncated = (await flatPng(1440, 3200)).subarray(0, 200);
-  assert.deepEqual((await runGates(truncated, {annotate: async () => clean, knownHashes: async () => []})).reasons,
+  assert.deepEqual((await runGates(truncated, {annotate: async () => clean, knownSignatures: async () => []})).reasons,
     ["undecodable"]);
 });

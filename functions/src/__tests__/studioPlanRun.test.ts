@@ -27,7 +27,7 @@ test("a run writes the run doc, queued candidates, the day's counter and the sub
   const run = store.get("studioRuns/d20261012");
   assert.equal(run?.source, "schedule");
   assert.equal(run?.count, 10);
-  assert.equal(run?.model, "fal-ai/bytedance/seedream/v4.5/text-to-image");
+  assert.equal(run?.model, "openai/gpt-image-2.5/sunburst/text-to-image");
   const items = candidates(store, "d20261012");
   assert.deepEqual(items.map(([path]) => path.split("/").pop()).sort(),
     Array.from({length: 10}, (_, i) => `d20261012-${i}`).sort());

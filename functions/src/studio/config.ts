@@ -26,7 +26,7 @@ export interface StudioConfig {
 
 const DEFAULTS = {
   dailyCandidates: 10,
-  model: "fal-ai/bytedance/seedream/v4.5/text-to-image",
+  model: "openai/gpt-image-2.5/sunburst/text-to-image",
   width: 1440,
   height: 3200,
 };
