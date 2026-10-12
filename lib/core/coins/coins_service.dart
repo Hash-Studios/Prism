@@ -297,6 +297,9 @@ class CoinsService with WidgetsBindingObserver {
 
   /// Answers whether a link is already in the Downloads index. Tests replace it.
   DownloadedLinkCheck isLinkDownloaded = isLinkInDownloadedIndex;
+
+  /// Answers whether a link was saved at or after a time. Recovery of a paid download asks it with the marker time.
+  DownloadedSinceCheck wasDownloadedSince = isLinkInDownloadedIndexSince;
   int? _adsRemaining;
   String _adsRemainingDay = '';
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
@@ -949,9 +952,10 @@ class CoinsService with WidgetsBindingObserver {
       return;
     }
     if (marker['userId']?.toString() != app_state.prismUser.id) return;
-    final int ageMs = DateTime.now().millisecondsSinceEpoch - parseIntOr(marker['at']);
+    final int paidAt = parseIntOr(marker['at']);
+    final int ageMs = DateTime.now().millisecondsSinceEpoch - paidAt;
     if (ageMs < _abandonedDownloadAfter.inMilliseconds) return;
-    if (isLinkDownloaded(link)) {
+    if (wasDownloadedSince(link, paidAt)) {
       await clearPendingDownload();
       return;
     }
