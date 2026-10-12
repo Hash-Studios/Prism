@@ -17,6 +17,9 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -67,12 +70,13 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
-  Future<void> pumpGrid(WidgetTester tester) {
+  Future<void> pumpGrid(WidgetTester tester, {ThemeData? theme}) {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     return tester.pumpWidget(
       MaterialApp(
+        theme: theme,
         home: BlocProvider<FavouriteWallsBloc>.value(
           value: bloc,
           child: const Scaffold(body: FavouriteGrid()),
@@ -134,10 +138,30 @@ void main() {
       return bloc;
     }
 
-    Future<void> pumpLoaded(WidgetTester tester) async {
-      await pumpGrid(tester);
+    Future<void> pumpLoaded(WidgetTester tester, {ThemeData? theme}) async {
+      await pumpGrid(tester, theme: theme);
       await tester.pump();
       await tester.pump();
+    }
+
+    for (final PrismThemeOption option in <PrismThemeOption>[prismLightThemes.first, prismDarkThemes[1]]) {
+      testWidgets('${option.label}: the source chips and the count line read on the page', (tester) async {
+        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+        createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+        await pumpLoaded(tester, theme: theme);
+
+        Color colorOf(Finder text) =>
+            tester.widget<RichText>(find.descendant(of: text, matching: find.byType(RichText))).text.style!.color!;
+        final Color count = colorOf(find.text('2 favourites'));
+        final Color chip = colorOf(find.text('Prism'));
+
+        expect(
+          contrastRatio(Color.alphaBlend(count, theme.primaryColor), theme.primaryColor),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(chip, theme.colorScheme.secondary);
+        expect(tester.getSize(find.widgetWithText(ChoiceChip, 'Prism')).height, 48);
+      });
     }
 
     testWidgets('filter chips and search narrow the grid and clear filters restores it', (tester) async {

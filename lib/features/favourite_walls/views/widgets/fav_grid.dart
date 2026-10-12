@@ -384,7 +384,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             ],
           ),
           SizedBox(
-            height: 44,
+            height: 48,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -405,7 +405,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
               padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
               child: Text(
                 state.items.length == 1 ? '1 favourite' : '${state.items.length} favourites',
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.7)),
               ),
             ),
           ),

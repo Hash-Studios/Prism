@@ -9,7 +9,6 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart'
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_preview.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -155,7 +154,6 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
     final List<_LiveMode> modes = _modes;
     final bool shadersOff = !state.capabilities.supportsShaders && _mode != _LiveMode.video;
     final bool videoOff = !state.capabilities.supportsVideo && _mode == _LiveMode.video;
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       children: [
         const SizedBox(height: 12),
@@ -171,12 +169,6 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
                   child: ChoiceChip(
                     label: Text(mode.label),
                     selected: mode == _mode,
-                    selectedColor: scheme.error,
-                    labelStyle: TextStyle(
-                      color: mode == _mode ? scheme.onError : scheme.secondary,
-                      fontFamily: PrismFonts.proximaNova,
-                      fontWeight: mode == _mode ? FontWeight.bold : FontWeight.normal,
-                    ),
                     onSelected: (_) {
                       PrismHaptics.selection();
                       setState(() => _mode = mode);

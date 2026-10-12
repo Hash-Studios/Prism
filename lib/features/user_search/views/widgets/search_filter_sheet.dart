@@ -82,17 +82,8 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
       fontFamily: PrismFonts.proximaNova,
       fontWeight: FontWeight.bold,
     );
-    Widget chip({required String label, required bool selected, required VoidCallback onSelected}) => ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      selectedColor: scheme.error,
-      labelStyle: TextStyle(
-        color: selected ? scheme.onError : scheme.secondary,
-        fontFamily: PrismFonts.proximaNova,
-        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-      ),
-      onSelected: (_) => onSelected(),
-    );
+    Widget chip({required String label, required bool selected, required VoidCallback onSelected}) =>
+        ChoiceChip(label: Text(label), selected: selected, onSelected: (_) => onSelected());
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
