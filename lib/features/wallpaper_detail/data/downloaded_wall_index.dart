@@ -31,14 +31,10 @@ class DownloadedWallIndex {
     }
   }
 
-  /// Records the URL-derived filename sent to the native download request, and when the save happened.
+  /// Records the URL-derived filename sent to the native download request.
   Future<void> remember({required String link, required String id, required WallpaperSource source}) async {
     final Map<String, Object?> index = _read()
-      ..[downloadBaseName(link)] = <String, Object?>{
-        'id': id,
-        'source': source.wireValue,
-        'savedAt': DateTime.now().millisecondsSinceEpoch,
-      };
+      ..[downloadBaseName(link)] = <String, Object?>{'id': id, 'source': source.wireValue};
     try {
       await _settingsLocal.set(_key, json.encode(index));
     } catch (error, stackTrace) {
@@ -49,16 +45,6 @@ class DownloadedWallIndex {
   /// True when [link] was downloaded before and is still remembered. The file may have been moved since, so
   /// callers that charge for a download also check the file list.
   bool has(String link) => _read().containsKey(downloadBaseName(link));
-
-  /// True when [link] was saved at or after [sinceMs] (milliseconds since epoch), so a save from before a payment
-  /// does not pass for the file that payment bought. An entry with no save time, written before the index kept
-  /// one, does not count. That can refund a payment whose file did save but whose index write was lost, and it
-  /// never keeps a payment that lost its file.
-  bool savedSince(String link, int sinceMs) {
-    final Object? entry = _read()[downloadBaseName(link)];
-    final Object? savedAt = entry is Map ? entry['savedAt'] : null;
-    return savedAt is int && savedAt >= sinceMs;
-  }
 
   /// Forgets everything. Used by Clear downloads and when the account data is wiped.
   Future<void> clear() async {

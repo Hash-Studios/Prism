@@ -63,9 +63,15 @@ The app retries the queue at app start, when the app resumes, when the network r
 
 ### Downloads that do not finish
 
-- Before a paid save, the app writes a marker in settings (key `pendingDownloadMarker`) with the transaction id, the link, and the time.
-- The app clears the marker when the download is done or handled.
-- On the next start, a marker older than 2 minutes whose link is not in Downloads is refunded. The app shows "Your last download did not finish. Coins returned."
+- Before each paid save, the app adds an entry to a list in settings (key `pendingDownloads_v2`). An entry holds the transaction id, the user id, the link, the action, the time, and a `saved` flag. Each paid save has its own entry, so two saves never share one.
+- When the native save or enqueue reports success, the app sets `saved` on the entry. The app removes the entry when the save is done or when its refund is confirmed. A refused spend removes only its own entry.
+- Recovery refunds an entry that is not `saved` and is older than 2 minutes. It uses the transaction id of that entry. It removes a `saved` entry without a refund. It never reads the Downloads list or compares the clock to a save time.
+- While a save runs in the app, recovery skips its entry, however old it is. A slow save, for example a Photos permission dialog left open, is never refunded while it runs. The app keeps this list of running saves in memory only.
+- When the tap ends with no confirmed save and no confirmed refund, the app releases the entry. Recovery then refunds it at once if it is older than 2 minutes, or when it turns 2 minutes old. The stored entry does not change on release.
+- After a restart nothing runs, so recovery treats every stored entry as in the rules above.
+- Recovery runs at app start, when the app resumes, when the network returns, and on a timer. A younger entry gets a timer that fires when it turns 2 minutes old. A refund that failed for a network reason keeps its entry, and the 30 second retry loop tries again. A refund the server refuses for good removes the entry.
+- An entry with no valid time, or a time far ahead of the clock, counts as old. An entry of another account stays until that account signs in.
+- Older builds kept one entry in the key `pendingDownloadMarker`. The app moves it into the list on the first read and deletes the old key.
 
 ### Ledger label
 
@@ -94,7 +100,7 @@ Fix: the `subscription_conversion` event now fires only from the paywall result.
 ## Limits
 
 - The Downloads index only knows downloads made after the index existed.
-- The app cannot tell if a download that the system finishes later is complete. A marker older than 2 minutes counts as unfinished.
+- The app cannot tell if a download that the system finishes later is complete. A marker older than 2 minutes counts as unfinished, unless its tap still runs in the same app session.
 - The refund window on the server is 10 minutes for downloads. A marker found after that is cleared without a refund.
 - The coin balance chip still has fixed red and green colours.
 
@@ -108,5 +114,6 @@ Fix: the `subscription_conversion` event now fires only from the paywall result.
 6. Sign out. Open a Pro wallpaper. The sheet offers Sign in and Get Pro. It has no ad button.
 7. Turn on airplane mode, start a save, and close the app at once. Open the app after 2 minutes online. The coins return with the toast.
 8. In the EEA, refuse ad consent. The sheet hides the ad button and shows the Privacy message.
+9. On iOS, reset the Photos permission and start a save. Leave the permission dialog open for 3 minutes. The coins stay spent and no refund toast shows. Allow access. The file saves.
 
 Automated: `test/core/coins/coins_pending_test.dart`, `test/core/coins/coins_service_lifecycle_test.dart`, `test/features/ads/download_button_gate_test.dart`, `test/features/ads/biz/coin_gate_test.dart`, `test/core/purchases/paywall_orchestrator_test.dart`.
