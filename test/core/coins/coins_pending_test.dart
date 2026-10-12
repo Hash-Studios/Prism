@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/coins/coin_action.dart';
@@ -37,10 +38,11 @@ class _FlakySettings extends SettingsLocalDataSource {
 
   bool failSets = false;
   bool failDeletes = false;
+  final Set<String> failingKeys = <String>{};
 
   @override
   Future<void> set(String key, Object? value) {
-    if (failSets) throw StateError('write failed');
+    if (failSets || failingKeys.contains(key)) throw StateError('write failed');
     return super.set(key, value);
   }
 
@@ -48,6 +50,24 @@ class _FlakySettings extends SettingsLocalDataSource {
   Future<void> delete(String key) {
     if (failDeletes) throw StateError('delete failed');
     return super.delete(key);
+  }
+}
+
+class _PausingSettings extends SettingsLocalDataSource {
+  _PausingSettings() : super(InMemoryLocalStore());
+
+  final Completer<void> stored = Completer<void>();
+  final Completer<void> resume = Completer<void>();
+  bool _paused = false;
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    await super.set(key, value);
+    if (key == _ledgerKey && !_paused) {
+      _paused = true;
+      stored.complete();
+      await resume.future;
+    }
   }
 }
 
@@ -987,6 +1007,89 @@ void main() {
         await service.refundAbandonedDownload();
 
         expect(refunds, isEmpty);
+      });
+    });
+
+    group('when the account or the storage changes under a spend', () {
+      late SettingsLocalDataSource original;
+
+      setUp(() {
+        original = getIt<SettingsLocalDataSource>();
+      });
+      tearDown(() {
+        getIt.unregister<SettingsLocalDataSource>();
+        getIt.registerSingleton<SettingsLocalDataSource>(original);
+      });
+
+      void useSettings(SettingsLocalDataSource settings) {
+        getIt.unregister<SettingsLocalDataSource>();
+        getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      }
+
+      test('another account signing in while the entry is written is never charged', () async {
+        final payer = app_state.prismUser.id;
+        final settings = _PausingSettings();
+        useSettings(settings);
+        final calls = <String>[];
+        backend.onCall = (name, parameters) async {
+          calls.add('$name:${app_state.prismUser.id}');
+          return _spent;
+        };
+
+        final spend = service.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: linkA);
+        await settings.stored.future;
+        expect(ledger().single['userId'], payer);
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'account-b'
+          ..loggedIn = true
+          ..coins = 100;
+        settings.resume.complete();
+        final result = await spend;
+
+        expect(calls, isEmpty);
+        expect(result.success, isFalse);
+        expect(result.reason, 'not_logged_in');
+        expect(result.pendingDownloadTxId, isEmpty);
+        expect(result.unknownOutcomeTransactionId, isEmpty);
+        expect(ledger(), isEmpty);
+        expect(stored(_queueKey), isEmpty);
+        expect(app_state.prismUser.coins, 100);
+
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = payer
+          ..loggedIn = true
+          ..coins = 100;
+        service.abandonedDownloadAfter = Duration.zero;
+        final refunds = recordRefunds();
+        await service.refundAbandonedDownload();
+        expect(refunds, isEmpty);
+      });
+
+      test('a lost debit reply whose refund queue cannot be written keeps the entry for recovery', () async {
+        final settings = _FlakySettings()..failingKeys.add(_queueKey);
+        useSettings(settings);
+        final requestIds = <String>[];
+        backend.onCall = (name, parameters) {
+          requestIds.add(parameters['requestId'] as String);
+          return Future<dynamic>.error(FirebaseFunctionsException(code: 'unavailable', message: 'debit reply lost'));
+        };
+
+        await expectLater(
+          service.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: linkA),
+          throwsA(isA<StateError>()),
+        );
+
+        final txId = 'spend_${app_state.prismUser.id}_${requestIds.first}';
+        expect(requestIds, hasLength(2));
+        expect(requestIds.toSet(), hasLength(1));
+        expect(ledger().map((e) => e['txId']), <Object?>[txId]);
+
+        service.abandonedDownloadAfter = Duration.zero;
+        final refunds = recordRefunds();
+        await service.refundAbandonedDownload();
+
+        expect(txIds(refunds), <Object?>[txId]);
+        expect(ledger(), isEmpty);
       });
     });
   });

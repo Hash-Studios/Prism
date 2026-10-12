@@ -66,6 +66,8 @@ The app retries the queue at app start, when the app resumes, when the network r
 - Before each paid save, the app adds an entry to a list in settings (key `pendingDownloads_v2`). An entry holds the transaction id, the user id, the link, the action, the time, and a `saved` flag. Each paid save has its own entry, so two saves never share one.
 - Every change to an entry names its transaction id. No change looks for an entry by link or by the signed-in account. A retry of the same wallpaper, a second button on the same wallpaper, or a sign-out during the save never touches the entry of another payment. An unknown transaction id changes nothing.
 - The spend returns the transaction id as `CoinMutationResult.pendingDownloadTxId`. The coin gate passes it to the button through `CoinGateSpec.onPaid` right after the charge, before it checks that the screen is still there.
+- The charge belongs to the account that tapped. If another account signs in while the app writes the entry, the spend sends no call, removes the entry, and returns `not_logged_in`. No account pays for the tap of another account.
+- If the spend throws after the app wrote the entry (for example, a lost reply and the refund queue cannot be written), the app releases the entry and keeps it stored. Recovery then refunds it when it is older than 2 minutes.
 - When the native save or enqueue reports success, the button sets `saved` on its own entry. The button marks an entry only when its own tap paid.
 - The coin gate settles the entry on every way out of a paid tap:
 
