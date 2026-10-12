@@ -49,12 +49,18 @@ void main() {
   late FakeAppAnalytics fakeAnalytics;
   late List<Map<String, dynamic>> spendCalls;
   late List<Object?> enqueued;
+  late List<SaveMediaRequest> saved;
+  late List<Object?> toastMessages;
   late bool enqueueSucceeds;
   late List<String> downloadsOnDisk;
   late Directory tempDir;
 
   const enqueueChannel = BasicMessageChannel<Object?>(
     'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+    PrismMediaHostApi.pigeonChannelCodec,
+  );
+  const saveChannel = BasicMessageChannel<Object?>(
+    'dev.flutter.pigeon.Prism.PrismMediaHostApi.saveMedia',
     PrismMediaHostApi.pigeonChannelCodec,
   );
   const listChannel = BasicMessageChannel<Object?>(
@@ -70,6 +76,8 @@ void main() {
     AnalyticsRuntime.instance = fakeAnalytics;
     spendCalls = <Map<String, dynamic>>[];
     enqueued = <Object?>[];
+    saved = <SaveMediaRequest>[];
+    toastMessages = <Object?>[];
     enqueueSucceeds = true;
     downloadsOnDisk = <String>[];
     tempDir = Directory.systemTemp.createTempSync('prism_dl_test');
@@ -81,11 +89,18 @@ void main() {
       enqueued.add((message! as List<Object?>).single);
       return <Object?>[OperationResult(success: enqueueSucceeds, message: enqueueSucceeds ? null : 'no space')];
     });
+    messenger.setMockDecodedMessageHandler<Object?>(saveChannel, (message) async {
+      saved.add((message! as List<Object?>).single! as SaveMediaRequest);
+      return <Object?>[OperationResult(success: true)];
+    });
     messenger.setMockDecodedMessageHandler<Object?>(
       listChannel,
       (_) async => <Object?>[DownloadItemsResult(success: true, items: downloadsOnDisk)],
     );
-    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    messenger.setMockMethodCallHandler(toastChannel, (call) async {
+      if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']);
+      return true;
+    });
     AdConsent.instance = AdConsent(
       requestInfoUpdate: () async {},
       showFormIfRequired: () async {},
@@ -100,6 +115,7 @@ void main() {
   tearDown(() async {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockDecodedMessageHandler<Object?>(enqueueChannel, null);
+    messenger.setMockDecodedMessageHandler<Object?>(saveChannel, null);
     messenger.setMockDecodedMessageHandler<Object?>(listChannel, null);
     messenger.setMockMethodCallHandler(toastChannel, null);
     AnalyticsRuntime.reset();
@@ -116,6 +132,7 @@ void main() {
     String? title,
     String? creator,
     VoidCallback? onOpen,
+    Future<String> Function()? prepareSource,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -129,6 +146,7 @@ void main() {
             wallpaperTitle: title,
             creatorName: creator,
             onOpenDownloads: onOpen,
+            prepareSource: prepareSource,
           ),
         ),
       ),
@@ -360,6 +378,95 @@ void main() {
 
       expect(find.text('Already in Downloads'), findsNothing);
       expect(enqueued, hasLength(1));
+    });
+  });
+
+  group('with a prepared source', () {
+    const String tinted = '/data/user/0/com.hash.prism/cache/prism_tint/1_0.png';
+
+    testWidgets('charges the usual price, saves the prepared file and prepares once', (tester) async {
+      int prepared = 0;
+      await pump(
+        tester,
+        prepareSource: () async {
+          prepared++;
+          return tinted;
+        },
+      );
+      await tapSave(tester);
+
+      expect(prepared, 1);
+      expect(spendCalls.single['action'], 'wallpaperDownload');
+      expect(saved.single.link, tinted);
+      expect(saved.single.isLocalFile, isTrue);
+      expect(enqueued, isEmpty);
+      expect(results().single.result, 'success');
+    });
+
+    testWidgets('a wallpaper already in Downloads does not stop the tinted save and is still charged', (tester) async {
+      final File onDisk = File('${tempDir.path}/sunset.jpg')..writeAsStringSync('x');
+      downloadsOnDisk = <String>[onDisk.path];
+      CoinsService.instance.isLinkDownloaded = (link) => link == _link;
+      await pump(tester, prepareSource: () async => tinted);
+
+      expect(find.text('Save · 5'), findsOneWidget);
+      await tester.runAsync(() async {});
+      await tapSave(tester);
+
+      expect(find.text('Already in Downloads'), findsNothing);
+      expect(spendCalls, hasLength(1));
+      expect(saved.single.link, tinted);
+    });
+
+    testWidgets('prepares before the coin sheet and a low balance saves nothing', (tester) async {
+      app_state.prismUser.coins = 2;
+      CoinsService.instance.balanceNotifier.value = 2;
+      int prepared = 0;
+      await pump(
+        tester,
+        prepareSource: () async {
+          prepared++;
+          return tinted;
+        },
+      );
+      await tapSave(tester);
+
+      expect(prepared, 1);
+      expect(find.text('Not enough coins'), findsOneWidget);
+      expect(spendCalls, isEmpty);
+      expect(saved, isEmpty);
+    });
+
+    testWidgets('a failed prepare tells the user, charges nothing and can be tried again', (tester) async {
+      bool fail = true;
+      await pump(
+        tester,
+        prepareSource: () async {
+          if (fail) throw StateError('render failed');
+          return tinted;
+        },
+      );
+      await tapSave(tester);
+
+      expect(toastMessages, contains("Couldn't apply the colour. Try again."));
+      expect(spendCalls, isEmpty);
+      expect(saved, isEmpty);
+      expect(enqueued, isEmpty);
+      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
+
+      fail = false;
+      await tapSave(tester);
+
+      expect(spendCalls, hasLength(1));
+      expect(saved.single.link, tinted);
+    });
+
+    testWidgets('a tinted save does not turn the pill to Saved', (tester) async {
+      await pump(tester, prepareSource: () async => tinted);
+      await tapSave(tester);
+
+      expect(saved, hasLength(1));
+      expect(find.text('Save · 5'), findsOneWidget);
     });
   });
 
