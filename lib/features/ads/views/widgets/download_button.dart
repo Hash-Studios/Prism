@@ -19,6 +19,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -46,6 +47,7 @@ class DownloadButton extends StatefulWidget {
     this.wallpaperTitle,
     this.creatorName,
     this.onOpenDownloads,
+    this.variant,
     super.key,
   });
 
@@ -66,6 +68,12 @@ class DownloadButton extends StatefulWidget {
   @visibleForTesting
   final VoidCallback? onOpenDownloads;
 
+  /// Saves a changed copy, such as a colour variation, in place of [link]. `variant.prepare` runs once per tap, after
+  /// the "already in Downloads" check and before the coin gate. If it throws, the user is told and nothing is charged.
+  /// The recovery marker, the "already in Downloads" check and the saved file name use `variant.identityOf(link)`, so
+  /// each variation is its own purchase.
+  final DownloadVariant? variant;
+
   @override
   State<DownloadButton> createState() => _DownloadButtonState();
 }
@@ -77,6 +85,9 @@ enum _GuestProChoice { signIn, pro }
 class _DownloadButtonState extends State<DownloadButton> {
   bool isLoading = false;
   bool _saved = false;
+  String? _preparedSource;
+  String _identity = '';
+  VoidCallback? _onDownloaded;
   String? _failureReason;
   String _failureStage = 'download';
 
@@ -86,17 +97,24 @@ class _DownloadButtonState extends State<DownloadButton> {
   @override
   void initState() {
     super.initState();
-    _saved = _isSaved(widget.link);
+    _saved = _isSaved(_currentIdentity);
   }
 
   @override
   void didUpdateWidget(DownloadButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.link != widget.link) _saved = _isSaved(widget.link);
+    if (oldWidget.link != widget.link || oldWidget.variant?.key != widget.variant?.key) {
+      _saved = _isSaved(_currentIdentity);
+    }
   }
 
-  bool _isSaved(String? link) {
-    final String trimmed = link?.trim() ?? '';
+  String? get _currentIdentity {
+    final String link = widget.link?.trim() ?? '';
+    return link.isEmpty ? null : widget.variant?.identityOf(link) ?? link;
+  }
+
+  bool _isSaved(String? identity) {
+    final String trimmed = identity?.trim() ?? '';
     if (trimmed.isEmpty) return false;
     try {
       return CoinsService.instance.isLinkDownloaded(trimmed);
@@ -156,7 +174,15 @@ class _DownloadButtonState extends State<DownloadButton> {
       setState(() => isLoading = true);
     }
     try {
-      if (!await _confirmDownloadAgain(link)) return;
+      _preparedSource = null;
+      final DownloadVariant? variant = widget.variant;
+      _identity = variant?.identityOf(link) ?? link;
+      _onDownloaded = widget.onDownloaded;
+      if (!await _confirmDownloadAgain(_identity)) return;
+      if (variant != null) {
+        _preparedSource = await runPrepareSource(variant.prepare);
+        if (_preparedSource == null || !mounted) return;
+      }
       _failureReason = null;
       _failureStage = 'download';
       _track(DownloadAttemptEvent(source: _sourceLabel, premium: widget.isPremiumContent));
@@ -205,8 +231,8 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   /// Asks what to do when the wallpaper is already in Downloads. Returns true to go on with a new download.
-  Future<bool> _confirmDownloadAgain(String link) async {
-    if (!_isSaved(link) || !await _fileStillInDownloads(link) || !mounted) return true;
+  Future<bool> _confirmDownloadAgain(String identity) async {
+    if (!_isSaved(identity) || !await _fileStillInDownloads(identity) || !mounted) return true;
     final bool free = app_state.prismUser.premium || _isGuest;
     final int cost = _downloadSpendAction.cost();
     final _SavedChoice? choice = await showCoinGateSheet<_SavedChoice>(
@@ -234,12 +260,12 @@ class _DownloadButtonState extends State<DownloadButton> {
     return choice == _SavedChoice.again;
   }
 
-  /// True when the Downloads list still holds a file with this link's name. False when it cannot tell.
-  Future<bool> _fileStillInDownloads(String link) async {
+  /// True when the Downloads list still holds a file with this identity's name. False when it cannot tell.
+  Future<bool> _fileStillInDownloads(String identity) async {
     try {
       final DownloadItemsResult result = await PrismMediaHostApi().listDownloads();
       if (!result.success) return false;
-      final String base = downloadBaseName(link);
+      final String base = downloadBaseName(identity);
       final RegExp copySuffix = RegExp(r' \(\d+\)$');
       return result.items.any(
         (String path) =>
@@ -471,7 +497,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         action: _downloadSpendAction,
         reason: contentId.isEmpty ? null : 'content_$contentId',
         label: _ledgerLabel,
-        pendingDownloadLink: widget.link?.trim(),
+        pendingDownloadLink: _identity,
         tags: const CoinGateTags(
           spend: 'coins.download.spend',
           retrySpend: 'coins.download.watch_and_download.spend',
@@ -497,16 +523,22 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String link = widget.link?.trim() ?? '';
     final String? sourceContext = widget.sourceContext;
     final bool premiumContent = widget.isPremiumContent;
-    final VoidCallback? onDownloaded = widget.onDownloaded;
+    final VoidCallback? onDownloaded = _onDownloaded;
     if (link.isEmpty) {
       toasts.error('No download link available.');
       return false;
     }
+    final String saveLink = _preparedSource ?? link;
+    final bool prepared = _preparedSource != null;
 
     try {
-      final Uri? source = Uri.tryParse(link);
-      if (link.startsWith('/') || source?.scheme == 'file') {
-        final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
+      final Uri? source = Uri.tryParse(saveLink);
+      if (!prepared && (saveLink.startsWith('/') || source?.scheme == 'file')) {
+        final SaveMediaRequest request = SaveMediaRequest(
+          link: saveLink,
+          isLocalFile: true,
+          kind: SaveMediaKind.wallpaper,
+        );
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
           _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'save_failed';
@@ -518,7 +550,11 @@ class _DownloadButtonState extends State<DownloadButton> {
           return false;
         }
       } else {
-        final DownloadRequest request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
+        final DownloadRequest request = DownloadRequest(
+          link: saveLink,
+          filenameWithoutExtension: downloadBaseName(_identity),
+          isLocalFile: prepared,
+        );
         final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
           _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'enqueue_failed';
@@ -558,7 +594,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
     }
 
-    if (mounted) setState(() => _saved = true);
+    if (mounted && _identity == _currentIdentity) setState(() => _saved = true);
     final String contentId = widget.contentId?.trim() ?? '';
     if (contentId.isNotEmpty) {
       try {

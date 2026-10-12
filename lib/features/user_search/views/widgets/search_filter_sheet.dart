@@ -82,17 +82,8 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
       fontFamily: PrismFonts.proximaNova,
       fontWeight: FontWeight.bold,
     );
-    Widget chip({required String label, required bool selected, required VoidCallback onSelected}) => ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      selectedColor: scheme.error,
-      labelStyle: TextStyle(
-        color: selected ? scheme.onError : scheme.secondary,
-        fontFamily: PrismFonts.proximaNova,
-        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-      ),
-      onSelected: (_) => onSelected(),
-    );
+    Widget chip({required String label, required bool selected, required VoidCallback onSelected}) =>
+        ChoiceChip(label: Text(label), selected: selected, onSelected: (_) => onSelected());
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -111,7 +102,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               onChanged: (value) => setState(() => _portraitOnly = value),
             ),
             const SizedBox(height: 8),
-            Text('Min resolution', style: heading.copyWith(fontSize: 14)),
+            Text('Min resolution', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -125,7 +116,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               ],
             ),
             const SizedBox(height: 16),
-            Text('Sort', style: heading.copyWith(fontSize: 14)),
+            Text('Sort', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

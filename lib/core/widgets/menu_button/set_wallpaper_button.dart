@@ -12,6 +12,7 @@ import 'package:Prism/core/rating/rate_prompt_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
+import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/core/widgets/menu_button/set_options_panel.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
@@ -373,6 +374,10 @@ class SetWallpaperButton extends StatefulWidget {
   /// Adds "Match accent" to the success snackbar when set.
   final VoidCallback? onMatchAccent;
 
+  /// Makes the image to set, such as a colour variation, and returns its local path. It runs on tap, before the sheet
+  /// opens, and the path replaces [url]. If it throws, the user is told and nothing is set.
+  final Future<String> Function()? prepareSource;
+
   const SetWallpaperButton({
     super.key,
     required this.url,
@@ -383,6 +388,7 @@ class SetWallpaperButton extends StatefulWidget {
     this.entryPoint,
     this.notes = const <String>[],
     this.onMatchAccent,
+    this.prepareSource,
   });
 
   @override
@@ -408,11 +414,20 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     final String? url = widget.url;
     if (isLoading || url == null) return;
     PrismHaptics.tap();
+    String source = url;
+    final Future<String> Function()? prepare = widget.prepareSource;
+    if (prepare != null) {
+      setState(() => isLoading = true);
+      final String? prepared = await runPrepareSource(prepare);
+      if (mounted) setState(() => isLoading = false);
+      if (prepared == null || !mounted) return;
+      source = prepared;
+    }
     WallpaperSetResult? result;
     try {
       result = await SetWallpaperFlow.run(
         context,
-        url: url,
+        url: source,
         thumbnailUrl: widget.thumbnailUrl,
         forceSheet: forceSheet,
         entryPoint: widget.entryPoint,

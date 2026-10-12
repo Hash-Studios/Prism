@@ -151,7 +151,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                     const _FieldLabel('Category'),
                     const SizedBox(height: 8),
                     SizedBox(
-                      height: 40,
+                      height: 48,
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         scrollDirection: Axis.horizontal,
@@ -163,12 +163,6 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                           return ChoiceChip(
                             label: Text(cat.name),
                             selected: selected,
-                            selectedColor: accentColor,
-                            labelStyle: TextStyle(
-                              color: selected ? PrismColors.onPrimary : theme.colorScheme.secondary,
-                              fontFamily: _fontFamily,
-                              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                            ),
                             onSelected: (_) {
                               setState(() {
                                 _selectedCategoryName = cat.name;

@@ -65,7 +65,7 @@ internal class PrismMediaHostApiImpl(
         withWritePermission(callback) {
             // ponytail: in-process transfer; use WorkManager if downloads must survive process death.
             runInBackground(callback, { operationError("DOWNLOAD_FAILED", it) }) {
-                withImage(request.link, false) { image ->
+                withImage(request.link, request.isLocalFile) { image ->
                     publish(image, DOWNLOAD_FOLDER, request.filenameWithoutExtension)
                     OperationResult(success = true)
                 }

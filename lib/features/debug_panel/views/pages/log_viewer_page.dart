@@ -4,6 +4,7 @@ import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
 import 'package:Prism/logger/app_logger.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 
@@ -88,6 +89,15 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
     return buf.toString();
   }
 
+  Color _levelFill(AppLogLevel level) => level.color.withValues(alpha: 0.3);
+
+  /// A selected chip keeps its level colour as the fill, so its label is black or white by that fill over the page.
+  /// An unselected chip returns null and takes the chip theme label.
+  Color? _levelLabelColor(AppLogLevel level) {
+    if (!_selectedLevels.contains(level)) return null;
+    return onColor(Color.alphaBlend(_levelFill(level), Theme.of(context).primaryColor));
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -110,9 +120,9 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: FilterChip(
-                    label: Text(level.shortLabel, style: const TextStyle(fontSize: 11)),
+                    label: Text(level.shortLabel, style: TextStyle(fontSize: 11, color: _levelLabelColor(level))),
                     selected: _selectedLevels.contains(level),
-                    selectedColor: level.color.withValues(alpha: 0.3),
+                    selectedColor: _levelFill(level),
                     checkmarkColor: level.color,
                     onSelected: (v) {
                       setState(() {

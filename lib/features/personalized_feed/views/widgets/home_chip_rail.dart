@@ -9,7 +9,7 @@ class HomeChipRailDelegate extends SliverPersistentHeaderDelegate {
   final HomeFeedChip selected;
   final ValueChanged<HomeFeedChip> onSelected;
 
-  static const double _height = 52;
+  static const double _height = 56;
 
   @override
   double get minExtent => _height;
@@ -20,24 +20,27 @@ class HomeChipRailDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Material(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        children: <Widget>[
-          for (final HomeFeedChip chip in HomeFeedChip.values)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: ChoiceChip(
-                label: Text(chip.label),
-                selected: chip == selected,
-                onSelected: (_) {
-                  PrismHaptics.tap();
-                  onSelected(chip);
-                },
+      color: Theme.of(context).primaryColor,
+      child: MediaQuery.withClampedTextScaling(
+        maxScaleFactor: 1.5,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          children: <Widget>[
+            for (final HomeFeedChip chip in HomeFeedChip.values)
+              Padding(
+                padding: EdgeInsetsDirectional.only(end: chip == HomeFeedChip.values.last ? 0 : 8),
+                child: ChoiceChip(
+                  label: Text(chip.label),
+                  selected: chip == selected,
+                  onSelected: (_) {
+                    PrismHaptics.tap();
+                    onSelected(chip);
+                  },
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

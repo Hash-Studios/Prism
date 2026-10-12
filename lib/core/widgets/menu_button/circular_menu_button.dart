@@ -70,6 +70,7 @@ class CircularMenuButton extends StatelessWidget {
       child: onTap == null
           ? button
           : GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: onTap,
               child: PressScale(child: button),
             ),
