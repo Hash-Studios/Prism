@@ -559,6 +559,7 @@ class CoinsService with WidgetsBindingObserver {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
     final CoinMutationResult result = await _callCoinMutation(
+      userId: userId,
       callableName: 'awardCoins',
       amount: amount,
       action: action.name,
@@ -611,36 +612,43 @@ class CoinsService with WidgetsBindingObserver {
         return true;
       });
     }
-    final CoinMutationResult result = await _callCoinMutation(
-      callableName: 'spendCoins',
-      amount: amount,
-      action: action.name,
-      sourceTag: sourceTag,
-      reason: reason ?? action.name,
-      allowPremiumBypass: true,
-      label: label,
-      requestId: requestId,
-    );
-
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.unknownOutcomeTransactionId.isNotEmpty) {
-      await _rememberPendingRefund(
-        result.unknownOutcomeTransactionId,
+    try {
+      final CoinMutationResult result = await _callCoinMutation(
         userId: userId,
-        action: action,
-        reason: _failedRefundReason(action),
+        callableName: 'spendCoins',
+        amount: amount,
+        action: action.name,
+        sourceTag: sourceTag,
+        reason: reason ?? action.name,
+        allowPremiumBypass: true,
+        label: label,
+        requestId: requestId,
       );
+
+      _applyLocalBalance(result.currentBalance, delta: result.delta);
+      if (result.unknownOutcomeTransactionId.isNotEmpty) {
+        await _rememberPendingRefund(
+          result.unknownOutcomeTransactionId,
+          userId: userId,
+          action: action,
+          reason: _failedRefundReason(action),
+        );
+      }
+      final bool charged = result.success && result.changed;
+      if (pendingTxId != null && !charged) {
+        await _updatePendingDownloads(
+          'coins.download.ledger_remove',
+          (Map<String, PendingDownload> ledger) => ledger.remove(pendingTxId) != null,
+          onPersisted: () => _liveDownloadTxIds.remove(pendingTxId),
+        );
+      }
+      if (result.changed) _logSpend(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+      return pendingTxId != null && charged ? result.withPendingDownloadTxId(pendingTxId) : result;
+    } catch (_) {
+      // No caller gets the txId, so no save will run. The stored entry stays for recovery to refund.
+      if (pendingTxId != null) await releasePendingDownload(pendingTxId);
+      rethrow;
     }
-    final bool charged = result.success && result.changed;
-    if (pendingTxId != null && !charged) {
-      await _updatePendingDownloads(
-        'coins.download.ledger_remove',
-        (Map<String, PendingDownload> ledger) => ledger.remove(pendingTxId) != null,
-        onPersisted: () => _liveDownloadTxIds.remove(pendingTxId),
-      );
-    }
-    if (result.changed) _logSpend(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
-    return pendingTxId != null && charged ? result.withPendingDownloadTxId(pendingTxId) : result;
   }
 
   /// Rewarded ads left today, as the last `rewardedAd` reply told. Null when unknown or from an earlier UTC day.
@@ -690,6 +698,7 @@ class CoinsService with WidgetsBindingObserver {
     final int cost = qualityTier.coinCost;
     final String reservingUserId = app_state.prismUser.id;
     final CoinMutationResult mutation = await _callCoinMutation(
+      userId: reservingUserId,
       callableName: 'spendCoins',
       amount: cost,
       action: CoinSpendAction.aiGeneration.name,
@@ -1469,6 +1478,7 @@ class CoinsService with WidgetsBindingObserver {
     }
     final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await _callCoinMutation(
+      userId: userId,
       callableName: callableName,
       amount: action.defaultAmount(),
       action: action.name,
@@ -1501,6 +1511,7 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   Future<CoinMutationResult> _callCoinMutation({
+    required String userId,
     required String callableName,
     int? amount,
     required String action,
@@ -1512,7 +1523,6 @@ class CoinsService with WidgetsBindingObserver {
     String? label,
     String? requestId,
   }) async {
-    final String userId = app_state.prismUser.id;
     final bool idempotent = callableName == 'spendCoins' || (callableName == 'awardCoins' && action == 'rewardedAd');
     final String transactionPrefix = callableName == 'spendCoins' ? _spendTransactionPrefix : _awardTransactionPrefix;
     final String? effectiveRequestId = idempotent ? (requestId ?? _newRequestId()) : null;
