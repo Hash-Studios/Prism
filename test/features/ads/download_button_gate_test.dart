@@ -40,6 +40,7 @@ class _RecordingStats extends Fake implements ViewStatsRepository {
 }
 
 const String _link = 'https://example.com/walls/sunset.jpg';
+const String _encodedLink = 'https://example.com/walls/wall%231.jpg';
 const String _markerKey = 'pendingDownloadMarker';
 
 const Map<String, Object> _spent = <String, Object>{
@@ -142,12 +143,13 @@ void main() {
     VoidCallback? onOpen,
     DownloadVariant? variant,
     VoidCallback? onDownloaded,
+    String link = _link,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: DownloadButton(
-            link: _link,
+            link: link,
             label: 'Save',
             isPremiumContent: premiumContent,
             contentId: 'wall-1',
@@ -628,29 +630,33 @@ void main() {
 
     String marker() => getIt<SettingsLocalDataSource>().get<String>(_markerKey, defaultValue: '');
 
-    testWidgets('a failed save of tint B is refunded after a restart although tint A was saved', (tester) async {
-      await index.remember(link: tintA.identityOf(_link), id: 'wall-1', source: WallpaperSource.prism);
-      enqueueSucceeds = false;
-      backend.onCall = (name, parameters) async {
-        if (name == 'spendCoins') return _spent;
-        throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
-      };
-      await pump(tester, variant: tintB);
-      await tester.runAsync(() async {});
-      await tapSave(tester);
+    for (final String link in <String>[_link, _encodedLink]) {
+      testWidgets('a failed save of tint B is refunded after a restart although tint A was saved ($link)', (
+        tester,
+      ) async {
+        await index.remember(link: tintA.identityOf(link), id: 'wall-1', source: WallpaperSource.prism);
+        enqueueSucceeds = false;
+        backend.onCall = (name, parameters) async {
+          if (name == 'spendCoins') return _spent;
+          throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+        };
+        await pump(tester, variant: tintB, link: link);
+        await tester.runAsync(() async {});
+        await tapSave(tester);
 
-      expect(results().single.reason, 'enqueue_failed');
-      expect(marker(), isNotEmpty);
-      final String transactionId = (jsonDecode(marker()) as Map<String, dynamic>)['txId'] as String;
-      await ageMarker();
+        expect(results().single.reason, 'enqueue_failed');
+        expect(marker(), isNotEmpty);
+        final String transactionId = (jsonDecode(marker()) as Map<String, dynamic>)['txId'] as String;
+        await ageMarker();
 
-      final List<Map<String, dynamic>> refunds = await restart();
-      await settle(tester);
+        final List<Map<String, dynamic>> refunds = await restart();
+        await settle(tester);
 
-      expect(refunds.single['action'], 'refund');
-      expect(refunds.single['transactionId'], transactionId);
-      expect(marker(), isEmpty);
-    });
+        expect(refunds.single['action'], 'refund');
+        expect(refunds.single['transactionId'], transactionId);
+        expect(marker(), isEmpty);
+      });
+    }
 
     testWidgets('a paid save of tint A that finished but left its marker is not refunded', (tester) async {
       await CoinsService.instance.spend(

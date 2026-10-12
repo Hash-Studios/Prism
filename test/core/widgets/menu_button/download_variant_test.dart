@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -44,6 +46,55 @@ void main() {
         downloadBaseName(_variant('tint-ff8800').identityOf('https://example.com/walls/sunset.jpg')),
         'sunset_tint-ff8800',
       );
+    });
+  });
+
+  group('identityOf is a plain file name', () {
+    const String key = 'tint-ff8800';
+    final Map<String, String> expected = <String, String>{
+      'https://example.com/walls/wall%231.jpg': 'wall_1_tint-ff8800.png',
+      'https://example.com/walls/wall%3F1.jpg': 'wall_1_tint-ff8800.png',
+      'https://example.com/walls/wall%25201.jpg': 'wall_201_tint-ff8800.png',
+      'https://example.com/walls/wall%2F1.jpg': 'wall_1_tint-ff8800.png',
+      'https://example.com/walls/%E7%A7%8B.jpg': '__tint-ff8800.png',
+      'https://example.com/walls/.hidden.jpg': '_hidden_tint-ff8800.png',
+      'https://example.com/walls/sunset.jpg': 'sunset_tint-ff8800.png',
+      'https://example.com/walls/my.wall.jpg': 'my.wall_tint-ff8800.png',
+      'https://example.com/walls/${'a' * 250}.jpg': '${'a' * 188}_tint-ff8800.png',
+    };
+
+    bool isValidNativeStem(String stem) =>
+        RegExp(r'^[A-Za-z0-9._-]+$').hasMatch(stem) && !stem.startsWith('.') && utf8.encode(stem).length <= 200;
+
+    for (final MapEntry<String, String> entry in expected.entries) {
+      final String label = entry.key.length > 70
+          ? '${entry.key.substring(0, 50)}... (${entry.key.length} chars)'
+          : entry.key;
+
+      test('for $label', () {
+        final String identity = _variant(key).identityOf(entry.key);
+        final String stem = identity.substring(0, identity.length - '.png'.length);
+
+        expect(identity, entry.value);
+        expect(downloadBaseName(identity), stem);
+        expect(isValidNativeStem(stem), isTrue);
+      });
+
+      test('gives two colours of $label two names', () {
+        final String first = _variant('tint-ff8800').identityOf(entry.key);
+        final String second = _variant('tint-0088ff').identityOf(entry.key);
+
+        expect(downloadBaseName(first), isNot(downloadBaseName(second)));
+      });
+    }
+
+    test('two colours of one wallpaper stay apart in the Downloads index', () async {
+      final DownloadedWallIndex index = DownloadedWallIndex(SettingsLocalDataSource(InMemoryLocalStore()));
+      const String link = 'https://example.com/walls/wall%231.jpg';
+      await index.remember(link: _variant('tint-ff8800').identityOf(link), id: 'wall-1', source: WallpaperSource.prism);
+
+      expect(index.has(_variant('tint-ff8800').identityOf(link)), isTrue);
+      expect(index.has(_variant('tint-0088ff').identityOf(link)), isFalse);
     });
   });
 

@@ -46,8 +46,9 @@ Colour variations:
 - Tap the wallpaper to cycle through the palette. Each tap tints the whole wallpaper with the hue of the next colour (`ColorFiltered` with `BlendMode.hue`, over the image). The change slides in about 220 ms, or at once when the device asks for less motion. The slide blends the two colours in HSL space and the hue takes the short way round (`lerpHueTint`), so it never fades through grey. Long press the wallpaper to bring back the original.
 - The colour bar shows the original first, then one swatch per palette colour. Each swatch is the wallpaper thumbnail with that hue. A bar in the swatch colour is at its bottom. Tap a swatch to pick it. It plays the selection haptic, like a tap on the wallpaper. Long press a swatch to copy its hex code.
 - The back and clock buttons always follow the accent. At first, the accent is the first palette colour and the wallpaper stays original. The wallpaper only changes after you pick a colour.
-- Set, Download (Save on iOS) and Edit use the tinted image. Set and Edit get `prepareSource`, which calls `renderTintedWallpaper` (`wallpaper_tint_renderer.dart`). It draws the full wallpaper with the same hue blend and returns a PNG path. Download gets a `DownloadVariant` with the key `tint-<rrggbb>` and the same `prepare`. Each colour is its own purchase, and a finished tinted download is remembered in `DownloadedWallIndex` under `variant.identityOf(url)`, not under the wallpaper link. With the original showing, the buttons use the wallpaper as before.
-- The clock preview shows the same hue (`ClockOverlay.tint`).
+- Set, Download (Save on iOS) and Edit use the tinted image. Set and Edit get `prepareSource`, which calls `renderTintedWallpaper` (`wallpaper_tint_renderer.dart`). It draws the full wallpaper with the same hue blend and returns a PNG path. Download gets a `DownloadVariant` with the key `tint-<rrggbb>` and the same `prepare`. Each colour is its own purchase, and a finished tinted download is remembered in `DownloadedWallIndex` under `variant.identityOf(url)`, not under the wallpaper link. The identity is a plain file name, `<base>_<key>.png`. Every character of the base outside `A-Z a-z 0-9 . _ -` becomes `_` (a decoded `#` or `?` in the link would otherwise start a fragment or query when the name is parsed again) and the base is cut so the name stays within the 200 bytes the native side accepts. With the original showing, the buttons use the wallpaper as before.
+- A tinted file opened from Library > Downloads is that variation. When the file name ends in `_tint-<rrggbb>` (and an optional ` (n)` copy suffix) and no new colour is picked, Download (Save on iOS) gets a `DownloadVariant` with that key whose `prepare` returns the file itself. So the pill reads Saved, and Download again copies the tinted file, not the original. Edit opens any local file as it is. A colour picked on top renders from the local file, as a new variation.
+- The clock preview shows the same hue (`ClockOverlay.tint`). The clock text colour is measured on the tinted 32 px sample (`textColorForTopThird(tint:)`), so it reads on the hue the user sees.
 
 Header (top of the panel):
 
@@ -164,6 +165,7 @@ Automated tests:
 - `test/features/wallpaper_detail/views/wallpaper_detail_motion_test.dart`
 - `test/features/wallpaper_detail/views/pages/wallpaper_detail_header_test.dart`
 - `test/features/wallpaper_detail/views/pages/wallpaper_detail_set_flow_test.dart`
+- `test/features/wallpaper_detail/views/pages/wallpaper_detail_saved_tint_test.dart`
 - `test/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc_test.dart`
 - `test/core/widgets/content_report/content_report_sheet_test.dart`
 - `test/features/wallpaper_detail/views/widgets/wallpaper_detail_widgets_test.dart`
@@ -171,6 +173,7 @@ Automated tests:
 - `test/core/widgets/circular_menu_button_test.dart`
 - `test/features/wallpaper_detail/views/widgets/clock_overlay_test.dart`
 - `test/features/wallpaper_detail/views/widgets/preview_layers_test.dart`
+- `test/features/wallpaper_detail/biz/top_third_text_color_test.dart`
 - `test/features/wallpaper_detail/biz/similar_wallpapers_loader_test.dart`
 - `test/features/wallpaper_detail/biz/wallpaper_detail_rules_test.dart`
 - `test/data/share/create_dynamic_link_test.dart`

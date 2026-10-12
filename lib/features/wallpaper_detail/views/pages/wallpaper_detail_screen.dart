@@ -17,6 +17,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -1015,18 +1016,30 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     return name == null || name.isEmpty || name.contains('@') ? null : 'by $name';
   }
 
+  static String _tintKey(Color tint) => 'tint-${tint.rgbHex}';
+
+  static final RegExp _savedTintKey = RegExp(r'_(tint-[0-9a-f]{6})(?: \(\d+\))?$');
+
+  /// The colour key in the name of a tinted wallpaper saved from this screen, so a reopened file is that variation.
+  static String? _savedTintKeyOf(String path) => _savedTintKey.firstMatch(downloadBaseName(path))?.group(1);
+
   Widget _buildActionBar(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(entity);
-    final String source = widget.localFile?.path ?? url;
+    final File? localFile = widget.localFile;
+    final String source = localFile?.path ?? url;
+    final Future<String> Function()? localSource = localFile == null ? null : () async => localFile.path;
     final Color? tint = state.tint;
     final double deviceLongSidePx = _screenPixels(context).longestSide;
     Future<String> Function()? prepareSource;
     DownloadVariant? variant;
     if (tint != null) {
       prepareSource = () => renderTintedWallpaper(source: source, tint: tint, deviceLongSidePx: deviceLongSidePx);
-      variant = DownloadVariant(key: 'tint-${tint.rgbHex}', prepare: prepareSource);
+      variant = DownloadVariant(key: _tintKey(tint), prepare: prepareSource);
+    } else if (localFile != null) {
+      final String? savedKey = _savedTintKeyOf(localFile.path);
+      if (savedKey != null) variant = DownloadVariant(key: savedKey, prepare: () async => localFile.path);
     }
     // The round icon buttons press-scale themselves. Only the labelled pill needs the wrapper.
     Widget downloadButton({String? label}) {
@@ -1100,7 +1113,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
         WallpaperBarAction(
           label: 'Edit',
-          child: EditButton(url: entity.fullUrl, prepareSource: prepareSource),
+          child: EditButton(url: entity.fullUrl, prepareSource: prepareSource ?? localSource),
         ),
       ],
     );
