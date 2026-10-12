@@ -22,6 +22,7 @@ class CarouselDots extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(500),
               color: current == i ? Colors.white : Colors.white38,
+              boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 1))],
             ),
           );
         }),
