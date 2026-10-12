@@ -1099,6 +1099,20 @@ test('studio generation with GPT Image 2.5 sends high quality, no seed and the e
   assert.equal(body.costUsd, 0.07);
 });
 
+test('studio generation bills STUDIO_FAL_API_KEY when it is set and FAL_API_KEY when it is not', async () => {
+  for (const [overrides, expected] of [[{ STUDIO_FAL_API_KEY: 'studio-key' }, 'Key studio-key'], [{}, 'Key test-key']]) {
+    const stats = {};
+    const restore = mockFal({ stats });
+    try {
+      const response = await postStudioGeneration(studioEnv(new MemoryStorage(), overrides));
+      assert.equal(response.status, 200);
+    } finally {
+      restore();
+    }
+    assert.equal(stats.falRequest.authorization, expected);
+  }
+});
+
 test('a repeated studio id returns the stored result once and a running id gets 409 until it goes stale', async () => {
   const storage = new MemoryStorage();
   const env = studioEnv(storage);

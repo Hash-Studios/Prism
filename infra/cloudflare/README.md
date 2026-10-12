@@ -56,9 +56,10 @@ wrangler secret put BROWSER_RENDERING_API_TOKEN
 wrangler secret put FAL_API_KEY
 wrangler secret put GEMINI_API_KEY
 wrangler secret put STUDIO_SECRET
+wrangler secret put STUDIO_FAL_API_KEY  # optional: a separate fal account for Studio
 ```
 
-Without `STUDIO_SECRET`, the studio routes return `503 service_disabled`. Their spend has its own caps: `STUDIO_DAILY_BUDGET_USD` and `STUDIO_MONTHLY_BUDGET_USD` in `wrangler.toml`.
+Without `STUDIO_SECRET`, the studio routes return `503 service_disabled`. Their spend has its own caps: `STUDIO_DAILY_BUDGET_USD` and `STUDIO_MONTHLY_BUDGET_USD` in `wrangler.toml`. They call fal with `STUDIO_FAL_API_KEY` if it is set, else with `FAL_API_KEY`.
 
 5. Deploy:
 
