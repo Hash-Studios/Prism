@@ -2,9 +2,12 @@ import 'dart:convert';
 
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/downloaded_link_lookup.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,7 +43,7 @@ void main() {
   setUp(() async {
     await backend.install();
     service.balanceNotifier.value = 100;
-    service.isLinkDownloaded = (_) => false;
+    service.wasDownloadedSince = (_, _) => false;
     toastMessages.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('PonnamKarthik/fluttertoast'),
@@ -292,19 +295,114 @@ void main() {
       expect(toastMessages, contains('Your last download did not finish. Coins returned.'));
     });
 
-    test('a marker whose file is in the index is cleared without a refund', () async {
-      await writeMarker(age: const Duration(minutes: 3));
-      service.isLinkDownloaded = (link) => link == 'https://x.test/a.jpg';
-      var calls = 0;
-      backend.onCall = (name, parameters) async {
-        calls++;
-        return _refunded;
-      };
+    group('against the Downloads index', () {
+      late DownloadedWallIndex index;
 
-      await service.refundAbandonedDownload();
+      setUp(() {
+        index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+        getIt.registerSingleton<DownloadedWallIndex>(index);
+        service.wasDownloadedSince = isLinkInDownloadedIndexSince;
+      });
 
-      expect(calls, 0);
-      expect(stored(_markerKey), isEmpty);
+      tearDown(() async {
+        await index.clear();
+        getIt.unregister<DownloadedWallIndex>();
+      });
+
+      Future<void> seedIndex({int? savedAt}) => getIt<SettingsLocalDataSource>().set(
+        'downloaded_walls_v1',
+        jsonEncode(<String, Object>{
+          'a': <String, Object>{'id': 'wall-a', 'source': 'prism', if (savedAt != null) 'savedAt': savedAt},
+        }),
+      );
+
+      int minutesAgo(int minutes) => DateTime.now().subtract(Duration(minutes: minutes)).millisecondsSinceEpoch;
+
+      test('a marker whose link was saved before the payment is refunded', () async {
+        await seedIndex(savedAt: minutesAgo(60));
+        await writeMarker(age: const Duration(minutes: 3));
+        final refunds = <Map<String, dynamic>>[];
+        backend.onCall = (name, parameters) async {
+          refunds.add(parameters);
+          return _refunded;
+        };
+
+        await service.refundAbandonedDownload();
+
+        expect(refunds.map((refund) => refund['transactionId']), <Object?>['spend_tx_marker']);
+        expect(stored(_markerKey), isEmpty);
+      });
+
+      test('a marker whose link was saved after the payment is cleared without a refund', () async {
+        await seedIndex(savedAt: minutesAgo(1));
+        await writeMarker(age: const Duration(minutes: 3));
+        var calls = 0;
+        backend.onCall = (name, parameters) async {
+          calls++;
+          return _refunded;
+        };
+
+        await service.refundAbandonedDownload();
+
+        expect(calls, 0);
+        expect(stored(_markerKey), isEmpty);
+      });
+
+      test('a save that remember recorded after the payment is cleared without a refund', () async {
+        await writeMarker(age: const Duration(minutes: 3));
+        await index.remember(link: 'https://x.test/a.jpg', id: 'wall-a', source: WallpaperSource.prism);
+        var calls = 0;
+        backend.onCall = (name, parameters) async {
+          calls++;
+          return _refunded;
+        };
+
+        await service.refundAbandonedDownload();
+
+        expect(calls, 0);
+        expect(stored(_markerKey), isEmpty);
+      });
+
+      test('a marker whose index entry has no save time is refunded', () async {
+        await seedIndex();
+        await writeMarker(age: const Duration(minutes: 3));
+        final refunds = <Map<String, dynamic>>[];
+        backend.onCall = (name, parameters) async {
+          refunds.add(parameters);
+          return _refunded;
+        };
+
+        await service.refundAbandonedDownload();
+
+        expect(refunds.map((refund) => refund['transactionId']), <Object?>['spend_tx_marker']);
+        expect(stored(_markerKey), isEmpty);
+      });
+
+      test('a marker with no index entry is refunded', () async {
+        await writeMarker(age: const Duration(minutes: 3));
+        final refunds = <Map<String, dynamic>>[];
+        backend.onCall = (name, parameters) async {
+          refunds.add(parameters);
+          return _refunded;
+        };
+
+        await service.refundAbandonedDownload();
+
+        expect(refunds.map((refund) => refund['transactionId']), <Object?>['spend_tx_marker']);
+        expect(stored(_markerKey), isEmpty);
+      });
+
+      test('a refund the network lost keeps the marker although an older save is in the index', () async {
+        await seedIndex(savedAt: minutesAgo(60));
+        await writeMarker(age: const Duration(minutes: 3));
+        backend.onCall = (name, parameters) async =>
+            throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+
+        await service.refundAbandonedDownload();
+
+        expect(stored(_markerKey), isNotEmpty);
+        expect(toastMessages, isEmpty);
+      });
     });
 
     test('a marker younger than 2 minutes is left alone', () async {

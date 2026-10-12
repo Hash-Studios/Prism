@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
@@ -59,6 +61,61 @@ void main() {
     expect(index.has('https://example.com/a/image_picker1.png'), isTrue);
     expect(index.has('https://example.com/b/image_picker1.jpg'), isTrue);
     expect(index.has('https://example.com/a/image_picker2.png'), isFalse);
+  });
+
+  group('save time', () {
+    const String storeKey = 'settings.downloaded_walls_v1';
+    late InMemoryLocalStore store;
+
+    setUp(() {
+      store = InMemoryLocalStore();
+      index = DownloadedWallIndex(SettingsLocalDataSource(store));
+    });
+
+    Map<String, Object?> storedEntry(String name) =>
+        Map<String, Object?>.from((jsonDecode(store.data[storeKey]! as String) as Map<String, Object?>)[name]! as Map);
+
+    test('remember stores the time of the save next to the id and the source', () async {
+      final int before = DateTime.now().millisecondsSinceEpoch;
+      await index.remember(link: 'https://example.com/one.png', id: 'w1', source: WallpaperSource.prism);
+      final int after = DateTime.now().millisecondsSinceEpoch;
+
+      final Map<String, Object?> entry = storedEntry('one');
+      expect(entry.keys.toSet(), <String>{'id', 'source', 'savedAt'});
+      expect(entry['id'], 'w1');
+      expect(entry['source'], 'prism');
+      expect(entry['savedAt'], inInclusiveRange(before, after));
+    });
+
+    test('savedSince is true from the save time on and false after it, whatever the extension', () async {
+      await index.remember(link: 'https://example.com/a/one.png', id: 'w1', source: WallpaperSource.prism);
+      final int savedAt = storedEntry('one')['savedAt']! as int;
+
+      expect(index.savedSince('https://example.com/a/one.png', savedAt - 1), isTrue);
+      expect(index.savedSince('https://example.com/b/one.jpg', savedAt), isTrue);
+      expect(index.savedSince('https://example.com/a/one.png', savedAt + 1), isFalse);
+      expect(index.savedSince('https://example.com/a/two.png', 0), isFalse);
+    });
+
+    test('remembering a link again moves its save time forward', () async {
+      store.data[storeKey] = '{"one":{"id":"w1","source":"prism","savedAt":1000}}';
+      expect(index.savedSince('https://example.com/one.png', 2000), isFalse);
+
+      await index.remember(link: 'https://example.com/one.png', id: 'w1', source: WallpaperSource.prism);
+
+      expect(index.savedSince('https://example.com/one.png', 2000), isTrue);
+    });
+
+    test(
+      'an entry from before the index kept a save time still resolves and counts as downloaded, but not as saved',
+      () {
+        store.data[storeKey] = '{"one":{"id":"old","source":"prism"}}';
+
+        expect(index.has('https://example.com/one.png'), isTrue);
+        expect(index.resolve('/d/one.jpg'), (id: 'old', source: WallpaperSource.prism));
+        expect(index.savedSince('https://example.com/one.png', 0), isFalse);
+      },
+    );
   });
 
   test('clear() forgets every entry', () async {
