@@ -9,6 +9,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
@@ -148,6 +149,7 @@ void main() {
     await getIt<SettingsLocalDataSource>().delete(_legacyMarkerKey);
     await getIt<SettingsLocalDataSource>().delete('notificationPermissionPromptedV2');
     CoinsService.instance.abandonedDownloadAfter = const Duration(minutes: 2);
+    CoinsService.instance.pendingRetryInterval = const Duration(seconds: 30);
   });
 
   Future<void> pump(
@@ -216,6 +218,38 @@ void main() {
     CoinsService.instance.abandonedDownloadAfter = Duration.zero;
     await CoinsService.instance.refundAbandonedDownload();
     return refunds;
+  }
+
+  Future<dynamic> Function(String name, Map<String, dynamic> parameters) offlineRefunds() => (name, parameters) async {
+    if (name == 'spendCoins') {
+      spendCalls.add(parameters);
+      return _spent;
+    }
+    throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+  };
+
+  String txIdOf(int spendIndex) => 'spend_${backend.userId}_${spendCalls[spendIndex]['requestId']}';
+
+  Iterable<Object?> refundedIds(List<Map<String, dynamic>> refunds) =>
+      refunds.map((Map<String, dynamic> refund) => refund['transactionId']);
+
+  void signOut() => app_state.prismUser = app_constants.createGuestPrismUser();
+
+  void signInAgain() => app_state.prismUser = app_constants.createGuestPrismUser()
+    ..id = backend.userId
+    ..loggedIn = true
+    ..coins = 100;
+
+  Completer<bool> holdSaves() {
+    final Completer<bool> result = Completer<bool>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+      enqueueChannel,
+      (message) async {
+        enqueued.add((message! as List<Object?>).single);
+        return <Object?>[OperationResult(success: await result.future)];
+      },
+    );
+    return result;
   }
 
   group('price on the pill', () {
@@ -665,11 +699,11 @@ void main() {
     }
 
     testWidgets('a paid save of tint A that finished but left its entry is not refunded', (tester) async {
-      await CoinsService.instance.spend(
+      final CoinMutationResult paid = await CoinsService.instance.spend(
         CoinSpendAction.wallpaperDownload,
         pendingDownloadLink: tintA.identityOf(_link),
       );
-      await CoinsService.instance.markPendingDownloadSaved(tintA.identityOf(_link));
+      await CoinsService.instance.markPendingDownloadSaved(paid.pendingDownloadTxId);
 
       final List<Map<String, dynamic>> refunds = await restart();
       await settle(tester);
@@ -780,6 +814,149 @@ void main() {
       await settle(tester);
 
       expect(refunds.map((Map<String, dynamic> refund) => refund['transactionId']), <Object?>[failedTxId]);
+      expect(ledger(), isEmpty);
+    });
+  });
+
+  group('each paid save is settled by its own transaction', () {
+    setUp(() => CoinsService.instance.pendingRetryInterval = const Duration(milliseconds: 50));
+
+    testWidgets('a retry that saves while recovery runs does not clear the failed attempt of the same link', (
+      tester,
+    ) async {
+      IosWallpaperGuideSession.shown = false;
+      CoinsService.instance.abandonedDownloadAfter = Duration.zero;
+      enqueueSucceeds = false;
+      backend.onCall = offlineRefunds();
+      await pump(tester);
+      await tapSave(tester);
+      final String failedTxId = txIdOf(0);
+      expect(ledger().map((Map<String, dynamic> e) => e['txId']), <Object?>[failedTxId]);
+
+      enqueueSucceeds = true;
+      await tapSave(tester);
+      expect(find.text('Open Photos'), findsOneWidget);
+      await CoinsService.instance.refundAbandonedDownload();
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+      expect(find.text('Open Photos'), findsNothing);
+
+      final List<Map<String, dynamic>> refunds = await restart();
+      await settle(tester);
+
+      expect(refundedIds(refunds), <Object?>[failedTxId]);
+      expect(ledger(), isEmpty);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('two buttons on one wallpaper: the one that saved is not refunded, the one that failed is', (
+      tester,
+    ) async {
+      final List<Completer<bool>> saves = <Completer<bool>>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        enqueueChannel,
+        (message) async {
+          enqueued.add((message! as List<Object?>).single);
+          final Completer<bool> done = Completer<bool>();
+          saves.add(done);
+          return <Object?>[OperationResult(success: await done.future)];
+        },
+      );
+      backend.onCall = offlineRefunds();
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: <Widget>[
+                DownloadButton(key: ValueKey<String>('a'), link: _link, label: 'Save'),
+                DownloadButton(key: ValueKey<String>('b'), link: _link, label: 'Save'),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byType(PrimaryActionPill).at(0));
+      await settle(tester);
+      await tester.tap(find.byType(PrimaryActionPill).at(1));
+      await settle(tester);
+      expect(saves, hasLength(2));
+
+      saves[0].complete(true);
+      await settle(tester);
+      saves[1].complete(false);
+      await settle(tester);
+
+      final List<Map<String, dynamic>> refunds = await restart();
+      await settle(tester);
+
+      expect(refundedIds(refunds), <Object?>[txIdOf(1)]);
+      expect(ledger(), isEmpty);
+    });
+
+    testWidgets('leaving the page while the charge is in flight releases the entry when the refund fails', (
+      tester,
+    ) async {
+      final Completer<void> reply = Completer<void>();
+      backend.onCall = (name, parameters) async {
+        if (name == 'spendCoins') {
+          spendCalls.add(parameters);
+          await reply.future;
+          return _spent;
+        }
+        throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+      };
+      await pump(tester);
+      await tester.tap(find.byType(PrimaryActionPill));
+      await settle(tester);
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      reply.complete();
+      await settle(tester);
+
+      expect(enqueued, isEmpty);
+      expect(ledger().map((Map<String, dynamic> e) => e['txId']), <Object?>[txIdOf(0)]);
+
+      final List<Map<String, dynamic>> refunds = await restart();
+      await settle(tester);
+
+      expect(refundedIds(refunds), <Object?>[txIdOf(0)]);
+      expect(ledger(), isEmpty);
+    });
+
+    testWidgets('a payer who signs out during the save keeps no entry when the save succeeds', (tester) async {
+      final Completer<bool> save = holdSaves();
+      backend.onCall = offlineRefunds();
+      await pump(tester);
+      await tester.tap(find.byType(PrimaryActionPill));
+      await settle(tester);
+      expect(enqueued, hasLength(1));
+
+      signOut();
+      save.complete(true);
+      await settle(tester);
+
+      expect(ledger(), isEmpty);
+      signInAgain();
+      final List<Map<String, dynamic>> refunds = await restart();
+      expect(refunds, isEmpty);
+    });
+
+    testWidgets('a payer who signs out during a failing save is refunded after signing in again', (tester) async {
+      final Completer<bool> save = holdSaves();
+      backend.onCall = offlineRefunds();
+      await pump(tester);
+      await tester.tap(find.byType(PrimaryActionPill));
+      await settle(tester);
+      expect(enqueued, hasLength(1));
+
+      signOut();
+      save.complete(false);
+      await settle(tester);
+
+      expect(ledger().map((Map<String, dynamic> e) => e['txId']), <Object?>[txIdOf(0)]);
+      signInAgain();
+      final List<Map<String, dynamic>> refunds = await restart();
+      await settle(tester);
+
+      expect(refundedIds(refunds), <Object?>[txIdOf(0)]);
       expect(ledger(), isEmpty);
     });
   });

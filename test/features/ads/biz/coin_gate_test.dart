@@ -704,4 +704,170 @@ void main() {
       expect(port.log.last, contains('premium_filter_export_failed_refund'));
     });
   });
+
+  group('paid download ledger', () {
+    const String link = 'https://x.test/a.jpg';
+    const String txId = 'ledger-x.spend';
+    const String refundCall = 'refund:x.spend.refund:tx-x.spend:download_failed_refund';
+
+    CoinGateSpec downloadSpec({
+      Future<bool> Function()? perform,
+      bool Function()? isMounted,
+      bool refundOnFailure = true,
+      void Function(String txId)? onPaid,
+      String? pendingDownloadLink = link,
+    }) => CoinGateSpec(
+      action: CoinSpendAction.premiumFilter,
+      tags: _tags,
+      upsellSource: 'upsell',
+      upgradeSource: 'upgrade',
+      pendingDownloadLink: pendingDownloadLink,
+      refundOnFailure: refundOnFailure,
+      onPaid: onPaid,
+      isMounted: isMounted ?? () => true,
+      perform: perform ?? () async => true,
+      choose: (_) async => CoinGateChoice.cancel,
+    );
+
+    test('a finished action clears the entry', () async {
+      expect(await CoinGate(port).run(downloadSpec()), CoinGateResult.performed);
+      expect(port.log, <String>['spend:x.spend', 'clear:$txId']);
+    });
+
+    test('a failed action with a confirmed refund clears the entry', () async {
+      expect(await CoinGate(port).run(downloadSpec(perform: () async => false)), CoinGateResult.failedRefunded);
+      expect(port.log, <String>['spend:x.spend', refundCall, 'clear:$txId']);
+    });
+
+    test('a failed action with a refund that does not confirm releases the entry', () async {
+      port.refundApplies = false;
+      expect(await CoinGate(port).run(downloadSpec(perform: () async => false)), CoinGateResult.failedNotRefunded);
+      expect(port.log, <String>['spend:x.spend', refundCall, 'error:x.spend.refund', 'release:$txId']);
+    });
+
+    test('a refund that throws releases the entry', () async {
+      final _ThrowingRefundPort throwing = _ThrowingRefundPort(balance: 10);
+      expect(await CoinGate(throwing).run(downloadSpec(perform: () async => false)), CoinGateResult.failedNotRefunded);
+      expect(throwing.log, <String>['spend:x.spend', 'refund-threw', 'error:x.spend.refund', 'release:$txId']);
+    });
+
+    test('a failed action that is not refunded by design releases the entry', () async {
+      expect(
+        await CoinGate(port).run(downloadSpec(perform: () async => false, refundOnFailure: false)),
+        CoinGateResult.failedNotRefunded,
+      );
+      expect(port.log, <String>['spend:x.spend', 'release:$txId']);
+    });
+
+    test('leaving the screen during the spend still tells the caller and clears a confirmed refund', () async {
+      bool mounted = true;
+      port.afterSpend = () async => mounted = false;
+      final List<String> paid = <String>[];
+
+      final CoinGateResult result = await CoinGate(
+        port,
+      ).run(downloadSpec(isMounted: () => mounted, onPaid: paid.add, perform: () async => fail('must not perform')));
+
+      expect(result, CoinGateResult.failedRefunded);
+      expect(paid, <String>[txId]);
+      expect(port.log, <String>['spend:x.spend', refundCall, 'clear:$txId']);
+    });
+
+    test('leaving the screen during the spend releases the entry when the refund does not confirm', () async {
+      bool mounted = true;
+      port.refundApplies = false;
+      port.afterSpend = () async => mounted = false;
+
+      final CoinGateResult result = await CoinGate(port).run(downloadSpec(isMounted: () => mounted));
+
+      expect(result, CoinGateResult.failedNotRefunded);
+      expect(port.log, <String>['spend:x.spend', refundCall, 'error:x.spend.refund', 'release:$txId']);
+    });
+
+    test('leaving the screen during a spend that is not refunded by design releases the entry', () async {
+      bool mounted = true;
+      port.afterSpend = () async => mounted = false;
+
+      final CoinGateResult result = await CoinGate(
+        port,
+      ).run(downloadSpec(isMounted: () => mounted, refundOnFailure: false));
+
+      expect(result, CoinGateResult.performed);
+      expect(port.log, <String>['spend:x.spend', 'release:$txId']);
+    });
+
+    test('the caller learns the id before the action runs', () async {
+      final List<String> order = <String>[];
+
+      await CoinGate(port).run(
+        downloadSpec(
+          onPaid: (String id) => order.add('paid:$id'),
+          perform: () async {
+            order.add('perform');
+            return true;
+          },
+        ),
+      );
+
+      expect(order, <String>['paid:$txId', 'perform']);
+    });
+
+    test('a throwing paid callback cannot strand the charge', () async {
+      expect(
+        await CoinGate(port).run(downloadSpec(onPaid: (_) => throw StateError('callback failed'))),
+        CoinGateResult.performed,
+      );
+      expect(port.log, <String>['spend:x.spend', 'error:x.spend', 'clear:$txId']);
+    });
+
+    test('a ledger call that throws never changes the result', () async {
+      port.ledgerThrows = true;
+      expect(await CoinGate(port).run(downloadSpec()), CoinGateResult.performed);
+      expect(port.log, <String>['spend:x.spend', 'clear:$txId', 'error:x.spend.ledger_clear']);
+    });
+
+    test('a spend that is not a tracked download never touches the ledger', () async {
+      expect(await CoinGate(port).run(downloadSpec(pendingDownloadLink: null)), CoinGateResult.performed);
+      expect(
+        await CoinGate(port).run(downloadSpec(pendingDownloadLink: null, perform: () async => false)),
+        CoinGateResult.failedRefunded,
+      );
+      expect(port.log.where((String entry) => entry.startsWith('clear:') || entry.startsWith('release:')), isEmpty);
+    });
+
+    test('a premium run has no charge to settle and never calls the paid callback', () async {
+      port.isPremium = true;
+      final List<String> paid = <String>[];
+
+      expect(await CoinGate(port).run(downloadSpec(onPaid: paid.add)), CoinGateResult.performedFree);
+
+      expect(paid, isEmpty);
+      expect(port.log, isEmpty);
+    });
+
+    test('a refused spend settles nothing', () async {
+      port.balance = 1;
+      final List<String> paid = <String>[];
+
+      expect(await CoinGate(port).run(downloadSpec(onPaid: paid.add)), CoinGateResult.cancelled);
+
+      expect(paid, isEmpty);
+      expect(port.log.where((String entry) => entry.startsWith('clear:') || entry.startsWith('release:')), isEmpty);
+    });
+  });
+}
+
+class _ThrowingRefundPort extends FakeCoinGatePort {
+  _ThrowingRefundPort({super.balance});
+
+  @override
+  Future<CoinMutationResult> refundSpend(
+    CoinSpendAction action, {
+    required String sourceTag,
+    required String transactionId,
+    required String reason,
+  }) {
+    log.add('refund-threw');
+    return Future<CoinMutationResult>.error(StateError('refund failed'));
+  }
 }
