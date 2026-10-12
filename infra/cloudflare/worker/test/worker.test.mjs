@@ -281,7 +281,9 @@ async function postGeneration(env, extra = {}, token = undefined) {
   );
 }
 
-function mockFal({ providerStatus = 200, imageSize = 4096, imageStatus = 200, firestore = null, stats = {} } = {}) {
+function mockFal({
+  providerStatus = 200, imageSize = 4096, imageStatus = 200, firestore = null, stats = {}, falPayload = {},
+} = {}) {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
     const url = String(input instanceof Request ? input.url : input);
@@ -293,7 +295,7 @@ function mockFal({ providerStatus = 200, imageSize = 4096, imageStatus = 200, fi
       stats.fal = (stats.fal ?? 0) + 1;
       stats.falRequest = { url, authorization: new Headers(init.headers).get('authorization'), body: JSON.parse(init.body) };
       return providerStatus === 200
-        ? Response.json({ images: [{ url: 'https://fal.media/image.png' }] })
+        ? Response.json({ images: [{ url: 'https://fal.media/image.png' }], ...falPayload })
         : new Response('boom', { status: providerStatus });
     }
     if (url === 'https://fal.media/image.png') {
@@ -892,6 +894,303 @@ test('rate limit counter resets after its window', async () => {
   }
 });
 
+const STUDIO_SECRET = 'studio-test-secret';
+const STUDIO_MODEL = 'fal-ai/bytedance/seedream/v4.5/text-to-image';
+const STUDIO_ID = 'daily-2026-10-12';
+const STUDIO_RAW_KEY = `ai/studio/raw/${STUDIO_ID}.png`;
+const today = () => new Date().toISOString().slice(0, 10);
+
+function studioEnv(storage = new MemoryStorage(), overrides = {}) {
+  return aiEnv(new MemoryKv(), new AiQuotaCoordinator({ storage }), {
+    STUDIO_SECRET,
+    AI_IMAGES: new MemoryR2(),
+    ...overrides,
+  });
+}
+
+function studioFetch(env, method, path, { body, headers = {}, secret = STUDIO_SECRET } = {}) {
+  return worker.fetch(
+    new Request(`https://prismwalls.com${path}`, {
+      method,
+      headers: { ...(secret == null ? {} : { 'x-studio-secret': secret }), ...headers },
+      body,
+    }),
+    env,
+    { waitUntil() {} },
+  );
+}
+
+function postStudioGeneration(env, extra = {}, options = {}) {
+  return studioFetch(env, 'POST', '/api/ai/studio/generations', {
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      id: STUDIO_ID, prompt: 'A quiet mountain lake at dawn', model: STUDIO_MODEL, width: 1080, height: 1920, seed: 42,
+      ...extra,
+    }),
+    ...options,
+  });
+}
+
+test('studio routes are off without STUDIO_SECRET and need the exact secret header', async () => {
+  const stats = {};
+  const restore = mockFal({ stats });
+  try {
+    const disabled = await postStudioGeneration(studioEnv(new MemoryStorage(), { STUDIO_SECRET: undefined }));
+    assert.equal(disabled.status, 503);
+    assert.equal((await disabled.json()).error, 'service_disabled');
+
+    const env = studioEnv();
+    for (const secret of [null, '', 'wrong', `${STUDIO_SECRET}x`, STUDIO_SECRET.slice(0, -1)]) {
+      const denied = await postStudioGeneration(env, {}, { secret });
+      assert.equal(denied.status, 401, String(secret));
+      assert.equal((await denied.json()).error, 'unauthorized');
+    }
+    assert.equal((await studioFetch(env, 'DELETE', `/api/ai/studio/assets/${STUDIO_RAW_KEY}`, { secret: 'x' })).status, 401);
+    assert.equal(stats.fal ?? 0, 0);
+
+    assert.equal((await postStudioGeneration(env)).status, 200);
+  } finally {
+    restore();
+  }
+});
+
+test('studio generation refuses bad bodies and unknown models before any provider call', async () => {
+  const stats = {};
+  const env = studioEnv();
+  const restore = mockFal({ stats });
+  try {
+    const invalidJson = await studioFetch(env, 'POST', '/api/ai/studio/generations', { body: '{nope' });
+    assert.equal(invalidJson.status, 400);
+    assert.equal((await invalidJson.json()).error, 'invalid_json');
+
+    const cases = {
+      'short id': { id: 'abc' },
+      'id with a slash': { id: 'daily/2026-10-12' },
+      'missing prompt': { prompt: undefined },
+      'blank prompt': { prompt: '   ' },
+      'long prompt': { prompt: 'x'.repeat(2001) },
+      'narrow width': { width: 511 },
+      'tall height': { height: 4097 },
+      'fraction width': { width: 1080.5 },
+      'string height': { height: '1920' },
+      'negative seed': { seed: -1 },
+      'string seed': { seed: '42' },
+      'consumer model': { model: 'fal-ai/flux/schnell' },
+      'prototype key model': { model: 'constructor' },
+      'missing model': { model: undefined },
+    };
+    for (const [label, extra] of Object.entries(cases)) {
+      const response = await postStudioGeneration(env, extra);
+      assert.equal(response.status, 400, label);
+      assert.equal((await response.json()).error, 'invalid_request', label);
+    }
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal ?? 0, 0);
+});
+
+test('studio generation sends the prompt as given, stores the raw image and returns the contract', async () => {
+  const storage = new MemoryStorage();
+  const env = studioEnv(storage);
+  const stats = {};
+  const restore = mockFal({
+    stats,
+    falPayload: { images: [{ url: 'https://fal.media/image.png', width: 1440, height: 2560 }], seed: 42 },
+  });
+  let body;
+  try {
+    const response = await postStudioGeneration(env);
+    assert.equal(response.status, 200);
+    body = await response.json();
+  } finally {
+    restore();
+  }
+
+  assert.deepEqual(body, {
+    id: STUDIO_ID,
+    imageUrl: `https://prismwalls.com/api/ai/assets/${STUDIO_RAW_KEY}`,
+    key: STUDIO_RAW_KEY,
+    width: 1440,
+    height: 2560,
+    contentType: 'image/png',
+    bytes: 4096,
+    model: STUDIO_MODEL,
+    provider: 'fal',
+    seed: 42,
+    costUsd: 0.04,
+  });
+  assert.equal(stats.falRequest.url, `https://fal.run/${STUDIO_MODEL}`);
+  assert.equal(stats.falRequest.authorization, 'Key test-key');
+  assert.deepEqual(stats.falRequest.body, {
+    prompt: 'A quiet mountain lake at dawn',
+    image_size: { width: 1440, height: 2560 },
+    seed: 42,
+    num_images: 1,
+    enable_safety_checker: true,
+  });
+
+  const stored = env.AI_IMAGES.objects.get(STUDIO_RAW_KEY);
+  assert.equal(stored.bytes.length, 4096);
+  assert.deepEqual(stored.httpMetadata, { contentType: 'image/png', cacheControl: 'public, max-age=31536000, immutable' });
+  const served = await worker.fetch(new Request(body.imageUrl), env, { waitUntil() {} });
+  assert.equal(served.status, 200);
+  assert.equal(served.headers.get('content-type'), 'image/png');
+
+  assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0.04);
+  assert.equal(await storage.get(`provider:fal:daily:${today()}`), undefined);
+});
+
+test('studio generation with v5 lite sends no seed and falls back to the requested size', async () => {
+  const env = studioEnv();
+  const stats = {};
+  const restore = mockFal({ stats });
+  let body;
+  try {
+    const response = await postStudioGeneration(env, {
+      model: 'fal-ai/bytedance/seedream/v5/lite/text-to-image', width: 944, height: 2048,
+    });
+    assert.equal(response.status, 200);
+    body = await response.json();
+  } finally {
+    restore();
+  }
+  assert.equal('seed' in stats.falRequest.body, false);
+  assert.deepEqual(stats.falRequest.body.image_size, seedreamImageSize(944, 2048));
+  assert.deepEqual({ width: body.width, height: body.height }, seedreamImageSize(944, 2048));
+  assert.equal(body.seed, null);
+});
+
+test('a repeated studio id returns the stored result once and a running id gets 409 until it goes stale', async () => {
+  const storage = new MemoryStorage();
+  const env = studioEnv(storage);
+  const stats = {};
+  const restore = mockFal({ stats });
+  const realNow = Date.now;
+  try {
+    const first = await postStudioGeneration(env);
+    assert.equal(first.status, 200);
+    const firstBody = await first.json();
+    const replay = await postStudioGeneration(env, { prompt: 'a different prompt' });
+    assert.equal(replay.status, 200);
+    assert.deepEqual(await replay.json(), firstBody);
+    assert.equal(stats.fal, 1);
+
+    const coordinator = new AiQuotaCoordinator({ storage });
+    await coordinator.fetch(quotaRequest({ op: 'studio_claim', id: 'daily-running' }));
+    const busy = await postStudioGeneration(env, { id: 'daily-running' });
+    assert.equal(busy.status, 409);
+    assert.equal((await busy.json()).error, 'in_progress');
+    assert.equal(stats.fal, 1);
+
+    const now = realNow();
+    Date.now = () => now + 6 * 60 * 1000;
+    assert.equal((await postStudioGeneration(env, { id: 'daily-running' })).status, 200);
+    assert.equal(stats.fal, 2);
+
+    Date.now = () => now + 8 * 24 * 60 * 60 * 1000;
+    assert.equal((await postStudioGeneration(env)).status, 200);
+    assert.equal(stats.fal, 3);
+  } finally {
+    Date.now = realNow;
+    restore();
+  }
+});
+
+test('the studio budget is separate from consumer budgets and fails closed with no fal call', async () => {
+  const storage = new MemoryStorage();
+  await storage.put(`provider:fal:daily:${today()}`, 30);
+  const env = studioEnv(storage, { STUDIO_DAILY_BUDGET_USD: '0.05' });
+  const stats = {};
+  const restore = mockFal({ stats });
+  try {
+    assert.equal((await postStudioGeneration(env)).status, 200);
+    const exhausted = await postStudioGeneration(env, { id: 'daily-2026-10-13' });
+    assert.equal(exhausted.status, 429);
+    assert.equal((await exhausted.json()).error, 'budget_exhausted');
+
+    const monthly = await postStudioGeneration(studioEnv(new MemoryStorage(), { STUDIO_MONTHLY_BUDGET_USD: '0.01' }));
+    assert.equal(monthly.status, 429);
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal, 1);
+  assert.equal(await storage.get(`provider:fal:daily:${today()}`), 30);
+});
+
+test('a studio fal failure releases the budget reservation and the id so a retry can run', async () => {
+  const storage = new MemoryStorage();
+  const env = studioEnv(storage, { STUDIO_DAILY_BUDGET_USD: '0.04' });
+  const restoreFailing = mockFal({ providerStatus: 500 });
+  try {
+    const failed = await postStudioGeneration(env);
+    assert.equal(failed.status, 502);
+    assert.equal((await failed.json()).error, 'provider_error');
+  } finally {
+    restoreFailing();
+  }
+  assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0);
+  assert.equal(env.AI_IMAGES.objects.size, 0);
+
+  const restoreWorking = mockFal();
+  try {
+    assert.equal((await postStudioGeneration(env)).status, 200);
+  } finally {
+    restoreWorking();
+  }
+});
+
+test('studio asset upload checks key, content type and size, then stores an image the asset route serves', async () => {
+  const env = studioEnv();
+  const put = (key, bytes, contentType) => studioFetch(env, 'PUT', `/api/ai/studio/assets/${key}`, {
+    body: bytes,
+    headers: contentType == null ? {} : { 'content-type': contentType },
+  });
+  const image = new Uint8Array(2048).fill(7);
+
+  for (const key of [STUDIO_RAW_KEY, 'ai/public/x.png', 'ai/studio/x.gif', 'ai/studio/x', 'ai/studio/a.b.png']) {
+    assert.equal((await put(key, image, 'image/png')).status, 400, key);
+  }
+  for (const contentType of ['image/png', 'text/plain', null]) {
+    const response = await put('ai/studio/wall.jpg', image, contentType);
+    assert.equal(response.status, 415, String(contentType));
+    assert.equal((await response.json()).error, 'invalid_request');
+  }
+  assert.equal((await put('ai/studio/wall.png', new Uint8Array(1023), 'image/png')).status, 400);
+  assert.equal((await put('ai/studio/wall.png', new Uint8Array(15 * 1024 * 1024 + 1), 'image/png')).status, 413);
+  assert.equal(env.AI_IMAGES.objects.size, 0);
+
+  const stored = await put('ai/studio/wall-2026-10-12.webp', image, 'image/webp');
+  assert.equal(stored.status, 200);
+  const body = await stored.json();
+  assert.deepEqual(body, {
+    key: 'ai/studio/wall-2026-10-12.webp',
+    url: 'https://prismwalls.com/api/ai/assets/ai/studio/wall-2026-10-12.webp',
+  });
+  const served = await worker.fetch(new Request(body.url), env, { waitUntil() {} });
+  assert.equal(served.status, 200);
+  assert.equal(served.headers.get('content-type'), 'image/webp');
+  assert.equal(served.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+  assert.deepEqual(new Uint8Array(await served.arrayBuffer()), image);
+});
+
+test('studio asset delete removes raw and uploaded keys and also succeeds for a missing key', async () => {
+  const env = studioEnv();
+  await env.AI_IMAGES.put(STUDIO_RAW_KEY, new Uint8Array(2048));
+  await env.AI_IMAGES.put('ai/studio/wall.jpg', new Uint8Array(2048));
+  const remove = (key) => studioFetch(env, 'DELETE', `/api/ai/studio/assets/${key}`);
+
+  for (const key of [STUDIO_RAW_KEY, 'ai/studio/wall.jpg', 'ai/studio/missing.png']) {
+    const response = await remove(key);
+    assert.equal(response.status, 200, key);
+    assert.deepEqual(await response.json(), { deleted: true });
+  }
+  assert.equal(env.AI_IMAGES.objects.size, 0);
+  for (const key of ['ai/public/x.png', 'ai/original/x.png', 'ai/studio/raw/nested/x.png']) {
+    assert.equal((await remove(key)).status, 400, key);
+  }
+});
+
 async function makeToken(overrides = {}) {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'RS256', kid: publicJwk.kid };
@@ -968,6 +1267,23 @@ class MemoryKv {
 
   async del(key) {
     this.#values.delete(key);
+  }
+}
+
+class MemoryR2 {
+  objects = new Map();
+
+  async put(key, value, options = {}) {
+    this.objects.set(key, { bytes: new Uint8Array(value), httpMetadata: options.httpMetadata });
+  }
+
+  async get(key) {
+    const object = this.objects.get(key);
+    return object == null ? null : { body: object.bytes, httpMetadata: object.httpMetadata };
+  }
+
+  async delete(key) {
+    this.objects.delete(key);
   }
 }
 

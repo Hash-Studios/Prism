@@ -12,6 +12,9 @@ This folder contains the Cloudflare implementation for:
 - `POST /api/ai/generations/{id}/variations` AI variation generation
 - `POST /api/ai/metadata/prefill` AI-assisted submit metadata prefill
 - `GET /api/ai/health` AI provider health + routing version
+- `POST /api/ai/studio/generations` internal daily content generation (header `x-studio-secret`)
+- `PUT /api/ai/studio/assets/{key}` internal studio image upload (header `x-studio-secret`)
+- `DELETE /api/ai/studio/assets/{key}` internal studio image delete (header `x-studio-secret`)
 
 ## Deep-link canonical URL rules
 
@@ -52,7 +55,10 @@ cd infra/cloudflare/worker
 wrangler secret put BROWSER_RENDERING_API_TOKEN
 wrangler secret put FAL_API_KEY
 wrangler secret put GEMINI_API_KEY
+wrangler secret put STUDIO_SECRET
 ```
+
+Without `STUDIO_SECRET`, the studio routes return `503 service_disabled`. Their spend has its own caps: `STUDIO_DAILY_BUDGET_USD` and `STUDIO_MONTHLY_BUDGET_USD` in `wrangler.toml`.
 
 5. Deploy:
 
