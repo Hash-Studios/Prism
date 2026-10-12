@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
 import { test } from 'node:test';
-import { AiQuotaCoordinator } from '../src/ai.ts';
+import { AiQuotaCoordinator, seedreamImageSize } from '../src/ai.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
 
@@ -291,6 +291,7 @@ function mockFal({ providerStatus = 200, imageSize = 4096, imageStatus = 200, fi
     }
     if (url.startsWith('https://fal.run/')) {
       stats.fal = (stats.fal ?? 0) + 1;
+      stats.falRequest = { url, authorization: new Headers(init.headers).get('authorization'), body: JSON.parse(init.body) };
       return providerStatus === 200
         ? Response.json({ images: [{ url: 'https://fal.media/image.png' }] })
         : new Response('boom', { status: providerStatus });
@@ -433,6 +434,43 @@ test('a watermark failure still returns success, keeps the original and defers t
     monthKey: new Date().toISOString().slice(0, 7),
   }));
   assert.ok((await responseJson(budget)).dailySpentUsd > 0);
+});
+
+test('Seedream sizing keeps the requested aspect ratio and meets the fal pixel minimum', () => {
+  const minPixels = 2560 * 1440;
+  const phone = seedreamImageSize(944, 2048);
+  assert.ok(Math.abs(phone.width / phone.height - 944 / 2048) < 0.002, JSON.stringify(phone));
+  assert.ok(phone.width * phone.height >= minPixels, JSON.stringify(phone));
+  assert.deepEqual(seedreamImageSize(1080, 1920), { width: 1440, height: 2560 });
+  assert.deepEqual(seedreamImageSize(1440, 3200), { width: 1440, height: 3200 });
+  assert.deepEqual(seedreamImageSize(1024, 1024), { width: 1920, height: 1920 });
+
+  const inputs = [[944, 2048], [1080, 1920], [1179, 2556], [1080, 2400], [2048, 944], [777, 1333], [512, 4096], [4096, 512]];
+  for (const [width, height] of inputs) {
+    const size = seedreamImageSize(width, height);
+    const label = `${width}x${height} -> ${size.width}x${size.height}`;
+    assert.equal(size.width % 8, 0, label);
+    assert.equal(size.height % 8, 0, label);
+    assert.ok(size.width <= 4096 && size.height <= 4096, label);
+    assert.ok(size.width * size.height >= minPixels, label);
+  }
+});
+
+test('a Seedream generation sends and reports a size with the requested aspect ratio', async () => {
+  const env = aiEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const stats = {};
+  const restore = mockFal({ stats });
+  let body;
+  try {
+    const response = await postGeneration(env, { qualityTier: 'quality', targetSize: '944x2048' });
+    assert.equal(response.status, 200);
+    body = await response.json();
+  } finally {
+    restore();
+  }
+  assert.equal(stats.falRequest.url, 'https://fal.run/fal-ai/bytedance/seedream/v4.5/text-to-image');
+  assert.deepEqual(stats.falRequest.body.image_size, seedreamImageSize(944, 2048));
+  assert.deepEqual({ width: body.width, height: body.height }, stats.falRequest.body.image_size);
 });
 
 function chargeDoc(overrides = {}) {
