@@ -84,6 +84,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final Size screen = MediaQuery.sizeOf(context);
+    final double statusBarInset = MediaQuery.viewPaddingOf(context).top;
     return BlocConsumer<WallpaperPositionBloc, WallpaperPositionState>(
       listenWhen: (previous, current) => previous.resultToken != current.resultToken,
       listener: _onResult,
@@ -131,6 +132,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
                           placement: state.placement,
                           syncToken: state.syncToken,
                           controller: _controller,
+                          statusBarInset: statusBarInset,
                           onMoved: (dx, dy, zoom) => bloc.add(WallpaperPositionEvent.moved(dx: dx, dy: dy, zoom: zoom)),
                         ),
                       ),
