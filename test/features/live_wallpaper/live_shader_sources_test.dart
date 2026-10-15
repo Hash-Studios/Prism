@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/features/live_wallpaper/data/shaders/live_shader_sources.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
@@ -12,6 +14,13 @@ void main() {
 
   group('shader lint negative controls', () {
     final String shader = LiveShaderSources.gradient(GradientStyle.mesh, darkPalette);
+
+    test('rejects generated shader comments exceeding 64 KiB in UTF-8', () {
+      final String mutated = '$shader\n// ${'é' * (32 * 1024)}';
+      expect(mutated.codeUnits.length, lessThanOrEqualTo(64 * 1024));
+      expect(utf8.encode(mutated).length, greaterThan(64 * 1024));
+      expect(validateShaderContract(mutated, textureCount: 0), <String>['shader is larger than 64 KiB']);
+    });
 
     test('rejects a while loop added to a generated shader', () {
       final String mutated = shader.replaceFirst('void main() {', 'void main() { while (true) {}');

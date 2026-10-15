@@ -1,7 +1,9 @@
+import 'dart:convert';
+
 /// Approximate shader source lint; this does not establish native validator parity or compilation success.
 List<String> validateShaderContract(String shader, {required int textureCount}) {
   final List<String> problems = <String>[];
-  if (shader.codeUnits.length > 64 * 1024) problems.add('shader is larger than 64 KiB');
+  if (utf8.encode(shader).length > 64 * 1024) problems.add('shader is larger than 64 KiB');
 
   final String source = _stripComments(shader);
   if (!RegExp(r'\bvoid\s+main\s*\(\s*\)').hasMatch(source)) problems.add('missing void main()');
