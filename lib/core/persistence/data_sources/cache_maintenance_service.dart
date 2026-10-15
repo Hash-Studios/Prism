@@ -1,8 +1,11 @@
 import 'dart:io';
 
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/persistence/data_sources/app_icons_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
+import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -17,17 +20,26 @@ class CacheMaintenanceService {
     this._feedCacheLocal,
     this._appIconsLocal, {
     @ignoreParam BaseCacheManager? imageCache,
-  }) : _imageCache = imageCache;
+    @ignoreParam BaseCacheManager? thumbnailCache,
+    @ignoreParam BaseCacheManager? fullImageCache,
+  }) : _imageCache = imageCache,
+       _thumbnailCache = thumbnailCache,
+       _fullImageCache = fullImageCache;
 
   final NotificationsLocalDataSource _notificationsLocal;
   final FeedCacheLocalDataSource _feedCacheLocal;
   final AppIconsLocalDataSource _appIconsLocal;
   final BaseCacheManager? _imageCache;
+  final BaseCacheManager? _thumbnailCache;
+  final BaseCacheManager? _fullImageCache;
 
   Future<void> clearTransientCache() async {
     final steps = <Future<void> Function()>[
       () => (_imageCache ?? DefaultCacheManager()).emptyCache(),
+      () => (_thumbnailCache ?? PrismImageCache.instance).emptyCache(),
+      () => (_fullImageCache ?? PrismFullImageCache.instance).emptyCache(),
       () async => PaintingBinding.instance.imageCache.clear(),
+      clearTintedWallpapers,
       _notificationsLocal.clearAll,
       _notificationsLocal.clearLastFetchAtUtc,
       _feedCacheLocal.clearAllFeedCaches,

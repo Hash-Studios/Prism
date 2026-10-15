@@ -21,14 +21,17 @@ import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
+import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
 import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -93,7 +96,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         // The app bar gives guests a Back button out of this screen.
-        appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.surface),
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          actions: <Widget>[
+            IconButton(
+              tooltip: 'Settings',
+              icon: Icon(JamIcons.cog, color: Theme.of(context).colorScheme.secondary),
+              onPressed: () {
+                PrismHaptics.tap();
+                context.router.push(const SettingsRoute());
+              },
+            ),
+          ],
+        ),
         body: SignInPrompt(feature: _isOwnProfile ? 'your profile' : 'profiles'),
       );
     }
@@ -191,10 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
                     builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
                       if (BlockedCreatorsFilter.hidesCreatorEmail(profile.email, blockSnap.data ?? <String>{})) {
-                        final String display = <String>[
-                          profile.name.trim(),
-                          profile.username.trim(),
-                        ].firstWhere((String value) => value.isNotEmpty, orElse: () => profile.email);
+                        final String display = creatorLabel(name: profile.name, username: profile.username);
                         return BlockedUserProfileShell(
                           targetUserId: profile.id,
                           targetEmail: profile.email,
@@ -293,13 +305,27 @@ class _ProfileChildState extends State<_ProfileChild> {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: _profile.id,
         targetUserEmail: _profile.email,
+        targetName: creatorLabel(name: _profile.name, username: _profile.username),
       ),
     );
-    if (following) {
-      toasts.success('Unfollowed ${_profile.name}!', haptic: false);
-    } else {
-      toasts.success('Followed ${_profile.name}!', haptic: false);
+  }
+
+  /// Opens a profile link. A link with an unsafe scheme or no host is refused with a calm toast.
+  Future<bool> _openProfileLink(String link) async {
+    final Uri? uri = safeProfileLinkUri(link);
+    try {
+      if (uri != null && await launchUrl(uri)) return true;
+    } catch (error, stackTrace) {
+      logger.w('Could not open a profile link.', error: error, stackTrace: stackTrace);
     }
+    toasts.info("Couldn't open this link.");
+    return false;
+  }
+
+  bool _isFollowing(PublicProfileState state) {
+    final String me = app_state.prismUser.email.trim().toLowerCase();
+    return state.followOverrides[_profile.email.trim().toLowerCase()] ??
+        _profile.followers.any((String e) => e.trim().toLowerCase() == me);
   }
 
   Future<void> _onMenuSelected(_ProfileMenuAction action) async {
@@ -315,7 +341,12 @@ class _ProfileChildState extends State<_ProfileChild> {
         if (uid.isEmpty || email.isEmpty) {
           return;
         }
-        await confirmAndBlockUser(context: context, targetUserId: uid, targetEmail: email, displayName: _profile.name);
+        await confirmAndBlockUser(
+          context: context,
+          targetUserId: uid,
+          targetEmail: email,
+          displayName: creatorLabel(name: _profile.name, username: _profile.username),
+        );
     }
   }
 
@@ -351,7 +382,6 @@ class _ProfileChildState extends State<_ProfileChild> {
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
     final bool showProfileCompletenessCard = ownProfile && !profileCompletenessStatus.isComplete;
-    final bool following = _profile.followers.contains(app_state.prismUser.email);
 
     return Stack(
       children: [
@@ -385,10 +415,20 @@ class _ProfileChildState extends State<_ProfileChild> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          _HeaderButton(
-                            icon: following ? JamIcons.user_remove : JamIcons.user_plus,
-                            alignment: Alignment.centerRight,
-                            onPressed: () => _toggleFollow(following: following),
+                          BlocConsumer<PublicProfileBloc, PublicProfileState>(
+                            listenWhen: (prev, curr) =>
+                                curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+                            listener: (context, state) => showFollowOutcomeToast(state.followOutcome!),
+                            buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
+                            builder: (context, state) {
+                              final bool following = _isFollowing(state);
+                              return _HeaderButton(
+                                tooltip: following ? 'Unfollow' : 'Follow',
+                                icon: following ? JamIcons.user_remove : JamIcons.user_plus,
+                                alignment: Alignment.centerRight,
+                                onPressed: () => _toggleFollow(following: following),
+                              );
+                            },
                           ),
                           PopupMenuButton<_ProfileMenuAction>(
                             icon: const _CircleIcon(icon: JamIcons.more_vertical),
@@ -465,7 +505,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
                                       child: Text(
-                                        _profile.name,
+                                        creatorLabel(name: _profile.name, username: _profile.username),
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -569,11 +609,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                                                     AnalyticsActionValue.actionChipTapped,
                                                     sourceContext: 'profile_screen_link_chip',
                                                   );
-                                                  final String link = _profile.links[key].toString();
-                                                  final String targetLink = link.contains('@gmail.com')
-                                                      ? 'mailto:$link'
-                                                      : link;
-                                                  final bool launched = await launchUrl(Uri.parse(targetLink));
+                                                  final bool launched = await _openProfileLink(
+                                                    _profile.links[key].toString(),
+                                                  );
                                                   unawaited(
                                                     analytics.track(
                                                       ExternalLinkOpenResultEvent(

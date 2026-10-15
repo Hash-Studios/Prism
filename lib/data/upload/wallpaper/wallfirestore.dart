@@ -5,6 +5,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/upload/wallpaper/wall_files.dart';
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -23,13 +24,17 @@ Future<WallSubmissionResult> createRecord(
   String? wallpaperDesc,
   Object review, {
   List<String>? wallpaperTags,
+  String? wallpaperPath,
+  String? wallpaperSha,
+  String? thumbPath,
+  String? thumbSha,
   bool isAiGenerated = false,
   String? aiGenerationId,
   String? aiProvider,
   String? aiModel,
-  String? aiOriginalImageUrl,
   String? aiPrompt,
   String? aiStylePreset,
+  String? docId,
   DateTime Function()? now,
 }) async {
   final user = app_state.prismUser;
@@ -77,15 +82,23 @@ Future<WallSubmissionResult> createRecord(
       'review': review,
       'createdAt': DateTime.now().toUtc(),
       'collections': ['community'],
+      if (wallpaperPath != null && wallpaperSha != null) ...{
+        WallFileFields.wallpaperPath: wallpaperPath,
+        WallFileFields.wallpaperSha: wallpaperSha,
+      },
+      if (thumbPath != null && thumbSha != null) ...{
+        WallFileFields.thumbPath: thumbPath,
+        WallFileFields.thumbSha: thumbSha,
+      },
       if (wallpaperTags != null) 'tags': wallpaperTags.map((tag) => tag.trim()).where((tag) => tag.isNotEmpty).toList(),
       'isAiGenerated': isAiGenerated,
       if (aiGenerationId != null && aiGenerationId.trim().isNotEmpty) 'aiGenerationId': aiGenerationId,
       if (aiProvider != null && aiProvider.trim().isNotEmpty) 'aiProvider': aiProvider,
       if (aiModel != null && aiModel.trim().isNotEmpty) 'aiModel': aiModel,
-      if (aiOriginalImageUrl != null && aiOriginalImageUrl.trim().isNotEmpty) 'aiOriginalImageUrl': aiOriginalImageUrl,
       if (aiPrompt != null && aiPrompt.trim().isNotEmpty) 'aiPrompt': aiPrompt,
       if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
     },
+    docId: docId,
     awardFirstUpload: () {
       if (app_state.prismUser.id != user.id) return Future<void>.value();
       return CoinsService.instance.maybeAwardFirstWallpaperUpload().then((_) {});

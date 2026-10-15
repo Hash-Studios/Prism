@@ -66,7 +66,7 @@ void main() {
     expect(firestore.dedupeWindowMs, 0);
   });
 
-  testWidgets('activity shows 8 rows, then more after Show more', (tester) async {
+  testWidgets('activity shows 8 rows, and Show more and See all open the coin history', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-1'
       ..loggedIn = true;
@@ -84,14 +84,32 @@ void main() {
     getIt.registerSingleton<FirestoreClient>(firestore);
     await tester.binding.setSurfaceSize(const Size(400, 2400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(_host(const RewardsActivitySection(), Brightness.dark));
+    int opened = 0;
+    await tester.pumpWidget(_host(RewardsActivitySection(onSeeAll: () => opened++), Brightness.dark));
     await tester.pump();
     await tester.pump();
     expect(find.text('-50'), findsNWidgets(8));
     await tester.tap(find.text('Show more'));
-    await tester.pump();
-    expect(find.text('-50'), findsNWidgets(12));
-    expect(find.text('Show less'), findsOneWidget);
+    await tester.tap(find.text('See all'));
+    expect(opened, 2);
+    expect(find.text('-50'), findsNWidgets(8));
+    expect(find.text('Show less'), findsNothing);
+  });
+
+  testWidgets('earn section lists the Pro bonuses only for Pro users', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
+    expect(find.text('Pro daily bonus'), findsNothing);
+    expect(find.text('Pro streak bonus'), findsNothing);
+    final int plainBonusRewards = find.text('+${CoinPolicy.proDailyBonus}').evaluate().length;
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.dark));
+    expect(find.text('Pro daily bonus'), findsOneWidget);
+    expect(find.text('+${CoinPolicy.proDailyBonus}'), findsNWidgets(plainBonusRewards + 1));
+    expect(find.text('Pro streak bonus'), findsOneWidget);
+    expect(find.text('+${CoinPolicy.proStreakDailyBonus} to +${CoinPolicy.proStreak7Bonus}'), findsOneWidget);
   });
 
   testWidgets('PrismTextStyles titles are not the legacy dark grey on a dark theme', (tester) async {

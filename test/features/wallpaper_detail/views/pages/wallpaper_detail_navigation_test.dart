@@ -43,6 +43,7 @@ FeedItemEntity _prism(String id) => FeedItemEntity.prism(
   id: id,
   wallpaper: PrismWallpaper(
     core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+    title: id,
   ),
 );
 

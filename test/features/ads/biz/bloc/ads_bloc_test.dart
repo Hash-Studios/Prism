@@ -14,6 +14,8 @@ class _MockCreateRewardedAdUseCase extends Mock implements CreateRewardedAdUseCa
 
 class _MockShowRewardedAdUseCase extends Mock implements ShowRewardedAdUseCase {}
 
+Future<bool> watchRewardedAd(AdsBloc bloc) async => (await watchRewardedAdResult(bloc)).earned;
+
 void main() {
   const loaded = AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: true, adFailed: false);
   const earned = AdsEntity(rewardEarned: true, loadingAd: false, adLoaded: false, adFailed: false);
@@ -88,6 +90,34 @@ void main() {
 
     expect(await watchRewardedAd(bloc), isFalse);
     verifyNever(() => showUseCase(const NoParams()));
+  });
+
+  test('a failed load names its reason', () async {
+    when(() => createUseCase(const NoParams())).thenAnswer(
+      (_) async => Result.success(
+        const AdsEntity(
+          rewardEarned: false,
+          loadingAd: false,
+          adLoaded: false,
+          adFailed: true,
+          failureReason: AdFailureReason.consent,
+        ),
+      ),
+    );
+
+    final RewardedAdResult result = await watchRewardedAdResult(bloc);
+
+    expect(result.earned, isFalse);
+    expect(result.failure, AdFailureReason.consent);
+  });
+
+  test('an earned reward has no failure reason', () async {
+    stubShow([Result.success(earned)]);
+
+    final RewardedAdResult result = await watchRewardedAdResult(bloc);
+
+    expect(result.earned, isTrue);
+    expect(result.failure, isNull);
   });
 
   test('a failed load releases the watch guard for a later attempt', () async {

@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,14 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     super.dispose();
   }
 
+  void _resetActiveTab(int index) {
+    PrismHaptics.selection();
+    final StackRouter? stack = _tabsRouter!.stackRouterOfIndex(index);
+    if (stack != null && stack.canPop()) {
+      stack.popUntilRoot();
+    }
+  }
+
   void _trackTabSelection({required int fromIndex, required int toIndex}) {
     analytics.track(NavTabSelectedEvent(fromTab: _tabs[fromIndex].value, toTab: _tabs[toIndex].value));
   }
@@ -48,6 +57,7 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   void _switchTab({required int toIndex}) {
     final fromIndex = _tabsRouter!.activeIndex;
     if (fromIndex == toIndex) {
+      _resetActiveTab(toIndex);
       return;
     }
     PrismHaptics.selection();
@@ -98,17 +108,17 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = isActive
-        ? Theme.of(context).colorScheme.secondary
-        : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final iconColor = isActive ? cs.onPrimary : onColor(Theme.of(context).primaryColor).withValues(alpha: 0.7);
 
     return Container(
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: isActive ? const Color(0xFF252525) : Colors.transparent, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: isActive ? cs.primary : Colors.transparent, shape: BoxShape.circle),
       child: IconButton(
         tooltip: tooltip,
         padding: EdgeInsets.zero,
         iconSize: 19,
+        isSelected: isActive,
         onPressed: onPressed,
         icon: Icon(icon, color: iconColor, size: 19),
       ),

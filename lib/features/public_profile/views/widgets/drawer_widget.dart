@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/account/account_copy.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -33,6 +34,36 @@ class ProfileDrawer extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<bool> _confirmLogout(BuildContext context) async {
+    final bool? ok = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text(logoutConfirmMessage),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Log out')),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
+  Future<void> _shareProfile(BuildContext context) async {
+    try {
+      await createUserDynamicLink(
+        app_state.prismUser.name,
+        app_state.prismUser.username,
+        app_state.prismUser.email,
+        app_state.prismUser.bio,
+        app_state.prismUser.profilePhoto,
+        context: context,
+      );
+    } catch (_) {
+      toasts.error("Couldn't create the link. Try again.");
+    }
   }
 
   // ── Builder helpers ──────────────────────────────────────────────────────
@@ -155,28 +186,12 @@ class ProfileDrawer extends StatelessWidget {
             _sectionHeader('YOUR CONTENT', context),
             _item(
               icon: JamIcons.picture,
-              text: 'Favourite Wallpapers',
+              text: 'Library',
               context: context,
               onTap: () {
-                _trackDrawerAction(
-                  AnalyticsActionValue.drawerFavWallsTapped,
-                  sourceContext: 'profile_drawer_fav_walls',
-                );
+                _trackDrawerAction(AnalyticsActionValue.drawerLibraryTapped, sourceContext: 'profile_drawer_library');
                 Navigator.pop(context);
-                context.router.push(const FavouriteWallpaperRoute());
-              },
-            ),
-            _item(
-              icon: JamIcons.download,
-              text: 'Downloaded Walls',
-              context: context,
-              onTap: () {
-                _trackDrawerAction(
-                  AnalyticsActionValue.drawerDownloadsTapped,
-                  sourceContext: 'profile_drawer_downloads',
-                );
-                Navigator.pop(context);
-                context.router.push(const DownloadRoute());
+                context.router.push(LibraryRoute());
               },
             ),
 
@@ -194,14 +209,7 @@ class ProfileDrawer extends StatelessWidget {
                   AnalyticsActionValue.drawerSharePrismTapped,
                   sourceContext: 'profile_drawer_share_profile',
                 );
-                createUserDynamicLink(
-                  app_state.prismUser.name,
-                  app_state.prismUser.username,
-                  app_state.prismUser.email,
-                  app_state.prismUser.bio,
-                  app_state.prismUser.profilePhoto,
-                  context: context,
-                );
+                unawaited(_shareProfile(context));
               },
             ),
             _item(
@@ -210,13 +218,13 @@ class ProfileDrawer extends StatelessWidget {
               context: context,
               onTap: () async {
                 _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
+                if (!await _confirmLogout(context)) return;
                 // Finish signing out before the restart, or the restarted app still sees the old
                 // session and stays on the splash screen. The restart closes this drawer.
                 if (!await globalGoogleAuth.signOutGoogle()) {
-                  toasts.error('Could not log out. Please try again.');
+                  toasts.error(logoutFailedMessage);
                   return;
                 }
-                toasts.success('Log out Successful!');
                 await resetOnboardingLocalState(getIt<SettingsLocalDataSource>());
                 if (context.mounted) {
                   main.RestartWidget.restartApp(context);

@@ -118,7 +118,7 @@ void main() {
       return null;
     });
     messenger.setMockMethodCallHandler(toastChannel, (call) async {
-      messages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      if (call.method == 'showToast') messages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
     messenger.setMockMethodCallHandler(compressionChannel, (call) async {
@@ -177,7 +177,7 @@ void main() {
             photo == 'profile' ? 'profilePhoto' : 'coverPhoto': 'https://example.test/profile.png',
           });
         } else {
-          expect(messages, <String>['Some uploading issue, please try again.']);
+          expect(messages, <String>["Couldn't update your profile. Please try again."]);
           expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.errorNotification']);
           expect(find.text('Edit Profile'), findsOneWidget);
           final save = find.ancestor(of: find.text('Update'), matching: find.byType(InkWell));

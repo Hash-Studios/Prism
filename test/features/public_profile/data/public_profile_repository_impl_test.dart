@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/public_profile/data/repositories/public_profile_repository_impl.dart';
@@ -13,20 +14,55 @@ import '../../../support/profile_user_fixture.dart';
 class _WatchingClient extends FakeFirestoreClient {
   final StreamController<List<FakeDocRow>> rows = StreamController<List<FakeDocRow>>();
   final List<FirestoreQuerySpec> watchSpecs = <FirestoreQuerySpec>[];
-  Object? updateError;
+  int? failTransactionWriteNumber;
+  final List<String> transactionTags = <String>[];
+
+  /// Applies the writes of a transaction all together, or none of them, as Firestore does.
+  @override
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  }) async {
+    transactionTags.add(sourceTag);
+    final _BufferedTransaction buffer = _BufferedTransaction(failTransactionWriteNumber);
+    final T value = await action(buffer);
+    for (final write in buffer.writes) {
+      await super.updateDoc(write.collection, write.id, write.data, sourceTag: sourceTag);
+    }
+    return value;
+  }
 
   @override
   Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
     watchSpecs.add(spec);
     return rows.stream.map((list) => list.map((row) => map(row.data, row.id)).toList());
   }
+}
+
+class _BufferedTransaction implements FirestoreTransaction {
+  _BufferedTransaction(this.failWriteNumber);
+
+  final int? failWriteNumber;
+  final List<({String collection, String id, Map<String, dynamic> data})> writes =
+      <({String collection, String id, Map<String, dynamic> data})>[];
 
   @override
-  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) {
-    final Object? error = updateError;
-    if (error != null) throw error;
-    return super.updateDoc(collection, id, data, sourceTag: sourceTag);
+  Future<Map<String, dynamic>?> getDoc(String collection, String id) async => null;
+
+  @override
+  void updateDoc(String collection, String id, Map<String, dynamic> data) {
+    if (writes.length + 1 == failWriteNumber) throw StateError('write $failWriteNumber failed');
+    writes.add((collection: collection, id: id, data: data));
   }
+
+  @override
+  void setDoc(String collection, String id, Map<String, dynamic> data, {bool merge = false}) =>
+      throw UnimplementedError();
+
+  @override
+  void deleteDoc(String collection, String id) => throw UnimplementedError();
 }
 
 FakeDocRow _user(String email, {String name = ''}) =>
@@ -117,6 +153,35 @@ void main() {
         ('usersv2', 'me', 'following'),
         ('usersv2', 'them', 'followers'),
       ]);
+      expect(client.transactionTags, <String>['public_profile.follow']);
+    });
+
+    test('commits neither side when the second write fails', () async {
+      client.failTransactionWriteNumber = 2;
+
+      final result = await repo.follow(
+        currentUserId: 'me',
+        currentUserEmail: 'me@x.com',
+        targetUserId: 'them',
+        targetUserEmail: 'them@x.com',
+      );
+
+      expect(result.failure, isA<ServerFailure>());
+      expect(client.writes, isEmpty);
+    });
+
+    test('unfollow also commits neither side when the second write fails', () async {
+      client.failTransactionWriteNumber = 2;
+
+      final result = await repo.unfollow(
+        currentUserId: 'me',
+        currentUserEmail: 'me@x.com',
+        targetUserId: 'them',
+        targetUserEmail: 'them@x.com',
+      );
+
+      expect(result.failure, isA<ServerFailure>());
+      expect(client.writes, isEmpty);
     });
 
     test('unfollow touches the same fields and reports write errors as a failure', () async {
@@ -128,7 +193,7 @@ void main() {
       );
       expect(client.writes.map((w) => w.data!.keys.single), <String>['following', 'followers']);
 
-      client.updateError = StateError('offline');
+      client.failTransactionWriteNumber = 1;
       final failed = await repo.unfollow(
         currentUserId: 'me',
         currentUserEmail: 'me@x.com',

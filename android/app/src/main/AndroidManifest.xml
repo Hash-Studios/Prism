@@ -28,6 +28,7 @@
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
     <application
+        android:allowBackup="false"
         android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
         android:label="Prism" >
@@ -66,6 +67,17 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
         </service>
+        <receiver
+            android:name=".WotdWidgetProvider"
+            android:exported="false"
+            android:label="@string/quick_settings_wotd">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/wotd_widget_info" />
+        </receiver>
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -87,6 +99,12 @@
                 <data android:pathPrefix="/l" />
             </intent-filter>
             <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="prism" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -101,6 +119,16 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
         </activity>
+
+        <provider
+            android:name=".WallpaperCropFileProvider"
+            android:authorities="${applicationId}.wallpaper_crop"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/wallpaper_crop_paths" />
+        </provider>
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

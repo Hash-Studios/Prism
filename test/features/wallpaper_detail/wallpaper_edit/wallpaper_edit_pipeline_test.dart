@@ -227,6 +227,39 @@ void main() {
     });
   });
 
+  group('exportSize', () {
+    test('leaves images within the cap alone', () {
+      expect(exportSize(1080, 2400), (width: 1080, height: 2400));
+      expect(exportSize(4096, 3000), (width: 4096, height: 3000));
+    });
+
+    test('caps the long side at 4096 and keeps the ratio', () {
+      expect(exportSize(6000, 3000), (width: 4096, height: 2048));
+      expect(exportSize(3000, 8192), (width: 1500, height: 4096));
+    });
+
+    test('lets a larger device screen raise the cap', () {
+      expect(exportSize(6000, 3000, deviceLongSidePx: 5000), (width: 5000, height: 2500));
+      expect(exportSize(6000, 3000, deviceLongSidePx: 1000), (width: 4096, height: 2048));
+    });
+  });
+
+  testWidgets('renderEditedPng scales an oversize image down to the cap', (tester) async {
+    await tester.runAsync(() async {
+      final ui.Image image = await solidImage(4200, 4, const Color(0xFFFF0000));
+      try {
+        final Uint8List png = await renderEditedPng(image, const [], WallpaperAdjustments.none);
+        final ui.Codec codec = await ui.instantiateImageCodec(png);
+        final ui.Image out = (await codec.getNextFrame()).image;
+        expect((out.width, out.height), (4096, 4));
+        out.dispose();
+        codec.dispose();
+      } finally {
+        image.dispose();
+      }
+    });
+  });
+
   testWidgets('loadKernelEffects completes', (tester) async {
     await tester.runAsync(() async {
       await expectLater(loadKernelEffects(), completion(isA<bool>()));

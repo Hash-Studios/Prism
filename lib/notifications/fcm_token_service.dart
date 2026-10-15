@@ -32,10 +32,15 @@ class FcmTokenService {
       if (generation != _generation || token == null || token.trim().isEmpty) return;
       await _trackWrite(() => _persistToken(userId: userId, token: token, client: client));
       if (generation != _generation) return;
-      // Carries a Followers switch turned off on an older build over to the server.
-      if (getIt.isRegistered<SettingsLocalDataSource>() &&
-          !getIt<SettingsLocalDataSource>().get<bool>(NotificationPrefKeys.followers, defaultValue: true)) {
-        await saveFollowerAlerts(userId: userId, enabled: false, client: client);
+      // Carries switches turned off before sign-in (or on an older build) over to the server.
+      if (getIt.isRegistered<SettingsLocalDataSource>()) {
+        final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+        if (!settings.get<bool>(NotificationPrefKeys.followers, defaultValue: true)) {
+          await saveFollowerAlerts(userId: userId, enabled: false, client: client);
+        }
+        if (!settings.get<bool>(NotificationPrefKeys.recommendations, defaultValue: true)) {
+          await saveMarketingPushes(userId: userId, enabled: false, client: client);
+        }
       }
     } catch (e, st) {
       logger.w('FcmTokenService: failed to sync token.', error: e, stackTrace: st);
@@ -57,6 +62,24 @@ class FcmTokenService {
       );
     } catch (e, st) {
       logger.w('FcmTokenService: failed to save follower alerts.', error: e, stackTrace: st);
+    }
+  }
+
+  /// Stores the Recommendations switch where the win-back and campaign pushes read it.
+  Future<void> saveMarketingPushes({required String userId, required bool enabled, FirestoreClient? client}) async {
+    if (userId.trim().isEmpty) return;
+    try {
+      await _trackWrite(
+        () => (client ?? firestoreClient).setDoc(
+          '${FirebaseCollections.usersV2}/$userId/private',
+          'session',
+          <String, dynamic>{'marketingPushes': enabled},
+          merge: true,
+          sourceTag: 'fcm_token.marketing_pushes',
+        ),
+      );
+    } catch (e, st) {
+      logger.w('FcmTokenService: failed to save marketing pushes.', error: e, stackTrace: st);
     }
   }
 

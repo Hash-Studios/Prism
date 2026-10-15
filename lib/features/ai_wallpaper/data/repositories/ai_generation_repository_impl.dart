@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -10,6 +11,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 
@@ -30,8 +32,25 @@ typedef AiSubmissionMetadata = ({String title, String description, String catego
 class AiGenerationRepositoryImpl {
   static const String _apiBase = 'https://prismwalls.com/api/ai';
 
-  final http.Client _client = http.Client();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  AiGenerationRepositoryImpl()
+    : _client = http.Client(),
+      _auth = FirebaseAuth.instance,
+      _requestTimeout = _defaultTimeout;
+
+  @visibleForTesting
+  AiGenerationRepositoryImpl.forTest({
+    required http.Client client,
+    required FirebaseAuth auth,
+    Duration requestTimeout = _defaultTimeout,
+  }) : _client = client,
+       _auth = auth,
+       _requestTimeout = requestTimeout;
+
+  static const Duration _defaultTimeout = Duration(seconds: 60);
+
+  final http.Client _client;
+  final FirebaseAuth _auth;
+  final Duration _requestTimeout;
 
   User _requireUser() {
     final user = _auth.currentUser;
@@ -53,6 +72,7 @@ class AiGenerationRepositoryImpl {
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? chargeTxId,
   }) async {
     final user = _requireUser();
 
@@ -62,8 +82,9 @@ class AiGenerationRepositoryImpl {
       'qualityTier': qualityTier.apiValue,
       'targetSize': targetSize,
       if (seed != null) 'seed': seed,
+      if (chargeTxId != null && chargeTxId.isNotEmpty) 'chargeTxId': chargeTxId,
     };
-    final data = await _post('/generations', payload);
+    final data = await _post('/generations', payload, retryOnTimeout: payload.containsKey('chargeTxId'));
     final record = _recordFromApiResponse(
       data: data,
       userId: user.uid,
@@ -87,12 +108,21 @@ class AiGenerationRepositoryImpl {
     required int coinsSpent,
     String variationPrompt = '',
     double strength = 0.45,
+    String? chargeTxId,
   }) async {
     final user = _requireUser();
 
     final AiGenerationRecord? original = await _fetchById(generationId);
-    final payload = <String, dynamic>{'variationPrompt': variationPrompt, 'strength': strength};
-    final data = await _post('/generations/$generationId/variations', payload);
+    final payload = <String, dynamic>{
+      'variationPrompt': variationPrompt,
+      'strength': strength,
+      if (chargeTxId != null && chargeTxId.isNotEmpty) 'chargeTxId': chargeTxId,
+    };
+    final data = await _post(
+      '/generations/$generationId/variations',
+      payload,
+      retryOnTimeout: payload.containsKey('chargeTxId'),
+    );
     final record = _recordFromApiResponse(
       data: data,
       userId: user.uid,
@@ -184,13 +214,13 @@ class AiGenerationRepositoryImpl {
     );
   }
 
-  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body, {bool retryOnTimeout = false}) async {
     final token = await _auth.currentUser?.getIdToken();
     if (token == null || token.trim().isEmpty) {
       throw AiGenerationApiException(message: 'Please sign in to continue.', code: 'unauthorized', statusCode: 401);
     }
 
-    final response = await _client
+    Future<http.Response> send() => _client
         .post(
           Uri.parse('$_apiBase$path'),
           headers: <String, String>{
@@ -200,7 +230,16 @@ class AiGenerationRepositoryImpl {
           },
           body: jsonEncode(body),
         )
-        .timeout(const Duration(seconds: 60));
+        .timeout(_requestTimeout);
+
+    http.Response response;
+    try {
+      response = await send();
+    } on TimeoutException {
+      // The worker stores the finished image under the charge id, so a retry returns it instead of a second image.
+      if (!retryOnTimeout) rethrow;
+      response = await send();
+    }
 
     Map<String, dynamic> payload = <String, dynamic>{};
     try {

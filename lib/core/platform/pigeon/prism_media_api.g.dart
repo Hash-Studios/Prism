@@ -139,14 +139,16 @@ class SaveMediaRequest {
 }
 
 class DownloadRequest {
-  DownloadRequest({required this.link, required this.filenameWithoutExtension});
+  DownloadRequest({required this.link, required this.filenameWithoutExtension, required this.isLocalFile});
 
   String link;
 
   String filenameWithoutExtension;
 
+  bool isLocalFile;
+
   List<Object?> _toList() {
-    return <Object?>[link, filenameWithoutExtension];
+    return <Object?>[link, filenameWithoutExtension, isLocalFile];
   }
 
   Object encode() {
@@ -155,7 +157,11 @@ class DownloadRequest {
 
   static DownloadRequest decode(Object result) {
     result as List<Object?>;
-    return DownloadRequest(link: result[0]! as String, filenameWithoutExtension: result[1]! as String);
+    return DownloadRequest(
+      link: result[0]! as String,
+      filenameWithoutExtension: result[1]! as String,
+      isLocalFile: result[2]! as bool,
+    );
   }
 
   @override
@@ -167,7 +173,9 @@ class DownloadRequest {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(link, other.link) && _deepEquals(filenameWithoutExtension, other.filenameWithoutExtension);
+    return _deepEquals(link, other.link) &&
+        _deepEquals(filenameWithoutExtension, other.filenameWithoutExtension) &&
+        _deepEquals(isLocalFile, other.isLocalFile);
   }
 
   @override
@@ -176,7 +184,7 @@ class DownloadRequest {
 
   @override
   String toString() {
-    return 'DownloadRequest(link: $link, filenameWithoutExtension: $filenameWithoutExtension)';
+    return 'DownloadRequest(link: $link, filenameWithoutExtension: $filenameWithoutExtension, isLocalFile: $isLocalFile)';
   }
 }
 
@@ -405,6 +413,25 @@ class PrismMediaHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as OperationResult;
+  }
+
+  Future<OperationResult> deleteDownload(String path) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.deleteDownload$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[path]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(

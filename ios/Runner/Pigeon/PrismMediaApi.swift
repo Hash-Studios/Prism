@@ -238,39 +238,44 @@ struct SaveMediaRequest: Hashable, CustomStringConvertible {
 struct DownloadRequest: Hashable, CustomStringConvertible {
   var link: String
   var filenameWithoutExtension: String
+  var isLocalFile: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> DownloadRequest? {
     let link = pigeonVar_list[0] as! String
     let filenameWithoutExtension = pigeonVar_list[1] as! String
+    let isLocalFile = pigeonVar_list[2] as! Bool
 
     return DownloadRequest(
       link: link,
-      filenameWithoutExtension: filenameWithoutExtension
+      filenameWithoutExtension: filenameWithoutExtension,
+      isLocalFile: isLocalFile
     )
   }
   func toList() -> [Any?] {
     return [
       link,
       filenameWithoutExtension,
+      isLocalFile,
     ]
   }
   static func == (lhs: DownloadRequest, rhs: DownloadRequest) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return PrismMediaApiPigeonInternal.deepEquals(lhs.link, rhs.link) && PrismMediaApiPigeonInternal.deepEquals(lhs.filenameWithoutExtension, rhs.filenameWithoutExtension)
+    return PrismMediaApiPigeonInternal.deepEquals(lhs.link, rhs.link) && PrismMediaApiPigeonInternal.deepEquals(lhs.filenameWithoutExtension, rhs.filenameWithoutExtension) && PrismMediaApiPigeonInternal.deepEquals(lhs.isLocalFile, rhs.isLocalFile)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("DownloadRequest")
     PrismMediaApiPigeonInternal.deepHash(value: link, hasher: &hasher)
     PrismMediaApiPigeonInternal.deepHash(value: filenameWithoutExtension, hasher: &hasher)
+    PrismMediaApiPigeonInternal.deepHash(value: isLocalFile, hasher: &hasher)
   }
 
   public var description: String {
-    return "DownloadRequest(link: \(String(describing: link)), filenameWithoutExtension: \(String(describing: filenameWithoutExtension)))"
+    return "DownloadRequest(link: \(String(describing: link)), filenameWithoutExtension: \(String(describing: filenameWithoutExtension)), isLocalFile: \(String(describing: isLocalFile)))"
   }
 }
 
@@ -436,6 +441,7 @@ protocol PrismMediaHostApi {
   func enqueueDownload(request: DownloadRequest, completion: @escaping (Result<OperationResult, Error>) -> Void)
   func listDownloads(completion: @escaping (Result<DownloadItemsResult, Error>) -> Void)
   func clearDownloads(completion: @escaping (Result<OperationResult, Error>) -> Void)
+  func deleteDownload(path: String, completion: @escaping (Result<OperationResult, Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -507,6 +513,23 @@ class PrismMediaHostApiSetup {
       }
     } else {
       clearDownloadsChannel.setMessageHandler(nil)
+    }
+    let deleteDownloadChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.deleteDownload\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      deleteDownloadChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let pathArg = args[0] as! String
+        api.deleteDownload(path: pathArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      deleteDownloadChannel.setMessageHandler(nil)
     }
   }
 }

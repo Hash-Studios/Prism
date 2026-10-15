@@ -42,9 +42,42 @@ class DownloadedWallIndex {
     }
   }
 
+  /// True when [link] was downloaded before and is still remembered. The file may have been moved since, so
+  /// callers that charge for a download also check the file list.
+  bool has(String link) => _read().containsKey(downloadBaseName(link));
+
+  /// Forgets everything. Used by Clear downloads and when the account data is wiped.
+  Future<void> clear() async {
+    try {
+      await _settingsLocal.set(_key, '{}');
+    } catch (error, stackTrace) {
+      logger.w('Unable to clear the downloaded wallpaper index', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// Drops the entries of deleted files. An entry stays while a file that still exists uses it, so deleting
+  /// `name.jpg` keeps the entry for `name (1).jpg`. [remainingPaths] are the files that are left.
+  Future<void> forget(Iterable<String> deletedPaths, {required Iterable<String> remainingPaths}) async {
+    final Set<String> remaining = remainingPaths.map(p.basenameWithoutExtension).toSet();
+    final Set<String> stillUsed = <String>{...remaining, ...remaining.map(_withoutCopySuffix)};
+    final Set<String> candidates = deletedPaths.map(p.basenameWithoutExtension).expand((name) {
+      return <String>{name, _withoutCopySuffix(name)};
+    }).toSet()..removeAll(stillUsed);
+    final Map<String, Object?> index = _read();
+    if (!candidates.any(index.containsKey)) return;
+    candidates.forEach(index.remove);
+    try {
+      await _settingsLocal.set(_key, json.encode(index));
+    } catch (error, stackTrace) {
+      logger.w('Unable to forget deleted wallpapers', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  static String _withoutCopySuffix(String name) => name.replaceFirst(_copySuffix, '');
+
   DownloadedWallRef? resolve(String filePath) {
     final String name = p.basenameWithoutExtension(filePath);
-    final String withoutCopySuffix = name.replaceFirst(_copySuffix, '');
+    final String withoutCopySuffix = _withoutCopySuffix(name);
     final Map<String, Object?> index = _read();
 
     DownloadedWallRef? readEntry(String key) {

@@ -10,6 +10,7 @@ export interface AiEnvBindings {
   BROWSER_RENDERING_API_TOKEN?: string;
   FIREBASE_PROJECT_ID?: string;
   FIREBASE_AUTH_DEBUG?: string;
+  AI_REQUIRE_CHARGE?: string;
 }
 
 type AiProviderName = 'fal' | 'gemini';
@@ -25,7 +26,10 @@ type AiErrorCode =
   | 'unsafe_prompt'
   | 'unsafe_output'
   | 'generation_not_found'
-  | 'service_disabled';
+  | 'service_disabled'
+  | 'charge_required'
+  | 'charge_invalid'
+  | 'charge_in_progress';
 type BudgetThresholdLevel = 0 | 70 | 85 | 95;
 
 interface AuthContext {
@@ -39,11 +43,13 @@ interface AiGenerateRequest {
   qualityTier: AiQualityTier;
   targetSize: string;
   seed?: number;
+  chargeTxId?: unknown;
 }
 
 interface AiVariationRequest {
   variationPrompt?: string;
   strength?: number;
+  chargeTxId?: unknown;
 }
 
 interface AiGenerationRecord {
@@ -91,6 +97,7 @@ interface AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult>;
 }
 
@@ -180,16 +187,33 @@ const BLOCKED_PROMPT_TERMS = [
   'non consensual',
   'gore kill',
 ];
+const BLOCKED_PROMPT_REGEX = new RegExp(
+  `\\b(?:${BLOCKED_PROMPT_TERMS.map((term) => term.replaceAll(' ', '\\s+')).join('|')})(?:s|d|ed|ing)?\\b`,
+  'i',
+);
+
+const AI_COIN_COST_BY_TIER: Record<AiQualityTier, number> = { fast: 10, balanced: 75, quality: 100 };
+const CHARGE_TX_ID_REGEX = /^[A-Za-z0-9_-]{8,220}$/;
+const CHARGE_RECORD_TTL_MS = 24 * 60 * 60 * 1000;
+const CHARGE_STALE_IN_PROGRESS_MS = 5 * 60 * 1000;
+const CHARGE_MAX_AGE_MS = 15 * 60 * 1000;
+const CHARGE_CLOCK_SKEW_MS = 60 * 1000;
 
 const AI_QUOTA_OBJECT_NAME = 'global';
 const AI_QUOTA_RPC_URL = 'https://quota.internal/rpc';
 
 type AiQuotaRpcOp =
   | 'user_daily_cap_try_increment'
+  | 'user_daily_cap_release'
   | 'provider_budget_read'
   | 'provider_budget_reserve'
   | 'provider_budget_release'
-  | 'provider_budget_commit';
+  | 'provider_budget_commit'
+  | 'charge_claim'
+  | 'charge_status'
+  | 'charge_finish'
+  | 'charge_release'
+  | 'rate_limit_bump';
 
 interface AiQuotaRpcBaseRequest {
   op: AiQuotaRpcOp;
@@ -200,6 +224,12 @@ interface AiQuotaUserDailyCapRequest extends AiQuotaRpcBaseRequest {
   userId: string;
   dayKey: string;
   cap: number;
+}
+
+interface AiQuotaUserDailyCapReleaseRequest extends AiQuotaRpcBaseRequest {
+  op: 'user_daily_cap_release';
+  userId: string;
+  dayKey: string;
 }
 
 interface AiQuotaProviderBudgetReadRequest extends AiQuotaRpcBaseRequest {
@@ -225,8 +255,31 @@ interface AiQuotaProviderBudgetMutationRequest extends AiQuotaRpcBaseRequest {
   actualCostUsd?: number;
 }
 
+interface AiQuotaChargeRequest extends AiQuotaRpcBaseRequest {
+  op: 'charge_claim' | 'charge_status' | 'charge_release';
+  txId: string;
+}
+
+interface AiQuotaChargeFinishRequest extends AiQuotaRpcBaseRequest {
+  op: 'charge_finish';
+  txId: string;
+  outcome: 'succeeded' | 'failed';
+  response?: string;
+}
+
+interface AiQuotaRateLimitRequest extends AiQuotaRpcBaseRequest {
+  op: 'rate_limit_bump';
+  key: string;
+  limit: number;
+  ttlSeconds: number;
+}
+
 type AiQuotaRpcRequest =
+  | AiQuotaChargeRequest
+  | AiQuotaChargeFinishRequest
+  | AiQuotaRateLimitRequest
   | AiQuotaUserDailyCapRequest
+  | AiQuotaUserDailyCapReleaseRequest
   | AiQuotaProviderBudgetReadRequest
   | AiQuotaProviderBudgetReserveRequest
   | AiQuotaProviderBudgetMutationRequest;
@@ -239,6 +292,11 @@ interface AiQuotaRpcErrorResponse {
 interface AiQuotaUserDailyCapResponse {
   ok: true;
   allowed: boolean;
+  current: number;
+}
+
+interface AiQuotaUserDailyCapReleaseResponse {
+  ok: true;
   current: number;
 }
 
@@ -266,9 +324,50 @@ interface AiQuotaProviderBudgetCommitResponse {
   committed: boolean;
 }
 
+type AiChargeClaimStatus = 'new' | 'in_progress' | 'done' | 'failed';
+type AiChargeEvidenceStatus = 'not_started' | 'in_progress' | 'succeeded' | 'failed';
+
+interface AiQuotaChargeClaimResponse {
+  ok: true;
+  status: AiChargeClaimStatus;
+  response?: string;
+}
+
+interface AiQuotaChargeStatusResponse {
+  ok: true;
+  status: AiChargeEvidenceStatus;
+}
+
+interface AiQuotaChargeMutationResponse {
+  ok: true;
+}
+
+interface AiQuotaRateLimitResponse {
+  ok: true;
+  allowed: boolean;
+  current: number;
+}
+
+interface AiChargeRecord {
+  state: 'in_progress' | 'succeeded' | 'failed';
+  at: number;
+  expiresAt: number;
+  response?: string;
+}
+
+interface AiRateLimitRecord {
+  count: number;
+  expiresAt: number;
+}
+
 type AiQuotaRpcResponse =
+  | AiQuotaChargeClaimResponse
+  | AiQuotaChargeStatusResponse
+  | AiQuotaChargeMutationResponse
+  | AiQuotaRateLimitResponse
   | AiQuotaRpcErrorResponse
   | AiQuotaUserDailyCapResponse
+  | AiQuotaUserDailyCapReleaseResponse
   | AiQuotaProviderBudgetReadResponse
   | AiQuotaProviderBudgetReserveResponse
   | AiQuotaProviderBudgetReleaseResponse
@@ -307,6 +406,8 @@ export class AiQuotaCoordinator {
       switch (body.op) {
         case 'user_daily_cap_try_increment':
           return this.handleUserDailyCapTryIncrement(body);
+        case 'user_daily_cap_release':
+          return this.handleUserDailyCapRelease(body);
         case 'provider_budget_read':
           return this.handleProviderBudgetRead(body);
         case 'provider_budget_reserve':
@@ -315,6 +416,16 @@ export class AiQuotaCoordinator {
           return this.handleProviderBudgetRelease(body);
         case 'provider_budget_commit':
           return this.handleProviderBudgetCommit(body);
+        case 'charge_claim':
+          return this.handleChargeClaim(body);
+        case 'charge_status':
+          return this.handleChargeStatus(body);
+        case 'charge_finish':
+          return this.handleChargeFinish(body);
+        case 'charge_release':
+          return this.handleChargeRelease(body);
+        case 'rate_limit_bump':
+          return this.handleRateLimitBump(body);
       }
     } catch (error) {
       console.error('[ai] quota_coordinator_error', { error: `${error ?? ''}` });
@@ -337,6 +448,19 @@ export class AiQuotaCoordinator {
     const next = current + 1;
     await this.state.storage.put(key, next);
     return quotaJson<AiQuotaUserDailyCapResponse>({ ok: true, allowed: true, current: next });
+  }
+
+  private async handleUserDailyCapRelease(request: AiQuotaUserDailyCapReleaseRequest): Promise<Response> {
+    const userId = clipText(asString(request.userId), 128);
+    const dayKey = clipText(asString(request.dayKey), 16);
+    if (!isNonEmptyString(userId) || !isNonEmptyString(dayKey)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const key = this.userDailyCapKey(userId, dayKey);
+    const current = this.readStoredNumber(await this.state.storage.get<number | string>(key), 0);
+    const next = Math.max(0, current - 1);
+    await this.state.storage.put(key, next);
+    return quotaJson<AiQuotaUserDailyCapReleaseResponse>({ ok: true, current: next });
   }
 
   private async handleProviderBudgetRead(request: AiQuotaProviderBudgetReadRequest): Promise<Response> {
@@ -437,6 +561,109 @@ export class AiQuotaCoordinator {
     return quotaJson<AiQuotaProviderBudgetCommitResponse>({ ok: true, committed });
   }
 
+  private async handleChargeClaim(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record == null) {
+      const now = Date.now();
+      await this.state.storage.put<AiChargeRecord>(this.chargeKey(txId), {
+        state: 'in_progress',
+        at: now,
+        expiresAt: now + CHARGE_RECORD_TTL_MS,
+      });
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
+    }
+    const state = effectiveChargeState(record);
+    if (state === 'succeeded') {
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'done', response: record.response ?? '' });
+    }
+    return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: state });
+  }
+
+  private async handleChargeStatus(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    return quotaJson<AiQuotaChargeStatusResponse>({
+      ok: true,
+      status: record == null ? 'not_started' : effectiveChargeState(record),
+    });
+  }
+
+  private async handleChargeFinish(request: AiQuotaChargeFinishRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null || (request.outcome !== 'succeeded' && request.outcome !== 'failed')) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record != null && record.state === 'in_progress') {
+      const now = Date.now();
+      await this.state.storage.put<AiChargeRecord>(this.chargeKey(txId), {
+        state: request.outcome,
+        at: now,
+        expiresAt: now + CHARGE_RECORD_TTL_MS,
+        response: request.outcome === 'succeeded' ? asString(request.response) : undefined,
+      });
+    }
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private async handleChargeRelease(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record != null && record.state === 'in_progress') {
+      await this.state.storage.delete(this.chargeKey(txId));
+    }
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private async handleRateLimitBump(request: AiQuotaRateLimitRequest): Promise<Response> {
+    const key = clipText(asString(request.key), 200);
+    const limit = Math.max(1, Math.round(asNumber(request.limit, 1)));
+    const ttlSeconds = Math.max(1, Math.round(asNumber(request.ttlSeconds, 60)));
+    if (!isNonEmptyString(key)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const storageKey = `ratelimit:${key}`;
+    const now = Date.now();
+    const stored = await this.state.storage.get<AiRateLimitRecord>(storageKey);
+    const current = stored != null && stored.expiresAt > now ? stored : null;
+    const count = current?.count ?? 0;
+    if (count >= limit) {
+      return quotaJson<AiQuotaRateLimitResponse>({ ok: true, allowed: false, current: count });
+    }
+    await this.state.storage.put<AiRateLimitRecord>(storageKey, {
+      count: count + 1,
+      expiresAt: current?.expiresAt ?? now + ttlSeconds * 1000,
+    });
+    return quotaJson<AiQuotaRateLimitResponse>({ ok: true, allowed: true, current: count + 1 });
+  }
+
+  private async readChargeRecord(txId: string): Promise<AiChargeRecord | null> {
+    const key = this.chargeKey(txId);
+    const record = await this.state.storage.get<AiChargeRecord>(key);
+    if (record == null) {
+      return null;
+    }
+    if (record.expiresAt <= Date.now()) {
+      await this.state.storage.delete(key);
+      return null;
+    }
+    return record;
+  }
+
+  private chargeKey(txId: string): string {
+    return `charge:${txId}`;
+  }
+
   private async readProviderBudgetStatus(provider: AiProviderName, dayKey: string, monthKey: string): Promise<BudgetStatus> {
     const [daily, monthly] = await Promise.all([
       this.state.storage.get<number | string>(this.providerDailyBudgetKey(provider, dayKey)),
@@ -485,7 +712,12 @@ export async function handleAiApiRequest(
   }
 
   if (request.method === 'GET' && url.pathname === '/api/ai/health') {
-    return handleAiHealth(env);
+    return handleAiHealth(request, env);
+  }
+
+  const chargeMatch = /^\/api\/ai\/charges\/([^/]+)$/.exec(url.pathname);
+  if (request.method === 'GET' && chargeMatch != null) {
+    return handleChargeEvidence(chargeMatch[1], env);
   }
 
   if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/api/ai/assets/')) {
@@ -515,9 +747,12 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
   }
 
   if (env.AI_IMAGES != null) {
-    const object = await env.AI_IMAGES.get(objectKey);
+    let object = await env.AI_IMAGES.get(objectKey);
+    if (object == null && (await ensureDeferredWatermark(objectKey, env))) {
+      object = await env.AI_IMAGES.get(objectKey);
+    }
     if (object == null) {
-      return aiError('generation_not_found', 404, 'Asset not found');
+      return assetNotFound(objectKey, env);
     }
     if (method === 'HEAD') {
       return new Response(null, {
@@ -537,9 +772,12 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
     });
   }
 
-  const encoded = await env.AI_STATE_KV.get(`ai:asset:${objectKey}`);
+  let encoded = await env.AI_STATE_KV.get(`ai:asset:${objectKey}`);
+  if (!isNonEmptyString(encoded) && (await ensureDeferredWatermark(objectKey, env))) {
+    encoded = await env.AI_STATE_KV.get(`ai:asset:${objectKey}`);
+  }
   if (!isNonEmptyString(encoded)) {
-    return aiError('generation_not_found', 404, 'Asset not found');
+    return assetNotFound(objectKey, env);
   }
   const bytes = fromBase64(encoded);
   if (method === 'HEAD') {
@@ -560,7 +798,34 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
   });
 }
 
-async function handleAiHealth(env: AiEnvBindings): Promise<Response> {
+async function assetNotFound(objectKey: string, env: AiEnvBindings): Promise<Response> {
+  const match = PUBLIC_ASSET_KEY_REGEX.exec(objectKey);
+  if (match != null && isNonEmptyString(await env.AI_STATE_KV.get(watermarkPendingKey(match[1])))) {
+    const response = aiError('provider_error', 503, 'Watermarked image is not ready yet');
+    response.headers.set('retry-after', '30');
+    return response;
+  }
+  return aiError('generation_not_found', 404, 'Asset not found');
+}
+
+async function handleChargeEvidence(rawTxId: string, env: AiEnvBindings): Promise<Response> {
+  const txId = chargeTxIdOrNull(rawTxId);
+  if (txId == null) {
+    return aiError('invalid_request', 404, 'Unknown charge id');
+  }
+  try {
+    const response = await sendQuotaRequest<AiQuotaChargeStatusResponse>(env, { op: 'charge_status', txId });
+    return aiJson({ status: response.status });
+  } catch (error) {
+    console.error('[ai] charge_status_failed', { error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+}
+
+async function handleAiHealth(request: Request, env: AiEnvBindings): Promise<Response> {
+  if (await parseAuth(request, env) == null) {
+    return aiJson({ ok: true });
+  }
   const config = await readRoutingConfig(env);
   let snapshots: Record<AiProviderName, ProviderBudgetSnapshot>;
   try {
@@ -603,6 +868,11 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     return aiError('invalid_json', 400, 'Invalid JSON body');
   }
 
+  const charge = readChargeTxId(body.chargeTxId, env);
+  if (charge instanceof Response) {
+    return charge;
+  }
+
   const parsed = normalizeGenerateRequest(body);
   if (parsed == null) {
     return aiError('invalid_request', 400, 'Invalid generation payload');
@@ -615,6 +885,7 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
   return executeGeneration({
     env,
     auth,
+    chargeTxId: charge,
     prompt: parsed.prompt,
     stylePreset: parsed.stylePreset,
     qualityTier: parsed.qualityTier,
@@ -642,6 +913,11 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
     return aiError('invalid_json', 400, 'Invalid JSON body');
   }
 
+  const charge = readChargeTxId(body.chargeTxId, env);
+  if (charge instanceof Response) {
+    return charge;
+  }
+
   const variationPrompt = clipText(sanitizeText(body.variationPrompt ?? ''), 160);
   const strength = clampNumber(asNumber(body.strength, 0.45), 0.1, 1.0);
   const mergedPrompt = variationPrompt.length === 0
@@ -654,6 +930,7 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
   return executeGeneration({
     env,
     auth,
+    chargeTxId: charge,
     prompt: mergedPrompt,
     stylePreset: original.stylePreset,
     qualityTier: original.qualityTier,
@@ -694,7 +971,7 @@ async function handlePrefill(request: Request, env: AiEnvBindings): Promise<Resp
   });
 }
 
-async function executeGeneration(params: {
+interface ExecuteGenerationParams {
   env: AiEnvBindings;
   auth: AuthContext;
   prompt: string;
@@ -703,12 +980,154 @@ async function executeGeneration(params: {
   targetSize: string;
   seed: number;
   parentGenerationId?: string;
-}): Promise<Response> {
+  chargeTxId?: string;
+}
+
+function chargeTxIdOrNull(value: unknown): string | null {
+  return typeof value === 'string' && CHARGE_TX_ID_REGEX.test(value) ? value : null;
+}
+
+function effectiveChargeState(record: AiChargeRecord): 'in_progress' | 'succeeded' | 'failed' {
+  if (record.state === 'in_progress' && Date.now() - record.at > CHARGE_STALE_IN_PROGRESS_MS) {
+    return 'failed';
+  }
+  return record.state;
+}
+
+function readChargeTxId(value: unknown, env: AiEnvBindings): string | undefined | Response {
+  if (value == null) {
+    return env.AI_REQUIRE_CHARGE === 'true'
+      ? aiError('charge_required', 402, 'A paid charge id is required')
+      : undefined;
+  }
+  const txId = chargeTxIdOrNull(value);
+  return txId ?? aiError('invalid_request', 400, 'Invalid chargeTxId');
+}
+
+async function executeGeneration(params: ExecuteGenerationParams): Promise<Response> {
+  const txId = params.chargeTxId;
+  if (txId == null) {
+    return runQuotaGatedGeneration(params);
+  }
+
+  let claim: AiQuotaChargeClaimResponse;
+  try {
+    claim = await sendQuotaRequest<AiQuotaChargeClaimResponse>(params.env, { op: 'charge_claim', txId });
+  } catch (error) {
+    console.error('[ai] charge_claim_failed', { userId: params.auth.userId, error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+  if (claim.status === 'done') {
+    return new Response(claim.response ?? '', {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
+  if (claim.status === 'in_progress') {
+    return aiError('charge_in_progress', 409, 'This charge is already being processed');
+  }
+  if (claim.status === 'failed') {
+    return aiError('charge_invalid', 402, 'This charge already failed. Request a refund.');
+  }
+
+  const verdict = await verifyCharge(txId, params.qualityTier, params.auth, params.env);
+  if (verdict !== 'ok') {
+    await sendChargeMutation(params.env, { op: 'charge_release', txId });
+    return verdict === 'invalid'
+      ? aiError('charge_invalid', 402, 'Charge could not be verified')
+      : aiError('provider_error', 502, 'Charge verification unavailable');
+  }
+
+  let response: Response;
+  try {
+    response = await runQuotaGatedGeneration(params);
+  } catch (error) {
+    await sendChargeMutation(params.env, { op: 'charge_finish', txId, outcome: 'failed' });
+    throw error;
+  }
+  await sendChargeMutation(
+    params.env,
+    response.ok
+      ? { op: 'charge_finish', txId, outcome: 'succeeded', response: await response.clone().text() }
+      : { op: 'charge_finish', txId, outcome: 'failed' },
+  );
+  return response;
+}
+
+async function sendChargeMutation(env: AiEnvBindings, body: AiQuotaChargeRequest | AiQuotaChargeFinishRequest): Promise<void> {
+  try {
+    await sendQuotaRequest<AiQuotaChargeMutationResponse>(env, body);
+  } catch (error) {
+    console.error('[ai] charge_update_failed', { op: body.op, txId: body.txId, error: `${error ?? ''}` });
+  }
+}
+
+async function verifyCharge(
+  txId: string,
+  qualityTier: AiQualityTier,
+  auth: AuthContext,
+  env: AiEnvBindings,
+): Promise<'ok' | 'invalid' | 'unavailable'> {
+  if (!isNonEmptyString(env.FIREBASE_PROJECT_ID)) {
+    console.error('[ai] charge_verify_missing_project_id');
+    return 'unavailable';
+  }
+  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}`
+    + `/databases/(default)/documents/coinTransactions/${encodeURIComponent(txId)}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { authorization: `Bearer ${auth.token}` },
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch (error) {
+    console.error('[ai] charge_verify_fetch_failed', { error: `${error ?? ''}` });
+    return 'unavailable';
+  }
+  if (response.status === 404 || response.status === 403 || response.status === 401) {
+    return 'invalid';
+  }
+  if (!response.ok) {
+    console.error('[ai] charge_verify_http_error', { status: response.status });
+    return 'unavailable';
+  }
+  const doc = await readJson<{ fields?: Record<string, Record<string, unknown> | undefined> }>(response);
+  const fields = doc?.fields;
+  if (fields == null) {
+    return 'invalid';
+  }
+  const delta = firestoreNumber(fields.delta);
+  const createdAtMs = typeof fields.createdAt?.timestampValue === 'string'
+    ? Date.parse(fields.createdAt.timestampValue)
+    : Number.NaN;
+  const ageMs = Date.now() - createdAtMs;
+  const matches = fields.userId?.stringValue === auth.userId
+    && fields.action?.stringValue === 'aiGeneration'
+    && fields.type?.stringValue === 'debit'
+    && fields.status?.stringValue === 'completed'
+    && delta != null
+    && -delta === AI_COIN_COST_BY_TIER[qualityTier]
+    && Number.isFinite(ageMs)
+    && ageMs >= -CHARGE_CLOCK_SKEW_MS
+    && ageMs <= CHARGE_MAX_AGE_MS;
+  return matches ? 'ok' : 'invalid';
+}
+
+function firestoreNumber(field: Record<string, unknown> | undefined): number | null {
+  if (field == null) {
+    return null;
+  }
+  const raw = field.integerValue ?? field.doubleValue;
+  const value = typeof raw === 'string' ? Number(raw) : raw;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+async function runQuotaGatedGeneration(params: ExecuteGenerationParams): Promise<Response> {
   const config = await readRoutingConfig(params.env);
   if (!config.enabled) {
     return aiError('service_disabled', 503, 'AI generation is disabled');
   }
-  let dailyCapStatus: { allowed: boolean; current: number };
+  let dailyCapStatus: { allowed: boolean; current: number; dayKey: string };
   try {
     dailyCapStatus = await checkAndIncrementUserDailyCap(params.auth.userId, config.hardUserDailyCap, params.env);
   } catch (error) {
@@ -722,6 +1141,27 @@ async function executeGeneration(params: {
     return aiError('rate_limited', 429, 'User daily generation limit reached');
   }
 
+  const billing = { billed: false };
+  let response: Response;
+  try {
+    response = await runGenerationAttempts(params, config, billing);
+  } catch (error) {
+    if (!billing.billed) {
+      await releaseUserDailyCap(params.auth.userId, dailyCapStatus.dayKey, params.env);
+    }
+    throw error;
+  }
+  if (!response.ok && !billing.billed) {
+    await releaseUserDailyCap(params.auth.userId, dailyCapStatus.dayKey, params.env);
+  }
+  return response;
+}
+
+async function runGenerationAttempts(
+  params: ExecuteGenerationParams,
+  config: AiRoutingConfig,
+  billing: { billed: boolean },
+): Promise<Response> {
   let routingPlan: RoutingPlan;
   try {
     routingPlan = await buildProviderAttemptOrder(config, params.qualityTier, params.env);
@@ -736,6 +1176,15 @@ async function executeGeneration(params: {
     return aiError('service_disabled', 503, 'No AI providers are enabled');
   }
   const effectiveQualityTier = routingPlan.effectiveQualityTier;
+  if (params.chargeTxId != null && effectiveQualityTier !== params.qualityTier) {
+    console.warn('[ai] paid_request_not_downgraded', {
+      userId: params.auth.userId,
+      requestedQualityTier: params.qualityTier,
+      effectiveQualityTier,
+      guardrailLevel: routingPlan.guardrailLevel,
+    });
+    return aiError('budget_exhausted', 429, 'The requested quality is unavailable right now');
+  }
   const attemptedProviders: AiProviderName[] = [];
   const requestStartedAt = Date.now();
   if (routingPlan.guardrailLevel > 0) {
@@ -790,6 +1239,18 @@ async function executeGeneration(params: {
     const model = providerConfig.modelByQuality[effectiveQualityTier];
     const startedAt = Date.now();
     let shouldReleaseReservation = true;
+    let reservationCommitted = false;
+    const markBilled = async (): Promise<void> => {
+      if (reservationCommitted) {
+        return;
+      }
+      reservationCommitted = true;
+      if (isNonEmptyString(reservationId)) {
+        await commitBilledReservation(reservationId, providerName, estimatedCost, params.env);
+      }
+      shouldReleaseReservation = false;
+      billing.billed = true;
+    };
     try {
       const result = await adapter.generate({
         prompt: params.prompt,
@@ -801,7 +1262,10 @@ async function executeGeneration(params: {
         stylePreset: params.stylePreset,
         timeoutMs: providerConfig.timeoutMs,
         env: params.env,
+        onProviderBilled: markBilled,
       });
+
+      await markBilled();
 
       if (!isOutputSafe(result.imageBytes, result.contentType)) {
         lastErrorCode = 'unsafe_output';
@@ -811,7 +1275,7 @@ async function executeGeneration(params: {
           model: result.model,
           contentType: result.contentType,
         });
-        continue;
+        break;
       }
 
       const generationId = createId('gen');
@@ -824,7 +1288,6 @@ async function executeGeneration(params: {
         params.env,
       );
       const latencyMs = Date.now() - startedAt;
-      const billedCost = result.estimatedCostUsd > 0 ? result.estimatedCostUsd : estimatedCost;
 
       const record: AiGenerationRecord = {
         generationId,
@@ -845,23 +1308,11 @@ async function executeGeneration(params: {
           promptSafe: true,
           outputSafe: true,
         },
-        estimatedCostUsd: billedCost,
+        estimatedCostUsd: estimatedCost,
         latencyMs,
       };
 
       await saveGenerationRecord(record, params.env);
-      if (isNonEmptyString(reservationId)) {
-        try {
-          await commitProviderBudgetReservation(reservationId, billedCost, params.env);
-        } catch (commitError) {
-          console.error('[ai] budget_reservation_commit_failed', {
-            provider: providerName,
-            reservationId,
-            error: `${commitError ?? ''}`,
-          });
-        }
-      }
-      shouldReleaseReservation = false;
 
       console.info('[ai] generation_success', {
         generationId: record.generationId,
@@ -903,6 +1354,9 @@ async function executeGeneration(params: {
         effectiveQualityTier,
         error: `${error ?? ''}`,
       });
+      if (reservationCommitted) {
+        break;
+      }
     } finally {
       if (shouldReleaseReservation && isNonEmptyString(reservationId)) {
         try {
@@ -1302,6 +1756,23 @@ async function commitProviderBudgetReservation(
   });
 }
 
+async function commitBilledReservation(
+  reservationId: string,
+  provider: AiProviderName,
+  billedCostUsd: number,
+  env: AiEnvBindings,
+): Promise<void> {
+  try {
+    await commitProviderBudgetReservation(reservationId, billedCostUsd, env);
+  } catch (commitError) {
+    console.error('[ai] budget_reservation_commit_failed', {
+      provider,
+      reservationId,
+      error: `${commitError ?? ''}`,
+    });
+  }
+}
+
 async function releaseProviderBudgetReservation(reservationId: string, env: AiEnvBindings): Promise<void> {
   await sendQuotaRequest<AiQuotaProviderBudgetReleaseResponse>(env, {
     op: 'provider_budget_release',
@@ -1313,17 +1784,31 @@ async function checkAndIncrementUserDailyCap(
   userId: string,
   cap: number,
   env: AiEnvBindings,
-): Promise<{ allowed: boolean; current: number }> {
+): Promise<{ allowed: boolean; current: number; dayKey: string }> {
+  const dayKey = utcDayKey();
   const response = await sendQuotaRequest<AiQuotaUserDailyCapResponse>(env, {
     op: 'user_daily_cap_try_increment',
     userId,
-    dayKey: utcDayKey(),
+    dayKey,
     cap,
   });
   return {
     allowed: response.allowed,
     current: Math.max(0, Math.round(asNumber(response.current, 0))),
+    dayKey,
   };
+}
+
+async function releaseUserDailyCap(userId: string, dayKey: string, env: AiEnvBindings): Promise<void> {
+  try {
+    await sendQuotaRequest<AiQuotaUserDailyCapReleaseResponse>(env, {
+      op: 'user_daily_cap_release',
+      userId,
+      dayKey,
+    });
+  } catch (error) {
+    console.error('[ai] quota_cap_release_failed', { userId, error: `${error ?? ''}` });
+  }
 }
 
 async function sendQuotaRequest<T extends AiQuotaRpcResponse>(env: AiEnvBindings, body: AiQuotaRpcRequest): Promise<T> {
@@ -1347,9 +1832,31 @@ async function sendQuotaRequest<T extends AiQuotaRpcResponse>(env: AiEnvBindings
   return parsed as T;
 }
 
+export async function bumpRateLimit(env: AiEnvBindings, key: string, limit: number, ttlSeconds: number): Promise<boolean> {
+  const response = await sendQuotaRequest<AiQuotaRateLimitResponse>(env, {
+    op: 'rate_limit_bump',
+    key,
+    limit,
+    ttlSeconds,
+  });
+  return response.allowed;
+}
+
 function quotaCoordinatorStub(env: AiEnvBindings): DurableObjectStub {
   const id = env.AI_QUOTA_DO.idFromName(AI_QUOTA_OBJECT_NAME);
   return env.AI_QUOTA_DO.get(id);
+}
+
+const WATERMARK_MIN_BYTES = 1024;
+const WATERMARK_RENDER_ATTEMPTS = 2;
+const WATERMARK_PENDING_TTL_SECONDS = 60 * 60 * 24 * 30;
+const PUBLIC_ASSET_KEY_REGEX = /^ai\/public\/([A-Za-z0-9_-]+)\.png$/;
+const ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
+interface WatermarkPendingRecord {
+  contentType: string;
+  width: number;
+  height: number;
 }
 
 async function persistGenerationArtifacts(
@@ -1362,39 +1869,95 @@ async function persistGenerationArtifacts(
 ): Promise<{ imageUrl: string; watermarkedImageUrl: string }> {
   const originalKey = `ai/original/${generationId}.png`;
   const publicKey = `ai/public/${generationId}.png`;
-  const cacheControl = 'public, max-age=31536000, immutable';
-  const watermarked = await renderPublicWatermarkedBytes(imageBytes, contentType, width, height, env);
-  if (watermarked.bytes.length < 1024) {
-    throw new Error('watermark_generation_failed');
+  await storeAsset(originalKey, imageBytes, contentType, env);
+
+  let watermarked: { bytes: Uint8Array; contentType: string } | null = null;
+  for (let attempt = 1; attempt <= WATERMARK_RENDER_ATTEMPTS && watermarked == null; attempt += 1) {
+    try {
+      const rendered = await renderPublicWatermarkedBytes(imageBytes, contentType, width, height, env);
+      if (rendered.bytes.length >= WATERMARK_MIN_BYTES) {
+        watermarked = rendered;
+      }
+    } catch (error) {
+      console.warn('[ai] watermark_attempt_failed', { generationId, attempt, error: `${error ?? ''}` });
+    }
   }
 
-  if (env.AI_IMAGES != null) {
-    await env.AI_IMAGES.put(originalKey, imageBytes, {
-      httpMetadata: {
-        contentType,
-        cacheControl,
-      },
+  if (watermarked != null) {
+    await storeAsset(publicKey, watermarked.bytes, watermarked.contentType, env);
+  } else {
+    const pending: WatermarkPendingRecord = { contentType, width, height };
+    await env.AI_STATE_KV.put(watermarkPendingKey(generationId), JSON.stringify(pending), {
+      expirationTtl: WATERMARK_PENDING_TTL_SECONDS,
     });
-    await env.AI_IMAGES.put(publicKey, watermarked.bytes, {
-      httpMetadata: {
-        contentType: watermarked.contentType,
-        cacheControl,
-      },
-    });
-    return {
-      imageUrl: `https://prismwalls.com/api/ai/assets/${originalKey}`,
-      watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${publicKey}`,
-    };
+    console.warn('[ai] watermark_deferred', { generationId });
   }
 
-  await env.AI_STATE_KV.put(`ai:asset:${originalKey}`, toBase64(imageBytes), { expirationTtl: 60 * 60 * 24 * 30 });
-  await env.AI_STATE_KV.put(`ai:asset:${publicKey}`, toBase64(watermarked.bytes), {
-    expirationTtl: 60 * 60 * 24 * 30,
-  });
   return {
     imageUrl: `https://prismwalls.com/api/ai/assets/${originalKey}`,
     watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${publicKey}`,
   };
+}
+
+function watermarkPendingKey(generationId: string): string {
+  return `ai:wmpending:${generationId}`;
+}
+
+async function storeAsset(key: string, bytes: Uint8Array, contentType: string, env: AiEnvBindings): Promise<void> {
+  if (env.AI_IMAGES != null) {
+    await env.AI_IMAGES.put(key, bytes, { httpMetadata: { contentType, cacheControl: ASSET_CACHE_CONTROL } });
+    return;
+  }
+  await env.AI_STATE_KV.put(`ai:asset:${key}`, toBase64(bytes), { expirationTtl: 60 * 60 * 24 * 30 });
+}
+
+async function readAssetBytes(key: string, env: AiEnvBindings): Promise<Uint8Array | null> {
+  if (env.AI_IMAGES != null) {
+    const object = await env.AI_IMAGES.get(key);
+    return object == null ? null : new Uint8Array(await object.arrayBuffer());
+  }
+  const encoded = await env.AI_STATE_KV.get(`ai:asset:${key}`);
+  return isNonEmptyString(encoded) ? fromBase64(encoded) : null;
+}
+
+async function ensureDeferredWatermark(objectKey: string, env: AiEnvBindings): Promise<boolean> {
+  const match = PUBLIC_ASSET_KEY_REGEX.exec(objectKey);
+  if (match == null) {
+    return false;
+  }
+  const generationId = match[1];
+  const rawPending = await env.AI_STATE_KV.get(watermarkPendingKey(generationId));
+  if (!isNonEmptyString(rawPending)) {
+    return false;
+  }
+  let pending: WatermarkPendingRecord;
+  try {
+    pending = JSON.parse(rawPending) as WatermarkPendingRecord;
+  } catch {
+    return false;
+  }
+  const original = await readAssetBytes(`ai/original/${generationId}.png`, env);
+  if (original == null) {
+    return false;
+  }
+  try {
+    const rendered = await renderPublicWatermarkedBytes(
+      original,
+      asString(pending.contentType),
+      asNumber(pending.width, 1080),
+      asNumber(pending.height, 1920),
+      env,
+    );
+    if (rendered.bytes.length < WATERMARK_MIN_BYTES) {
+      return false;
+    }
+    await storeAsset(objectKey, rendered.bytes, rendered.contentType, env);
+  } catch (error) {
+    console.warn('[ai] watermark_deferred_failed', { generationId, error: `${error ?? ''}` });
+    return false;
+  }
+  await env.AI_STATE_KV.delete(watermarkPendingKey(generationId));
+  return true;
 }
 
 async function renderPublicWatermarkedBytes(
@@ -1678,13 +2241,7 @@ async function readGenerationRecord(generationId: string, env: AiEnvBindings): P
 }
 
 function isPromptSafe(prompt: string): boolean {
-  const normalized = prompt.toLowerCase();
-  for (const token of BLOCKED_PROMPT_TERMS) {
-    if (normalized.includes(token)) {
-      return false;
-    }
-  }
-  return true;
+  return !BLOCKED_PROMPT_REGEX.test(prompt);
 }
 
 function isOutputSafe(imageBytes: Uint8Array, contentType: string): boolean {
@@ -1737,17 +2294,16 @@ class FalProviderAdapter implements AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult> {
     if (!isNonEmptyString(params.env.FAL_API_KEY)) {
       throw new Error('FAL_API_KEY missing');
     }
     const endpoint = `https://fal.run/${params.model}`;
-    const { width: rawWidth, height: rawHeight } = parseSize(params.targetSize);
-    const isSeedream = params.model.includes('seedream');
-    // Seedream requires dimensions between 1920–4096; scale up if below minimum.
-    const SEEDREAM_MIN = 1920;
-    const width = isSeedream ? Math.max(rawWidth, SEEDREAM_MIN) : rawWidth;
-    const height = isSeedream ? Math.max(rawHeight, SEEDREAM_MIN) : rawHeight;
+    const requestedSize = parseSize(params.targetSize);
+    const { width, height } = params.model.includes('seedream')
+      ? seedreamImageSize(requestedSize.width, requestedSize.height)
+      : requestedSize;
     const requestBody = {
       prompt: `${params.prompt}, ${params.stylePreset} style`,
       image_size: { width, height },
@@ -1766,6 +2322,7 @@ class FalProviderAdapter implements AiProviderAdapter {
       const details = await readErrorDetails(response);
       throw new Error(`fal_failed_${response.status}${details}`);
     }
+    await params.onProviderBilled();
     const payload = await response.json() as {
       images?: Array<{ url?: string }>;
       image?: { url?: string };
@@ -1805,6 +2362,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult> {
     if (!isNonEmptyString(params.env.GEMINI_API_KEY)) {
       throw new Error('GEMINI_API_KEY missing');
@@ -1832,6 +2390,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
       const details = await readErrorDetails(response);
       throw new Error(`gemini_failed_${response.status}${details}`);
     }
+    await params.onProviderBilled();
     const payload = await response.json() as {
       candidates?: Array<{
         content?: {
@@ -1872,6 +2431,33 @@ function parseSize(raw: string): { width: number; height: number } {
     width: Number.parseInt(match[1], 10),
     height: Number.parseInt(match[2], 10),
   };
+}
+
+// fal Seedream needs at least 2560x1440 total pixels and at most 4096 on each edge.
+const SEEDREAM_MIN_PIXELS = 2560 * 1440;
+const SEEDREAM_MAX_EDGE = 4096;
+
+export function seedreamImageSize(width: number, height: number): { width: number; height: number } {
+  // One factor for both edges keeps the requested aspect ratio.
+  const scale = Math.min(
+    Math.max(1, Math.sqrt(SEEDREAM_MIN_PIXELS / (width * height))),
+    SEEDREAM_MAX_EDGE / Math.max(width, height),
+  );
+  const size = { width: roundUpToMultipleOf8(width * scale), height: roundUpToMultipleOf8(height * scale) };
+  if (size.width * size.height < SEEDREAM_MIN_PIXELS) {
+    // Past about 1:4.5 the edge cap blocks the pixel minimum; widen the short edge so fal still accepts the size.
+    if (size.width <= size.height) {
+      size.width = roundUpToMultipleOf8(SEEDREAM_MIN_PIXELS / size.height);
+    } else {
+      size.height = roundUpToMultipleOf8(SEEDREAM_MIN_PIXELS / size.width);
+    }
+  }
+  return size;
+}
+
+function roundUpToMultipleOf8(value: number): number {
+  // The small offset stops float noise such as 1440.0000000002 from adding a whole step.
+  return Math.ceil(value / 8 - 1e-9) * 8;
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {

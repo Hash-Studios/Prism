@@ -1,3 +1,4 @@
+import 'package:Prism/core/account/local_account_data_cleaner.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
@@ -9,12 +10,28 @@ import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+typedef _Step = Future<void> Function();
+
 class DeleteAccountService {
-  DeleteAccountService._();
+  DeleteAccountService({
+    _Step? reauthenticate,
+    _Step? deleteOnServer,
+    Future<bool> Function()? signOut,
+    Future<void> Function(String userId)? clearLocalData,
+  }) : _reauthenticate = reauthenticate ?? _reauthenticateWithProvider,
+       _deleteOnServer = deleteOnServer ?? _callDeleteAccount,
+       _signOut = signOut ?? (() => globalGoogleAuth.signOutGoogle()),
+       _clearLocalData = clearLocalData ?? _clearLocalAccountData;
 
-  static final DeleteAccountService instance = DeleteAccountService._();
+  static DeleteAccountService instance = DeleteAccountService();
 
-  SettingsLocalDataSource get _settingsLocal => getIt<SettingsLocalDataSource>();
+  /// The server deletes in batches and can take up to 300 seconds.
+  static const Duration serverTimeout = Duration(seconds: 300);
+
+  final _Step _reauthenticate;
+  final _Step _deleteOnServer;
+  final Future<bool> Function() _signOut;
+  final Future<void> Function(String userId) _clearLocalData;
 
   /// Performs a full account deletion:
   ///   1. Re-authenticates (required before the server will act on this account)
@@ -28,6 +45,17 @@ class DeleteAccountService {
     logger.i('[DeleteAccount] Starting deletion for userId=$userId', tag: 'DeleteAccount');
 
     // If the user cancels re-authentication this throws and we never reach the server.
+    await _reauthenticate();
+    await _deleteOnServer();
+
+    // Sign out from Google SDK so silent re-auth doesn't recreate the account.
+    await _signOut();
+    await _clearLocalData(userId);
+
+    logger.i('[DeleteAccount] Done', tag: 'DeleteAccount');
+  }
+
+  static Future<void> _reauthenticateWithProvider() async {
     final providerIds =
         FirebaseAuth.instance.currentUser?.providerData.map((provider) => provider.providerId).toSet() ?? {};
     if (providerIds.contains('apple.com')) {
@@ -35,17 +63,17 @@ class DeleteAccountService {
     } else {
       await globalGoogleAuth.reauthenticateCurrentUser();
     }
+  }
 
+  static Future<void> _callDeleteAccount() async {
     await appFunctions
-        .httpsCallable('deleteAccount', options: HttpsCallableOptions(timeout: const Duration(seconds: 30)))
+        .httpsCallable('deleteAccount', options: HttpsCallableOptions(timeout: serverTimeout))
         .call<dynamic>();
+  }
 
-    // Sign out from Google SDK so silent re-auth doesn't recreate the account.
-    await globalGoogleAuth.signOutGoogle();
-
-    await resetOnboardingLocalState(_settingsLocal);
+  static Future<void> _clearLocalAccountData(String userId) async {
+    await resetOnboardingLocalState(getIt<SettingsLocalDataSource>());
     await getIt<SessionLocalDataSource>().clearCurrentUser();
-
-    logger.i('[DeleteAccount] Done', tag: 'DeleteAccount');
+    await LocalAccountDataCleaner().clearForUser(userId);
   }
 }

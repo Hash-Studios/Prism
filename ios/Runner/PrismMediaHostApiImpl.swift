@@ -39,7 +39,7 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
     queueDownloadOperation { [self] in
       do {
         try PrismMediaFiles.validateFilename(request.filenameWithoutExtension)
-        let image = try await files.resolve(link: request.link, isLocalFile: false)
+        let image = try await files.resolve(link: request.link, isLocalFile: request.isLocalFile)
         let staged: URL
         do {
           staged = try await files.stage(image: image, filename: request.filenameWithoutExtension)
@@ -89,6 +89,21 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
       } catch {
         completion(.success(OperationResult(
           success: false, errorCode: "CLEAR_FAILED", message: error.localizedDescription
+        )))
+      }
+    }
+  }
+
+  func deleteDownload(path: String, completion: @escaping (Result<OperationResult, Error>) -> Void) {
+    queueDownloadOperation { [self] in
+      do {
+        let removed = try await files.delete(path: path)
+        completion(.success(removed
+          ? OperationResult(success: true)
+          : OperationResult(success: false, errorCode: "NOT_FOUND", message: "Download not found.")))
+      } catch {
+        completion(.success(OperationResult(
+          success: false, errorCode: "DELETE_FAILED", message: error.localizedDescription
         )))
       }
     }

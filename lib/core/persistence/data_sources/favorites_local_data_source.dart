@@ -40,19 +40,4 @@ class FavoritesLocalDataSource {
   Future<void> replaceWallFavourites(String userId, Iterable<String> itemIds) {
     return _saveWallSet(_scope(userId), itemIds.where((id) => id.isNotEmpty).toSet());
   }
-
-  Future<void> setSeeded(String userId, bool value) async {
-    final scope = _scope(userId);
-    final key = PersistenceKeys.favoritesSeeded(scope);
-    if (!value) {
-      await _store.delete(key);
-      return;
-    }
-    await _store.set(key, true);
-  }
-
-  bool isSeeded(String userId) {
-    final scope = _scope(userId);
-    return (_store.get(PersistenceKeys.favoritesSeeded(scope)) as bool?) ?? false;
-  }
 }

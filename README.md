@@ -119,17 +119,26 @@ You can also report bugs, upload your walls on our telegram channel
 - Each wallpaper/creator has a unique deep link for easy sharing
 - Option to add Twitter/Instagram/links to your profile
 - Low internet usage with aggressive caching
-- Save favourite wallpapers (synced to cloud)
+- Save favourite wallpapers (synced to cloud). Sort, filter, search and select many at once
+- Share or delete many downloads at once
 - Set random wallpaper from downloaded ones via quick tile
+- Auto-rotate your favourites or downloads on a timer, only while charging or in set hours (Android, Pro)
+- Live wallpapers: make any wallpaper move, pick a living gradient, or use a video (Android)
+- Wallpaper history: see what you set and set it again
 - Secure data storage on Google Firebase
-- Search wallpapers by keyword, color, or tags
+- Search wallpapers by keyword, color, or tags, with Prism results, filters and recent searches
+- Tap a tag or open More like this on a wallpaper to find similar ones
 - Preview wallpaper with clock and app icon overlay before applying
-- Set any wallpaper on the home screen, lock screen, or both
+- Set any wallpaper on the home screen, lock screen, or both. Choose Fill or Fit, crop it, or pick a default target
+- Notification inbox with unread marks, Mark all as read, swipe to delete, and one preferences sheet
+- Wall of the Day push at 9 AM in your time zone
 - Extensive settings with modular sections
 - Minimal design with smooth animations
 - Clear Cache, Downloads, or Favourites with one-tap
 - Application size about 12 MB
 - Adaptive UI (changes color based on wallpaper)
+
+See [docs/features](docs/features/README.md) for a short page on each feature.
 
 ## Changelog
 

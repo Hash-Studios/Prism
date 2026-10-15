@@ -17,6 +17,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:Prism/features/ads/domain/usecases/ads_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
@@ -80,6 +81,14 @@ void main() {
   });
 
   setUp(() {
+    // The coin gate asks for ad consent before it shows a prompt. The real flow needs the Google UMP plugin.
+    AdConsent.instance = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      canRequestAds: () async => true,
+      privacyOptionsRequired: () async => false,
+      showPrivacyOptions: () async {},
+    );
     AnalyticsRuntime.instance = FakeAppAnalytics();
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'test'
@@ -90,6 +99,7 @@ void main() {
   });
 
   tearDown(() async {
+    AdConsent.instance = AdConsent();
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();

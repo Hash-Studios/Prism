@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -20,11 +21,17 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+
+/// `<uid>_<epochMs>_<basename>`: unique per user and per upload, so one upload never overwrites another.
+@visibleForTesting
+String uploadFileName(String uid, String basename, {int? epochMs}) =>
+    '${uid}_${epochMs ?? DateTime.now().millisecondsSinceEpoch}_$basename';
 
 @RoutePage(name: 'EditProfilePanelRoute')
 class EditProfilePanel extends StatefulWidget {
@@ -48,7 +55,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool linkEdit = false;
   bool enabled = false;
   bool? available;
+  String? _usernameError;
+  final Set<String> _invalidLinks = <String>{};
   bool isCheckingUsername = false;
+  Timer? _usernameDebounce;
+  int _usernameCheckId = 0;
   File? _pfp;
   File? _cover;
   final picker2 = ImagePicker();
@@ -65,6 +76,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _usernameDebounce?.cancel();
+    linkController.dispose();
+    bioController.dispose();
+    usernameController.dispose();
+    nameController.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickImage(ValueSetter<File> onPicked) async {
     PrismHaptics.tap();
     final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
@@ -73,34 +94,22 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     }
   }
 
-  Future<Uint8List> compressFile(File file) async {
-    final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: 400, quality: 85);
+  Future<Uint8List> compressFile(File file, {required int minWidth}) async {
+    final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: minWidth, quality: 85);
     return result!;
   }
 
-  Future<bool> _uploadImage(File file, {required String field}) async {
-    try {
-      final Uint8List compressed = await compressFile(file);
-      final value = await GitHubContentApi().putFile(
-        repo: Env.normalize(Env.ghRepoWalls),
-        message: path.basename(file.path),
-        contentBase64: base64Encode(compressed),
-        path: path.basename(file.path),
-      );
-      final String url = value.downloadUrl!;
-      if (field == 'profilePhoto') {
-        app_state.prismUser.profilePhoto = url;
-      } else {
-        app_state.prismUser.coverPhoto = url;
-      }
-      app_state.persistPrismUser();
-      await _updateCurrentUser(<String, dynamic>{field: url}, 'profile.edit.$field');
-      return true;
-    } catch (e) {
-      logger.d(e.toString());
-      toasts.error('Some uploading issue, please try again.');
-      return false;
-    }
+  /// Uploads [file] under a name no other user or upload can share and returns its download URL.
+  Future<String> _uploadImage(File file, {required int minWidth}) async {
+    final Uint8List compressed = await compressFile(file, minWidth: minWidth);
+    final String fileName = uploadFileName(app_state.prismUser.id, path.basename(file.path));
+    final value = await GitHubContentApi().putFile(
+      repo: Env.normalize(Env.ghRepoWalls),
+      message: fileName,
+      contentBase64: base64Encode(compressed),
+      path: fileName,
+    );
+    return value.downloadUrl!;
   }
 
   Future<void> showRemoveAlertDialog(BuildContext context, Future<void> Function() remove, String removeWhat) async {
@@ -169,75 +178,136 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<bool> _isUsernameAvailable(String username) async {
-    final users = await firestoreClient.query<Map<String, dynamic>>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.usersV2,
-        sourceTag: 'profile.edit.usernameAvailability',
-        filters: <FirestoreFilter>[
-          FirestoreFilter(field: "username", op: FirestoreFilterOp.isEqualTo, value: username),
-        ],
-        limit: 1,
-      ),
-      (data, _) => data,
-    );
-    return users.isEmpty;
+    final String currentUserId = app_state.prismUser.id;
+    final List<List<String>> matches = await Future.wait(<Future<List<String>>>[
+      _userIdsWhere('username', username),
+      _userIdsWhere('usernameLower', username.toLowerCase()),
+    ]);
+    return !matches.expand((ids) => ids).any((id) => id != currentUserId);
   }
 
-  bool get _hasChanges =>
-      (!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) || (usernameEdit && enabled);
+  Future<List<String>> _userIdsWhere(String field, String value) {
+    return firestoreClient.query<String>(
+      FirestoreQuerySpec(
+        collection: FirebaseCollections.usersV2,
+        sourceTag: 'profile.edit.usernameAvailability.$field',
+        filters: <FirestoreFilter>[FirestoreFilter(field: field, op: FirestoreFilterOp.isEqualTo, value: value)],
+        limit: 2,
+      ),
+      (data, docId) => docId,
+    );
+  }
+
+  void _onUsernameChanged(String value) {
+    _usernameDebounce?.cancel();
+    final bool longEnough = value.length >= minUsernameLength;
+    final bool validChars = !value.contains(RegExp(r"(?: |[^\w\s])+"));
+    final bool valid = longEnough && validChars;
+    final int checkId = ++_usernameCheckId;
+    setState(() {
+      enabled = valid;
+      available = null;
+      _usernameError = value.isEmpty || value == app_state.prismUser.username
+          ? null
+          : !longEnough
+          ? 'Use at least $minUsernameLength characters.'
+          : !validChars
+          ? 'Use letters, numbers and underscores only.'
+          : null;
+      isCheckingUsername = valid && value != app_state.prismUser.username;
+      usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
+    });
+    if (!isCheckingUsername) return;
+    _usernameDebounce = Timer(const Duration(milliseconds: 400), () async {
+      bool? isAvailable;
+      try {
+        isAvailable = await _isUsernameAvailable(value);
+      } catch (e) {
+        logger.d(e.toString());
+      }
+      if (!mounted || checkId != _usernameCheckId) return;
+      setState(() {
+        available = isAvailable;
+        isCheckingUsername = false;
+        if (isAvailable == false) _usernameError = 'That username is taken.';
+      });
+      if (isAvailable == null) toasts.error("Couldn't check the username. Try again.");
+    });
+  }
+
+  bool get _hasChanges {
+    final bool usernameOk = !usernameEdit || (enabled && available == true && !isCheckingUsername);
+    return (usernameEdit || pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit) &&
+        usernameOk &&
+        _invalidLinks.isEmpty;
+  }
 
   Future<void> _saveProfile() async {
     PrismHaptics.tap();
+    if (usernameEdit && available != true) {
+      toasts.error('Pick an available username.');
+      return;
+    }
     setState(() => isLoading = true);
-
-    if (usernameEdit && usernameController.text.isNotEmpty && usernameController.text.length >= 8) {
-      app_state.prismUser.username = usernameController.text;
-      app_state.persistPrismUser();
-      await _updateCurrentUser(<String, dynamic>{"username": usernameController.text}, 'profile.edit.username');
-    }
-    if (_pfp != null && pfpEdit) {
-      if (!await _uploadImage(_pfp!, field: 'profilePhoto')) {
-        if (mounted) setState(() => isLoading = false);
-        return;
+    try {
+      final PrismUsersV2 user = app_state.prismUser;
+      final Map<String, dynamic> updates = <String, dynamic>{};
+      if (usernameEdit && usernameController.text.length >= minUsernameLength) {
+        updates['username'] = usernameController.text;
       }
-    }
-    if (_cover != null && coverEdit) {
-      if (!await _uploadImage(_cover!, field: 'coverPhoto')) {
-        if (mounted) setState(() => isLoading = false);
-        return;
+      if (_pfp != null && pfpEdit) {
+        updates['profilePhoto'] = await _uploadImage(_pfp!, minWidth: 400);
       }
-    }
-    if (bioEdit && bioController.text.isNotEmpty) {
-      app_state.prismUser.bio = bioController.text;
-      app_state.persistPrismUser();
-      await _updateCurrentUser(<String, dynamic>{"bio": bioController.text}, 'profile.edit.bio');
-    }
-    if (nameEdit && nameController.text.isNotEmpty) {
-      app_state.prismUser.name = nameController.text;
-      app_state.persistPrismUser();
-      await _updateCurrentUser(<String, dynamic>{"name": nameController.text}, 'profile.edit.name');
-    }
-    if (linkEdit) {
-      final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
-      _linkValues.forEach((name, value) {
-        if (value.isNotEmpty) {
-          links[name] = value;
-        }
-      });
-      app_state.prismUser.links = links;
-      app_state.persistPrismUser();
-      await _updateCurrentUser(<String, dynamic>{"links": links}, 'profile.edit.links');
-    }
+      if (_cover != null && coverEdit) {
+        updates['coverPhoto'] = await _uploadImage(_cover!, minWidth: 1080);
+      }
+      if (bioEdit && bioController.text.isNotEmpty) {
+        updates['bio'] = bioController.text;
+      }
+      if (nameEdit && nameController.text.isNotEmpty) {
+        updates['name'] = nameController.text;
+      }
+      if (linkEdit) {
+        final Map<String, String> links = Map<String, String>.from(user.links);
+        _linkValues.forEach((name, value) {
+          if (value.isNotEmpty) {
+            links[name] = value;
+          }
+        });
+        updates['links'] = links;
+      }
+      if (updates.isNotEmpty) {
+        await _updateCurrentUser(updates, 'profile.edit.save');
+      }
 
-    await CoinsService.instance.maybeAwardProfileCompletion();
-    setState(() => isLoading = false);
-    if (mounted) {
-      Navigator.pop(context);
-      toasts.success("Profile updated!");
+      if (updates['username'] != null) user.username = updates['username'] as String;
+      if (updates['profilePhoto'] != null) user.profilePhoto = updates['profilePhoto'] as String;
+      if (updates['coverPhoto'] != null) user.coverPhoto = updates['coverPhoto'] as String;
+      if (updates['bio'] != null) user.bio = updates['bio'] as String;
+      if (updates['name'] != null) user.name = updates['name'] as String;
+      if (updates['links'] != null) user.links = updates['links'] as Map<String, String>;
+      await app_state.persistPrismUser();
+
+      await CoinsService.instance.maybeAwardProfileCompletion();
+      if (mounted) {
+        Navigator.pop(context);
+        toasts.success("Profile updated!");
+      }
+    } catch (e) {
+      logger.d(e.toString());
+      toasts.error("Couldn't update your profile. Please try again.");
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
-  InputDecoration _fieldDecoration({required String label, Widget? prefixIcon, Widget? suffixIcon, String? hintText}) {
+  InputDecoration _fieldDecoration({
+    required String label,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    String? hintText,
+    String? errorText,
+  }) {
     final secondary = Theme.of(context).colorScheme.secondary;
     final borderColor = secondary.withValues(alpha: PrismFormField.restingBorderOpacity);
     final borderSide = BorderSide(color: borderColor, width: PrismFormField.borderWidth);
@@ -265,6 +335,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       ),
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
+      errorText: errorText,
     );
   }
 
@@ -513,6 +584,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       controller: usernameController,
       decoration: _fieldDecoration(
         label: 'Username',
+        errorText: _usernameError,
         prefixIcon: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           child: Text(
@@ -552,28 +624,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           ),
         ),
       ),
-      onChanged: (value) async {
-        final valid = value.isNotEmpty && value.length >= 8 && !value.contains(RegExp(r"(?: |[^\w\s])+"));
-        setState(() => enabled = valid);
-
-        if (valid) {
-          setState(() => isCheckingUsername = true);
-          final isAvailable = await _isUsernameAvailable(value);
-          if (mounted) {
-            setState(() {
-              available = isAvailable;
-              isCheckingUsername = false;
-            });
-          }
-        } else {
-          setState(() => available = null);
-        }
-
-        setState(() {
-          usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
-          if (!usernameEdit) available = null;
-        });
-      },
+      onChanged: _onUsernameChanged,
     );
   }
 
@@ -650,7 +701,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               }).toList(),
               underline: const SizedBox.shrink(),
               onChanged: (value) {
-                setState(() => _link = value!);
+                setState(() {
+                  _invalidLinks.remove(_link.name);
+                  _link = value!;
+                });
                 linkController.text = _linkValues[_link.name] ?? '';
               },
               icon: const SizedBox.shrink(),
@@ -686,6 +740,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             decoration: _fieldDecoration(
               label: _link.name.inCaps,
               hintText: _link.placeholder,
+              errorText: _invalidLinks.contains(_link.name) ? _linkErrorText(_link) : null,
               suffixIcon: IconButton(
                 tooltip: 'Remove link',
                 onPressed: () => showRemoveAlertDialog(context, () async {
@@ -702,10 +757,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               ),
             ),
             onChanged: (value) {
-              if (value.toLowerCase().contains(_link.validator.toLowerCase())) {
-                _linkValues[_link.name] = value;
-              } else if (value.isEmpty) {
-                _linkValues[_link.name] = '';
+              final String? clean = value.trim().isEmpty ? '' : sanitizeProfileLink(_link, value);
+              if (clean == null) {
+                _invalidLinks.add(_link.name);
+              } else {
+                _invalidLinks.remove(_link.name);
+                _linkValues[_link.name] = clean;
               }
               final changed = _linkValues.values.any((v) => v.isNotEmpty);
               setState(() => linkEdit = changed);
@@ -715,6 +772,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       ],
     );
   }
+
+  String _linkErrorText(ProfileLinkKind kind) => switch (kind.name) {
+    'email' => 'Enter a valid email address.',
+    customLinkName => 'Enter a valid link.',
+    _ => 'Enter a valid ${kind.name} link.',
+  };
 
   Widget _buildSaveButton(Color secondary) {
     final isActive = _hasChanges;

@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -154,6 +155,7 @@ void main() {
       () => fetchStarterPackUseCase(const NoParams()),
     ).thenAnswer((_) async => Result.success(<OnboardingStarterCreatorEntity>[]));
     when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer((_) async => null);
+    when(() => settingsLocalDataSource.set(any(), any())).thenAnswer((_) async {});
     when(
       () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
     ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: false, hasFollows: false)));
@@ -222,7 +224,7 @@ void main() {
   );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
-    'a short unique creator list can be recovered by reloading the starter pack',
+    'an empty starter pack can be recovered by reloading it',
     setUp: () {
       app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
       when(
@@ -232,7 +234,7 @@ void main() {
       when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
         (_) async => Result.success(
           fetchStarterPackUseCaseCalls++ == 0
-              ? <OnboardingStarterCreatorEntity>[_creator(2), _creator(0), _creator(0)]
+              ? <OnboardingStarterCreatorEntity>[]
               : <OnboardingStarterCreatorEntity>[_creator(2), _creator(1), _creator(0)],
         ),
       );
@@ -242,7 +244,7 @@ void main() {
     act: (bloc) async {
       bloc.add(const OnboardingV2Event.started());
       final short = await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
-      expect(short.starterPackData.creators.length, 2);
+      expect(short.starterPackData.creators, isEmpty);
       expect(short.starterPackData.canContinue, isFalse);
       bloc.add(const OnboardingV2Event.starterPackReloadRequested());
       await bloc.stream.firstWhere((state) => state.starterPackData.canContinue);
@@ -301,14 +303,12 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       bloc.add(const OnboardingV2Event.interestsConfirmed());
     },
-    verify: (_) => expect(analytics.events, isEmpty),
+    verify: (_) => expect(trackedNames(), isNot(contains('onboarding_v2_interests_completed'))),
   );
 
   group('save failures', () {
     late Completer<Result<void>> pendingInterestsResult;
     late Completer<Result<void>> pendingStarterPackResult;
-    late Completer<OnboardingWallpaperVm?> pendingRecommendation;
-    late Completer<void> recommendationStarted;
 
     Future<void> confirmInterests(OnboardingV2Bloc bloc) async {
       app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
@@ -361,7 +361,7 @@ void main() {
           expect(bloc.state.sessionInvalid, isFalse);
           expect(bloc.state.interestsData.selected, <String>['Nature', 'Anime', 'Minimal']);
           expect(bloc.state.navRequest, isNull);
-          expect(trackedNames(), isEmpty);
+          expect(trackedNames(), isNot(contains('onboarding_v2_interests_completed')));
         },
       );
     }
@@ -591,11 +591,16 @@ void main() {
     );
 
     blocTest<OnboardingV2Bloc, OnboardingV2State>(
-      'backing out and returning while an interests save is pending ignores its stale failure',
+      'backing out and returning while a starter pack save is pending ignores its stale failure',
       setUp: () {
         app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
-        pendingInterestsResult = Completer<Result<void>>();
-        when(() => saveInterestsUseCase(any())).thenAnswer((_) => pendingInterestsResult.future);
+        pendingStarterPackResult = Completer<Result<void>>();
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
+        when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+          (_) async =>
+              Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+        );
+        when(() => followStarterPackUseCase(any())).thenAnswer((_) => pendingStarterPackResult.future);
       },
       build: buildBloc,
       act: (bloc) async {
@@ -606,12 +611,12 @@ void main() {
         bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
         await Future<void>.delayed(Duration.zero);
         bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
         await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.inProgress);
         bloc.add(const OnboardingV2Event.stepBack());
-        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.auth);
-        bloc.add(const OnboardingV2Event.authCompleted());
         await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
-        pendingInterestsResult.complete(Result.error(const ServerFailure('offline')));
+        pendingStarterPackResult.complete(Result.error(const ServerFailure('offline')));
         await Future<void>.delayed(Duration.zero);
       },
       verify: (bloc) {
@@ -620,46 +625,6 @@ void main() {
         expect(bloc.state.sessionInvalid, isFalse);
       },
       wait: const Duration(milliseconds: 10),
-    );
-
-    blocTest<OnboardingV2Bloc, OnboardingV2State>(
-      'backing out during wallpaper refresh does not advance the step after returning',
-      setUp: () {
-        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
-        var recommendationCalls = 0;
-        recommendationStarted = Completer<void>();
-        pendingRecommendation = Completer<OnboardingWallpaperVm?>();
-        when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
-        when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer((_) {
-          recommendationCalls++;
-          if (recommendationCalls == 2) {
-            recommendationStarted.complete();
-            return pendingRecommendation.future;
-          }
-          return Future<OnboardingWallpaperVm?>.value();
-        });
-      },
-      build: buildBloc,
-      act: (bloc) async {
-        bloc.add(const OnboardingV2Event.started());
-        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
-        bloc.add(const OnboardingV2Event.interestToggled('Nature'));
-        bloc.add(const OnboardingV2Event.interestToggled('Anime'));
-        bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
-        await Future<void>.delayed(Duration.zero);
-        bloc.add(const OnboardingV2Event.interestsConfirmed());
-        await recommendationStarted.future;
-        bloc.add(const OnboardingV2Event.stepBack());
-        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.auth);
-        bloc.add(const OnboardingV2Event.authCompleted());
-        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
-        pendingRecommendation.complete(null);
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-      },
-      verify: (bloc) {
-        expect(bloc.state.step, OnboardingV2Step.interests);
-        expect(bloc.state.actionStatus, ActionStatus.idle);
-      },
     );
 
     for (final code in <String>['permission-denied', 'not-found', 'unauthenticated']) {
@@ -864,7 +829,7 @@ void main() {
   );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
-    'reloading a short starter pack refreshes Remote Config and preselects the new creators',
+    'reloading an empty starter pack refreshes Remote Config and preselects the new creators',
     setUp: () {
       app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
       when(
@@ -874,7 +839,7 @@ void main() {
       var calls = 0;
       when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
         (_) async => Result.success(
-          List<OnboardingStarterCreatorEntity>.generate(calls++ == 0 ? 1 : OnboardingV2Config.minFollows + 1, _creator),
+          List<OnboardingStarterCreatorEntity>.generate(calls++ == 0 ? 0 : OnboardingV2Config.minFollows + 1, _creator),
         ),
       );
     },
@@ -884,7 +849,7 @@ void main() {
       final short = await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
       expect(short.starterPackData.canContinue, isFalse);
       bloc.add(const OnboardingV2Event.starterPackReloadRequested());
-      await bloc.stream.firstWhere((s) => s.starterPackData.creators.length > 1);
+      await bloc.stream.firstWhere((s) => s.starterPackData.creators.isNotEmpty);
     },
     verify: (bloc) {
       verify(() => remoteConfig.fetchAndActivate()).called(1);
@@ -951,28 +916,32 @@ void main() {
     'back navigation cancels a pending starter-pack reload result',
     setUp: () {
       app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
-      when(
-        () => onboardingRepository.fetchUserCompletionStatus(userId: 'resume-user'),
-      ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: true, hasFollows: false)));
+      when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
     },
     build: buildBloc,
     act: (bloc) async {
       final pendingFetch = Completer<bool>();
       when(() => remoteConfig.fetchAndActivate()).thenAnswer((_) => pendingFetch.future);
       bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.interests);
+      bloc.add(const OnboardingV2Event.interestToggled('Nature'));
+      bloc.add(const OnboardingV2Event.interestToggled('Anime'));
+      bloc.add(const OnboardingV2Event.interestToggled('Minimal'));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const OnboardingV2Event.interestsConfirmed());
       await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
       final originalPack = bloc.state.starterPackData;
       bloc.add(const OnboardingV2Event.starterPackReloadRequested());
       await bloc.stream.firstWhere((state) => state.actionStatus == ActionStatus.inProgress);
       bloc.add(const OnboardingV2Event.stepBack());
-      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.auth);
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.interests);
       pendingFetch.complete(true);
       await Future<void>.delayed(Duration.zero);
       expect(bloc.state.starterPackData, originalPack);
     },
     verify: (bloc) {
       expect(bloc.state.actionStatus, ActionStatus.idle);
-      expect(bloc.state.step, OnboardingV2Step.auth);
+      expect(bloc.state.step, OnboardingV2Step.interests);
     },
   );
 
@@ -990,7 +959,7 @@ void main() {
     var packCalls = 0;
     when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
       (_) async => Result.success(
-        List<OnboardingStarterCreatorEntity>.generate(packCalls++ == 0 ? 1 : OnboardingV2Config.minFollows, _creator),
+        List<OnboardingStarterCreatorEntity>.generate(packCalls++ == 0 ? 0 : OnboardingV2Config.minFollows, _creator),
       ),
     );
 
@@ -1005,7 +974,7 @@ void main() {
 
       await tester.pump(const Duration(seconds: 30));
       expect(bloc.state.actionStatus, ActionStatus.idle);
-      expect(bloc.state.starterPackData.creators, hasLength(1));
+      expect(bloc.state.starterPackData.creators, isEmpty);
       expect(bloc.state.starterPackData.canContinue, isFalse);
 
       bloc.add(const OnboardingV2Event.starterPackReloadRequested());
@@ -1172,19 +1141,33 @@ void main() {
     );
   });
 
-  blocTest<OnboardingV2Bloc, OnboardingV2State>(
-    'stepping back walks the steps in reverse and stops at auth',
-    setUp: () => app_state.prismUser = _user(id: 'resume-user', loggedIn: true),
-    build: buildBloc,
-    act: (bloc) async {
-      bloc.add(const OnboardingV2Event.started());
-      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
-      bloc.add(const OnboardingV2Event.stepBack());
-      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.auth);
-      bloc.add(const OnboardingV2Event.stepBack());
-    },
-    verify: (bloc) => expect(bloc.state.step, OnboardingV2Step.auth),
-  );
+  test('stepping back walks the steps in reverse and then exits instead of showing auth', () async {
+    app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+    final bloc = buildBloc();
+    addTearDown(bloc.close);
+    final requests = <OnboardingV2NavRequest>[];
+    final sub = bloc.stream.listen((s) {
+      if (s.navRequest != null) requests.add(s.navRequest!);
+    });
+    addTearDown(sub.cancel);
+
+    bloc.add(const OnboardingV2Event.started());
+    await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+    bloc.add(const OnboardingV2Event.interestsSkipped());
+    await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+    bloc.add(const OnboardingV2Event.starterPackSkipped());
+    await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+
+    bloc.add(const OnboardingV2Event.stepBack());
+    await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+    bloc.add(const OnboardingV2Event.stepBack());
+    await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+    bloc.add(const OnboardingV2Event.stepBack());
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.step, OnboardingV2Step.interests);
+    expect(requests, <OnboardingV2NavRequest>[OnboardingV2NavRequest.exitApp]);
+  });
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'records first-wallpaper exposure on entry and action outcome after the platform call',
@@ -1196,7 +1179,9 @@ void main() {
           sourceCategory: 'Nature',
         ),
       );
-      when(() => firstWallpaperService.performAction(any())).thenAnswer((_) async => false);
+      when(
+        () => firstWallpaperService.performAction(any()),
+      ).thenAnswer((_) async => const FirstWallpaperResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'));
     },
     build: buildBloc,
     act: (bloc) async {
@@ -1214,6 +1199,7 @@ void main() {
       );
       final action = analytics.events.singleWhere((e) => e.eventName == 'onboarding_v2_first_wallpaper_action');
       expect(action.toWireParameters()['result'], 'failure');
+      expect(trackedNames(), isNot(contains('onboarding_step_completed')));
     },
   );
 
@@ -1253,15 +1239,379 @@ void main() {
     },
   );
 
-  blocTest<OnboardingV2Bloc, OnboardingV2State>(
-    'does not record onboarding completion when persistence fails',
-    setUp: () {
+  group('completion failure', () {
+    test('after the paywall was handled a later continue does not open it again', () async {
+      when(() => completeOnboardingUseCase(any())).thenAnswer((_) async => Result.error(const ServerFailure('x')));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: false));
+      await bloc.stream.firstWhere((s) => s.completionFailed);
+      final nextRequests = <OnboardingV2NavRequest?>[];
+      final sub = bloc.stream.listen((s) => nextRequests.add(s.navRequest));
+      bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await sub.cancel();
+
+      expect(nextRequests, isNot(contains(OnboardingV2NavRequest.openPaywall)));
+    });
+  });
+
+  group('returning user', () {
+    setUp(() {
+      app_state.prismUser = _user(id: 'returning', loggedIn: true);
+      when(() => onboardingRepository.fetchUserCompletionStatus(userId: 'returning')).thenAnswer(
+        (_) async =>
+            Result.success(const OnboardingUserStatus(hasInterests: false, hasFollows: false, completed: true)),
+      );
+    });
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a user the server marks completed skips every step and the paywall',
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.navRequest != null);
+      },
+      verify: (bloc) {
+        expect(bloc.state.navRequest, OnboardingV2NavRequest.completeOnboarding);
+        expect(bloc.state.step, OnboardingV2Step.auth);
+        verify(() => settingsLocalDataSource.set('onboarded_v2_new', true)).called(1);
+        verifyNever(() => completeOnboardingUseCase(any()));
+        expect(trackedNames(), isNot(contains('onboarding_v2_completed')));
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a non-premium returning user is never sent to the paywall',
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.authCompleted());
+        await bloc.stream.firstWhere((s) => s.navRequest != null);
+      },
+      verify: (bloc) => expect(bloc.state.navRequest, isNot(OnboardingV2NavRequest.openPaywall)),
+    );
+  });
+
+  group('starter pack and interests skipping', () {
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a starter pack with fewer creators than the minimum can continue once all are picked',
+      setUp: () => when(
+        () => fetchStarterPackUseCase(const NoParams()),
+      ).thenAnswer((_) async => Result.success(<OnboardingStarterCreatorEntity>[_creator(0), _creator(1)])),
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      },
+      verify: (bloc) {
+        expect(bloc.state.starterPackData.requiredCount, 2);
+        expect(bloc.state.starterPackData.canContinue, isTrue);
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'an empty starter pack cannot continue but can be skipped to the AI step',
+      setUp: () => app_state.prismUser = _user(id: 'resume-user', loggedIn: true),
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestsSkipped());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        expect(bloc.state.starterPackData.canContinue, isFalse);
+        bloc.add(const OnboardingV2Event.starterPackSkipped());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.aiGenerate);
+        verifyNever(() => followStarterPackUseCase(any()));
+        verifyNever(() => saveInterestsUseCase(any()));
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'skipping interests when the follows are already done goes to the AI step with a prompt',
+      setUp: () {
+        app_state.prismUser = _user(id: 'follower', loggedIn: true);
+        when(
+          () => onboardingRepository.fetchUserCompletionStatus(userId: 'follower'),
+        ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: false, hasFollows: true)));
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestsSkipped());
+      },
+      verify: (bloc) {
+        expect(bloc.state.step, OnboardingV2Step.aiGenerate);
+        expect(bloc.state.aiData.prompt, isNotEmpty);
+      },
+    );
+
+    test('interests need min(3, available) picks and an empty list never continues', () {
+      const base = OnboardingInterestsData(available: <String>['a', 'b'], selected: <String>[], categoryImages: {});
+      expect(base.requiredCount, 2);
+      expect(base.canContinue, isFalse);
+      expect(base.copyWith(selected: <String>['a', 'b']).canContinue, isTrue);
+      expect(OnboardingInterestsData.initial().canContinue, isFalse);
+    });
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'retrying a failed load fetches the catalogue again',
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+        bloc.add(const OnboardingV2Event.loadRetried());
+        await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.loading);
+        await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      },
+      verify: (_) => verify(() => fetchStarterPackUseCase(const NoParams())).called(2),
+    );
+  });
+
+  group('back navigation', () {
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'back on the auth step asks the shell to exit the app',
+      build: buildBloc,
+      act: (bloc) => bloc.add(const OnboardingV2Event.stepBack()),
+      expect: () => <Matcher>[
+        isA<OnboardingV2State>().having((s) => s.navRequest, 'navRequest', OnboardingV2NavRequest.exitApp),
+        isA<OnboardingV2State>().having((s) => s.navRequest, 'navRequest', isNull),
+      ],
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a signed-in user on the first step never goes back to auth',
+      setUp: () => app_state.prismUser = _user(id: 'resume-user', loggedIn: true),
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.stepBack());
+      },
+      verify: (bloc) => expect(bloc.state.step, OnboardingV2Step.interests),
+    );
+  });
+
+  group('analytics funnel', () {
+    int stepCompletions(String step) => analytics.events
+        .where((e) => e.eventName == 'onboarding_step_completed' && e.toWireParameters()['step'] == step)
+        .length;
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'starting onboarding records onboarding_started once',
+      build: buildBloc,
+      act: (bloc) => bloc.add(const OnboardingV2Event.started()),
+      verify: (_) => expect(trackedNames().where((n) => n == 'onboarding_started'), hasLength(1)),
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'each finished step records onboarding_step_completed with its name',
+      setUp: () {
+        app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+        when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
+        when(() => followStarterPackUseCase(any())).thenAnswer((_) async => Result.success(null));
+        when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+          (_) async =>
+              Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+        );
+        when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer(
+          (_) async => const OnboardingWallpaperVm(
+            fullUrl: 'https://example.com/wall.jpg',
+            thumbnailUrl: 'https://example.com/thumb.jpg',
+            sourceCategory: 'Nature',
+          ),
+        );
+        when(
+          () => firstWallpaperService.performAction(any()),
+        ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.both));
+        when(
+          () => aiRepository.generate(
+            prompt: any(named: 'prompt'),
+            stylePreset: any(named: 'stylePreset'),
+            qualityTier: any(named: 'qualityTier'),
+            targetSize: any(named: 'targetSize'),
+            chargeMode: any(named: 'chargeMode'),
+            coinsSpent: any(named: 'coinsSpent'),
+          ),
+        ).thenAnswer((_) async => _aiRecord());
+      },
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        for (final interest in <String>['Nature', 'Anime', 'Minimal']) {
+          bloc.add(OnboardingV2Event.interestToggled(interest));
+        }
+        bloc.add(const OnboardingV2Event.interestsConfirmed());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackConfirmed());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+        bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+        await bloc.stream.firstWhere((s) => s.aiData.status == AiGenerateStatus.success);
+        bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.firstWallpaper);
+        bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
+        await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.success);
+      },
+      verify: (_) {
+        for (final step in <String>['auth', 'interests', 'starter_pack', 'ai_generate', 'first_wallpaper']) {
+          expect(stepCompletions(step), 1, reason: step);
+        }
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'skipping the AI step does not count it as completed',
+      setUp: () => app_state.prismUser = _user(id: 'resume-user', loggedIn: true),
+      build: buildBloc,
+      act: (bloc) async {
+        bloc.add(const OnboardingV2Event.started());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+        bloc.add(const OnboardingV2Event.interestsSkipped());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
+        bloc.add(const OnboardingV2Event.starterPackSkipped());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+        bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+        await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.firstWallpaper);
+      },
+      verify: (_) {
+        expect(stepCompletions('ai_generate'), 0);
+        expect(stepCompletions('interests'), 0);
+      },
+    );
+  });
+
+  group('first wallpaper outcome', () {
+    setUp(() {
+      when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer(
+        (_) async => const OnboardingWallpaperVm(
+          fullUrl: 'https://example.com/wall.jpg',
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          sourceCategory: 'Nature',
+        ),
+      );
+    });
+
+    Future<void> request(OnboardingV2Bloc bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
+    }
+
+    test('a success keeps the screen that was set so the toast can name it', () async {
       when(
-        () => completeOnboardingUseCase(any()),
-      ).thenAnswer((_) async => Result.error(const ServerFailure('write failed')));
-    },
-    build: buildBloc,
-    act: (bloc) => bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: false)),
-    verify: (_) => expect(analytics.events, isEmpty),
-  );
+        () => firstWallpaperService.performAction(any()),
+      ).thenAnswer((_) async => const FirstWallpaperResult(success: true, target: WallpaperTarget.home));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      await request(bloc);
+      final state = await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.success);
+
+      expect(state.wallpaperData.target, WallpaperTarget.home);
+      expect(state.wallpaperData.errorCode, isNull);
+    });
+
+    test('a failure keeps the error code and trying again clears it', () async {
+      when(
+        () => firstWallpaperService.performAction(any()),
+      ).thenAnswer((_) async => const FirstWallpaperResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      await request(bloc);
+      final failed = await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.failure);
+      expect(failed.wallpaperData.errorCode, 'PHOTO_PERMISSION_DENIED');
+
+      bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
+      final loading = await bloc.stream.firstWhere((s) => s.wallpaperData.status == FirstWallpaperStatus.loading);
+      expect(loading.wallpaperData.errorCode, isNull);
+    });
+  });
+
+  group('guest path', () {
+    Future<void> startAsGuest(OnboardingV2Bloc bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      bloc.add(const OnboardingV2Event.guestBrowseStarted());
+      await bloc.stream.firstWhere((s) => s.isGuest);
+    }
+
+    void pickThree(OnboardingV2Bloc bloc) {
+      for (final interest in <String>['Nature', 'Anime', 'Minimal']) {
+        bloc.add(OnboardingV2Event.interestToggled(interest));
+      }
+    }
+
+    test('browsing without an account opens the interests step', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      await startAsGuest(bloc);
+
+      expect(bloc.state.step, OnboardingV2Step.interests);
+      expect(bloc.state.isGuest, isTrue);
+    });
+
+    test('confirming stores the picks on the device only and opens the dashboard', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await startAsGuest(bloc);
+
+      pickThree(bloc);
+      bloc.add(const OnboardingV2Event.interestsConfirmed());
+      final done = await bloc.stream.firstWhere((s) => s.navRequest != null);
+
+      expect(done.navRequest, OnboardingV2NavRequest.openDashboardAsGuest);
+      verify(() => settingsLocalDataSource.set('onboarding_v2_interests', 'Nature,Anime,Minimal')).called(1);
+      verify(() => settingsLocalDataSource.set('onboarded_v2_new', true)).called(1);
+      verifyNever(() => saveInterestsUseCase(any()));
+      verifyNever(() => completeOnboardingUseCase(any()));
+      expect(trackedNames(), containsAll(<String>['onboarding_v2_interests_completed', 'onboarding_step_completed']));
+    });
+
+    test('skipping opens the dashboard without storing interests', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await startAsGuest(bloc);
+
+      bloc.add(const OnboardingV2Event.interestsSkipped());
+      final done = await bloc.stream.firstWhere((s) => s.navRequest != null);
+
+      expect(done.navRequest, OnboardingV2NavRequest.openDashboardAsGuest);
+      verify(() => settingsLocalDataSource.set('onboarded_v2_new', true)).called(1);
+      verifyNever(() => settingsLocalDataSource.set('onboarding_v2_interests', any()));
+    });
+
+    test('a failed local write reports the failure and stays on the step', () async {
+      when(() => settingsLocalDataSource.set('onboarding_v2_interests', any())).thenThrow(StateError('disk full'));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await startAsGuest(bloc);
+
+      pickThree(bloc);
+      bloc.add(const OnboardingV2Event.interestsConfirmed());
+      final failed = await bloc.stream.firstWhere((s) => s.actionStatus == ActionStatus.failure);
+
+      expect(failed.step, OnboardingV2Step.interests);
+      expect(failed.navRequest, isNull);
+      verifyNever(() => settingsLocalDataSource.set('onboarded_v2_new', true));
+    });
+
+    test('back returns a guest to the sign-in step and ends the guest path', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await startAsGuest(bloc);
+
+      bloc.add(const OnboardingV2Event.stepBack());
+      final back = await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.auth);
+
+      expect(back.isGuest, isFalse);
+      expect(back.navRequest, isNull);
+    });
+  });
 }

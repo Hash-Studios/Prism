@@ -8,6 +8,7 @@ import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -25,14 +26,18 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickWallpaperImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (!mounted || pickedFile == null) {
+    final int limit = uploadPickLimit(
+      isPremium: app_state.prismUser.premium,
+      remainingFree: UploadQuota.remainingFreeUploadsThisWeek(),
+    );
+    final List<XFile> picked = await _picker.pickMultiImage(limit: limit);
+    if (!mounted || picked.isEmpty) {
       return;
     }
-    final wallpaper = File(pickedFile.path);
+    final List<File> wallpapers = picked.take(limit).map((file) => File(file.path)).toList();
     final router = context.router;
     Navigator.pop(context);
-    router.push(EditWallRoute(image: wallpaper));
+    router.push(EditWallRoute(image: wallpapers.first, batch: wallpapers.length > 1 ? UploadBatch(wallpapers) : null));
   }
 
   Future<void> _onWallpaperTap() async {

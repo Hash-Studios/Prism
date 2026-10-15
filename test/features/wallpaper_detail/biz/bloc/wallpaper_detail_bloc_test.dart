@@ -15,6 +15,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/palette_entity.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
+import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -28,6 +29,8 @@ class _MockPexelsRepository extends Mock implements PexelsWallpaperRepository {}
 class _MockRecordViews extends Mock implements RecordPrismWallpaperViewsUsecase {}
 
 class _MockPaletteRepository extends Mock implements PaletteRepository {}
+
+class _MockSetCount extends Mock implements GetWallpaperSetCountUseCase {}
 
 const PrismWallpaper _wallpaper = PrismWallpaper(
   core: WallpaperCore(
@@ -43,6 +46,7 @@ void main() {
   late _MockPaletteRepository palette;
   late _MockWallhavenRepository wallhaven;
   late _MockRecordViews views;
+  late _MockSetCount setCount;
   late WallpaperDetailBloc bloc;
 
   setUp(() {
@@ -50,29 +54,88 @@ void main() {
     palette = _MockPaletteRepository();
     wallhaven = _MockWallhavenRepository();
     views = _MockRecordViews();
+    setCount = _MockSetCount();
+    when(() => setCount(any())).thenAnswer((_) async => Result.success<int?>(null));
+    when(() => palette.generatePalette(any())).thenAnswer((_) async => Result.error(const NetworkFailure('x')));
     when(() => views(any())).thenAnswer((_) async => Result.success('7'));
-    bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette);
+    bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount);
     addTearDown(bloc.close);
   });
 
   Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 10));
 
-  test('a failed fetch shows the failure message without an Exception prefix', () async {
+  test('a failed fetch never shows the raw failure text and keeps the thumbnail for the error screen', () async {
+    when(() => prism.fetchById('abc')).thenAnswer(
+      (_) async =>
+          Result.error(const ServerFailure('[cloud_firestore/unavailable] The service is currently unavailable')),
+    );
+
+    bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism, thumbnailUrl: 'https://img/t.jpg'));
+    await settle();
+
+    expect(
+      bloc.state,
+      const WallpaperDetailError(message: 'Check your connection and try again.', thumbnailUrl: 'https://img/t.jpg'),
+    );
+  });
+
+  test('a network failure also reads as a connection problem', () async {
     when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.error(const NetworkFailure('No connection')));
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await settle();
 
-    expect(bloc.state, const WallpaperDetailError(message: 'No connection'));
+    expect(bloc.state, const WallpaperDetailError(message: 'Check your connection and try again.'));
   });
 
-  test('a missing wallpaper shows a not found message', () async {
+  test('a missing wallpaper keeps the not found message', () async {
     when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await settle();
 
     expect(bloc.state, const WallpaperDetailError(message: 'Wallpaper not found'));
+  });
+
+  test('the set count of a Prism wall lands in the loaded state', () async {
+    when(() => setCount('abc')).thenAnswer((_) async => Result.success<int?>(12));
+
+    bloc.add(
+      const LoadFromEntity(
+        entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+      ),
+    );
+    await settle();
+
+    expect((bloc.state as WallpaperDetailLoaded).setCount, 12);
+  });
+
+  test('a failed or empty set count leaves the state without a count', () async {
+    when(() => setCount('abc')).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+
+    bloc.add(
+      const LoadFromEntity(
+        entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+      ),
+    );
+    await settle();
+
+    expect((bloc.state as WallpaperDetailLoaded).setCount, isNull);
+  });
+
+  test('walls from other sources never ask for a set count', () async {
+    const WallhavenWallpaper wallhavenWall = WallhavenWallpaper(
+      core: WallpaperCore(id: 'w', source: WallpaperSource.wallhaven, fullUrl: 'f', thumbnailUrl: 't', authorName: 'a'),
+    );
+
+    bloc.add(
+      const LoadFromEntity(
+        entity: WallhavenFeedItem(id: 'w', wallpaper: wallhavenWall),
+      ),
+    );
+    await settle();
+
+    verifyNever(() => setCount(any()));
   });
 
   test('palette colours land in the loaded state with similar shades removed', () async {

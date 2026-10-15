@@ -1,3 +1,4 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
@@ -120,7 +121,7 @@ class _PreviewArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 400),
+      duration: context.motion(const Duration(milliseconds: 400)),
       child: switch (aiData.status) {
         AiGenerateStatus.idle => const _IdlePlaceholder(key: ValueKey('idle')),
         AiGenerateStatus.loading => const _LoadingView(key: ValueKey('loading')),
@@ -203,7 +204,7 @@ class _ResultImage extends StatelessWidget {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        fadeInDuration: const Duration(milliseconds: 300),
+        fadeInDuration: context.motion(const Duration(milliseconds: 300)),
         errorWidget: (_, _, _) => const _FailureView(),
       ),
     );

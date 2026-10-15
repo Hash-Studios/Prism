@@ -251,20 +251,23 @@ data class SaveMediaRequest (
 /** Generated class from Pigeon that represents data sent in messages. */
 data class DownloadRequest (
   val link: String,
-  val filenameWithoutExtension: String
+  val filenameWithoutExtension: String,
+  val isLocalFile: Boolean
 )
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): DownloadRequest {
       val link = pigeonVar_list[0] as String
       val filenameWithoutExtension = pigeonVar_list[1] as String
-      return DownloadRequest(link, filenameWithoutExtension)
+      val isLocalFile = pigeonVar_list[2] as Boolean
+      return DownloadRequest(link, filenameWithoutExtension, isLocalFile)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
       link,
       filenameWithoutExtension,
+      isLocalFile,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -275,17 +278,18 @@ data class DownloadRequest (
       return true
     }
     val other = other as DownloadRequest
-    return PrismMediaApiPigeonUtils.deepEquals(this.link, other.link) && PrismMediaApiPigeonUtils.deepEquals(this.filenameWithoutExtension, other.filenameWithoutExtension)
+    return PrismMediaApiPigeonUtils.deepEquals(this.link, other.link) && PrismMediaApiPigeonUtils.deepEquals(this.filenameWithoutExtension, other.filenameWithoutExtension) && PrismMediaApiPigeonUtils.deepEquals(this.isLocalFile, other.isLocalFile)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
     result = 31 * result + PrismMediaApiPigeonUtils.deepHash(this.link)
     result = 31 * result + PrismMediaApiPigeonUtils.deepHash(this.filenameWithoutExtension)
+    result = 31 * result + PrismMediaApiPigeonUtils.deepHash(this.isLocalFile)
     return result
   }
   override fun toString(): String {
-    return "DownloadRequest(link=$link, filenameWithoutExtension=$filenameWithoutExtension)"
+    return "DownloadRequest(link=$link, filenameWithoutExtension=$filenameWithoutExtension, isLocalFile=$isLocalFile)"
   }
 }
 
@@ -447,6 +451,7 @@ interface PrismMediaHostApi {
   fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit)
   fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit)
   fun clearDownloads(callback: (Result<OperationResult>) -> Unit)
+  fun deleteDownload(path: String, callback: (Result<OperationResult>) -> Unit)
 
   companion object {
     /** The codec used by PrismMediaHostApi. */
@@ -520,6 +525,26 @@ interface PrismMediaHostApi {
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.clearDownloads{ result: Result<OperationResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.deleteDownload$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pathArg = args[0] as String
+            api.deleteDownload(pathArg) { result: Result<OperationResult> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(PrismMediaApiPigeonUtils.wrapError(error))

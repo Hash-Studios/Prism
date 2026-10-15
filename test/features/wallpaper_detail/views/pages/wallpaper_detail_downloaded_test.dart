@@ -109,12 +109,14 @@ void main() {
       ),
     );
 
+    ImageProvider unwrap(ImageProvider provider) => provider is ResizeImage ? provider.imageProvider : provider;
     final localImages = tester
         .widgetList<Image>(find.byType(Image))
-        .where((image) => image.image is FileImage)
+        .map((image) => unwrap(image.image))
+        .whereType<FileImage>()
         .toList();
     expect(localImages.length, greaterThan(1));
-    expect(localImages.every((image) => (image.image as FileImage).file.path == file.path), isTrue);
+    expect(localImages.every((image) => image.file.path == file.path), isTrue);
     expect(tester.widget<SetWallpaperButton>(find.byType(SetWallpaperButton)).url, file.path);
     await tester.tap(find.byTooltip('Clock preview'));
     await tester.pumpAndSettle();

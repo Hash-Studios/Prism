@@ -143,7 +143,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
     ) async {
-      toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      if (call.method == 'showToast') toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
   });
@@ -163,6 +163,9 @@ void main() {
     VoidCallback? onMount,
     Stream<OnboardingV2State>? states,
   }) async {
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final _MockOnboardingBloc bloc = _MockOnboardingBloc();
     whenListen(bloc, states ?? Stream<OnboardingV2State>.value(to), initialState: from);
     when(() => bloc.close()).thenAnswer((_) async {});
@@ -580,7 +583,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  for (final int count in <int>[0, 2]) {
+  for (final int count in <int>[0]) {
     testWidgets('a starter pack with $count creators offers a reload instead of a dead end', (tester) async {
       final OnboardingV2State short = _starterPack.copyWith(
         starterPackData: OnboardingStarterPackData(
@@ -599,6 +602,22 @@ void main() {
       verifyNever(() => bloc.add(const OnboardingV2Event.starterPackConfirmed()));
     });
   }
+
+  testWidgets('a short starter pack with every creator picked continues instead of offering a reload', (tester) async {
+    final OnboardingV2State short = _starterPack.copyWith(
+      starterPackData: OnboardingStarterPackData(
+        creators: <OnboardingStarterCreatorEntity>[_creator(0), _creator(1)],
+        selectedEmails: <String>{'creator-0@example.com', 'creator-1@example.com'},
+      ),
+    );
+    final bloc = await pumpShell(tester, short, short);
+
+    expect(find.text('reload'), findsNothing);
+    await tester.tap(find.text('continue'));
+    await tester.pump();
+
+    verify(() => bloc.add(const OnboardingV2Event.starterPackConfirmed())).called(1);
+  });
 
   testWidgets('a completion failure takes priority over reload for a short starter pack', (tester) async {
     final OnboardingV2State failed = _starterPack.copyWith(

@@ -1,4 +1,5 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -9,6 +10,7 @@ class NotFoundPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -21,7 +23,7 @@ class NotFoundPage extends StatelessWidget {
                 Text(
                   'The link you opened is invalid or no longer available.',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: PrismTextStyles.body(context),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(

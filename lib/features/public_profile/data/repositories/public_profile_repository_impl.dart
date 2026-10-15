@@ -153,12 +153,19 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
         ? FirestoreSentinels.arrayUnion
         : FirestoreSentinels.arrayRemove;
     try {
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, currentUserId, <String, dynamic>{
-        'following': change(<Object?>[targetUserEmail]),
-      }, sourceTag: 'public_profile.$verb.current_user');
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, targetUserId, <String, dynamic>{
-        'followers': change(<Object?>[currentUserEmail]),
-      }, sourceTag: 'public_profile.$verb.target_user');
+      await _firestoreClient.runTransaction<void>(
+        (FirestoreTransaction transaction) async {
+          transaction.updateDoc(FirebaseCollections.usersV2, currentUserId, <String, dynamic>{
+            'following': change(<Object?>[targetUserEmail]),
+          });
+          transaction.updateDoc(FirebaseCollections.usersV2, targetUserId, <String, dynamic>{
+            'followers': change(<Object?>[currentUserEmail]),
+          });
+        },
+        sourceTag: 'public_profile.$verb',
+        collection: FirebaseCollections.usersV2,
+        docId: currentUserId,
+      );
       return Result.success<void>(null);
     } catch (error) {
       return Result.error(ServerFailure('Unable to $verb user: $error'));
