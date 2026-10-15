@@ -41,22 +41,21 @@ Future<int> _centreRed(File file) async {
 }
 
 Future<void> _waitForReady(WidgetTester tester) async {
-  for (int attempt = 0; attempt < 20; attempt++) {
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+  while (true) {
+    await tester.runAsync(() => Future<void>(() {}));
     await tester.pump();
+    expect(find.text("Couldn't open this wallpaper."), findsNothing);
     final Finder downloadButton = find.ancestor(of: find.byTooltip('Download'), matching: find.byType(IconButton));
     if (tester.widget<IconButton>(downloadButton).onPressed != null) return;
   }
-  fail('Valid preview did not become ready');
 }
 
 Future<void> _waitForFailure(WidgetTester tester) async {
-  for (int attempt = 0; attempt < 20; attempt++) {
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+  while (true) {
+    await tester.runAsync(() => Future<void>(() {}));
     await tester.pump();
     if (find.text("Couldn't open this wallpaper.").evaluate().isNotEmpty) return;
   }
-  fail('Invalid preview did not show its error state');
 }
 
 Widget _screenHost(String sourcePath) => MaterialApp(home: WallpaperFilterScreen(filePath: sourcePath));
@@ -243,11 +242,10 @@ void main() {
     await tester.tap(find.byTooltip('Download'));
     brightness.onChanged!(-100);
     await tester.pump();
-    for (int attempt = 0; attempt < 100 && !requestReceived.isCompleted; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+    while (!requestReceived.isCompleted) {
+      await tester.runAsync(() => Future<void>(() {}));
       await tester.pump();
     }
-    expect(requestReceived.isCompleted, isTrue);
     final SaveMediaRequest request = await requestReceived.future;
     await tester.pump();
 
@@ -257,8 +255,10 @@ void main() {
     expect(await tester.runAsync(() => _centreRed(File(request.link))), 255);
 
     allowSave.complete();
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-    await tester.pump();
+    while (File(request.link).parent.existsSync()) {
+      await tester.runAsync(() => Future<void>(() {}));
+      await tester.pump();
+    }
 
     expect(File(request.link).existsSync(), isFalse);
     expect(Directory(File(request.link).parent.path).existsSync(), isFalse);
@@ -297,22 +297,23 @@ void main() {
     await tester.tap(find.text('AddictiveBlue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Set as wallpaper'));
-    for (int attempt = 0; attempt < 40 && find.text('Home Screen').evaluate().isEmpty; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-      await tester.pump(const Duration(milliseconds: 50));
+    while (find.text('Home Screen').evaluate().isEmpty) {
+      await tester.runAsync(() => Future<void>(() {}));
+      await tester.pump();
     }
     expect(find.text('Home Screen'), findsOneWidget);
     final Finder homeTarget = find.ancestor(of: find.text('Home Screen'), matching: find.byType(GestureDetector)).last;
     tester.widget<GestureDetector>(homeTarget).onTap!();
     await tester.pump(const Duration(milliseconds: 500));
 
-    for (int attempt = 0; attempt < 20 && client.requests.isEmpty; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+    while (client.requests.isEmpty || File(client.requests.single.source.filePath!).existsSync()) {
+      await tester.runAsync(() => Future<void>(() {}));
       await tester.pump();
     }
 
     expect(client.requests, hasLength(1));
     expect(client.requests.single.source.filePath, isNotNull);
     expect(File(client.requests.single.source.filePath!).existsSync(), isFalse);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
