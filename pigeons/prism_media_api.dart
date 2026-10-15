@@ -29,8 +29,13 @@ class SaveMediaRequest {
 class DownloadRequest {
   final String link;
   final String filenameWithoutExtension;
+  final bool isLocalFile;
 
-  DownloadRequest({required this.link, required this.filenameWithoutExtension});
+  DownloadRequest({
+    required this.link,
+    required this.filenameWithoutExtension,
+    required this.isLocalFile,
+  });
 }
 
 class OperationResult {

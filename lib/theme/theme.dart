@@ -1,4 +1,5 @@
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -26,13 +27,85 @@ const _darkSecond = Color(0xFF2F2F2F);
 const _darkAccent = Color(0xFFF0F0F0);
 const _defaultPink = Color(0xFFE57697);
 
+/// [foreground] when it reads on a chip fill over [page]. Otherwise [foreground] moved towards black or white in
+/// steps of 10 percent, until it reaches [PrismChip.minLabelContrast].
+Color _legibleLabel(Color foreground, Color page) {
+  final Color fill = Color.alphaBlend(foreground.withValues(alpha: PrismChip.restFillAlpha), page);
+  final Color extreme = onColor(page);
+  for (int step = 0; step <= 10; step++) {
+    final Color candidate = Color.lerp(foreground, extreme, step / 10)!;
+    if (contrastRatio(candidate, fill) >= PrismChip.minLabelContrast) {
+      return candidate;
+    }
+  }
+  return extreme;
+}
+
+/// The theme foreground ([ColorScheme.secondary]) as text on the page, darkened or lightened until it reaches
+/// [PrismChip.minLabelContrast]. Chip labels, the library tabs and the count line use it.
+Color prismReadableInk(ThemeData theme) => _legibleLabel(theme.colorScheme.secondary, theme.primaryColor);
+
+/// [prismReadableInk] at [PrismInk.softAlpha], for text one level below the main text. It stays at full ink when
+/// the softer one would fall under [PrismChip.minLabelContrast] on the page.
+Color prismSoftInk(ThemeData theme) {
+  final Color ink = prismReadableInk(theme);
+  final Color soft = ink.withValues(alpha: PrismInk.softAlpha);
+  final bool reads =
+      contrastRatio(Color.alphaBlend(soft, theme.primaryColor), theme.primaryColor) >= PrismChip.minLabelContrast;
+  return reads ? soft : ink;
+}
+
+/// Gives every chip the same look: a pill with a tonal fill of the foreground colour, and the accent fill when
+/// selected. Run it after anything that changes the accent, because it reads the accent from [ThemeData.colorScheme].
+ThemeData withPrismChipTheme(ThemeData base) {
+  final ColorScheme scheme = base.colorScheme;
+  final Color foreground = scheme.secondary;
+  final Color accent = scheme.primary;
+  final Color onAccent = onColor(accent);
+  final Color label = prismReadableInk(base);
+  return base.copyWith(
+    chipTheme: ChipThemeData(
+      shape: const StadiumBorder(),
+      side: BorderSide.none,
+      showCheckmark: false,
+      elevation: 0,
+      pressElevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      backgroundColor: foreground.withValues(alpha: PrismChip.restFillAlpha),
+      selectedColor: accent,
+      disabledColor: foreground.withValues(alpha: PrismChip.disabledFillAlpha),
+      padding: PrismChip.padding,
+      labelPadding: PrismChip.labelPadding,
+      labelStyle: TextStyle(
+        fontFamily: PrismFonts.proximaNova,
+        fontSize: PrismChip.fontSize,
+        fontWeight: FontWeight.w600,
+        height: PrismChip.labelHeight,
+        color: WidgetStateColor.resolveWith((Set<WidgetState> states) {
+          if (states.contains(WidgetState.selected)) {
+            return onAccent;
+          }
+          if (states.contains(WidgetState.disabled)) {
+            return label.withValues(alpha: PrismChip.disabledLabelAlpha);
+          }
+          return label;
+        }),
+      ),
+      iconTheme: IconThemeData(color: label, size: PrismChip.iconSize),
+      avatarBoxConstraints: PrismChip.avatarConstraints,
+      deleteIconColor: label,
+    ),
+  );
+}
+
 ThemeData _lightTheme({
   required Color primary,
   required Color hint,
   required Color accent,
   Color secondary = _lightAccent,
 }) {
-  return ThemeData(
+  final ThemeData theme = ThemeData(
     canvasColor: Colors.transparent,
     primaryColor: primary,
     brightness: Brightness.light,
@@ -104,6 +177,7 @@ ThemeData _lightTheme({
     colorScheme: ColorScheme.light(primary: accent).copyWith(secondary: secondary, error: accent),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: accent, refreshBackgroundColor: primary),
   );
+  return withPrismChipTheme(theme);
 }
 
 ThemeData _darkTheme({
@@ -115,7 +189,7 @@ ThemeData _darkTheme({
   Color titleMedium = _darkSecond,
   Color? error,
 }) {
-  return ThemeData(
+  final ThemeData theme = ThemeData(
     canvasColor: Colors.transparent,
     primaryColor: primary,
     brightness: Brightness.dark,
@@ -173,6 +247,7 @@ ThemeData _darkTheme({
     colorScheme: ColorScheme.dark(primary: accent).copyWith(secondary: secondary, error: error ?? accent),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: accent, refreshBackgroundColor: primary),
   );
+  return withPrismChipTheme(theme);
 }
 
 ThemeData kLightTheme = _lightTheme(primary: _lightMain, hint: _lightSecond, accent: _defaultPink);

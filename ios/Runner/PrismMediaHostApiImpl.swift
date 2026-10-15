@@ -39,7 +39,7 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
     queueDownloadOperation { [self] in
       do {
         try PrismMediaFiles.validateFilename(request.filenameWithoutExtension)
-        let image = try await files.resolve(link: request.link, isLocalFile: false)
+        let image = try await files.resolve(link: request.link, isLocalFile: request.isLocalFile)
         let staged: URL
         do {
           staged = try await files.stage(image: image, filename: request.filenameWithoutExtension)

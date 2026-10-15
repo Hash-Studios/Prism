@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -5,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -94,6 +97,7 @@ void main() {
     String? entryPoint,
     List<String> notes = const <String>[],
     VoidCallback? onMatchAccent,
+    Future<String> Function()? prepareSource,
   }) async {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
@@ -112,6 +116,7 @@ void main() {
               entryPoint: entryPoint,
               notes: notes,
               onMatchAccent: onMatchAccent,
+              prepareSource: prepareSource,
             ),
           ),
         ),
@@ -705,6 +710,113 @@ void main() {
       isTrue,
     );
     await tester.pump(const Duration(seconds: 5));
+  });
+
+  group('prepareSource', () {
+    final List<MethodCall> toasts = <MethodCall>[];
+
+    Future<void> pumpPrepared(WidgetTester tester, Future<String> Function() prepareSource) async {
+      await pumpButton(tester, prepareSource: prepareSource);
+      toasts.clear();
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('PonnamKarthik/fluttertoast'),
+        (call) async {
+          toasts.add(call);
+          return true;
+        },
+      );
+    }
+
+    bool toasted(String message) =>
+        toasts.any((call) => call.method == 'showToast' && (call.arguments as Map)['msg'] == message);
+
+    testWidgets('a saved default target sets the prepared file, not the url', (tester) async {
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      final _Client client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      int prepared = 0;
+      await pumpPrepared(tester, () async {
+        prepared++;
+        return '/tmp/tinted.png';
+      });
+
+      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      expect(prepared, 1);
+      expect(client.requests.single.source.filePath, '/tmp/tinted.png');
+    });
+
+    testWidgets('prepares before the sheet opens and opens the position studio on the prepared file', (tester) async {
+      aw.AsyncWallpaper.debugSetClient(_Client());
+      String? studioUrl;
+      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
+        studioUrl = url;
+        return null;
+      };
+      int prepared = 0;
+      await pumpPrepared(tester, () async {
+        prepared++;
+        return '/tmp/tinted.png';
+      });
+
+      await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+      await tester.pumpAndSettle();
+      expect(prepared, 1);
+      expect(find.byType(SetOptionsPanel), findsOneWidget);
+      await tester.tap(find.text('Adjust position and preview'));
+      await tester.pumpAndSettle();
+
+      expect(studioUrl, '/tmp/tinted.png');
+    });
+
+    testWidgets('shows the busy state while preparing and ignores a second tap', (tester) async {
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      final _Client client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      final Completer<String> ready = Completer<String>();
+      int prepared = 0;
+      await pumpPrepared(tester, () {
+        prepared++;
+        return ready.future;
+      });
+
+      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.pump();
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isTrue);
+      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.pump();
+      expect(prepared, 1);
+
+      ready.complete('/tmp/tinted.png');
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+      expect(client.requests.single.source.filePath, '/tmp/tinted.png');
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+    });
+
+    testWidgets('a failed prepare tells the user, sets nothing and can be tried again', (tester) async {
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      final _Client client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      int prepared = 0;
+      await pumpPrepared(tester, () {
+        prepared++;
+        return Future<String>.error(StateError('render failed'));
+      });
+
+      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.pumpAndSettle();
+
+      expect(toasted("Couldn't apply the colour. Try again."), isTrue);
+      expect(client.requests, isEmpty);
+      expect(find.byType(SetOptionsPanel), findsNothing);
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+
+      await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
+      await tester.pumpAndSettle();
+      expect(prepared, 2);
+      await tester.pump(const Duration(seconds: 5));
+    });
   });
 
   test('defaultTarget reads the saved value and treats ask or junk as ask', () async {

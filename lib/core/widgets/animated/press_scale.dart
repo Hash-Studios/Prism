@@ -27,12 +27,12 @@ class _PressScaleState extends State<PressScale> with SingleTickerProviderStateM
     _controller = AnimationController(
       vsync: this,
       duration: PrismDurations.press,
-      reverseDuration: const Duration(milliseconds: 80),
+      reverseDuration: const Duration(milliseconds: 140),
     );
     _scale = Tween<double>(
       begin: 1,
       end: widget.scale,
-    ).animate(CurvedAnimation(parent: _controller, curve: PrismCurves.exit, reverseCurve: PrismCurves.enter));
+    ).animate(CurvedAnimation(parent: _controller, curve: PrismCurves.enter, reverseCurve: PrismCurves.enter.flipped));
   }
 
   @override
@@ -67,8 +67,7 @@ class _PressScaleState extends State<PressScale> with SingleTickerProviderStateM
       onPointerCancel: (_) => _setPressed(false),
       child: AnimatedBuilder(
         animation: _scale,
-        builder: (context, child) =>
-            Transform.scale(scale: _scale.value, filterQuality: FilterQuality.low, child: child),
+        builder: (context, child) => Transform.scale(scale: _scale.value, child: child),
         child: widget.child,
       ),
     );

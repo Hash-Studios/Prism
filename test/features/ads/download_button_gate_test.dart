@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/downloaded_link_lookup.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -10,10 +14,14 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
+import 'package:cloud_functions/cloud_functions.dart' show FirebaseFunctionsException;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,6 +40,7 @@ class _RecordingStats extends Fake implements ViewStatsRepository {
 }
 
 const String _link = 'https://example.com/walls/sunset.jpg';
+const String _encodedLink = 'https://example.com/walls/wall%231.jpg';
 const String _markerKey = 'pendingDownloadMarker';
 
 const Map<String, Object> _spent = <String, Object>{
@@ -49,12 +58,18 @@ void main() {
   late FakeAppAnalytics fakeAnalytics;
   late List<Map<String, dynamic>> spendCalls;
   late List<Object?> enqueued;
+  late List<SaveMediaRequest> saved;
+  late List<Object?> toastMessages;
   late bool enqueueSucceeds;
   late List<String> downloadsOnDisk;
   late Directory tempDir;
 
   const enqueueChannel = BasicMessageChannel<Object?>(
     'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+    PrismMediaHostApi.pigeonChannelCodec,
+  );
+  const saveChannel = BasicMessageChannel<Object?>(
+    'dev.flutter.pigeon.Prism.PrismMediaHostApi.saveMedia',
     PrismMediaHostApi.pigeonChannelCodec,
   );
   const listChannel = BasicMessageChannel<Object?>(
@@ -70,6 +85,8 @@ void main() {
     AnalyticsRuntime.instance = fakeAnalytics;
     spendCalls = <Map<String, dynamic>>[];
     enqueued = <Object?>[];
+    saved = <SaveMediaRequest>[];
+    toastMessages = <Object?>[];
     enqueueSucceeds = true;
     downloadsOnDisk = <String>[];
     tempDir = Directory.systemTemp.createTempSync('prism_dl_test');
@@ -81,11 +98,18 @@ void main() {
       enqueued.add((message! as List<Object?>).single);
       return <Object?>[OperationResult(success: enqueueSucceeds, message: enqueueSucceeds ? null : 'no space')];
     });
+    messenger.setMockDecodedMessageHandler<Object?>(saveChannel, (message) async {
+      saved.add((message! as List<Object?>).single! as SaveMediaRequest);
+      return <Object?>[OperationResult(success: true)];
+    });
     messenger.setMockDecodedMessageHandler<Object?>(
       listChannel,
       (_) async => <Object?>[DownloadItemsResult(success: true, items: downloadsOnDisk)],
     );
-    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    messenger.setMockMethodCallHandler(toastChannel, (call) async {
+      if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']);
+      return true;
+    });
     AdConsent.instance = AdConsent(
       requestInfoUpdate: () async {},
       showFormIfRequired: () async {},
@@ -100,6 +124,7 @@ void main() {
   tearDown(() async {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockDecodedMessageHandler<Object?>(enqueueChannel, null);
+    messenger.setMockDecodedMessageHandler<Object?>(saveChannel, null);
     messenger.setMockDecodedMessageHandler<Object?>(listChannel, null);
     messenger.setMockMethodCallHandler(toastChannel, null);
     AnalyticsRuntime.reset();
@@ -116,12 +141,15 @@ void main() {
     String? title,
     String? creator,
     VoidCallback? onOpen,
+    DownloadVariant? variant,
+    VoidCallback? onDownloaded,
+    String link = _link,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: DownloadButton(
-            link: _link,
+            link: link,
             label: 'Save',
             isPremiumContent: premiumContent,
             contentId: 'wall-1',
@@ -129,6 +157,8 @@ void main() {
             wallpaperTitle: title,
             creatorName: creator,
             onOpenDownloads: onOpen,
+            variant: variant,
+            onDownloaded: onDownloaded,
           ),
         ),
       ),
@@ -360,6 +390,287 @@ void main() {
 
       expect(find.text('Already in Downloads'), findsNothing);
       expect(enqueued, hasLength(1));
+    });
+  });
+
+  group('with a variant', () {
+    const String tinted = '/data/user/0/com.hash.prism/cache/prism_tint/1_0.png';
+
+    DownloadVariant variant({String key = 'tint-ff8800', Future<String> Function()? prepare}) =>
+        DownloadVariant(key: key, prepare: prepare ?? () async => tinted);
+
+    testWidgets('charges the usual price, saves the prepared file into Downloads under the variant name', (
+      tester,
+    ) async {
+      int prepared = 0;
+      await pump(
+        tester,
+        variant: variant(
+          prepare: () async {
+            prepared++;
+            return tinted;
+          },
+        ),
+      );
+      await tapSave(tester);
+
+      expect(prepared, 1);
+      expect(spendCalls.single['action'], 'wallpaperDownload');
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(request.link, tinted);
+      expect(request.isLocalFile, isTrue);
+      expect(request.filenameWithoutExtension, 'sunset_tint-ff8800');
+      expect(saved, isEmpty);
+      expect(results().single.result, 'success');
+    });
+
+    testWidgets('a plain download still sends the URL as a remote file named after it', (tester) async {
+      await pump(tester);
+      await tapSave(tester);
+
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(request.link, _link);
+      expect(request.isLocalFile, isFalse);
+      expect(request.filenameWithoutExtension, 'sunset');
+    });
+
+    testWidgets('the recovery marker names the variation, not the original link', (tester) async {
+      String? markerDuringSpend;
+      backend.onCall = (name, parameters) async {
+        markerDuringSpend = getIt<SettingsLocalDataSource>().get<String>(_markerKey, defaultValue: '');
+        return _spent;
+      };
+      await pump(tester, variant: variant());
+      await tapSave(tester);
+
+      expect((jsonDecode(markerDuringSpend!) as Map<String, dynamic>)['link'], 'sunset_tint-ff8800.png');
+    });
+
+    testWidgets('the original in Downloads does not stop a variant save, which is still charged', (tester) async {
+      final File original = File('${tempDir.path}/sunset.jpg')..writeAsStringSync('x');
+      downloadsOnDisk = <String>[original.path];
+      CoinsService.instance.isLinkDownloaded = (identity) => identity == _link;
+      await pump(tester, variant: variant());
+
+      expect(find.text('Save · 5'), findsOneWidget);
+      await tester.runAsync(() async {});
+      await tapSave(tester);
+
+      expect(find.text('Already in Downloads'), findsNothing);
+      expect(spendCalls, hasLength(1));
+      expect((enqueued.single! as DownloadRequest).link, tinted);
+    });
+
+    testWidgets('a variant already in Downloads asks first, and only Download again prepares and charges', (
+      tester,
+    ) async {
+      final File onDisk = File('${tempDir.path}/sunset_tint-ff8800.png')..writeAsStringSync('x');
+      downloadsOnDisk = <String>[onDisk.path];
+      CoinsService.instance.isLinkDownloaded = (identity) => identity == 'sunset_tint-ff8800.png';
+      int prepared = 0;
+      await pump(
+        tester,
+        variant: variant(
+          prepare: () async {
+            prepared++;
+            return tinted;
+          },
+        ),
+      );
+
+      expect(find.text('Saved'), findsOneWidget);
+      await tester.runAsync(() async {});
+      await tapSave(tester);
+
+      expect(find.text('Already in Downloads'), findsOneWidget);
+      expect(prepared, 0);
+      expect(spendCalls, isEmpty);
+
+      await tester.tap(find.text('Download again (-5 coins)'));
+      await settle(tester);
+
+      expect(prepared, 1);
+      expect(spendCalls, hasLength(1));
+      expect(enqueued, hasLength(1));
+    });
+
+    testWidgets('prepares before the coin sheet and a low balance saves nothing', (tester) async {
+      app_state.prismUser.coins = 2;
+      CoinsService.instance.balanceNotifier.value = 2;
+      int prepared = 0;
+      await pump(
+        tester,
+        variant: variant(
+          prepare: () async {
+            prepared++;
+            return tinted;
+          },
+        ),
+      );
+      await tapSave(tester);
+
+      expect(prepared, 1);
+      expect(find.text('Not enough coins'), findsOneWidget);
+      expect(spendCalls, isEmpty);
+      expect(enqueued, isEmpty);
+      expect(saved, isEmpty);
+    });
+
+    testWidgets('a failed prepare tells the user, charges nothing and can be tried again', (tester) async {
+      bool fail = true;
+      await pump(
+        tester,
+        variant: variant(
+          prepare: () async {
+            if (fail) throw StateError('render failed');
+            return tinted;
+          },
+        ),
+      );
+      await tapSave(tester);
+
+      expect(toastMessages, contains("Couldn't apply the colour. Try again."));
+      expect(spendCalls, isEmpty);
+      expect(saved, isEmpty);
+      expect(enqueued, isEmpty);
+      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
+
+      fail = false;
+      await tapSave(tester);
+
+      expect(spendCalls, hasLength(1));
+      expect((enqueued.single! as DownloadRequest).link, tinted);
+    });
+
+    testWidgets('a variant save reads Saved for that variation only', (tester) async {
+      await pump(tester, variant: variant());
+      await tapSave(tester);
+
+      expect(enqueued, hasLength(1));
+      expect(find.text('Saved'), findsOneWidget);
+
+      await pump(tester, variant: variant(key: 'tint-00ff00'));
+
+      expect(find.text('Save · 5'), findsOneWidget);
+    });
+
+    testWidgets('a colour picked while the first one renders changes neither what is saved nor what is remembered', (
+      tester,
+    ) async {
+      final Completer<String> rendered = Completer<String>();
+      final List<String> remembered = <String>[];
+      await pump(
+        tester,
+        variant: variant(prepare: () => rendered.future),
+        onDownloaded: () => remembered.add('a'),
+      );
+      await tester.tap(find.byType(PrimaryActionPill));
+      await tester.pump();
+
+      await pump(
+        tester,
+        variant: variant(key: 'tint-00ff00'),
+        onDownloaded: () => remembered.add('b'),
+      );
+      rendered.complete(tinted);
+      await settle(tester);
+
+      expect((enqueued.single! as DownloadRequest).filenameWithoutExtension, 'sunset_tint-ff8800');
+      expect(remembered, <String>['a']);
+      expect(find.text('Save · 5'), findsOneWidget);
+    });
+
+    testWidgets('a variant save counts the download for the wallpaper, not for the variation link', (tester) async {
+      await pump(tester, variant: variant());
+      await tapSave(tester);
+
+      expect(fakeAnalytics.events.whereType<DownloadWallpaperEvent>().single.link, _link);
+    });
+  });
+
+  group('recovery of a paid variation', () {
+    late DownloadedWallIndex index;
+    final DownloadVariant tintA = DownloadVariant(key: 'tint-ff8800', prepare: () async => '/cache/prism_tint/a.png');
+    final DownloadVariant tintB = DownloadVariant(key: 'tint-0088ff', prepare: () async => '/cache/prism_tint/b.png');
+
+    setUp(() {
+      index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      CoinsService.instance.isLinkDownloaded = isLinkInDownloadedIndex;
+    });
+
+    tearDown(() async {
+      await index.clear();
+      getIt.unregister<DownloadedWallIndex>();
+    });
+
+    Future<void> ageMarker() async {
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      final Map<String, dynamic> marker =
+          jsonDecode(settings.get<String>(_markerKey, defaultValue: '')) as Map<String, dynamic>;
+      marker['at'] = DateTime.now().subtract(const Duration(minutes: 3)).millisecondsSinceEpoch;
+      await settings.set(_markerKey, jsonEncode(marker));
+    }
+
+    Future<List<Map<String, dynamic>>> restart() async {
+      final List<Map<String, dynamic>> refunds = <Map<String, dynamic>>[];
+      backend.onCall = (name, parameters) async {
+        refunds.add(parameters);
+        return const <String, Object>{
+          'success': true,
+          'changed': true,
+          'previousBalance': 95,
+          'currentBalance': 100,
+          'delta': 5,
+        };
+      };
+      await CoinsService.instance.refundAbandonedDownload();
+      return refunds;
+    }
+
+    String marker() => getIt<SettingsLocalDataSource>().get<String>(_markerKey, defaultValue: '');
+
+    for (final String link in <String>[_link, _encodedLink]) {
+      testWidgets('a failed save of tint B is refunded after a restart although tint A was saved ($link)', (
+        tester,
+      ) async {
+        await index.remember(link: tintA.identityOf(link), id: 'wall-1', source: WallpaperSource.prism);
+        enqueueSucceeds = false;
+        backend.onCall = (name, parameters) async {
+          if (name == 'spendCoins') return _spent;
+          throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+        };
+        await pump(tester, variant: tintB, link: link);
+        await tester.runAsync(() async {});
+        await tapSave(tester);
+
+        expect(results().single.reason, 'enqueue_failed');
+        expect(marker(), isNotEmpty);
+        final String transactionId = (jsonDecode(marker()) as Map<String, dynamic>)['txId'] as String;
+        await ageMarker();
+
+        final List<Map<String, dynamic>> refunds = await restart();
+        await settle(tester);
+
+        expect(refunds.single['action'], 'refund');
+        expect(refunds.single['transactionId'], transactionId);
+        expect(marker(), isEmpty);
+      });
+    }
+
+    testWidgets('a paid save of tint A that finished but left its marker is not refunded', (tester) async {
+      await CoinsService.instance.spend(
+        CoinSpendAction.wallpaperDownload,
+        pendingDownloadLink: tintA.identityOf(_link),
+      );
+      await index.remember(link: tintA.identityOf(_link), id: 'wall-1', source: WallpaperSource.prism);
+      await ageMarker();
+
+      final List<Map<String, dynamic>> refunds = await restart();
+      await settle(tester);
+
+      expect(refunds, isEmpty);
+      expect(marker(), isEmpty);
     });
   });
 

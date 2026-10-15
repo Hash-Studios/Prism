@@ -51,6 +51,9 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   final bool panelCollapsed;
   final bool panelScrollInProgress;
 
+  /// The colour variation applied to the wallpaper, or null while the original shows.
+  Color? get tint => colorChanged ? accent : null;
+
   WallpaperDetailLoaded copyWith({
     FeedItemEntity? entity,
     String? views,
