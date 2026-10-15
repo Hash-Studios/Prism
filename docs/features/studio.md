@@ -99,7 +99,7 @@ Clients cannot read or write the Studio collections. The last rule in `firestore
 ## Setup
 
 1. Sign in for the scripts: `gcloud auth application-default login` as the Prism owner.
-2. In `functions/`, run `GOOGLE_CLOUD_PROJECT=prism-wallpapers npm run studio:account`. It is a dry run and prints the plan. Then run it again with `-- --apply`. It creates the profile `usersv2/prism-studio` (`studio@prismwalls.com`) and `studioConfig/current` with the identity and `generationEnabled: false`. It does not change a doc that exists.
+2. In `functions/`, run `GOOGLE_CLOUD_PROJECT=prism-wallpapers npm run studio:account`. It is a dry run and prints the plan. Then run it again with `-- --apply`. It creates the profile `usersv2/prism-studio` (`studio@prismwalls.com`) if no profile has that email. It creates `studioConfig/current` with the identity and `generationEnabled: false`. If that doc exists, it fills only the empty identity fields and keeps all other fields.
 3. Make one random secret. Set it as `STUDIO_SECRET` in the worker (`wrangler secret put STUDIO_SECRET`) and in Firebase (`make functions-secrets-sync` after you add it to Doppler `prd`).
 4. Deploy the worker.
 5. Deploy the functions: `processStudioCandidate`, `planStudioBatch`, `runStudioBatch`, `onWallApproved`, `onWallSubmitted`.

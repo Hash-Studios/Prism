@@ -53,6 +53,15 @@ export function withStarterPackEntry(raw: string, entry: StarterPackEntry): stri
   return JSON.stringify(at >= 0 ? list.map((e, i) => i === at ? {...e, rank: entry.rank} : e) : [...list, entry]);
 }
 
+/** The `--rank` operand, or 0 when the flag is absent. Throws when the operand is not a whole number. */
+export function parseRankArg(argv: string[]): number {
+  const at = argv.indexOf("--rank");
+  if (at < 0) return 0;
+  const raw = argv[at + 1]?.trim() ?? "";
+  if (!/^-?\d+$/.test(raw)) throw new Error("--rank must be a whole number.");
+  return Number(raw);
+}
+
 /** The starter pack parameter of `template`, at the top level or in a group. Adds it when it is missing. */
 function starterPackParameter(template: admin.remoteConfig.RemoteConfigTemplate): admin.remoteConfig.RemoteConfigParameter {
   return template.parameters[STARTER_PACK_KEY] ??
@@ -109,12 +118,15 @@ export async function setupStudioAccount(options: {apply: boolean; rank: number;
     users.where("email", "==", STUDIO_ACCOUNT.email).limit(1).get(),
     configRef.get(),
   ]);
-  const identity = {by: STUDIO_ACCOUNT.name, email: STUDIO_ACCOUNT.email, userPhoto: STUDIO_ACCOUNT.profilePhoto};
-  const configEmail = config.data()?.identity?.email;
-  if (configEmail && configEmail !== STUDIO_ACCOUNT.email) {
-    throw new Error(`studioConfig/current posts as ${configEmail}, not ${STUDIO_ACCOUNT.email}. ` +
+  const current: Record<string, unknown> = config.data()?.identity ?? {};
+  if (current.email && current.email !== STUDIO_ACCOUNT.email) {
+    throw new Error(`studioConfig/current posts as ${current.email}, not ${STUDIO_ACCOUNT.email}. ` +
       "Make them the same, then run again.");
   }
+  // Fills only empty identity fields, so a name or photo set in the console stays.
+  const wanted = {by: STUDIO_ACCOUNT.name, email: STUDIO_ACCOUNT.email, userPhoto: STUDIO_ACCOUNT.profilePhoto};
+  const identity = Object.fromEntries(Object.entries(wanted).map(([key, value]) => [key, current[key] || value]));
+  const missing = Object.keys(wanted).filter((key) => !current[key]);
 
   if (!profile.empty) {
     log.push(`Profile: usersv2/${profile.docs[0].id} exists.`);
@@ -123,10 +135,10 @@ export async function setupStudioAccount(options: {apply: boolean; rank: number;
     if (apply) await users.doc(STUDIO_ACCOUNT.id).create(studioUserDoc(now.toISOString()));
   }
 
-  if (configEmail) {
+  if (missing.length === 0) {
     log.push("Config: studioConfig/current has the identity.");
   } else {
-    log.push(config.exists ? "Config: set the identity in studioConfig/current." :
+    log.push(config.exists ? `Config: set ${missing.join(", ")} of the identity in studioConfig/current.` :
       "Config: create studioConfig/current with the identity and generation off.");
     if (apply) await configRef.set(config.exists ? {identity} : {generationEnabled: false, identity}, {merge: true});
   }
