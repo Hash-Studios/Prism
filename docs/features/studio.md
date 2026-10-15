@@ -21,6 +21,7 @@ Backend only. The walls work on Android and iOS, for free and Pro users, like ot
 | `functions/src/studio/process.ts` | `processStudioCandidate`: generate, check, store, create the pending wall. |
 | `functions/src/studio/gates.ts` | Quality checks. |
 | `functions/src/studio/config.ts` | Reads `studioConfig/current`. |
+| `functions/src/studio/account.ts` | `npm run studio:account`: the Studio profile, its identity and the onboarding starter pack. |
 | `infra/cloudflare/worker/src/ai.ts` | `/api/ai/studio/*` routes: fal generation, R2 storage, Studio budget. |
 
 ### Flow
@@ -97,13 +98,15 @@ Clients cannot read or write the Studio collections. The last rule in `firestore
 
 ## Setup
 
-1. Create the Prism Studio account. Sign in to Prism once with it, and set the name, username and photo.
-2. Make one random secret. Set it as `STUDIO_SECRET` in the worker (`wrangler secret put STUDIO_SECRET`) and in Firebase (`make functions-secrets-sync` after you add it to Doppler `prd`).
-3. Deploy the worker.
-4. Write `studioConfig/current` with `generationEnabled: false` and `identity`.
+1. Sign in for the scripts: `gcloud auth application-default login` as the Prism owner.
+2. In `functions/`, run `GOOGLE_CLOUD_PROJECT=prism-wallpapers npm run studio:account`. It is a dry run and prints the plan. Then run it again with `-- --apply`. It creates the profile `usersv2/prism-studio` (`studio@prismwalls.com`) if no profile has that email. It creates `studioConfig/current` with the identity and `generationEnabled: false`. If that doc exists, it fills only the empty identity fields and keeps all other fields.
+3. Make one random secret. Set it as `STUDIO_SECRET` in the worker (`wrangler secret put STUDIO_SECRET`) and in Firebase (`make functions-secrets-sync` after you add it to Doppler `prd`).
+4. Deploy the worker.
 5. Deploy the functions: `processStudioCandidate`, `planStudioBatch`, `runStudioBatch`, `onWallApproved`, `onWallSubmitted`.
 6. Set `generationEnabled: true`. Test with `cd functions && npm run studio:run -- --count 1`.
-7. After a few Studio walls are live, add the account to the onboarding starter pack. In Remote Config, add `{"email": "<studio email>", "rank": 0}` to `onboarding_starter_pack_v1` and keep the other entries. The 3 lowest ranks are ticked by default, and the card shows the last 5 walls of each creator.
+7. When 5 Studio walls are live, run `npm run studio:account -- --apply` again. It adds `{"email": "studio@prismwalls.com", "rank": 0}` to the Remote Config list `onboarding_starter_pack_v1` and publishes it. It keeps the other entries. The 3 lowest ranks are ticked by default, so rank 0 makes new users follow Studio. To list Studio but not tick it, add `--rank` with a number higher than the third rank. With fewer than 5 live walls, the script skips this step, because the onboarding card shows 5 walls.
+
+Never sign in to Prism with the Studio email. Sign-in finds a profile by Auth uid, so a sign-in makes a second profile with the same email.
 
 ## Limits
 
