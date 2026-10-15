@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -134,7 +135,10 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
               ),
             )
           : RefreshIndicator(
-              onRefresh: _loadTelemetry,
+              onRefresh: () {
+                PrismHaptics.impact();
+                return _loadTelemetry();
+              },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),

@@ -15,11 +15,9 @@
 #endif
 import FirebaseFunctions
 
-extension FlutterError: Error {}
-
 let kFLTFirebaseFunctionsChannelName = "plugins.flutter.io/firebase_functions"
 
-public class FirebaseFunctionsPlugin: NSObject, FLTFirebasePluginProtocol, FlutterPlugin,
+public final class FirebaseFunctionsPlugin: NSObject, FLTFirebasePluginProtocol, FlutterPlugin,
   CloudFunctionsHostApi {
   func call(arguments: [String: Any?], completion: @escaping (Result<Any?, any Error>) -> Void) {
     httpsFunctionCall(arguments: arguments) { result, error in
@@ -33,16 +31,33 @@ public class FirebaseFunctionsPlugin: NSObject, FLTFirebasePluginProtocol, Flutt
 
   func registerEventChannel(arguments: [String: Any],
                             completion: @escaping (Result<Void, any Error>) -> Void) {
-    let eventChannelId = arguments["eventChannelId"]!
+    guard let eventChannelId = arguments["eventChannelId"] as? String, !eventChannelId.isEmpty else {
+      completion(.failure(functionsArgumentError("eventChannelId must be a non-empty string")))
+      return
+    }
+    let functions: Functions
+    do {
+      functions = try getFunctions(arguments: arguments)
+    } catch {
+      completion(.failure(error))
+      return
+    }
     let eventChannelName = "\(kFLTFirebaseFunctionsChannelName)/\(eventChannelId)"
     let eventChannel = FlutterEventChannel(name: eventChannelName, binaryMessenger: binaryMessenger)
-    let functions = getFunctions(arguments: arguments)
-    let streamHandler = FunctionsStreamHandler(functions: functions)
+    streams[eventChannelId]?.1.cancel()
+    streams[eventChannelId]?.0.setStreamHandler(nil)
+    let streamHandler = FunctionsStreamHandler(functions: functions) { [weak self] cancelled in
+      guard let current = self?.streams[eventChannelId], current.1 === cancelled else { return }
+      self?.streams.removeValue(forKey: eventChannelId)
+      current.0.setStreamHandler(nil)
+    }
+    streams[eventChannelId] = (eventChannel, streamHandler)
     eventChannel.setStreamHandler(streamHandler)
     completion(.success(()))
   }
 
   private let binaryMessenger: FlutterBinaryMessenger
+  private var streams: [String: (FlutterEventChannel, FunctionsStreamHandler)] = [:]
 
   init(binaryMessenger: FlutterBinaryMessenger) {
     self.binaryMessenger = binaryMessenger
@@ -77,116 +92,110 @@ public class FirebaseFunctionsPlugin: NSObject, FLTFirebasePluginProtocol, Flutt
     #endif
 
     let instance = FirebaseFunctionsPlugin(binaryMessenger: binaryMessenger)
+    registrar.publish(instance)
     CloudFunctionsHostApiSetup.setUp(binaryMessenger: binaryMessenger, api: instance)
   }
 
-  private func httpsFunctionCall(arguments: [String: Any],
+  #if os(iOS)
+  public func detachFromEngine(for registrar: FlutterPluginRegistrar) {
+    CloudFunctionsHostApiSetup.setUp(binaryMessenger: binaryMessenger, api: nil)
+    for (channel, handler) in streams.values {
+      handler.cancel()
+      channel.setStreamHandler(nil)
+    }
+    streams.removeAll()
+  }
+  #endif
+
+  deinit {
+    for (_, handler) in streams.values { handler.cancel() }
+  }
+
+  private func httpsFunctionCall(arguments: [String: Any?],
                                  completion: @escaping (Any?, FlutterError?) -> Void) {
-    let appName = arguments["appName"] as? String ?? ""
-    let functionName = arguments["functionName"] as? String
-    let functionUri = arguments["functionUri"] as? String
-    let origin = arguments["origin"] as? String
-    let region = arguments["region"] as? String
-    let timeout = arguments["timeout"] as? Double
-    let parameters = arguments["parameters"]
-    let limitedUseAppCheckToken = arguments["limitedUseAppCheckToken"] as? Bool ?? false
-
-    let app = FLTFirebasePlugin.firebaseAppNamed(appName)!
-
-    let functions = Functions.functions(app: app, region: region ?? "")
-
-    if let origin, !origin.isEmpty,
-       let url = URL(string: origin),
-       let host = url.host,
-       let port = url.port {
-      functions.useEmulator(withHost: host, port: port)
-    }
-
-    let options = HTTPSCallableOptions(requireLimitedUseAppCheckTokens: limitedUseAppCheckToken)
-
-    let function: HTTPSCallable
-
-    if let functionName, !functionName.isEmpty {
-      function = functions.httpsCallable(functionName, options: options)
-    } else if let functionUri, !functionUri.isEmpty,
-              let url = URL(string: functionUri) {
-      function = functions.httpsCallable(url, options: options)
-    } else {
-      completion(nil, FlutterError(
-        code: "IllegalArgumentException",
-        message: "Either functionName or functionUri must be set",
-        details: nil
-      ))
-      return
-    }
-
-    // Set timeout if provided
-    if let timeout {
-      function.timeoutInterval = timeout / 1000
-    }
-
-    // Use the async API directly to avoid the @MainActor/@isolated(any) thunk
-    // that crashes in iOS 26.3.1's Swift concurrency runtime (firebase-ios-sdk bug).
-    Task {
-      do {
-        let result = try await function.call(parameters)
-        completion(result.data, nil)
-      } catch {
-        let flutterError = self.createFlutterError(from: error)
-        completion(nil, flutterError)
+    do {
+      let values = try CallableArguments(arguments)
+      let functions = try getFunctions(arguments: arguments)
+      if let origin = values.origin, let host = origin.host, let port = origin.port {
+        functions.useEmulator(withHost: host, port: port)
       }
-    }
-  }
-
-  private func getFunctions(arguments: [String: Any]) -> Functions {
-    let appName = arguments["appName"] as? String ?? ""
-    let region = arguments["region"] as? String
-    let app = FLTFirebasePlugin.firebaseAppNamed(appName)!
-    return Functions.functions(app: app, region: region ?? "")
-  }
-
-  private func createFlutterError(from error: Error) -> FlutterError {
-    let nsError = error as NSError
-    var errorCode = "unknown"
-    var additionalDetails: [String: Any] = [:]
-
-    // Map Firebase Functions error codes
-    if nsError.domain == "com.firebase.functions" {
-      errorCode = mapFunctionsErrorCode(nsError.code)
-      if let details = nsError.userInfo["details"] {
-        additionalDetails["additionalData"] = details
+      let options = HTTPSCallableOptions(requireLimitedUseAppCheckTokens: values.limitedUseAppCheckToken)
+      let function: HTTPSCallable
+      switch values.target {
+      case let .name(name): function = functions.httpsCallable(name, options: options)
+      case let .url(url): function = functions.httpsCallable(url, options: options)
       }
+      if let timeout = values.timeout { function.timeoutInterval = timeout }
+
+      // The callback API crashes in the iOS 26.3.1 concurrency thunk.
+      Task { @MainActor in
+        do {
+          let result = try await function.call(values.parameters)
+          completion(result.data, nil)
+        } catch {
+          completion(nil, functionsFlutterError(error))
+        }
+      }
+    } catch {
+      completion(nil, error as? FlutterError ?? functionsFlutterError(error))
     }
-
-    additionalDetails["code"] = errorCode
-    additionalDetails["message"] = nsError.localizedDescription
-
-    return FlutterError(
-      code: errorCode,
-      message: nsError.localizedDescription,
-      details: additionalDetails
-    )
   }
 
-  private func mapFunctionsErrorCode(_ code: Int) -> String {
-    switch code {
-    case FunctionsErrorCode.aborted.rawValue: return "aborted"
-    case FunctionsErrorCode.alreadyExists.rawValue: return "already-exists"
-    case FunctionsErrorCode.cancelled.rawValue: return "cancelled"
-    case FunctionsErrorCode.dataLoss.rawValue: return "data-loss"
-    case FunctionsErrorCode.deadlineExceeded.rawValue: return "deadline-exceeded"
-    case FunctionsErrorCode.failedPrecondition.rawValue: return "failed-precondition"
-    case FunctionsErrorCode.internal.rawValue: return "internal"
-    case FunctionsErrorCode.invalidArgument.rawValue: return "invalid-argument"
-    case FunctionsErrorCode.notFound.rawValue: return "not-found"
-    case FunctionsErrorCode.OK.rawValue: return "ok"
-    case FunctionsErrorCode.outOfRange.rawValue: return "out-of-range"
-    case FunctionsErrorCode.permissionDenied.rawValue: return "permission-denied"
-    case FunctionsErrorCode.resourceExhausted.rawValue: return "resource-exhausted"
-    case FunctionsErrorCode.unauthenticated.rawValue: return "unauthenticated"
-    case FunctionsErrorCode.unavailable.rawValue: return "unavailable"
-    case FunctionsErrorCode.unimplemented.rawValue: return "unimplemented"
-    default: return "unknown"
+  private func getFunctions(arguments: [String: Any?]) throws -> Functions {
+    let appName = try functionsRequiredString(arguments, "appName")
+    let region = try functionsRequiredString(arguments, "region")
+    guard let app = FLTFirebasePlugin.firebaseAppNamed(appName) else {
+      throw functionsArgumentError("Firebase app is not initialized")
     }
+    return Functions.functions(app: app, region: region)
+  }
+}
+
+func functionsArgumentError(_ message: String) -> FlutterError {
+  FlutterError(code: "invalid-argument", message: message,
+               details: ["code": "invalid-argument", "message": message])
+}
+
+func functionsFlutterError(_ error: Error) -> FlutterError {
+  let nsError = error as NSError
+  var errorCode = "unknown"
+  var additionalDetails: [String: Any] = [:]
+
+  if nsError.domain == "com.firebase.functions" {
+    errorCode = mapFunctionsErrorCode(nsError.code)
+    if let details = nsError.userInfo["details"] {
+      additionalDetails["additionalData"] = details
+    }
+  }
+
+  additionalDetails["code"] = errorCode
+  additionalDetails["message"] = nsError.localizedDescription
+
+  return FlutterError(
+    code: errorCode,
+    message: nsError.localizedDescription,
+    details: additionalDetails
+  )
+}
+
+private func mapFunctionsErrorCode(_ code: Int) -> String {
+  switch code {
+  case FunctionsErrorCode.aborted.rawValue: return "aborted"
+  case FunctionsErrorCode.alreadyExists.rawValue: return "already-exists"
+  case FunctionsErrorCode.cancelled.rawValue: return "cancelled"
+  case FunctionsErrorCode.dataLoss.rawValue: return "data-loss"
+  case FunctionsErrorCode.deadlineExceeded.rawValue: return "deadline-exceeded"
+  case FunctionsErrorCode.failedPrecondition.rawValue: return "failed-precondition"
+  case FunctionsErrorCode.internal.rawValue: return "internal"
+  case FunctionsErrorCode.invalidArgument.rawValue: return "invalid-argument"
+  case FunctionsErrorCode.notFound.rawValue: return "not-found"
+  case FunctionsErrorCode.OK.rawValue: return "ok"
+  case FunctionsErrorCode.outOfRange.rawValue: return "out-of-range"
+  case FunctionsErrorCode.permissionDenied.rawValue: return "permission-denied"
+  case FunctionsErrorCode.resourceExhausted.rawValue: return "resource-exhausted"
+  case FunctionsErrorCode.unauthenticated.rawValue: return "unauthenticated"
+  case FunctionsErrorCode.unavailable.rawValue: return "unavailable"
+  case FunctionsErrorCode.unimplemented.rawValue: return "unimplemented"
+  default: return "unknown"
   }
 }

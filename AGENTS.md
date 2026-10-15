@@ -46,7 +46,7 @@ Flutter wallpaper app for Android and iOS, with Firebase
   gate; `make test` runs Flutter tests. Use `fvm`.
 - After editing a freezed/json/injectable/auto_route source, run
   `make file-gen` and commit the generated files with the source change.
-- Functions: `cd functions && npm ci && npm run build && node --test lib/__tests__/`.
+- Functions: `cd functions && npm ci && npm run build && node --test 'lib/__tests__/*.test.js'`.
   Web: `cd web && npm ci && npx tsc --noEmit`.
 - UI changes need an iOS Simulator and Android emulator run with screenshots
   (`verify-prism` skill). Local proof, hosted CI, merge, deploy, and live

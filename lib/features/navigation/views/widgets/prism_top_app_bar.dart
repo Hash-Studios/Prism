@@ -1,8 +1,10 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -20,8 +22,16 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    void handleLogoTap() {
+      PrismHaptics.tap();
+      onLogoTap();
+    }
+
+    final Color barColor = Theme.of(context).primaryColor;
+    final Color foreground = onColor(barColor);
+
     return ColoredBox(
-      color: Theme.of(context).primaryColor,
+      color: barColor,
       child: SafeArea(
         bottom: false,
         child: SizedBox(
@@ -40,22 +50,18 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
                       button: true,
                       label: 'Feed settings',
                       excludeSemantics: true,
-                      onTap: onLogoTap,
+                      onTap: handleLogoTap,
                       child: GestureDetector(
-                        onTap: onLogoTap,
+                        onTap: handleLogoTap,
                         behavior: HitTestBehavior.opaque,
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            _PrismLogo(),
-                            SizedBox(width: 4),
-                            Text('prism', style: PrismTextStyles.brandName),
-                            SizedBox(width: 2),
-                            Icon(
-                              PrismIcons.dropdownCaret,
-                              color: PrismColors.onPrimary,
-                              size: PrismAppBarSizes.iconSize,
-                            ),
+                            _PrismLogo(color: foreground),
+                            const SizedBox(width: 4),
+                            Text('prism', style: PrismTextStyles.brandName.copyWith(color: foreground)),
+                            const SizedBox(width: 2),
+                            Icon(PrismIcons.dropdownCaret, color: foreground, size: PrismAppBarSizes.iconSize),
                           ],
                         ),
                       ),
@@ -73,16 +79,13 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class _PrismLogo extends StatelessWidget {
-  const _PrismLogo();
+  const _PrismLogo({required this.color});
+
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return SvgPicture.string(
-      prismVector,
-      width: 10,
-      height: 12,
-      colorFilter: const ColorFilter.mode(PrismColors.onPrimary, BlendMode.srcIn),
-    );
+    return SvgPicture.string(prismVector, width: 10, height: 12, colorFilter: ColorFilter.mode(color, BlendMode.srcIn));
   }
 }
 
@@ -101,7 +104,10 @@ class _NotificationButton extends StatelessWidget {
         type: MaterialType.transparency,
         child: InkWell(
           customBorder: const CircleBorder(),
-          onTap: () => context.router.push(const NotificationRoute()),
+          onTap: () {
+            PrismHaptics.tap();
+            context.router.push(const NotificationRoute());
+          },
           child: SizedBox(
             width: PrismAppBarSizes.iconButtonTouchTarget,
             height: PrismAppBarSizes.iconButtonTouchTarget,
@@ -114,7 +120,7 @@ class _NotificationButton extends StatelessWidget {
                   child: Icon(
                     PrismIcons.notificationBell,
                     size: PrismAppBarSizes.iconSize,
-                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.75),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
                   ),
                 ),
                 if (hasUnread)
@@ -152,7 +158,11 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String photoUrl = app_state.prismUser.profilePhoto;
-    void openProfile() => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email));
+    void openProfile() {
+      PrismHaptics.tap();
+      context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email));
+    }
+
     return Semantics(
       button: true,
       label: 'Your profile',

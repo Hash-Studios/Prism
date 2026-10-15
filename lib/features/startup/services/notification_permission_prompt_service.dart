@@ -3,6 +3,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -15,28 +16,55 @@ class NotificationPermissionPromptService {
 
   static final NotificationPermissionPromptService instance = NotificationPermissionPromptService._();
 
-  static const String _promptedPrefKey = 'notificationPermissionPromptedV1';
+  static const String _legacyPromptedPrefKey = 'notificationPermissionPromptedV1';
+  static const String _promptedPrefKey = 'notificationPermissionPromptedV2';
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   /// Android reports denied until POST_NOTIFICATIONS is granted, even before the first ask.
+  /// iOS provisional access delivers quietly with no banner, so it can still ask for full access.
   @visibleForTesting
   static bool canAsk(AuthorizationStatus status, TargetPlatform platform) =>
       status == AuthorizationStatus.notDetermined ||
-      (status == AuthorizationStatus.denied && platform == TargetPlatform.android);
+      (status == AuthorizationStatus.denied && platform == TargetPlatform.android) ||
+      (status == AuthorizationStatus.provisional && platform == TargetPlatform.iOS);
+
+  /// V1 asked iOS only for provisional access. iOS checks again once to ask for full access.
+  @visibleForTesting
+  static bool alreadyPrompted({required bool v1, required bool v2, required TargetPlatform platform}) =>
+      v2 || (v1 && platform != TargetPlatform.iOS);
+
+  /// Asks in one line before the system prompt, and runs [requestPermission] only when the user taps Turn on. It
+  /// returns null without asking when another startup sheet already showed in this session, or the user taps Not now.
+  /// Neither case marks the prompt as done, so a later session can ask again.
+  @visibleForTesting
+  static Future<T?> requestAfterSoftPrompt<T>(
+    BuildContext context, {
+    required Future<T> Function() requestPermission,
+  }) async {
+    if (!StartupModalSlot.tryClaim()) return null;
+    final bool turnOn = await showStartupChoiceSheet(
+      context,
+      message: 'Get the Wall of the Day and streak reminders?',
+      confirmLabel: 'Turn on',
+    );
+    return turnOn ? requestPermission() : null;
+  }
 
   Future<void> maybePromptAfterValueAction(BuildContext context, {required String sourceTag}) async {
     if (!_settings.isOpen || !context.mounted) {
       return;
     }
-    final bool alreadyPrompted = _settings.get<bool>(_promptedPrefKey, defaultValue: false);
-    if (alreadyPrompted) {
+    if (alreadyPrompted(
+      v1: _settings.get<bool>(_legacyPromptedPrefKey, defaultValue: false),
+      v2: _settings.get<bool>(_promptedPrefKey, defaultValue: false),
+      platform: defaultTargetPlatform,
+    )) {
       return;
     }
 
     final FirebaseMessaging messaging = FirebaseMessaging.instance;
     final NotificationSettings current = await messaging.getNotificationSettings();
-    if (current.authorizationStatus == AuthorizationStatus.authorized ||
-        current.authorizationStatus == AuthorizationStatus.provisional) {
+    if (current.authorizationStatus == AuthorizationStatus.authorized) {
       await _settings.set(_promptedPrefKey, true);
       final bool subscribedToWotd = await _subscribeAfterPermissionGrant(
         messaging,
@@ -60,7 +88,16 @@ class NotificationPermissionPromptService {
       return;
     }
 
-    final NotificationSettings requested = await messaging.requestPermission(provisional: true);
+    if (!context.mounted) {
+      return;
+    }
+    final NotificationSettings? requested = await requestAfterSoftPrompt(
+      context,
+      requestPermission: messaging.requestPermission,
+    );
+    if (requested == null) {
+      return;
+    }
     await _settings.set(_promptedPrefKey, true);
 
     final AuthorizationStatus status = requested.authorizationStatus;
@@ -83,7 +120,7 @@ class NotificationPermissionPromptService {
     bool subscribedToWotd = false;
     final bool wantsWotd = _settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
     if (wantsWotd) {
-      subscribedToWotd = await subscribeToTopicSafely(messaging, 'wall_of_the_day', sourceTag: '$sourceTag.wotd');
+      subscribedToWotd = await setWotdTopics(messaging, _settings, subscribed: true, sourceTag: '$sourceTag.wotd');
     }
 
     if (app_state.prismUser.loggedIn) {

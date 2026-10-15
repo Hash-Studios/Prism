@@ -1,3 +1,12 @@
+## Prism native fork (6.5.0 dependency compatibility)
+
+- Retains the 6.1.0 vendored Dart API and Pigeon wire contract while aligning
+  Firebase dependencies with 6.5.0. This is not a full upstream source sync.
+- Keeps asynchronous Apple callable execution for the iOS 26.3.1 runtime issue.
+- Validates native arguments, preserves stream errors, cancels subscriptions,
+  applies timeouts before streaming, and includes URL callable parameters.
+- Preserves numeric values and booleans in Apple streaming codecs.
+
 ## 6.1.0
 
  - **FIX**(functions,web): fix a crash that could happen with the Int64 type ([#18066](https://github.com/firebase/flutterfire/issues/18066)). ([5eed50c1](https://github.com/firebase/flutterfire/commit/5eed50c15dd29ab97934a4bd0919378f61c46f9e))

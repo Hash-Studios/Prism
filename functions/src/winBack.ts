@@ -1,12 +1,14 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {emailToTopic, fcmMessage, userIdToTopic} from "./notificationHelper";
+import {fcmMessage, userIdToTopic, userPushTokens} from "./notificationHelper";
 import {db, REGION, str} from "./common";
 
 export const WIN_BACK_STEPS = [3, 7, 14, 30, 60];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+/** Days a step stays open. A missed daily run gets a second chance; the dedupe stamp blocks repeats. */
+const WINDOW_DAYS = 2;
 const PAGE_SIZE = 300;
 const CHUNK_SIZE = 25;
 const FIELD = "coinState.streakLastClaimServerAt";
@@ -25,7 +27,7 @@ interface WinBackState {
 }
 
 /**
- * Returns the step N whose window holds the inactivity (>= N days, < N+1 days),
+ * Returns the step N whose window holds the inactivity (>= N days, < N + 2 days),
  * or null. Null also when this inactivity period already got step N or later.
  */
 export function winBackStepFor(
@@ -35,7 +37,7 @@ export function winBackStepFor(
 ): number | null {
   const idle = nowMs - lastActiveMs;
   for (const n of WIN_BACK_STEPS) {
-    if (idle >= n * DAY_MS && idle < (n + 1) * DAY_MS) {
+    if (idle >= n * DAY_MS && idle < (n + WINDOW_DAYS) * DAY_MS) {
       if (state?.claimAtMs === lastActiveMs && (state.step ?? 0) >= n) return null;
       return n;
     }
@@ -49,6 +51,16 @@ function completedState(data: admin.firestore.DocumentData): WinBackState {
     step: Number.isFinite(winBack?.step) ? winBack.step : undefined,
     claimAtMs: winBack?.claimAt instanceof admin.firestore.Timestamp ? winBack.claimAt.toMillis() : undefined,
   };
+}
+
+/** True only when the user turned marketing pushes off; an unreadable pref does not block the push. */
+async function marketingPushesOff(uid: string): Promise<boolean> {
+  try {
+    return (await db.doc(`usersv2/${uid}/private/session`).get()).data()?.marketingPushes === false;
+  } catch (err) {
+    logger.warn("winBack: could not read the marketing push pref.", {uid, err});
+    return false;
+  }
 }
 
 async function todaysWall(): Promise<{title: string; wallId?: string; imageUrl?: string}> {
@@ -87,7 +99,7 @@ export const sendWinBackPushes = onSchedule(
       while (true) {
         let q = db
           .collection("usersv2")
-          .where(FIELD, ">", admin.firestore.Timestamp.fromMillis(nowMs - (n + 1) * DAY_MS))
+          .where(FIELD, ">", admin.firestore.Timestamp.fromMillis(nowMs - (n + WINDOW_DAYS) * DAY_MS))
           .where(FIELD, "<=", admin.firestore.Timestamp.fromMillis(nowMs - n * DAY_MS))
           .orderBy(FIELD)
           .limit(PAGE_SIZE);
@@ -105,10 +117,13 @@ export const sendWinBackPushes = onSchedule(
                   !(claimAt instanceof admin.firestore.Timestamp)) return false;
               const step = winBackStepFor(nowMs, claimAt.toMillis(), completedState(data));
               if (step !== n) return false;
+              if (await marketingPushesOff(uid)) return false;
 
-              const email = str(data.email);
-              const topics = [...new Set([userIdToTopic(uid), email && emailToTopic(email)].filter(Boolean))];
-              await admin.messaging().send(fcmMessage({
+              const targets = [
+                {topic: userIdToTopic(uid)},
+                ...(await userPushTokens(uid, data.fcmToken)).map((token) => ({token})),
+              ];
+              const deliveries = await Promise.allSettled(targets.map((fcmTarget) => admin.messaging().send(fcmMessage({
                 title: copy.title,
                 body: copy.body(wall.title),
                 data: {route: "wall_of_the_day", ...(wall.wallId ? {wall_id: wall.wallId} : {})},
@@ -117,8 +132,11 @@ export const sendWinBackPushes = onSchedule(
                 channelId: "wall_of_the_day",
                 pushOnly: true,
                 collapseKey: `win_back_${n}`,
-                fcmTarget: {condition: topics.map((t) => `'${t}' in topics`).join(" || ")},
-              }));
+                fcmTarget,
+              }))));
+              if (deliveries.every((d) => d.status === "rejected")) {
+                throw (deliveries[0] as PromiseRejectedResult).reason;
+              }
               await doc.ref.update({
                 winBack: {step: n, claimAt, sentAt: admin.firestore.FieldValue.serverTimestamp()},
               });

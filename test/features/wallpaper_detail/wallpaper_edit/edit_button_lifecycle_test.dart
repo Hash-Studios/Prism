@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -29,11 +30,13 @@ class _ObservedHttpClient extends Mock implements HttpClient {
   }
 }
 
-Widget _host(StackRouter router, String url) => MaterialApp(
+Widget _host(StackRouter router, String? url, {Future<String> Function()? prepareSource}) => MaterialApp(
   home: StackRouterScope(
     controller: router,
     stateHash: 0,
-    child: Scaffold(body: EditButton(url: url)),
+    child: Scaffold(
+      body: EditButton(url: url, prepareSource: prepareSource),
+    ),
   ),
 );
 
@@ -62,6 +65,12 @@ void main() {
     final Directory editDirectory = Directory('${directory.path}/prism_edit')..createSync();
     final File activeSource = File('${editDirectory.path}/source_active.img')..writeAsBytesSync(<int>[9, 8, 7]);
     final _MockStackRouter router = _MockStackRouter();
+    final List<Object?> hapticTypes = <Object?>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
     final Completer<WallpaperFilterRoute> pushed = Completer<WallpaperFilterRoute>();
     final Completer<Object?> routeResult = Completer<Object?>();
     when(() => router.push(any())).thenAnswer((invocation) {
@@ -91,6 +100,7 @@ void main() {
     final WallpaperFilterRoute route = await pushed.future;
     final File source = File(route.args!.filePath);
     expect(activeSource.readAsBytesSync(), <int>[9, 8, 7]);
+    expect(hapticTypes.where((type) => type == 'HapticFeedbackType.lightImpact'), hasLength(1));
     expect(source.readAsBytesSync(), <int>[1, 2, 3]);
     expect(source.parent.path, isNot(editDirectory.path));
 
@@ -104,7 +114,99 @@ void main() {
     expect(source.parent.existsSync(), isFalse);
     expect(activeSource.readAsBytesSync(), <int>[9, 8, 7]);
     expect(tester.takeException(), isNull);
+    expect(hapticTypes, <Object?>['HapticFeedbackType.lightImpact']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  group('prepareSource', () {
+    testWidgets('opens the editor on the prepared file without fetching the url or deleting the file', (tester) async {
+      final _MockStackRouter router = _MockStackRouter();
+      final File prepared = File('${directory.path}/prism_tint/1_0.png')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(<int>[4, 5, 6]);
+      final Completer<Object?> routeResult = Completer<Object?>();
+      WallpaperFilterRoute? pushed;
+      when(() => router.push(any())).thenAnswer((invocation) {
+        pushed = invocation.positionalArguments.single as WallpaperFilterRoute;
+        return routeResult.future;
+      });
+      int calls = 0;
+
+      await tester.pumpWidget(
+        _host(
+          router,
+          'http://127.0.0.1:9/wallpaper',
+          prepareSource: () async {
+            calls++;
+            return prepared.path;
+          },
+        ),
+      );
+      await tester.tap(find.byType(EditButton));
+      await tester.pump();
+      await tester.pump();
+      routeResult.complete();
+      await tester.pump();
+
+      expect(calls, 1);
+      expect(pushed!.args!.filePath, prepared.path);
+      expect(prepared.readAsBytesSync(), <int>[4, 5, 6]);
+      expect(Directory('${directory.path}/prism_edit').existsSync(), isFalse);
+      expect(tester.takeException(), isNull);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('a failed prepare tells the user, does not open the editor and can be tried again', (tester) async {
+      final _MockStackRouter router = _MockStackRouter();
+      final List<Object?> toastMessages = <Object?>[];
+      messenger.setMockMethodCallHandler(toastChannel, (call) async {
+        if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']);
+        return true;
+      });
+      int calls = 0;
+
+      await tester.pumpWidget(
+        _host(
+          router,
+          'http://127.0.0.1:9/wallpaper',
+          prepareSource: () {
+            calls++;
+            return Future<String>.error(StateError('render failed'));
+          },
+        ),
+      );
+      await tester.tap(find.byType(EditButton));
+      await tester.pump();
+      await tester.pump();
+
+      expect(toastMessages, contains("Couldn't apply the colour. Try again."));
+      verifyNever(() => router.push(any()));
+      expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
+
+      await tester.tap(find.byType(EditButton));
+      await tester.pump();
+      await tester.pump();
+      expect(calls, 2);
+      await tester.pump(const Duration(seconds: 1));
+    });
   });
+
+  testWidgets('missing wallpaper URL only plays the error haptic', (tester) async {
+    final _MockStackRouter router = _MockStackRouter();
+    final List<Object?> hapticTypes = <Object?>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+    await tester.pumpWidget(_host(router, null));
+    await tester.tap(find.byType(EditButton));
+    await tester.pump();
+
+    expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+    expect(hapticTypes.where((type) => type == 'HapticFeedbackType.lightImpact'), isEmpty);
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('does not create a source or route after disposal while the download is pending', (tester) async {
     final _MockStackRouter router = _MockStackRouter();

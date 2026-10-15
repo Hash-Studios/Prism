@@ -10,6 +10,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart' as cf;
 import 'package:injectable/injectable.dart';
 import 'package:rxdart/rxdart.dart';
@@ -23,6 +24,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   }
 
   static const Duration _timeout = Duration(seconds: 25);
+  static const Duration _initialLoadTimeout = Duration(seconds: 3);
   static const String _subcollection = 'blockedUsers';
 
   final SessionRepository _session;
@@ -42,7 +44,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     if (!waitForInitialLoad || _hasLoadedBlockedCreatorEmails) {
       return _blockedEmailsSubject.value;
     }
-    return _initialLoadCompleter.future;
+    return _initialLoadCompleter.future.timeout(_initialLoadTimeout, onTimeout: () => _blockedEmailsSubject.value);
   }
 
   @override
@@ -63,7 +65,13 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     }
 
     _beginPendingInitialLoad();
-    _blockedEmailsSubscription = _watchBlockedEmails(nextUserId).listen(_publishSnapshot);
+    _blockedEmailsSubscription = _watchBlockedEmails(nextUserId).listen(
+      _publishSnapshot,
+      onError: (Object error, StackTrace stackTrace) {
+        logger.w('Blocked users stream failed; keeping the last known set.', tag: 'UserBlocks', error: error);
+        _publishSnapshot(_blockedEmailsSubject.value);
+      },
+    );
   }
 
   void _beginPendingInitialLoad() {

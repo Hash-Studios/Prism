@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/wotd_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:contentDescription="@string/wotd_widget_description">
+
+    <ImageView
+        android:id="@+id/wotd_logo"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"
+        android:importantForAccessibility="no"
+        android:src="@mipmap/ic_launcher" />
+
+    <TextView
+        android:id="@+id/wotd_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="40dp"
+        android:padding="12dp"
+        android:gravity="center"
+        android:text="@string/wotd_widget_hint"
+        android:textColor="@android:color/white"
+        android:textSize="12sp" />
+
+    <ImageView
+        android:id="@+id/wotd_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/wotd_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="10dp"
+        android:importantForAccessibility="no"
+        android:shadowColor="@android:color/black"
+        android:shadowRadius="4"
+        android:text="@string/wotd_widget_label"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+</FrameLayout>

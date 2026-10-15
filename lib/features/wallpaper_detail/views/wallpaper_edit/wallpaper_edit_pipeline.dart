@@ -24,13 +24,14 @@ Future<bool> loadKernelEffects() async {
   }
 }
 
-ui.ImageFilter kernelImageFilter(KernelEffect effect, {double kernelScale = 1}) {
+ui.ImageFilter kernelImageFilter(KernelEffect effect, {double kernelScale = 1, double lightness = 0}) {
   final ui.FragmentShader shader = _convolveProgram!.fragmentShader();
   for (int i = 0; i < 9; i++) {
     shader.setFloat(2 + i, effect.kernel[i]);
   }
   shader.setFloat(11, effect.bias / 255);
   shader.setFloat(12, kernelScale);
+  shader.setFloat(13, lightness);
   return ui.ImageFilter.shader(shader);
 }
 
@@ -74,6 +75,11 @@ ui.ImageFilter? buildEditFilter(
   }
   pending = pending == null ? adjustments.matrix : composeMatrices(pending!, adjustments.matrix);
   flush();
+  if (adjustments.lightness != 0) {
+    then(
+      kernelImageFilter(const KernelEffect('Lightness', [0, 0, 0, 0, 1, 0, 0, 0, 0]), lightness: adjustments.lightness),
+    );
+  }
   if (adjustments.blur > 0) {
     final double sigma = adjustments.blur * _maxBlurFraction * shortSide;
     then(ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.mirror));
@@ -81,15 +87,30 @@ ui.ImageFilter? buildEditFilter(
   return filter;
 }
 
-/// Renders [source] at full resolution with the edit applied and returns PNG bytes.
+/// Longest side the editor exports, in pixels, unless the device screen is larger.
+const int maxExportLongSide = 4096;
+
+/// Size the export is rendered at: [width] x [height], scaled down so the long side fits the cap.
+/// The cap is [maxExportLongSide] or the device's native long side, whichever is larger.
+({int width, int height}) exportSize(int width, int height, {double deviceLongSidePx = 0}) {
+  final int cap = math.max(maxExportLongSide, deviceLongSidePx.ceil());
+  final int longSide = math.max(width, height);
+  if (longSide <= cap) return (width: width, height: height);
+  final double scale = cap / longSide;
+  return (width: math.max(1, (width * scale).round()), height: math.max(1, (height * scale).round()));
+}
+
+/// Renders [source] with the edit applied and returns PNG bytes. The long side is capped, see [exportSize].
 Future<Uint8List> renderEditedPng(
   ui.Image source,
   List<WallpaperFilter> stack,
   WallpaperAdjustments adjustments, {
   double? previewPixelShortSide,
+  double deviceLongSidePx = 0,
 }) async {
-  final int width = source.width;
-  final int height = source.height;
+  final ({int width, int height}) size = exportSize(source.width, source.height, deviceLongSidePx: deviceLongSidePx);
+  final int width = size.width;
+  final int height = size.height;
   final int shortSide = math.min(width, height);
   final double kernelScale = previewPixelShortSide == null ? 1 : kernelScaleForExport(shortSide, previewPixelShortSide);
   final ui.ImageFilter? filter = buildEditFilter(stack, adjustments, shortSide.toDouble(), kernelScale: kernelScale);
@@ -97,7 +118,12 @@ Future<Uint8List> renderEditedPng(
   final Canvas canvas = Canvas(recorder);
   final Rect bounds = Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
   if (filter != null) canvas.saveLayer(bounds, Paint()..imageFilter = filter);
-  canvas.drawImage(source, Offset.zero, Paint()..filterQuality = FilterQuality.high);
+  canvas.drawImageRect(
+    source,
+    Rect.fromLTWH(0, 0, source.width.toDouble(), source.height.toDouble()),
+    bounds,
+    Paint()..filterQuality = FilterQuality.high,
+  );
   if (filter != null) canvas.restore();
   final ui.Picture picture = recorder.endRecording();
   final ui.Image rendered = await rasterizePicture(picture, width, height);

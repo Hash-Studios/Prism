@@ -1,11 +1,18 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -14,7 +21,6 @@ import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
-import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/wallpaper_brightness.dart';
@@ -28,7 +34,10 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_copy.d
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_progress_indicator.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_scrollable_canvas.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_staggered_fade.dart';
+import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
@@ -49,6 +58,7 @@ class OnboardingV2Shell extends StatefulWidget {
 class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   late final OnboardingV2Bloc _bloc;
   late final TapGestureRecognizer _legalTap;
+  late final TapGestureRecognizer _privacyTap;
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _imagesPrecached = false;
   bool _termsAccepted = false;
@@ -68,6 +78,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     _termsAccepted = _settingsLocal.get<bool>(OnboardingV2Config.termsAcceptedKey, defaultValue: false);
     _legalTap = TapGestureRecognizer()
       ..onTap = () => launchUrl(Uri.parse(OnboardingV2Config.termsUrl), mode: LaunchMode.externalApplication);
+    _privacyTap = TapGestureRecognizer()
+      ..onTap = () => launchUrl(Uri.parse(OnboardingV2Config.privacyUrl), mode: LaunchMode.externalApplication);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -90,6 +102,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   @override
   void dispose() {
     _legalTap.dispose();
+    _privacyTap.dispose();
     _bloc.close();
     super.dispose();
   }
@@ -108,22 +121,75 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       case OnboardingV2NavRequest.completeOnboarding:
         if (!context.mounted) return;
         context.router.replaceAll([const SplashWidgetRoute()]);
+
+      case OnboardingV2NavRequest.openDashboardAsGuest:
+        if (!context.mounted) return;
+        context.router.replaceAll([const DashboardRoute()]);
+
+      case OnboardingV2NavRequest.exitApp:
+        SystemNavigator.pop();
     }
   }
 
-  Future<void> _handleGoogleSignIn() => _runSignIn(globalGoogleAuth.signInWithGoogle, _googleErrorMessage);
-
-  Future<void> _handleAppleSignIn() => _runSignIn(globalAppleAuth.signInWithApple, (_) => _genericSignInError);
-
-  static const String _genericSignInError = 'Something went wrong, please try again!';
-
-  String _googleErrorMessage(Object error) {
-    final String message = error.toString();
-    final bool isPlayServicesError =
-        defaultTargetPlatform == TargetPlatform.android &&
-        (message.contains('providerConfigurationError') || message.contains('no provider dependencies'));
-    return isPlayServicesError ? 'Google Play services on this device cannot sign in.' : _genericSignInError;
+  Future<void> _onFirstWallpaperSaved(BuildContext context, OnboardingWallpaperData wallpaperData) async {
+    toasts.success(_firstWallpaperSuccessMessage(wallpaperData.target));
+    // iOS cannot set the wallpaper from the app, so show how to finish in Photos. The guide skips itself elsewhere.
+    await showIosSetWallpaperGuide(context);
+    if (!context.mounted) return;
+    await _continueAfterFirstWallpaper(context);
   }
+
+  static String _firstWallpaperSuccessMessage(WallpaperTarget? target) {
+    if (defaultTargetPlatform != TargetPlatform.android) return 'Saved to Photos!';
+    return switch (target) {
+      WallpaperTarget.both => 'Wallpaper set on your home and lock screens.',
+      WallpaperTarget.home => 'Wallpaper set on your home screen.',
+      WallpaperTarget.lock => 'Wallpaper set on your lock screen.',
+      null => 'Wallpaper set!',
+    };
+  }
+
+  void _onFirstWallpaperFailed(BuildContext context, OnboardingWallpaperData wallpaperData) {
+    if (defaultTargetPlatform == TargetPlatform.iOS && isPhotosPermissionDenied(wallpaperData.errorCode)) {
+      showPhotosPermissionDenied(context);
+      return;
+    }
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    PrismHaptics.error();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            defaultTargetPlatform == TargetPlatform.android
+                ? "Couldn't set your wallpaper. Try again or skip."
+                : "Couldn't save your wallpaper. Try again or skip.",
+          ),
+          action: SnackBarAction(
+            label: 'Try again',
+            onPressed: () => _bloc.add(const OnboardingV2Event.firstWallpaperActionRequested()),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _continueAfterFirstWallpaper(BuildContext context) async {
+    try {
+      await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+        context,
+        sourceTag: 'onboarding_v2.first_wallpaper',
+      );
+    } catch (error, stackTrace) {
+      logger.w('Onboarding notification prompt failed.', tag: 'OnboardingV2', error: error, stackTrace: stackTrace);
+    }
+    if (!mounted) return;
+    _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
+  }
+
+  Future<void> _handleGoogleSignIn() => _runSignIn(globalGoogleAuth.signInWithGoogle, googleSignInErrorMessage);
+
+  Future<void> _handleAppleSignIn() => _runSignIn(globalAppleAuth.signInWithApple, (_) => genericSignInErrorMessage);
 
   Future<void> _runSignIn(Future<SignInOutcome> Function() signIn, String Function(Object error) errorMessage) async {
     _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
@@ -131,7 +197,6 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       final result = await signIn();
       if (!mounted) return;
       if (result == SignInOutcome.cancelled) {
-        toasts.error('Sign in cancelled.');
         _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
       } else {
         app_state.prismUser.loggedIn = true;
@@ -145,17 +210,16 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   }
 
   void _setTermsAccepted(bool accepted) {
+    if (accepted && !_termsAccepted) unawaited(analytics.track(const TermsAcceptedEvent()));
     setState(() => _termsAccepted = accepted);
     _settingsLocal.set(OnboardingV2Config.termsAcceptedKey, accepted);
   }
 
-  /// iOS-only guest path (Guideline 5.1.1(v)): browsing must not require an
-  /// account. Marks onboarding done the same way a completed sign-in flow
-  /// does, then goes straight to the dashboard signed out.
-  Future<void> _handleBrowseWithoutAccount() async {
-    await _settingsLocal.set(OnboardingV2Keys.onboardedNew, true);
-    if (!mounted) return;
-    context.router.replaceAll([const DashboardRoute()]);
+  /// iOS-only guest path (Guideline 5.1.1(v)): browsing must not require an account. The guest picks interests
+  /// first, then the bloc marks onboarding done and the shell opens the dashboard signed out.
+  void _handleBrowseWithoutAccount() {
+    unawaited(analytics.track(const BrowseAsGuestTappedEvent()));
+    _bloc.add(const OnboardingV2Event.guestBrowseStarted());
   }
 
   void _handleCtaTap(OnboardingV2Step step) {
@@ -200,92 +264,121 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
-      child: BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
-        listenWhen: (prev, curr) {
-          final navChanged = curr.navRequest != null && prev.navRequest != curr.navRequest;
-          final wallpaperSucceeded =
-              curr.step == OnboardingV2Step.firstWallpaper &&
-              prev.wallpaperData.status != curr.wallpaperData.status &&
-              curr.wallpaperData.status == FirstWallpaperStatus.success;
-          final aiGenerationSucceeded =
-              curr.step == OnboardingV2Step.aiGenerate &&
-              prev.aiData.status != AiGenerateStatus.success &&
-              curr.aiData.status == AiGenerateStatus.success;
-          return navChanged || wallpaperSucceeded || aiGenerationSucceeded;
-        },
-        listener: (context, state) {
-          if (state.navRequest != null) _handleNavRequest(context, state.navRequest!);
-          if (state.navRequest == null && state.wallpaperData.status == FirstWallpaperStatus.success) {
-            toasts.success(defaultTargetPlatform == TargetPlatform.android ? 'Wallpaper set!' : 'Saved to Photos!');
-            _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
-          }
-          if (state.step == OnboardingV2Step.aiGenerate && state.aiData.status == AiGenerateStatus.success) {
-            _bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
-          }
-        },
-        buildWhen: (prev, curr) =>
-            prev.step != curr.step ||
-            prev.isAuthLoading != curr.isAuthLoading ||
-            prev.actionStatus != curr.actionStatus ||
-            prev.interestsData.selected.length != curr.interestsData.selected.length ||
-            prev.starterPackData.selectedEmails.length != curr.starterPackData.selectedEmails.length ||
-            prev.wallpaperData.status != curr.wallpaperData.status ||
-            prev.wallpaperData.wallpaper?.thumbnailUrl != curr.wallpaperData.wallpaper?.thumbnailUrl ||
-            prev.aiData != curr.aiData,
-        builder: (context, state) {
-          return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: _systemUiStyle,
-            child: PopScope(
-              canPop: false,
-              onPopInvokedWithResult: (didPop, result) {
-                _bloc.add(const OnboardingV2Event.stepBack());
-              },
-              child: Material(
-                color: OnboardingColors.fallbackFill,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Layer 0: animated background (blur + image cross-fade), isolated in a
-                    // RepaintBoundary from page content and overlay layers.
-                    RepaintBoundary(
-                      child: OnboardingStepBackground(
-                        step: state.step,
-                        wallpaperUrl: state.wallpaperData.wallpaper?.fullUrl,
-                      ),
-                    ),
+      child: BlocListener<OnboardingV2Bloc, OnboardingV2State>(
+        listenWhen: (prev, curr) =>
+            curr.step == OnboardingV2Step.firstWallpaper &&
+            prev.wallpaperData.status != FirstWallpaperStatus.failure &&
+            curr.wallpaperData.status == FirstWallpaperStatus.failure,
+        listener: (context, state) => _onFirstWallpaperFailed(context, state.wallpaperData),
+        child: BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
+          listenWhen: (prev, curr) {
+            final navChanged = curr.navRequest != null && prev.navRequest != curr.navRequest;
+            final wallpaperSucceeded =
+                curr.step == OnboardingV2Step.firstWallpaper &&
+                prev.wallpaperData.status != curr.wallpaperData.status &&
+                curr.wallpaperData.status == FirstWallpaperStatus.success;
+            final aiGenerationSucceeded =
+                curr.step == OnboardingV2Step.aiGenerate &&
+                prev.aiData.status != AiGenerateStatus.success &&
+                curr.aiData.status == AiGenerateStatus.success;
+            final actionFailed = curr.actionStatus == ActionStatus.failure && prev.actionStatus != ActionStatus.failure;
+            return navChanged || wallpaperSucceeded || aiGenerationSucceeded || actionFailed;
+          },
+          listener: (context, state) {
+            if (state.actionStatus == ActionStatus.failure) {
+              toasts.error(
+                state.navRequest == OnboardingV2NavRequest.completeOnboarding
+                    ? "Couldn't save your setup. We will try again."
+                    : "Couldn't save that. Please try again.",
+              );
+            }
+            if (state.navRequest != null) _handleNavRequest(context, state.navRequest!);
+            if (state.navRequest == null && state.wallpaperData.status == FirstWallpaperStatus.success) {
+              _onFirstWallpaperSaved(context, state.wallpaperData);
+            }
+            if (state.step == OnboardingV2Step.aiGenerate && state.aiData.status == AiGenerateStatus.success) {
+              _bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+            }
+          },
+          buildWhen: (prev, curr) =>
+              prev.step != curr.step ||
+              prev.isAuthLoading != curr.isAuthLoading ||
+              prev.actionStatus != curr.actionStatus ||
+              prev.loadStatus != curr.loadStatus ||
+              prev.interestsData.available.length != curr.interestsData.available.length ||
+              prev.interestsData.selected.length != curr.interestsData.selected.length ||
+              prev.starterPackData.creators.length != curr.starterPackData.creators.length ||
+              prev.starterPackData.selectedEmails.length != curr.starterPackData.selectedEmails.length ||
+              prev.wallpaperData.status != curr.wallpaperData.status ||
+              prev.wallpaperData.wallpaper?.thumbnailUrl != curr.wallpaperData.wallpaper?.thumbnailUrl ||
+              prev.aiData != curr.aiData,
+          builder: (context, state) {
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: _systemUiStyle,
+              child: PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, result) {
+                  _bloc.add(const OnboardingV2Event.stepBack());
+                },
+                child: MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: OnboardingLayout.maxTextScale,
+                  // A Scaffold gives the snackbars a place to show.
+                  child: Scaffold(
+                    backgroundColor: OnboardingColors.fallbackFill,
+                    resizeToAvoidBottomInset: false,
+                    body: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Layer 0: animated background (blur + image cross-fade), isolated in a
+                        // RepaintBoundary from page content and overlay layers.
+                        RepaintBoundary(
+                          child: OnboardingStepBackground(
+                            step: state.step,
+                            wallpaperUrl: state.wallpaperData.wallpaper?.fullUrl,
+                          ),
+                        ),
 
-                    // Layer 1: unique page content — fades between steps.
-                    AnimatedSwitcher(
-                      duration: context.motion(const Duration(milliseconds: 300)),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
-                      layoutBuilder: (currentChild, previousChildren) => Stack(
-                        fit: StackFit.expand,
-                        children: [...previousChildren, if (currentChild != null) currentChild],
-                      ),
-                      child: _pageFor(state.step),
-                    ),
+                        // Layers 1 and 2 share one scrollable canvas, so a short screen or large text
+                        // scrolls the page and its overlay together instead of overlapping them.
+                        OnboardingScrollableCanvas(
+                          children: [
+                            // Layer 1: unique page content, fades between steps.
+                            AnimatedSwitcher(
+                              duration: context.motion(const Duration(milliseconds: 300)),
+                              switchInCurve: Curves.easeOut,
+                              switchOutCurve: Curves.easeIn,
+                              transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+                              layoutBuilder: (currentChild, previousChildren) => Stack(
+                                fit: StackFit.expand,
+                                children: [...previousChildren, if (currentChild != null) currentChild],
+                              ),
+                              child: _pageFor(state.step),
+                            ),
 
-                    // Layer 2: shared animated overlay (headline, progress, button, helper),
-                    // isolated in a RepaintBoundary from the background and page layers.
-                    RepaintBoundary(
-                      child: _SharedOverlay(
-                        state: state,
-                        legalTap: _legalTap,
-                        onCtaTap: () => _handleCtaTap(state.step),
-                        onAppleTap: _handleAppleSignIn,
-                        termsAccepted: _termsAccepted,
-                        onTermsChanged: _setTermsAccepted,
-                        onBrowseTap: _handleBrowseWithoutAccount,
-                      ),
+                            // Layer 2: shared animated overlay (headline, progress, button, helper),
+                            // isolated in a RepaintBoundary from the background and page layers.
+                            RepaintBoundary(
+                              child: _SharedOverlay(
+                                state: state,
+                                legalTap: _legalTap,
+                                privacyTap: _privacyTap,
+                                onCtaTap: () => _handleCtaTap(state.step),
+                                onAppleTap: _handleAppleSignIn,
+                                termsAccepted: _termsAccepted,
+                                onTermsChanged: _setTermsAccepted,
+                                onBrowseTap: _handleBrowseWithoutAccount,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -296,6 +389,7 @@ class _SharedOverlay extends StatefulWidget {
   const _SharedOverlay({
     required this.state,
     required this.legalTap,
+    required this.privacyTap,
     required this.onCtaTap,
     required this.onAppleTap,
     required this.termsAccepted,
@@ -305,6 +399,7 @@ class _SharedOverlay extends StatefulWidget {
 
   final OnboardingV2State state;
   final TapGestureRecognizer legalTap;
+  final TapGestureRecognizer privacyTap;
   final VoidCallback onCtaTap;
   final VoidCallback onAppleTap;
   final bool termsAccepted;
@@ -375,10 +470,13 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               step: step,
               sy: sy,
               legalTap: widget.legalTap,
+              privacyTap: widget.privacyTap,
               termsAccepted: widget.termsAccepted,
               onTermsChanged: widget.onTermsChanged,
               wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
               aiGenerateStatus: widget.state.aiData.status,
+              interestsRequired: widget.state.interestsData.requiredCount,
+              creatorCount: widget.state.starterPackData.creators.length,
             ),
           ],
         );
@@ -412,7 +510,7 @@ class _Progress extends StatelessWidget {
       left: 0,
       right: 0,
       child: AnimatedOpacity(
-        duration: OnboardingMotion.normal,
+        duration: context.motion(OnboardingMotion.normal),
         opacity: step == OnboardingV2Step.auth ? 0.0 : 1.0,
         child: Center(
           child: Transform.scale(
@@ -465,7 +563,7 @@ class _Headline extends StatelessWidget {
         ? OnboardingTypography.headline.copyWith(color: wallpaperColor)
         : OnboardingTypography.headline;
     return AnimatedPositioned(
-      duration: OnboardingMotion.normal,
+      duration: context.motion(OnboardingMotion.normal),
       curve: OnboardingMotion.emphasized,
       top: _headlineY(step) * sy,
       left: _headlineX(step) * sx,
@@ -473,8 +571,12 @@ class _Headline extends StatelessWidget {
       child: OnboardingStaggeredFade(
         delay: const Duration(milliseconds: 450),
         child: AnimatedSwitcher(
-          duration: OnboardingMotion.short,
-          child: Text(key: ValueKey(text), text, style: style, textAlign: TextAlign.center),
+          duration: context.motion(OnboardingMotion.short),
+          child: FittedBox(
+            key: ValueKey(text),
+            fit: BoxFit.scaleDown,
+            child: Text(text, style: style, textAlign: TextAlign.center),
+          ),
         ),
       ),
     );
@@ -502,7 +604,7 @@ class _CtaButton extends StatelessWidget {
   final VoidCallback onCtaTap;
   final VoidCallback onAppleTap;
 
-  /// "I agree to the Terms of Use" gate — Google, Apple and the guest button
+  /// Terms and Privacy policy gate. Google, Apple and the guest button
   /// all stay disabled until this is ticked.
   final bool termsAccepted;
   final ValueChanged<bool> onTermsChanged;
@@ -532,7 +634,7 @@ class _CtaButton extends StatelessWidget {
       OnboardingV2Step.auth => 'Continue with Google',
       OnboardingV2Step.interests => () {
         final selected = state.interestsData.selected.length;
-        return selected < OnboardingV2Config.minInterests ? 'continue ($selected selected)' : 'continue';
+        return selected < state.interestsData.requiredCount ? 'continue ($selected selected)' : 'continue';
       }(),
       OnboardingV2Step.starterPack => 'continue',
       OnboardingV2Step.aiGenerate => 'generate my wallpaper',
@@ -545,12 +647,10 @@ class _CtaButton extends StatelessWidget {
     final bool showIosAuthExtras = isAuthStep && defaultTargetPlatform == TargetPlatform.iOS;
     const double browseRowHeight = 36;
     final double extraHeight = showIosAuthExtras ? (OnboardingLayout.ctaHeight + 12) * sy + browseRowHeight * sy : 0.0;
-    // Buttons stay at most 480 pt wide, centered, so a tablet does not stretch them edge to edge.
-    final double side = math.max(OnboardingLayout.ctaX * sx, (MediaQuery.sizeOf(context).width - 480) / 2);
     return Positioned(
       top: OnboardingLayout.ctaY * sy - extraHeight,
-      left: side,
-      right: side,
+      left: OnboardingLayout.ctaX * sx,
+      right: OnboardingLayout.ctaX * sx,
       height: OnboardingLayout.ctaHeight * sy + extraHeight,
       child: OnboardingStaggeredFade(
         delay: const Duration(milliseconds: 750),
@@ -583,7 +683,12 @@ class _CtaButton extends StatelessWidget {
                     height: browseRowHeight * sy,
                     child: Center(
                       child: TextButton(
-                        onPressed: termsAccepted ? onBrowseTap : null,
+                        onPressed: termsAccepted
+                            ? () {
+                                PrismHaptics.tap();
+                                onBrowseTap();
+                              }
+                            : null,
                         child: Text(
                           'Browse without an account',
                           style: OnboardingTypography.helper.copyWith(
@@ -601,7 +706,7 @@ class _CtaButton extends StatelessWidget {
               Positioned.fill(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => toasts.error('Please agree to the Terms of Use first.'),
+                  onTap: () => toasts.error('Please agree to the Terms and Privacy policy first.'),
                 ),
               ),
           ],
@@ -612,17 +717,27 @@ class _CtaButton extends StatelessWidget {
 }
 
 class _TermsCheckboxRow extends StatelessWidget {
-  const _TermsCheckboxRow({required this.accepted, required this.onChanged, required this.legalTap, super.key});
+  const _TermsCheckboxRow({
+    required this.accepted,
+    required this.onChanged,
+    required this.legalTap,
+    required this.privacyTap,
+    super.key,
+  });
 
   final bool accepted;
   final ValueChanged<bool> onChanged;
   final TapGestureRecognizer legalTap;
+  final TapGestureRecognizer privacyTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => onChanged(!accepted),
+      onTap: () {
+        PrismHaptics.selection();
+        onChanged(!accepted);
+      },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -631,7 +746,10 @@ class _TermsCheckboxRow extends StatelessWidget {
             height: 22,
             child: Checkbox(
               value: accepted,
-              onChanged: (value) => onChanged(value ?? false),
+              onChanged: (value) {
+                PrismHaptics.selection();
+                onChanged(value ?? false);
+              },
               fillColor: WidgetStateProperty.resolveWith(
                 (states) => states.contains(WidgetState.selected)
                     ? OnboardingColors.buttonBackground
@@ -649,11 +767,17 @@ class _TermsCheckboxRow extends StatelessWidget {
               text: TextSpan(
                 style: OnboardingTypography.helper,
                 children: [
-                  const TextSpan(text: 'I agree to the '),
+                  const TextSpan(text: 'By continuing you agree to the '),
                   TextSpan(
-                    text: 'Terms of Use',
+                    text: 'Terms',
                     style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
                     recognizer: legalTap,
+                  ),
+                  const TextSpan(text: ' and '),
+                  TextSpan(
+                    text: 'Privacy policy',
+                    style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
+                    recognizer: privacyTap,
                   ),
                 ],
               ),
@@ -670,26 +794,37 @@ class _BottomText extends StatelessWidget {
     required this.step,
     required this.sy,
     required this.legalTap,
+    required this.privacyTap,
     required this.termsAccepted,
     required this.onTermsChanged,
     this.wallpaperCategory,
     this.aiGenerateStatus,
+    this.interestsRequired = OnboardingV2Config.minInterests,
+    this.creatorCount = OnboardingV2Config.minFollows,
   });
 
   final OnboardingV2Step step;
   final double sy;
   final TapGestureRecognizer legalTap;
+  final TapGestureRecognizer privacyTap;
   final bool termsAccepted;
   final ValueChanged<bool> onTermsChanged;
   final String? wallpaperCategory;
   final AiGenerateStatus? aiGenerateStatus;
+  final int interestsRequired;
+  final int creatorCount;
 
   String _helperText() => switch (step) {
     OnboardingV2Step.interests =>
-      'select at least ${OnboardingV2Config.minInterests} categories to personalize your feed',
-    OnboardingV2Step.starterPack => 'we are suggesting you follow these ${OnboardingV2Config.minFollows} creators',
+      interestsRequired == 0
+          ? 'we could not load categories, you can skip this step'
+          : 'select at least $interestsRequired categories to personalize your feed',
+    OnboardingV2Step.starterPack =>
+      creatorCount == 0
+          ? 'we could not load creators, you can skip this step'
+          : 'we are suggesting you follow these ${math.min(OnboardingV2Config.minFollows, creatorCount)} creators',
     OnboardingV2Step.aiGenerate => switch (aiGenerateStatus) {
-      AiGenerateStatus.success => 'looking good! tap "use this wallpaper" to continue',
+      AiGenerateStatus.success => 'looking good! opening your wallpaper',
       AiGenerateStatus.failure => 'something went wrong — tap generate to try again',
       _ => 'your first wallpaper, generated by AI',
     },
@@ -708,6 +843,7 @@ class _BottomText extends StatelessWidget {
         accepted: termsAccepted,
         onChanged: onTermsChanged,
         legalTap: legalTap,
+        privacyTap: privacyTap,
       );
     } else {
       final text = _helperText();
@@ -715,14 +851,14 @@ class _BottomText extends StatelessWidget {
     }
 
     return AnimatedPositioned(
-      duration: OnboardingMotion.normal,
+      duration: context.motion(OnboardingMotion.normal),
       curve: OnboardingMotion.emphasized,
       top: OnboardingLayout.helperY * sy,
       left: 0,
       right: 0,
       child: OnboardingStaggeredFade(
         delay: const Duration(milliseconds: 900),
-        child: AnimatedSwitcher(duration: OnboardingMotion.short, child: content),
+        child: AnimatedSwitcher(duration: context.motion(OnboardingMotion.short), child: content),
       ),
     );
   }

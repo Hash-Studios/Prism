@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
+import 'package:Prism/features/admin_review/views/widgets/reject_reason_chips.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -81,7 +85,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       if (dx > 0 || vx > _velocityThreshold) {
         _startDismissAnimation(approve: true);
       } else {
-        _startDismissAnimation(approve: false);
+        unawaited(_askRejectReason());
       }
     } else if (dx.abs() < 0.5) {
       setState(() {
@@ -105,12 +109,30 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     }
   }
 
-  void _startDismissAnimation({required bool approve}) {
+  /// A left swipe asks for a reason first. Cancelling snaps the card back.
+  Future<void> _askRejectReason() async {
+    final String? reason = await showRejectReasonSheet(context);
+    if (!mounted) return;
+    if (reason == null) {
+      _startSnapBackAnimation();
+      return;
+    }
+    _startDismissAnimation(approve: false, reason: reason);
+  }
+
+  void _startDismissAnimation({required bool approve, String? reason}) {
+    PrismHaptics.impact();
     final maxX = _maxDragX(MediaQuery.sizeOf(context).width);
     _startAnimation(
       target: approve ? maxX : -maxX,
       curve: Curves.easeOut,
-      onDone: () => _bloc.add(approve ? const ReviewBatchSwipeApproved() : const ReviewBatchSwipeRejected()),
+      onDone: () => _bloc.add(
+        approve
+            ? const ReviewBatchSwipeApproved()
+            : reason == null
+            ? const ReviewBatchSwipeRejected()
+            : ReviewBatchSwipeRejected(reason: reason),
+      ),
     );
   }
 
@@ -284,7 +306,10 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
               label: 'Undo',
               color: Colors.orange,
               enabled: state.canUndo,
-              onTap: () => _bloc.add(const ReviewBatchUndoRequested()),
+              onTap: () {
+                PrismHaptics.tap();
+                _bloc.add(const ReviewBatchUndoRequested());
+              },
             ),
             _ActionButton(
               icon: Icons.fullscreen,
@@ -304,6 +329,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
               color: Colors.blue,
               enabled: state.hasMoreWalls,
               onTap: () {
+                PrismHaptics.tap();
                 _bloc.add(const ReviewBatchSwipeSkipped());
               },
             ),
@@ -334,6 +360,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {
+              PrismHaptics.tap();
               _bloc.add(const ReviewBatchLoadRequested());
             },
             icon: const Icon(Icons.refresh),
@@ -357,6 +384,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () {
+              PrismHaptics.tap();
               _bloc.add(const ReviewBatchNextBatchRequested());
             },
             icon: const Icon(Icons.arrow_forward),

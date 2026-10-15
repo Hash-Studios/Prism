@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart'
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -146,19 +148,29 @@ class _StartupFailure extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text("Prism couldn't start", style: textTheme.titleLarge, textAlign: TextAlign.center),
+              Text("Prism couldn't start", style: PrismTextStyles.cardTitle(context), textAlign: TextAlign.center),
               const SizedBox(height: 8),
-              Text('Check your connection and try again.', style: textTheme.bodyMedium, textAlign: TextAlign.center),
+              Text(
+                'Check your connection and try again.',
+                style: PrismTextStyles.body(context),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
-              FilledButton(onPressed: onRetry, child: const Text('Retry')),
+              FilledButton(
+                onPressed: () {
+                  PrismHaptics.tap();
+                  onRetry();
+                },
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),

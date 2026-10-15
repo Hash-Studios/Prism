@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
@@ -18,6 +19,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+
+class _MockBadgesBloc extends MockBloc<BadgesEvent, BadgesState> implements BadgesBloc {}
 
 class _MockShopBloc extends MockBloc<StreakShopEvent, StreakShopState> implements StreakShopBloc {}
 
@@ -82,6 +85,43 @@ void main() {
     expect(find.byType(BackButton), findsNothing);
   });
 
+  Future<void> pumpRewardsPage(WidgetTester tester, {required bool scrollToEarn}) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'rewards-earn-scroll-$scrollToEarn'
+      ..loggedIn = true;
+    final _MockShopBloc shop = _MockShopBloc();
+    whenListen(shop, const Stream<StreakShopState>.empty(), initialState: const StreakShopState());
+    getIt.registerFactory<StreakShopBloc>(() => shop);
+    final _MockBadgesBloc badges = _MockBadgesBloc();
+    whenListen(badges, const Stream<BadgesState>.empty(), initialState: const BadgesState());
+    getIt.registerFactory<BadgesBloc>(() => badges);
+    getIt.registerSingleton<FirestoreClient>(CoinsTestFirestore());
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: kLightTheme,
+        home: RewardsPage(showBack: false, scrollToEarn: scrollToEarn),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+  }
+
+  testWidgets('scrollToEarn brings the Earn coins section into view', (tester) async {
+    await pumpRewardsPage(tester, scrollToEarn: true);
+    final Finder earn = find.text('Earn coins');
+    expect(earn, findsOneWidget);
+    expect(tester.getTopLeft(earn).dy, lessThan(400));
+  });
+
+  testWidgets('without scrollToEarn the page starts at the top', (tester) async {
+    await pumpRewardsPage(tester, scrollToEarn: false);
+    expect(find.text('Earn coins'), findsNothing);
+  });
+
   for (final Brightness brightness in Brightness.values) {
     testWidgets('populated rewards cards fit at 320px and text scale 1.3 (${brightness.name})', (tester) async {
       tester.view.physicalSize = const Size(320, 568);
@@ -140,6 +180,9 @@ void main() {
         initialState: StreakShopState(status: StreakShopStatus.success, items: <PrismWallpaper>[_shopWallpaper()]),
       );
       getIt.registerFactory<StreakShopBloc>(() => shop);
+      final _MockBadgesBloc badges = _MockBadgesBloc();
+      whenListen(badges, const Stream<BadgesState>.empty(), initialState: const BadgesState());
+      getIt.registerFactory<BadgesBloc>(() => badges);
       final CoinsTestFirestore firestore = CoinsTestFirestore()
         ..transactions = <Map<String, dynamic>>[
           for (int i = 0; i < 9; i++)
@@ -185,9 +228,8 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.scrollUntilVisible(find.text('Show more'), 200, scrollable: find.byType(Scrollable).first);
       await tester.pump();
-      await tester.tap(find.text('Show more'));
-      await tester.pump();
-      expect(find.text('Show less'), findsOneWidget);
+      expect(find.text('Show more'), findsOneWidget);
+      expect(find.text('See all'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

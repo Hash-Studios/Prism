@@ -8,5 +8,6 @@ WallOfTheDayEntity wallOfTheDayEntityFromPrismWallpaper(PrismWallpaper wallpaper
     thumbnailUrl: wallpaper.thumbnailUrl,
     photographer: wallpaper.core.authorName ?? '',
     source: wallpaper.source,
+    wallpaper: wallpaper,
   );
 }

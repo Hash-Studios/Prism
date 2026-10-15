@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
@@ -44,16 +47,22 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
           }
 
           return RefreshIndicator(
-            onRefresh: retry,
+            onRefresh: () {
+              PrismHaptics.impact();
+              return retry();
+            },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               children: <Widget>[
                 const SizedBox(height: 120),
                 GlintState(
                   kind: GlintStateKind.offline,
-                  title: "Can't connect to the Servers!",
+                  title: "Couldn't load collections",
                   actionLabel: 'Try again',
-                  onAction: retry,
+                  onAction: () {
+                    PrismHaptics.tap();
+                    unawaited(retry());
+                  },
                 ),
               ],
             ),

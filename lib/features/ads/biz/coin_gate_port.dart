@@ -4,6 +4,7 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/biz/rewarded_ad_flow.dart' as flow;
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 /// Everything the coin gate needs from the outside world. Production uses [AppCoinGatePort]; tests use a fake.
@@ -11,8 +12,21 @@ abstract interface class CoinGatePort {
   bool get isPremium;
   int get balance;
 
-  Future<bool> watchRewardedAd();
-  Future<CoinMutationResult> spend(CoinSpendAction action, {required String sourceTag, String? reason});
+  /// Rewarded ads the user can still watch today, when the server has said so.
+  int? get adsRemaining;
+
+  /// False when the user refused ad consent, so no ad can play.
+  Future<bool> adsAllowed();
+
+  /// Loads and shows a rewarded ad. The result says whether the user earned it, and why not when no ad played.
+  Future<flow.RewardedAdResult> watchRewardedAdResult();
+  Future<CoinMutationResult> spend(
+    CoinSpendAction action, {
+    required String sourceTag,
+    String? reason,
+    String? label,
+    String? pendingDownloadLink,
+  });
   Future<CoinMutationResult> award(CoinEarnAction action, {required String sourceTag});
   Future<CoinMutationResult> refundSpend(
     CoinSpendAction action, {
@@ -26,6 +40,7 @@ abstract interface class CoinGatePort {
   void logCoinError({required String sourceTag, required Object error, StackTrace? stackTrace});
   void showError(String message);
   void showSuccess(String message);
+  void showInfo(String message);
 }
 
 class AppCoinGatePort implements CoinGatePort {
@@ -41,11 +56,28 @@ class AppCoinGatePort implements CoinGatePort {
   int get balance => CoinsService.instance.balanceNotifier.value;
 
   @override
-  Future<bool> watchRewardedAd() => flow.watchRewardedAd(_ads());
+  int? get adsRemaining => CoinsService.instance.adsRemainingToday;
 
   @override
-  Future<CoinMutationResult> spend(CoinSpendAction action, {required String sourceTag, String? reason}) =>
-      CoinsService.instance.spend(action, sourceTag: sourceTag, reason: reason);
+  Future<bool> adsAllowed() => AdConsent.instance.ensure();
+
+  @override
+  Future<flow.RewardedAdResult> watchRewardedAdResult() => flow.watchRewardedAdResult(_ads());
+
+  @override
+  Future<CoinMutationResult> spend(
+    CoinSpendAction action, {
+    required String sourceTag,
+    String? reason,
+    String? label,
+    String? pendingDownloadLink,
+  }) => CoinsService.instance.spend(
+    action,
+    sourceTag: sourceTag,
+    reason: reason,
+    label: label,
+    pendingDownloadLink: pendingDownloadLink,
+  );
 
   @override
   Future<CoinMutationResult> award(CoinEarnAction action, {required String sourceTag}) =>
@@ -80,4 +112,7 @@ class AppCoinGatePort implements CoinGatePort {
 
   @override
   void showSuccess(String message) => toasts.success(message);
+
+  @override
+  void showInfo(String message) => toasts.info(message);
 }

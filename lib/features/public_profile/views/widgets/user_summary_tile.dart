@@ -1,7 +1,9 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,12 +22,15 @@ class UserSummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String safeName = user.name.isNotEmpty ? user.name : user.email;
+    final String safeName = creatorLabel(name: user.name, username: user.username);
     final String safePhoto = user.profilePhoto.trim();
     final bool isOwnAccount = user.email.toLowerCase() == app_state.prismUser.email.toLowerCase();
 
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        PrismHaptics.tap();
+        onTap();
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
@@ -176,6 +181,7 @@ class _FollowButton extends StatelessWidget {
   }
 
   void _onPressed(BuildContext context) {
+    PrismHaptics.tap();
     context.read<PublicProfileBloc>().add(
       PublicProfileEvent.followChangeRequested(
         follow: !user.isFollowedByCurrentUser,
@@ -183,6 +189,7 @@ class _FollowButton extends StatelessWidget {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: user.id,
         targetUserEmail: user.email,
+        targetName: user.name,
       ),
     );
   }

@@ -7,10 +7,16 @@ abstract class PexelsWallpaperRepository {
     required bool refresh,
     int startPage = 1,
     String? paginationKey,
+    bool portraitOnly = true,
   });
 
   /// Wallpapers matching a colour. [hex] is six hex digits, with or without a leading `#`.
-  Future<Result<List<PexelsWallpaper>>> fetchColorFeed({required String hex, required bool refresh});
+  /// [name] (for example `Red`) goes into the search query: the Pexels colour filter alone barely ranks by colour.
+  Future<Result<List<PexelsWallpaper>>> fetchColorFeed({
+    required String hex,
+    required String name,
+    required bool refresh,
+  });
 
   Future<Result<PexelsWallpaper?>> fetchById(String id);
   bool hasMoreForCategory(String categoryName, {String? paginationKey});

@@ -1,31 +1,47 @@
 import 'dart:math';
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Portrait card width: 3.5 cards across a phone, capped so a tablet does not get giant cards.
 double _cardWidth(BuildContext context) => min(MediaQuery.sizeOf(context).width / 3.5, 160);
 
+/// Decode height, in physical pixels, for a portrait card. The card is taller than most photos, so height sets the scale.
+int _cardDecodeHeight(BuildContext context) =>
+    (_cardWidth(context) * 2 * MediaQuery.devicePixelRatioOf(context)).round();
+
 class SearchDiscoveryWidget extends StatelessWidget {
-  const SearchDiscoveryWidget({super.key, required this.tags, required this.selectedTag, required this.onTagPressed});
+  const SearchDiscoveryWidget({
+    super.key,
+    required this.tags,
+    required this.selectedTag,
+    required this.onTagPressed,
+    this.recentSearches = const <String>[],
+    this.onRecentPressed,
+    this.onClearRecents,
+  });
 
   final List<String> tags;
   final String selectedTag;
   final void Function(String tag) onTagPressed;
+  final List<String> recentSearches;
+  final void Function(String query)? onRecentPressed;
+  final VoidCallback? onClearRecents;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +50,10 @@ class SearchDiscoveryWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (recentSearches.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            _RecentSearches(searches: recentSearches, onPressed: onRecentPressed, onClear: onClearRecents),
+          ],
           const SizedBox(height: 12),
           _TagsRow(tags: tags, selectedTag: selectedTag, onTagPressed: onTagPressed),
           const SizedBox(height: 8),
@@ -47,6 +67,53 @@ class SearchDiscoveryWidget extends StatelessWidget {
           const SizedBox(height: 40),
         ],
       ),
+    );
+  }
+}
+
+class _RecentSearches extends StatelessWidget {
+  const _RecentSearches({required this.searches, required this.onPressed, required this.onClear});
+
+  final List<String> searches;
+  final void Function(String query)? onPressed;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Row(
+            children: <Widget>[
+              const Expanded(
+                child: _SectionHeader(label: 'Recent searches', icon: JamIcons.history),
+              ),
+              TextButton(onPressed: onClear, child: const Text('Clear')),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Wrap(
+            spacing: 8,
+            children: <Widget>[
+              for (final String query in searches)
+                ActionChip(
+                  avatar: const Icon(Icons.history_rounded),
+                  label: Text(query),
+                  onPressed: onPressed == null
+                      ? null
+                      : () {
+                          PrismHaptics.selection();
+                          onPressed!(query);
+                        },
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -82,7 +149,10 @@ class _TagsRow extends StatelessWidget {
                 color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.secondary,
               ),
             ),
-            onPressed: () => onTagPressed(tag),
+            onPressed: () {
+              PrismHaptics.selection();
+              onTagPressed(tag);
+            },
           );
         },
       ),
@@ -98,7 +168,10 @@ class _FindCreatorsRow extends StatelessWidget {
     return Semantics(
       button: true,
       child: InkWell(
-        onTap: () => context.router.push(const UserSearchRoute()),
+        onTap: () {
+          PrismHaptics.tap();
+          context.router.push(const UserSearchRoute());
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
@@ -190,6 +263,7 @@ class _TrendingList extends StatelessWidget {
             label: wallpaperSemanticLabel(wall.core.authorName),
             child: GestureDetector(
               onTap: () {
+                PrismHaptics.tap();
                 context.router.push(
                   WallpaperDetailRoute(
                     entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
@@ -200,7 +274,11 @@ class _TrendingList extends StatelessWidget {
               child: SizedBox(
                 width: _cardWidth(context),
                 height: _cardWidth(context) * 2,
-                child: CachedNetworkImage(imageUrl: thumbUrl, fit: BoxFit.cover),
+                child: PrismImageTile(
+                  url: thumbUrl,
+                  fallbackUrl: wall.core.fullUrl,
+                  memCacheHeight: _cardDecodeHeight(context),
+                ),
               ),
             ),
           );
@@ -239,8 +317,8 @@ class _TrendingError extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlintState(
       kind: GlintStateKind.error,
-      title: 'Could not load trending',
-      actionLabel: 'Retry',
+      title: "Couldn't load trending",
+      actionLabel: 'Try again',
       onAction: onRetry,
       glintSize: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -270,6 +348,7 @@ class _CategorySection extends StatelessWidget {
                 button: true,
                 child: GestureDetector(
                   onTap: () {
+                    PrismHaptics.tap();
                     context.router.push(
                       CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(cat.name)}'),
                     );
@@ -280,7 +359,11 @@ class _CategorySection extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        CachedNetworkImage(imageUrl: cat.imageUrl, fit: BoxFit.cover),
+                        PrismImageTile(
+                          url: cat.imageUrl,
+                          fallbackUrl: cat.secondaryImageUrl,
+                          memCacheHeight: _cardDecodeHeight(context),
+                        ),
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -363,7 +446,10 @@ class _ColorSection extends StatelessWidget {
               button: true,
               label: swatch.name,
               child: GestureDetector(
-                onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex)),
+                onTap: () {
+                  PrismHaptics.tap();
+                  context.router.push(ColorRoute(hexColor: swatch.color.rgbHex, name: swatch.name));
+                },
                 child: Container(decoration: BoxDecoration(color: swatch.color)),
               ),
             );

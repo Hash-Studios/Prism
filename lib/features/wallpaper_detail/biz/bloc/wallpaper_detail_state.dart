@@ -26,6 +26,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   const WallpaperDetailLoaded({
     required this.entity,
     this.views,
+    this.setCount,
     this.viewsLoading = false,
     this.paletteLoading = true,
     this.colors,
@@ -38,6 +39,9 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
 
   final FeedItemEntity entity;
   final String? views;
+
+  /// Times the wall was set, from `wallpaper_stats`. Null until known.
+  final int? setCount;
   final bool viewsLoading;
   final bool paletteLoading;
   final List<Color>? colors;
@@ -47,9 +51,13 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   final bool panelCollapsed;
   final bool panelScrollInProgress;
 
+  /// The colour variation applied to the wallpaper, or null while the original shows.
+  Color? get tint => colorChanged ? accent : null;
+
   WallpaperDetailLoaded copyWith({
     FeedItemEntity? entity,
     String? views,
+    int? setCount,
     bool? viewsLoading,
     bool? paletteLoading,
     List<Color>? colors,
@@ -62,6 +70,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     return WallpaperDetailLoaded(
       entity: entity ?? this.entity,
       views: views ?? this.views,
+      setCount: setCount ?? this.setCount,
       viewsLoading: viewsLoading ?? this.viewsLoading,
       paletteLoading: paletteLoading ?? this.paletteLoading,
       colors: colors ?? this.colors,
@@ -77,6 +86,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   List<Object?> get props => [
     entity,
     views,
+    setCount,
     viewsLoading,
     paletteLoading,
     colors,
@@ -89,10 +99,13 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
 }
 
 final class WallpaperDetailError extends WallpaperDetailState {
-  const WallpaperDetailError({required this.message});
+  const WallpaperDetailError({required this.message, this.thumbnailUrl});
 
   final String message;
 
+  /// The thumbnail the link or tile carried, shown behind the message.
+  final String? thumbnailUrl;
+
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, thumbnailUrl];
 }

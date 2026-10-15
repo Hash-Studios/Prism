@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -120,6 +120,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                         ),
                         TextButton(
                           onPressed: () {
+                            PrismHaptics.tap();
                             context.read<InAppNotificationsBloc>().add(
                               const InAppNotificationsEvent.refreshRequested(),
                             );
@@ -177,6 +178,15 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
               },
             ),
             actions: <Widget>[
+              if (state.unreadCount > 0)
+                IconButton(
+                  tooltip: 'Mark all as read',
+                  icon: const Icon(JamIcons.check),
+                  onPressed: () {
+                    PrismHaptics.tap();
+                    context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
+                  },
+                ),
               IconButton(
                 tooltip: 'Notification preferences',
                 icon: const Icon(JamIcons.settings_alt),
@@ -188,19 +198,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                       sourceContext: 'notification_screen',
                     ),
                   );
-                  showModalBottomSheet<void>(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                    sheetAnimationStyle: AnimationStyle(
-                      duration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                      reverseDuration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
-                      curve: PrismCurves.enter,
-                      reverseCurve: PrismCurves.exit,
-                    ),
-                    builder: (_) => const NotificationSettingsSheet(),
-                  );
+                  showNotificationSettingsSheet(context);
                 },
               ),
             ],
@@ -211,16 +209,11 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                   tooltip: 'Clear inbox',
                   backgroundColor: colorScheme.error,
                   foregroundColor: colorScheme.onError,
-                  onPressed: () async {
-                    final bool confirmed = await _confirm(
-                      context,
-                      title: 'Clear your inbox?',
-                      content: "You'll remove every notification from this list on this device. This can't be undone.",
-                      confirmLabel: 'Clear inbox',
-                    );
-                    if (!confirmed || !context.mounted) return;
+                  onPressed: () {
+                    PrismHaptics.tap();
                     analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
                     context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
+                    _showUndoSnackBar(context, 'Inbox cleared', notifications);
                   },
                   child: const Icon(JamIcons.trash),
                 )
@@ -230,43 +223,19 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     );
   }
 
-  Future<bool> _confirm(
-    BuildContext context, {
-    required String title,
-    required String content,
-    required String confirmLabel,
-  }) async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) {
-        final ThemeData t = Theme.of(ctx);
-        final ColorScheme cs = t.colorScheme;
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          backgroundColor: t.primaryColor,
-          title: Text(
-            title,
-            style: t.textTheme.headlineSmall?.copyWith(color: cs.secondary, fontWeight: FontWeight.w600),
+  void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {
+    final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => bloc.add(InAppNotificationsEvent.restoreRequested(items: removed)),
           ),
-          content: Text(content, style: t.textTheme.bodyMedium?.copyWith(color: cs.secondary.withValues(alpha: 0.9))),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text('Cancel', style: TextStyle(color: cs.secondary)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(
-                confirmLabel,
-                style: TextStyle(color: cs.error, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-          actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-        );
-      },
-    );
-    return confirmed ?? false;
+        ),
+      );
   }
 
   Widget _dismissBackground(ColorScheme colorScheme, Alignment alignment) {
@@ -291,17 +260,13 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
   }) {
     return Dismissible(
       key: ValueKey<String>(notification.id),
-      confirmDismiss: (DismissDirection direction) => _confirm(
-        context,
-        title: 'Remove from inbox?',
-        content: 'This notification will be removed from your list on this device.',
-        confirmLabel: 'Remove',
-      ),
       onDismissed: (_) {
+        PrismHaptics.impact();
         analytics.track(
           NotificationItemDismissedEvent(type: _notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
         );
         context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
+        _showUndoSnackBar(context, 'Notification removed', <InAppNotificationEntity>[notification]);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(colorScheme, Alignment.centerRight),
@@ -326,18 +291,14 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     final bool expanded = _expandedNotificationGroups.contains(group.key);
     return Dismissible(
       key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
-      confirmDismiss: (DismissDirection direction) => _confirm(
-        context,
-        title: 'Remove this summary?',
-        content: 'All ${group.items.length} notifications in this group will be removed from your list on this device.',
-        confirmLabel: 'Remove',
-      ),
       onDismissed: (_) {
+        PrismHaptics.impact();
         context.read<InAppNotificationsBloc>().add(
           InAppNotificationsEvent.deleteManyRequested(
             ids: group.items.map((InAppNotificationEntity e) => e.id).toList(),
           ),
         );
+        _showUndoSnackBar(context, '${group.items.length} notifications removed', group.items);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(colorScheme, Alignment.centerRight),
@@ -355,6 +316,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
               color: theme.primaryColor,
               child: InkWell(
                 onTap: () {
+                  PrismHaptics.tap();
                   setState(() {
                     if (expanded) {
                       _expandedNotificationGroups.remove(group.key);
@@ -382,12 +344,19 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                if (group.unreadCount > 0) ...<Widget>[
+                                  ExcludeSemantics(child: _UnreadDot(color: colorScheme.error)),
+                                  const SizedBox(width: 6),
+                                ],
                                 Expanded(
                                   child: Text(
                                     group.displayTitle,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.headlineMedium?.copyWith(color: colorScheme.secondary),
+                                    style: theme.textTheme.headlineMedium?.copyWith(
+                                      color: colorScheme.secondary,
+                                      fontWeight: group.unreadCount > 0 ? FontWeight.w700 : FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -462,6 +431,23 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
   }
 }
 
+class _UnreadDot extends StatelessWidget {
+  const _UnreadDot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: const SizedBox.square(dimension: 8),
+      ),
+    );
+  }
+}
+
 class _NotificationCard extends StatelessWidget {
   const _NotificationCard({
     required this.notification,
@@ -483,6 +469,7 @@ class _NotificationCard extends StatelessWidget {
   static bool _hasValidImageUrl(String? url) => Uri.tryParse(url?.trim() ?? '')?.host.isNotEmpty ?? false;
 
   Future<void> _onTap(BuildContext context) async {
+    PrismHaptics.tap();
     onMarkRead?.call();
     analytics.track(
       NotificationItemOpenedEvent(
@@ -503,11 +490,7 @@ class _NotificationCard extends StatelessWidget {
       sourceTag: 'notification.route_mapper',
     );
     if (!context.mounted) return;
-    if (mappedRoute != null) {
-      context.router.navigate(mappedRoute);
-      return;
-    }
-    context.router.navigate(const NotFoundRoute());
+    context.router.navigate(mappedRoute ?? const NotificationRoute());
   }
 
   @override
@@ -536,6 +519,10 @@ class _NotificationCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (!notification.read) ...<Widget>[
+                    ExcludeSemantics(child: _UnreadDot(color: colorScheme.error)),
+                    const SizedBox(width: 6),
+                  ],
                   Expanded(
                     child: Text(
                       displayBody,
@@ -545,6 +532,7 @@ class _NotificationCard extends StatelessWidget {
                         fontSize: 13,
                         height: 1.25,
                         color: colorScheme.secondary,
+                        fontWeight: notification.read ? null : FontWeight.w700,
                       ),
                     ),
                   ),
@@ -599,12 +587,19 @@ class _NotificationCard extends StatelessWidget {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
+                              if (!notification.read) ...<Widget>[
+                                ExcludeSemantics(child: _UnreadDot(color: colorScheme.error)),
+                                const SizedBox(width: 6),
+                              ],
                               Expanded(
                                 child: Text(
                                   notification.title,
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.headlineMedium?.copyWith(color: colorScheme.secondary),
+                                  style: theme.textTheme.headlineMedium?.copyWith(
+                                    color: colorScheme.secondary,
+                                    fontWeight: notification.read ? FontWeight.w500 : FontWeight.w700,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),

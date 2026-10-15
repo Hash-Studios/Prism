@@ -89,7 +89,11 @@ class GlintState extends StatelessWidget {
                 ),
                 child: body,
               );
-        return Center(child: animated);
+        final Widget centered = Center(child: animated);
+        if (kind == GlintStateKind.error || kind == GlintStateKind.offline) {
+          return Semantics(liveRegion: true, container: true, child: centered);
+        }
+        return centered;
       },
     );
   }

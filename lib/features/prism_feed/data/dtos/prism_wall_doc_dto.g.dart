@@ -22,6 +22,7 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   by: json['by'] == null ? '' : const FirestoreStringConverter().fromJson(json['by']),
   email: json['email'] == null ? '' : const FirestoreStringConverter().fromJson(json['email']),
   userPhoto: json['userPhoto'] == null ? '' : const FirestoreStringConverter().fromJson(json['userPhoto']),
+  title: json['title'] as String?,
   desc: json['desc'] == null ? '' : const FirestoreStringConverter().fromJson(json['desc']),
   collections: json['collections'] == null
       ? const <String>[]
@@ -49,6 +50,7 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'by': const FirestoreStringConverter().toJson(instance.by),
   'email': const FirestoreStringConverter().toJson(instance.email),
   'userPhoto': const FirestoreStringConverter().toJson(instance.userPhoto),
+  'title': instance.title,
   'desc': const FirestoreStringConverter().toJson(instance.desc),
   'collections': const FirestoreStringListConverter().toJson(instance.collections),
   'tags': const FirestoreStringListConverter().toJson(instance.tags),

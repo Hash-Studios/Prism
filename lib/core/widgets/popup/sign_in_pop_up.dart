@@ -2,12 +2,14 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/widgets/accent_color.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/popup_header.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -38,7 +40,11 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
   void runSignIn(Future<SignInOutcome> Function() signIn) {
     navigator.pop();
     loaderVisible = true;
-    showDialog(barrierDismissible: false, context: navigator.context, builder: (BuildContext context) => loaderDialog);
+    showDialog(
+      barrierDismissible: false,
+      context: navigator.context,
+      builder: (BuildContext context) => PopScope(canPop: false, child: loaderDialog),
+    );
     signIn()
         .then((outcome) {
           if (!navigator.mounted) {
@@ -46,10 +52,9 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           }
           closeLoaderIfVisible();
           if (outcome == SignInOutcome.cancelled) {
-            toasts.success('Sign in cancelled.');
             return;
           }
-          toasts.success('Login Successful!');
+          PrismHaptics.success();
           app_state.prismUser.loggedIn = true;
           app_state.persistPrismUser();
           func();
@@ -91,7 +96,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
                   child: Text(
-                    'SIGNING IN UNLOCKS:',
+                    'Signing in unlocks',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
@@ -110,35 +115,42 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
       ),
     ),
     actions: [
-      MaterialButton(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).primaryColor,
+      TextButton(
+        style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.secondary),
         onPressed: () {
           navigator.pop();
         },
-        child: Text('CLOSE', style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary)),
+        child: const Text('Close', style: TextStyle(fontSize: 16.0)),
       ),
-      MaterialButton(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).colorScheme.error,
+      FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.error,
+          foregroundColor: onColor(Theme.of(context).colorScheme.error),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+        ),
         onPressed: () {
+          PrismHaptics.tap();
           runSignIn(globalGoogleAuth.signInWithGoogle);
         },
-        child: const Text('GOOGLE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+        child: const Text('Google', style: TextStyle(fontSize: 16.0)),
       ),
       if (Platform.isIOS || Platform.isMacOS)
-        MaterialButton(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: Colors.white,
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          ),
           onPressed: () {
+            PrismHaptics.tap();
             runSignIn(globalAppleAuth.signInWithApple);
           },
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.apple, color: Colors.black, size: 18),
+              Icon(Icons.apple, size: 18),
               SizedBox(width: 6),
-              Text('Sign in with Apple', style: TextStyle(fontSize: 16.0, color: Colors.black)),
+              Text('Sign in with Apple', style: TextStyle(fontSize: 16.0)),
             ],
           ),
         ),

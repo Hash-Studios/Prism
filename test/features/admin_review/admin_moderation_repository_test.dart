@@ -3,6 +3,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show FieldValue;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
@@ -108,5 +109,65 @@ void main() {
     expect(client.writes.single.op, 'add');
     expect(client.writes.single.collection, FirebaseCollections.notifications);
     expect((client.writes.single.data!['notification'] as Map<String, dynamic>)['body'], 'Wrong aspect ratio');
+  });
+
+  test('approval updates the wall and leaves the inbox entry to onWallApproved', () async {
+    const wall = FirestoreDocument('wall-1', <String, dynamic>{'email': 'creator@example.com', 'review': false});
+
+    await repository.approveWall(wall);
+
+    final write = client.writes.single;
+    expect((write.op, write.collection, write.id), ('update', FirebaseCollections.walls, 'wall-1'));
+    expect(write.data!['review'], isTrue);
+    expect(write.data!['collections'], <String>['community']);
+  });
+
+  test('approval replaces creator-written collections and removes the streak fields', () async {
+    const wall = FirestoreDocument('wall-2', <String, dynamic>{
+      'email': 'creator@example.com',
+      'review': false,
+      'collections': <String>['streak', 'wall_of_the_day'],
+      'is_streak_exclusive': true,
+      'streak_shop_coin_cost': 1,
+    });
+
+    await repository.approveWall(wall);
+
+    final data = client.writes.single.data!;
+    expect(data['collections'], <String>['community']);
+    expect(data['is_streak_exclusive'], isA<FieldValue>());
+    expect(data['streak_shop_coin_cost'], isA<FieldValue>());
+  });
+
+  test('approval keeps values the admin sets on purpose', () async {
+    const wall = FirestoreDocument('wall-3', <String, dynamic>{'email': 'creator@example.com', 'review': false});
+
+    await repository.approveWall(
+      wall,
+      collections: <String>['community', 'minimal'],
+      streakExclusive: true,
+      streakShopCoinCost: 50,
+    );
+
+    final data = client.writes.single.data!;
+    expect(data['collections'], <String>['community', 'minimal']);
+    expect(data['is_streak_exclusive'], isTrue);
+    expect(data['streak_shop_coin_cost'], 50);
+  });
+
+  test('undoing an approval puts the original streak values back', () async {
+    const wall = FirestoreDocument('wall-4', <String, dynamic>{
+      'review': false,
+      'collections': <String>['community'],
+      'is_streak_exclusive': true,
+      'streak_shop_coin_cost': 20,
+    });
+
+    await repository.undoApproveWall(wall);
+
+    final data = client.writes.single.data!;
+    expect(data['review'], isFalse);
+    expect(data['is_streak_exclusive'], isTrue);
+    expect(data['streak_shop_coin_cost'], 20);
   });
 }

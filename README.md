@@ -6,19 +6,25 @@ Prism is an open-source wallpaper app for Android and iOS, built with Flutter an
 
 ## Features
 
-- Browse community wallpapers, Wallhaven, and Pexels, with a personalized home feed.
-- Search by keyword or color, browse categories and collections, and follow creators.
-- Save favourites to your account, download wallpapers, and share wallpaper or profile links.
-- Preview wallpapers with a clock overlay and apply them on supported platforms.
+- Browse community wallpapers, Wallhaven, and Pexels, with a personalized home feed and a Wall of the Day.
+- Search by keyword, color, or tag, with filters and recent searches. Open "More like this" to find similar wallpapers.
+- Browse categories and collections, and follow creators.
+- Save favourites to your account, then sort, filter, search, and select many at once. Share or delete many downloads at once.
+- Preview wallpapers with a clock overlay. Set them with Fill or Fit, crop them, or pick a default target on supported platforms.
+- Make any wallpaper move, pick a living gradient, or use a video as a live wallpaper (Android).
+- See the wallpapers you set before and set them again.
 - Edit wallpapers with stacked filters, blur, hue, saturation, and brightness controls.
 - Upload wallpapers for review and track their approval status.
 - Generate AI wallpapers from text prompts, create variations, and share the results.
 - Earn Prism Coins through rewarded ads and daily rewards, and spend them on supported actions.
+- Read notifications in an inbox with unread marks, and set preferences in one sheet.
 - Customize the app's theme and accent, and manage cached images and downloads.
-- Rotate favourite wallpapers on a timer with Prism Pro on Android.
+- Rotate favourites or downloads on a timer, only while charging or in set hours, with Prism Pro on Android.
 
 Platform capabilities vary. Android supports home-screen and lock-screen wallpaper actions. iOS supports saving images for manual application.
 Premium access and coin costs depend on the action. The app shows the applicable gate before proceeding.
+
+See [docs/features](docs/features/README.md) for a short page on each feature.
 
 ## Repository layout
 

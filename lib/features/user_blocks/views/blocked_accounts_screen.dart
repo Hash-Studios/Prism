@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
@@ -37,6 +38,31 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
     await _loadFuture;
   }
 
+  /// The list never shows an email address, only the username.
+  static String _displayName(BlockedUserListRow row) {
+    final String? username = row.blockedUsername?.trim();
+    return username == null || username.isEmpty ? 'Blocked user' : username;
+  }
+
+  Future<void> _confirmUnblock(BlockedUserListRow row, String name) async {
+    PrismHaptics.tap();
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text('Unblock $name?'),
+        content: const Text('Their wallpapers will show in your feeds again.'),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Unblock')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (await unblockUserWithFeedback(context, row.blockedUid)) {
+      await _refresh();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,7 +85,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                 kind: GlintStateKind.error,
                 title: 'Could not load blocked accounts.',
                 actionLabel: 'Retry',
-                onAction: _refresh,
+                onAction: () {
+                  PrismHaptics.tap();
+                  _refresh();
+                },
               ),
             );
           }
@@ -71,7 +100,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
             );
           }
           return RefreshIndicator(
-            onRefresh: _refresh,
+            onRefresh: () {
+              PrismHaptics.impact();
+              return _refresh();
+            },
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: rows.length,
@@ -79,26 +111,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                   const Divider(height: 1, indent: 16, endIndent: 16),
               itemBuilder: (BuildContext context, int i) {
                 final BlockedUserListRow row = rows[i];
-                final String title = (row.blockedUsername != null && row.blockedUsername!.isNotEmpty)
-                    ? row.blockedUsername!
-                    : row.blockedEmail;
+                final String name = _displayName(row);
                 return ListTile(
-                  title: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
-                  subtitle: Text(
-                    row.blockedEmail,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.65),
-                      fontSize: 12,
-                    ),
-                  ),
-                  trailing: TextButton(
-                    onPressed: () async {
-                      if (await unblockUserWithFeedback(context, row.blockedUid)) {
-                        await _refresh();
-                      }
-                    },
-                    child: const Text('Unblock'),
-                  ),
+                  title: Text(name, style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+                  trailing: TextButton(onPressed: () => _confirmUnblock(row, name), child: const Text('Unblock')),
                 );
               },
             ),
@@ -118,7 +134,10 @@ class _Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: () {
+        PrismHaptics.impact();
+        return onRefresh();
+      },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: <Widget>[

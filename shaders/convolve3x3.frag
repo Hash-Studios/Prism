@@ -8,6 +8,7 @@ uniform vec3 uRow1;
 uniform vec3 uRow2;
 uniform float uBias;
 uniform float uKernelScale;
+uniform float uLightness;
 uniform sampler2D uTexture;
 
 out vec4 fragColor;
@@ -40,5 +41,13 @@ void main() {
   sum += uRow0.x * tap(-1.0, -1.0) + uRow0.y * tap(0.0, -1.0) + uRow0.z * tap(1.0, -1.0);
   sum += uRow1.x * tap(-1.0, 0.0) + uRow1.y * centre + uRow1.z * tap(1.0, 0.0);
   sum += uRow2.x * tap(-1.0, 1.0) + uRow2.y * tap(0.0, 1.0) + uRow2.z * tap(1.0, 1.0);
-  fragColor = vec4(clamp(sum, 0.0, 1.0) * source.a, source.a);
+  sum = clamp(sum, 0.0, 1.0);
+  if (uLightness != 0.0) {
+    float lightness = (max(max(sum.r, sum.g), sum.b) + min(min(sum.r, sum.g), sum.b)) * 0.5;
+    float adjusted = clamp(lightness + uLightness, 0.0, 1.0);
+    float span = 1.0 - abs(2.0 * lightness - 1.0);
+    float scale = span > 0.0 ? (1.0 - abs(2.0 * adjusted - 1.0)) / span : 0.0;
+    sum = (sum - lightness) * scale + adjusted;
+  }
+  fragColor = vec4(sum * source.a, source.a);
 }

@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -15,16 +17,21 @@ import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/badges/domain/badge_catalog.dart';
+import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
+import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
 import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -61,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return identifier == app_state.prismUser.email || identifier == app_state.prismUser.username;
   }
 
-  PublicProfileEntity get _ownProfile => PublicProfileEntity(
+  PublicProfileEntity _ownProfile({List<String>? badges}) => PublicProfileEntity(
     id: app_state.prismUser.id,
     name: app_state.prismUser.name,
     email: app_state.prismUser.email,
@@ -72,6 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     following: app_state.prismUser.following,
     links: app_state.prismUser.links,
     coverPhoto: app_state.prismUser.coverPhoto ?? '',
+    badges: badges ?? app_state.prismUser.badges.map((b) => b.id).toList(growable: false),
   );
 
   @override
@@ -88,7 +96,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         // The app bar gives guests a Back button out of this screen.
-        appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.surface),
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          actions: <Widget>[
+            IconButton(
+              tooltip: 'Settings',
+              icon: Icon(JamIcons.cog, color: Theme.of(context).colorScheme.secondary),
+              onPressed: () {
+                PrismHaptics.tap();
+                context.router.push(const SettingsRoute());
+              },
+            ),
+          ],
+        ),
         body: SignInPrompt(feature: _isOwnProfile ? 'your profile' : 'profiles'),
       );
     }
@@ -113,11 +133,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: _isOwnProfile
           ? Scaffold(
               key: _scaffoldKey,
-              body: _ProfileChild(
-                ownProfile: true,
-                parentScaffoldKey: _scaffoldKey,
-                onProfileEdited: () => setState(() {}),
-                profile: _ownProfile,
+              body: StreamBuilder<PublicProfileEntity?>(
+                stream: _profileStream,
+                builder: (context, snapshot) => _ProfileChild(
+                  ownProfile: true,
+                  parentScaffoldKey: _scaffoldKey,
+                  onProfileEdited: () => setState(() {}),
+                  profile: _ownProfile(
+                    badges: snapshot.data?.id == app_state.prismUser.id ? snapshot.data?.badges : null,
+                  ),
+                ),
               ),
               endDrawer: SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: const ProfileDrawer()),
             )
@@ -181,10 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
                     builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
                       if (BlockedCreatorsFilter.hidesCreatorEmail(profile.email, blockSnap.data ?? <String>{})) {
-                        final String display = <String>[
-                          profile.name.trim(),
-                          profile.username.trim(),
-                        ].firstWhere((String value) => value.isNotEmpty, orElse: () => profile.email);
+                        final String display = creatorLabel(name: profile.name, username: profile.username);
                         return BlockedUserProfileShell(
                           targetUserId: profile.id,
                           targetEmail: profile.email,
@@ -271,6 +293,7 @@ class _ProfileChildState extends State<_ProfileChild> {
   }
 
   void _toggleFollow({required bool following}) {
+    PrismHaptics.tap();
     _trackAction(
       following ? AnalyticsActionValue.unfollowTapped : AnalyticsActionValue.followTapped,
       sourceContext: 'profile_screen_follow_action',
@@ -282,13 +305,27 @@ class _ProfileChildState extends State<_ProfileChild> {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: _profile.id,
         targetUserEmail: _profile.email,
+        targetName: creatorLabel(name: _profile.name, username: _profile.username),
       ),
     );
-    if (following) {
-      toasts.error('Unfollowed ${_profile.name}!');
-    } else {
-      toasts.success('Followed ${_profile.name}!');
+  }
+
+  /// Opens a profile link. A link with an unsafe scheme or no host is refused with a calm toast.
+  Future<bool> _openProfileLink(String link) async {
+    final Uri? uri = safeProfileLinkUri(link);
+    try {
+      if (uri != null && await launchUrl(uri)) return true;
+    } catch (error, stackTrace) {
+      logger.w('Could not open a profile link.', error: error, stackTrace: stackTrace);
     }
+    toasts.info("Couldn't open this link.");
+    return false;
+  }
+
+  bool _isFollowing(PublicProfileState state) {
+    final String me = app_state.prismUser.email.trim().toLowerCase();
+    return state.followOverrides[_profile.email.trim().toLowerCase()] ??
+        _profile.followers.any((String e) => e.trim().toLowerCase() == me);
   }
 
   Future<void> _onMenuSelected(_ProfileMenuAction action) async {
@@ -304,7 +341,12 @@ class _ProfileChildState extends State<_ProfileChild> {
         if (uid.isEmpty || email.isEmpty) {
           return;
         }
-        await confirmAndBlockUser(context: context, targetUserId: uid, targetEmail: email, displayName: _profile.name);
+        await confirmAndBlockUser(
+          context: context,
+          targetUserId: uid,
+          targetEmail: email,
+          displayName: creatorLabel(name: _profile.name, username: _profile.username),
+        );
     }
   }
 
@@ -318,6 +360,10 @@ class _ProfileChildState extends State<_ProfileChild> {
     final bool ownProfile = widget.ownProfile;
     final ScrollController? controller = ownProfile ? scrollController : null;
     final List<String> linkKeys = _profile.links.keys.toList(growable: false);
+    final int badgeCount = _profile.badges.toSet().where((id) => badgeInfo(id) != null).length;
+    final int badgesPerRow = math.max(1, ((MediaQuery.sizeOf(context).width - 24 + 8) / 40).floor());
+    final int badgeRows = (badgeCount / badgesPerRow).ceil();
+    final double badgeHeight = badgeRows == 0 ? 0 : 10 + badgeRows * 32 + (badgeRows - 1) * 8;
     // Own profile is pushed from the home avatar now, so it needs a way back like any other profile.
     final bool showBack = !ownProfile || Navigator.canPop(context);
     final Widget editButton = Padding(
@@ -326,6 +372,7 @@ class _ProfileChildState extends State<_ProfileChild> {
         tooltip: 'Edit profile',
         icon: JamIcons.pencil,
         onPressed: () {
+          PrismHaptics.tap();
           unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
         },
       ),
@@ -335,7 +382,6 @@ class _ProfileChildState extends State<_ProfileChild> {
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
     final bool showProfileCompletenessCard = ownProfile && !profileCompletenessStatus.isComplete;
-    final bool following = _profile.followers.contains(app_state.prismUser.email);
 
     return Stack(
       children: [
@@ -369,10 +415,20 @@ class _ProfileChildState extends State<_ProfileChild> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          _HeaderButton(
-                            icon: following ? JamIcons.user_remove : JamIcons.user_plus,
-                            alignment: Alignment.centerRight,
-                            onPressed: () => _toggleFollow(following: following),
+                          BlocConsumer<PublicProfileBloc, PublicProfileState>(
+                            listenWhen: (prev, curr) =>
+                                curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+                            listener: (context, state) => showFollowOutcomeToast(state.followOutcome!),
+                            buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
+                            builder: (context, state) {
+                              final bool following = _isFollowing(state);
+                              return _HeaderButton(
+                                tooltip: following ? 'Unfollow' : 'Follow',
+                                icon: following ? JamIcons.user_remove : JamIcons.user_plus,
+                                alignment: Alignment.centerRight,
+                                onPressed: () => _toggleFollow(following: following),
+                              );
+                            },
                           ),
                           PopupMenuButton<_ProfileMenuAction>(
                             icon: const _CircleIcon(icon: JamIcons.more_vertical),
@@ -412,8 +468,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                 backgroundColor: theme.primaryColor,
                 automaticallyImplyLeading: false,
                 expandedHeight: linkKeys.isEmpty
-                    ? MediaQuery.of(context).size.height * 0.4
-                    : MediaQuery.of(context).size.height * 0.46,
+                    ? MediaQuery.of(context).size.height * 0.4 + badgeHeight
+                    : MediaQuery.of(context).size.height * 0.46 + badgeHeight,
                 flexibleSpace: Stack(
                   children: [
                     FlexibleSpaceBar(
@@ -442,14 +498,14 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                                 width: double.maxFinite,
                                 height: linkKeys.isEmpty
-                                    ? MediaQuery.of(context).size.height * 0.21 - 37
-                                    : MediaQuery.of(context).size.height * 0.27 - 37,
+                                    ? MediaQuery.of(context).size.height * 0.21 - 37 + badgeHeight
+                                    : MediaQuery.of(context).size.height * 0.27 - 37 + badgeHeight,
                                 child: Column(
                                   children: [
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
                                       child: Text(
-                                        _profile.name,
+                                        creatorLabel(name: _profile.name, username: _profile.username),
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -500,6 +556,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                       ),
                                       const SizedBox(height: 2),
                                     ],
+                                    ProfileBadgeRow(badgeIds: _profile.badges),
                                     const SizedBox(height: 8),
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
@@ -509,9 +566,12 @@ class _ProfileChildState extends State<_ProfileChild> {
                                           // Following count is tappable on own profile only.
                                           GestureDetector(
                                             onTap: ownProfile
-                                                ? () => context.router.push(
-                                                    FollowingListRoute(following: _profile.following),
-                                                  )
+                                                ? () {
+                                                    PrismHaptics.tap();
+                                                    context.router.push(
+                                                      FollowingListRoute(following: _profile.following),
+                                                    );
+                                                  }
                                                 : null,
                                             child: _StatPill(count: _profile.following.length, label: 'Following'),
                                           ),
@@ -523,8 +583,10 @@ class _ProfileChildState extends State<_ProfileChild> {
                                           ),
                                           // Followers count is tappable on both own and other profiles.
                                           GestureDetector(
-                                            onTap: () =>
-                                                context.router.push(FollowersRoute(followers: _profile.followers)),
+                                            onTap: () {
+                                              PrismHaptics.tap();
+                                              context.router.push(FollowersRoute(followers: _profile.followers));
+                                            },
                                             child: _StatPill(count: _profile.followers.length, label: 'Followers'),
                                           ),
                                         ],
@@ -547,11 +609,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                                                     AnalyticsActionValue.actionChipTapped,
                                                     sourceContext: 'profile_screen_link_chip',
                                                   );
-                                                  final String link = _profile.links[key].toString();
-                                                  final String targetLink = link.contains('@gmail.com')
-                                                      ? 'mailto:$link'
-                                                      : link;
-                                                  final bool launched = await launchUrl(Uri.parse(targetLink));
+                                                  final bool launched = await _openProfileLink(
+                                                    _profile.links[key].toString(),
+                                                  );
                                                   unawaited(
                                                     analytics.track(
                                                       ExternalLinkOpenResultEvent(
@@ -715,7 +775,10 @@ class _LinkButton extends StatelessWidget {
         ),
         child: Icon(icon, size: 18, color: secondary.withValues(alpha: 0.85)),
       ),
-      onPressed: onPressed,
+      onPressed: () {
+        PrismHaptics.tap();
+        onPressed();
+      },
     );
   }
 }

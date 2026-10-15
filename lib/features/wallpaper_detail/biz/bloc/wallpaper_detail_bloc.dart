@@ -9,6 +9,7 @@ import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wall
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
+import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,10 +23,12 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     this._pexelsRepository,
     this._recordPrismWallpaperViewsUsecase,
     this._paletteRepository,
+    this._getWallpaperSetCountUseCase,
   ) : super(const WallpaperDetailInitial()) {
     on<LoadFromEntity>(_onLoadFromEntity);
     on<LoadFromId>(_onLoadFromId);
     on<FetchViews>(_onFetchViews);
+    on<FetchSetCount>(_onFetchSetCount);
     on<SelectAccentColor>(_onSelectAccentColor);
     on<CycleAccentColor>(_onCycleAccentColor);
     on<ResetAccentColor>(_onResetAccentColor);
@@ -40,28 +43,47 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final PexelsWallpaperRepository _pexelsRepository;
   final RecordPrismWallpaperViewsUsecase _recordPrismWallpaperViewsUsecase;
   final PaletteRepository _paletteRepository;
+  final GetWallpaperSetCountUseCase _getWallpaperSetCountUseCase;
+  bool _closing = false;
+
+  static const String notFoundMessage = 'Wallpaper not found';
+  static const String loadFailedMessage = 'Check your connection and try again.';
+
+  @override
+  Future<void> close() {
+    _closing = true;
+    return super.close();
+  }
 
   Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
     emit(WallpaperDetailLoaded(entity: event.entity));
     _fetchAndUpdateViews(event.entity);
-    await Future.wait([_loadPalette(event.entity, emit), _enrichWallhavenFromFeedIfNeeded(event.entity, emit)]);
+    await Future.wait([
+      _loadPalette(event.entity, emit, event.localFilePath),
+      _enrichWallhavenFromFeedIfNeeded(event.entity, emit),
+    ]);
   }
 
   Future<void> _onLoadFromId(LoadFromId event, Emitter<WallpaperDetailState> emit) async {
     emit(WallpaperDetailLoading(thumbnailUrl: event.thumbnailUrl));
 
     final result = await _fetchWallpaper(wallId: event.wallId, source: event.source);
+    if (_closing) return;
     final failure = result.failure;
     if (failure != null) {
-      emit(WallpaperDetailError(message: failure.message));
+      emit(WallpaperDetailError(message: _loadErrorMessage(failure), thumbnailUrl: event.thumbnailUrl));
       return;
     }
 
     final entity = result.data!;
     emit(WallpaperDetailLoaded(entity: entity));
     _fetchAndUpdateViews(entity);
-    await _loadPalette(entity, emit);
+    await _loadPalette(entity, emit, event.localFilePath);
   }
+
+  /// Text a person can read. Raw failure text from Firestore or the network never reaches the screen.
+  String _loadErrorMessage(Failure failure) =>
+      failure is UnknownFailure && failure.message == notFoundMessage ? notFoundMessage : loadFailedMessage;
 
   Future<void> _onFetchViews(FetchViews event, Emitter<WallpaperDetailState> emit) async {
     final currentState = state;
@@ -87,6 +109,17 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
         emit(latestState.copyWith(views: views, viewsLoading: false));
       },
     );
+  }
+
+  Future<void> _onFetchSetCount(FetchSetCount event, Emitter<WallpaperDetailState> emit) async {
+    final currentState = state;
+    if (currentState is! WallpaperDetailLoaded || currentState.entity.source != WallpaperSource.prism) return;
+
+    final result = await _getWallpaperSetCountUseCase(currentState.entity.id);
+    final latestState = state;
+    if (emit.isDone || latestState is! WallpaperDetailLoaded || latestState.entity.id != currentState.entity.id) return;
+    final count = result.data;
+    if (result.isSuccess && count != null) emit(latestState.copyWith(setCount: count));
   }
 
   void _onSelectAccentColor(SelectAccentColor event, Emitter<WallpaperDetailState> emit) {
@@ -146,23 +179,33 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     emit(currentState.copyWith(panelScrollInProgress: false));
   }
 
-  Future<void> _loadPalette(FeedItemEntity entity, Emitter<WallpaperDetailState> emit) async {
-    final imageUrl = entity.thumbnailUrl;
-    if (imageUrl.trim().isEmpty) return;
+  Future<void> _loadPalette(FeedItemEntity entity, Emitter<WallpaperDetailState> emit, String? localFilePath) async {
+    final imageUrl = localFilePath?.trim().isNotEmpty == true ? localFilePath! : entity.thumbnailUrl;
+    final latest = state;
+    if (latest is! WallpaperDetailLoaded || latest.entity.id != entity.id || latest.entity.source != entity.source) {
+      return;
+    }
+    if (imageUrl.trim().isEmpty) {
+      emit(latest.copyWith(paletteLoading: false));
+      return;
+    }
 
     final result = await _paletteRepository.generatePalette(imageUrl);
-    final latest = state;
-    if (latest is! WallpaperDetailLoaded || latest.entity.thumbnailUrl != imageUrl) return;
+    if (emit.isDone) return;
+    final current = state;
+    if (current is! WallpaperDetailLoaded || current.entity.id != entity.id || current.entity.source != entity.source) {
+      return;
+    }
 
     result.fold(
-      onFailure: (_) => emit(latest.copyWith(paletteLoading: false)),
+      onFailure: (_) => emit(current.copyWith(paletteLoading: false)),
       onSuccess: (palette) {
         final colors = _deduplicateColors(palette.paletteColorValues.map(Color.new).toList()).take(5).toList();
         emit(
-          latest.copyWith(
+          current.copyWith(
             paletteLoading: false,
             colors: colors,
-            accent: colors.isNotEmpty ? colors.first : latest.accent,
+            accent: colors.isNotEmpty ? colors.first : current.accent,
           ),
         );
       },
@@ -195,7 +238,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       return result.fold(
         onFailure: Result.error,
         onSuccess: (wallpaper) => wallpaper == null
-            ? Result.error(const UnknownFailure('Wallpaper not found'))
+            ? Result.error(const UnknownFailure(notFoundMessage))
             : Result.success(toEntity(wallpaper)),
       );
     }
@@ -218,7 +261,9 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   }
 
   void _fetchAndUpdateViews(FeedItemEntity entity) {
-    if (entity.source == WallpaperSource.prism) add(const FetchViews());
+    if (_closing || entity.source != WallpaperSource.prism) return;
+    add(const FetchViews());
+    add(const FetchSetCount());
   }
 
   /// Search/list responses often omit `uploader`; single-wall API includes it.

@@ -10,6 +10,13 @@ abstract class PersonalizedFeedState with _$PersonalizedFeedState {
     required bool isFetchingMore,
     required int page,
     required List<String> seenKeys,
+    required HomeFeedChip chip,
+
+    /// Cached items are on screen while the fresh page loads.
+    required bool isRefreshing,
+
+    /// The last refresh failed. Items from before it stay on screen.
+    required bool refreshFailed,
     Failure? failure,
   }) = _PersonalizedFeedState;
 
@@ -21,5 +28,8 @@ abstract class PersonalizedFeedState with _$PersonalizedFeedState {
     isFetchingMore: false,
     page: 0,
     seenKeys: <String>[],
+    chip: HomeFeedChip.forYou,
+    isRefreshing: false,
+    refreshFailed: false,
   );
 }

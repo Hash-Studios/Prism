@@ -16,6 +16,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,9 @@ import '../../support/fake_app_analytics.dart';
 class _FakeConnectivityService implements ConnectivityService {
   @override
   Future<bool> hasConnection() async => true;
+
+  @override
+  Stream<bool> get onConnectionChange => const Stream<bool>.empty();
 }
 
 class _ThrowingShareTapAnalytics extends FakeAppAnalytics {
@@ -97,6 +101,36 @@ AiGenerationRecord _record({
 const AiSubmissionMetadata _emptyMetadata = (title: '', description: '', category: '', tags: <String>[]);
 
 void main() {
+  testWidgets('the starting-point chips use the app chip size and label', (tester) async {
+    tester.view.physicalSize = const Size(400, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: withPrismChipTheme(ThemeData()),
+        home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ActionChip), findsNWidgets(3));
+    final Finder chip = find.byType(ActionChip).first;
+    expect(tester.getSize(find.descendant(of: chip, matching: find.byType(Ink))).height, 36);
+    final RichText label = tester.widget<RichText>(find.descendant(of: chip, matching: find.byType(RichText)));
+    expect(label.text.style?.fontSize, 14);
+    final List<double> tops = <double>[for (int i = 0; i < 3; i++) tester.getTopLeft(find.byType(ActionChip).at(i)).dy];
+    expect(tops[1] - tops[0], 48);
+    expect(tops[2] - tops[1], 48);
+  });
+
   testWidgets('AI share is single-flight, reports the chosen image and records tap and success', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
@@ -182,7 +216,7 @@ void main() {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     final List<MethodCall> toastCalls = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call);
+      if (call.method == 'showToast') toastCalls.add(call);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -219,6 +253,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(shareCalls, 2);
     expect(analytics.events.whereType<InviteShareResultEvent>(), hasLength(2));
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('AI share dismissed by the user is tracked as cancelled without an error toast', (tester) async {
@@ -238,7 +273,7 @@ void main() {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     final List<MethodCall> toastCalls = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call);
+      if (call.method == 'showToast') toastCalls.add(call);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -428,7 +463,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -477,7 +512,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -516,7 +551,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -552,7 +587,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -604,7 +639,7 @@ void main() {
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toastCalls.add(call.method);
+      if (call.method == 'showToast') toastCalls.add(call.method);
       return true;
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -644,6 +679,7 @@ void main() {
     expect(find.textContaining('Submission status is unconfirmed'), findsOneWidget);
     expect(submissions, 2);
     expect(toastCalls, isNotEmpty);
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('does not apply a completed submission to a newly active account', (tester) async {

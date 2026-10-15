@@ -1,26 +1,40 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/rating/rate_prompt_service.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
+import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
+import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart' as p;
 
 class DownloadButton extends StatefulWidget {
   const DownloadButton({
@@ -29,6 +43,11 @@ class DownloadButton extends StatefulWidget {
     this.contentId,
     this.sourceContext,
     this.onDownloaded,
+    this.label,
+    this.wallpaperTitle,
+    this.creatorName,
+    this.onOpenDownloads,
+    this.variant,
     super.key,
   });
 
@@ -38,23 +57,103 @@ class DownloadButton extends StatefulWidget {
   final String? sourceContext;
   final VoidCallback? onDownloaded;
 
+  /// Text shown beside the circle. It sits inside the same tap target, so tapping it starts the download.
+  final String? label;
+
+  /// Names the coin history row of the spend. Without it the row reads "Wallpaper by" plus the creator name.
+  final String? wallpaperTitle;
+  final String? creatorName;
+
+  /// Replaces the push to the Downloads route when the user taps "Open" on a wallpaper they already saved.
+  @visibleForTesting
+  final VoidCallback? onOpenDownloads;
+
+  /// Saves a changed copy, such as a colour variation, in place of [link]. `variant.prepare` runs once per tap, after
+  /// the "already in Downloads" check and before the coin gate. If it throws, the user is told and nothing is charged.
+  /// The recovery marker, the "already in Downloads" check and the saved file name use `variant.identityOf(link)`, so
+  /// each variation is its own purchase.
+  final DownloadVariant? variant;
+
   @override
   State<DownloadButton> createState() => _DownloadButtonState();
 }
 
+enum _SavedChoice { open, again }
+
+enum _GuestProChoice { signIn, pro }
+
 class _DownloadButtonState extends State<DownloadButton> {
   bool isLoading = false;
+  bool _saved = false;
+  String? _preparedSource;
+  String _identity = '';
+  VoidCallback? _onDownloaded;
+  String? _failureReason;
+  String _failureStage = 'download';
 
   CoinSpendAction get _downloadSpendAction =>
       widget.isPremiumContent ? CoinSpendAction.premiumWallpaperDownload : CoinSpendAction.wallpaperDownload;
 
   @override
+  void initState() {
+    super.initState();
+    _saved = _isSaved(_currentIdentity);
+  }
+
+  @override
+  void didUpdateWidget(DownloadButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.link != widget.link || oldWidget.variant?.key != widget.variant?.key) {
+      _saved = _isSaved(_currentIdentity);
+    }
+  }
+
+  String? get _currentIdentity {
+    final String link = widget.link?.trim() ?? '';
+    return link.isEmpty ? null : widget.variant?.identityOf(link) ?? link;
+  }
+
+  bool _isSaved(String? identity) {
+    final String trimmed = identity?.trim() ?? '';
+    if (trimmed.isEmpty) return false;
+    try {
+      return CoinsService.instance.isLinkDownloaded(trimmed);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  bool get _isGuest => !app_state.prismUser.premium && !app_state.prismUser.loggedIn;
+
+  @override
   Widget build(BuildContext context) {
-    return CircularMenuButton(
-      label: 'Download',
+    final ThemeData theme = Theme.of(context);
+    final String? label = widget.label;
+    final Widget icon = Icon(JamIcons.download, color: theme.colorScheme.secondary, size: 20);
+    if (label == null) {
+      return CircularMenuButton(label: 'Download', onTap: _handleTap, isLoading: isLoading, child: icon);
+    }
+    final int cost = _downloadSpendAction.cost();
+    final bool pro = app_state.prismUser.premium;
+    final String text;
+    final String semantics;
+    if (_saved) {
+      text = 'Saved';
+      semantics = 'Saved. Already in Downloads';
+    } else if (pro) {
+      text = 'Free with Pro';
+      semantics = '$label. Free with Pro';
+    } else if (_isGuest) {
+      text = label;
+      semantics = label;
+    } else {
+      text = '$label · $cost';
+      semantics = '$label. Costs $cost coins';
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _handleTap,
-      isLoading: isLoading,
-      child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
+      child: PrimaryActionPill(icon: JamIcons.download, label: text, semanticLabel: semantics, isLoading: isLoading),
     );
   }
 
@@ -69,16 +168,31 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.error('No download link available.');
       return;
     }
+    PrismHaptics.tap();
 
     if (mounted) {
       setState(() => isLoading = true);
     }
     try {
-      if (!app_state.prismUser.premium && !app_state.prismUser.loggedIn) {
-        await _showGuestAdGatePopup();
+      _preparedSource = null;
+      final DownloadVariant? variant = widget.variant;
+      _identity = variant?.identityOf(link) ?? link;
+      _onDownloaded = widget.onDownloaded;
+      if (!await _confirmDownloadAgain(_identity)) return;
+      if (variant != null) {
+        _preparedSource = await runPrepareSource(variant.prepare);
+        if (_preparedSource == null || !mounted) return;
+      }
+      _failureReason = null;
+      _failureStage = 'download';
+      _track(DownloadAttemptEvent(source: _sourceLabel, premium: widget.isPremiumContent));
+      if (_isGuest) {
+        await _runGuestFlow();
         return;
       }
-      await _gatedDownload();
+      final CoinGateResult result = await _gatedDownload();
+      if (result != CoinGateResult.failedNotRefunded) await CoinsService.instance.clearPendingDownload();
+      _trackGateResult(result);
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -86,8 +200,131 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
   }
 
-  Future<void> _showGuestAdGatePopup() async {
+  String get _sourceLabel {
+    final String source = widget.sourceContext?.trim() ?? '';
+    return source.isEmpty ? 'unknown' : source;
+  }
+
+  void _track(AnalyticsEvent event) {
+    try {
+      unawaited(analytics.track(event));
+    } catch (error, stackTrace) {
+      logger.w('Download analytics failed', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  void _trackGateResult(CoinGateResult result) {
+    switch (result) {
+      case CoinGateResult.performed:
+      case CoinGateResult.performedFree:
+        _track(const DownloadResultEvent(result: 'success', stage: 'download'));
+      case CoinGateResult.cancelled:
+        _track(const DownloadResultEvent(result: 'cancelled', stage: 'gate'));
+      case CoinGateResult.insufficient:
+        _track(const DownloadResultEvent(result: 'failed', reason: 'insufficient_balance', stage: 'gate'));
+      case CoinGateResult.spendFailed:
+        _track(const DownloadResultEvent(result: 'failed', reason: 'spend_failed', stage: 'spend'));
+      case CoinGateResult.failedRefunded:
+      case CoinGateResult.failedNotRefunded:
+        _track(DownloadResultEvent(result: 'failed', reason: _failureReason ?? 'unknown', stage: _failureStage));
+    }
+  }
+
+  /// Asks what to do when the wallpaper is already in Downloads. Returns true to go on with a new download.
+  Future<bool> _confirmDownloadAgain(String identity) async {
+    if (!_isSaved(identity) || !await _fileStillInDownloads(identity) || !mounted) return true;
+    final bool free = app_state.prismUser.premium || _isGuest;
+    final int cost = _downloadSpendAction.cost();
+    final _SavedChoice? choice = await showCoinGateSheet<_SavedChoice>(
+      context,
+      title: 'Already in Downloads',
+      cost: 0,
+      message: (_) => 'You saved this wallpaper before.',
+      options: <CoinGateOption<_SavedChoice>>[
+        const CoinGateOption(label: 'Open', value: _SavedChoice.open),
+        CoinGateOption(
+          label: free ? 'Download again' : 'Download again (-$cost coins)',
+          value: _SavedChoice.again,
+          outlined: true,
+        ),
+      ],
+    );
+    if (choice == _SavedChoice.open && mounted) {
+      final VoidCallback? override = widget.onOpenDownloads;
+      if (override != null) {
+        override();
+      } else {
+        unawaited(context.router.push(const DownloadRoute()));
+      }
+    }
+    return choice == _SavedChoice.again;
+  }
+
+  /// True when the Downloads list still holds a file with this identity's name. False when it cannot tell.
+  Future<bool> _fileStillInDownloads(String identity) async {
+    try {
+      final DownloadItemsResult result = await PrismMediaHostApi().listDownloads();
+      if (!result.success) return false;
+      final String base = downloadBaseName(identity);
+      final RegExp copySuffix = RegExp(r' \(\d+\)$');
+      return result.items.any(
+        (String path) =>
+            p.basenameWithoutExtension(path).replaceFirst(copySuffix, '') == base && File(path).existsSync(),
+      );
+    } catch (error, stackTrace) {
+      logger.w('Could not list downloads', error: error, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
+  Future<void> _runGuestFlow() async {
+    if (widget.isPremiumContent) {
+      await _showGuestPremiumPrompt();
+      _track(const DownloadResultEvent(result: 'cancelled', stage: 'gate'));
+      return;
+    }
+    final bool? downloaded = await _showGuestAdGatePopup();
+    if (downloaded == null) {
+      _track(const DownloadResultEvent(result: 'cancelled', stage: 'gate'));
+    } else if (downloaded) {
+      _track(const DownloadResultEvent(result: 'success', stage: 'download'));
+    } else {
+      _track(DownloadResultEvent(result: 'failed', reason: _failureReason ?? 'unknown', stage: _failureStage));
+    }
+  }
+
+  /// Guests cannot pay for a Pro wallpaper with an ad. They sign in to use coins, or get Pro.
+  Future<void> _showGuestPremiumPrompt() async {
+    final _GuestProChoice? choice = await showCoinGateSheet<_GuestProChoice>(
+      context,
+      title: 'Pro wallpaper',
+      cost: 0,
+      message: (_) => 'Sign in to save this wallpaper with coins, or get Prism Pro.',
+      options: const <CoinGateOption<_GuestProChoice>>[
+        CoinGateOption(label: 'Sign in', value: _GuestProChoice.signIn),
+        CoinGateOption(label: 'Get Pro', value: _GuestProChoice.pro, outlined: true),
+      ],
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case _GuestProChoice.signIn:
+        googleSignInPopUp(context, () {});
+      case _GuestProChoice.pro:
+        await PaywallOrchestrator.instance.presentOrRequireSignIn(
+          context,
+          placement: PaywallPlacement.mainUpsell,
+          source: 'download_guest_premium',
+        );
+      case null:
+        break;
+    }
+  }
+
+  /// Returns whether the download ran and worked, or null when the user left without one.
+  Future<bool?> _showGuestAdGatePopup() async {
     Future<bool>? pendingDownload;
+    final bool adsAllowed = await AdConsent.instance.ensure();
+    if (!mounted) return null;
     await showModal<void>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -128,6 +365,17 @@ class _DownloadButtonState extends State<DownloadButton> {
                         textAlign: TextAlign.center,
                       ),
                     ),
+                    if (!adsAllowed) ...<Widget>[
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          'Ads are off. Change this in Settings > Privacy.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 22),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -136,6 +384,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                           shape: const StadiumBorder(),
                           color: Theme.of(context).colorScheme.error,
                           onPressed: () {
+                            PrismHaptics.tap();
                             Navigator.of(dialogContext).pop();
                             PaywallOrchestrator.instance.presentOrRequireSignIn(
                               this.context,
@@ -148,45 +397,49 @@ class _DownloadButtonState extends State<DownloadButton> {
                             style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                           ),
                         ),
-                        MaterialButton(
-                          shape: const StadiumBorder(),
-                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                          onPressed: watchingAd
-                              ? null
-                              : () async {
-                                  setDialogState(() => watchingAd = true);
-                                  final bool watched = await watchRewardedAd(context.read<AdsBloc>());
-                                  if (!context.mounted || !mounted) return;
-                                  setDialogState(() => watchingAd = false);
-                                  if (!watched) {
-                                    toasts.error('Ad was not completed.');
-                                    return;
-                                  }
-                                  if (!dialogContext.mounted) {
-                                    return;
-                                  }
-                                  if (Navigator.of(dialogContext).canPop()) {
-                                    Navigator.of(dialogContext).pop();
-                                  }
-                                  pendingDownload = _performDownload();
-                                  await pendingDownload;
-                                },
-                          child: AnimatedSwitcher(
-                            duration: context.motion(PrismDurations.fast),
-                            child: watchingAd
-                                ? const SizedBox(
-                                    key: ValueKey<bool>(true),
-                                    height: 16,
-                                    width: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : Text(
-                                    'WATCH AD',
-                                    key: const ValueKey<bool>(false),
-                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-                                  ),
+                        if (adsAllowed)
+                          MaterialButton(
+                            shape: const StadiumBorder(),
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                            onPressed: watchingAd
+                                ? null
+                                : () async {
+                                    PrismHaptics.tap();
+                                    setDialogState(() => watchingAd = true);
+                                    final RewardedAdResult watched = await watchRewardedAdResult(
+                                      context.read<AdsBloc>(),
+                                    );
+                                    if (!context.mounted || !mounted) return;
+                                    setDialogState(() => watchingAd = false);
+                                    if (!watched.earned) {
+                                      toasts.error(adFailureMessage(watched.failure));
+                                      return;
+                                    }
+                                    if (!dialogContext.mounted) {
+                                      return;
+                                    }
+                                    if (Navigator.of(dialogContext).canPop()) {
+                                      Navigator.of(dialogContext).pop();
+                                    }
+                                    pendingDownload = _performDownload();
+                                    await pendingDownload;
+                                  },
+                            child: AnimatedSwitcher(
+                              duration: context.motion(PrismDurations.fast),
+                              child: watchingAd
+                                  ? const SizedBox(
+                                      key: ValueKey<bool>(true),
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : Text(
+                                      'WATCH AD',
+                                      key: const ValueKey<bool>(false),
+                                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -198,44 +451,61 @@ class _DownloadButtonState extends State<DownloadButton> {
         );
       },
     );
-    if (pendingDownload != null) await pendingDownload;
+    return pendingDownload;
   }
 
   Future<CoinGateChoice> _chooseLowBalanceAction(CoinGatePrompt prompt) async {
-    final bool allowDownloadNow = prompt.phase == CoinGatePhase.nudge && prompt.canSpend;
+    final int missing = prompt.missing;
+    final int? adsLeft = prompt.adsRemaining;
+    final String adNote = !prompt.adsAllowed
+        ? ' Ads are off. Change this in Settings > Privacy.'
+        : (adsLeft != null && adsLeft <= 0 ? ' Daily limit reached. Back tomorrow.' : '');
     final CoinGateChoice? choice = await showCoinGateSheet<CoinGateChoice>(
       context,
-      title: 'Low coin balance',
+      title: 'Not enough coins',
       cost: prompt.cost,
-      message: (missing) => missing > 0
-          ? 'You need $missing more coins for this download.'
-          : 'You are below ${CoinPolicy.lowBalanceNudgeThreshold} coins.',
-      options: [
-        if (allowDownloadNow) CoinGateOption(label: 'Download (-${prompt.cost})', value: CoinGateChoice.spend),
-        const CoinGateOption(label: 'Watch & Download (+${CoinPolicy.rewardedAd})', value: CoinGateChoice.watchAd),
+      message: (int sheetMissing) {
+        final String need = 'You need ${sheetMissing > 0 ? sheetMissing : missing} more coins to save this wallpaper.';
+        final String perAd = sheetMissing > CoinPolicy.rewardedAd && prompt.canWatchAd
+            ? ' Each ad adds ${CoinPolicy.rewardedAd}.'
+            : '';
+        return '$need$perAd$adNote';
+      },
+      options: <CoinGateOption<CoinGateChoice>>[
+        if (prompt.canWatchAd)
+          CoinGateOption(
+            label: 'Watch ad (+${CoinPolicy.rewardedAd})${adsLeft == null ? '' : ' · $adsLeft left today'}',
+            value: CoinGateChoice.watchAd,
+          ),
         const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
       ],
     );
-    return choice ?? (prompt.phase == CoinGatePhase.nudge ? CoinGateChoice.proceed : CoinGateChoice.cancel);
+    return choice ?? CoinGateChoice.cancel;
   }
 
-  Future<void> _gatedDownload() {
+  String? get _ledgerLabel {
+    final String title = widget.wallpaperTitle?.trim() ?? '';
+    if (title.isNotEmpty) return title;
+    final String creator = widget.creatorName?.trim() ?? '';
+    return creator.isEmpty ? null : 'Wallpaper by $creator';
+  }
+
+  Future<CoinGateResult> _gatedDownload() {
     final String contentId = widget.contentId?.trim() ?? '';
     return CoinGate.forContext(context).run(
       CoinGateSpec(
         action: _downloadSpendAction,
         reason: contentId.isEmpty ? null : 'content_$contentId',
+        label: _ledgerLabel,
+        pendingDownloadLink: _identity,
         tags: const CoinGateTags(
           spend: 'coins.download.spend',
-          nudgeSpend: 'coins.download.nudge_download_now',
           retrySpend: 'coins.download.watch_and_download.spend',
           ad: 'coins.download.watch_and_download.rewarded_ad',
-          nudge: 'coins.download.low_balance_nudge',
           insufficient: 'coins.download.insufficient_balance_nudge',
         ),
         upsellSource: 'download_watch_and_download_rewarded_ad',
         upgradeSource: 'download_low_balance_upgrade',
-        nudgeBelow: CoinPolicy.lowBalanceNudgeThreshold,
         precheckBalance: true,
         repromptOnNudgeSpendInsufficient: false,
         isMounted: () => mounted,
@@ -253,29 +523,51 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String link = widget.link?.trim() ?? '';
     final String? sourceContext = widget.sourceContext;
     final bool premiumContent = widget.isPremiumContent;
-    final VoidCallback? onDownloaded = widget.onDownloaded;
+    final VoidCallback? onDownloaded = _onDownloaded;
     if (link.isEmpty) {
       toasts.error('No download link available.');
       return false;
     }
+    final String saveLink = _preparedSource ?? link;
+    final bool prepared = _preparedSource != null;
 
     try {
-      if (link.contains('com.hash.prism')) {
-        final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
+      final Uri? source = Uri.tryParse(saveLink);
+      if (!prepared && (saveLink.startsWith('/') || source?.scheme == 'file')) {
+        final SaveMediaRequest request = SaveMediaRequest(
+          link: saveLink,
+          isLocalFile: true,
+          kind: SaveMediaKind.wallpaper,
+        );
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
-          toasts.error("Couldn't download! Please retry.");
+          _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'save_failed';
+          if (isPhotosPermissionDenied(result.errorCode)) {
+            if (mounted) showPhotosPermissionDenied(context);
+          } else {
+            toasts.error("Couldn't download! Please retry.");
+          }
           return false;
         }
       } else {
-        final DownloadRequest request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
+        final DownloadRequest request = DownloadRequest(
+          link: saveLink,
+          filenameWithoutExtension: downloadBaseName(_identity),
+          isLocalFile: prepared,
+        );
         final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
-          toasts.error(result.message ?? "Couldn't download! Please retry.");
+          _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'enqueue_failed';
+          if (isPhotosPermissionDenied(result.errorCode)) {
+            if (mounted) showPhotosPermissionDenied(context);
+          } else {
+            toasts.error(result.message ?? "Couldn't download! Please retry.");
+          }
           return false;
         }
       }
     } on PlatformException catch (e) {
+      _failureReason = 'platform_error';
       if (e.code == 'channel-error') {
         logger.w('Download channel unavailable (native side not registered)', error: e);
       } else {
@@ -284,6 +576,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.error("Couldn't download! Please retry.");
       return false;
     } catch (e, stackTrace) {
+      _failureReason = 'unexpected';
       logger.e('Unexpected download failure', error: e, stackTrace: stackTrace);
       toasts.error('Something went wrong!');
       return false;
@@ -301,11 +594,27 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
     }
 
+    if (mounted && _identity == _currentIdentity) setState(() => _saved = true);
+    final String contentId = widget.contentId?.trim() ?? '';
+    if (contentId.isNotEmpty) {
+      try {
+        unawaited(getIt<RecordWallpaperActionUseCase>()(contentId, WallpaperAction.download));
+      } catch (e, stackTrace) {
+        logger.w('Download action record failed after media was saved', error: e, stackTrace: stackTrace);
+      }
+    }
     try {
       toasts.success(wallpaperSavedMessage);
       onDownloaded?.call();
     } catch (e, stackTrace) {
       logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
+    }
+    if (mounted) {
+      try {
+        await showIosSetWallpaperGuide(context);
+      } catch (e, stackTrace) {
+        logger.w('iOS wallpaper guide failed after media was saved', error: e, stackTrace: stackTrace);
+      }
     }
     if (mounted) {
       try {
@@ -315,6 +624,13 @@ class _DownloadButtonState extends State<DownloadButton> {
         );
       } catch (e, stackTrace) {
         logger.w('Notification permission prompt after download failed', error: e, stackTrace: stackTrace);
+      }
+    }
+    if (mounted) {
+      try {
+        unawaited(RatePromptService.instance.maybePrompt(context, RatePromptTrigger.download));
+      } catch (e, stackTrace) {
+        logger.w('Rate prompt after download failed', error: e, stackTrace: stackTrace);
       }
     }
     return true;
