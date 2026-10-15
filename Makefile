@@ -312,9 +312,9 @@ native-ios-check: get
 		packages/cloud_functions/ios/cloud_functions/Sources/cloud_functions/FunctionsArguments.swift \
 		packages/cloud_functions/native_tests/NativeSwiftCheck.swift \
 		-o "$$check_dir/cloud-functions-check" && "$$check_dir/cloud-functions-check"
-	@$(FLUTTER) build ios --debug --no-codesign --dart-define=SKIP_FIREBASE_INIT=true
+	@$(FLUTTER) build ios --config-only --debug --no-codesign --dart-define=SKIP_FIREBASE_INIT=true
 	@xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Debug \
-		-sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+		-sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES \
 		-derivedDataPath build/ios/native-tests build-for-testing CODE_SIGNING_ALLOWED=NO FLUTTER_BUILD_MODE=debug
 
 test: ensure-fvm
