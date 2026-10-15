@@ -50,7 +50,7 @@ if grep -qE '^functions/(src/|package(-lock)?\.json$|tsconfig)' <<<"$changed"; t
   out="$(mktemp -d)"
   trap 'rm -rf "$out"' EXIT
   (cd functions && npx tsc --outDir "$out" && npm run lint)
-  NODE_PATH="$REPO_ROOT/functions/node_modules" node --test "$out"/__tests__/*.test.js
+  PRISM_REPO_ROOT="$REPO_ROOT" NODE_PATH="$REPO_ROOT/functions/node_modules" node --test "$out"/__tests__/*.test.js
 fi
 
 if grep -qE '^firestore\.rules$|^tool/firestore_rules_smoke\.mjs$' <<<"$changed"; then

@@ -52,3 +52,36 @@ test("with no admin emails the report stays unescalated so a later run can ping"
   await sweepOpenReports.run({jobName: "t", scheduleTime: NOW.toISOString()});
   assert.equal(store.get("contentReports/old")?.escalatedAt, undefined);
 });
+
+test("pages past escalated and recent reports, caps escalations, and does not ping twice", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const seed: Record<string, Record<string, unknown>> = {
+    "config/adminNotifications": {emails: ["admin@example.com"]},
+    "usersv2/adm1": {email: "admin@example.com"},
+  };
+  for (let i = 0; i < 601; i++) {
+    seed[`contentReports/${String(i).padStart(3, "0")}`] = {
+      status: "open", contentType: "user", createdAt: ts(i < 400 && i >= 200 ? 2 : 14),
+      ...(i < 200 ? {escalatedAt: ts(1)} : {}),
+    };
+  }
+  const store = installFakeDb(t, seed);
+  const sent: string[] = [];
+  t.mock.method(admin.messaging(), "send", async (message: {data?: Record<string, string>}) => {
+    sent.push(message.data?.report_id ?? "");
+    return "id";
+  });
+  const run = () => sweepOpenReports.run({jobName: "t", scheduleTime: NOW.toISOString()});
+  await run();
+  assert.equal(new Set(sent).size, 200);
+  assert.ok(store.get("contentReports/599")?.escalatedAt);
+  assert.equal(store.get("contentReports/600")?.escalatedAt, undefined);
+  assert.equal(store.get("contentReports/200")?.escalatedAt, undefined);
+  await run();
+  assert.ok(store.get("contentReports/600")?.escalatedAt);
+  assert.equal(new Set(sent).size, 201);
+  assert.equal(sent.length, 201);
+  const count = sent.length;
+  await run();
+  assert.equal(sent.length, count);
+});

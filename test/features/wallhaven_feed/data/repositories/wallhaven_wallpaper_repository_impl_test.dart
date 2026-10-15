@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show SocketException;
 
-import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -11,28 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-class _NoFeedCache extends Fake implements FeedCacheLocalDataSource {
-  final List<String> scopes = <String>[];
-  final Map<String, FeedSnapshot> snapshots = <String, FeedSnapshot>{};
-
-  @override
-  Future<FeedSnapshot?> read({required String source, required String scope}) async => snapshots['$source:$scope'];
-
-  @override
-  Future<void> write({
-    required String source,
-    required String scope,
-    required Object? payload,
-    required int ttlHours,
-  }) async {
-    scopes.add('$source:$scope');
-    snapshots['$source:$scope'] = FeedSnapshot(
-      payload: payload,
-      cachedAtUtc: DateTime.now().toUtc(),
-      ttlHours: ttlHours,
-    );
-  }
-}
+import '../../../../support/fake_feed_cache_local_data_source.dart';
 
 void main() {
   test('category and personalized searches keep independent pagination', () async {
@@ -48,7 +26,7 @@ void main() {
         200,
       );
     });
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     final repository = WallhavenWallpaperRepositoryImpl(cache);
 
     await http.runWithClient(() async {
@@ -71,7 +49,7 @@ void main() {
 
   test('a failed refresh falls back to the cached first page and keeps its candidate pool', () async {
     final List<int> pages = <int>[];
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     final http.Client client = MockClient((http.Request request) async {
       final int page = int.parse(request.url.queryParameters['page']!);
       pages.add(page);
@@ -106,7 +84,7 @@ void main() {
   });
 
   test('a failed fetch-more returns an error instead of the cached first page', () async {
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     bool offline = false;
     final http.Client client = MockClient((http.Request request) async {
       if (offline) return http.Response('offline', 503);
@@ -125,7 +103,7 @@ void main() {
   });
 
   test('later pages move the cursor without overwriting the first-page snapshot', () async {
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     final http.Client client = MockClient(
       (http.Request request) async => _page(int.parse(request.url.queryParameters['page']!)),
     );
@@ -148,7 +126,7 @@ void main() {
       queries.add(request.url.queryParameters);
       return _page(1);
     });
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     final repository = WallhavenWallpaperRepositoryImpl(cache);
 
     await http.runWithClient(() async {
@@ -178,7 +156,7 @@ void main() {
 
   testWidgets('a request that never answers fails with a timeout instead of hanging', (tester) async {
     final http.Client client = MockClient((http.Request request) => Completer<http.Response>().future);
-    final repository = WallhavenWallpaperRepositoryImpl(_NoFeedCache());
+    final repository = WallhavenWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
 
     final Future<Result<List<WallhavenWallpaper>>> pending = http.runWithClient(
       () => repository.fetchFeed(categoryName: 'nature', refresh: true),
@@ -191,7 +169,7 @@ void main() {
 
   group('fetchById failures', () {
     Future<Result<WallhavenWallpaper?>> fetchWith(http.Client client) {
-      final repository = WallhavenWallpaperRepositoryImpl(_NoFeedCache());
+      final repository = WallhavenWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
       return http.runWithClient(() => repository.fetchById('abc123'), () => client);
     }
 

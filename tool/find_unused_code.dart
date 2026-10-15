@@ -615,9 +615,6 @@ void _generateHtml({
     }
   }
 
-  html.writeln('<script>');
-  html.writeln(_htmlJs());
-  html.writeln('</script>');
   html.writeln('</body>');
   html.writeln('</html>');
 
@@ -673,11 +670,6 @@ String _htmlCss() => """
   .notice summary { background: none; border: none; color: #d29922; font-size: .85rem; }
   .notice ul { margin: .5rem 0 0 1.5rem; font-size: .82rem; color: #8b949e; }
   .notice li { margin: .25rem 0; }
-""";
-
-String _htmlJs() => """
-  // Collapse/expand all button would go here if needed.
-  // Currently details elements are all open by default for immediate visibility.
 """;
 
 String _statCard(String label, String value, {bool warn = false}) =>

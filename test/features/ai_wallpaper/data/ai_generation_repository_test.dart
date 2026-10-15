@@ -52,6 +52,56 @@ void main() {
   setUp(() => getIt.registerSingleton<FirestoreClient>(FakeFirestoreClient()));
   tearDown(getIt.reset);
 
+  for (final variation in <bool>[false, true]) {
+    for (final field in <String>['generationId', 'imageUrl', 'watermarkedImageUrl']) {
+      test('rejects wrong-type $field for variation=$variation', () async {
+        final data = jsonDecode(_okBody) as Map<String, dynamic>;
+        if (field == 'generationId') {
+          data[field] = 7;
+        } else {
+          (data['imageUrls'] as Map<String, dynamic>)[field] = <String, bool>{'bad': true};
+        }
+        final repository = _repository(MockClient((_) async => http.Response(jsonEncode(data), 200)));
+        await expectLater(
+          variation
+              ? repository.generateVariation(generationId: 'gen-0', chargeMode: AiChargeMode.coinSpend, coinsSpent: 10)
+              : _generate(repository),
+          throwsA(
+            isA<AiGenerationApiException>()
+                .having((e) => e.code, 'code', 'provider_error')
+                .having((e) => e.statusCode, 'status', 502),
+          ),
+        );
+      });
+    }
+  }
+
+  for (final explicitNull in <bool>[false, true]) {
+    test('optional watermark falls back to the image URL (null=$explicitNull)', () async {
+      final repository = _repository(
+        MockClient(
+          (_) async => http.Response(
+            jsonEncode(<String, Object>{
+              'generationId': 'gen-1',
+              'imageUrls': <String, Object?>{
+                'imageUrl': 'https://cdn/full.png',
+                if (explicitNull) 'watermarkedImageUrl': null,
+              },
+            }),
+            200,
+          ),
+        ),
+      );
+      final record = await repository.generateVariation(
+        generationId: 'gen-0',
+        chargeMode: AiChargeMode.coinSpend,
+        coinsSpent: 10,
+      );
+      expect(record.imageUrl, 'https://cdn/full.png');
+      expect(record.watermarkedImageUrl, 'https://cdn/full.png');
+    });
+  }
+
   test('generate sends the charge transaction id', () async {
     final List<Map<String, dynamic>> bodies = <Map<String, dynamic>>[];
     final repository = _repository(

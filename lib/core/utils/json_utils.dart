@@ -2,9 +2,7 @@ import 'dart:convert';
 
 /// Safely decodes JSON response body to [Map<String, dynamic>].
 ///
-/// [jsonDecode] returns internal types like `_JsonMap` that are not a subtype
-/// of [Map<String, dynamic>], causing type cast failures in release builds.
-/// This recursively converts to proper [Map<String, dynamic>] and [List].
+/// Recursively normalizes map keys to strings and nested maps and lists.
 Map<String, dynamic> decodeJsonMap(String source) {
   final decoded = jsonDecode(source);
   if (decoded is! Map) {
@@ -13,8 +11,7 @@ Map<String, dynamic> decodeJsonMap(String source) {
   return _toMap(decoded);
 }
 
-/// Recursively converts a Map from jsonDecode to [Map<String, dynamic>].
-/// Use when reading cached JSON or any value that may be `_JsonMap`.
+/// Recursively normalizes cached or untyped maps to [Map<String, dynamic>].
 /// Returns empty map if value is null or not a Map.
 Map<String, dynamic> toJsonMap(Object? value) {
   if (value == null) return <String, dynamic>{};

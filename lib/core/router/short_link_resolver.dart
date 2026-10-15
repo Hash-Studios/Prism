@@ -31,17 +31,21 @@ const Set<int> _serverUnavailableStatuses = <int>{502, 503, 504};
 
 class ShortLinkResolver {
   ShortLinkResolver({http.Client? client, DeepLinkParser parser = const DeepLinkParser()})
-    : _client = client ?? http.Client(),
+    : _client = client,
       _parser = parser;
 
-  final http.Client _client;
+  final http.Client? _client;
   final DeepLinkParser _parser;
 
   Future<ShortLinkResult> resolve(String code) async {
+    final shortCode = code.trim();
+    if (shortCode.isEmpty) return const ShortLinkFailed(AnalyticsReasonValue.missingData);
     try {
-      final response = await _client
-          .get(Uri.parse('$shortLinkApiUrl/$code'), headers: const <String, String>{'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 6));
+      final endpoint = Uri.parse('$shortLinkApiUrl/$shortCode');
+      const headers = <String, String>{'Accept': 'application/json'};
+      final response = await (_client?.get(endpoint, headers: headers) ?? http.get(endpoint, headers: headers)).timeout(
+        const Duration(seconds: 6),
+      );
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         logger.w(
@@ -59,8 +63,10 @@ class ShortLinkResolver {
       final canonicalUri = canonical is String && canonical.isNotEmpty ? Uri.tryParse(canonical) : null;
       if (canonicalUri == null) return const ShortLinkFailed(AnalyticsReasonValue.missingData);
 
-      final action = _parser.parse(canonicalUri);
-      if (action is UnknownIntent) return const ShortLinkFailed(AnalyticsReasonValue.missingData);
+      final action = _parser.parse(_parser.transform(canonicalUri));
+      if (action is UnknownIntent || action is ShortCodeIntent) {
+        return const ShortLinkFailed(AnalyticsReasonValue.missingData);
+      }
       return ShortLinkResolved(action);
     } catch (error, stackTrace) {
       logger.w(
