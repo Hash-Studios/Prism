@@ -37,6 +37,7 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
+import '../../support/wait_for_real_io.dart';
 
 class _MockCacheMaintenanceService extends Mock implements CacheMaintenanceService {}
 
@@ -715,7 +716,7 @@ void main() {
       );
       final cacheScanned = Completer<void>();
       messenger.setMockDecodedMessageHandler<Object?>(downloadsChannel, (_) async {
-        cacheScanned.complete();
+        if (!cacheScanned.isCompleted) cacheScanned.complete();
         return <Object?>[DownloadItemsResult(success: true, items: <String>[])];
       });
       final temp = Directory.systemTemp.createTempSync('prism_settings_temp');
@@ -731,10 +732,7 @@ void main() {
 
       await pumpSettings(tester);
       // Storage stats request downloads only after the asynchronous cache scan finishes.
-      while (!cacheScanned.isCompleted) {
-        await tester.runAsync(() => Future<void>(() {}));
-        await tester.pump();
-      }
+      await waitForRealIo(tester, () => cacheScanned.isCompleted, reason: 'settings cache size scan');
       await tester.pump();
 
       expect(find.text('2 KB of cached images'), findsOneWidget);

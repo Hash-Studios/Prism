@@ -13,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../support/wait_for_real_io.dart';
+
 Future<List<int>> _smallPng() async {
   final ui.PictureRecorder recorder = ui.PictureRecorder();
   Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 8, 8), Paint()..color = const Color(0xFFFF0000));
@@ -41,21 +43,19 @@ Future<int> _centreRed(File file) async {
 }
 
 Future<void> _waitForReady(WidgetTester tester) async {
-  while (true) {
-    await tester.runAsync(() => Future<void>(() {}));
-    await tester.pump();
+  await waitForRealIo(tester, () {
     expect(find.text("Couldn't open this wallpaper."), findsNothing);
     final Finder downloadButton = find.ancestor(of: find.byTooltip('Download'), matching: find.byType(IconButton));
-    if (tester.widget<IconButton>(downloadButton).onPressed != null) return;
-  }
+    return tester.widget<IconButton>(downloadButton).onPressed != null;
+  }, reason: 'decoded source image and enabled Download');
 }
 
 Future<void> _waitForFailure(WidgetTester tester) async {
-  while (true) {
-    await tester.runAsync(() => Future<void>(() {}));
-    await tester.pump();
-    if (find.text("Couldn't open this wallpaper.").evaluate().isNotEmpty) return;
-  }
+  await waitForRealIo(
+    tester,
+    () => find.text("Couldn't open this wallpaper.").evaluate().isNotEmpty,
+    reason: 'source image decode error',
+  );
 }
 
 Widget _screenHost(String sourcePath) => MaterialApp(home: WallpaperFilterScreen(filePath: sourcePath));
@@ -242,10 +242,7 @@ void main() {
     await tester.tap(find.byTooltip('Download'));
     brightness.onChanged!(-100);
     await tester.pump();
-    while (!requestReceived.isCompleted) {
-      await tester.runAsync(() => Future<void>(() {}));
-      await tester.pump();
-    }
+    await waitForRealIo(tester, () => requestReceived.isCompleted, reason: 'native save receives edited export');
     final SaveMediaRequest request = await requestReceived.future;
     await tester.pump();
 
@@ -255,10 +252,11 @@ void main() {
     expect(await tester.runAsync(() => _centreRed(File(request.link))), 255);
 
     allowSave.complete();
-    while (File(request.link).parent.existsSync()) {
-      await tester.runAsync(() => Future<void>(() {}));
-      await tester.pump();
-    }
+    await waitForRealIo(
+      tester,
+      () => !File(request.link).parent.existsSync(),
+      reason: 'saved export directory cleanup',
+    );
 
     expect(File(request.link).existsSync(), isFalse);
     expect(Directory(File(request.link).parent.path).existsSync(), isFalse);
@@ -297,19 +295,21 @@ void main() {
     await tester.tap(find.text('AddictiveBlue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Set as wallpaper'));
-    while (find.text('Home Screen').evaluate().isEmpty) {
-      await tester.runAsync(() => Future<void>(() {}));
-      await tester.pump();
-    }
+    await waitForRealIo(
+      tester,
+      () => find.text('Home Screen').evaluate().isNotEmpty,
+      reason: 'wallpaper target options open',
+    );
     expect(find.text('Home Screen'), findsOneWidget);
     final Finder homeTarget = find.ancestor(of: find.text('Home Screen'), matching: find.byType(GestureDetector)).last;
     tester.widget<GestureDetector>(homeTarget).onTap!();
     await tester.pump(const Duration(milliseconds: 500));
 
-    while (client.requests.isEmpty || File(client.requests.single.source.filePath!).existsSync()) {
-      await tester.runAsync(() => Future<void>(() {}));
-      await tester.pump();
-    }
+    await waitForRealIo(
+      tester,
+      () => client.requests.isNotEmpty && !File(client.requests.single.source.filePath!).existsSync(),
+      reason: 'wallpaper preview request and edited export cleanup',
+    );
 
     expect(client.requests, hasLength(1));
     expect(client.requests.single.source.filePath, isNotNull);

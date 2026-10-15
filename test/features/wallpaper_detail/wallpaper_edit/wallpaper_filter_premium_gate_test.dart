@@ -32,6 +32,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/in_memory_local_store.dart';
+import '../../../support/wait_for_real_io.dart';
 
 const String _functionsChannel = 'dev.flutter.pigeon.cloud_functions_platform_interface.CloudFunctionsHostApi.call';
 const String _mediaChannel = 'dev.flutter.pigeon.Prism.PrismMediaHostApi.saveMedia';
@@ -171,7 +172,7 @@ void main() {
     set.onPressed!();
     set.onPressed!();
     await tester.pump();
-    await _waitForSignal(tester, spendStarted);
+    await _waitForSignal(tester, spendStarted, 'premium filter spend starts');
 
     expect(spendCalls, 1);
     expect(saveCalls, 0);
@@ -184,12 +185,13 @@ void main() {
     expect(tester.widget<Slider>(firstSlider).value, sliderBefore);
 
     allowSpend.complete();
-    await _waitForSignal(tester, mediaSaved);
+    await _waitForSignal(tester, mediaSaved, 'native media save completes');
     expect(savedRequest?.kind, SaveMediaKind.wallpaper);
-    while (tester.widget<IconButton>(_iconButton('Reset')).onPressed == null) {
-      await tester.runAsync(() => Future<void>(() {}));
-      await tester.pump();
-    }
+    await waitForRealIo(
+      tester,
+      () => tester.widget<IconButton>(_iconButton('Reset')).onPressed != null,
+      reason: 'editor re-enabled after native save',
+    );
     expect(spendCalls, 1);
     expect(saveCalls, 1);
     await tester.pump(const Duration(seconds: 1));
@@ -256,7 +258,7 @@ void main() {
     await _tapInvert(tester);
     await tester.tap(_iconButton('Download'));
     await tester.pump();
-    await _waitForSignal(tester, spendStarted);
+    await _waitForSignal(tester, spendStarted, 'premium filter spend before screen disposal');
 
     await tester.pumpWidget(const SizedBox());
     allowSpend.complete();
@@ -562,10 +564,7 @@ void main() {
     await tester.tap(_iconButton('Set as wallpaper'));
 
     final Finder optionsTitle = find.text('Set Wallpaper as');
-    while (optionsTitle.evaluate().isEmpty) {
-      await tester.pump();
-      await tester.runAsync(() => Future<void>(() {}));
-    }
+    await waitForRealIo(tester, () => optionsTitle.evaluate().isNotEmpty, reason: 'wallpaper set options open');
     expect(optionsTitle, findsOneWidget);
 
     final List<File> editedFiles = directory
@@ -582,10 +581,11 @@ void main() {
     await tester.tapAt(const Offset(1, 1));
     await tester.pump(const Duration(milliseconds: 300));
     final Finder resetButton = _iconButton('Reset');
-    while (editedFile.existsSync() || tester.widget<IconButton>(resetButton).onPressed == null) {
-      await tester.pump();
-      await tester.runAsync(() => Future<void>(() {}));
-    }
+    await waitForRealIo(
+      tester,
+      () => !editedFile.existsSync() && tester.widget<IconButton>(resetButton).onPressed != null,
+      reason: 'canceled export removed and editor re-enabled',
+    );
 
     expect(editedFile.existsSync(), isFalse);
     expect(Directory(editedFile.parent.path).existsSync(), isFalse);
@@ -596,18 +596,15 @@ void main() {
 }
 
 Future<void> _waitForEditorReady(WidgetTester tester) async {
-  while (true) {
-    await tester.pump();
+  await waitForRealIo(tester, () {
     expect(find.text("Couldn't open this wallpaper."), findsNothing);
     final Finder preview = find.descendant(of: find.byType(AspectRatio).first, matching: find.byType(RawImage));
-    if (tester.widget<IconButton>(_iconButton('Download')).onPressed != null &&
+    return tester.widget<PopScope>(find.byType(PopScope)).canPop &&
+        tester.widget<IconButton>(_iconButton('Download')).onPressed != null &&
         preview.evaluate().isNotEmpty &&
-        tester.widget<RawImage>(preview).image != null) {
-      await tester.pumpAndSettle();
-      return;
-    }
-    await tester.runAsync(() => Future<void>(() {}));
-  }
+        tester.widget<RawImage>(preview).image != null;
+  }, reason: 'decoded editor preview and enabled Download');
+  await tester.pumpAndSettle();
 }
 
 Future<void> _tapInvert(WidgetTester tester) async {
@@ -620,27 +617,18 @@ Future<void> _tapInvert(WidgetTester tester) async {
   await tester.pump();
 }
 
-Future<void> _waitForSignal(WidgetTester tester, Completer<void> signal) async {
-  while (!signal.isCompleted) {
-    await tester.pump();
-    await tester.runAsync(() => Future<void>(() {}));
-  }
+Future<void> _waitForSignal(WidgetTester tester, Completer<void> signal, String reason) async {
+  await waitForRealIo(tester, () => signal.isCompleted, reason: reason);
   await signal.future;
 }
 
 Future<void> _waitForCount(WidgetTester tester, int Function() read, int expected, String description) async {
-  while (read() < expected) {
-    await tester.pump();
-    await tester.runAsync(() => Future<void>(() {}));
-  }
+  await waitForRealIo(tester, () => read() >= expected, reason: description);
   expect(read(), expected, reason: description);
 }
 
 Future<void> _waitForText(WidgetTester tester, String text) async {
-  while (find.text(text).evaluate().isEmpty) {
-    await tester.pump();
-    await tester.runAsync(() => Future<void>(() {}));
-  }
+  await waitForRealIo(tester, () => find.text(text).evaluate().isNotEmpty, reason: 'dialog "$text"');
   await tester.pump(const Duration(milliseconds: 500));
   expect(find.text(text), findsOneWidget);
 }
