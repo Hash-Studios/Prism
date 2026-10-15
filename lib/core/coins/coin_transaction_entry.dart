@@ -43,7 +43,6 @@ class CoinTransactionEntry {
   final DateTime? updatedAt;
 
   bool get isCredit => delta > 0;
-  bool get isDebit => delta < 0;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
