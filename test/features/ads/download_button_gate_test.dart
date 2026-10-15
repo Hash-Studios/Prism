@@ -157,9 +157,11 @@ void main() {
     bool premiumContent = false,
     String? title,
     String? creator,
+    String contentId = 'wall-1',
+    String sourceContext = 'detail',
     VoidCallback? onOpen,
-    DownloadVariant? variant,
     VoidCallback? onDownloaded,
+    DownloadVariant? variant,
     String link = _link,
   }) async {
     await tester.pumpWidget(
@@ -169,8 +171,8 @@ void main() {
             link: link,
             label: 'Save',
             isPremiumContent: premiumContent,
-            contentId: 'wall-1',
-            sourceContext: 'detail',
+            contentId: contentId,
+            sourceContext: sourceContext,
             wallpaperTitle: title,
             creatorName: creator,
             onOpenDownloads: onOpen,
@@ -326,6 +328,70 @@ void main() {
       await tapSave(tester);
 
       expect(spendCalls.single['label'], 'Wallpaper by Ana');
+    });
+
+    testWidgets('changing wallpaper while spend is pending keeps the tap snapshot for its save and follow-ups', (
+      tester,
+    ) async {
+      const String nextLink = 'https://example.com/walls/mountain.jpg';
+      final Completer<void> spendReply = Completer<void>();
+      final List<String> callbacks = <String>[];
+      final _RecordingStats stats = _RecordingStats();
+      getIt.registerSingleton<RecordWallpaperActionUseCase>(RecordWallpaperActionUseCase(stats));
+      addTearDown(() => getIt.unregister<RecordWallpaperActionUseCase>());
+      backend.onCall = (name, parameters) async {
+        if (name == 'spendCoins') {
+          spendCalls.add(parameters);
+          await spendReply.future;
+          return _spent;
+        }
+        return const <String, Object>{
+          'success': true,
+          'changed': true,
+          'previousBalance': 95,
+          'currentBalance': 100,
+          'delta': 5,
+        };
+      };
+
+      await pump(
+        tester,
+        title: 'Sunset over the bay',
+        contentId: 'wall-old',
+        sourceContext: 'old-detail',
+        onDownloaded: () => callbacks.add('old'),
+      );
+      await tester.tap(find.byType(PrimaryActionPill));
+      await tester.pump();
+      expect(spendCalls, hasLength(1));
+      expect(ledger().single['link'], _link);
+
+      await pump(
+        tester,
+        link: nextLink,
+        premiumContent: true,
+        title: 'Mountain lake',
+        creator: 'New Creator',
+        contentId: 'wall-new',
+        sourceContext: 'new-detail',
+        onDownloaded: () => callbacks.add('new'),
+      );
+      spendReply.complete();
+      await settle(tester);
+
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      final DownloadWallpaperEvent downloadEvent = fakeAnalytics.events.whereType<DownloadWallpaperEvent>().single;
+      expect(spendCalls.single['action'], CoinSpendAction.wallpaperDownload.name);
+      expect(spendCalls.single['label'], 'Sunset over the bay');
+      expect(spendCalls.single['reason'], 'content_wall-old');
+      expect(ledger(), isEmpty);
+      expect(request.link, _link);
+      expect(request.filenameWithoutExtension, 'sunset');
+      expect(downloadEvent.link, _link);
+      expect(downloadEvent.sourceContext, 'old-detail');
+      expect(downloadEvent.premiumContent, isFalse);
+      expect(stats.actions, <(String, WallpaperAction)>[('wall-old', WallpaperAction.download)]);
+      expect(callbacks, <String>['old']);
     });
 
     testWidgets('a download that fails after the charge is refunded and reported', (tester) async {
