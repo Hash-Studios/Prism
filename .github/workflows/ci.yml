@@ -189,7 +189,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ios == 'true' || needs.changes.outputs.workflow == 'true'
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode 26.6
@@ -202,6 +202,14 @@ jobs:
           flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
+      # pod install took about 4 minutes cold. Master does not run this job, so the
+      # cache helps from the second push of a PR on.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
       - run: tool/write_firebase_options_stub.sh
       - run: make native-ios-check CI=true
 
