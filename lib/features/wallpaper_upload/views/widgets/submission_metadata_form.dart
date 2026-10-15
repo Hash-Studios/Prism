@@ -67,7 +67,6 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          runSpacing: 4,
           children: <Widget>[
             for (final String category in submissionCategories)
               ChoiceChip(
@@ -104,7 +103,6 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
-            runSpacing: 4,
             children: <Widget>[
               for (final String tag in _tags)
                 InputChip(

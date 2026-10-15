@@ -37,6 +37,7 @@ import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/app_tokens.dart';
@@ -87,7 +88,7 @@ Future<int?> _imageCacheBytes() async {
   try {
     final Directory temp = await getTemporaryDirectory();
     int total = 0;
-    for (final String name in <String>['libCachedImageData', 'prism_images', 'prism_full']) {
+    for (final String name in <String>['libCachedImageData', 'prism_images', 'prism_full', tintedWallpaperFolder]) {
       final Directory dir = Directory(path.join(temp.path, name));
       if (!await dir.exists()) continue;
       await for (final FileSystemEntity entry in dir.list(recursive: true, followLinks: false)) {

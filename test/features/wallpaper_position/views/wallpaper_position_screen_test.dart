@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 
 import '../../../support/fake_app_analytics.dart';
 
@@ -110,7 +111,11 @@ void main() {
     directory.deleteSync(recursive: true);
   });
 
-  Future<void> pumpScreen(WidgetTester tester, {void Function(Object? result)? onResult}) async {
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    void Function(Object? result)? onResult,
+    EdgeInsets deviceInsets = EdgeInsets.zero,
+  }) async {
     repository.image = await tester.runAsync(() {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 40, 80), Paint()..color = const Color(0xFF336699));
@@ -118,6 +123,10 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(padding: deviceInsets, viewPadding: deviceInsets),
+          child: child!,
+        ),
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -180,6 +189,28 @@ void main() {
 
     expect(find.byType(HomePreviewLayer), findsOneWidget);
     expect(find.byType(LockPreviewLayer), findsNothing);
+  });
+
+  group('device insets in the frame', () {
+    testWidgets('the iOS lock date clears the status bar although the app bar covers it', (tester) async {
+      await pumpScreen(tester, deviceInsets: const EdgeInsets.only(top: 47));
+
+      final Rect layer = tester.getRect(find.byType(LockPreviewLayer));
+      final double scale = layer.width / 800;
+      final double dateTop = tester.getTopLeft(find.text(DateFormat('EEEE d MMMM').format(DateTime.now()))).dy;
+      expect(dateTop - layer.top, closeTo((47 + 24) * scale, 0.01));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('the Android dock clears the navigation bar', (tester) async {
+      await pumpScreen(tester, deviceInsets: const EdgeInsets.only(bottom: 34));
+      await tester.tap(find.text('Home'));
+      await tester.pump();
+
+      final Rect layer = tester.getRect(find.byType(HomePreviewLayer));
+      final double scale = layer.width / 800;
+      final Finder dock = find.descendant(of: find.byType(HomePreviewLayer), matching: find.byType(Row));
+      expect(layer.bottom - tester.getBottomLeft(dock).dy, closeTo((34 + 100) * scale, 0.01));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 
   testWidgets('a fit chip changes the placement and Reset puts it back', (tester) async {

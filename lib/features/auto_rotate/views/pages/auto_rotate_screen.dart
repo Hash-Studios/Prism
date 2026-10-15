@@ -333,18 +333,11 @@ class _Controls extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Wrap(
         spacing: 8,
-        runSpacing: 4,
         children: [
           for (final MapEntry<T, String> entry in labels.entries)
             ChoiceChip(
               label: Text(entry.value),
               selected: entry.key == selected,
-              selectedColor: accent,
-              labelStyle: TextStyle(
-                color: entry.key == selected ? theme.colorScheme.onError : theme.colorScheme.secondary,
-                fontFamily: _fontFamily,
-                fontWeight: entry.key == selected ? FontWeight.bold : FontWeight.normal,
-              ),
               onSelected: (_) {
                 PrismHaptics.selection();
                 onSelected(entry.key);

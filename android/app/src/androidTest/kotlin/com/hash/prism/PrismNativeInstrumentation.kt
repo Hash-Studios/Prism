@@ -63,7 +63,7 @@ internal class PrismNativeInstrumentation : Instrumentation() {
 
             repeat(2) {
                 withResponse(bytes) { url ->
-                    val downloaded = await<OperationResult> { callback -> api.enqueueDownload(DownloadRequest(url, basename), callback) }
+                    val downloaded = await<OperationResult> { callback -> api.enqueueDownload(DownloadRequest(url, basename, false), callback) }
                     check(downloaded.success) { downloaded.message ?: "PNG download failed" }
                 }
             }
@@ -104,7 +104,7 @@ internal class PrismNativeInstrumentation : Instrumentation() {
         check(!invalid.success) { "Relative local path accepted" }
         val remoteFile = await<OperationResult> { api.saveMedia(SaveMediaRequest("file://remotehost${fixture.absolutePath}", true, SaveMediaKind.WALLPAPER), it) }
         check(!remoteFile.success) { "Remote file URI authority accepted as a local file" }
-        val traversal = await<OperationResult> { api.enqueueDownload(DownloadRequest("https://unused.invalid", "../wall"), it) }
+        val traversal = await<OperationResult> { api.enqueueDownload(DownloadRequest("https://unused.invalid", "../wall", false), it) }
         check(!traversal.success && traversal.errorCode == "INVALID_FILENAME") { "Unsafe filename accepted" }
         check(PrismHapticType.fromWire("invalid") == null) { "Unknown haptic type accepted" }
     }
@@ -112,13 +112,13 @@ internal class PrismNativeInstrumentation : Instrumentation() {
     private fun verifyCorruptImages(api: PrismMediaHostApiImpl, fixture: File, bytes: ByteArray, basename: String) {
         val count = imageIds().size
         withResponse("not an image".toByteArray()) { url ->
-            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-invalid-image"), it) }.success)
+            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-invalid-image", false), it) }.success)
         }
         withResponse(bytes.copyOf(20), bytes.size) { url ->
-            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-truncated-image"), it) }.success)
+            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-truncated-image", false), it) }.success)
         }
         withResponse(bytes.copyOf(33)) { url ->
-            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-corrupt-body"), it) }.success)
+            check(!await<OperationResult> { api.enqueueDownload(DownloadRequest(url, "$basename-corrupt-body", false), it) }.success)
         }
         fixture.writeBytes(bytes.copyOf(33))
         check(!await<OperationResult> { api.saveMedia(SaveMediaRequest(fixture.absolutePath, true, SaveMediaKind.WALLPAPER), it) }.success) {

@@ -5,7 +5,30 @@ import 'package:Prism/theme/contrast.dart';
 
 /// Black or white text, whichever reads on the top third of [image], where the clock sits.
 /// Pass a small decode, about 32 px wide: the colour is the average of its top rows.
-Future<ui.Color> textColorForTopThird(ui.Image image) async {
+///
+/// With a [tint] the top third is measured as the preview shows it, under a hue blend of that colour.
+Future<ui.Color> textColorForTopThird(ui.Image image, {ui.Color? tint}) async {
+  final ui.Image shown = tint == null ? image : await _withHue(image, tint);
+  try {
+    return await _readableOn(shown);
+  } finally {
+    if (!identical(shown, image)) shown.dispose();
+  }
+}
+
+Future<ui.Image> _withHue(ui.Image image, ui.Color tint) async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final ui.Paint paint = ui.Paint()..colorFilter = ui.ColorFilter.mode(tint, ui.BlendMode.hue);
+  ui.Canvas(recorder).drawImage(image, ui.Offset.zero, paint);
+  final ui.Picture picture = recorder.endRecording();
+  try {
+    return await picture.toImage(image.width, image.height);
+  } finally {
+    picture.dispose();
+  }
+}
+
+Future<ui.Color> _readableOn(ui.Image image) async {
   final ByteData? data = await image.toByteData();
   if (data == null || image.width == 0 || image.height == 0) return const ui.Color(0xFFFFFFFF);
   final int rows = (image.height / 3).ceil().clamp(1, image.height);

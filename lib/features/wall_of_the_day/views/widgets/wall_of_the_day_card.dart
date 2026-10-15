@@ -6,6 +6,8 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
@@ -88,61 +90,157 @@ class _WotdCardContent extends StatelessWidget {
                 fallbackUrl: entity.url,
                 memCacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
               ),
+              const _BottomScrim(),
+              Positioned(
+                left: _sidePadding,
+                right: _sidePadding,
+                bottom: _bottomPadding,
+                child: Row(
+                  children: [
+                    Expanded(child: _Caption(photographer: entity.photographer)),
+                    const SizedBox(width: 12),
+                    _PastPicksPill(onTap: () => _openArchive(context)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-              Center(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.scrim.withValues(alpha: PrismOverlay.carouselBannerScrimAlpha),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'wall of the day',
-                          style: TextStyle(
-                            fontFamily: 'Fraunces',
-                            color: PrismColors.onPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        if (entity.photographer.isNotEmpty) ...[
-                          const SizedBox(height: 4),
+/// The carousel dots take the bottom 30 px of every slide, so the caption row starts above them.
+const double _sidePadding = 16;
+const double _bottomPadding = 34;
+
+class _BottomScrim extends StatelessWidget {
+  const _BottomScrim();
+
+  @override
+  Widget build(BuildContext context) {
+    final Color scrim = Theme.of(context).colorScheme.scrim;
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: FractionallySizedBox(
+          widthFactor: 1,
+          heightFactor: 0.6,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [scrim.withValues(alpha: 0), scrim.withValues(alpha: 0.3), scrim.withValues(alpha: 0.65)],
+                stops: const [0, 0.45, 1],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Caption extends StatelessWidget {
+  const _Caption({required this.photographer});
+
+  final String photographer;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Shadow> shadows = [
+      Shadow(color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.4), blurRadius: 6),
+    ];
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.5,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'WALL OF THE DAY',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: PrismTextStyles.eyebrow(
+              context,
+            ).copyWith(color: PrismColors.onPrimary.withValues(alpha: 0.94), shadows: shadows),
+          ),
+          if (photographer.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              'by $photographer',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: PrismFonts.fraunces,
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                fontVariations: const [FontVariation('wght', 500)],
+                height: 1.2,
+                color: PrismColors.onPrimary,
+                shadows: shadows,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PastPicksPill extends StatelessWidget {
+  const _PastPicksPill({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      container: true,
+      excludeSemantics: true,
+      label: 'See past walls of the day',
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: PressScale(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            child: Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: MediaQuery.withClampedTextScaling(
+                maxScaleFactor: 1.5,
+                child: PrismGlass(
+                  borderRadius: 18,
+                  thickness: 16,
+                  glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.4),
+                  child: SizedBox(
+                    height: 36,
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 14, end: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                           Text(
-                            'by ${entity.photographer}',
+                            'Past picks',
                             maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'Fraunces',
-                              color: PrismColors.onPrimary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                            ),
+                            style: PrismTextStyles.caption(
+                              context,
+                            ).copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: PrismColors.onPrimary),
                           ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.chevron_right_rounded, size: 18, color: PrismColors.onPrimary),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: TextButton(
-                  onPressed: () => _openArchive(context),
-                  style: TextButton.styleFrom(
-                    foregroundColor: PrismColors.onPrimary,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.scrim.withValues(alpha: PrismOverlay.carouselBannerScrimAlpha),
-                    minimumSize: const Size(48, 48),
-                  ),
-                  child: const Text('See past picks'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
