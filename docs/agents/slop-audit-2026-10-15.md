@@ -2,7 +2,7 @@
 
 This report records 19 investigated groups against `origin/master` at `c5ef0356`: 18 accepted and fixed groups and one rejected candidate, A5, on `t3/codebase-slop-audit`. The review targeted unnecessary code, weak tests, erased types, misleading comments, and duplicated logic. Caller tracing also exposed several behavior bugs. Those bugs are included because deleting the apparent duplication without understanding its callers would leave incorrect behavior.
 
-Locations marked "baseline" refer to `c5ef0356`; line numbers move after edits. Relative file links open the current implementation. No deployment, schema change, data migration, or store upload is part of this work.
+Locations marked "baseline" refer to `c5ef0356` (rewritten upstream as `abd1aa33e`); line numbers move after edits. Relative file links open the current implementation. No deployment, schema change, data migration, or store upload is part of this work.
 
 ## Scope and method
 
@@ -36,7 +36,7 @@ The locked rewrite in [CoinsService](../../lib/core/coins/coins_service.dart) no
 
 Baseline `lib/features/live_wallpaper/data/live_texture_preparer.dart:35-65` never disposed the codec or recorded picture. Buffer, descriptor, and image cleanup ran only after successful byte encoding. Decode or crop failures bypassed cleanup.
 
-[LiveTexturePreparer](../../lib/features/live_wallpaper/data/live_texture_preparer.dart) now disposes every acquired native resource through `finally`, including a recorder still recording when an error occurs. The codec is released after its first frame is read. Geometry, JPEG settings, size limits, filenames, and exception messages remain unchanged.
+[LiveTexturePreparer](../../lib/features/live_wallpaper/data/live_texture_preparer.dart) releases the codec after its first frame is read. Immediately after successful PNG byte extraction, it releases and nulls both images, the picture, descriptor, and buffer before JPEG compression or file writing. The `finally` block preserves cleanup on errors, including a recorder still recording. Geometry, JPEG settings, size limits, filenames, and exception messages remain unchanged.
 
 [Preparation tests](../../test/features/live_wallpaper/live_texture_preparer_test.dart) exercise a real small image and a download failure alongside existing geometry coverage. Resource disposal also requires source review of each acquisition and cleanup path. These tests do not claim native allocation measurements or device memory profiling.
 
@@ -96,7 +96,7 @@ The member scan also found unused `maxBytes` and `allowedUniforms` metadata cons
 
 Baseline `test/features/live_wallpaper/live_shader_sources_test.dart:15-41` tested the handwritten Dart helper in `shader_contract.dart`, without invoking production Prism code or the plugin's Kotlin validator. Passing those cases could not prove native validator parity.
 
-[The shader suite](../../test/features/live_wallpaper/live_shader_sources_test.dart) removes the helper's self-test group. [The helper](../../test/features/live_wallpaper/shader_contract.dart) remains an approximate lint applied to real generated shaders. Actual Android plugin validation against shared generated fixtures would be stronger proof, but that integration is a separate change. This cleanup does not claim it supplies native validation.
+[The shader suite](../../test/features/live_wallpaper/live_shader_sources_test.dart) removes the copied validator self-test group. Three compact negative controls remain: they mutate real generated shader output and verify rejection of while loops, an unknown uniform, and `dFdx`. [The helper](../../test/features/live_wallpaper/shader_contract.dart) remains an approximate lint, and its comment now states that limit. Actual Android plugin validation against shared generated fixtures would be stronger proof, but that integration is a separate change. This cleanup does not claim native validator parity or compilation success.
 
 ### T3. Theme contrast tests parsed source and pinned obsolete copy
 
@@ -128,13 +128,15 @@ Baseline `test/core/widgets/share_button_test.dart:49,83` used a real one-second
 
 The full local CI run exposed a timing failure in [settings screen tests](../../test/features/session/settings_screen_test.dart), in `the cache size counts tinted wallpapers`. The test polled for 40 intervals of 25 milliseconds. A slow filesystem scan could exceed that one-second window even when cache accounting was correct.
 
-The fix uses a `Completer` signaled by the mocked `listDownloads` platform call after the filesystem scan. A loop yields real events and pumps fake test microtasks until the signal arrives, then pumps the state update. Directly awaiting the signal alone cannot drain the fake-zone microtasks. The handler is removed in teardown, and the test framework's timeout still catches a stuck operation.
+The fix uses a `Completer` signaled by the mocked `listDownloads` platform call after the filesystem scan. Completion is guarded so repeated calls cannot complete it twice. The handler is removed in teardown.
 
 The real 2048-byte tinted-file fixture and exact `2 KB of cached images` assertion remain. The focused scenario and complete 42-test settings suite passed. The final full concurrent run also passed this scenario. Production cache accounting is unchanged.
 
 The same full run exposed three bounded-wait failures in [premium editor tests](../../test/features/wallpaper_detail/wallpaper_edit/wallpaper_filter_premium_gate_test.dart) and [editor lifecycle tests](../../test/features/wallpaper_detail/wallpaper_edit/wallpaper_filter_screen_lifecycle_test.dart). Preview helpers allowed half a second for image metadata and decoding. A save helper allowed one second for reading, engine rendering, PNG encoding, directory creation, and writing an export. Those deadlines tested machine speed rather than completion.
 
-The helpers now yield real events and pump fake microtasks until the preview, platform signal, count, rendered text, refunded balance, editor re-enablement, or directory deletion condition occurs. Preview waits fail immediately on a terminal image error. Pure I/O waits do not advance fake time. Once the editor is enabled and its preview decoded, the readiness helper settles finite animations before another export. This also resolves an assumption that a 100 ms pump had finished a 160 ms `AnimatedSwitcher` transition. The lifecycle test drains the existing toast timer with fake time after cleanup; it adds no real delay.
+The shared [real I/O wait helper](../../test/support/wait_for_real_io.dart) first pumps to refresh rendered state, then yields real events and pumps fake microtasks. Each wait has a named completion condition and a default 30-second real-time deadline. Directly awaiting an I/O signal alone cannot drain fake-zone microtasks. Pure I/O waits do not advance fake time. Preview waits fail immediately on a terminal image error.
+
+Editor readiness also requires navigation to be unlocked: `AnimatedSwitcher` can retain an outgoing enabled Download button while an export is busy. Once navigation is unlocked and the preview decoded, the helper settles finite animations before another export. This replaces an assumption that a 100 ms pump had finished a 160 ms transition. The lifecycle test drains the existing toast timer with fake time after cleanup.
 
 All spending, refund, duplicate-action, disposal, export-pixel, and file-cleanup assertions remain. The two editor suites passed all 11 tests, focused analysis found no issues, and formatting and diff checks passed. Together with the settings scenario, these fixes address four timing failures across three suites without changing production behavior.
 
@@ -186,26 +188,30 @@ The only identified shader skips are capability-dependent. Native app code and n
 
 ## Verification
 
-The audit started from `origin/master` at `c5ef0356`. The branch subsequently merged `8609b082` and then `557e85cc`, with the final merge recorded as `ce9bbf6e`. Functions and web dependencies were reinstalled after the dependency updates in `8609b082`. The later master change only corrected a shader-test uniform assignment.
+The audit started from `origin/master` at `c5ef0356`. It incorporated the dependency updates and paid-download settlement fixes as master advanced. During final verification, upstream rewrote repository history to remove 58 old demo and example images. The original PR head `28a4c4cc` maps to `0578ff6f6`; their tracked trees differ only in those images. The review fixes were replayed as three focused commits on the rewritten branch. Merge `c9f24fd07` includes current master `1871f26ba`, including Studio. No old history was merged back into the rewritten branch.
 
-The final full run, `make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=4`, passed with **3,006 Flutter tests passing and one existing shader-capability skip**. The preceding run exposed the four timing failures in T7; all four passed in this final concurrent run. No pass is claimed for the interrupted initial run or the earlier failed run. The final log is `/tmp/prism-slop-final-ci-3.log`.
+One Opus 5.5 review examined `28a4c4cc` and found no blockers. All four follow-ups are fixed: bounded named I/O waits, shader negative controls, early native image resource release, and guarded settings completer completion. The parent reviewed every follow-up diff and the overlapping coin and Makefile merge results.
+
+The original full local run passed 3,006 Flutter tests at `28a4c4cc`. After the review fixes and paid-download merge, `make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=4` passed at `7252256f` with **3,081 Flutter tests passing and one existing shader-capability skip**. Its log is `/tmp/prism-opus-followup-ci.log`. Earlier failed runs exposed the four timing failures in T7; they are not counted as passes.
+
+After replay and the Studio merge, a tracked-file comparison proved that `lib/`, `test/`, `packages/`, both native app directories, `pubspec.yaml`, `pubspec.lock`, and `.fvmrc` exactly match that tested tree. The full Flutter suite was not repeated after an unchanged Dart tree. The parent reran static gates and the changed server and worker suites on `c9f24fd07`.
 
 | Check | Result |
 |---|---|
-| Full local `make ci` with the flags above | Passed; 3,006 Flutter tests passed and one shader-capability test skipped |
-| `make format-check` after the final master merge | Passed |
-| Local CI guards, including `make guard-test` | Passed; search tests cover both ripgrep and grep |
-| Full Flutter analysis | No errors or warnings; four informational findings explained below |
-| Dead-code CI gate and `fvm dart run tool/find_unused_code.dart --html --json` | Passed; no unreachable files or unused top-level declarations; HTML retained native disclosure controls |
-| `make file-gen` | Passed; no generated diff |
-| Cloudflare worker check | 35 tests passed |
-| Functions `npm ci`, `npm run build`, `npm run lint`, and `node --test 'lib/__tests__/*.test.js'` | Passed; 413 tests |
-| Functions compiled with `npx tsc --outDir` into a temporary directory, then tested with `PRISM_REPO_ROOT` and `NODE_PATH` set as in the hook | 413 tests passed |
-| Web `npm ci` and `npx tsc --noEmit --incremental false` | Passed |
-| Focused final timing and typing suites | 42 settings, 11 editor, and two share-service tests passed |
+| Full local `make ci` with the flags above, `7252256f` | Passed; 3,081 Flutter tests passed and one shader-capability test skipped; final Dart tree is identical |
+| Post-rewrite format, environment, secrets, version, analytics, Firestore, shape parsing, dynamic, and system-UI guards | Passed |
+| `make guard-test` | Passed for ripgrep and grep |
+| Post-rewrite Flutter analysis | No errors or warnings; five informational findings explained below |
+| Post-rewrite dead-code CI gate | Passed; no unreachable files or unused top-level declarations |
+| `make file-gen` after the texture follow-up | Passed; no generated diff |
+| Post-rewrite Cloudflare worker check | 51 tests passed |
+| Functions `npm ci`, `npm run build`, `npm run lint`, and `node --test 'lib/__tests__/*.test.js'` after the Studio merge | Passed; 486 tests |
+| Relocated Functions tests through the pre-push hook | Passed; 486 tests with the repository fixture root and module path set |
+| Web `npm ci` and `npx tsc --noEmit --incremental false` | Passed before the review; web files and dependencies remain unchanged |
+| Dead-code JSON/HTML report generation | Passed before the review; retained native disclosure controls |
 
-The four analyzer notices are the two necessary lifecycle overrides in A5, the ignored local Firebase stub's static-only class, and the existing `Prism` package name. The four nullable-cast notices found during verification were fixed in A6. No lint rule or guard was disabled. The ignored Firebase stub is not part of the change.
+The five analyzer notices are the two necessary lifecycle overrides in A5, the ignored local Firebase stub's static-only class, the existing `Prism` package name, and a field-initializer notice introduced by the paid-download merge. The four nullable-cast notices found during the audit were fixed in A6. No lint rule or guard was disabled. The ignored Firebase stub is not part of the change.
 
-The parent reviewed each combined diff and ran the local checks. The final diff check passed, and all 50 relative links in this report resolved. Independent Sol review also examined the implementation, but worker reports do not replace the parent checks. Hosted PR CI, merge status, native device execution, deployment, and live moderation behavior are separate gates. This report claims no device screenshots, deployment, or production result.
+The final report has 51 valid relative file links. Independent Sol workers supplied implementation and review, but their reports do not replace the parent checks. Hosted PR CI, merge status, native device execution, deployment, and live moderation behavior remain separate gates. This report claims no device screenshots, deployment, or production result.
 
 Inventory counts can be regenerated with `rg --files lib`, excluding generated Dart suffixes and generated DI files; `find lib/features -mindepth 1 -maxdepth 1 -type d`; and `rg --files test`, separately counting Dart files and `*_test.dart` files. Registration-site counts are textual searches for `test(` and `testWidgets(`, not an executed suite total.
