@@ -99,7 +99,7 @@ Prism follows the plugin validator (`ShaderProgramValidator.kt` in `async_wallpa
 | Language | GLSL ES 1.00, with `precision mediump float;` |
 | Uniforms Prism uses | `u_time` (float), `u_resolution` (vec2), `u_touch` (vec2), `u_offset` (vec2), `u_texture0` (sampler2D) |
 | Loops | No `while`. Only `for` with integer literal bounds. |
-| Source size | Under 64 KiB. Prism constant `LiveShaderSources.maxBytes`. |
+| Source size | At most 64 KiB of UTF-8 source, enforced by the plugin validator. |
 | Plugin limits | Up to 4 textures, 32 uniform declarations, 128 static loop iterations. Prism uses at most one texture. |
 
 ### Frame rate and battery saver

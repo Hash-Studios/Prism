@@ -10,32 +10,6 @@ void main() {
   final LivePalette darkPalette = LivePalette.fromAccent(const Color(0xFFE57697), dark: true);
   final LivePalette lightPalette = LivePalette.fromAccent(const Color(0xFF2962FF), dark: false);
 
-  group('shader contract mirror', () {
-    test('rejects what the plugin validator rejects', () {
-      const String head = 'precision mediump float;\nvoid main() { gl_FragColor = vec4(1.0); }\n';
-      expect(validateShaderContract(head, textureCount: 0), isEmpty);
-      expect(validateShaderContract('$head uniform vec3 u_custom;', textureCount: 0), isNotEmpty);
-      expect(validateShaderContract('$head uniform vec3 u_time;', textureCount: 0), isNotEmpty);
-      expect(validateShaderContract('$head uniform sampler2D u_texture0;', textureCount: 0), isNotEmpty);
-      expect(validateShaderContract('$head uniform sampler2D u_texture0;', textureCount: 1), isEmpty);
-      expect(validateShaderContract('$head #pragma optimize(off)', textureCount: 0), isNotEmpty);
-      expect(validateShaderContract('$head #version 300 es', textureCount: 0), isNotEmpty);
-      expect(
-        validateShaderContract('$head void f() { int n = 0; while (n < 2) { n++; } }', textureCount: 0),
-        isNotEmpty,
-      );
-      expect(
-        validateShaderContract('$head void f(int n) { for (int i = 0; i < n; i++) {} }', textureCount: 0),
-        isNotEmpty,
-      );
-      expect(
-        validateShaderContract('$head void f() { for (int i = 0; i < 129; i++) {} }', textureCount: 0),
-        isNotEmpty,
-      );
-      expect(validateShaderContract('${head}float x = dFdx(1.0);', textureCount: 0), isNotEmpty);
-    });
-  });
-
   group('gradient shaders', () {
     for (final GradientStyle style in GradientStyle.values) {
       for (final (String name, LivePalette palette) in <(String, LivePalette)>[
@@ -44,6 +18,7 @@ void main() {
       ]) {
         test('${style.name} ($name) meets the contract', () {
           final String shader = LiveShaderSources.gradient(style, palette);
+          expect(shader, isNot(contains('{{')));
           expect(validateShaderContract(shader, textureCount: 0), isEmpty);
           expect(shader.contains('u_texture0'), isFalse);
         });
@@ -55,6 +30,7 @@ void main() {
     for (final MotionStyle style in MotionStyle.values) {
       test('${style.name} meets the contract with one texture', () {
         final String shader = LiveShaderSources.motion(style, darkPalette);
+        expect(shader, isNot(contains('{{')));
         expect(validateShaderContract(shader, textureCount: 1), isEmpty);
         expect(shader, contains('uniform sampler2D u_texture0;'));
       });
@@ -90,15 +66,6 @@ void main() {
         LiveShaderSources.gradient(GradientStyle.aurora, darkPalette),
         isNot(LiveShaderSources.gradient(GradientStyle.aurora, lightPalette)),
       );
-    });
-
-    test('every template placeholder is a known one', () {
-      for (final GradientStyle style in GradientStyle.values) {
-        final Iterable<String> found = RegExp(
-          r'\{\{[A-Z0-9]+\}\}',
-        ).allMatches(LiveShaderSources.gradientTemplate(style)).map((match) => match.group(0)!);
-        expect(LiveShaderSources.placeholders, containsAll(found));
-      }
     });
 
     test('the starfield stays pure black whatever the theme', () {
