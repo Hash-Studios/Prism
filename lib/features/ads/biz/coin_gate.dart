@@ -136,6 +136,7 @@ class CoinGateSpec {
     this.refundReason = 'download_failed_refund',
     this.onAttempt,
     this.onWatchChosen,
+    this.onPaid,
     this.onSpent,
     this.retrySpec,
   });
@@ -195,6 +196,11 @@ class CoinGateSpec {
   final String refundReason;
   final void Function(String spendTag)? onAttempt;
   final VoidCallback? onWatchChosen;
+
+  /// Called with the ledger id of a tracked download right after its charge, before the mounted check, so a caller that
+  /// has left the screen still learns it. The gate settles that id on every way out: [perform] succeeded or a refund was
+  /// confirmed clears it, anything else releases it to recovery.
+  final void Function(String txId)? onPaid;
 
   /// Called when coins really left the balance, before [perform].
   final void Function(String spendTag, CoinMutationResult result)? onSpent;
@@ -441,10 +447,19 @@ class CoinGate {
       }
       return CoinGateResult.spendFailed;
     }
+    final String txId = spent.changed ? spent.pendingDownloadTxId : '';
+    if (txId.isNotEmpty) {
+      try {
+        spec.onPaid?.call(txId);
+      } catch (error, stackTrace) {
+        _port.logCoinError(sourceTag: tag, error: error, stackTrace: stackTrace);
+      }
+    }
     if (!spec.isMounted()) {
       if (spent.changed && spec.refundOnFailure) {
-        return _refund(spec, tag, spent);
+        return _refund(spec, tag, spent, txId);
       }
+      await _release(tag, txId);
       return spent.changed ? CoinGateResult.performed : CoinGateResult.failedNotRefunded;
     }
     if (spent.changed) {
@@ -455,9 +470,14 @@ class CoinGate {
       }
     }
     if (await _perform(spec, tag)) {
+      await _clear(tag, txId);
       return CoinGateResult.performed;
     }
-    return spent.changed && spec.refundOnFailure ? _refund(spec, tag, spent) : CoinGateResult.failedNotRefunded;
+    if (spent.changed && spec.refundOnFailure) {
+      return _refund(spec, tag, spent, txId);
+    }
+    await _release(tag, txId);
+    return CoinGateResult.failedNotRefunded;
   }
 
   Future<bool> _perform(CoinGateSpec spec, String tag) async {
@@ -472,7 +492,7 @@ class CoinGate {
     }
   }
 
-  Future<CoinGateResult> _refund(CoinGateSpec spec, String tag, CoinMutationResult spent) async {
+  Future<CoinGateResult> _refund(CoinGateSpec spec, String tag, CoinMutationResult spent, String txId) async {
     final String refundTag = '$tag.refund';
     try {
       final CoinMutationResult refund = await _port.refundSpend(
@@ -482,6 +502,7 @@ class CoinGate {
         reason: spec.refundReason,
       );
       if (refund.success && refund.changed) {
+        await _clear(tag, txId);
         if (spec.isMounted()) {
           _port.showSuccess('${spec.failureLabel}. ${refund.delta} coins refunded.');
         }
@@ -491,10 +512,29 @@ class CoinGate {
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: refundTag, error: error, stackTrace: stackTrace);
     }
+    await _release(tag, txId);
     if (spec.isMounted()) {
       _port.showError('${spec.failureLabel}. Your refund could not be confirmed.');
     }
     return CoinGateResult.failedNotRefunded;
+  }
+
+  Future<void> _clear(String tag, String txId) async {
+    if (txId.isEmpty) return;
+    try {
+      await _port.clearPendingDownload(txId);
+    } catch (error, stackTrace) {
+      _port.logCoinError(sourceTag: '$tag.ledger_clear', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _release(String tag, String txId) async {
+    if (txId.isEmpty) return;
+    try {
+      await _port.releasePendingDownload(txId);
+    } catch (error, stackTrace) {
+      _port.logCoinError(sourceTag: '$tag.ledger_release', error: error, stackTrace: stackTrace);
+    }
   }
 }
 

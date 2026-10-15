@@ -33,6 +33,7 @@ class FakeCoinGatePort implements CoinGatePort {
   bool recordThrows = false;
   Future<void> Function()? afterRecord;
   bool refundApplies = true;
+  bool ledgerThrows = false;
   bool consentGiven = true;
   AdFailureReason? adFailure;
   String awardReason = '';
@@ -95,6 +96,7 @@ class FakeCoinGatePort implements CoinGatePort {
       currentBalance: balance,
       delta: -cost,
       transactionId: 'tx-$sourceTag',
+      pendingDownloadTxId: pendingDownloadLink == null ? '' : 'ledger-$sourceTag',
     );
   }
 
@@ -139,6 +141,18 @@ class FakeCoinGatePort implements CoinGatePort {
       currentBalance: balance,
       delta: action.cost(),
     );
+  }
+
+  @override
+  Future<void> clearPendingDownload(String txId) async {
+    log.add('clear:$txId');
+    if (ledgerThrows) throw StateError('ledger failed');
+  }
+
+  @override
+  Future<void> releasePendingDownload(String txId) async {
+    log.add('release:$txId');
+    if (ledgerThrows) throw StateError('ledger failed');
   }
 
   @override
