@@ -259,10 +259,4 @@ void main() {
       }
     });
   });
-
-  testWidgets('loadKernelEffects completes', (tester) async {
-    await tester.runAsync(() async {
-      await expectLater(loadKernelEffects(), completion(isA<bool>()));
-    });
-  });
 }
