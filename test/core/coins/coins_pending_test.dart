@@ -53,6 +53,13 @@ class _FlakySettings extends SettingsLocalDataSource {
   }
 }
 
+class _ClosedSettings extends SettingsLocalDataSource {
+  _ClosedSettings() : super(InMemoryLocalStore());
+
+  @override
+  bool get isOpen => false;
+}
+
 class _PausingSettings extends SettingsLocalDataSource {
   _PausingSettings() : super(InMemoryLocalStore());
 
@@ -958,6 +965,38 @@ void main() {
       tearDown(() {
         getIt.unregister<SettingsLocalDataSource>();
         getIt.registerSingleton<SettingsLocalDataSource>(original);
+      });
+
+      test('a failed initial ledger write prevents the spend call', () async {
+        flaky.failSets = true;
+        var calls = 0;
+        backend.onCall = (name, parameters) async {
+          calls++;
+          return _spent;
+        };
+
+        final result = await service.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: linkA);
+
+        expect(calls, 0);
+        expect(result.success, isFalse);
+        expect(result.reason, 'pending_download_storage_failed');
+        expect(ledger(), isEmpty);
+      });
+
+      test('a closed settings store prevents the spend call', () async {
+        getIt.unregister<SettingsLocalDataSource>();
+        getIt.registerSingleton<SettingsLocalDataSource>(_ClosedSettings());
+        var calls = 0;
+        backend.onCall = (name, parameters) async {
+          calls++;
+          return _spent;
+        };
+
+        final result = await service.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: linkA);
+
+        expect(calls, 0);
+        expect(result.success, isFalse);
+        expect(result.reason, 'pending_download_storage_failed');
       });
 
       test('a failing saved write keeps the download live, so recovery does not refund it in this session', () async {
