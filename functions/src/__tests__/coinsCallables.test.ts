@@ -449,13 +449,27 @@ test("spendCoins: without a label the description is the reason; a blank label c
 type Store = Map<string, Record<string, unknown>>;
 
 /** An in-memory Firestore for the award and rescue callables: transaction reads, writes and plain doc reads. */
-function mockStore(t: test.TestContext, store: Store): void {
+function mockStore(t: test.TestContext, store: Store, options: {wallEvidence?: boolean; candidateReadFails?: boolean} = {}): void {
   const ref = (name: string, id: string) => ({
     id,
     path: `${name}/${id}`,
     get: async () => ({exists: store.has(`${name}/${id}`), data: () => store.get(`${name}/${id}`)}),
   });
-  t.mock.method(db, "collection", (name: string) => ({doc: (id: string) => ref(name, id)}));
+  t.mock.method(db, "collection", (name: string) => {
+    if (options.wallEvidence && name === "walls") {
+      return {where: (_field: string, _operator: string, email: string) => ({get: async () => ({docs: [...store]
+        .filter(([path, wall]) => path.startsWith("walls/") && wall.email === email)
+        .map(([path, wall]) => ({id: path.split("/").pop(), data: () => wall}))})})};
+    }
+    if (options.wallEvidence && name === "studioRuns") {
+      return {doc: (runId: string) => ({collection: () => ({doc: (candidateId: string) => ({get: async () => {
+        if (options.candidateReadFails) throw new Error("candidate read failed");
+        const candidate = store.get(`studioRuns/${runId}/candidates/${candidateId}`);
+        return {data: () => candidate};
+      }})})})};
+    }
+    return {doc: (id: string) => ref(name, id)};
+  });
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
     const staged = new Map<string, Record<string, unknown>>();
     await callback({
@@ -476,6 +490,66 @@ const awardRequest = (data: Record<string, unknown>) => ({
 }) as unknown as Parameters<typeof awardCoins.run>[0];
 
 const userDoc = (extra: Record<string, unknown> = {}): Record<string, unknown> => ({coins: 0, coinState: {}, ...extra});
+
+const firstUploadRequest = (email: string) => ({
+  auth: {uid: "user-1", token: {email}},
+  data: {sourceTag: "test", action: "firstWallpaperUpload"},
+}) as unknown as Parameters<typeof awardCoins.run>[0];
+
+test("awardCoins firstWallpaperUpload: an approved wall with verified Studio provenance is not upload evidence", async (t) => {
+  const store: Store = new Map([
+    ["usersv2/user-1", userDoc()],
+    ["walls/STUDIO1234", {email: "studio@example.com", review: true, origin: "studio",
+      studioRunId: "d20261012", studioCandidateId: "d20261012-0"}],
+    ["studioRuns/d20261012/candidates/d20261012-0", {wallId: "STUDIO1234"}],
+  ]);
+  mockStore(t, store, {wallEvidence: true});
+
+  const result = await awardCoins.run(firstUploadRequest("studio@example.com"));
+  assert.equal(result.success, false);
+  assert.equal(result.reason, "first_upload_no_wall");
+  assert.equal(store.get("usersv2/user-1")?.coins, 0);
+});
+
+test("awardCoins firstWallpaperUpload: a Studio provenance read failure awards no coins", async (t) => {
+  const store: Store = new Map([
+    ["usersv2/user-1", userDoc()],
+    ["walls/STUDIO1234", {email: "studio@example.com", review: true, origin: "studio",
+      studioRunId: "d20261012", studioCandidateId: "d20261012-0"}],
+  ]);
+  mockStore(t, store, {wallEvidence: true, candidateReadFails: true});
+
+  await assert.rejects(awardCoins.run(firstUploadRequest("studio@example.com")), /candidate read failed/);
+  assert.equal(store.get("usersv2/user-1")?.coins, 0);
+});
+
+test("awardCoins firstWallpaperUpload: an approved community wall qualifies", async (t) => {
+  const store: Store = new Map([
+    ["usersv2/user-1", userDoc()],
+    ["walls/COMMUNITY1", {email: "artist@example.com", review: true}],
+  ]);
+  mockStore(t, store, {wallEvidence: true});
+
+  const result = await awardCoins.run(firstUploadRequest("artist@example.com"));
+  assert.equal(result.success, true);
+  assert.equal(result.delta, 50);
+  assert.equal(store.get("usersv2/user-1")?.coins, 50);
+});
+
+test("awardCoins firstWallpaperUpload: an unverified origin-studio claim qualifies as a community wall", async (t) => {
+  const store: Store = new Map([
+    ["usersv2/user-1", userDoc()],
+    ["walls/SPOOFED1234", {email: "artist@example.com", review: true, origin: "studio",
+      studioRunId: "d20261012", studioCandidateId: "d20261012-0"}],
+    ["studioRuns/d20261012/candidates/d20261012-0", {wallId: "OTHERWALL1"}],
+  ]);
+  mockStore(t, store, {wallEvidence: true});
+
+  const result = await awardCoins.run(firstUploadRequest("artist@example.com"));
+  assert.equal(result.success, true);
+  assert.equal(result.delta, 50);
+  assert.equal(store.get("usersv2/user-1")?.coins, 50);
+});
 
 test("awardCoins proDailyBonus: premium gets 50 once a day, others and repeats get nothing", async (t) => {
   const store: Store = new Map([["usersv2/user-1", userDoc({premium: true})]]);

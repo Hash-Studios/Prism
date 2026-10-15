@@ -26,8 +26,6 @@ export interface StudioPlanInput {
   weights: Record<string, number>;
   /** Subjects used within STUDIO_SUBJECT_COOLDOWN_DAYS. */
   recentSubjectIds: Set<string>;
-  /** Subject id -> last use in ms. Picks the least recently used subject when a whole series is on cooldown. */
-  lastUsedMs?: Map<string, number>;
   rng: Rng;
 }
 
@@ -44,8 +42,9 @@ function shuffle<T>(items: T[], rng: Rng): T[] {
 
 /** Splits `count` slots by weight with the largest remainder method. The rng breaks ties. */
 function apportion(weights: number[], count: number, rng: Rng): number[] {
-  const total = weights.reduce((a, b) => a + b, 0);
-  const exact = weights.map((w) => count * w / total);
+  const normalized = weights.map((w) => w / Math.max(...weights));
+  const total = normalized.reduce((a, b) => a + b, 0);
+  const exact = normalized.map((w) => count * w / total);
   const slots = exact.map(Math.floor);
   const left = count - slots.reduce((a, b) => a + b, 0);
   const order = shuffle(weights.map((_, i) => i), rng).sort((a, b) => (exact[b] - slots[b]) - (exact[a] - slots[a]));
@@ -74,14 +73,13 @@ export function studioPrompt(series: StudioSeries, subject: StudioSubject, palet
 }
 
 /**
- * The candidates of one run: slots split across series by weight, no subject twice, subjects on cooldown only when
- * a series has nothing else, and at most STUDIO_CATEGORY_CAP per category in a small mixed plan. A series that
+ * The candidates of one run: slots split across series by weight, no subject twice or within its cooldown, and at
+ * most STUDIO_CATEGORY_CAP per category in a small mixed plan. A series that
  * runs out gives its slot to another one, so the plan can be shorter than `count` only when every series is out.
  * Same rng, same plan.
  */
 export function buildDailyPlan(input: StudioPlanInput): StudioPlanItem[] {
   const {recentSubjectIds, rng} = input;
-  const lastUsedMs = input.lastUsedMs ?? new Map<string, number>();
   const count = Math.max(0, Math.trunc(input.count));
   const eligible = input.series.filter((s) => (input.weights[s.id] ?? 1) > 0 && s.subjects.length > 0 &&
     s.palettes.length > 0);
@@ -95,16 +93,10 @@ export function buildDailyPlan(input: StudioPlanInput): StudioPlanItem[] {
   const pickItem = (series: StudioSeries): StudioPlanItem | null => {
     const categoryOf = (subject: StudioSubject) => subject.category ?? series.category;
     const open = series.subjects.filter((s) => !usedSubjects.has(s.id) &&
+      !recentSubjectIds.has(s.id) &&
       (!capCategories || (perCategory.get(categoryOf(s)) ?? 0) < STUDIO_CATEGORY_CAP));
     if (open.length === 0) return null;
-    const fresh = open.filter((s) => !recentSubjectIds.has(s.id));
-    let subject: StudioSubject;
-    if (fresh.length > 0) {
-      subject = pick(fresh, rng);
-    } else {
-      const oldest = Math.min(...open.map((s) => lastUsedMs.get(s.id) ?? 0));
-      subject = pick(open.filter((s) => (lastUsedMs.get(s.id) ?? 0) === oldest), rng);
-    }
+    const subject = pick(open, rng);
     const unusedPalettes = series.palettes.filter((p) => !usedPalettes.has(`${series.id}/${p.id}`));
     const palette = pick(unusedPalettes.length > 0 ? unusedPalettes : series.palettes, rng);
 

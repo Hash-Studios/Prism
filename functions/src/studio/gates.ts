@@ -23,6 +23,7 @@ export const STUDIO_VISION_LONG_EDGE = 1600;
 
 const LIKELIHOODS = ["UNKNOWN", "VERY_UNLIKELY", "UNLIKELY", "POSSIBLE", "LIKELY", "VERY_LIKELY"];
 const SIGNATURE_BYTES = STUDIO_SIGNATURE_WIDTH * STUDIO_SIGNATURE_HEIGHT;
+const SIGNATURE_BASE64_LENGTH = Math.ceil(SIGNATURE_BYTES / 3) * 4;
 const LETTER_OR_DIGIT = new RegExp("[\\p{L}\\p{N}]", "gu");
 
 export interface GateResult {
@@ -56,6 +57,12 @@ export function likelihoodRank(value: unknown): number {
   return Math.max(0, LIKELIHOODS.indexOf(String(value)));
 }
 
+function decodeSignature(signature: string): Buffer | null {
+  if (!new RegExp(`^[A-Za-z0-9+/]{${SIGNATURE_BASE64_LENGTH}}$`).test(signature)) return null;
+  const bytes = Buffer.from(signature, "base64");
+  return bytes.length === SIGNATURE_BYTES && bytes.toString("base64") === signature ? bytes : null;
+}
+
 export function sizeCheck(width: number, height: number): {reasons: string[]; details: Record<string, unknown>} {
   const reasons: string[] = [];
   const aspect = height / width;
@@ -79,11 +86,11 @@ export async function imageSignature(bytes: Buffer): Promise<string> {
   return grey.toString("base64");
 }
 
-/** Pearson correlation of two signatures, from -1 to 1. 0 when one is flat or is not a signature. */
+/** Pearson correlation of two signatures, from -1 to 1. Equal flat signatures score 1; other flat pairs score 0. */
 export function signatureSimilarity(a: string, b: string): number {
-  const x = Buffer.from(a, "base64");
-  const y = Buffer.from(b, "base64");
-  if (x.length !== SIGNATURE_BYTES || y.length !== SIGNATURE_BYTES) return 0;
+  const x = decodeSignature(a);
+  const y = decodeSignature(b);
+  if (x === null || y === null) return 0;
   const meanX = x.reduce((sum, v) => sum + v, 0) / SIGNATURE_BYTES;
   const meanY = y.reduce((sum, v) => sum + v, 0) / SIGNATURE_BYTES;
   let cov = 0;
@@ -96,22 +103,34 @@ export function signatureSimilarity(a: string, b: string): number {
     varX += dx * dx;
     varY += dy * dy;
   }
-  return varX === 0 || varY === 0 ? 0 : cov / Math.sqrt(varX * varY);
+  return varX === 0 || varY === 0 ? (x.equals(y) ? 1 : 0) : cov / Math.sqrt(varX * varY);
 }
 
 export function duplicateCheck(
   signature: string, known: KnownSignature[],
 ): {reasons: string[]; details: Record<string, unknown>} {
+  if (decodeSignature(signature) === null) {
+    return {reasons: ["invalid_signature"], details: {nearestSimilarity: null, nearestWallId: null}};
+  }
   let nearest: {similarity: number; wallId: string} | null = null;
+  let invalidKnownSignatures = 0;
   for (const other of known) {
+    if (decodeSignature(other.signature) === null) {
+      invalidKnownSignatures++;
+      continue;
+    }
     const similarity = signatureSimilarity(signature, other.signature);
     if (nearest === null || similarity > nearest.similarity) nearest = {similarity, wallId: other.wallId};
   }
+  const reasons = [];
+  if (invalidKnownSignatures > 0) reasons.push("invalid_known_signature");
+  if (nearest !== null && nearest.similarity >= STUDIO_DUPLICATE_MIN_SIMILARITY) reasons.push("duplicate");
   return {
-    reasons: nearest !== null && nearest.similarity >= STUDIO_DUPLICATE_MIN_SIMILARITY ? ["duplicate"] : [],
+    reasons,
     details: {
       nearestSimilarity: nearest === null ? null : Math.round(nearest.similarity * 1000) / 1000,
       nearestWallId: nearest?.wallId ?? null,
+      ...(invalidKnownSignatures > 0 ? {invalidKnownSignatures} : {}),
     },
   };
 }
@@ -127,7 +146,8 @@ export function visionCheck(result: VisionResult): {reasons: string[]; details: 
     for (const category of STUDIO_SAFE_SEARCH_CATEGORIES) {
       const rank = likelihoodRank(safe[category]);
       safeSearch[category] = LIKELIHOODS[rank];
-      if (rank >= rejectAt) reasons.push(`unsafe_${category}`);
+      if (rank === 0) reasons.push(`safe_search_unknown_${category}`);
+      else if (rank >= rejectAt) reasons.push(`unsafe_${category}`);
     }
   }
   // The first text annotation is the whole block; the rest are single words.

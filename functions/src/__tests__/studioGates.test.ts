@@ -14,7 +14,7 @@ import {
 import {flatPng, gradientPng} from "./studioTestUtil";
 
 const clean: VisionResult = {
-  safeSearchAnnotation: {adult: "VERY_UNLIKELY", racy: "UNLIKELY", violence: "VERY_UNLIKELY", medical: "UNKNOWN"},
+  safeSearchAnnotation: {adult: "VERY_UNLIKELY", racy: "UNLIKELY", violence: "VERY_UNLIKELY", medical: "VERY_UNLIKELY"},
   textAnnotations: [],
   logoAnnotations: [],
 };
@@ -39,11 +39,15 @@ test("safe search rejects POSSIBLE or higher for adult, racy, violence and medic
   assert.deepEqual(visionCheck(clean).reasons, []);
   assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: {adult: "POSSIBLE", racy: 4, violence: 2, medical: 5}})
     .reasons, ["unsafe_adult", "unsafe_racy", "unsafe_medical"]);
-  assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: {adult: 3, racy: "UNLIKELY"}}).reasons, ["unsafe_adult"]);
-  assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: {violence: "VERY_LIKELY"}}).reasons, ["unsafe_violence"]);
+  assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: {adult: 3, racy: "UNLIKELY"}}).reasons,
+    ["unsafe_adult", "safe_search_unknown_violence", "safe_search_unknown_medical"]);
+  assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: {violence: "VERY_LIKELY"}}).reasons,
+    ["safe_search_unknown_adult", "safe_search_unknown_racy", "unsafe_violence", "safe_search_unknown_medical"]);
   assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: {...clean.safeSearchAnnotation, spoof: "VERY_LIKELY"} as
     VisionResult["safeSearchAnnotation"]}).reasons, []);
   assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: null}).reasons, ["safe_search_missing"]);
+  assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: {adult: "UNKNOWN", racy: "UNLIKELY"}}).reasons,
+    ["safe_search_unknown_adult", "safe_search_unknown_violence", "safe_search_unknown_medical"]);
   assert.deepEqual(visionCheck({...clean, safeSearchAnnotation: {adult: 4}}).details.safeSearch,
     {adult: "LIKELY", racy: "UNKNOWN", violence: "UNKNOWN", medical: "UNKNOWN"});
 });
@@ -112,12 +116,18 @@ test("a flat image or a bad signature has similarity 0", async () => {
   assert.equal(signatureSimilarity("bad", wall), 0);
 });
 
+test("an exact flat duplicate is rejected and a corrupt known signature fails closed", async () => {
+  const flat = await imageSignature(await flatPng(40, 40));
+  assert.deepEqual(duplicateCheck(flat, [{signature: flat, wallId: "FLAT"}]).reasons, ["duplicate"]);
+  assert.deepEqual(duplicateCheck(flat, [{signature: "bad", wallId: "BROKEN"}]).reasons,
+    ["invalid_known_signature"]);
+});
+
 test("the most similar known wall decides a duplicate and is recorded", async () => {
   const lighthouse = await imageSignature(await darkWall(LIGHTHOUSE));
   const copy = await imageSignature(await sharp(await darkWall(LIGHTHOUSE)).jpeg({quality: 70}).toBuffer());
   const jellyfish = await imageSignature(await darkWall(JELLYFISH));
-  const known = [{signature: jellyfish, wallId: "FAR"}, {signature: copy, wallId: "NEAR"},
-    {signature: "bad", wallId: "SKIP"}];
+  const known = [{signature: jellyfish, wallId: "FAR"}, {signature: copy, wallId: "NEAR"}];
   const result = duplicateCheck(lighthouse, known);
   assert.deepEqual(result.reasons, ["duplicate"]);
   assert.equal(result.details.nearestWallId, "NEAR");

@@ -1,9 +1,10 @@
 import * as admin from "firebase-admin";
+import {randomUUID} from "crypto";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {isAdminCaller} from "../adminConfig";
-import {db, readDailyCount, REGION, utcDateString} from "../common";
+import {db, REGION, utcDateString} from "../common";
 import {loadStudioConfig, STUDIO_MAX_CANDIDATES_PER_DAY} from "./config";
 import {type Rng, studioCandidateId} from "./ids";
 import {buildDailyPlan} from "./plan";
@@ -49,21 +50,22 @@ export async function createStudioRun(request: StudioRunRequest): Promise<Studio
 
   const result = await db.runTransaction(async (tx): Promise<StudioRunResult> => {
     if ((await tx.get(runRef)).exists) return {status: "exists", runId, count: 0};
-    const used = readDailyCount(await tx.get(dailyRef), day);
+    const dailySnap = await tx.get(dailyRef);
+    const dailyData = dailySnap.data();
+    const storedCount = dailyData?.count;
+    const used = !dailySnap.exists ? 0 : dailyData?.day === day && typeof storedCount === "number" &&
+      Number.isSafeInteger(storedCount) && storedCount >= 0 ? storedCount : config.maxCandidatesPerDay;
     const allowed = Math.min(requested, config.maxCandidatesPerDay - used);
     if (allowed <= 0) return {status: "daily_cap", runId, count: 0};
 
     const cutoff = nowMs - STUDIO_SUBJECT_COOLDOWN_DAYS * DAY_MS;
     const recentSubjectIds = new Set<string>();
-    const lastUsedMs = new Map<string, number>();
     for (const doc of (await tx.get(usesRef)).docs) {
       const at = doc.data().lastUsedAt;
       if (!(at instanceof admin.firestore.Timestamp)) continue;
-      lastUsedMs.set(doc.id, at.toMillis());
       if (at.toMillis() >= cutoff) recentSubjectIds.add(doc.id);
     }
-    const plan = buildDailyPlan({series, count: allowed, weights, recentSubjectIds, lastUsedMs,
-      rng: request.rng ?? Math.random});
+    const plan = buildDailyPlan({series, count: allowed, weights, recentSubjectIds, rng: request.rng ?? Math.random});
     if (plan.length === 0) return {status: "empty_plan", runId, count: 0};
 
     const now = admin.firestore.FieldValue.serverTimestamp();
@@ -118,9 +120,13 @@ export const runStudioBatch = onCall(
   {region: REGION, cors: true, maxInstances: 10},
   async (request: CallableRequest<unknown>) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in to run Prism Studio.");
-    if (!(await isAdminCaller(request.auth))) throw new HttpsError("permission-denied", "Only admins can run Prism Studio.");
+    const hasAdminClaim = request.auth.token.admin === true;
+    const hasVerifiedEmail = request.auth.token.email_verified === true;
+    if (!(hasAdminClaim || (hasVerifiedEmail && await isAdminCaller(request.auth)))) {
+      throw new HttpsError("permission-denied", "Only admins can run Prism Studio.");
+    }
     const input = parseRunInput(request.data);
-    const result = await createStudioRun({runId: `m${Date.now()}`, ...input, source: "manual"});
+    const result = await createStudioRun({runId: `m${randomUUID()}`, ...input, source: "manual"});
     switch (result.status) {
     case "created":
       return {runId: result.runId, count: result.count};
