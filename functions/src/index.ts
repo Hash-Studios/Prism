@@ -23,3 +23,5 @@ export {computeTrending} from "./trending";
 export {sweepOpenReports} from "./reportSweeper";
 export {claimUsername} from "./claimUsername";
 export {onUserCreated} from "./onUserCreated";
+export {processStudioCandidate} from "./studio/process";
+export {planStudioBatch, runStudioBatch} from "./studio/planRun";

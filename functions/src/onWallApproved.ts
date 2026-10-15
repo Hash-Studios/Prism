@@ -4,6 +4,7 @@ import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {db, findUserByEmail, REGION, str} from "./common";
+import {isStudioWall} from "./studio/process";
 import {
   emailHash,
   emailToTopic,
@@ -38,6 +39,10 @@ export const onWallApproved = onDocumentUpdated(
     }
 
     const wallId = event.params.wallId;
+    if (await isStudioWall(wallId, after)) {
+      logger.info("onWallApproved: Prism Studio wall, no pushes.", {wallId});
+      return;
+    }
     const artistEmail = str(after.email);
     const artistName = str(after.by) || "An artist";
     const wallTitle = str(after.title) || "Untitled";

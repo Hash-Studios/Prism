@@ -4,6 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {emailHash, sendToUserByEmail} from "./notificationHelper";
 import {findUserByEmail, REGION, str} from "./common";
+import {isStudioWall} from "./studio/process";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 
@@ -34,6 +35,10 @@ export const onWallSubmitted = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
+    if (await isStudioWall(wallId, data)) {
+      logger.info("onWallSubmitted: Prism Studio wall, no owner sync or admin push.", {wallId});
+      return;
+    }
     const artistEmail = str(data.email);
     const wallTitle = str(data.title) || "Untitled";
     const wallThumb = str(data.wallpaper_thumb);
