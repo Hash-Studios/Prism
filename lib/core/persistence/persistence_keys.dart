@@ -22,9 +22,6 @@ class PersistenceKeys {
 
   static const String favoritesWallPrefix = 'favorites.walls.';
   static const String favoritesSetupPrefix = 'favorites.setups.';
-  static const String favoritesSeededPrefix = 'favorites.seeded.';
-
-  static String favoritesSeeded(String userId) => '$favoritesSeededPrefix$userId';
 
   /// Set-based favorites keys (v3+): store the full set of favorited IDs as a
   /// JSON list under a single key per user scope.

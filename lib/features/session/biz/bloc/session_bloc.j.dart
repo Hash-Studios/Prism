@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -25,7 +26,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
 
   final GetSessionUseCase _getSessionUseCase;
   final SessionRepository _sessionRepository;
-  StreamSubscription<dynamic>? _currentUserSubscription;
+  StreamSubscription<PrismUsersV2>? _currentUserSubscription;
   Timer? _startedDebounce;
 
   static const Duration _startedDebounceDelay = Duration(milliseconds: 400);
