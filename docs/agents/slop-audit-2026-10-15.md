@@ -96,7 +96,7 @@ The member scan also found unused `maxBytes` and `allowedUniforms` metadata cons
 
 Baseline `test/features/live_wallpaper/live_shader_sources_test.dart:15-41` tested the handwritten Dart helper in `shader_contract.dart`, without invoking production Prism code or the plugin's Kotlin validator. Passing those cases could not prove native validator parity.
 
-[The shader suite](../../test/features/live_wallpaper/live_shader_sources_test.dart) removes the copied validator self-test group. Three compact negative controls remain: they mutate real generated shader output and verify rejection of while loops, an unknown uniform, and `dFdx`. [The helper](../../test/features/live_wallpaper/shader_contract.dart) remains an approximate lint, and its comment now states that limit. Actual Android plugin validation against shared generated fixtures would be stronger proof, but that integration is a separate change. This cleanup does not claim native validator parity or compilation success.
+[The shader suite](../../test/features/live_wallpaper/live_shader_sources_test.dart) removes the copied validator self-test group. Four compact negative controls mutate real generated shader output: while loops, an unknown uniform, `dFdx`, and an oversized non-ASCII comment. The size check now counts UTF-8 bytes, matching the documented byte limit rather than UTF-16 code units. [The helper](../../test/features/live_wallpaper/shader_contract.dart) remains an approximate lint, and its comment now states that limit. Actual Android plugin validation against shared generated fixtures would be stronger proof, but that integration is a separate change. This cleanup does not claim native validator parity or compilation success.
 
 ### T3. Theme contrast tests parsed source and pinned obsolete copy
 
@@ -154,13 +154,15 @@ Baseline `tool/lib/search.sh:11,13` discarded diagnostics and used `|| true`. A 
 
 [The shared search helper](../../tool/lib/search.sh) now normalizes ordinary no-match status 1 but propagates execution errors with diagnostics. [Analytics](../../tool/analytics_raw_usage_guard.sh), [environment](../../tool/env_define_guard.sh), and [system UI](../../tool/system_ui_guard.sh) guards preserve that distinction. System-UI search alternatives share a pattern and generated-file exclusions.
 
-[Behavioral shell tests](../../tool/search_guard_test.sh), wired through `make guard-test` and [local CI](../../Makefile), cover match, no match, missing paths, malformed patterns, and tool failures for both ripgrep and grep paths. Existing guards must also run against the actual repository. The change adds a focused check, not a new process framework.
+[Behavioral shell tests](../../tool/search_guard_test.sh), wired through `make guard-test` and [local CI](../../Makefile), cover match, no match, missing paths, malformed patterns, and tool failures for both ripgrep and grep paths. The tests reject missing-command failures and require search diagnostics. Each backend also runs the real analytics guard on forbidden code and checks the diagnostic and matched file. Existing guards also pass against the actual repository. The change adds a focused check, not a new process framework.
 
 ### S3. Moderation escalation starved reports after the first page
 
 Baseline `functions/src/reportSweeper.ts:30-54` fetched the first 200 open reports, then filtered already-escalated records in memory. Escalation left `status=open`. Once those 200 records had been escalated, every later run fetched and discarded them, leaving later reports untouched.
 
 [The sweeper](../../functions/src/reportSweeper.ts) pages open reports by document ID and cursor until it finds 200 due reports or exhausts results. Missing legacy `escalatedAt` fields still work because the existing predicate remains. No null query, new field, rule, or index was introduced. The cap limits escalations, while scans can read additional pages when earlier reports are ineligible.
+
+Automated review raised the read cost of this stateless scan. When fewer than 200 reports are due, it can read all open reports each run. This is an explicit tradeoff: a null-field query excludes legacy records with a missing `escalatedAt`, while a persisted scan position adds retry and catch-up state. The scan retains complete eligibility checks without a schema change. The 200-report limit caps escalations, not database reads.
 
 [Sweeper tests](../../functions/src/__tests__/reportSweeper.test.ts) place due reports beyond a full page of already-escalated or recent reports and verify they are notified and stamped. A repeated run must not duplicate escalation. [The fake database](../../functions/src/__tests__/fakeDb.ts) supports the document-ID ordering used by the real query. This is a server behavior fix; local tests do not deploy it.
 
@@ -194,13 +196,14 @@ One Opus 5.5 review examined `28a4c4cc` and found no blockers. All four follow-u
 
 The original full local run passed 3,006 Flutter tests at `28a4c4cc`. After the review fixes and paid-download merge, `make ci ANALYZE_FLAGS=--no-fatal-infos TEST_FLAGS=--concurrency=4` passed at `7252256f` with **3,081 Flutter tests passing and one existing shader-capability skip**. Its log is `/tmp/prism-opus-followup-ci.log`. Earlier failed runs exposed the four timing failures in T7; they are not counted as passes.
 
-After replay and the Studio merge, a tracked-file comparison proved that `lib/`, `test/`, `packages/`, both native app directories, `pubspec.yaml`, `pubspec.lock`, and `.fvmrc` exactly match that tested tree. The full Flutter suite was not repeated after an unchanged Dart tree. The parent reran static gates and the changed server and worker suites on `c9f24fd07`.
+After replay and the Studio merge, a tracked-file comparison proved that `lib/`, `test/`, `packages/`, both native app directories, `pubspec.yaml`, `pubspec.lock`, and `.fvmrc` exactly match that tested tree. The parent reran static gates and the changed server and worker suites on `c9f24fd07`. A later automated review led to the UTF-8 shader-lint correction and stronger guard assertions. The parent verified those final test-only changes with all 64 shader tests, targeted analysis and formatting, both guard backends, and the real guards. The full Flutter suite was not repeated for those focused test changes.
 
 | Check | Result |
 |---|---|
-| Full local `make ci` with the flags above, `7252256f` | Passed; 3,081 Flutter tests passed and one shader-capability test skipped; final Dart tree is identical |
+| Full local `make ci` with the flags above, `7252256f` | Passed; 3,081 Flutter tests passed and one shader-capability test skipped; Dart tree at `c9f24fd07` is identical |
 | Post-rewrite format, environment, secrets, version, analytics, Firestore, shape parsing, dynamic, and system-UI guards | Passed |
-| `make guard-test` | Passed for ripgrep and grep |
+| Final `make guard-test` and actual guards | Passed for ripgrep and grep; missing commands cannot satisfy error assertions |
+| Final shader suite, targeted analysis and formatting | 64 tests passed; no analysis or formatting findings |
 | Post-rewrite Flutter analysis | No errors or warnings; five informational findings explained below |
 | Post-rewrite dead-code CI gate | Passed; no unreachable files or unused top-level declarations |
 | `make file-gen` after the texture follow-up | Passed; no generated diff |
