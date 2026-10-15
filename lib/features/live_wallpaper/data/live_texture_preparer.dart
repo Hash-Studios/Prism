@@ -30,21 +30,28 @@ class LiveTexturePreparer {
     } catch (_) {
       throw const LiveTextureException("Couldn't download the wallpaper. Check your connection and try again.");
     }
+    ui.ImmutableBuffer? buffer;
+    ui.ImageDescriptor? descriptor;
+    ui.Codec? codec;
+    ui.Image? decoded;
+    ui.PictureRecorder? recorder;
+    ui.Picture? picture;
+    ui.Image? cropped;
     try {
       final Uint8List bytes = await source.readAsBytes();
-      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-      final ui.ImageDescriptor descriptor = await ui.ImageDescriptor.encoded(buffer);
+      buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      descriptor = await ui.ImageDescriptor.encoded(buffer);
       final TextureGeometry geometry = TextureGeometry.compute(
         sourceWidth: descriptor.width,
         sourceHeight: descriptor.height,
         screenAspectRatio: screenAspectRatio,
       );
       final double scale = geometry.scale;
-      final ui.Codec codec = await descriptor.instantiateCodec(
-        targetWidth: scale < 1 ? (descriptor.width * scale).round() : null,
-      );
-      final ui.Image decoded = (await codec.getNextFrame()).image;
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      codec = await descriptor.instantiateCodec(targetWidth: scale < 1 ? (descriptor.width * scale).round() : null);
+      decoded = (await codec.getNextFrame()).image;
+      codec.dispose();
+      codec = null;
+      recorder = ui.PictureRecorder();
       final double decodedScale = decoded.width / descriptor.width;
       ui.Canvas(recorder).drawImageRect(
         decoded,
@@ -57,12 +64,9 @@ class LiveTexturePreparer {
         ui.Rect.fromLTWH(0, 0, geometry.outputWidth.toDouble(), geometry.outputHeight.toDouble()),
         ui.Paint()..filterQuality = ui.FilterQuality.medium,
       );
-      final ui.Image cropped = await recorder.endRecording().toImage(geometry.outputWidth, geometry.outputHeight);
+      picture = recorder.endRecording();
+      cropped = await picture.toImage(geometry.outputWidth, geometry.outputHeight);
       final ByteData? png = await cropped.toByteData(format: ui.ImageByteFormat.png);
-      decoded.dispose();
-      cropped.dispose();
-      descriptor.dispose();
-      buffer.dispose();
       if (png == null) throw const LiveTextureException("Couldn't prepare the wallpaper.");
       final Uint8List jpeg = await FlutterImageCompress.compressWithList(
         png.buffer.asUint8List(),
@@ -81,6 +85,14 @@ class LiveTexturePreparer {
       rethrow;
     } catch (_) {
       throw const LiveTextureException("Couldn't prepare the wallpaper.");
+    } finally {
+      if (recorder?.isRecording ?? false) recorder!.endRecording().dispose();
+      cropped?.dispose();
+      picture?.dispose();
+      decoded?.dispose();
+      codec?.dispose();
+      descriptor?.dispose();
+      buffer?.dispose();
     }
   }
 }
