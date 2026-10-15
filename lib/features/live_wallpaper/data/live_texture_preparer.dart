@@ -68,6 +68,16 @@ class LiveTexturePreparer {
       cropped = await picture.toImage(geometry.outputWidth, geometry.outputHeight);
       final ByteData? png = await cropped.toByteData(format: ui.ImageByteFormat.png);
       if (png == null) throw const LiveTextureException("Couldn't prepare the wallpaper.");
+      cropped.dispose();
+      cropped = null;
+      picture.dispose();
+      picture = null;
+      decoded.dispose();
+      decoded = null;
+      descriptor.dispose();
+      descriptor = null;
+      buffer.dispose();
+      buffer = null;
       final Uint8List jpeg = await FlutterImageCompress.compressWithList(
         png.buffer.asUint8List(),
         minWidth: geometry.outputWidth,
