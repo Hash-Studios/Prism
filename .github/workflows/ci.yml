@@ -424,7 +424,7 @@ jobs:
 
   ios_cache_base:
     name: iOS build cache (master)
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.head_ref == 'akshay/ios-ci-10min'
     runs-on: macos-26
     timeout-minutes: 30
     steps:
