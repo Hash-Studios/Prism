@@ -600,7 +600,9 @@ class CoinsService with WidgetsBindingObserver {
     final String? requestId = pendingDownloadLink == null ? null : _newRequestId();
     final String? pendingTxId = requestId == null ? null : '$_spendTransactionPrefix${userId}_$requestId';
     if (pendingDownloadLink != null && pendingTxId != null) {
-      await _updatePendingDownloads('coins.download.ledger_write', (Map<String, PendingDownload> ledger) {
+      final bool persisted = await _updatePendingDownloads('coins.download.ledger_write', (
+        Map<String, PendingDownload> ledger,
+      ) {
         ledger[pendingTxId] = PendingDownload(
           txId: pendingTxId,
           userId: userId,
@@ -611,6 +613,14 @@ class CoinsService with WidgetsBindingObserver {
         _liveDownloadTxIds.add(pendingTxId);
         return true;
       });
+      if (!persisted) {
+        _liveDownloadTxIds.remove(pendingTxId);
+        return CoinMutationResult.noChange(
+          balance: app_state.prismUser.coins,
+          success: false,
+          reason: 'pending_download_storage_failed',
+        );
+      }
     }
     try {
       final CoinMutationResult result = await _callCoinMutation(
@@ -977,45 +987,51 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Runs [change] on the ledger under the queue lock and saves the result when [change] returns true or an old
-  /// marker still waits to move. [onPersisted] runs under the lock once the save went through, or at once when
-  /// nothing needed saving. A read or write that fails skips it. Failures are logged and never reach the download.
-  Future<void> _updatePendingDownloads(
+  /// marker still waits to move. Returns false when settings are closed or a read/write fails. [onPersisted] runs under
+  /// the lock once the save went through, or at once when nothing needed saving. Failures are logged.
+  Future<bool> _updatePendingDownloads(
     String sourceTag,
     bool Function(Map<String, PendingDownload> ledger) change, {
     VoidCallback? onPersisted,
   }) async {
+    bool persisted = false;
     try {
-      if (!_settings.isOpen) return;
+      if (!_settings.isOpen) return false;
       await _withRefundQueueLock(() async {
         final Map<String, PendingDownload> ledger = _readPendingDownloads();
         final bool hasLegacyMarker = _settings.get<String>(_legacyPendingDownloadPrefKey, defaultValue: '').isNotEmpty;
         if (change(ledger) || hasLegacyMarker) await _writePendingDownloads(ledger);
         onPersisted?.call();
+        persisted = true;
       });
       _scheduleDownloadRecovery();
     } catch (error, stackTrace) {
       logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
     }
+    return persisted;
   }
 
   /// Marks the download paid by [txId] as saved. Call it as soon as the native save or enqueue reports success, so a
   /// crash from here on never leads to a refund. An unknown [txId] changes nothing. The id stays protected from
   /// recovery until the saved flag is stored.
-  Future<void> markPendingDownloadSaved(String txId) =>
-      _updatePendingDownloads('coins.download.ledger_mark', (Map<String, PendingDownload> ledger) {
-        final PendingDownload? entry = ledger[txId];
-        if (entry == null || entry.saved) return false;
-        ledger[txId] = entry.asSaved();
-        return true;
-      }, onPersisted: () => _liveDownloadTxIds.remove(txId));
+  Future<void> markPendingDownloadSaved(String txId) async {
+    await _updatePendingDownloads('coins.download.ledger_mark', (Map<String, PendingDownload> ledger) {
+      final PendingDownload? entry = ledger[txId];
+      if (entry == null || entry.saved) return false;
+      ledger[txId] = entry.asSaved();
+      return true;
+    }, onPersisted: () => _liveDownloadTxIds.remove(txId));
+  }
 
   /// Drops the download paid by [txId]. Call it once the download finished or its refund was confirmed. An unknown
   /// [txId] changes nothing. The id stays protected from recovery until the removal is stored.
-  Future<void> clearPendingDownload(String txId) => _updatePendingDownloads(
-    'coins.download.ledger_clear',
-    (Map<String, PendingDownload> ledger) => ledger.remove(txId) != null,
-    onPersisted: () => _liveDownloadTxIds.remove(txId),
-  );
+  Future<void> clearPendingDownload(String txId) async {
+    await _updatePendingDownloads(
+      'coins.download.ledger_clear',
+      (Map<String, PendingDownload> ledger) => ledger.remove(txId) != null,
+      onPersisted: () => _liveDownloadTxIds.remove(txId),
+    );
+  }
 
   /// Ends the running status of the download paid by [txId] and starts a recovery pass. Call it when the tap that paid
   /// ends with no confirmed save and no confirmed refund. The stored entry stays, so recovery refunds it once it is
