@@ -49,16 +49,16 @@ test("subjects on cooldown are skipped while a series has fresh ones", () => {
   }
   const allButEclipse = new Set(afterDark.subjects.map((s) => s.id).filter((id) => id !== "eclipse"));
   assert.equal(plan({series: [afterDark], count: 1, recentSubjectIds: allButEclipse})[0].subjectId, "eclipse");
+  assert.deepEqual(plan({series: [afterDark], count: 1, recentSubjectIds: new Set(afterDark.subjects.map((s) => s.id))}), []);
 });
 
-test("when a whole series is on cooldown, the least recently used subject comes first", () => {
-  const recent = new Set(afterDark.subjects.map((s) => s.id));
-  const lastUsedMs = new Map(afterDark.subjects.map((s, i) => [s.id, 1_000_000 + i]));
-  lastUsedMs.set("comet-trail", 5);
-  const items = plan({series: [afterDark], count: 2, recentSubjectIds: recent, lastUsedMs});
-  assert.equal(items[0].subjectId, "comet-trail");
-  assert.equal(items[1].subjectId, afterDark.subjects[0].id === "comet-trail" ? afterDark.subjects[1].id :
-    afterDark.subjects[0].id);
+test("finite weights near the numeric limit still produce the requested plan", () => {
+  const items = plan({weights: {
+    "after-dark": Number.MAX_VALUE,
+    "quiet-architecture": Number.MAX_VALUE,
+    "paper-worlds": Number.MAX_VALUE,
+  }});
+  assert.equal(items.length, 10);
 });
 
 test("the category cap holds only for a mixed plan of ten or fewer", () => {
@@ -137,9 +137,17 @@ test("config is off without the flag or an identity email, and numbers are clamp
   assert.equal(parseStudioConfig({generationEnabled: true}).generationEnabled, false);
   assert.equal(parseStudioConfig({generationEnabled: true, identity: {...identity, email: " "}}).generationEnabled, false);
   assert.equal(parseStudioConfig({generationEnabled: "yes", identity}).generationEnabled, false);
-  const clamped = parseStudioConfig({dailyCandidates: 100, maxCandidatesPerDay: 99, width: -5, height: 2.5});
+  const clamped = parseStudioConfig({generationEnabled: true, identity, dailyCandidates: 100, maxCandidatesPerDay: 99,
+    width: -5, height: 2.5});
+  assert.equal(clamped.generationEnabled, false);
   assert.deepEqual([clamped.dailyCandidates, clamped.maxCandidatesPerDay, clamped.width, clamped.height],
-    [30, STUDIO_MAX_CANDIDATES_PER_DAY, 1440, 3200]);
+    [30, STUDIO_MAX_CANDIDATES_PER_DAY, -5, 2.5]);
   assert.equal(parseStudioConfig({dailyCandidates: 0}).dailyCandidates, 1);
   assert.deepEqual(parseStudioConfig({seriesWeights: {"a": 2, "b": -1, "c": "x", "d": 0}}).seriesWeights, {a: 2, d: 0});
+  const customModel = parseStudioConfig({generationEnabled: true, identity, model: "unlisted/model"});
+  assert.equal(customModel.generationEnabled, true);
+  assert.equal(customModel.model, "unlisted/model");
+  const invalidDimensions = parseStudioConfig({generationEnabled: true, identity, width: 1400, height: 2500});
+  assert.equal(invalidDimensions.generationEnabled, false);
+  assert.deepEqual([invalidDimensions.width, invalidDimensions.height], [1400, 2500]);
 });

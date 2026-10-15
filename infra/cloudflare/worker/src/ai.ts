@@ -207,8 +207,6 @@ const CHARGE_MAX_AGE_MS = 15 * 60 * 1000;
 const CHARGE_CLOCK_SKEW_MS = 60 * 1000;
 
 const STUDIO_ID_REGEX = /^[A-Za-z0-9_-]{8,64}$/;
-const STUDIO_RECORD_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const STUDIO_STALE_IN_PROGRESS_MS = 5 * 60 * 1000;
 
 const AI_QUOTA_OBJECT_NAME = 'global';
 const AI_QUOTA_RPC_URL = 'https://quota.internal/rpc';
@@ -297,6 +295,8 @@ interface AiQuotaStudioFinishRequest extends AiQuotaRpcBaseRequest {
   op: 'studio_finish';
   id: string;
   response: string;
+  responseStatus: number;
+  outcome: 'succeeded' | 'failed';
 }
 
 type AiQuotaRpcRequest =
@@ -358,6 +358,7 @@ interface AiQuotaChargeClaimResponse {
   ok: true;
   status: AiChargeClaimStatus;
   response?: string;
+  responseStatus?: number;
 }
 
 interface AiQuotaChargeStatusResponse {
@@ -380,6 +381,7 @@ interface AiChargeRecord {
   at: number;
   expiresAt: number;
   response?: string;
+  responseStatus?: number;
 }
 
 interface AiRateLimitRecord {
@@ -688,34 +690,52 @@ export class AiQuotaCoordinator {
     }
     const now = Date.now();
     const record = await this.state.storage.get<AiChargeRecord>(this.studioKey(id));
-    if (record != null && record.expiresAt > now) {
+    if (record != null) {
       if (record.state === 'succeeded') {
-        return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'done', response: record.response ?? '' });
+        return quotaJson<AiQuotaChargeClaimResponse>({
+          ok: true,
+          status: 'done',
+          response: record.response ?? '',
+          responseStatus: record.responseStatus ?? 200,
+        });
       }
-      if (now - record.at <= STUDIO_STALE_IN_PROGRESS_MS) {
-        return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'in_progress' });
+      if (record.state === 'failed') {
+        return quotaJson<AiQuotaChargeClaimResponse>({
+          ok: true,
+          status: 'failed',
+          response: record.response ?? '',
+          responseStatus: record.responseStatus ?? 502,
+        });
       }
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'in_progress' });
     }
-    // A missing, expired or stale record is claimed again, so a crashed run can be retried.
     await this.state.storage.put<AiChargeRecord>(this.studioKey(id), {
       state: 'in_progress',
       at: now,
-      expiresAt: now + STUDIO_RECORD_TTL_MS,
+      expiresAt: Number.MAX_SAFE_INTEGER,
     });
     return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
   }
 
   private async handleStudioFinish(request: AiQuotaStudioFinishRequest): Promise<Response> {
     const id = studioIdOrNull(request.id);
-    if (id == null || !isNonEmptyString(request.response)) {
+    if (
+      id == null
+      || !isNonEmptyString(request.response)
+      || !Number.isInteger(request.responseStatus)
+      || request.responseStatus < 100
+      || request.responseStatus > 599
+      || (request.outcome !== 'succeeded' && request.outcome !== 'failed')
+    ) {
       return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
     }
     const now = Date.now();
     await this.state.storage.put<AiChargeRecord>(this.studioKey(id), {
-      state: 'succeeded',
+      state: request.outcome,
       at: now,
-      expiresAt: now + STUDIO_RECORD_TTL_MS,
+      expiresAt: Number.MAX_SAFE_INTEGER,
       response: request.response,
+      responseStatus: request.responseStatus,
     });
     return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
   }
@@ -1959,6 +1979,11 @@ interface StudioGenerateRequest {
   seed?: number;
 }
 
+interface StudioGenerationResult {
+  response: Response;
+  terminal: boolean;
+}
+
 // Models the internal studio pipeline may call. Adding a model is one entry here.
 const STUDIO_MODELS: Record<string, StudioModel> = {
   // Default studio model: first on the LMArena and Artificial Analysis image boards (Oct 2026), exact phone sizes.
@@ -2084,9 +2109,9 @@ async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promi
     console.error('[ai] studio_claim_failed', { id: parsed.id, error: `${error ?? ''}` });
     return aiError('provider_error', 502, 'Quota coordinator unavailable');
   }
-  if (claim.status === 'done') {
+  if (claim.status === 'done' || claim.status === 'failed') {
     return new Response(claim.response ?? '', {
-      status: 200,
+      status: claim.responseStatus ?? (claim.status === 'done' ? 200 : 502),
       headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
     });
   }
@@ -2094,14 +2119,20 @@ async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promi
     return aiError('in_progress', 409, 'This studio generation is already running');
   }
 
-  const response = await runStudioGeneration(parsed, STUDIO_MODELS[parsed.model], env);
+  const result = await runStudioGeneration(parsed, STUDIO_MODELS[parsed.model], env);
   await sendStudioMutation(
     env,
-    response.ok
-      ? { op: 'studio_finish', id: parsed.id, response: await response.clone().text() }
+    result.terminal
+      ? {
+        op: 'studio_finish',
+        id: parsed.id,
+        outcome: result.response.ok ? 'succeeded' : 'failed',
+        responseStatus: result.response.status,
+        response: await result.response.clone().text(),
+      }
       : { op: 'studio_release', id: parsed.id },
   );
-  return response;
+  return result.response;
 }
 
 function normalizeStudioGenerateRequest(body: Partial<StudioGenerateRequest>): StudioGenerateRequest | null {
@@ -2129,7 +2160,7 @@ async function runStudioGeneration(
   request: StudioGenerateRequest,
   studioModel: StudioModel,
   env: AiEnvBindings,
-): Promise<Response> {
+): Promise<StudioGenerationResult> {
   let reservation: AiQuotaProviderBudgetReserveResponse;
   try {
     reservation = await sendQuotaRequest<AiQuotaProviderBudgetReserveResponse>(env, {
@@ -2143,7 +2174,7 @@ async function runStudioGeneration(
     });
   } catch (error) {
     console.error('[ai] studio_budget_reservation_failed', { id: request.id, error: `${error ?? ''}` });
-    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+    return { response: aiError('provider_error', 502, 'Quota coordinator unavailable'), terminal: false };
   }
   const reservationId = reservation.reservationId;
   if (!reservation.allowed || !isNonEmptyString(reservationId)) {
@@ -2153,14 +2184,15 @@ async function runStudioGeneration(
       dailySpentUsd: reservation.dailySpentUsd,
       monthlySpentUsd: reservation.monthlySpentUsd,
     });
-    return aiError('budget_exhausted', 429, 'Studio budget exhausted');
+    return { response: aiError('budget_exhausted', 429, 'Studio budget exhausted'), terminal: false };
   }
 
   const size = studioModel.imageSize?.(request.width, request.height) ?? { width: request.width, height: request.height };
   const falBody = studioModel.buildBody(request.prompt, size.width, size.height, request.seed);
   const startedAt = Date.now();
-  let billed = false;
+  let providerRequestStarted = false;
   try {
+    providerRequestStarted = true;
     const response = await fetchWithTimeout(`https://fal.run/${request.model}`, {
       method: 'POST',
       headers: {
@@ -2172,9 +2204,6 @@ async function runStudioGeneration(
     if (!response.ok) {
       throw new Error(`fal_failed_${response.status}${await readErrorDetails(response)}`);
     }
-    // fal bills once it answers, so the spend stays committed even if the download below fails.
-    billed = true;
-    await commitBilledReservation(reservationId, 'fal', studioModel.costUsd, env);
     const payload = await response.json() as {
       images?: Array<{ url?: string; width?: number; height?: number }>;
       seed?: number;
@@ -2192,9 +2221,12 @@ async function runStudioGeneration(
     if (extension == null) {
       throw new Error(`fal_unsupported_content_type_${contentType}`);
     }
-    const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
+    const imageBytes = await readBoundedBytes(imageResponse.body, STUDIO_UPLOAD_MAX_BYTES);
+    if (imageBytes == null) {
+      throw new Error('fal_image_too_large');
+    }
     if (!isOutputSafe(imageBytes, contentType)) {
-      return aiError('unsafe_output', 502, 'Studio output blocked by safety policy');
+      return { response: aiError('unsafe_output', 502, 'Studio output blocked by safety policy'), terminal: true };
     }
     const key = `ai/studio/raw/${request.id}.${extension}`;
     await storeAsset(key, imageBytes, contentType, env);
@@ -2209,7 +2241,7 @@ async function runStudioGeneration(
       latencyMs: Date.now() - startedAt,
       costUsd: studioModel.costUsd,
     });
-    return aiJson({
+    return { response: aiJson({
       id: request.id,
       imageUrl: `https://prismwalls.com/api/ai/assets/${key}`,
       key,
@@ -2221,17 +2253,22 @@ async function runStudioGeneration(
       provider: 'fal',
       seed: seed ?? null,
       costUsd: studioModel.costUsd,
-    });
+    }), terminal: true };
   } catch (error) {
     console.warn('[ai] studio_generation_failed', {
       id: request.id,
       model: request.model,
-      billed,
+      providerRequestStarted,
       error: `${error ?? ''}`,
     });
-    return aiError(isTimeoutError(error) ? 'provider_timeout' : 'provider_error', 502, 'Studio generation failed');
+    return {
+      response: aiError(isTimeoutError(error) ? 'provider_timeout' : 'provider_error', 502, 'Studio generation failed'),
+      terminal: providerRequestStarted,
+    };
   } finally {
-    if (!billed) {
+    if (providerRequestStarted) {
+      await commitBilledReservation(reservationId, 'fal', studioModel.costUsd, env);
+    } else {
       try {
         await releaseProviderBudgetReservation(reservationId, env);
       } catch (releaseError) {
@@ -2261,9 +2298,12 @@ async function handleStudioAssetPut(request: Request, key: string, env: AiEnvBin
   if (asNumber(request.headers.get('content-length'), 0) > STUDIO_UPLOAD_MAX_BYTES) {
     return aiError('invalid_request', 413, 'Studio asset must be 1 KB to 15 MB');
   }
-  const bytes = new Uint8Array(await request.arrayBuffer());
-  if (bytes.length < STUDIO_UPLOAD_MIN_BYTES || bytes.length > STUDIO_UPLOAD_MAX_BYTES) {
-    return aiError('invalid_request', bytes.length > STUDIO_UPLOAD_MAX_BYTES ? 413 : 400, 'Studio asset must be 1 KB to 15 MB');
+  const bytes = await readBoundedBytes(request.body, STUDIO_UPLOAD_MAX_BYTES);
+  if (bytes == null) {
+    return aiError('invalid_request', 413, 'Studio asset must be 1 KB to 15 MB');
+  }
+  if (bytes.length < STUDIO_UPLOAD_MIN_BYTES) {
+    return aiError('invalid_request', 400, 'Studio asset must be 1 KB to 15 MB');
   }
   await storeAsset(key, bytes, contentType, env);
   return aiJson({ key, url: `https://prismwalls.com/api/ai/assets/${key}` });
@@ -2275,6 +2315,41 @@ async function handleStudioAssetDelete(key: string, env: AiEnvBindings): Promise
   }
   await env.AI_IMAGES?.delete(key);
   return aiJson({ deleted: true });
+}
+
+async function readBoundedBytes(
+  body: ReadableStream<Uint8Array> | null,
+  maxBytes: number,
+): Promise<Uint8Array | null> {
+  if (body == null) {
+    return new Uint8Array();
+  }
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let byteCount = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      byteCount += value.byteLength;
+      if (byteCount > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(byteCount);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
 }
 
 const WATERMARK_MIN_BYTES = 1024;

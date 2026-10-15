@@ -5,7 +5,7 @@ import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db, int, REGION, str} from "../common";
 import {loadStudioConfig, type StudioIdentity} from "./config";
-import {annotateWithVision, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
+import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
 import {randomWallId, type Rng} from "./ids";
 import {STUDIO_SERIES} from "./series";
 
@@ -163,7 +163,6 @@ async function putAsset(deps: StudioProcessDeps, key: string, bytes: Buffer): Pr
   return url.startsWith("https://") ? url : `${PUBLIC_ASSET_BASE}/${key}`;
 }
 
-/** Best effort: a raw image that stays behind costs storage, nothing else. */
 async function deleteAsset(deps: StudioProcessDeps, key: string): Promise<void> {
   if (!RAW_ASSET_KEY.test(key)) {
     logger.warn("studio: not deleting an asset with an unexpected key.", {key});
@@ -172,10 +171,38 @@ async function deleteAsset(deps: StudioProcessDeps, key: string): Promise<void> 
   try {
     const response = await workerFetch(deps, "delete", `/api/ai/studio/assets/${key}`, {method: "DELETE"},
       TRANSFER_TIMEOUT_MS);
-    if (!response.ok) logger.warn("studio: could not delete a rejected image.", {key, status: response.status});
+    if (!response.ok) throw new TransientError(`delete: worker ${response.status}`);
   } catch (err) {
-    logger.warn("studio: could not delete a rejected image.", {key, err: message(err)});
+    if (err instanceof TransientError) throw err;
+    throw new TransientError(`delete: ${message(err)}`);
   }
+}
+
+async function cleanupPendingAssets(ref: admin.firestore.DocumentReference, deps: StudioProcessDeps): Promise<void> {
+  const current = (await ref.get()).data();
+  const cleanupKeys = Array.isArray(current?.cleanupKeys) ? current.cleanupKeys.filter((key) => typeof key === "string") : [];
+  if (cleanupKeys.length === 0) return;
+  for (const key of cleanupKeys) await deleteAsset(deps, String(key));
+  await db.runTransaction(async (tx) => {
+    const latest = (await tx.get(ref)).data();
+    const latestKeys = Array.isArray(latest?.cleanupKeys) ? latest.cleanupKeys : [];
+    if (latestKeys.length === cleanupKeys.length && latestKeys.every((key, i) => key === cleanupKeys[i])) {
+      tx.update(ref, {cleanupKeys: [], updatedAt: admin.firestore.FieldValue.serverTimestamp()});
+    }
+  });
+}
+
+async function updateOwnedCandidate(
+  ref: admin.firestore.DocumentReference,
+  attempts: number,
+  update: admin.firestore.DocumentData,
+): Promise<boolean> {
+  return db.runTransaction(async (tx) => {
+    const current = (await tx.get(ref)).data();
+    if (current?.status !== "generating" || current.attempts !== attempts) return false;
+    tx.update(ref, {...update, updatedAt: admin.firestore.FieldValue.serverTimestamp()});
+    return true;
+  });
 }
 
 /** The final wallpaper (same size, mozjpeg, no metadata) and the thumbnail the app would make. */
@@ -213,7 +240,10 @@ async function claimCandidate(ref: admin.firestore.DocumentReference, nowMs: num
     const attempts = int(data.attempts) + 1;
     const updatedAt = admin.firestore.FieldValue.serverTimestamp();
     if (attempts > STUDIO_MAX_ATTEMPTS) {
-      tx.update(ref, {status: "failed", error: "max_attempts", updatedAt});
+      const workerKey = str((data.worker as admin.firestore.DocumentData | undefined)?.key);
+      const outputKeys = Array.isArray(data.outputAssetKeys) ? data.outputAssetKeys.filter((key) => typeof key === "string") : [];
+      tx.update(ref, {status: "failed", error: "max_attempts", cleanupKeys: [...outputKeys, workerKey].filter(Boolean),
+        outputAssetKeys: admin.firestore.FieldValue.delete(), updatedAt});
       return null;
     }
     tx.update(ref, {status: "generating", attempts, claimedAt: admin.firestore.Timestamp.fromMillis(nowMs), updatedAt});
@@ -231,8 +261,9 @@ async function publishWall(params: {
   wall: admin.firestore.DocumentData;
   signature: string;
   candidateUpdate: admin.firestore.DocumentData;
+  outputAssetKeys: string[];
   rng: Rng;
-}): Promise<string | null> {
+}): Promise<string | null | "duplicate"> {
   const {ref, attempts, wall, signature, rng} = params;
   for (let i = 0; i < PUBLISH_TRIES; i++) {
     const wallId = randomWallId(rng);
@@ -241,14 +272,36 @@ async function publishWall(params: {
       const current = (await tx.get(ref)).data();
       if (current?.status !== "generating" || current.attempts !== attempts) return "lost";
       if ((await tx.get(wallRef)).exists) return "taken";
+      const signatureIndexRef = db.doc("studioState/signatureIndex");
+      const signatureIndex = (await tx.get(signatureIndexRef)).data();
+      const signatures = await tx.get(db.collection("studioSignatures").select("signature", "wallId"));
+      const known = signatures.docs.map((doc) => ({
+        signature: str(doc.data()?.signature), wallId: str(doc.data()?.wallId),
+      }));
+      const check = duplicateCheck(signature, known);
+      if (check.reasons.length > 0) {
+        const gates = params.candidateUpdate.gates as admin.firestore.DocumentData;
+        const details = gates.details as admin.firestore.DocumentData;
+        tx.update(ref, {...params.candidateUpdate, status: "rejected", reasons: check.reasons,
+          gates: {...gates, passed: false, reasons: check.reasons, details: {...details, duplicate: check.details}},
+          cleanupKeys: [str((params.candidateUpdate.worker as admin.firestore.DocumentData | undefined)?.key),
+            ...params.outputAssetKeys].filter(Boolean),
+          outputAssetKeys: admin.firestore.FieldValue.delete(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()});
+        return "duplicate";
+      }
       const now = admin.firestore.FieldValue.serverTimestamp();
       tx.create(wallRef, {...wall, id: wallId});
       tx.create(db.collection("studioSignatures").doc(ref.id), {signature, wallId, candidateId: ref.id, createdAt: now});
       tx.update(ref, {...params.candidateUpdate, status: "pending_review", wallId, updatedAt: now,
+        cleanupKeys: [str((params.candidateUpdate.worker as admin.firestore.DocumentData | undefined)?.key)].filter(Boolean),
+        outputAssetKeys: admin.firestore.FieldValue.delete(),
         lastError: admin.firestore.FieldValue.delete()});
+      tx.set(signatureIndexRef, {revision: int(signatureIndex?.revision) + 1, updatedAt: now}, {merge: true});
       return "published";
     });
     if (outcome === "published") return wallId;
+    if (outcome === "duplicate") return "duplicate";
     if (outcome === "lost") return null;
   }
   throw new TransientError(`publish: no free wall id after ${PUBLISH_TRIES} tries.`);
@@ -303,13 +356,8 @@ export async function isStudioWall(wallId: string, data: admin.firestore.Documen
   const runId = str(data.studioRunId);
   const candidateId = str(data.studioCandidateId);
   if (!DOC_ID.test(runId) || !DOC_ID.test(candidateId)) return false;
-  try {
-    const candidate = await db.collection("studioRuns").doc(runId).collection("candidates").doc(candidateId).get();
-    return candidate.data()?.wallId === wallId;
-  } catch (err) {
-    logger.warn("studio: could not check the wall's candidate.", {wallId, err: message(err)});
-    return false;
-  }
+  const candidate = await db.collection("studioRuns").doc(runId).collection("candidates").doc(candidateId).get();
+  return candidate.data()?.wallId === wallId;
 }
 
 /**
@@ -318,33 +366,49 @@ export async function isStudioWall(wallId: string, data: admin.firestore.Documen
  */
 export async function processCandidate(runId: string, candidateId: string, deps: StudioProcessDeps): Promise<void> {
   const ref = db.collection("studioRuns").doc(runId).collection("candidates").doc(candidateId);
+  await cleanupPendingAssets(ref, deps);
+  const status = (await ref.get()).data()?.status;
+  if (status !== "queued" && status !== "generating") return;
   const claim = await claimCandidate(ref, deps.nowMs());
-  if (claim === null) return;
+  if (claim === null) {
+    if ((await ref.get()).data()?.status === "failed") await cleanupPendingAssets(ref, deps);
+    return;
+  }
   const {data: candidate, attempts} = claim;
   let image: WorkerImage | null = null;
+  const outputAssetKeys = Array.isArray(candidate.outputAssetKeys) ?
+    candidate.outputAssetKeys.filter((key): key is string => typeof key === "string") : [];
   try {
     const config = await loadStudioConfig();
     if (!config.generationEnabled || config.identity === null) {
       throw new PermanentError("disabled", "Studio generation is off in studioConfig/current.");
     }
     image = await generate(deps, candidateId, candidate);
+    if (!await updateOwnedCandidate(ref, attempts, {worker: image})) return;
     const bytes = await download(image.imageUrl);
     const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures});
     if (!gates.passed) {
-      await ref.update({
+      const saved = await updateOwnedCandidate(ref, attempts, {
         status: "rejected",
         reasons: gates.reasons,
         gates: {passed: false, reasons: gates.reasons, details: gates.details},
         worker: image,
+        cleanupKeys: [...outputAssetKeys, image.key],
+        outputAssetKeys: admin.firestore.FieldValue.delete(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-      await deleteAsset(deps, image.key);
+      if (!saved) return;
+      await cleanupPendingAssets(ref, deps);
       logger.info("studio: candidate rejected.", {runId, candidateId, reasons: gates.reasons});
       return;
     }
     const rendered = await renderWallpaper(bytes);
-    const wallUrl = await putAsset(deps, `ai/studio/${candidateId}.jpg`, rendered.wall);
-    const thumbUrl = await putAsset(deps, `ai/studio/thumb_${candidateId}.jpg`, rendered.thumb);
+    const wallKey = `ai/studio/${candidateId}.jpg`;
+    const thumbKey = `ai/studio/thumb_${candidateId}.jpg`;
+    outputAssetKeys.splice(0, outputAssetKeys.length, ...new Set([...outputAssetKeys, wallKey, thumbKey]));
+    if (!await updateOwnedCandidate(ref, attempts, {outputAssetKeys})) return;
+    const wallUrl = await putAsset(deps, wallKey, rendered.wall);
+    const thumbUrl = await putAsset(deps, thumbKey, rendered.thumb);
     const wallId = await publishWall({
       ref,
       attempts,
@@ -353,27 +417,45 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       }),
       signature: gates.signature,
       candidateUpdate: {gates: {passed: true, reasons: [], details: gates.details}, worker: image},
+      outputAssetKeys,
       rng: deps.rng,
     });
     if (wallId === null) {
       logger.warn("studio: another attempt took this candidate over; not publishing.", {runId, candidateId});
       return;
     }
+    if (wallId === "duplicate") {
+      await cleanupPendingAssets(ref, deps);
+      return;
+    }
+    await cleanupPendingAssets(ref, deps);
     logger.info("studio: candidate is pending review.", {runId, candidateId, wallId});
   } catch (err) {
     const updatedAt = admin.firestore.FieldValue.serverTimestamp();
     if (err instanceof RejectedError) {
-      await ref.update({status: "rejected", reasons: [err.code], lastError: err.message, updatedAt});
+      const workerKey = image?.key ?? str((candidate.worker as admin.firestore.DocumentData | undefined)?.key);
+      const saved = await updateOwnedCandidate(ref, attempts, {status: "rejected", reasons: [err.code],
+        lastError: err.message, cleanupKeys: [...outputAssetKeys, workerKey].filter(Boolean),
+        outputAssetKeys: admin.firestore.FieldValue.delete(), updatedAt});
+      if (!saved) return;
+      await cleanupPendingAssets(ref, deps);
       logger.info("studio: candidate rejected.", {runId, candidateId, reasons: [err.code]});
       return;
     }
     if (err instanceof PermanentError) {
-      await ref.update({status: "failed", error: err.code, lastError: err.message, ...(image ? {worker: image} : {}),
-        updatedAt});
+      const workerKey = image?.key ?? str((candidate.worker as admin.firestore.DocumentData | undefined)?.key);
+      const saved = await updateOwnedCandidate(ref, attempts, {status: "failed", error: err.code, lastError: err.message,
+        ...(image ? {worker: image} : {}),
+        ...(workerKey || outputAssetKeys.length ? {cleanupKeys: [...outputAssetKeys, workerKey].filter(Boolean)} : {}),
+        outputAssetKeys: admin.firestore.FieldValue.delete(), updatedAt});
+      if (!saved) return;
+      await cleanupPendingAssets(ref, deps);
       logger.warn("studio: candidate failed.", {runId, candidateId, error: err.code});
       return;
     }
-    await ref.update({status: "queued", lastError: message(err), updatedAt});
+    const saved = await updateOwnedCandidate(ref, attempts, {status: "queued", lastError: message(err),
+      ...(image ? {worker: image} : {}), outputAssetKeys, updatedAt});
+    if (!saved) throw err;
     logger.warn("studio: candidate will retry.", {runId, candidateId, attempts, err: message(err)});
     throw err;
   }

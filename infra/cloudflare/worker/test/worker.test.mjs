@@ -914,6 +914,7 @@ function studioFetch(env, method, path, { body, headers = {}, secret = STUDIO_SE
       method,
       headers: { ...(secret == null ? {} : { 'x-studio-secret': secret }), ...headers },
       body,
+      ...(body instanceof ReadableStream ? { duplex: 'half' } : {}),
     }),
     env,
     { waitUntil() {} },
@@ -1113,7 +1114,7 @@ test('studio generation bills STUDIO_FAL_API_KEY when it is set and FAL_API_KEY 
   }
 });
 
-test('a repeated studio id returns the stored result once and a running id gets 409 until it goes stale', async () => {
+test('a repeated studio id replays success and a stale in-flight id never regenerates', async () => {
   const storage = new MemoryStorage();
   const env = studioEnv(storage);
   const stats = {};
@@ -1137,12 +1138,12 @@ test('a repeated studio id returns the stored result once and a running id gets 
 
     const now = realNow();
     Date.now = () => now + 6 * 60 * 1000;
-    assert.equal((await postStudioGeneration(env, { id: 'daily-running' })).status, 200);
-    assert.equal(stats.fal, 2);
+    assert.equal((await postStudioGeneration(env, { id: 'daily-running' })).status, 409);
+    assert.equal(stats.fal, 1);
 
     Date.now = () => now + 8 * 24 * 60 * 60 * 1000;
     assert.equal((await postStudioGeneration(env)).status, 200);
-    assert.equal(stats.fal, 3);
+    assert.equal(stats.fal, 1);
   } finally {
     Date.now = realNow;
     restore();
@@ -1170,26 +1171,96 @@ test('the studio budget is separate from consumer budgets and fails closed with 
   assert.equal(await storage.get(`provider:fal:daily:${today()}`), 30);
 });
 
-test('a studio fal failure releases the budget reservation and the id so a retry can run', async () => {
+test('a dispatched fal failure consumes the reservation and replays without a second generation', async () => {
   const storage = new MemoryStorage();
   const env = studioEnv(storage, { STUDIO_DAILY_BUDGET_USD: '0.04' });
-  const restoreFailing = mockFal({ providerStatus: 500 });
+  const stats = {};
+  const restoreFailing = mockFal({ providerStatus: 500, stats });
   try {
     const failed = await postStudioGeneration(env);
     assert.equal(failed.status, 502);
-    assert.equal((await failed.json()).error, 'provider_error');
+    const failedBody = await failed.json();
+    assert.equal(failedBody.error, 'provider_error');
+    const replay = await postStudioGeneration(env, { prompt: 'a different prompt' });
+    assert.equal(replay.status, 502);
+    assert.deepEqual(await replay.json(), failedBody);
   } finally {
     restoreFailing();
   }
-  assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0);
+  assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0.04);
   assert.equal(env.AI_IMAGES.objects.size, 0);
+  assert.equal(stats.fal, 1);
+});
 
-  const restoreWorking = mockFal();
+test('an ambiguous fal timeout is terminal and cannot be retried for the same id', async () => {
+  const storage = new MemoryStorage();
+  const env = studioEnv(storage, { STUDIO_DAILY_BUDGET_USD: '0.04' });
+  const originalFetch = globalThis.fetch;
+  let falCalls = 0;
+  globalThis.fetch = async (input) => {
+    if (String(input).startsWith('https://fal.run/')) {
+      falCalls += 1;
+      throw new Error('timeout');
+    }
+    throw new Error(`unexpected fetch ${String(input)}`);
+  };
   try {
-    assert.equal((await postStudioGeneration(env)).status, 200);
+    const first = await postStudioGeneration(env);
+    assert.equal(first.status, 502);
+    const failure = await first.json();
+    assert.equal(failure.error, 'provider_timeout');
+
+    const replay = await postStudioGeneration(env, { prompt: 'a different prompt' });
+    assert.equal(replay.status, 502);
+    assert.deepEqual(await replay.json(), failure);
   } finally {
-    restoreWorking();
+    globalThis.fetch = originalFetch;
   }
+
+  assert.equal(falCalls, 1);
+  assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0.04);
+});
+
+test('a fal image-download failure is terminal after the provider has answered', async () => {
+  const storage = new MemoryStorage();
+  const env = studioEnv(storage, { STUDIO_DAILY_BUDGET_USD: '0.04' });
+  const stats = {};
+  const restore = mockFal({ imageStatus: 500, stats });
+  try {
+    const first = await postStudioGeneration(env);
+    assert.equal(first.status, 502);
+    const failure = await first.json();
+    const replay = await postStudioGeneration(env);
+    assert.equal(replay.status, 502);
+    assert.deepEqual(await replay.json(), failure);
+  } finally {
+    restore();
+  }
+
+  assert.equal(stats.fal, 1);
+  assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0.04);
+  assert.equal(env.AI_IMAGES.objects.size, 0);
+});
+
+test('an oversized fal image is rejected without storage or a second generation', async () => {
+  const storage = new MemoryStorage();
+  const env = studioEnv(storage, { STUDIO_DAILY_BUDGET_USD: '0.04' });
+  const stats = {};
+  const restore = mockFal({ imageSize: 15 * 1024 * 1024 + 1, stats });
+  try {
+    const first = await postStudioGeneration(env);
+    assert.equal(first.status, 502);
+    const failure = await first.json();
+    const replay = await postStudioGeneration(env);
+    assert.equal(replay.status, 502);
+    assert.deepEqual(await replay.json(), failure);
+  } finally {
+    restore();
+  }
+
+  assert.equal(stats.fal, 1);
+  assert.equal(await storage.get(`provider:studio:daily:${today()}`), 0.04);
+  assert.equal(env.AI_IMAGES.objects.size, 0);
 });
 
 test('studio asset upload checks key, content type and size, then stores an image the asset route serves', async () => {
@@ -1224,6 +1295,34 @@ test('studio asset upload checks key, content type and size, then stores an imag
   assert.equal(served.headers.get('content-type'), 'image/webp');
   assert.equal(served.headers.get('cache-control'), 'public, max-age=31536000, immutable');
   assert.deepEqual(new Uint8Array(await served.arrayBuffer()), image);
+});
+
+test('studio asset upload cancels a streamed body as soon as it exceeds the byte limit', async () => {
+  const env = studioEnv();
+  let cancelled = false;
+  let chunksRead = 0;
+  const body = new ReadableStream({
+    pull(controller) {
+      chunksRead += 1;
+      if (chunksRead <= 3) {
+        controller.enqueue(new Uint8Array(8 * 1024 * 1024));
+      } else {
+        controller.close();
+      }
+    },
+    cancel() {
+      cancelled = true;
+    },
+  }, { highWaterMark: 0 });
+  const response = await studioFetch(env, 'PUT', '/api/ai/studio/assets/ai/studio/large.png', {
+    body,
+    headers: { 'content-type': 'image/png' },
+  });
+
+  assert.equal(response.status, 413, await response.clone().text());
+  assert.equal(cancelled, true);
+  assert.equal(chunksRead, 2);
+  assert.equal(env.AI_IMAGES.objects.size, 0);
 });
 
 test('studio asset delete removes raw and uploaded keys and also succeeds for a missing key', async () => {

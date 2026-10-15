@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import sharp from "sharp";
+import {db} from "../common";
 import {onWallApproved} from "../onWallApproved";
 import {onWallSubmitted} from "../onWallSubmitted";
 import {imageSignature, type VisionResult} from "../studio/gates";
@@ -39,10 +40,14 @@ const candidate = (extra: Doc = {}): Doc => ({
 
 function setup(t: TestContext, opts: {
   seed?: Record<string, Doc>;
-  generate?: () => Response;
+  generate?: () => Response | Promise<Response>;
   image?: () => Promise<Buffer>;
-  vision?: VisionResult;
+  vision?: VisionResult | (() => VisionResult);
   rng?: () => number;
+  nowMs?: () => number;
+  deleteAsset?: () => Response;
+  putAsset?: (key: string) => Response;
+  beforePut?: (store: Map<string, Doc>, key: string) => void;
 } = {}) {
   const store = installFakeDb(t, {
     "studioConfig/current": {generationEnabled: true, identity: IDENTITY},
@@ -57,22 +62,25 @@ function setup(t: TestContext, opts: {
     const body = typeof init.body === "string" ? JSON.parse(init.body) : init.body;
     calls.push({method, url, headers, body});
     if (method === "POST" && url === `${BASE}/api/ai/studio/generations`) {
-      return opts.generate?.() ?? Response.json({
+      return await opts.generate?.() ?? Response.json({
         id: CAND, imageUrl: IMAGE_URL, key: RAW_KEY, width: 1440, height: 3200, contentType: "image/png",
         bytes: wallpaper.length, model: "fal-ai/model-v2", provider: "fal", seed: 42, costUsd: 0.04,
       });
     }
     if (method === "GET" && url === IMAGE_URL) return new Response(new Uint8Array(await (opts.image?.() ?? wallpaper)));
     const asset = url.replace(`${BASE}/api/ai/studio/assets/`, "");
-    if (method === "PUT") return Response.json({key: asset, url: `https://prismwalls.com/api/ai/assets/${asset}`});
-    if (method === "DELETE") return Response.json({deleted: true});
+    if (method === "PUT") {
+      opts.beforePut?.(store, asset);
+      return opts.putAsset?.(asset) ?? Response.json({key: asset, url: `https://prismwalls.com/api/ai/assets/${asset}`});
+    }
+    if (method === "DELETE") return opts.deleteAsset?.() ?? Response.json({deleted: true});
     throw new Error(`unexpected fetch ${method} ${url}`);
   });
   const deps: StudioProcessDeps = {
     worker: {base: BASE, secret: "test-secret"},
-    annotate: async () => opts.vision ?? CLEAN,
+    annotate: async () => typeof opts.vision === "function" ? opts.vision() : opts.vision ?? CLEAN,
     rng: opts.rng ?? seededRng(1),
-    nowMs: Date.now,
+    nowMs: opts.nowMs ?? Date.now,
   };
   const run = () => processCandidate(RUN, CAND, deps);
   return {store, calls, run, cand: () => store.get(CAND_PATH) as Doc};
@@ -101,7 +109,8 @@ test("a clean candidate becomes a pending wall with the app's fields, a signatur
   const thumbMeta = await sharp(Buffer.from(puts[1].body as Uint8Array)).metadata();
   assert.deepEqual([wallMeta.format, wallMeta.width, wallMeta.height], ["jpeg", 1440, 3200]);
   assert.deepEqual([thumbMeta.format, thumbMeta.width, thumbMeta.height], ["jpeg", 486, 1080]);
-  assert.equal(calls.some((c) => c.method === "DELETE"), false);
+  assert.deepEqual(calls.filter((c) => c.method === "DELETE").map((c) => c.url),
+    [`${BASE}/api/ai/studio/assets/${RAW_KEY}`]);
 
   const [[path, wall]] = walls(store);
   const wallId = path.split("/")[1];
@@ -146,7 +155,8 @@ test("a wall id that exists already is not overwritten; the next id is used", as
 });
 
 test("a gate failure rejects the candidate, deletes the raw image and makes no wall", async (t) => {
-  const {store, calls, run, cand} = setup(t, {vision: {safeSearchAnnotation: {adult: "LIKELY"}}});
+  const {store, calls, run, cand} = setup(t, {vision: {safeSearchAnnotation: {adult: "LIKELY", racy: 1,
+    violence: 1, medical: 1}}});
   await run();
   assert.equal(cand().status, "rejected");
   assert.deepEqual(cand().reasons, ["unsafe_adult"]);
@@ -167,6 +177,111 @@ test("a near copy of an earlier Studio wall is rejected as a duplicate", async (
   assert.equal(cand().status, "rejected");
   assert.deepEqual(cand().reasons, ["duplicate"]);
   assert.equal((((cand().gates as Doc).details as Doc).duplicate as Doc).nearestWallId, "OLDWALL1AB");
+});
+
+test("a signature added after gates still blocks publication", async (t) => {
+  const signature = await imageSignature(wallpaper);
+  const {store, calls, run, cand} = setup(t, {beforePut: (docs, key) => {
+    if (key === `ai/studio/${CAND}.jpg`) docs.set("studioSignatures/concurrent", {signature, wallId: "OTHERWALL01"});
+  }});
+  await run();
+  assert.equal(cand().status, "rejected");
+  assert.deepEqual(cand().reasons, ["duplicate"]);
+  assert.deepEqual(calls.filter((call) => call.method === "DELETE").map((call) => call.url), [
+    `${BASE}/api/ai/studio/assets/${RAW_KEY}`,
+    `${BASE}/api/ai/studio/assets/ai/studio/${CAND}.jpg`,
+    `${BASE}/api/ai/studio/assets/ai/studio/thumb_${CAND}.jpg`,
+  ]);
+  assert.deepEqual(store.get(CAND_PATH)?.cleanupKeys, []);
+  assert.equal(walls(store).length, 0);
+});
+
+test("a stale attempt cannot reset a newer attempt that published", async (t) => {
+  let clock = Date.now();
+  let generationCount = 0;
+  let firstStarted!: () => void;
+  let releaseFirst!: (response: Response) => void;
+  const started = new Promise<void>((resolve) => {
+    firstStarted = resolve;
+  });
+  const firstResponse = new Promise<Response>((resolve) => {
+    releaseFirst = resolve;
+  });
+  const {run, cand, store} = setup(t, {
+    nowMs: () => clock,
+    generate: () => ++generationCount === 1 ? (firstStarted(), firstResponse) : Response.json({
+      id: CAND, imageUrl: IMAGE_URL, key: RAW_KEY, width: 1440, height: 3200, contentType: "image/png",
+      bytes: wallpaper.length, model: "fal-ai/model-v2", provider: "fal", seed: 42, costUsd: 0.04,
+    }),
+  });
+  const firstAttempt = run();
+  await started;
+  clock += 7 * 60_000;
+  await run();
+  assert.equal(cand().status, "pending_review");
+  releaseFirst(Response.json({error: "provider_error"}, {status: 502}));
+  await assert.rejects(firstAttempt);
+  assert.equal(cand().status, "pending_review");
+  assert.equal(walls(store).length, 1);
+});
+
+test("failed R2 deletion is retried without regenerating a terminal candidate", async (t) => {
+  let deleteCount = 0;
+  const {calls, run, cand} = setup(t, {vision: {safeSearchAnnotation: {adult: "LIKELY", racy: 1, violence: 1, medical: 1}},
+    deleteAsset: () => ++deleteCount === 1 ? Response.json({error: "unavailable"}, {status: 503}) : Response.json({deleted: true})});
+  await assert.rejects(run());
+  assert.equal(cand().status, "rejected");
+  assert.deepEqual(cand().cleanupKeys, [RAW_KEY]);
+  await run();
+  assert.equal(cand().status, "rejected");
+  assert.deepEqual(cand().cleanupKeys, []);
+  assert.equal(calls.filter((call) => call.method === "POST").length, 1);
+  assert.equal(deleteCount, 2);
+});
+
+test("a retry that ends in rejection cleans assets from its earlier partial upload", async (t) => {
+  let rejectImage = false;
+  let thumbUploads = 0;
+  const wallKey = `ai/studio/${CAND}.jpg`;
+  const thumbKey = `ai/studio/thumb_${CAND}.jpg`;
+  const upload = (key: string) => {
+    if (key === thumbKey && ++thumbUploads === 1) return Response.json({error: "provider_error"}, {status: 503});
+    return Response.json({key, url: `https://prismwalls.com/api/ai/assets/${key}`});
+  };
+  const {calls, run, cand} = setup(t, {
+    vision: () => rejectImage ? {safeSearchAnnotation: {adult: "LIKELY", racy: 1, violence: 1, medical: 1}} : CLEAN,
+    putAsset: upload,
+  });
+  await assert.rejects(run());
+  assert.equal(cand().status, "queued");
+  assert.deepEqual(cand().outputAssetKeys, [wallKey, thumbKey]);
+  assert.equal(calls.some((call) => call.method === "DELETE"), false);
+
+  rejectImage = true;
+  await run();
+  assert.equal(cand().status, "rejected");
+  assert.deepEqual(calls.filter((call) => call.method === "DELETE").map((call) => call.url), [
+    `${BASE}/api/ai/studio/assets/${wallKey}`,
+    `${BASE}/api/ai/studio/assets/${thumbKey}`,
+    `${BASE}/api/ai/studio/assets/${RAW_KEY}`,
+  ]);
+});
+
+test("a permanent retry failure cleans prior raw and partial output assets", async (t) => {
+  const wallKey = `ai/studio/${CAND}.jpg`;
+  const thumbKey = `ai/studio/thumb_${CAND}.jpg`;
+  const {calls, run, cand} = setup(t, {seed: {
+    "studioConfig/current": {generationEnabled: false, identity: IDENTITY},
+    [CAND_PATH]: candidate({attempts: 1, worker: {key: RAW_KEY}, outputAssetKeys: [wallKey, thumbKey]}),
+  }});
+  await run();
+  assert.equal(cand().status, "failed");
+  assert.equal(cand().error, "disabled");
+  assert.deepEqual(calls.filter((call) => call.method === "DELETE").map((call) => call.url), [
+    `${BASE}/api/ai/studio/assets/${wallKey}`,
+    `${BASE}/api/ai/studio/assets/${thumbKey}`,
+    `${BASE}/api/ai/studio/assets/${RAW_KEY}`,
+  ]);
 });
 
 test("an image that does not decode is rejected and deleted", async (t) => {
@@ -226,6 +341,23 @@ test("the fourth claim marks the candidate failed and calls nothing", async (t) 
   assert.equal(cand().status, "failed");
   assert.equal(cand().error, "max_attempts");
   assert.equal(calls.length, 0);
+});
+
+test("the terminal attempt removes raw and partial output assets", async (t) => {
+  const partialWallKey = `ai/studio/${CAND}.jpg`;
+  const partialThumbKey = `ai/studio/thumb_${CAND}.jpg`;
+  const {calls, run, cand} = setup(t, {seed: {[CAND_PATH]: candidate({attempts: 3,
+    worker: {key: RAW_KEY}, outputAssetKeys: [partialWallKey, partialThumbKey]})}});
+  await run();
+  assert.equal(cand().status, "failed");
+  assert.equal(cand().error, "max_attempts");
+  assert.deepEqual(calls.filter((call) => call.method === "DELETE").map((call) => call.url), [
+    `${BASE}/api/ai/studio/assets/${partialWallKey}`,
+    `${BASE}/api/ai/studio/assets/${partialThumbKey}`,
+    `${BASE}/api/ai/studio/assets/${RAW_KEY}`,
+  ]);
+  assert.deepEqual(cand().cleanupKeys, []);
+  assert.equal(calls.some((call) => call.method === "POST"), false);
 });
 
 test("three transient failures, then the next delivery gives up", async (t) => {
@@ -292,6 +424,15 @@ function walls2(t: TestContext, wall: Doc) {
   return {store, send};
 }
 
+function failStudioCandidateRead(t: TestContext) {
+  const collection = db.collection.bind(db);
+  t.mock.method(db, "collection", (name: string) => name === "studioRuns" ? {
+    doc: () => ({collection: () => ({doc: () => ({get: async () => {
+      throw new Error("candidate read failed");
+    }})})}),
+  } : collection(name));
+}
+
 test("onWallSubmitted leaves a Studio wall alone: no owner sync, no admin push", async (t) => {
   const {store, send} = walls2(t, studioWall());
   await onWallSubmitted.run({
@@ -304,13 +445,28 @@ test("onWallSubmitted leaves a Studio wall alone: no owner sync, no admin push",
 });
 
 test("a user wall that only claims origin studio still gets the owner sync", async (t) => {
-  const {store} = walls2(t, studioWall({studioCandidateId: "d20261012-9"}));
+  const {store, send} = walls2(t, studioWall({studioCandidateId: "d20261012-9"}));
   await onWallSubmitted.run({
     params: {wallId: "WALL1AAAAA"},
     data: {data: () => store.get("walls/WALL1AAAAA"), ref: {update: async (u: Doc) =>
       void store.set("walls/WALL1AAAAA", {...store.get("walls/WALL1AAAAA"), ...u})}},
   } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
   assert.equal(store.get("walls/WALL1AAAAA")?.by, "Someone Else");
+  assert.equal(send.mock.callCount(), 1, "the spoofed Studio wall still notifies admins");
+});
+
+test("onWallSubmitted stops before owner sync or notification when the candidate read fails", async (t) => {
+  const {store, send} = walls2(t, studioWall());
+  failStudioCandidateRead(t);
+  const updates: Doc[] = [];
+  await assert.rejects(onWallSubmitted.run({
+    params: {wallId: "WALL1AAAAA"},
+    data: {data: () => store.get("walls/WALL1AAAAA"), ref: {update: async (u: Doc) => {
+      updates.push(u);
+    }}},
+  } as unknown as Parameters<typeof onWallSubmitted.run>[0]), /candidate read failed/);
+  assert.deepEqual(updates, []);
+  assert.equal(send.mock.callCount(), 0);
 });
 
 test("onWallApproved sends no pushes for a Studio wall", async (t) => {
@@ -323,4 +479,29 @@ test("onWallApproved sends no pushes for a Studio wall", async (t) => {
     },
   } as unknown as Parameters<typeof onWallApproved.run>[0]);
   assert.equal(send.mock.callCount(), 0);
+});
+
+test("onWallApproved stops before notification when the candidate read fails", async (t) => {
+  const {store, send} = walls2(t, studioWall());
+  failStudioCandidateRead(t);
+  await assert.rejects(onWallApproved.run({
+    params: {wallId: "WALL1AAAAA"},
+    data: {
+      before: {data: () => store.get("walls/WALL1AAAAA")},
+      after: {data: () => ({...store.get("walls/WALL1AAAAA"), review: true})},
+    },
+  } as unknown as Parameters<typeof onWallApproved.run>[0]), /candidate read failed/);
+  assert.equal(send.mock.callCount(), 0);
+});
+
+test("a user wall that only claims origin studio still gets approval notifications", async (t) => {
+  const {store, send} = walls2(t, studioWall({studioCandidateId: "d20261012-9"}));
+  await onWallApproved.run({
+    params: {wallId: "WALL1AAAAA"},
+    data: {
+      before: {data: () => store.get("walls/WALL1AAAAA")},
+      after: {data: () => ({...store.get("walls/WALL1AAAAA"), review: true})},
+    },
+  } as unknown as Parameters<typeof onWallApproved.run>[0]);
+  assert.ok(send.mock.callCount() > 0, "the spoofed Studio wall still sends approval notifications");
 });

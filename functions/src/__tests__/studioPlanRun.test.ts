@@ -15,8 +15,16 @@ function setup(t: TestContext, config: Doc = {}, seed: Record<string, Doc> = {})
 }
 const candidates = (store: Map<string, Doc>, runId: string) =>
   [...store.entries()].filter(([path]) => path.startsWith(`studioRuns/${runId}/candidates/`));
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const call = (request: Record<string, unknown>) => runStudioBatch.run(request as any);
+type CallableTestRequest = {
+  auth?: {uid: string; token: {admin?: boolean; email?: string; email_verified?: boolean}};
+  data?: unknown;
+};
+const call = (callInput: CallableTestRequest) => runStudioBatch.run({
+  data: callInput.data,
+  auth: callInput.auth as Parameters<typeof runStudioBatch.run>[0]["auth"],
+  rawRequest: {} as Parameters<typeof runStudioBatch.run>[0]["rawRequest"],
+  acceptsStreaming: false,
+});
 const admin1 = {uid: "a1", token: {admin: true}};
 
 test("a run writes the run doc, queued candidates, the day's counter and the subject use", async (t) => {
@@ -63,6 +71,15 @@ test("the day's cap counts every run and trims the last one", async (t) => {
   assert.equal(store.get("studioDaily/2026-10-12")?.count, 30);
   assert.equal(store.has("studioRuns/m1760300000003"), false);
   assert.equal((await createStudioRun({runId: "m1760300000004", count: 2, source: "manual", nowMs: NOW + DAY_MS})).count, 2);
+});
+
+test("a malformed daily count fails closed instead of reopening the day's cap", async (t) => {
+  const store = setup(t, {maxCandidatesPerDay: 3}, {
+    "studioDaily/2026-10-12": {day: "2026-10-12", count: -1},
+  });
+  assert.deepEqual(await createStudioRun({runId: "m1760300000005", count: 1, source: "manual", nowMs: NOW}),
+    {status: "daily_cap", runId: "m1760300000005", count: 0});
+  assert.equal(store.has("studioRuns/m1760300000005"), false);
 });
 
 test("generation off plans nothing and writes nothing", async (t) => {
@@ -115,10 +132,25 @@ test("runStudioBatch is for admins only and checks its input", async (t) => {
   await assert.rejects(call({auth: admin1, data: {count: 2, seriesId: "nope"}}), {code: "invalid-argument"});
 });
 
+test("runStudioBatch requires verified email for email-list admin access", async (t) => {
+  setup(t, {}, {"config/adminNotifications": {emails: ["admin@prismwalls.com"]}});
+  await assert.rejects(call({
+    auth: {uid: "u1", token: {email: "admin@prismwalls.com", email_verified: false}},
+    data: {count: 1},
+  }), {code: "permission-denied"});
+  const verifiedEmail = await call({
+    auth: {uid: "u2", token: {email: "admin@prismwalls.com", email_verified: true}},
+    data: {count: 1},
+  });
+  const claimedAdmin = await call({auth: admin1, data: {count: 1}});
+  assert.equal(verifiedEmail.count, 1);
+  assert.equal(claimedAdmin.count, 1);
+});
+
 test("runStudioBatch plans a manual run and reports when it cannot", async (t) => {
   const store = setup(t, {maxCandidatesPerDay: 3});
   const result = await call({auth: admin1, data: {count: 3, seriesId: "quiet-architecture"}});
-  assert.match(result.runId, /^m\d+$/);
+  assert.match(result.runId, /^m[0-9a-f-]{36}$/i);
   assert.equal(result.count, 3);
   assert.equal(store.get(`studioRuns/${result.runId}`)?.source, "manual");
   assert.ok(candidates(store, result.runId).every(([, c]) => c.seriesId === "quiet-architecture"));
@@ -126,4 +158,13 @@ test("runStudioBatch plans a manual run and reports when it cannot", async (t) =
 
   setup(t, {generationEnabled: false});
   await assert.rejects(call({auth: admin1, data: {count: 1}}), {code: "failed-precondition"});
+});
+
+test("manual run ids do not collide when calls share a millisecond", async (t) => {
+  const store = setup(t, {maxCandidatesPerDay: 3});
+  t.mock.method(Date, "now", () => NOW);
+  const first = await call({auth: admin1, data: {count: 1}});
+  const second = await call({auth: admin1, data: {count: 1}});
+  assert.notEqual(first.runId, second.runId);
+  assert.equal(store.get("studioDaily/2026-10-12")?.count, 2);
 });

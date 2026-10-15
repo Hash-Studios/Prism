@@ -36,8 +36,26 @@ function clampInt(value: unknown, fallback: number, min: number, max: number): n
   return Math.min(max, Math.max(min, n));
 }
 
-function positiveInt(value: unknown, fallback: number): number {
-  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
+function isStudioEdge(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 512 && value <= 4096;
+}
+
+function parseDimensions(widthValue: unknown, heightValue: unknown): {width: number; height: number; valid: boolean} {
+  const width = widthValue === undefined ? DEFAULTS.width : widthValue;
+  const height = heightValue === undefined ? DEFAULTS.height : heightValue;
+  if (!isStudioEdge(width) || !isStudioEdge(height)) {
+    return {
+      width: typeof width === "number" ? width : DEFAULTS.width,
+      height: typeof height === "number" ? height : DEFAULTS.height,
+      valid: false,
+    };
+  }
+  const aspect = height / width;
+  if (Math.min(width, height) < 1400 || Math.max(width, height) < 3000 || width >= height ||
+    aspect < 2.0 || aspect > 2.4) {
+    return {width, height, valid: false};
+  }
+  return {width, height, valid: true};
 }
 
 function parseIdentity(raw: unknown): StudioIdentity | null {
@@ -60,17 +78,21 @@ function parseWeights(raw: unknown): Record<string, number> {
 /** Reads `studioConfig/current`. A missing doc, flag or identity turns generation off. */
 export function parseStudioConfig(data: admin.firestore.DocumentData | undefined): StudioConfig {
   const identity = parseIdentity(data?.identity);
+  const dimensions = parseDimensions(data?.width, data?.height);
   if (data?.generationEnabled === true && identity === null) {
     logger.warn("studio: studioConfig/current has no identity email; generation is off.");
   }
+  if (data?.generationEnabled === true && !dimensions.valid) {
+    logger.warn("studio: studioConfig/current has invalid dimensions; generation is off.");
+  }
   return {
-    generationEnabled: data?.generationEnabled === true && identity !== null,
+    generationEnabled: data?.generationEnabled === true && identity !== null && dimensions.valid,
     dailyCandidates: clampInt(data?.dailyCandidates, DEFAULTS.dailyCandidates, 1, STUDIO_MAX_CANDIDATES_PER_DAY),
     maxCandidatesPerDay: clampInt(data?.maxCandidatesPerDay, STUDIO_MAX_CANDIDATES_PER_DAY, 0,
       STUDIO_MAX_CANDIDATES_PER_DAY),
     model: str(data?.model) || DEFAULTS.model,
-    width: positiveInt(data?.width, DEFAULTS.width),
-    height: positiveInt(data?.height, DEFAULTS.height),
+    width: dimensions.width,
+    height: dimensions.height,
     seriesWeights: parseWeights(data?.seriesWeights),
     identity,
   };
