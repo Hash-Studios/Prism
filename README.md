@@ -144,7 +144,7 @@ See [docs/features](docs/features/README.md) for a short page on each feature.
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-- `CHANGELOG.md` is auto-updated on every push to `master` (adds the latest commit under `### Unreleased`).
+- `CHANGELOG.md` gets a `### vX.Y.Z` section in each release bump PR (see `.claude/skills/prism-release/SKILL.md`).
 - In-app changelog popup fetches the latest `CHANGELOG.md` from GitHub and caches it locally.
 - App version is sourced from `pubspec.yaml` and synced into `lib/core/constants/app_constants.dart` via `python3 tool/sync_app_version.py`.
 
