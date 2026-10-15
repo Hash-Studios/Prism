@@ -1,4 +1,4 @@
-/// Dart mirror of the checks in `ShaderProgramValidator.kt` (async_wallpaper 3.3.0).
+/// Approximate shader source lint; this does not establish native validator parity or compilation success.
 List<String> validateShaderContract(String shader, {required int textureCount}) {
   final List<String> problems = <String>[];
   if (shader.codeUnits.length > 64 * 1024) problems.add('shader is larger than 64 KiB');

@@ -10,6 +10,25 @@ void main() {
   final LivePalette darkPalette = LivePalette.fromAccent(const Color(0xFFE57697), dark: true);
   final LivePalette lightPalette = LivePalette.fromAccent(const Color(0xFF2962FF), dark: false);
 
+  group('shader lint negative controls', () {
+    final String shader = LiveShaderSources.gradient(GradientStyle.mesh, darkPalette);
+
+    test('rejects a while loop added to a generated shader', () {
+      final String mutated = shader.replaceFirst('void main() {', 'void main() { while (true) {}');
+      expect(validateShaderContract(mutated, textureCount: 0), contains('while or do loop'));
+    });
+
+    test('rejects an unknown uniform added to a generated shader', () {
+      final String mutated = 'uniform float u_unknown;\n$shader';
+      expect(validateShaderContract(mutated, textureCount: 0), contains('unknown uniform u_unknown'));
+    });
+
+    test('rejects dFdx added to a generated shader', () {
+      final String mutated = shader.replaceFirst('void main() {', 'void main() { float derivative = dFdx(1.0);');
+      expect(validateShaderContract(mutated, textureCount: 0), contains('forbidden construct'));
+    });
+  });
+
   group('gradient shaders', () {
     for (final GradientStyle style in GradientStyle.values) {
       for (final (String name, LivePalette palette) in <(String, LivePalette)>[
