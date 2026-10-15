@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, readDailyCount, REGION, str, utcDateString} from "./common";
 import {STREAK_RESCUE_MIN_COUNT, streakCycleDay} from "./streak";
+import {isStudioWall} from "./studio/process";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -223,6 +224,7 @@ async function hasSubmittedWall(callerUid: string, emails: string[]): Promise<bo
     const walls = await db.collection(WALLS).where("email", "==", email).get();
     for (const wall of walls.docs) {
       const data = wall.data();
+      if (await isStudioWall(wall.id, data)) continue;
       if (data.review === true) return true;
       const path = owner !== "" && repo !== "" ? thumbnailUploadPath(data.wallpaper_thumb, owner, repo) : null;
       if (path === null) continue;

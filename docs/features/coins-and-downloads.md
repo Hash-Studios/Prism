@@ -63,9 +63,30 @@ The app retries the queue at app start, when the app resumes, when the network r
 
 ### Downloads that do not finish
 
-- Before a paid save, the app writes a marker in settings (key `pendingDownloadMarker`) with the transaction id, the link, and the time.
-- The app clears the marker when the download is done or handled.
-- On the next start, a marker older than 2 minutes whose link is not in Downloads is refunded. The app shows "Your last download did not finish. Coins returned."
+- Before each paid save, the app adds an entry to a list in settings (key `pendingDownloads_v2`). An entry holds the transaction id, the user id, the link, the action, the time, and a `saved` flag. Each paid save has its own entry, so two saves never share one.
+- Every change to an entry names its transaction id. No change looks for an entry by link or by the signed-in account. A retry of the same wallpaper, a second button on the same wallpaper, or a sign-out during the save never touches the entry of another payment. An unknown transaction id changes nothing.
+- The spend returns the transaction id as `CoinMutationResult.pendingDownloadTxId`. The coin gate passes it to the button through `CoinGateSpec.onPaid` right after the charge, before it checks that the screen is still there.
+- The charge belongs to the account that tapped. If another account signs in while the app writes the entry, the spend sends no call, removes the entry, and returns `not_logged_in`. No account pays for the tap of another account.
+- If the spend throws after the app wrote the entry (for example, a lost reply and the refund queue cannot be written), the app releases the entry and keeps it stored. Recovery then refunds it when it is older than 2 minutes.
+- When the native save or enqueue reports success, the button sets `saved` on its own entry. The button marks an entry only when its own tap paid.
+- The coin gate settles the entry on every way out of a paid tap:
+
+| How the tap ends | What the gate does |
+|---|---|
+| The save worked | Removes the entry. |
+| The save failed and the refund is confirmed | Removes the entry. |
+| The save failed and the refund is not confirmed (offline, refused, signed out) | Releases the entry. |
+| The save failed and the action has no refund | Releases the entry. |
+| The user left the screen before the spend reply, and the refund is confirmed | Removes the entry. |
+| The user left the screen before the spend reply, and the refund is not confirmed | Releases the entry. |
+
+- Recovery refunds an entry that is not `saved` and is older than 2 minutes. It uses the transaction id of that entry. It removes a `saved` entry without a refund. It serves only the entries of the signed-in account. An entry of another account stays until that account signs in.
+- While a save runs in the app, recovery skips its entry, however old it is. A slow save, for example a Photos permission dialog left open, is never refunded while it runs. The app keeps this list of running saves in memory only. An entry leaves the list only after the new state (`saved`, or removed) is stored. If that write fails, the app logs the error and keeps the entry protected until the app restarts.
+- A released entry is not running any more. Recovery then refunds it at once if it is older than 2 minutes, or when it turns 2 minutes old. The stored entry does not change on release.
+- After a restart nothing runs, so recovery treats every stored entry as in the rules above.
+- Recovery runs at app start, when the app resumes, when the network returns, and on a timer. A younger entry gets a timer that fires when it turns 2 minutes old. A refund that failed for a network reason keeps its entry, and the 30 second retry loop tries again. A refund the server refuses for good removes the entry.
+- An entry with no valid time counts as old. The time is not valid when it is missing, not a number, or not finite (for example `1e309`). A time far ahead of the clock counts as old too. One bad entry never stops the other entries from loading.
+- Older builds kept one entry in the key `pendingDownloadMarker`. The app moves it into the list on the first read and deletes the old key. The old marker had no `saved` flag, so the app flags the moved entry `legacy`. Recovery checks only a `legacy` entry against the Downloads index: when the index holds the link, it removes the entry with no refund. Otherwise it refunds the entry. An entry written by this build never reads the index.
 
 ### Ledger label
 
@@ -93,9 +114,9 @@ Fix: the `subscription_conversion` event now fires only from the paywall result.
 
 ## Limits
 
-- The Downloads index only knows downloads made after the index existed.
-- The app cannot tell if a download that the system finishes later is complete. A marker older than 2 minutes counts as unfinished.
-- The refund window on the server is 10 minutes for downloads. A marker found after that is cleared without a refund.
+- The Downloads index only knows downloads made after the index existed. Only an entry moved in from an old build is checked against it.
+- The app cannot tell if a download that the system finishes later is complete. An entry that is not `saved` and is older than 2 minutes counts as unfinished, unless its tap still runs in the same app session.
+- The refund window on the server is 10 minutes for downloads. An entry found after that is cleared without a refund.
 - The coin balance chip still has fixed red and green colours.
 
 ## How to test
@@ -108,5 +129,6 @@ Fix: the `subscription_conversion` event now fires only from the paywall result.
 6. Sign out. Open a Pro wallpaper. The sheet offers Sign in and Get Pro. It has no ad button.
 7. Turn on airplane mode, start a save, and close the app at once. Open the app after 2 minutes online. The coins return with the toast.
 8. In the EEA, refuse ad consent. The sheet hides the ad button and shows the Privacy message.
+9. On iOS, reset the Photos permission and start a save. Leave the permission dialog open for 3 minutes. The coins stay spent and no refund toast shows. Allow access. The file saves.
 
 Automated: `test/core/coins/coins_pending_test.dart`, `test/core/coins/coins_service_lifecycle_test.dart`, `test/features/ads/download_button_gate_test.dart`, `test/features/ads/biz/coin_gate_test.dart`, `test/core/purchases/paywall_orchestrator_test.dart`.
