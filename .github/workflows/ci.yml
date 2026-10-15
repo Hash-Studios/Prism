@@ -211,13 +211,15 @@ jobs:
           cache: true
           cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-      # Pods and the compiled pod targets. Only ios_cache_base saves it.
+      # Pods and Xcode's compilation cache (content-keyed, so new file times do not force a
+      # rebuild). Only ios_cache_base saves it.
       - uses: actions/cache/restore@v4
         with:
           path: |
             ios/Pods
+            ~/Library/Caches/CocoaPods
             build/ios/native-tests
-          key: ios-build-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock', '.fvmrc') }}
+          key: ios-build-v2-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock', '.fvmrc') }}
       - run: tool/write_firebase_options_stub.sh
       - run: make native-ios-check CI=true
 
@@ -438,8 +440,9 @@ jobs:
         with:
           path: |
             ios/Pods
+            ~/Library/Caches/CocoaPods
             build/ios/native-tests
-          key: ios-build-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock', '.fvmrc') }}
+          key: ios-build-v2-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock', '.fvmrc') }}
           lookup-only: true
       - name: Select Xcode 26.6
         if: steps.cached.outputs.cache-hit != 'true'
@@ -461,6 +464,7 @@ jobs:
         with:
           path: |
             ios/Pods
+            ~/Library/Caches/CocoaPods
             build/ios/native-tests
           key: ${{ steps.cached.outputs.cache-primary-key }}
 
