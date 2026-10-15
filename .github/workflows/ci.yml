@@ -194,8 +194,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ios == 'true' || needs.changes.outputs.workflow == 'true'
     runs-on: macos-26
-    # Warm (cache from ios_cache_base): about 7 minutes. A PR that changes the cache key builds
-    # everything (about 18 minutes).
+    # Warm (cache from ios_cache_base): about 8 minutes. A PR that changes ios/Podfile.lock,
+    # pubspec.lock or .fvmrc builds cold (about 15 minutes).
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -426,7 +426,7 @@ jobs:
 
   ios_cache_base:
     name: iOS build cache (master)
-    if: github.event_name == 'push' || github.head_ref == 'akshay/ios-ci-cache'
+    if: github.event_name == 'push'
     runs-on: macos-26
     timeout-minutes: 30
     steps:
