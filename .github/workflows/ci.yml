@@ -30,6 +30,8 @@ on:
       - '.fvmrc'
       - 'tool/build_size_apk.sh'
       - 'tool/write_firebase_options_stub.sh'
+      # ios_cache_base key.
+      - 'ios/Podfile.lock'
       - '.github/workflows/ci.yml'
 
 concurrency:
@@ -180,6 +182,9 @@ jobs:
           flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
+          # Same keys as master, so the PR reads master's cache instead of saving its own copy.
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
       - uses: gradle/actions/setup-gradle@v4
       - run: tool/write_firebase_options_stub.sh
       - run: make native-android-check CI=true
@@ -189,6 +194,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ios == 'true' || needs.changes.outputs.workflow == 'true'
     runs-on: macos-26
+    # Warm (cache from ios_cache_base): about 7 minutes. A PR that changes the cache key builds
+    # everything (about 18 minutes).
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -202,14 +209,15 @@ jobs:
           flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
-      # pod install took about 4 minutes cold. Master does not run this job, so the
-      # cache helps from the second push of a PR on.
-      - uses: actions/cache@v4
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      # Pods and the compiled pod targets. Only ios_cache_base saves it.
+      - uses: actions/cache/restore@v4
         with:
           path: |
             ios/Pods
-            ~/Library/Caches/CocoaPods
-          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+            build/ios/native-tests
+          key: ios-build-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock', '.fvmrc') }}
       - run: tool/write_firebase_options_stub.sh
       - run: make native-ios-check CI=true
 
@@ -413,6 +421,48 @@ jobs:
             ## Android App Size Report
 
             Skipped: no app-size relevant files changed in this PR.
+
+  ios_cache_base:
+    name: iOS build cache (master)
+    if: github.event_name == 'push'
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Flutter version
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+      - name: Check for a cached build
+        id: cached
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ios/Pods
+            build/ios/native-tests
+          key: ios-build-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock', '.fvmrc') }}
+          lookup-only: true
+      - name: Select Xcode 26.6
+        if: steps.cached.outputs.cache-hit != 'true'
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+      - if: steps.cached.outputs.cache-hit != 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - if: steps.cached.outputs.cache-hit != 'true'
+        run: tool/write_firebase_options_stub.sh
+      - if: steps.cached.outputs.cache-hit != 'true'
+        run: make native-ios-check CI=true
+      - if: steps.cached.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ios/Pods
+            build/ios/native-tests
+          key: ${{ steps.cached.outputs.cache-primary-key }}
 
   app_size_base:
     name: Android app size (master baseline)
