@@ -13,6 +13,7 @@ import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.da
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
@@ -708,6 +709,15 @@ void main() {
 
     testWidgets('the cache size counts tinted wallpapers', (tester) async {
       const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
+      const downloadsChannel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+        PrismMediaHostApi.pigeonChannelCodec,
+      );
+      final cacheScanned = Completer<void>();
+      messenger.setMockDecodedMessageHandler<Object?>(downloadsChannel, (_) async {
+        cacheScanned.complete();
+        return <Object?>[DownloadItemsResult(success: true, items: <String>[])];
+      });
       final temp = Directory.systemTemp.createTempSync('prism_settings_temp');
       File('${temp.path}/prism_tint/1_0.png')
         ..createSync(recursive: true)
@@ -715,14 +725,17 @@ void main() {
       messenger.setMockMethodCallHandler(pathChannel, (_) async => temp.path);
       addTearDown(() {
         messenger.setMockMethodCallHandler(pathChannel, null);
+        messenger.setMockDecodedMessageHandler<Object?>(downloadsChannel, null);
         temp.deleteSync(recursive: true);
       });
 
       await pumpSettings(tester);
-      for (var i = 0; i < 40 && find.text('Clear locally cached images').evaluate().isNotEmpty; i++) {
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-        await tester.pump(const Duration(milliseconds: 25));
+      // Storage stats request downloads only after the asynchronous cache scan finishes.
+      while (!cacheScanned.isCompleted) {
+        await tester.runAsync(() => Future<void>(() {}));
+        await tester.pump();
       }
+      await tester.pump();
 
       expect(find.text('2 KB of cached images'), findsOneWidget);
     });
