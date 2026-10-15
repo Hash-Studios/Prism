@@ -1,7 +1,7 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// How much weight a [PrismButton] carries. Use one [primary] per screen.
 enum PrismButtonVariant {
@@ -85,7 +85,7 @@ class PrismButton extends StatelessWidget {
             : onPressed == null
             ? null
             : () {
-                HapticFeedback.selectionClick();
+                PrismHaptics.tap();
                 onPressed!();
               },
         style: FilledButton.styleFrom(

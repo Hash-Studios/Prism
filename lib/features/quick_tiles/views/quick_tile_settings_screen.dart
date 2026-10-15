@@ -1,8 +1,16 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/quick_settings_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -25,12 +33,34 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
 
   bool _loading = true;
   bool _loadFailed = false;
-  bool _saving = false;
+  bool _canAddTile = false;
 
   @override
   void initState() {
     super.initState();
     _loadConfig();
+    _loadAddTileSupport();
+  }
+
+  Future<void> _loadAddTileSupport() async {
+    final bool supported = await const QuickSettingsChannel().canRequestAddTile;
+    if (mounted && supported) setState(() => _canAddTile = true);
+  }
+
+  Future<void> _addTile(QuickTileKind tile) async {
+    final QuickSettingsAddResult result = await const QuickSettingsChannel().requestAddTile(tile);
+    analytics.track(QuickTileAddRequestedEvent(tile: tile.name, result: result.name));
+    if (!mounted) return;
+    final String message = switch (result) {
+      QuickSettingsAddResult.added => 'Tile added to Quick Settings.',
+      QuickSettingsAddResult.alreadyAdded => 'This tile is already in Quick Settings.',
+      QuickSettingsAddResult.notAdded => 'Tile not added. You can add it any time.',
+      QuickSettingsAddResult.unsupported ||
+      QuickSettingsAddResult.error => 'Could not add the tile. Add it by hand from the Quick Settings edit screen.',
+    };
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadConfig() async {
@@ -41,19 +71,20 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
         QuickTileConfigService.loadFavsTileConfig(),
       ).wait;
 
+      final QuickTileSeed config = await QuickTileDefaults.seedMissing(
+        category: catConfig,
+        wotd: wotdConfig,
+        favs: favsConfig,
+      );
+      await QuickTileDefaults.mirrorWallhavenCategories(getIt<SettingsLocalDataSource>());
+
       if (!mounted) return;
       setState(() {
-        if (catConfig != null) {
-          _selectedCategoryName = catConfig.categoryName;
-          _selectedCategorySource = catConfig.source;
-          _categoryTarget = catConfig.target;
-        }
-        if (wotdConfig != null) {
-          _wotdTarget = wotdConfig.target;
-        }
-        if (favsConfig != null) {
-          _favsTarget = favsConfig.target;
-        }
+        _selectedCategoryName = config.category.categoryName;
+        _selectedCategorySource = config.category.source;
+        _categoryTarget = config.category.target;
+        _wotdTarget = config.wotd.target;
+        _favsTarget = config.favs.target;
         _loading = false;
       });
     } catch (e, stackTrace) {
@@ -68,7 +99,6 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
   }
 
   Future<void> _saveAll() async {
-    setState(() => _saving = true);
     try {
       await Future.wait([
         QuickTileConfigService.saveCategoryTileConfig(
@@ -78,27 +108,18 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
         ),
         QuickTileConfigService.saveWotdTileConfig(target: _wotdTarget),
         QuickTileConfigService.saveFavsTileConfig(target: _favsTarget),
+        QuickTileDefaults.mirrorWallhavenCategories(getIt<SettingsLocalDataSource>()),
       ]);
-      if (!mounted) return;
-      toasts.success('Quick tile settings saved');
     } catch (e, stackTrace) {
       logger.e('Failed to save quick tile settings', error: e, stackTrace: stackTrace);
       if (!mounted) return;
       toasts.error('Could not save quick tile settings');
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return PrismPage(
-      title: 'Quick tiles',
-      bottomBar: _loading || _loadFailed
-          ? null
-          : PrismButton(label: 'Save', expand: true, loading: _saving, onPressed: _saving ? null : _saveAll),
-      body: _body(context),
-    );
+    return PrismPage(title: 'Quick tiles', body: _body(context));
   }
 
   Widget _body(BuildContext context) {
@@ -132,29 +153,44 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
                 PrismChip(
                   label: cat.name,
                   selected: cat.name == _selectedCategoryName,
-                  onTap: () => setState(() {
-                    _selectedCategoryName = cat.name;
-                    _selectedCategorySource = cat.source;
-                  }),
+                  onTap: () {
+                    setState(() {
+                      _selectedCategoryName = cat.name;
+                      _selectedCategorySource = cat.source;
+                    });
+                    unawaited(_saveAll());
+                  },
                 ),
             ],
           ),
           value: _categoryTarget,
-          onChanged: (v) => setState(() => _categoryTarget = v),
+          onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.shuffle) : null,
+          onChanged: (v) {
+            setState(() => _categoryTarget = v);
+            unawaited(_saveAll());
+          },
         ),
         const SizedBox(height: PrismSpace.md),
         _TileCard(
           title: 'Wall of the Day tile',
           description: "Applies today's Wall of the Day. Open Prism once a day to cache the latest one.",
           value: _wotdTarget,
-          onChanged: (v) => setState(() => _wotdTarget = v),
+          onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.wotd) : null,
+          onChanged: (v) {
+            setState(() => _wotdTarget = v);
+            unawaited(_saveAll());
+          },
         ),
         const SizedBox(height: PrismSpace.md),
         _TileCard(
           title: 'Random favourite tile',
           description: 'Applies a random wallpaper from your favourites. Sign in and favourite some wallpapers first.',
           value: _favsTarget,
-          onChanged: (v) => setState(() => _favsTarget = v),
+          onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.favs) : null,
+          onChanged: (v) {
+            setState(() => _favsTarget = v);
+            unawaited(_saveAll());
+          },
         ),
         const SizedBox(height: PrismSpace.md),
         const _HowToCard(),
@@ -169,6 +205,7 @@ class _TileCard extends StatelessWidget {
     required this.description,
     required this.value,
     required this.onChanged,
+    this.onAddToQuickSettings,
     this.category,
   });
 
@@ -176,6 +213,7 @@ class _TileCard extends StatelessWidget {
   final String description;
   final WallpaperTarget value;
   final ValueChanged<WallpaperTarget> onChanged;
+  final VoidCallback? onAddToQuickSettings;
 
   /// The category picker, for the tile that has one.
   final Widget? category;
@@ -213,6 +251,16 @@ class _TileCard extends StatelessWidget {
             },
             onChanged: onChanged,
           ),
+          if (onAddToQuickSettings != null) ...<Widget>[
+            const SizedBox(height: PrismSpace.md),
+            PrismButton(
+              label: 'Add to Quick Settings',
+              icon: Icons.add_rounded,
+              variant: PrismButtonVariant.tonal,
+              size: PrismButtonSize.compact,
+              onPressed: onAddToQuickSettings,
+            ),
+          ],
         ],
       ),
     );

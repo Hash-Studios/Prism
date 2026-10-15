@@ -2,11 +2,13 @@ import 'dart:io' show SocketException;
 import 'dart:io' as io;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
@@ -44,6 +46,7 @@ void main() {
     AnalyticsRuntime.instance = FakeAppAnalytics();
     originalCache = CachedNetworkImageProvider.defaultCacheManager;
     CachedNetworkImageProvider.defaultCacheManager = cache;
+    PrismImageCache.testOverride = cache;
     when(() => cache.removeFile(any())).thenAnswer((_) async {});
     final file = _MockFile();
     final bytes = await io.File('assets/images/ic_launcher.webp').readAsBytes();
@@ -54,6 +57,7 @@ void main() {
   tearDown(() {
     AnalyticsRuntime.reset();
     CachedNetworkImageProvider.defaultCacheManager = originalCache;
+    PrismImageCache.testOverride = null;
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
   });
@@ -192,5 +196,53 @@ void main() {
 
     expect(find.byWidgetPredicate((widget) => widget is RawImage && widget.image != null), findsOneWidget);
     expect(find.byTooltip('Retry image'), findsNothing);
+  });
+
+  testWidgets('a failed image offers retry even when the tile has no fallback URL', (tester) async {
+    respond(thumbnail, success: false);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(width: 120, height: 240, child: PrismImageTile(url: thumbnail)),
+      ),
+    );
+    await settleImages(tester);
+
+    expect(find.byTooltip('Retry image'), findsOneWidget);
+    respond(thumbnail, success: true);
+    await tester.tap(find.byTooltip('Retry image'));
+    await settleImages(tester);
+
+    expect(find.byWidgetPredicate((widget) => widget is RawImage && widget.image != null), findsOneWidget);
+    expect(find.byTooltip('Retry image'), findsNothing);
+  });
+
+  testWidgets('an empty URL with no fallback stays a skeleton and offers no retry', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(width: 120, height: 240, child: PrismImageTile(url: '')),
+      ),
+    );
+    await settleImages(tester);
+
+    expect(find.byTooltip('Retry image'), findsNothing);
+    expect(find.byType(PulseFill), findsOneWidget);
+  });
+
+  testWidgets('the decode sizes reach the image widget', (tester) async {
+    respond(thumbnail, success: true);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(
+          width: 120,
+          height: 240,
+          child: PrismImageTile(url: thumbnail, memCacheHeight: 300, memCacheWidth: 150),
+        ),
+      ),
+    );
+
+    final CachedNetworkImage image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
+    expect(image.memCacheHeight, 300);
+    expect(image.memCacheWidth, 150);
+    expect(image.cacheManager, same(PrismImageCache.instance));
   });
 }

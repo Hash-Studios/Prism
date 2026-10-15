@@ -1,12 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -17,10 +19,16 @@ import 'package:Prism/features/public_profile/views/widgets/edit_profile_link_fi
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+
+/// `<uid>_<epochMs>_<basename>`: unique per user and per upload, so one upload never overwrites another.
+@visibleForTesting
+String uploadFileName(String uid, String basename, {int? epochMs}) =>
+    '${uid}_${epochMs ?? DateTime.now().millisecondsSinceEpoch}_$basename';
 
 @RoutePage(name: 'EditProfilePanelRoute')
 class EditProfilePanel extends StatefulWidget {
@@ -31,7 +39,7 @@ class EditProfilePanel extends StatefulWidget {
 }
 
 class _EditProfilePanelState extends State<EditProfilePanel> {
-  static const String _usernameRule = 'Use 8 or more letters, numbers or underscores (_).';
+  static const String _usernameRule = 'Use $minUsernameLength or more letters, numbers or underscores (_).';
 
   final TextEditingController linkController = TextEditingController();
   late TextEditingController bioController;
@@ -46,7 +54,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool linkEdit = false;
   bool enabled = false;
   bool? available;
+  String? _usernameError;
+  final Set<String> _invalidLinks = <String>{};
   bool isCheckingUsername = false;
+  Timer? _usernameDebounce;
   int _usernameCheckId = 0;
   File? _pfp;
   File? _cover;
@@ -67,6 +78,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
 
   @override
   void dispose() {
+    _usernameDebounce?.cancel();
     linkController.dispose();
     bioController.dispose();
     usernameController.dispose();
@@ -75,38 +87,29 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> _pickImage(ValueSetter<File> onPicked) async {
+    PrismHaptics.tap();
     final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() => onPicked(File(pickedFile.path)));
     }
   }
 
-  Future<Uint8List> compressFile(File file) async {
-    final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: 400, quality: 85);
+  Future<Uint8List> compressFile(File file, {required int minWidth}) async {
+    final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: minWidth, quality: 85);
     return result!;
   }
 
-  Future<void> _uploadImage(File file, {required String field}) async {
-    try {
-      final Uint8List compressed = await compressFile(file);
-      final value = await GitHubContentApi().putFile(
-        repo: Env.normalize(Env.ghRepoWalls),
-        message: path.basename(file.path),
-        contentBase64: base64Encode(compressed),
-        path: path.basename(file.path),
-      );
-      final String url = value.downloadUrl!;
-      if (field == 'profilePhoto') {
-        app_state.prismUser.profilePhoto = url;
-      } else {
-        app_state.prismUser.coverPhoto = url;
-      }
-      app_state.persistPrismUser();
-      await _updateCurrentUser(<String, dynamic>{field: url}, 'profile.edit.$field');
-    } catch (e) {
-      logger.d(e.toString());
-      toasts.error('Some uploading issue, please try again.');
-    }
+  /// Uploads [file] under a name no other user or upload can share and returns its download URL.
+  Future<String> _uploadImage(File file, {required int minWidth}) async {
+    final Uint8List compressed = await compressFile(file, minWidth: minWidth);
+    final String fileName = uploadFileName(app_state.prismUser.id, path.basename(file.path));
+    final value = await GitHubContentApi().putFile(
+      repo: Env.normalize(Env.ghRepoWalls),
+      message: fileName,
+      contentBase64: base64Encode(compressed),
+      path: fileName,
+    );
+    return value.downloadUrl!;
   }
 
   /// Asks before removing [removeWhat], then runs [remove].
@@ -126,121 +129,156 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<bool> _isUsernameAvailable(String username) async {
-    final users = await firestoreClient.query<Map<String, dynamic>>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.usersV2,
-        sourceTag: 'profile.edit.usernameAvailability',
-        filters: <FirestoreFilter>[
-          FirestoreFilter(field: "username", op: FirestoreFilterOp.isEqualTo, value: username),
-        ],
-        limit: 1,
-      ),
-      (data, _) => data,
-    );
-    return users.isEmpty;
+    final String currentUserId = app_state.prismUser.id;
+    final List<List<String>> matches = await Future.wait(<Future<List<String>>>[
+      _userIdsWhere('username', username),
+      _userIdsWhere('usernameLower', username.toLowerCase()),
+    ]);
+    return !matches.expand((ids) => ids).any((id) => id != currentUserId);
   }
 
-  bool get _hasChanges =>
-      (!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
-      (usernameEdit && enabled && available != false);
+  Future<List<String>> _userIdsWhere(String field, String value) {
+    return firestoreClient.query<String>(
+      FirestoreQuerySpec(
+        collection: FirebaseCollections.usersV2,
+        sourceTag: 'profile.edit.usernameAvailability.$field',
+        filters: <FirestoreFilter>[FirestoreFilter(field: field, op: FirestoreFilterOp.isEqualTo, value: value)],
+        limit: 2,
+      ),
+      (data, docId) => docId,
+    );
+  }
+
+  bool get _hasChanges {
+    final bool usernameOk = !usernameEdit || (enabled && available == true && !isCheckingUsername);
+    return (usernameEdit || pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit) &&
+        usernameOk &&
+        _invalidLinks.isEmpty;
+  }
 
   bool get _hasUnsavedChanges => pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit || usernameEdit;
 
   Future<void> _saveProfile() async {
+    if (usernameEdit && available != true) {
+      toasts.error('Pick an available username.');
+      return;
+    }
     setState(() => isLoading = true);
     try {
-      if (usernameEdit && usernameController.text.isNotEmpty && usernameController.text.length >= 8) {
-        app_state.prismUser.username = usernameController.text;
-        app_state.persistPrismUser();
-        await _updateCurrentUser(<String, dynamic>{"username": usernameController.text}, 'profile.edit.username');
+      final PrismUsersV2 user = app_state.prismUser;
+      final Map<String, dynamic> updates = <String, dynamic>{};
+      if (usernameEdit && usernameController.text.length >= minUsernameLength) {
+        updates['username'] = usernameController.text;
       }
       if (_pfp != null && pfpEdit) {
-        await _uploadImage(_pfp!, field: 'profilePhoto');
+        updates['profilePhoto'] = await _uploadImage(_pfp!, minWidth: 400);
       }
       if (_cover != null && coverEdit) {
-        await _uploadImage(_cover!, field: 'coverPhoto');
+        updates['coverPhoto'] = await _uploadImage(_cover!, minWidth: 1080);
       }
       if (bioEdit && bioController.text.isNotEmpty) {
-        app_state.prismUser.bio = bioController.text;
-        app_state.persistPrismUser();
-        await _updateCurrentUser(<String, dynamic>{"bio": bioController.text}, 'profile.edit.bio');
+        updates['bio'] = bioController.text;
       }
       if (nameEdit && nameController.text.isNotEmpty) {
-        app_state.prismUser.name = nameController.text;
-        app_state.persistPrismUser();
-        await _updateCurrentUser(<String, dynamic>{"name": nameController.text}, 'profile.edit.name');
+        updates['name'] = nameController.text;
       }
       if (linkEdit) {
-        final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
+        final Map<String, String> links = Map<String, String>.from(user.links);
         _linkValues.forEach((name, value) {
           if (value.isNotEmpty) {
             links[name] = value;
           }
         });
-        app_state.prismUser.links = links;
-        app_state.persistPrismUser();
-        await _updateCurrentUser(<String, dynamic>{"links": links}, 'profile.edit.links');
+        updates['links'] = links;
+      }
+      if (updates.isNotEmpty) {
+        await _updateCurrentUser(updates, 'profile.edit.save');
       }
 
+      if (updates['username'] != null) user.username = updates['username'] as String;
+      if (updates['profilePhoto'] != null) user.profilePhoto = updates['profilePhoto'] as String;
+      if (updates['coverPhoto'] != null) user.coverPhoto = updates['coverPhoto'] as String;
+      if (updates['bio'] != null) user.bio = updates['bio'] as String;
+      if (updates['name'] != null) user.name = updates['name'] as String;
+      if (updates['links'] != null) user.links = updates['links'] as Map<String, String>;
+      await app_state.persistPrismUser();
+
       await CoinsService.instance.maybeAwardProfileCompletion();
+      if (mounted) {
+        Navigator.pop(context);
+        toasts.success("Profile updated");
+      }
     } catch (e) {
       logger.d(e.toString());
-      if (mounted) setState(() => isLoading = false);
       toasts.error('Could not save your profile. Please try again.');
-      return;
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
-    if (!mounted) return;
-    setState(() => isLoading = false);
-    Navigator.pop(context);
-    toasts.success("Profile updated");
   }
 
-  Future<void> _onUsernameChanged(String value) async {
+  void _onUsernameChanged(String value) {
+    _usernameDebounce?.cancel();
+    final bool longEnough = value.length >= minUsernameLength;
+    final bool validChars = !value.contains(RegExp(r"(?: |[^\w\s])+"));
+    final bool valid = longEnough && validChars;
     final int checkId = ++_usernameCheckId;
-    final valid = value.isNotEmpty && value.length >= 8 && !value.contains(RegExp(r"(?: |[^\w\s])+"));
     setState(() {
       enabled = valid;
-      usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
       available = null;
-      isCheckingUsername = valid && usernameEdit;
+      _usernameError = value.isEmpty || value == app_state.prismUser.username
+          ? null
+          : !longEnough
+          ? 'Use at least $minUsernameLength characters.'
+          : !validChars
+          ? 'Use letters, numbers and underscores only.'
+          : null;
+      isCheckingUsername = valid && value != app_state.prismUser.username;
+      usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
     });
-    if (!valid || !usernameEdit) return;
-    final isAvailable = await _isUsernameAvailable(value);
-    // A newer keystroke owns the result now.
-    if (mounted && checkId == _usernameCheckId) {
+    if (!isCheckingUsername) return;
+    _usernameDebounce = Timer(const Duration(milliseconds: 400), () async {
+      bool? isAvailable;
+      try {
+        isAvailable = await _isUsernameAvailable(value);
+      } catch (e) {
+        logger.d(e.toString());
+      }
+      // A newer keystroke owns the result now.
+      if (!mounted || checkId != _usernameCheckId) return;
       setState(() {
         available = isAvailable;
         isCheckingUsername = false;
+        if (isAvailable == false) _usernameError = 'That username is taken.';
       });
-    }
+      if (isAvailable == null) toasts.error("Couldn't check the username. Try again.");
+    });
   }
 
-  String? get _usernameError {
-    final String value = usernameController.text;
-    if (!usernameEdit || value.isEmpty) return null;
-    if (!enabled) return _usernameRule;
-    if (available == false) return 'That username is taken.';
-    return null;
-  }
+  String? get _linkError => _invalidLinks.contains(_link.name) ? _linkErrorText(_link) : null;
 
-  String? get _linkError {
-    final String value = linkController.text.trim();
-    if (value.isEmpty || value.toLowerCase().contains(_link.validator.toLowerCase())) return null;
-    return 'Enter a valid ${_link.name.inCaps} link.';
-  }
+  String _linkErrorText(ProfileLinkKind kind) => switch (kind.name) {
+    'email' => 'Enter a valid email address.',
+    customLinkName => 'Enter a valid link.',
+    _ => 'Enter a valid ${kind.name} link.',
+  };
 
   Future<void> _pickLinkKind() async {
     final ProfileLinkKind? picked = await showLinkKindSheet(context, selected: _link, values: _linkValues);
     if (picked == null || !mounted) return;
-    setState(() => _link = picked);
+    setState(() {
+      _invalidLinks.remove(_link.name);
+      _link = picked;
+    });
     linkController.text = _linkValues[_link.name] ?? '';
   }
 
   void _onLinkChanged(String value) {
-    if (value.toLowerCase().contains(_link.validator.toLowerCase())) {
-      _linkValues[_link.name] = value;
-    } else if (value.isEmpty) {
-      _linkValues[_link.name] = '';
+    final String? clean = value.trim().isEmpty ? '' : sanitizeProfileLink(_link, value);
+    if (clean == null) {
+      _invalidLinks.add(_link.name);
+    } else {
+      _invalidLinks.remove(_link.name);
+      _linkValues[_link.name] = clean;
     }
     final changed = _linkValues.values.any((v) => v.isNotEmpty);
     setState(() => linkEdit = changed);
@@ -398,6 +436,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                         setState(() {
                           linkController.text = '';
                           _linkValues[_link.name] = '';
+                          _invalidLinks.remove(_link.name);
                         });
                         final links = app_state.prismUser.links;
                         links.remove(_link.name);

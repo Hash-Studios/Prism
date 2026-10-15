@@ -1,9 +1,10 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// One person in a list: avatar, name, username and a Follow or Following button.
@@ -17,7 +18,12 @@ class UserSummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String name = user.name.isNotEmpty ? user.name : user.email;
+    final String name = creatorLabel(name: user.name, username: user.username);
+    void openProfile() {
+      PrismHaptics.tap();
+      onTap();
+    }
+
     final bool isOwnAccount = user.email.toLowerCase() == app_state.prismUser.email.toLowerCase();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
@@ -30,10 +36,10 @@ class UserSummaryTile extends StatelessWidget {
                 button: true,
                 label: user.username.isEmpty ? name : '$name, @${user.username}',
                 excludeSemantics: true,
-                onTap: onTap,
+                onTap: openProfile,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: onTap,
+                  onTap: openProfile,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 56),
                     child: Row(
@@ -127,7 +133,7 @@ class _FollowPill extends StatelessWidget {
   }
 
   void _onPressed(BuildContext context) {
-    HapticFeedback.selectionClick();
+    PrismHaptics.tap();
     context.read<PublicProfileBloc>().add(
       PublicProfileEvent.followChangeRequested(
         follow: !user.isFollowedByCurrentUser,
@@ -135,6 +141,7 @@ class _FollowPill extends StatelessWidget {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: user.id,
         targetUserEmail: user.email,
+        targetName: user.name,
       ),
     );
   }

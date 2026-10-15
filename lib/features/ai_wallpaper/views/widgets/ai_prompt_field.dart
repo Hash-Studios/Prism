@@ -2,7 +2,6 @@ import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_field.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// The description field, the hero of the compose state, with two helpers under it.
 class AiPromptField extends StatelessWidget {
@@ -36,7 +35,7 @@ class AiPromptField extends StatelessWidget {
           minLines: 4,
           maxLines: 6,
           textInputAction: TextInputAction.done,
-          inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(maxChars)],
+          maxLength: maxChars,
         ),
         const SizedBox(height: PrismSpace.xs),
         Wrap(

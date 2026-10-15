@@ -1,3 +1,4 @@
+import 'package:Prism/core/account/account_copy.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ class SettingsAccountCard extends StatelessWidget {
                 children: <Widget>[
                   Text('Sign in to Prism', style: PrismTextStyles.cardTitle(context)),
                   const SizedBox(height: 2),
-                  Text('Sync your data across devices', style: PrismTextStyles.caption(context)),
+                  Text(signInBenefitsLine, style: PrismTextStyles.caption(context)),
                 ],
               ),
             ),

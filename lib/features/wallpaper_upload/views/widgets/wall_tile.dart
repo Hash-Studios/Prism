@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
@@ -9,6 +11,7 @@ import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
+import 'package:Prism/data/upload/wallpaper/wall_files.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_photo_preview.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_tile_parts.dart';
@@ -85,6 +88,7 @@ class WallTile extends StatelessWidget {
                                 id: wallpaper.id,
                                 sourceTag: rejected ? 'review.rejectedWall.delete' : 'review.wall.delete',
                                 successToast: 'Wallpaper deleted.',
+                                pendingWallData: rejected ? null : wallpaper.data(),
                               ),
                             ),
                           ),
@@ -176,9 +180,12 @@ Future<void> _deleteDoc({
   required String id,
   required String sourceTag,
   required String successToast,
+  Map<String, dynamic>? pendingWallData,
 }) async {
   try {
     await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);
+    // A pending wall still holds a weekly upload slot. Deleting its files gives the slot back.
+    if (pendingWallData != null) unawaited(deleteWallFiles(pendingWallData));
     toasts.success(successToast);
   } on FirestoreError catch (e, st) {
     logger.e('review delete failed ($sourceTag)', error: e, stackTrace: st);

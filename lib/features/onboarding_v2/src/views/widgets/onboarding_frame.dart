@@ -1,9 +1,10 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
 /// The shared layout of onboarding steps 1 to 4: a skip button, a left-aligned title and one line of body text, the
 /// step content, and a bottom bar with one primary action. The progress bar is drawn above it by the shell so its
-/// fill can animate between steps.
+/// fill can animate between steps. The column is never wider than [OnboardingLayout.maxContentWidth].
 class OnboardingFrame extends StatelessWidget {
   const OnboardingFrame({
     super.key,
@@ -38,53 +39,58 @@ class OnboardingFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const SizedBox(height: progressSlot),
-          SizedBox(
-            height: 44,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: onSkip == null
-                  ? null
-                  : Padding(
-                      padding: const EdgeInsets.only(right: PrismSpace.xs),
-                      child: PrismButton(
-                        label: 'Skip',
-                        variant: PrismButtonVariant.ghost,
-                        size: PrismButtonSize.compact,
-                        onPressed: onSkip,
-                      ),
-                    ),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: PrismSpace.pageInsets,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Semantics(header: true, child: Text(title, style: PrismTextStyles.display(context))),
-                  const SizedBox(height: PrismSpace.xs),
-                  Text(body, style: PrismTextStyles.body(context).copyWith(fontSize: 15, height: 1.35)),
-                ],
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: OnboardingLayout.maxContentWidth),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const SizedBox(height: progressSlot),
+              SizedBox(
+                height: 44,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: onSkip == null
+                      ? null
+                      : Padding(
+                          padding: const EdgeInsets.only(right: PrismSpace.xs),
+                          child: PrismButton(
+                            label: 'Skip',
+                            variant: PrismButtonVariant.ghost,
+                            size: PrismButtonSize.compact,
+                            onPressed: onSkip,
+                          ),
+                        ),
+                ),
               ),
-            ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: PrismSpace.pageInsets,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Semantics(header: true, child: Text(title, style: PrismTextStyles.display(context))),
+                      const SizedBox(height: PrismSpace.xs),
+                      Text(body, style: PrismTextStyles.body(context).copyWith(fontSize: 15, height: 1.35)),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(flex: 3, child: _FadeBottom(child: child)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.md),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    PrismButton(label: primaryLabel, expand: true, loading: primaryLoading, onPressed: onPrimary),
+                    if (secondary != null) ...<Widget>[const SizedBox(height: PrismSpace.xxs), secondary!],
+                  ],
+                ),
+              ),
+            ],
           ),
-          Expanded(flex: 3, child: _FadeBottom(child: child)),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                PrismButton(label: primaryLabel, expand: true, loading: primaryLoading, onPressed: onPrimary),
-                if (secondary != null) ...<Widget>[const SizedBox(height: PrismSpace.xxs), secondary!],
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

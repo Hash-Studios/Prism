@@ -3,15 +3,17 @@ import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// Under the result: save and refine as buttons, set and submit as icons.
+/// Under the result: save and try another as buttons, set, share and submit as icons.
 class AiResultActions extends StatelessWidget {
   const AiResultActions({
     super.key,
     required this.showSet,
     required this.showRefine,
     required this.canSubmit,
+    required this.sharing,
     required this.onSet,
     required this.onSave,
+    required this.onShare,
     required this.onRefine,
     required this.onSubmit,
   });
@@ -19,30 +21,49 @@ class AiResultActions extends StatelessWidget {
   final bool showSet;
   final bool showRefine;
   final bool canSubmit;
+
+  /// True while the share card renders. The share icon shows a spinner and ignores taps.
+  final bool sharing;
   final VoidCallback onSet;
   final VoidCallback onSave;
+  final VoidCallback onShare;
   final VoidCallback onRefine;
   final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: PrismSpace.xs,
+      runSpacing: PrismSpace.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: <Widget>[
-        Expanded(
-          child: PrismButton(label: 'Save', onPressed: onSave, expand: true),
-        ),
-        if (showRefine) ...<Widget>[
-          const SizedBox(width: PrismSpace.xs),
-          Expanded(
-            child: PrismButton(label: 'Refine', variant: PrismButtonVariant.tonal, onPressed: onRefine, expand: true),
-          ),
-        ],
-        if (showSet) ...<Widget>[
-          const SizedBox(width: PrismSpace.xs),
+        PrismButton(label: 'Save', onPressed: onSave),
+        if (showRefine) PrismButton(label: 'Try another', variant: PrismButtonVariant.tonal, onPressed: onRefine),
+        if (showSet)
           PrismIconButton(icon: Icons.wallpaper_rounded, tooltip: 'Set as wallpaper', onPressed: onSet, filled: true),
-        ],
-        if (canSubmit) ...<Widget>[
-          const SizedBox(width: PrismSpace.xs),
+        Semantics(
+          liveRegion: sharing,
+          label: sharing ? 'Preparing share' : null,
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              PrismIconButton(
+                icon: Icons.ios_share_rounded,
+                tooltip: 'Share',
+                onPressed: sharing ? null : onShare,
+                filled: true,
+              ),
+              if (sharing)
+                IgnorePointer(
+                  child: SizedBox.square(
+                    dimension: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onSurface),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (canSubmit)
           Semantics(
             button: true,
             label: 'Submit wallpaper for community review',
@@ -55,7 +76,6 @@ class AiResultActions extends StatelessWidget {
               filled: true,
             ),
           ),
-        ],
       ],
     );
   }

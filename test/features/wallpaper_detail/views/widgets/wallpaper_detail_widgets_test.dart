@@ -1,0 +1,174 @@
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
+import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+FeedItemEntity _wall(String id) => FeedItemEntity.prism(
+  id: id,
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(
+      id: id,
+      source: WallpaperSource.prism,
+      fullUrl: 'https://img.test/$id.jpg',
+      thumbnailUrl: 'https://img.test/$id-t.jpg',
+    ),
+  ),
+);
+
+Widget _host(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+typedef _TagScene = ({String theme, String over, Color backdrop});
+
+const List<_TagScene> _tagScenes = <_TagScene>[
+  (theme: 'Frost White', over: 'a faint tint', backdrop: Color(0x33FFFFFF)),
+  (theme: 'Cotton Blue', over: 'a dark wallpaper', backdrop: Color(0xFF101010)),
+  (theme: 'Cotton Blue', over: 'a white wallpaper', backdrop: Color(0xFFFFFFFF)),
+];
+
+void main() {
+  group('SimilarWallpapersStrip', () {
+    testWidgets('is hidden when nothing similar exists', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          SimilarWallpapersStrip(entity: _wall('a'), loader: (_) async => const <FeedItemEntity>[], onOpen: (_) {}),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('More like this'), findsNothing);
+    });
+
+    testWidgets('is hidden when loading fails', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          SimilarWallpapersStrip(entity: _wall('a'), loader: (_) async => throw Exception('offline'), onOpen: (_) {}),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('More like this'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows the walls and reports the tapped one', (tester) async {
+      FeedItemEntity? opened;
+      await tester.pumpWidget(
+        _host(
+          SimilarWallpapersStrip(
+            entity: _wall('a'),
+            loader: (_) async => <FeedItemEntity>[_wall('b'), _wall('c')],
+            onOpen: (item) => opened = item,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('More like this'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey<String>('c')));
+      expect(opened?.id, 'c');
+    });
+  });
+
+  group('WallpaperTagChips', () {
+    testWidgets('tapping a tag reports it', (tester) async {
+      String? tapped;
+      await tester.pumpWidget(
+        _host(WallpaperTagChips(tags: const <String>['space', 'stars'], onTagTap: (tag) => tapped = tag)),
+      );
+
+      await tester.tap(find.text('stars'));
+
+      expect(tapped, 'stars');
+    });
+
+    testWidgets('renders nothing without tags', (tester) async {
+      await tester.pumpWidget(_host(WallpaperTagChips(tags: const <String>[], onTagTap: (_) {})));
+
+      expect(find.byType(ActionChip), findsNothing);
+    });
+
+    for (final _TagScene scene in _tagScenes) {
+      testWidgets('${scene.theme} tags are 36 px solid pills with 500 weight labels over ${scene.over}', (
+        tester,
+      ) async {
+        final PrismThemeOption option = <PrismThemeOption>[
+          ...prismLightThemes,
+          ...prismDarkThemes,
+        ].firstWhere((PrismThemeOption o) => o.label == scene.theme);
+        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: ColoredBox(
+                color: scene.backdrop,
+                child: WallpaperTagChips(tags: const <String>['space', 'stars'], onTagTap: (_) {}),
+              ),
+            ),
+          ),
+        );
+
+        for (final String tag in <String>['space', 'stars']) {
+          final Finder chip = find.widgetWithText(ActionChip, tag);
+          final ShapeDecoration decoration =
+              tester.widget<Ink>(find.descendant(of: chip, matching: find.byType(Ink))).decoration! as ShapeDecoration;
+          final TextStyle label = tester
+              .widget<RichText>(find.descendant(of: chip, matching: find.byType(RichText)))
+              .text
+              .style!;
+          expect(decoration.shape, isA<StadiumBorder>(), reason: tag);
+          expect(decoration.color!.a, 1, reason: tag);
+          expect(
+            decoration.color,
+            Color.alphaBlend(
+              ChipTheme.of(tester.element(chip)).backgroundColor!,
+              theme.colorScheme.surfaceContainerLow,
+            ),
+            reason: tag,
+          );
+          expect(label.fontWeight, FontWeight.w500, reason: tag);
+          expect(label.fontSize, 14, reason: tag);
+          expect(contrastRatio(label.color!, decoration.color!), greaterThanOrEqualTo(4.5), reason: tag);
+          expect(
+            tester.getSize(find.descendant(of: chip, matching: find.byType(Ink))).height,
+            36,
+            reason: tag,
+          );
+          expect(tester.getSize(chip).height, 48, reason: tag);
+        }
+      });
+    }
+  });
+
+  group('MakeItLiveButton', () {
+    testWidgets('appears when the device supports OpenGL live wallpapers', (tester) async {
+      var pressed = 0;
+      await tester.pumpWidget(_host(MakeItLiveButton(supportProbe: () async => true, onPressed: () => pressed++)));
+      await tester.pump();
+
+      await tester.tap(find.text('Make it live'));
+
+      expect(pressed, 1);
+    });
+
+    testWidgets('stays hidden when unsupported or when the probe fails', (tester) async {
+      await tester.pumpWidget(_host(MakeItLiveButton(supportProbe: () async => false, onPressed: () {})));
+      await tester.pump();
+      expect(find.text('Make it live'), findsNothing);
+
+      await tester.pumpWidget(
+        _host(MakeItLiveButton(key: UniqueKey(), supportProbe: () async => throw Exception('x'), onPressed: () {})),
+      );
+      await tester.pump();
+      expect(find.text('Make it live'), findsNothing);
+    });
+  });
+}

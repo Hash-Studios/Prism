@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -37,7 +38,14 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
     await _loadFuture;
   }
 
+  /// The list never shows an email address, only the username.
+  static String _displayName(BlockedUserListRow row) {
+    final String? username = row.blockedUsername?.trim();
+    return username == null || username.isEmpty ? 'Blocked user' : username;
+  }
+
   Future<void> _unblock(BlockedUserListRow row, String name) async {
+    PrismHaptics.tap();
     final bool confirmed = await showPrismConfirm(
       context,
       title: 'Unblock $name?',
@@ -71,7 +79,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                 title: 'Could not load blocked accounts',
                 body: 'Check your connection and try again.',
                 actionLabel: 'Retry',
-                onAction: _refresh,
+                onAction: () {
+                  PrismHaptics.tap();
+                  _refresh();
+                },
               ),
             );
           }
@@ -88,7 +99,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
             );
           }
           return RefreshIndicator(
-            onRefresh: _refresh,
+            onRefresh: () {
+              PrismHaptics.impact();
+              return _refresh();
+            },
             child: ListView.separated(
               padding: EdgeInsets.fromLTRB(
                 PrismSpace.page,
@@ -100,8 +114,8 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
               separatorBuilder: (BuildContext context, int index) => const SizedBox(height: PrismSpace.xxs),
               itemBuilder: (BuildContext context, int i) {
                 final BlockedUserListRow row = rows[i];
-                final bool hasUsername = row.blockedUsername != null && row.blockedUsername!.isNotEmpty;
-                final String name = hasUsername ? row.blockedUsername! : row.blockedEmail;
+                final String name = _displayName(row);
+                final bool hasUsername = row.blockedUsername?.trim().isNotEmpty ?? false;
                 return ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 56),
                   child: Row(
@@ -146,7 +160,10 @@ class _Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: () {
+        PrismHaptics.impact();
+        return onRefresh();
+      },
       child: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),

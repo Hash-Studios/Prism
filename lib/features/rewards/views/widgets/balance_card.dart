@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -42,7 +43,10 @@ class BalanceCard extends StatelessWidget {
           Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
           PrismRow(
             title: 'What you can do with them',
-            onTap: onSeeUses,
+            onTap: () {
+              PrismHaptics.tap();
+              onSeeUses();
+            },
             padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
           ),
           if (!app_state.prismUser.premium)

@@ -1,0 +1,63 @@
+import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+Widget _dots({required int current, bool reduceMotion = false}) {
+  return MaterialApp(
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+      child: child!,
+    ),
+    home: Scaffold(body: FeedCarouselDots(current: current, count: 4)),
+  );
+}
+
+void main() {
+  final Finder dots = find.descendant(of: find.byType(AnimatedContainer), matching: find.byType(DecoratedBox));
+
+  List<Size> sizes(WidgetTester tester) => [for (int i = 0; i < 4; i++) tester.getSize(dots.at(i))];
+
+  BoxDecoration decorationOf(WidgetTester tester, int index) =>
+      tester.widget<DecoratedBox>(dots.at(index)).decoration as BoxDecoration;
+
+  List<Color?> colours(WidgetTester tester) => [for (int i = 0; i < 4; i++) decorationOf(tester, i).color];
+
+  testWidgets('the active dot is a 16 by 6 pill in the page ink and the others are faded 6 by 6 dots', (tester) async {
+    await tester.pumpWidget(_dots(current: 1));
+
+    final Color ink = ThemeData().colorScheme.onSurface;
+    expect(sizes(tester), const <Size>[Size(6, 6), Size(16, 6), Size(6, 6), Size(6, 6)]);
+    expect(colours(tester), <Color>[
+      ink.withValues(alpha: 0.25),
+      ink,
+      ink.withValues(alpha: 0.25),
+      ink.withValues(alpha: 0.25),
+    ]);
+  });
+
+  testWidgets('the pill moves to the next dot and the row keeps its width', (tester) async {
+    await tester.pumpWidget(_dots(current: 0));
+    final double rowWidth = sizes(tester).fold(0.0, (sum, size) => sum + size.width);
+
+    await tester.pumpWidget(_dots(current: 1));
+    await tester.pump(const Duration(milliseconds: 60));
+
+    final List<Size> mid = sizes(tester);
+    expect(mid[0].width, inExclusiveRange(6, 16));
+    expect(mid[1].width, inExclusiveRange(6, 16));
+    expect(mid.fold(0.0, (sum, size) => sum + size.width), closeTo(rowWidth, 0.01));
+
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(sizes(tester), const <Size>[Size(6, 6), Size(16, 6), Size(6, 6), Size(6, 6)]);
+  });
+
+  testWidgets('the pill jumps when the system asks for less motion', (tester) async {
+    await tester.pumpWidget(_dots(current: 0, reduceMotion: true));
+
+    await tester.pumpWidget(_dots(current: 2, reduceMotion: true));
+    await tester.pump();
+
+    expect(sizes(tester), const <Size>[Size(6, 6), Size(6, 6), Size(16, 6), Size(6, 6)]);
+  });
+}

@@ -6,6 +6,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
+import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -131,54 +132,58 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   Widget build(BuildContext context) {
     return BlocProvider<PublicProfileBloc>.value(
       value: _bloc,
-      child: PrismPage(
-        title: _title,
-        headerBottom: _SearchField(controller: _searchController),
-        body: BlocBuilder<PublicProfileBloc, PublicProfileState>(
-          buildWhen: (prev, curr) => _list(prev) != _list(curr),
-          builder: (context, state) {
-            final list = _list(state);
-            // Search mode.
-            if (_isSearchActive) {
-              if (list.isSearching) {
-                return PrismSkeleton.rows(rows: 5);
+      child: BlocListener<PublicProfileBloc, PublicProfileState>(
+        listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+        listener: (context, state) => showFollowOutcomeToast(state.followOutcome!),
+        child: PrismPage(
+          title: _title,
+          headerBottom: _SearchField(controller: _searchController),
+          body: BlocBuilder<PublicProfileBloc, PublicProfileState>(
+            buildWhen: (prev, curr) => _list(prev) != _list(curr),
+            builder: (context, state) {
+              final list = _list(state);
+              // Search mode.
+              if (_isSearchActive) {
+                if (list.isSearching) {
+                  return PrismSkeleton.rows(rows: 5);
+                }
+                final results = list.searchResults ?? const <UserSummaryEntity>[];
+                if (results.isEmpty) {
+                  return GlintState(
+                    kind: GlintStateKind.empty,
+                    title: 'No results',
+                    body: 'Nobody matches "${_searchController.text.trim()}". Try a different username.',
+                  );
+                }
+                return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
               }
-              final results = list.searchResults ?? const <UserSummaryEntity>[];
-              if (results.isEmpty) {
+
+              // Paginated mode.
+              final summaries = list.summaries;
+              if (list.isFetching && summaries.isEmpty) {
+                return PrismSkeleton.rows();
+              }
+              if (summaries.isEmpty) {
+                if (widget.emails.isEmpty) {
+                  return GlintState(kind: GlintStateKind.empty, title: _emptyTitle, body: _emptyBody);
+                }
                 return GlintState(
-                  kind: GlintStateKind.empty,
-                  title: 'No results',
-                  body: 'Nobody matches "${_searchController.text.trim()}". Try a different username.',
+                  kind: GlintStateKind.error,
+                  title: _loadFailedTitle,
+                  body: 'Check your connection and try again.',
+                  actionLabel: 'Try again',
+                  onAction: () => _bloc.add(_fetchPageEvent(0)),
                 );
               }
-              return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
-            }
-
-            // Paginated mode.
-            final summaries = list.summaries;
-            if (list.isFetching && summaries.isEmpty) {
-              return PrismSkeleton.rows();
-            }
-            if (summaries.isEmpty) {
-              if (widget.emails.isEmpty) {
-                return GlintState(kind: GlintStateKind.empty, title: _emptyTitle, body: _emptyBody);
-              }
-              return GlintState(
-                kind: GlintStateKind.error,
-                title: _loadFailedTitle,
-                body: 'Check your connection and try again.',
-                actionLabel: 'Try again',
-                onAction: () => _bloc.add(_fetchPageEvent(0)),
+              _maybeAutoLoadMore(state);
+              return _UserList(
+                users: summaries,
+                scrollController: _scrollController,
+                hasMore: list.hasMore,
+                isLoading: list.isFetching,
               );
-            }
-            _maybeAutoLoadMore(state);
-            return _UserList(
-              users: summaries,
-              scrollController: _scrollController,
-              hasMore: list.hasMore,
-              isLoading: list.isFetching,
-            );
-          },
+            },
+          ),
         ),
       ),
     );

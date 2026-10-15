@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -5,7 +6,6 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// A horizontal row of style tiles. The selected tile has an accent ring and a tick.
 class AiStylePicker extends StatelessWidget {
@@ -31,7 +31,7 @@ class AiStylePicker extends StatelessWidget {
             selected: style == selected,
             onTap: enabled
                 ? () {
-                    HapticFeedback.selectionClick();
+                    PrismHaptics.selection();
                     onSelected(style);
                   }
                 : null,
@@ -159,7 +159,7 @@ class AiQualityPicker extends StatelessWidget {
               selected: AiQualityTier.values[i] == selected,
               onTap: enabled
                   ? () {
-                      HapticFeedback.selectionClick();
+                      PrismHaptics.selection();
                       onSelected(AiQualityTier.values[i]);
                     }
                   : null,

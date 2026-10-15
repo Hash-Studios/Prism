@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -22,6 +23,11 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    void handleLogoTap() {
+      PrismHaptics.tap();
+      onLogoTap();
+    }
+
     return ColoredBox(
       color: Theme.of(context).colorScheme.surface,
       child: SafeArea(
@@ -37,7 +43,7 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
                       _NotificationButton(hasUnread: state.unreadCount > 0),
                 ),
                 Expanded(
-                  child: Center(child: _Wordmark(onTap: onLogoTap)),
+                  child: Center(child: _Wordmark(onTap: handleLogoTap)),
                 ),
                 const _ProfileAvatar(),
               ],
@@ -102,7 +108,11 @@ class _NotificationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    void open() => context.router.push(const NotificationRoute());
+    void open() {
+      PrismHaptics.tap();
+      context.router.push(const NotificationRoute());
+    }
+
     return Semantics(
       label: 'Open notifications',
       button: true,
@@ -140,7 +150,11 @@ class _ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    void openProfile() => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email));
+    void openProfile() {
+      PrismHaptics.tap();
+      context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email));
+    }
+
     return Semantics(
       button: true,
       label: 'Your profile',

@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -13,9 +17,13 @@ class DetailPalette extends StatelessWidget {
     required this.onReset,
     required this.onSelect,
     required this.onCopy,
+    this.localFile,
   });
 
   final String thumbnailUrl;
+
+  /// The file opened from Downloads. It stands in for the thumbnail on the original swatch.
+  final File? localFile;
   final List<Color> colors;
 
   /// The tint in use, or null for the original wallpaper.
@@ -35,10 +43,14 @@ class DetailPalette extends StatelessWidget {
               semanticLabel: 'Original wallpaper colors',
               selected: selected == null,
               onTap: onReset,
-              child: thumbnailUrl.isEmpty
+              child: localFile != null
+                  ? Image.file(localFile!, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.expand())
+                  : thumbnailUrl.isEmpty
                   ? const SizedBox.expand()
                   : CachedNetworkImage(
+                      cacheManager: PrismImageCache.instance,
                       imageUrl: thumbnailUrl,
+                      memCacheWidth: 240,
                       fit: BoxFit.cover,
                       fadeInDuration: context.motion(PrismDurations.fast),
                       errorWidget: (_, _, _) => const SizedBox.expand(),
@@ -90,7 +102,10 @@ class _Swatch extends StatelessWidget {
       child: PressScale(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: onTap,
+          onTap: () {
+            PrismHaptics.selection();
+            onTap();
+          },
           onLongPress: onLongPress,
           child: SizedBox.square(
             dimension: 44,

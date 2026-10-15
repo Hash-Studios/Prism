@@ -1,10 +1,14 @@
 import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -167,6 +171,9 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   Future<void> _onFollowChangeRequested(_FollowChangeRequested event, Emitter<PublicProfileState> emit) async {
+    final String targetKey = event.targetUserEmail.trim().toLowerCase();
+    emit(_withFollowApplied(state, event.targetUserEmail, follow: event.follow));
+
     final result = event.follow
         ? await _followUserUseCase(
             FollowUserParams(
@@ -184,24 +191,67 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
               targetUserEmail: event.targetUserEmail,
             ),
           );
-    if (result.isFailure) return;
-
-    // Posts pushes for the creator follow the follow state.
-    if (!event.follow || creatorPostsAlertsEnabled) {
-      unawaited(
-        setCreatorPostsTopics(
-          FirebaseMessaging.instance,
-          <String>[event.targetUserEmail],
-          subscribed: event.follow,
-          sourceTag: event.follow ? 'follow.subscribe_posts_topic' : 'unfollow.unsubscribe_posts_topic',
+    final FollowOutcome outcome = FollowOutcome(
+      id: (state.followOutcome?.id ?? 0) + 1,
+      follow: event.follow,
+      success: result.isSuccess,
+      targetName: event.targetName,
+    );
+    unawaited(
+      analytics.track(
+        FollowResultEvent(
+          action: event.follow ? 'follow' : 'unfollow',
+          result: result.isSuccess ? 'success' : 'failure',
         ),
-      );
-    }
-    emit(
-      state.copyWith(
-        followers: state.followers.withFollowState(event.targetUserEmail, isFollowed: event.follow),
-        following: state.following.withFollowState(event.targetUserEmail, isFollowed: event.follow),
       ),
     );
+    if (result.isFailure) {
+      final PublicProfileState rolledBack = _withFollowApplied(state, event.targetUserEmail, follow: !event.follow);
+      emit(
+        rolledBack.copyWith(
+          followOverrides: <String, bool>{...rolledBack.followOverrides}..remove(targetKey),
+          followOutcome: outcome,
+        ),
+      );
+      return;
+    }
+
+    await _syncSessionFollowing(event.targetUserEmail, follow: event.follow);
+    unawaited(_syncPostsTopic(event.targetUserEmail, event.targetUserId, follow: event.follow));
+    emit(state.copyWith(followOutcome: outcome));
+  }
+
+  /// Posts pushes for the creator follow the follow state.
+  Future<void> _syncPostsTopic(String email, String targetUserId, {required bool follow}) async {
+    try {
+      if (follow && !creatorPostsAlertsEnabled) return;
+      await setCreatorPostsTopics(
+        FirebaseMessaging.instance,
+        <String>[email],
+        subscribed: follow,
+        sourceTag: follow ? 'follow.subscribe_posts_topic' : 'unfollow.unsubscribe_posts_topic',
+        knownUids: targetUserId.trim().isEmpty ? const <String, String>{} : <String, String>{email: targetUserId},
+      );
+    } catch (error, stackTrace) {
+      logger.w('Could not sync the posts topic.', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  PublicProfileState _withFollowApplied(PublicProfileState from, String email, {required bool follow}) {
+    return from.copyWith(
+      followOverrides: <String, bool>{...from.followOverrides, email.trim().toLowerCase(): follow},
+      followers: from.followers.withFollowState(email, isFollowed: follow),
+      following: from.following.withFollowState(email, isFollowed: follow),
+    );
+  }
+
+  Future<void> _syncSessionFollowing(String email, {required bool follow}) async {
+    final String key = email.trim().toLowerCase();
+    final List<String> next = app_state.prismUser.following
+        .where((String e) => e.trim().toLowerCase() != key)
+        .toList(growable: true);
+    if (follow) next.add(email);
+    app_state.prismUser.following = next;
+    await app_state.persistPrismUser();
   }
 }

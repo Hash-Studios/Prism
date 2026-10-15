@@ -1,14 +1,20 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
-import 'package:flutter/services.dart';
 
-/// "I agree to the Terms of Use": a 24 point checkbox with a 44 point tap target and a link to the terms. It sits on
-/// the welcome art, so it is white.
+/// "By continuing you agree to the Terms and Privacy policy": a 24 point checkbox with a 44 point tap target and links
+/// to both documents. It sits on the welcome art, so it is white.
 class OnboardingTermsRow extends StatelessWidget {
-  const OnboardingTermsRow({super.key, required this.accepted, required this.onChanged, required this.legalTap});
+  const OnboardingTermsRow({
+    super.key,
+    required this.accepted,
+    required this.onChanged,
+    required this.legalTap,
+    required this.privacyTap,
+  });
 
   final bool accepted;
   final ValueChanged<bool> onChanged;
@@ -16,21 +22,25 @@ class OnboardingTermsRow extends StatelessWidget {
   /// Opens the terms. It is set on the link text.
   final TapGestureRecognizer legalTap;
 
+  /// Opens the privacy policy. It is set on the link text.
+  final TapGestureRecognizer privacyTap;
+
   @override
   Widget build(BuildContext context) {
     final TextStyle text = PrismTextStyles.body(context).copyWith(color: Colors.white.withValues(alpha: 0.85));
     void toggle() {
-      HapticFeedback.selectionClick();
+      PrismHaptics.selection();
       onChanged(!accepted);
     }
 
     return Semantics(
       container: true,
       checked: accepted,
-      label: 'I agree to the Terms of Use',
+      label: 'By continuing you agree to the Terms and Privacy policy',
       onTap: toggle,
       customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-        const CustomSemanticsAction(label: 'Open Terms of Use'): () => legalTap.onTap?.call(),
+        const CustomSemanticsAction(label: 'Open Terms'): () => legalTap.onTap?.call(),
+        const CustomSemanticsAction(label: 'Open Privacy policy'): () => privacyTap.onTap?.call(),
       },
       child: ExcludeSemantics(
         child: GestureDetector(
@@ -47,11 +57,17 @@ class OnboardingTermsRow extends StatelessWidget {
                     TextSpan(
                       style: text,
                       children: <InlineSpan>[
-                        const TextSpan(text: 'I agree to the '),
+                        const TextSpan(text: 'By continuing you agree to the '),
                         TextSpan(
-                          text: 'Terms of Use',
+                          text: 'Terms',
                           style: text.copyWith(decoration: TextDecoration.underline, color: Colors.white),
                           recognizer: legalTap,
+                        ),
+                        const TextSpan(text: ' and '),
+                        TextSpan(
+                          text: 'Privacy policy',
+                          style: text.copyWith(decoration: TextDecoration.underline, color: Colors.white),
+                          recognizer: privacyTap,
                         ),
                       ],
                     ),

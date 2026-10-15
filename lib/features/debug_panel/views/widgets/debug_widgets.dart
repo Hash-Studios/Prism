@@ -19,7 +19,8 @@ TextStyle debugMono(BuildContext context, {double size = 12, double alpha = 1}) 
 
 /// Shows a short message in the app toast. Errors stay on screen longer.
 void showDebugSnackBar(BuildContext context, String message, {bool isError = false}) {
-  isError ? toasts.error(message) : toasts.success(message);
+  // No outcome haptic: a copy plays its own impact, and debug tools stay quiet.
+  isError ? toasts.error(message, haptic: false) : toasts.success(message, haptic: false);
 }
 
 void copyToClipboard(BuildContext context, String text, {String label = 'Copied'}) {

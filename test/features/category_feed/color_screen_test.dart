@@ -18,6 +18,7 @@ void main() {
     when(
       () => repository.fetchColorFeed(
         hex: any(named: 'hex'),
+        name: any(named: 'name'),
         refresh: any(named: 'refresh'),
       ),
     ).thenAnswer((_) async => Result.success(const []));
@@ -32,7 +33,11 @@ void main() {
 
   testWidgets('shows the title, the searched colour and its hex code above the grid', (tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
-    await tester.pumpWidget(const MaterialApp(home: ColorScreen(hexColor: 'ff6600')));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ColorScreen(hexColor: 'ff6600', name: 'Orange'),
+      ),
+    );
     await tester.pump();
 
     expect(find.text('Colour'), findsOneWidget);

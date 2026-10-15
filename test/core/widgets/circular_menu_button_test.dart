@@ -78,4 +78,31 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.byIcon(Icons.edit), findsOneWidget);
   });
+
+  testWidgets('a flat button takes a tap on its padding, not only on the glyph', (WidgetTester tester) async {
+    int taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: FlatMenuButtons(
+            child: CircularMenuButton(
+              label: 'Share',
+              isLoading: false,
+              onTap: () => taps++,
+              child: const Icon(Icons.share, size: 20),
+            ),
+          ),
+        ),
+      ),
+    );
+    final Offset centre = tester.getCenter(find.byType(CircularMenuButton));
+    expect(tester.getSize(find.byType(CircularMenuButton)), const Size.square(CircularMenuButton.size));
+
+    await tester.tapAt(centre + const Offset(14, 0));
+    await tester.tapAt(centre + const Offset(0, -14));
+    expect(taps, 2);
+
+    await tester.tapAt(centre + const Offset(40, 0));
+    expect(taps, 2);
+  });
 }

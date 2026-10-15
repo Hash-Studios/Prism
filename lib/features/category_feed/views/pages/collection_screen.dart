@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collection_card.dart';
@@ -55,7 +58,10 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
               }
 
               return RefreshIndicator(
-                onRefresh: retry,
+                onRefresh: () {
+                  PrismHaptics.impact();
+                  return retry();
+                },
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: <Widget>[
@@ -66,7 +72,10 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
                         title: "Can't reach the servers",
                         body: 'Check your connection and try again.',
                         actionLabel: 'Try again',
-                        onAction: retry,
+                        onAction: () {
+                          PrismHaptics.tap();
+                          unawaited(retry());
+                        },
                       ),
                     ),
                   ],

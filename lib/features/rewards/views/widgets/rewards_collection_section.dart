@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -16,7 +17,6 @@ import 'package:Prism/features/streak/streak_unlock.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 const double _kTileAspect = 0.6;
@@ -174,7 +174,7 @@ class _CollectionCard extends StatelessWidget {
 
   void _onTap(BuildContext context) {
     if (unlocked) {
-      HapticFeedback.lightImpact();
+      PrismHaptics.tap();
       context.router.root.push(
         WallpaperDetailRoute(
           entity: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
@@ -182,6 +182,7 @@ class _CollectionCard extends StatelessWidget {
       );
       return;
     }
+    PrismHaptics.warning();
     showPrismSheet<void>(
       context: context,
       useSafeArea: true,

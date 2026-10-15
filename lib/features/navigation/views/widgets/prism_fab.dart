@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -11,7 +12,6 @@ import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/nav_bar_surface.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// The round create button: a "+" inside a static rainbow ring. The ring turns a quarter once per tap.
 class PrismFab extends StatefulWidget {
@@ -32,7 +32,7 @@ class _PrismFabState extends State<PrismFab> {
   }
 
   void _onPressed() {
-    HapticFeedback.selectionClick();
+    PrismHaptics.tap();
     if (!context.reduceMotion) setState(() => _quarterTurns++);
     analytics.track(
       const UploadActionSelectedEvent(

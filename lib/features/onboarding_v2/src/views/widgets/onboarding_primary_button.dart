@@ -1,8 +1,8 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// How an [OnboardingPrimaryButton] sits on the welcome art.
 enum OnboardingButtonStyle {
@@ -61,7 +61,7 @@ class OnboardingPrimaryButton extends StatelessWidget {
               borderRadius: radius,
               onTap: isEnabled
                   ? () {
-                      HapticFeedback.selectionClick();
+                      PrismHaptics.tap();
                       onPressed!();
                     }
                   : null,
@@ -106,7 +106,7 @@ class OnboardingTextButton extends StatelessWidget {
     return PressScale(
       child: TextButton(
         onPressed: () {
-          HapticFeedback.selectionClick();
+          PrismHaptics.tap();
           onPressed();
         },
         style: TextButton.styleFrom(

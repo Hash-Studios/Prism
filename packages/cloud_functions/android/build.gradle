@@ -6,19 +6,20 @@ apply from: file("local-config.gradle")
 
 // AGP 9+ has built-in Kotlin support; older versions need the plugin explicitly.
 def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0] as int
-if (agpMajor < 9) {
+def builtInKotlin = agpMajor >= 9 && providers.gradleProperty('android.builtInKotlin').orNull != 'false'
+if (!builtInKotlin) {
   apply plugin: 'kotlin-android'
 }
 
 buildscript {
-  ext.kotlin_version = "1.8.22"
+  ext.kotlin_version = "2.4.20"
   repositories {
     google()
     mavenCentral()
   }
 
   dependencies {
-      classpath 'com.android.tools.build:gradle:8.1.4'
+      classpath 'com.android.tools.build:gradle:9.3.1'
       classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
   }
 }
@@ -44,16 +45,12 @@ def getRootProjectExtOrCoreProperty(name, firebaseCoreProject) {
 }
 
 android {
-  // Conditional for compatibility with AGP <4.2.
-  if (project.android.hasProperty("namespace")) {
-    namespace 'io.flutter.plugins.firebase.functions'
-  }
+  namespace 'io.flutter.plugins.firebase.functions'
 
   compileSdkVersion project.ext.compileSdk
 
   defaultConfig {
       minSdkVersion project.ext.minSdk
-      testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
   }
 
   compileOptions {
@@ -61,7 +58,7 @@ android {
       targetCompatibility project.ext.javaVersion
   }
 
-  if (agpMajor < 9) {
+  if (!builtInKotlin) {
     kotlinOptions {
       jvmTarget = project.ext.javaVersion
     }
@@ -84,8 +81,10 @@ android {
     api firebaseCoreProject
     implementation platform("com.google.firebase:firebase-bom:${getRootProjectExtOrCoreProperty("FirebaseSDKVersion", firebaseCoreProject)}")
     implementation 'com.google.firebase:firebase-functions'
-    implementation 'androidx.annotation:annotation:1.7.0'
+    implementation 'androidx.annotation:annotation:1.11.0'
     implementation 'org.reactivestreams:reactive-streams:1.0.4'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:5.24.0'
   }
 
 }

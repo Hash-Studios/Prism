@@ -42,7 +42,13 @@ class OldVersion extends StatelessWidget {
                   ),
                 ),
               ),
-              PrismButton(label: 'Update Prism', expand: true, onPressed: () => openPrismLink(context, _storeLink)),
+              PrismButton(
+                label: 'Update Prism',
+                expand: true,
+                onPressed: () {
+                  openPrismLink(context, _storeLink);
+                },
+              ),
             ],
           ),
         ),

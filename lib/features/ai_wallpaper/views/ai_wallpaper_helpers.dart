@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
 import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -29,7 +30,7 @@ String aiHistoryFailureMessage(Object error) => isAiOfflineOrNetworkError(error)
     : "Couldn't load history. Pull to refresh.";
 
 String aiGenerateFailureMessage(Object error) {
-  if (error is AiGenerationApiException) return error.message;
+  if (error is AiGenerationApiException) return aiGenerationErrorCopy(error);
   if (isAiOfflineOrNetworkError(error)) return 'No connection. Check your network and try again.';
   return 'Something went wrong. Try again.';
 }

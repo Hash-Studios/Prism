@@ -82,10 +82,22 @@ void main() {
       }
     });
 
+    test('lightness counts as an edit until reset', () {
+      const edit = WallpaperAdjustments(lightness: 0.25);
+      expect(edit.isNone, isFalse);
+      expect(edit.copyWith(lightness: 0).isNone, isTrue);
+    });
+
     test('copyWith keeps untouched fields', () {
-      const WallpaperAdjustments a = WallpaperAdjustments(blur: 0.1, hue: 20, saturation: 0.3, brightness: 0.4);
+      const WallpaperAdjustments a = WallpaperAdjustments(
+        blur: 0.1,
+        hue: 20,
+        saturation: 0.3,
+        lightness: 0.2,
+        brightness: 0.4,
+      );
       final WallpaperAdjustments b = a.copyWith(hue: 50);
-      expect((b.blur, b.hue, b.saturation, b.brightness), (0.1, 50.0, 0.3, 0.4));
+      expect((b.blur, b.hue, b.saturation, b.lightness, b.brightness), (0.1, 50.0, 0.3, 0.2, 0.4));
     });
   });
 }

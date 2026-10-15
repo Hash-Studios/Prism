@@ -1,3 +1,4 @@
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -20,54 +21,104 @@ void main() {
     expect(canAsk(AuthorizationStatus.notDetermined, TargetPlatform.android), isTrue);
   });
 
-  group('the pre-prompt sheet', () {
-    bool? answer;
+  test('iOS provisional access can ask for full access, Android has no provisional', () {
+    expect(canAsk(AuthorizationStatus.provisional, TargetPlatform.iOS), isTrue);
+    expect(canAsk(AuthorizationStatus.provisional, TargetPlatform.android), isFalse);
+  });
 
-    Future<void> openSheet(WidgetTester tester) async {
-      answer = null;
+  test('iOS re-checks once after the provisional-only V1 prompt, Android does not', () {
+    const prompted = NotificationPermissionPromptService.alreadyPrompted;
+    expect(prompted(v1: true, v2: false, platform: TargetPlatform.iOS), isFalse);
+    expect(prompted(v1: true, v2: false, platform: TargetPlatform.android), isTrue);
+    expect(prompted(v1: false, v2: true, platform: TargetPlatform.iOS), isTrue);
+    expect(prompted(v1: false, v2: false, platform: TargetPlatform.android), isFalse);
+  });
+
+  group('soft prompt before the system prompt', () {
+    late int requests;
+    Future<int> request() async => ++requests;
+
+    setUp(() {
+      requests = 0;
+      StartupModalSlot.reset();
+    });
+
+    // Glint loops, so pumpAndSettle would never finish. Pump past the sheet motion instead.
+    Future<void> settle(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+
+    Future<Future<int?>> openPrompt(WidgetTester tester) async {
+      late BuildContext context;
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
-            builder: (context) => TextButton(
-              onPressed: () async => answer = await NotificationPermissionPromptService.instance.askFirst(context),
-              child: const Text('open'),
-            ),
+            builder: (BuildContext builderContext) {
+              context = builderContext;
+              return const SizedBox();
+            },
           ),
         ),
       );
-      await tester.tap(find.text('open'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      final Future<int?> result = NotificationPermissionPromptService.requestAfterSoftPrompt<int>(
+        context,
+        requestPermission: request,
+      );
+      await settle(tester);
+      return result;
     }
 
-    Future<void> tapAndClose(WidgetTester tester, String label) async {
-      await tester.tap(find.text(label));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
-    }
-
-    testWidgets('explains the benefit with Glint before the system dialog', (tester) async {
-      await openSheet(tester);
+    testWidgets('asks in one line, and Not now never calls the system prompt', (WidgetTester tester) async {
+      final Future<int?> result = await openPrompt(tester);
 
       expect(find.byType(Glint), findsOneWidget);
       expect(find.text('Get the Wall of the Day'), findsOneWidget);
-      expect(find.text('One hand-picked wallpaper each morning. No spam.'), findsOneWidget);
       expect(find.text('Turn on notifications'), findsOneWidget);
-      expect(find.text('Not now'), findsOneWidget);
+      await tester.tap(find.text('Not now'));
+      await settle(tester);
+
+      expect(await result, isNull);
+      expect(requests, 0);
     });
 
-    testWidgets('Turn on notifications resolves true', (tester) async {
-      await openSheet(tester);
-      await tapAndClose(tester, 'Turn on notifications');
+    testWidgets('Turn on calls the system prompt once', (WidgetTester tester) async {
+      final Future<int?> result = await openPrompt(tester);
 
-      expect(answer, isTrue);
+      await tester.tap(find.text('Turn on notifications'));
+      await settle(tester);
+
+      expect(await result, 1);
+      expect(requests, 1);
     });
 
-    testWidgets('Not now resolves false', (tester) async {
-      await openSheet(tester);
-      await tapAndClose(tester, 'Not now');
+    testWidgets('closing the sheet without a choice does not call the system prompt', (WidgetTester tester) async {
+      final Future<int?> result = await openPrompt(tester);
 
-      expect(answer, isFalse);
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+
+      expect(await result, isNull);
+      expect(requests, 0);
+    });
+
+    testWidgets('does not show a second startup sheet in the same session', (WidgetTester tester) async {
+      StartupModalSlot.shown.value = true;
+      final Future<int?> result = await openPrompt(tester);
+
+      expect(find.text('Turn on notifications'), findsNothing);
+      expect(await result, isNull);
+      expect(requests, 0);
+    });
+
+    testWidgets('claims the slot so the next startup sheet waits for another session', (WidgetTester tester) async {
+      final Future<int?> result = await openPrompt(tester);
+      await tester.tap(find.text('Not now'));
+      await settle(tester);
+      await result;
+
+      expect(StartupModalSlot.shown.value, isTrue);
+      expect(StartupModalSlot.tryClaim(), isFalse);
     });
   });
 }

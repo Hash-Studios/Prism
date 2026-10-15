@@ -17,6 +17,7 @@ class _MockOnboardingBloc extends MockBloc<OnboardingV2Event, OnboardingV2State>
 void main() {
   late _MockOnboardingBloc bloc;
   late TapGestureRecognizer legalTap;
+  late TapGestureRecognizer privacyTap;
   int google = 0;
   int apple = 0;
   int browse = 0;
@@ -25,6 +26,7 @@ void main() {
   setUp(() {
     bloc = _MockOnboardingBloc();
     legalTap = TapGestureRecognizer();
+    privacyTap = TapGestureRecognizer();
     google = apple = browse = 0;
     terms = null;
     when(() => bloc.state).thenReturn(OnboardingV2State.initial());
@@ -32,6 +34,7 @@ void main() {
 
   tearDown(() {
     legalTap.dispose();
+    privacyTap.dispose();
     toasts.overlayResolver = null;
   });
 
@@ -53,6 +56,7 @@ void main() {
                   termsAccepted: accepted,
                   onTermsChanged: (value) => terms = value,
                   legalTap: legalTap,
+                  privacyTap: privacyTap,
                   onGoogle: () => google++,
                   onApple: () => apple++,
                   onBrowse: () => browse++,
@@ -76,7 +80,10 @@ void main() {
     expect(find.text('Continue with Google'), findsOneWidget);
     expect(find.text('Continue with Apple'), findsNothing);
     expect(find.text('Browse without an account'), findsNothing);
-    expect(tester.getSemantics(find.byType(OnboardingTermsRow)).label, 'I agree to the Terms of Use');
+    expect(
+      tester.getSemantics(find.byType(OnboardingTermsRow)).label,
+      'By continuing you agree to the Terms and Privacy policy',
+    );
     semantics.dispose();
   });
 
@@ -88,7 +95,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(google, 0);
-    expect(find.text('Agree to the Terms of Use to continue.'), findsOneWidget);
+    expect(find.text('Please agree to the Terms and Privacy policy first.'), findsOneWidget);
     await tester.pump(const Duration(seconds: 8));
   });
 
@@ -133,7 +140,7 @@ void main() {
       await tester.pump();
 
       expect(browse, 0);
-      expect(find.text('Agree to the Terms of Use to continue.'), findsOneWidget);
+      expect(find.text('Please agree to the Terms and Privacy policy first.'), findsOneWidget);
       await tester.pump(const Duration(seconds: 8));
     } finally {
       debugDefaultTargetPlatformOverride = null;

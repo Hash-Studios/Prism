@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/logger/logger.dart';
@@ -19,21 +22,37 @@ const List<(String wire, String label)> kContentReportReasons = <(String, String
   ('other', 'Other'),
 ];
 
+/// Opens the report sheet. A guest gets the sign-in sheet first, and the report sheet opens again after sign-in.
+///
+/// [onBlockCreator] adds "Also block this creator" to the "Report sent" snackbar.
 Future<void> showContentReportSheet(
   BuildContext context, {
   required String contentType,
   required String targetFirestoreDocId,
   String? subtitle,
+  VoidCallback? onBlockCreator,
 }) async {
   if (!context.mounted) {
     return;
   }
   if (FirebaseAuth.instance.currentUser == null) {
     toasts.error('Sign in to report content');
-    googleSignInPopUp(context, () {});
+    googleSignInPopUp(context, () {
+      if (!context.mounted) return;
+      unawaited(
+        showContentReportSheet(
+          context,
+          contentType: contentType,
+          targetFirestoreDocId: targetFirestoreDocId,
+          subtitle: subtitle,
+          onBlockCreator: onBlockCreator,
+        ),
+      );
+    });
     return;
   }
 
+  PrismHaptics.tap();
   await showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -42,6 +61,7 @@ Future<void> showContentReportSheet(
         contentType: contentType,
         targetFirestoreDocId: targetFirestoreDocId,
         subtitle: subtitle,
+        onBlockCreator: onBlockCreator,
       );
     },
   );
@@ -50,11 +70,17 @@ Future<void> showContentReportSheet(
 /// The content of the report sheet. Exposed so tests can pump it without signing in.
 @visibleForTesting
 class ContentReportSheetBody extends StatefulWidget {
-  const ContentReportSheetBody({required this.contentType, required this.targetFirestoreDocId, this.subtitle});
+  const ContentReportSheetBody({
+    required this.contentType,
+    required this.targetFirestoreDocId,
+    this.subtitle,
+    this.onBlockCreator,
+  });
 
   final String contentType;
   final String targetFirestoreDocId;
   final String? subtitle;
+  final VoidCallback? onBlockCreator;
 
   @override
   State<ContentReportSheetBody> createState() => ContentReportSheetBodyState();
@@ -87,6 +113,7 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
       toasts.error('Choose a reason');
       return;
     }
+    PrismHaptics.tap();
     setState(() => _submitting = true);
     String appVersion = '';
     try {
@@ -125,8 +152,21 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
         analytics.track(
           ContentReportSubmitEvent(contentType: widget.contentType, result: BinaryResultValue.success, reason: reason),
         );
+        final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
+        final VoidCallback? blockCreator = widget.onBlockCreator;
         Navigator.of(context).pop();
-        toasts.success('Report sent. Thank you.');
+        if (messenger == null || blockCreator == null) {
+          toasts.success('Report sent. Thank you.');
+          return;
+        }
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: const Text('Report sent. Thank you.'),
+              action: SnackBarAction(label: 'Also block this creator', onPressed: blockCreator),
+            ),
+          );
       },
     );
   }
@@ -155,7 +195,12 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
                   child: PrismRow(
                     title: reason,
                     trailing: _ReasonTick(selected: _selectedWire == wire),
-                    onTap: _submitting ? null : () => setState(() => _selectedWire = wire),
+                    onTap: _submitting
+                        ? null
+                        : () {
+                            PrismHaptics.selection();
+                            setState(() => _selectedWire = wire);
+                          },
                   ),
                 ),
             ],

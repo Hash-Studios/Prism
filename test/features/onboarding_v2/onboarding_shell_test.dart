@@ -6,6 +6,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_starter_creator_entity.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -105,8 +106,28 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Something went wrong. Try again.'), findsOneWidget);
+    expect(find.text("Couldn't save that. Please try again."), findsOneWidget);
     await tester.pump(const Duration(seconds: 8));
+  });
+
+  testWidgets('system text above the cap is held at the cap', (tester) async {
+    await pumpShell(tester, textScale: 3);
+
+    final BuildContext inside = tester.element(find.text('Your screen, reimagined.'));
+    expect(MediaQuery.textScalerOf(inside).scale(10), closeTo(10 * OnboardingLayout.maxTextScale, 0.001));
+  });
+
+  testWidgets('on a wide screen the progress bar sits in the same capped column as the step', (tester) async {
+    await pumpShell(tester, width: 1280, height: 800);
+    states.add(onStep(OnboardingV2Step.interests));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(
+      tester.getSize(find.byType(OnboardingProgressBar)).width,
+      lessThanOrEqualTo(OnboardingLayout.maxContentWidth),
+    );
+    expect(tester.getCenter(find.byType(OnboardingProgressBar)).dx, closeTo(640, 0.5));
   });
 
   group('compact and landscape layouts', () {

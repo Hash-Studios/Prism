@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -17,6 +18,7 @@ Future<void> buyStreakFreezeFlow(BuildContext context, {required VoidCallback on
     toasts.error('You already hold ${CoinPolicy.maxStreakFreezes} freezes.');
     return;
   }
+  PrismHaptics.tap();
   final _FreezeSheetResult? result = await showPrismSheet<_FreezeSheetResult>(
     context: context,
     useSafeArea: true,
@@ -157,6 +159,7 @@ class _FreezeSheetState extends State<_FreezeSheet> {
   }
 
   Future<void> _buy() async {
+    PrismHaptics.tap();
     setState(() => _busy = true);
     final StreakFreezePurchase purchase = await CoinsService.instance.buyStreakFreeze();
     if (!mounted) return;
@@ -165,6 +168,7 @@ class _FreezeSheetState extends State<_FreezeSheet> {
         Navigator.of(context).pop(_FreezeSheetResult.bought);
         return;
       case StreakFreezeOutcome.insufficientBalance:
+        PrismHaptics.warning();
         setState(() {
           _busy = false;
           _short = true;

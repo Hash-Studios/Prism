@@ -19,7 +19,11 @@ class UserSearchBloc extends Bloc<UserSearchEvent, UserSearchState> {
 
   final SearchUsersUseCase _searchUsersUseCase;
 
+  /// Each request takes the next number. Only the newest request may write its answer.
+  int _latestRequest = 0;
+
   Future<void> _onSearchRequested(_SearchRequested event, Emitter<UserSearchState> emit) async {
+    final int request = ++_latestRequest;
     emit(
       state.copyWith(
         status: LoadStatus.loading,
@@ -30,6 +34,7 @@ class UserSearchBloc extends Bloc<UserSearchEvent, UserSearchState> {
     );
 
     final result = await _searchUsersUseCase(SearchUsersParams(query: event.query));
+    if (request != _latestRequest) return;
 
     result.fold(
       onSuccess: (users) => emit(
@@ -41,6 +46,7 @@ class UserSearchBloc extends Bloc<UserSearchEvent, UserSearchState> {
   }
 
   void _onCleared(_Cleared event, Emitter<UserSearchState> emit) {
+    _latestRequest++;
     emit(UserSearchState.initial());
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -59,6 +60,7 @@ class NotificationRow extends StatelessWidget {
   static bool _hasValidImageUrl(String? url) => Uri.tryParse(url?.trim() ?? '')?.host.isNotEmpty ?? false;
 
   Future<void> _onTap(BuildContext context) async {
+    PrismHaptics.tap();
     onMarkRead?.call();
     analytics.track(
       NotificationItemOpenedEvent(
@@ -79,11 +81,7 @@ class NotificationRow extends StatelessWidget {
       sourceTag: 'notification.route_mapper',
     );
     if (!context.mounted) return;
-    if (mappedRoute != null) {
-      context.router.navigate(mappedRoute);
-      return;
-    }
-    context.router.navigate(const NotFoundRoute());
+    context.router.navigate(mappedRoute ?? const NotificationRoute());
   }
 
   @override
@@ -210,7 +208,12 @@ class NotificationTitleLine extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Expanded(
-          child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
+          child: Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: unread ? FontWeight.w700 : FontWeight.w500),
+          ),
         ),
         const SizedBox(width: PrismSpace.xs),
         Padding(

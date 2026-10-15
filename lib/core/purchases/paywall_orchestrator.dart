@@ -8,6 +8,7 @@ import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/widgets.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
@@ -29,7 +30,10 @@ class PaywallOrchestrator {
 
   static const int _adWatchThreshold = 3;
   static const String _adWatchCountKey = 'paywall_ad_watch_count';
-  static const String _adWatchPromptedKey = 'paywall_ad_watch_prompted';
+  static const String _adWatchPromptedAtKey = 'paywall_ad_watch_prompted_at';
+  static const Duration _adWatchPromptGap = Duration(hours: 24);
+  static const String plansUnavailableMessage =
+      'Plans are not available right now. Check your connection and try again.';
 
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
@@ -45,13 +49,19 @@ class PaywallOrchestrator {
       ),
     );
 
-    if (_rcPaywallsEnabled) {
-      return _presentRevenueCatPaywall(placement: normalizedPlacement, source: source);
-    }
-
-    // RevenueCat paywall not available — no fallback screen.
-    return PaywallResultValue.notPresented;
+    // Without RevenueCat paywalls there is no fallback screen.
+    final PaywallResultValue result = _rcPaywallsEnabled
+        ? await _presentRevenueCatPaywall(placement: normalizedPlacement, source: source)
+        : PaywallResultValue.notPresented;
+    if (_unavailableResults.contains(result)) toasts.error(plansUnavailableMessage);
+    return result;
   }
+
+  static const Set<PaywallResultValue> _unavailableResults = <PaywallResultValue>{
+    PaywallResultValue.notPresented,
+    PaywallResultValue.noOffering,
+    PaywallResultValue.rcError,
+  };
 
   /// Same as [present], but for a signed-out user it requires sign-in first
   /// unless the platform allows guest browsing (iOS 5.1.1(v): purchases must
@@ -75,17 +85,18 @@ class PaywallOrchestrator {
 
     final int count = (_settings.get<int>(_adWatchCountKey, defaultValue: 0)) + 1;
     _settings.set(_adWatchCountKey, count);
-    final bool prompted = _settings.get<bool>(_adWatchPromptedKey, defaultValue: false);
-    if (count < _adWatchThreshold || prompted) {
+    final int promptedAtMs = _settings.get<int>(_adWatchPromptedAtKey, defaultValue: 0);
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (count < _adWatchThreshold || nowMs - promptedAtMs < _adWatchPromptGap.inMilliseconds) {
       return;
     }
-    _settings.set(_adWatchPromptedKey, true);
+    _settings.set(_adWatchPromptedAtKey, nowMs);
     await present(placement: PaywallPlacement.afterAdWatch3, source: source);
   }
 
   void _resetAdWatchCounter() {
     _settings.set(_adWatchCountKey, 0);
-    _settings.set(_adWatchPromptedKey, false);
+    _settings.delete(_adWatchPromptedAtKey);
   }
 
   void _logPlacementTriggerContext({required String placement, required String source}) {

@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
@@ -29,6 +30,7 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   int approvals = 0;
   int rejections = 0;
   final List<String> reviewedReports = <String>[];
+  String? lastRejectReason;
   bool failFirstWallStream = false;
   Stream<List<FirestoreDocument>>? reportsStream;
   Stream<List<FirestoreDocument>>? wallsStream;
@@ -36,6 +38,7 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   List<FirestoreDocument>? reportsList;
   Future<void> Function()? approveAction;
   Future<void> Function()? rejectAction;
+  bool wallWasRemoved = true;
 
   @override
   Stream<List<FirestoreDocument>> watchPendingWalls() {
@@ -53,7 +56,12 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
       reportsStream ?? Stream<List<FirestoreDocument>>.value(reportsList ?? const <FirestoreDocument>[]);
 
   @override
-  Future<void> approveWall(FirestoreDocument wall) async {
+  Future<void> approveWall(
+    FirestoreDocument wall, {
+    List<String>? collections,
+    bool? streakExclusive,
+    int? streakShopCoinCost,
+  }) async {
     approvals++;
     await approveAction?.call();
   }
@@ -61,8 +69,12 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   @override
   Future<void> rejectWall(FirestoreDocument wall, {required String reason}) async {
     rejections++;
+    lastRejectReason = reason;
     await rejectAction?.call();
   }
+
+  @override
+  Future<bool> rejectWallByFirestoreDocumentId(String wallDocId, {required String reason}) async => wallWasRemoved;
 
   @override
   Future<void> markContentReportReviewed(String reportDocId, {String? resolution}) async {
@@ -88,6 +100,8 @@ class _RecordingFirestoreClient extends FakeFirestoreClient {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+  final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   late PrismUsersV2 originalUser;
   late _RecordingFirestoreClient firestore;
 
@@ -317,6 +331,7 @@ void main() {
     await tester.tap(find.text('Mark reviewed'));
     await tester.pumpAndSettle();
     expect(repository.reviewedReports, <String>['report-u']);
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('approval state stays with the same wall after an earlier row is removed', (WidgetTester tester) async {
@@ -410,7 +425,7 @@ void main() {
     await tester.tap(find.widgetWithText(ModerationDangerButton, 'Reject'));
     await tester.pumpAndSettle();
     expect(find.byType(PrismSheetBody), findsOneWidget);
-    expect(find.text('Low quality'), findsOneWidget);
+    expect(find.text('Low resolution'), findsOneWidget);
     await tester.enterText(find.byType(TextField), '   ');
     await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
     await tester.pumpAndSettle();
@@ -440,16 +455,114 @@ void main() {
     expect(find.byType(PrismSheetBody), findsNothing);
   });
 
+  testWidgets('a reason chip fills the rejection text that the creator will read', (WidgetTester tester) async {
+    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() => messenger.setMockMethodCallHandler(toastChannel, null));
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await pumpReviewScreen(tester, repository);
+
+    await tester.tap(find.widgetWithText(ModerationDangerButton, 'Reject'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Watermark'));
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, rejectReasons[1].text);
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastRejectReason, rejectReasons[1].text);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('the Other chip clears the reason text', (WidgetTester tester) async {
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await pumpReviewScreen(tester, repository);
+
+    await tester.tap(find.widgetWithText(ModerationDangerButton, 'Reject'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Blurry'));
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, rejectReasons[2].text);
+
+    await tester.tap(find.text('Other'));
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+  });
+
+  testWidgets('a successful wallpaper rejection uses success outcome feedback', (WidgetTester tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      messenger.setMockMethodCallHandler(toastChannel, null);
+    });
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await pumpReviewScreen(tester, repository);
+
+    await tester.tap(find.widgetWithText(ModerationDangerButton, 'Reject'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Copied artwork');
+    await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(repository.rejections, 1);
+    expect(hapticTypes, contains('HapticFeedbackType.successNotification'));
+    expect(hapticTypes, isNot(contains('HapticFeedbackType.errorNotification')));
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('closing a report for an already-missing wall uses success outcome feedback', (
+    WidgetTester tester,
+  ) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      messenger.setMockMethodCallHandler(toastChannel, null);
+    });
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..reportsList = const <FirestoreDocument>[
+        FirestoreDocument('report-a', <String, dynamic>{
+          'contentType': 'wall',
+          'reason': 'Copied work',
+          'targetFirestoreDocId': 'wall-a',
+        }),
+      ]
+      ..wallWasRemoved = false;
+    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reports (1)'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ModerationDangerButton, 'Remove'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Already removed');
+    await tester.tap(find.widgetWithText(PrismButton, 'Remove wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(repository.reviewedReports, <String>['report-a']);
+    expect(hapticTypes, contains('HapticFeedbackType.successNotification'));
+    expect(hapticTypes, isNot(contains('HapticFeedbackType.errorNotification')));
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
   testWidgets('a quick reason fills the reason field', (WidgetTester tester) async {
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
     await pumpReviewScreen(tester, repository);
 
     await tester.tap(find.widgetWithText(ModerationDangerButton, 'Reject'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Low quality'));
+    await tester.tap(find.text('Duplicate'));
     await tester.pump();
 
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'Low quality');
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, rejectReasons[4].text);
     await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
     await tester.pumpAndSettle();
     expect(repository.rejections, 1);

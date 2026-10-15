@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -218,7 +219,10 @@ class _InfoSection extends StatelessWidget {
                 value: e.value.length <= _inlineMax ? e.value : null,
                 subtitle: e.value.length <= _inlineMax ? null : e.value,
                 trailing: Icon(Icons.copy_rounded, size: 16, color: hint),
-                onTap: () => copyToClipboard(context, e.value),
+                onTap: () {
+                  PrismHaptics.impact();
+                  copyToClipboard(context, e.value);
+                },
               ),
           ],
         ),

@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_firebase_messaging.dart';
 import '../support/fake_firestore_client.dart';
+import '../support/in_memory_local_store.dart';
 
 class _MergeRecordingClient extends FakeFirestoreClient {
   bool? merged;
@@ -50,6 +53,42 @@ void main() {
     expect((write.collection, write.id), ('usersv2/uid1/private', 'session'));
     expect(client.merged, isTrue);
     expect(write.data, <String, dynamic>{'followerAlerts': false});
+  });
+
+  test('the Recommendations switch is stored where win-back and campaigns read it', () async {
+    final client = _MergeRecordingClient();
+
+    await FcmTokenService.instance.saveMarketingPushes(userId: 'uid1', enabled: false, client: client);
+
+    final write = client.writes.single;
+    expect((write.collection, write.id), ('usersv2/uid1/private', 'session'));
+    expect(client.merged, isTrue);
+    expect(write.data, <String, dynamic>{'marketingPushes': false});
+  });
+
+  test('saving the Recommendations switch without a signed-in user writes nothing', () async {
+    final client = _MergeRecordingClient();
+
+    await FcmTokenService.instance.saveMarketingPushes(userId: ' ', enabled: false, client: client);
+
+    expect(client.writes, isEmpty);
+  });
+
+  test('a Recommendations switch turned off before sign-in is carried to the server with the token', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('recommendationsSubscriber', false);
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final client = FakeFirestoreClient();
+
+    await FcmTokenService.instance.syncToken(
+      userId: 'uid1',
+      messaging: FakeFirebaseMessaging()..getTokenHandler = () async => 'tok',
+      client: client,
+    );
+
+    expect(client.writes.where((w) => w.data?['marketingPushes'] == false), hasLength(1));
   });
 
   test('does not persist a token fetched after sign-out begins', () async {

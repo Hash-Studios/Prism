@@ -1,6 +1,6 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// One row in a list or a [PrismGroup]: an icon tile, a title, an optional subtitle and a trailing part.
 class PrismRow extends StatelessWidget {
@@ -120,7 +120,7 @@ class PrismSwitchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void toggle(bool next) {
-      HapticFeedback.selectionClick();
+      PrismHaptics.selection();
       onChanged?.call(next);
     }
 

@@ -40,7 +40,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
     ) async {
-      toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      if (call.method == 'showToast') toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
   });
@@ -113,6 +113,43 @@ void main() {
     expect(repo.unblocked, <String>['u9']);
     expect(toasts, contains('Unblocked'));
     expect(find.text('No blocked accounts'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('rows show the username and never an email address', (tester) async {
+    await pumpScreen(
+      tester,
+      Result.success(const <BlockedUserListRow>[
+        BlockedUserListRow(blockedUid: 'u1', blockedEmail: 'secret@example.com', blockedUsername: 'maya'),
+        BlockedUserListRow(blockedUid: 'u2', blockedEmail: 'hidden@example.com'),
+      ]),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('@maya'), findsOneWidget);
+    expect(find.text('Blocked user'), findsOneWidget);
+    expect(find.textContaining('example.com'), findsNothing);
+  });
+
+  testWidgets('unblock asks first and cancel keeps the account blocked', (tester) async {
+    final repo = await pumpScreen(
+      tester,
+      Result.success(const <BlockedUserListRow>[
+        BlockedUserListRow(blockedUid: 'u1', blockedEmail: 'secret@example.com', blockedUsername: 'maya'),
+      ]),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.text('Unblock'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Unblock maya?'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(repo.unblocked, isEmpty);
+    expect(find.text('@maya'), findsOneWidget);
   });
 
   testWidgets('the blocked profile shell names the user and unblocks', (tester) async {
@@ -130,5 +167,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(repo.unblocked, <String>['u9']);
+    await tester.pump(const Duration(seconds: 2));
   });
 }

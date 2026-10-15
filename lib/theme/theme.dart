@@ -1,5 +1,6 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -54,6 +55,79 @@ TextTheme _textTheme(ColorScheme cs) {
     labelLarge: sans(15, FontWeight.w600),
     labelMedium: sans(13, FontWeight.w600),
     labelSmall: sans(11, FontWeight.w700),
+  );
+}
+
+/// [foreground] when it reads on a chip fill over [page]. Otherwise [foreground] moved towards black or white in
+/// steps of 10 percent, until it reaches [PrismChipMetrics.minLabelContrast].
+Color _legibleLabel(Color foreground, Color page) {
+  final Color fill = Color.alphaBlend(foreground.withValues(alpha: PrismChipMetrics.restFillAlpha), page);
+  final Color extreme = onColor(page);
+  for (int step = 0; step <= 10; step++) {
+    final Color candidate = Color.lerp(foreground, extreme, step / 10)!;
+    if (contrastRatio(candidate, fill) >= PrismChipMetrics.minLabelContrast) {
+      return candidate;
+    }
+  }
+  return extreme;
+}
+
+/// The theme foreground ([ColorScheme.secondary]) as text on the page, darkened or lightened until it reaches
+/// [PrismChipMetrics.minLabelContrast]. Chip labels, the library tabs and the count line use it.
+Color prismReadableInk(ThemeData theme) => _legibleLabel(theme.colorScheme.secondary, theme.primaryColor);
+
+/// [prismReadableInk] at [PrismInk.softAlpha], for text one level below the main text. It stays at full ink when
+/// the softer one would fall under [PrismChipMetrics.minLabelContrast] on the page.
+Color prismSoftInk(ThemeData theme) {
+  final Color ink = prismReadableInk(theme);
+  final Color soft = ink.withValues(alpha: PrismInk.softAlpha);
+  final bool reads =
+      contrastRatio(Color.alphaBlend(soft, theme.primaryColor), theme.primaryColor) >=
+      PrismChipMetrics.minLabelContrast;
+  return reads ? soft : ink;
+}
+
+/// Gives every chip the same look: a pill with a tonal fill of the foreground colour, and the accent fill when
+/// selected. Run it after anything that changes the accent, because it reads the accent from [ThemeData.colorScheme].
+ThemeData withPrismChipTheme(ThemeData base) {
+  final ColorScheme scheme = base.colorScheme;
+  final Color foreground = scheme.secondary;
+  final Color accent = scheme.primary;
+  final Color onAccent = onColor(accent);
+  final Color label = prismReadableInk(base);
+  return base.copyWith(
+    chipTheme: ChipThemeData(
+      shape: const StadiumBorder(),
+      side: BorderSide.none,
+      showCheckmark: false,
+      elevation: 0,
+      pressElevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      backgroundColor: foreground.withValues(alpha: PrismChipMetrics.restFillAlpha),
+      selectedColor: accent,
+      disabledColor: foreground.withValues(alpha: PrismChipMetrics.disabledFillAlpha),
+      padding: PrismChipMetrics.padding,
+      labelPadding: PrismChipMetrics.labelPadding,
+      labelStyle: TextStyle(
+        fontFamily: PrismFonts.proximaNova,
+        fontSize: PrismChipMetrics.fontSize,
+        fontWeight: FontWeight.w600,
+        height: PrismChipMetrics.labelHeight,
+        color: WidgetStateColor.resolveWith((Set<WidgetState> states) {
+          if (states.contains(WidgetState.selected)) {
+            return onAccent;
+          }
+          if (states.contains(WidgetState.disabled)) {
+            return label.withValues(alpha: PrismChipMetrics.disabledLabelAlpha);
+          }
+          return label;
+        }),
+      ),
+      iconTheme: IconThemeData(color: label, size: PrismChipMetrics.iconSize),
+      avatarBoxConstraints: PrismChipMetrics.avatarConstraints,
+      deleteIconColor: label,
+    ),
   );
 }
 
@@ -168,181 +242,174 @@ extension PrismThemeData on ThemeData {
       borderRadius: PrismRadius.field,
       borderSide: BorderSide(color: color, width: width),
     );
-    return copyWith(
-      colorScheme: cs,
-      textTheme: _textTheme(cs),
-      scaffoldBackgroundColor: cs.surface,
-      dividerColor: hairline,
-      splashColor: cs.onSurface.withValues(alpha: 0.06),
-      highlightColor: cs.onSurface.withValues(alpha: 0.04),
-      appBarTheme: appBarTheme.copyWith(
-        backgroundColor: cs.surface,
-        foregroundColor: cs.onSurface,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: 4,
-        titleTextStyle: title,
-        iconTheme: IconThemeData(color: cs.onSurface, size: 22),
-      ),
-      iconTheme: IconThemeData(color: cs.onSurface, size: 22),
-      dividerTheme: DividerThemeData(color: hairline, thickness: 1, space: 1),
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: cs.primary,
-        refreshBackgroundColor: cs.surfaceContainerHigh,
-        linearTrackColor: hairline,
-        circularTrackColor: Colors.transparent,
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: cs.primary,
-          foregroundColor: cs.onPrimary,
-          disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.08),
-          disabledForegroundColor: cs.onSurface.withValues(alpha: 0.38),
-          minimumSize: buttonSize,
-          padding: buttonPadding,
-          shape: pill,
-          textStyle: PrismTextStyles.button,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: cs.primary,
-          foregroundColor: cs.onPrimary,
+    return withPrismChipTheme(
+      copyWith(
+        colorScheme: cs,
+        textTheme: _textTheme(cs),
+        scaffoldBackgroundColor: cs.surface,
+        dividerColor: hairline,
+        splashColor: cs.onSurface.withValues(alpha: 0.06),
+        highlightColor: cs.onSurface.withValues(alpha: 0.04),
+        appBarTheme: appBarTheme.copyWith(
+          backgroundColor: cs.surface,
+          foregroundColor: cs.onSurface,
+          surfaceTintColor: Colors.transparent,
           elevation: 0,
-          minimumSize: buttonSize,
-          padding: buttonPadding,
-          shape: pill,
-          textStyle: PrismTextStyles.button,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          titleSpacing: 4,
+          titleTextStyle: title,
+          iconTheme: IconThemeData(color: cs.onSurface, size: 22),
         ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: cs.onSurface,
-          side: BorderSide(color: cs.outline),
-          minimumSize: buttonSize,
-          padding: buttonPadding,
-          shape: pill,
-          textStyle: PrismTextStyles.button,
+        iconTheme: IconThemeData(color: cs.onSurface, size: 22),
+        dividerTheme: DividerThemeData(color: hairline, thickness: 1, space: 1),
+        progressIndicatorTheme: ProgressIndicatorThemeData(
+          color: cs.primary,
+          refreshBackgroundColor: cs.surfaceContainerHigh,
+          linearTrackColor: hairline,
+          circularTrackColor: Colors.transparent,
         ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: cs.onSurface,
-          minimumSize: const Size(0, 44),
-          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
-          shape: pill,
-          textStyle: PrismTextStyles.button,
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: cs.primary,
+            foregroundColor: cs.onPrimary,
+            disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.08),
+            disabledForegroundColor: cs.onSurface.withValues(alpha: 0.38),
+            minimumSize: buttonSize,
+            padding: buttonPadding,
+            shape: pill,
+            textStyle: PrismTextStyles.button,
+          ),
         ),
-      ),
-      inputDecorationTheme: InputDecorationThemeData(
-        filled: true,
-        fillColor: cs.surfaceContainerHigh,
-        contentPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: 15),
-        hintStyle: body.copyWith(fontSize: 15, color: cs.onSurface.withValues(alpha: 0.45)),
-        labelStyle: body.copyWith(fontSize: 15),
-        helperStyle: body.copyWith(fontSize: 12),
-        errorStyle: body.copyWith(fontSize: 12, color: cs.error),
-        prefixIconColor: cs.onSurfaceVariant,
-        suffixIconColor: cs.onSurfaceVariant,
-        border: fieldBorder(Colors.transparent),
-        enabledBorder: fieldBorder(hairline),
-        disabledBorder: fieldBorder(Colors.transparent),
-        focusedBorder: fieldBorder(cs.primary, 1.5),
-        errorBorder: fieldBorder(cs.error),
-        focusedErrorBorder: fieldBorder(cs.error, 1.5),
-      ),
-      textSelectionTheme: TextSelectionThemeData(
-        cursorColor: cs.primary,
-        selectionColor: cs.primary.withValues(alpha: 0.3),
-        selectionHandleColor: cs.primary,
-      ),
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: cs.surfaceContainerLow,
-        modalBackgroundColor: cs.surfaceContainerLow,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        modalElevation: 0,
-        shape: const RoundedRectangleBorder(borderRadius: PrismRadius.sheet),
-        clipBehavior: Clip.antiAlias,
-        dragHandleColor: cs.onSurface.withValues(alpha: 0.22),
-        dragHandleSize: const Size(PrismBottomSheet.dragHandleWidth, PrismBottomSheet.dragHandleHeight),
-      ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: cs.surfaceContainerLow,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PrismRadius.xl),
-          side: BorderSide(color: hairline),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: cs.primary,
+            foregroundColor: cs.onPrimary,
+            elevation: 0,
+            minimumSize: buttonSize,
+            padding: buttonPadding,
+            shape: pill,
+            textStyle: PrismTextStyles.button,
+          ),
         ),
-        titleTextStyle: title.copyWith(fontSize: 20),
-        contentTextStyle: body,
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: cs.inverseSurface,
-        contentTextStyle: body.copyWith(color: cs.onInverseSurface),
-        actionTextColor: cs.onInverseSurface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PrismRadius.md)),
-      ),
-      popupMenuTheme: PopupMenuThemeData(
-        color: cs.surfaceContainerHigh,
-        surfaceTintColor: Colors.transparent,
-        elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PrismRadius.md),
-          side: BorderSide(color: hairline),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: cs.onSurface,
+            side: BorderSide(color: cs.outline),
+            minimumSize: buttonSize,
+            padding: buttonPadding,
+            shape: pill,
+            textStyle: PrismTextStyles.button,
+          ),
         ),
-        textStyle: body.copyWith(fontSize: 15, color: cs.onSurface),
-      ),
-      listTileTheme: ListTileThemeData(
-        iconColor: cs.onSurface,
-        textColor: cs.onSurface,
-        titleTextStyle: body.copyWith(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface),
-        subtitleTextStyle: body.copyWith(fontSize: 13),
-        contentPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
-      ),
-      switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.7),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: cs.onSurface,
+            minimumSize: const Size(0, 44),
+            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
+            shape: pill,
+            textStyle: PrismTextStyles.button,
+          ),
         ),
-        trackColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected) ? cs.primary : cs.onSurface.withValues(alpha: 0.12),
+        inputDecorationTheme: InputDecorationThemeData(
+          filled: true,
+          fillColor: cs.surfaceContainerHigh,
+          contentPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: 15),
+          hintStyle: body.copyWith(fontSize: 15, color: cs.onSurface.withValues(alpha: 0.45)),
+          labelStyle: body.copyWith(fontSize: 15),
+          helperStyle: body.copyWith(fontSize: 12),
+          errorStyle: body.copyWith(fontSize: 12, color: cs.error),
+          prefixIconColor: cs.onSurfaceVariant,
+          suffixIconColor: cs.onSurfaceVariant,
+          border: fieldBorder(Colors.transparent),
+          enabledBorder: fieldBorder(hairline),
+          disabledBorder: fieldBorder(Colors.transparent),
+          focusedBorder: fieldBorder(cs.primary, 1.5),
+          errorBorder: fieldBorder(cs.error),
+          focusedErrorBorder: fieldBorder(cs.error, 1.5),
         ),
-        trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
-      ),
-      sliderTheme: SliderThemeData(
-        activeTrackColor: cs.primary,
-        inactiveTrackColor: cs.onSurface.withValues(alpha: 0.12),
-        thumbColor: cs.primary,
-        overlayColor: cs.primary.withValues(alpha: 0.12),
-        trackHeight: 4,
-      ),
-      chipTheme: ChipThemeData(
-        backgroundColor: Colors.transparent,
-        selectedColor: cs.onSurface,
-        side: BorderSide(color: cs.onSurface.withValues(alpha: 0.12)),
-        shape: pill,
-        labelStyle: body.copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurface),
-        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.xs),
-        showCheckmark: false,
-      ),
-      tabBarTheme: TabBarThemeData(
-        labelColor: cs.onSurface,
-        unselectedLabelColor: cs.onSurface.withValues(alpha: 0.55),
-        indicatorColor: cs.primary,
-        dividerColor: Colors.transparent,
-        labelStyle: PrismTextStyles.button,
-        unselectedLabelStyle: PrismTextStyles.button.copyWith(fontWeight: FontWeight.w600),
-      ),
-      tooltipTheme: TooltipThemeData(
-        decoration: BoxDecoration(color: cs.inverseSurface, borderRadius: BorderRadius.circular(PrismRadius.xs)),
-        textStyle: body.copyWith(fontSize: 12, color: cs.onInverseSurface),
-        waitDuration: const Duration(milliseconds: 400),
-        exitDuration: PrismDurations.press,
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: cs.primary,
+          selectionColor: cs.primary.withValues(alpha: 0.3),
+          selectionHandleColor: cs.primary,
+        ),
+        bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: cs.surfaceContainerLow,
+          modalBackgroundColor: cs.surfaceContainerLow,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          modalElevation: 0,
+          shape: const RoundedRectangleBorder(borderRadius: PrismRadius.sheet),
+          clipBehavior: Clip.antiAlias,
+          dragHandleColor: cs.onSurface.withValues(alpha: 0.22),
+          dragHandleSize: const Size(PrismBottomSheet.dragHandleWidth, PrismBottomSheet.dragHandleHeight),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: cs.surfaceContainerLow,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(PrismRadius.xl),
+            side: BorderSide(color: hairline),
+          ),
+          titleTextStyle: title.copyWith(fontSize: 20),
+          contentTextStyle: body,
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: cs.inverseSurface,
+          contentTextStyle: body.copyWith(color: cs.onInverseSurface),
+          actionTextColor: cs.onInverseSurface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PrismRadius.md)),
+        ),
+        popupMenuTheme: PopupMenuThemeData(
+          color: cs.surfaceContainerHigh,
+          surfaceTintColor: Colors.transparent,
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(PrismRadius.md),
+            side: BorderSide(color: hairline),
+          ),
+          textStyle: body.copyWith(fontSize: 15, color: cs.onSurface),
+        ),
+        listTileTheme: ListTileThemeData(
+          iconColor: cs.onSurface,
+          textColor: cs.onSurface,
+          titleTextStyle: body.copyWith(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface),
+          subtitleTextStyle: body.copyWith(fontSize: 13),
+          contentPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.7),
+          ),
+          trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? cs.primary : cs.onSurface.withValues(alpha: 0.12),
+          ),
+          trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        ),
+        sliderTheme: SliderThemeData(
+          activeTrackColor: cs.primary,
+          inactiveTrackColor: cs.onSurface.withValues(alpha: 0.12),
+          thumbColor: cs.primary,
+          overlayColor: cs.primary.withValues(alpha: 0.12),
+          trackHeight: 4,
+        ),
+        tabBarTheme: TabBarThemeData(
+          labelColor: cs.onSurface,
+          unselectedLabelColor: cs.onSurface.withValues(alpha: 0.55),
+          indicatorColor: cs.primary,
+          dividerColor: Colors.transparent,
+          labelStyle: PrismTextStyles.button,
+          unselectedLabelStyle: PrismTextStyles.button.copyWith(fontWeight: FontWeight.w600),
+        ),
+        tooltipTheme: TooltipThemeData(
+          decoration: BoxDecoration(color: cs.inverseSurface, borderRadius: BorderRadius.circular(PrismRadius.xs)),
+          textStyle: body.copyWith(fontSize: 12, color: cs.onInverseSurface),
+          waitDuration: const Duration(milliseconds: 400),
+          exitDuration: PrismDurations.press,
+        ),
       ),
     );
   }

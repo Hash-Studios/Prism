@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/edit_adjustments_card.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -12,9 +14,12 @@ import 'package:image_editor/image_editor.dart' hide ImageSource;
 
 @RoutePage()
 class EditWallScreen extends StatefulWidget {
-  const EditWallScreen({super.key, required this.image});
+  const EditWallScreen({super.key, required this.image, this.batch});
 
   final File image;
+
+  /// Set when this image is one of several picked together.
+  final UploadBatch? batch;
 
   @override
   _EditWallScreenState createState() => _EditWallScreenState();
@@ -60,11 +65,14 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   bool get _dirty => sat != 1 || bright != 0 || con != 1 || _transformed || cropRatio != EditCropRatio.r9x18;
 
-  void _resetAdjustments() => setState(() {
-    sat = 1;
-    bright = 0;
-    con = 1;
-  });
+  void _resetAdjustments() {
+    PrismHaptics.tap();
+    setState(() {
+      sat = 1;
+      bright = 0;
+      con = 1;
+    });
+  }
 
   Future<void> _confirmDiscard() async {
     final bool discard = await showPrismConfirm(
@@ -85,7 +93,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
         if (!didPop) _confirmDiscard();
       },
       child: PrismPage(
-        title: 'Edit wallpaper',
+        title: widget.batch?.isMulti == true
+            ? 'Edit wallpaper ${widget.batch!.position} of ${widget.batch!.total}'
+            : 'Edit wallpaper',
         onBack: () => Navigator.maybePop(context),
         actions: <Widget>[
           PrismIconButton(icon: Icons.restart_alt_rounded, tooltip: 'Reset adjustments', onPressed: _resetAdjustments),
@@ -189,7 +199,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
       }
 
       widget.image.writeAsBytesSync(result);
-      await context.router.replace(UploadWallRoute(image: widget.image));
+      await context.router.replace(UploadWallRoute(image: widget.image, batch: widget.batch));
     } catch (_) {
       if (mounted) toasts.error('Could not save your edits. Try again.');
     } finally {
@@ -198,11 +208,13 @@ class _EditWallScreenState extends State<EditWallScreen> {
   }
 
   void flip() {
+    PrismHaptics.tap();
     editorKey.currentState!.flip();
     setState(() => _transformed = true);
   }
 
   void rotate(bool right) {
+    PrismHaptics.tap();
     editorKey.currentState!.rotate(degree: right ? 90 : -90);
     setState(() => _transformed = true);
   }

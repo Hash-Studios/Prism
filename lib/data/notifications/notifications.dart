@@ -10,6 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
+import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -208,6 +209,7 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({required bool force}) async 
   logger.d('Fetching in-app notifications');
   try {
     final NotificationsLocalDataSource notificationsLocal = getIt<NotificationsLocalDataSource>();
+    final NotificationTombstones tombstones = getIt<NotificationTombstones>();
     final DateTime nowUtc = DateTime.now().toUtc();
     final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
     final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
@@ -220,10 +222,12 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({required bool force}) async 
 
     if (force || lastFetchTime == null) {
       final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
-        sinceUtc: nowUtc.subtract(const Duration(days: 30)),
+        sinceUtc: tombstones.fetchFloor(nowUtc.subtract(const Duration(days: 30))),
         sourceTag: force ? 'notifications.force_backfill' : 'notifications.last_month',
       );
-      final entities = _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked);
+      final entities = tombstones.withoutRemoved(
+        _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked),
+      );
       await _replaceAllPreservingReadState(notificationsLocal, entities);
       await notificationsLocal.setLastFetchAtUtc(nowUtc);
       return true;
@@ -234,7 +238,9 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({required bool force}) async 
       sourceTag: 'notifications.latest',
       cachePolicy: FirestoreCachePolicy.memoryFirst,
     );
-    final entities = _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked);
+    final entities = tombstones.withoutRemoved(
+      _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked),
+    );
     if (entities.isNotEmpty) {
       await notificationsLocal.upsertAll(entities);
     }

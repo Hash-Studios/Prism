@@ -1,19 +1,29 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/platform/share_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class ShareButton extends StatefulWidget {
   final String? id;
   final WallpaperSource source;
   final String? url;
   final String thumbUrl;
+  final String? contextLine;
+  final Future<String?> Function(String id, WallpaperSource source, String? url, String thumbUrl) createLink;
+  final Future<ShareCardResult> Function(
+    BuildContext context, {
+    required String imageUrl,
+    required String link,
+    String? contextLine,
+  })
+  shareCard;
 
   /// Shows a caption under the round button.
   final bool labelled;
@@ -22,6 +32,9 @@ class ShareButton extends StatefulWidget {
     required this.source,
     required this.url,
     required this.thumbUrl,
+    this.contextLine,
+    this.createLink = createDynamicLink,
+    this.shareCard = shareWallpaperCard,
     this.labelled = false,
     super.key,
   });
@@ -44,6 +57,7 @@ class _ShareButtonState extends State<ShareButton> {
       label: 'Share',
       caption: widget.labelled ? 'Share' : null,
       onTap: () {
+        PrismHaptics.tap();
         logger.d('Share');
         onShare();
       },
@@ -53,21 +67,46 @@ class _ShareButtonState extends State<ShareButton> {
   }
 
   Future<void> onShare() async {
+    if (isLoading) return;
+
+    final String? id = widget.id;
+    final WallpaperSource source = widget.source;
+    final String? url = widget.url;
+    final String thumbUrl = widget.thumbUrl;
+    final String imageUrl = url?.trim().isNotEmpty == true ? url!.trim() : thumbUrl.trim();
+    final String? contextLine = widget.contextLine;
+    final createLink = widget.createLink;
+    final shareCard = widget.shareCard;
+
     analytics.track(const InviteShareTappedEvent(sourceContext: 'wallpaper_screen'));
     setState(() {
       isLoading = true;
     });
 
     try {
-      final String link = await createDynamicLink(widget.id!, widget.source, widget.url, widget.thumbUrl);
-      await Clipboard.setData(ClipboardData(text: link));
+      final String? link = await createLink(id!, source, url, thumbUrl);
+      if (link == null) {
+        if (mounted) toasts.error("Couldn't create the share link. Try again.");
+        analytics.track(
+          const InviteShareResultEvent(
+            channel: ShareChannelValue.shareSheet,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.error,
+            sourceContext: 'wallpaper_screen',
+          ),
+        );
+        return;
+      }
       if (!mounted) return;
-      await ShareService.shareText(text: '🔥Check this out ➜ $link', context: context);
+      final ShareCardResult shared = await shareCard(context, imageUrl: imageUrl, link: link, contextLine: contextLine);
+      if (!mounted) return;
       analytics.track(
-        const InviteShareResultEvent(
+        InviteShareResultEvent(
           channel: ShareChannelValue.shareSheet,
-          result: EventResultValue.success,
+          result: shared.dismissed ? EventResultValue.cancelled : EventResultValue.success,
+          reason: shared.dismissed ? AnalyticsReasonValue.userCancelled : null,
           sourceContext: 'wallpaper_screen',
+          format: shared.format,
         ),
       );
     } catch (error, stackTrace) {
@@ -80,6 +119,7 @@ class _ShareButtonState extends State<ShareButton> {
           sourceContext: 'wallpaper_screen',
         ),
       );
+      if (mounted) toasts.error("Couldn't share this wallpaper. Try again.");
     } finally {
       if (mounted) {
         setState(() {

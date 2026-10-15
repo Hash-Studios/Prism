@@ -1,3 +1,6 @@
+import 'dart:math' show max;
+
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -24,8 +27,14 @@ class DetailFact {
   final VoidCallback? onTap;
 }
 
-/// The name shown at the top of the detail panel.
-String detailTitle(FeedItemEntity entity) => entity.id.toUpperCase();
+/// "Set N times" shows from this count, so a small number never reads as a poor wallpaper.
+const int minSetCountShown = 5;
+
+/// The name shown at the top of the detail panel: the title the creator gave, else the id.
+String detailTitle(FeedItemEntity entity) {
+  final String title = entity.maybeWhen(prism: (_, w) => w.title?.trim(), orElse: () => null) ?? '';
+  return title.isNotEmpty ? title : entity.id.toUpperCase();
+}
 
 /// The creator's name for "by ...", or null when the source has none.
 String? detailAuthor(FeedItemEntity entity) {
@@ -52,7 +61,7 @@ List<DetailFact> detailFacts(BuildContext context, FeedItemEntity entity, Wallpa
   Future<void> open(Uri? uri) async {
     if (uri == null) return;
     final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!ok && context.mounted) toasts.success('Could not open profile');
+    if (!ok && context.mounted) toasts.error('Could not open profile');
   }
 
   return entity.when(
@@ -67,10 +76,17 @@ List<DetailFact> detailFacts(BuildContext context, FeedItemEntity entity, Wallpa
           DetailFact(
             label: 'Author',
             value: author,
-            onTap: profile.isEmpty ? null : () => context.router.push(ProfileRoute(profileIdentifier: profile)),
+            onTap: profile.isEmpty
+                ? null
+                : () {
+                    PrismHaptics.tap();
+                    context.router.push(ProfileRoute(profileIdentifier: profile));
+                  },
           ),
         if (state.views != null || state.viewsLoading)
           DetailFact(label: 'Views', value: state.views, loading: state.views == null),
+        if (state.setCount case final int sets when sets >= minSetCountShown)
+          DetailFact(label: 'Set', value: '$sets times'),
         if (w.core.sizeBytes != null) DetailFact(label: 'Size', value: formatMegabytes(w.core.sizeBytes!)),
         if (w.core.resolution != null) DetailFact(label: 'Resolution', value: w.core.resolution),
         if (w.core.category != null) DetailFact(label: 'Category', value: w.core.category),
@@ -122,7 +138,7 @@ class DetailFactsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double cell = (constraints.maxWidth - PrismSpace.md) / 2;
+        final double cell = max(0, (constraints.maxWidth - PrismSpace.md) / 2);
         return Wrap(
           spacing: PrismSpace.md,
           runSpacing: PrismSpace.sm,

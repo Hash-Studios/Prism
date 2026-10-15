@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
+import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -83,7 +87,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       if (dx > 0 || vx > _velocityThreshold) {
         _startDismissAnimation(approve: true);
       } else {
-        _startDismissAnimation(approve: false);
+        unawaited(_askRejectReason());
       }
     } else if (dx.abs() < 0.5) {
       setState(() {
@@ -107,11 +111,30 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     }
   }
 
-  void _startDismissAnimation({required bool approve}) {
+  /// A left swipe asks for a reason first. Cancelling snaps the card back.
+  Future<void> _askRejectReason() async {
+    String? reason;
+    await showRejectReasonSheet(context, onSubmit: (String picked) async => reason = picked);
+    if (!mounted) return;
+    if (reason == null) {
+      _startSnapBackAnimation();
+      return;
+    }
+    _startDismissAnimation(approve: false, reason: reason);
+  }
+
+  void _startDismissAnimation({required bool approve, String? reason}) {
+    PrismHaptics.impact();
     final maxX = _maxDragX(MediaQuery.sizeOf(context).width);
     _startAnimation(
       target: approve ? maxX : -maxX,
-      onDone: () => _bloc.add(approve ? const ReviewBatchSwipeApproved() : const ReviewBatchSwipeRejected()),
+      onDone: () => _bloc.add(
+        approve
+            ? const ReviewBatchSwipeApproved()
+            : reason == null
+            ? const ReviewBatchSwipeRejected()
+            : ReviewBatchSwipeRejected(reason: reason),
+      ),
     );
   }
 
@@ -275,7 +298,11 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
 
   void _dismissFromSemantics({required bool approve}) {
     if (_phase == _SwipePhase.animating) return;
-    _startDismissAnimation(approve: approve);
+    if (approve) {
+      _startDismissAnimation(approve: true);
+    } else {
+      unawaited(_askRejectReason());
+    }
   }
 
   Widget _buildBottomBar(ReviewBatchState state) {
@@ -286,7 +313,10 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
           icon: Icons.undo_rounded,
           label: 'Undo',
           enabled: state.canUndo,
-          onTap: () => _bloc.add(const ReviewBatchUndoRequested()),
+          onTap: () {
+            PrismHaptics.tap();
+            _bloc.add(const ReviewBatchUndoRequested());
+          },
         ),
         _ActionButton(
           icon: Icons.open_in_full_rounded,
@@ -304,6 +334,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
           label: 'Skip',
           enabled: state.hasMoreWalls,
           onTap: () {
+            PrismHaptics.tap();
             _bloc.add(const ReviewBatchSwipeSkipped());
           },
         ),
@@ -325,7 +356,10 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       title: 'All caught up',
       body: 'No wallpapers pending review.',
       actionLabel: 'Refresh',
-      onAction: () => _bloc.add(const ReviewBatchLoadRequested()),
+      onAction: () {
+        PrismHaptics.tap();
+        _bloc.add(const ReviewBatchLoadRequested());
+      },
     );
   }
 
@@ -335,7 +369,10 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       title: 'Batch complete',
       body: '${state.totalPending} wallpapers remaining',
       actionLabel: 'Load next batch',
-      onAction: () => _bloc.add(const ReviewBatchNextBatchRequested()),
+      onAction: () {
+        PrismHaptics.tap();
+        _bloc.add(const ReviewBatchNextBatchRequested());
+      },
     );
   }
 

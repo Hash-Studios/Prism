@@ -10,9 +10,16 @@ export interface AiEnvBindings {
   BROWSER_RENDERING_API_TOKEN?: string;
   FIREBASE_PROJECT_ID?: string;
   FIREBASE_AUTH_DEBUG?: string;
+  AI_REQUIRE_CHARGE?: string;
+  STUDIO_SECRET?: string;
+  STUDIO_FAL_API_KEY?: string;
+  STUDIO_DAILY_BUDGET_USD?: string;
+  STUDIO_MONTHLY_BUDGET_USD?: string;
 }
 
 type AiProviderName = 'fal' | 'gemini';
+// 'studio' keeps the internal content pipeline spend apart from the consumer provider budgets.
+type AiBudgetScope = AiProviderName | 'studio';
 type AiQualityTier = 'fast' | 'balanced' | 'quality';
 type AiErrorCode =
   | 'unauthorized'
@@ -25,7 +32,11 @@ type AiErrorCode =
   | 'unsafe_prompt'
   | 'unsafe_output'
   | 'generation_not_found'
-  | 'service_disabled';
+  | 'service_disabled'
+  | 'charge_required'
+  | 'charge_invalid'
+  | 'charge_in_progress'
+  | 'in_progress';
 type BudgetThresholdLevel = 0 | 70 | 85 | 95;
 
 interface AuthContext {
@@ -39,11 +50,13 @@ interface AiGenerateRequest {
   qualityTier: AiQualityTier;
   targetSize: string;
   seed?: number;
+  chargeTxId?: unknown;
 }
 
 interface AiVariationRequest {
   variationPrompt?: string;
   strength?: number;
+  chargeTxId?: unknown;
 }
 
 interface AiGenerationRecord {
@@ -91,6 +104,7 @@ interface AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult>;
 }
 
@@ -180,16 +194,38 @@ const BLOCKED_PROMPT_TERMS = [
   'non consensual',
   'gore kill',
 ];
+const BLOCKED_PROMPT_REGEX = new RegExp(
+  `\\b(?:${BLOCKED_PROMPT_TERMS.map((term) => term.replaceAll(' ', '\\s+')).join('|')})(?:s|d|ed|ing)?\\b`,
+  'i',
+);
+
+const AI_COIN_COST_BY_TIER: Record<AiQualityTier, number> = { fast: 10, balanced: 75, quality: 100 };
+const CHARGE_TX_ID_REGEX = /^[A-Za-z0-9_-]{8,220}$/;
+const CHARGE_RECORD_TTL_MS = 24 * 60 * 60 * 1000;
+const CHARGE_STALE_IN_PROGRESS_MS = 5 * 60 * 1000;
+const CHARGE_MAX_AGE_MS = 15 * 60 * 1000;
+const CHARGE_CLOCK_SKEW_MS = 60 * 1000;
+
+const STUDIO_ID_REGEX = /^[A-Za-z0-9_-]{8,64}$/;
 
 const AI_QUOTA_OBJECT_NAME = 'global';
 const AI_QUOTA_RPC_URL = 'https://quota.internal/rpc';
 
 type AiQuotaRpcOp =
   | 'user_daily_cap_try_increment'
+  | 'user_daily_cap_release'
   | 'provider_budget_read'
   | 'provider_budget_reserve'
   | 'provider_budget_release'
-  | 'provider_budget_commit';
+  | 'provider_budget_commit'
+  | 'charge_claim'
+  | 'charge_status'
+  | 'charge_finish'
+  | 'charge_release'
+  | 'rate_limit_bump'
+  | 'studio_claim'
+  | 'studio_finish'
+  | 'studio_release';
 
 interface AiQuotaRpcBaseRequest {
   op: AiQuotaRpcOp;
@@ -202,6 +238,12 @@ interface AiQuotaUserDailyCapRequest extends AiQuotaRpcBaseRequest {
   cap: number;
 }
 
+interface AiQuotaUserDailyCapReleaseRequest extends AiQuotaRpcBaseRequest {
+  op: 'user_daily_cap_release';
+  userId: string;
+  dayKey: string;
+}
+
 interface AiQuotaProviderBudgetReadRequest extends AiQuotaRpcBaseRequest {
   op: 'provider_budget_read';
   provider: AiProviderName;
@@ -211,7 +253,7 @@ interface AiQuotaProviderBudgetReadRequest extends AiQuotaRpcBaseRequest {
 
 interface AiQuotaProviderBudgetReserveRequest extends AiQuotaRpcBaseRequest {
   op: 'provider_budget_reserve';
-  provider: AiProviderName;
+  provider: AiBudgetScope;
   dayKey: string;
   monthKey: string;
   estimatedCostUsd: number;
@@ -225,8 +267,46 @@ interface AiQuotaProviderBudgetMutationRequest extends AiQuotaRpcBaseRequest {
   actualCostUsd?: number;
 }
 
+interface AiQuotaChargeRequest extends AiQuotaRpcBaseRequest {
+  op: 'charge_claim' | 'charge_status' | 'charge_release';
+  txId: string;
+}
+
+interface AiQuotaChargeFinishRequest extends AiQuotaRpcBaseRequest {
+  op: 'charge_finish';
+  txId: string;
+  outcome: 'succeeded' | 'failed';
+  response?: string;
+}
+
+interface AiQuotaRateLimitRequest extends AiQuotaRpcBaseRequest {
+  op: 'rate_limit_bump';
+  key: string;
+  limit: number;
+  ttlSeconds: number;
+}
+
+interface AiQuotaStudioRequest extends AiQuotaRpcBaseRequest {
+  op: 'studio_claim' | 'studio_release';
+  id: string;
+}
+
+interface AiQuotaStudioFinishRequest extends AiQuotaRpcBaseRequest {
+  op: 'studio_finish';
+  id: string;
+  response: string;
+  responseStatus: number;
+  outcome: 'succeeded' | 'failed';
+}
+
 type AiQuotaRpcRequest =
+  | AiQuotaStudioRequest
+  | AiQuotaStudioFinishRequest
+  | AiQuotaChargeRequest
+  | AiQuotaChargeFinishRequest
+  | AiQuotaRateLimitRequest
   | AiQuotaUserDailyCapRequest
+  | AiQuotaUserDailyCapReleaseRequest
   | AiQuotaProviderBudgetReadRequest
   | AiQuotaProviderBudgetReserveRequest
   | AiQuotaProviderBudgetMutationRequest;
@@ -239,6 +319,11 @@ interface AiQuotaRpcErrorResponse {
 interface AiQuotaUserDailyCapResponse {
   ok: true;
   allowed: boolean;
+  current: number;
+}
+
+interface AiQuotaUserDailyCapReleaseResponse {
+  ok: true;
   current: number;
 }
 
@@ -266,16 +351,59 @@ interface AiQuotaProviderBudgetCommitResponse {
   committed: boolean;
 }
 
+type AiChargeClaimStatus = 'new' | 'in_progress' | 'done' | 'failed';
+type AiChargeEvidenceStatus = 'not_started' | 'in_progress' | 'succeeded' | 'failed';
+
+interface AiQuotaChargeClaimResponse {
+  ok: true;
+  status: AiChargeClaimStatus;
+  response?: string;
+  responseStatus?: number;
+}
+
+interface AiQuotaChargeStatusResponse {
+  ok: true;
+  status: AiChargeEvidenceStatus;
+}
+
+interface AiQuotaChargeMutationResponse {
+  ok: true;
+}
+
+interface AiQuotaRateLimitResponse {
+  ok: true;
+  allowed: boolean;
+  current: number;
+}
+
+interface AiChargeRecord {
+  state: 'in_progress' | 'succeeded' | 'failed';
+  at: number;
+  expiresAt: number;
+  response?: string;
+  responseStatus?: number;
+}
+
+interface AiRateLimitRecord {
+  count: number;
+  expiresAt: number;
+}
+
 type AiQuotaRpcResponse =
+  | AiQuotaChargeClaimResponse
+  | AiQuotaChargeStatusResponse
+  | AiQuotaChargeMutationResponse
+  | AiQuotaRateLimitResponse
   | AiQuotaRpcErrorResponse
   | AiQuotaUserDailyCapResponse
+  | AiQuotaUserDailyCapReleaseResponse
   | AiQuotaProviderBudgetReadResponse
   | AiQuotaProviderBudgetReserveResponse
   | AiQuotaProviderBudgetReleaseResponse
   | AiQuotaProviderBudgetCommitResponse;
 
 interface AiQuotaReservationRecord {
-  provider: AiProviderName;
+  provider: AiBudgetScope;
   dayKey: string;
   monthKey: string;
   costUsd: number;
@@ -307,6 +435,8 @@ export class AiQuotaCoordinator {
       switch (body.op) {
         case 'user_daily_cap_try_increment':
           return this.handleUserDailyCapTryIncrement(body);
+        case 'user_daily_cap_release':
+          return this.handleUserDailyCapRelease(body);
         case 'provider_budget_read':
           return this.handleProviderBudgetRead(body);
         case 'provider_budget_reserve':
@@ -315,6 +445,22 @@ export class AiQuotaCoordinator {
           return this.handleProviderBudgetRelease(body);
         case 'provider_budget_commit':
           return this.handleProviderBudgetCommit(body);
+        case 'charge_claim':
+          return this.handleChargeClaim(body);
+        case 'charge_status':
+          return this.handleChargeStatus(body);
+        case 'charge_finish':
+          return this.handleChargeFinish(body);
+        case 'charge_release':
+          return this.handleChargeRelease(body);
+        case 'rate_limit_bump':
+          return this.handleRateLimitBump(body);
+        case 'studio_claim':
+          return this.handleStudioClaim(body);
+        case 'studio_finish':
+          return this.handleStudioFinish(body);
+        case 'studio_release':
+          return this.handleStudioRelease(body);
       }
     } catch (error) {
       console.error('[ai] quota_coordinator_error', { error: `${error ?? ''}` });
@@ -339,6 +485,19 @@ export class AiQuotaCoordinator {
     return quotaJson<AiQuotaUserDailyCapResponse>({ ok: true, allowed: true, current: next });
   }
 
+  private async handleUserDailyCapRelease(request: AiQuotaUserDailyCapReleaseRequest): Promise<Response> {
+    const userId = clipText(asString(request.userId), 128);
+    const dayKey = clipText(asString(request.dayKey), 16);
+    if (!isNonEmptyString(userId) || !isNonEmptyString(dayKey)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const key = this.userDailyCapKey(userId, dayKey);
+    const current = this.readStoredNumber(await this.state.storage.get<number | string>(key), 0);
+    const next = Math.max(0, current - 1);
+    await this.state.storage.put(key, next);
+    return quotaJson<AiQuotaUserDailyCapReleaseResponse>({ ok: true, current: next });
+  }
+
   private async handleProviderBudgetRead(request: AiQuotaProviderBudgetReadRequest): Promise<Response> {
     const status = await this.readProviderBudgetStatus(request.provider, request.dayKey, request.monthKey);
     return quotaJson<AiQuotaProviderBudgetReadResponse>({
@@ -352,7 +511,8 @@ export class AiQuotaCoordinator {
     const provider = request.provider;
     const dayKey = clipText(asString(request.dayKey), 16);
     const monthKey = clipText(asString(request.monthKey), 16);
-    if (!isNonEmptyString(dayKey) || !isNonEmptyString(monthKey) || (provider !== 'fal' && provider !== 'gemini')) {
+    const isKnownScope = provider === 'fal' || provider === 'gemini' || provider === 'studio';
+    if (!isNonEmptyString(dayKey) || !isNonEmptyString(monthKey) || !isKnownScope) {
       return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
     }
     const estimatedCostUsd = Math.max(0, asNumber(request.estimatedCostUsd, 0));
@@ -437,7 +597,183 @@ export class AiQuotaCoordinator {
     return quotaJson<AiQuotaProviderBudgetCommitResponse>({ ok: true, committed });
   }
 
-  private async readProviderBudgetStatus(provider: AiProviderName, dayKey: string, monthKey: string): Promise<BudgetStatus> {
+  private async handleChargeClaim(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record == null) {
+      const now = Date.now();
+      await this.state.storage.put<AiChargeRecord>(this.chargeKey(txId), {
+        state: 'in_progress',
+        at: now,
+        expiresAt: now + CHARGE_RECORD_TTL_MS,
+      });
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
+    }
+    const state = effectiveChargeState(record);
+    if (state === 'succeeded') {
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'done', response: record.response ?? '' });
+    }
+    return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: state });
+  }
+
+  private async handleChargeStatus(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    return quotaJson<AiQuotaChargeStatusResponse>({
+      ok: true,
+      status: record == null ? 'not_started' : effectiveChargeState(record),
+    });
+  }
+
+  private async handleChargeFinish(request: AiQuotaChargeFinishRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null || (request.outcome !== 'succeeded' && request.outcome !== 'failed')) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record != null && record.state === 'in_progress') {
+      const now = Date.now();
+      await this.state.storage.put<AiChargeRecord>(this.chargeKey(txId), {
+        state: request.outcome,
+        at: now,
+        expiresAt: now + CHARGE_RECORD_TTL_MS,
+        response: request.outcome === 'succeeded' ? asString(request.response) : undefined,
+      });
+    }
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private async handleChargeRelease(request: AiQuotaChargeRequest): Promise<Response> {
+    const txId = chargeTxIdOrNull(request.txId);
+    if (txId == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.readChargeRecord(txId);
+    if (record != null && record.state === 'in_progress') {
+      await this.state.storage.delete(this.chargeKey(txId));
+    }
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private async handleRateLimitBump(request: AiQuotaRateLimitRequest): Promise<Response> {
+    const key = clipText(asString(request.key), 200);
+    const limit = Math.max(1, Math.round(asNumber(request.limit, 1)));
+    const ttlSeconds = Math.max(1, Math.round(asNumber(request.ttlSeconds, 60)));
+    if (!isNonEmptyString(key)) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const storageKey = `ratelimit:${key}`;
+    const now = Date.now();
+    const stored = await this.state.storage.get<AiRateLimitRecord>(storageKey);
+    const current = stored != null && stored.expiresAt > now ? stored : null;
+    const count = current?.count ?? 0;
+    if (count >= limit) {
+      return quotaJson<AiQuotaRateLimitResponse>({ ok: true, allowed: false, current: count });
+    }
+    await this.state.storage.put<AiRateLimitRecord>(storageKey, {
+      count: count + 1,
+      expiresAt: current?.expiresAt ?? now + ttlSeconds * 1000,
+    });
+    return quotaJson<AiQuotaRateLimitResponse>({ ok: true, allowed: true, current: count + 1 });
+  }
+
+  private async handleStudioClaim(request: AiQuotaStudioRequest): Promise<Response> {
+    const id = studioIdOrNull(request.id);
+    if (id == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const now = Date.now();
+    const record = await this.state.storage.get<AiChargeRecord>(this.studioKey(id));
+    if (record != null) {
+      if (record.state === 'succeeded') {
+        return quotaJson<AiQuotaChargeClaimResponse>({
+          ok: true,
+          status: 'done',
+          response: record.response ?? '',
+          responseStatus: record.responseStatus ?? 200,
+        });
+      }
+      if (record.state === 'failed') {
+        return quotaJson<AiQuotaChargeClaimResponse>({
+          ok: true,
+          status: 'failed',
+          response: record.response ?? '',
+          responseStatus: record.responseStatus ?? 502,
+        });
+      }
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'in_progress' });
+    }
+    await this.state.storage.put<AiChargeRecord>(this.studioKey(id), {
+      state: 'in_progress',
+      at: now,
+      expiresAt: Number.MAX_SAFE_INTEGER,
+    });
+    return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
+  }
+
+  private async handleStudioFinish(request: AiQuotaStudioFinishRequest): Promise<Response> {
+    const id = studioIdOrNull(request.id);
+    if (
+      id == null
+      || !isNonEmptyString(request.response)
+      || !Number.isInteger(request.responseStatus)
+      || request.responseStatus < 100
+      || request.responseStatus > 599
+      || (request.outcome !== 'succeeded' && request.outcome !== 'failed')
+    ) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const now = Date.now();
+    await this.state.storage.put<AiChargeRecord>(this.studioKey(id), {
+      state: request.outcome,
+      at: now,
+      expiresAt: Number.MAX_SAFE_INTEGER,
+      response: request.response,
+      responseStatus: request.responseStatus,
+    });
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private async handleStudioRelease(request: AiQuotaStudioRequest): Promise<Response> {
+    const id = studioIdOrNull(request.id);
+    if (id == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.state.storage.get<AiChargeRecord>(this.studioKey(id));
+    if (record != null && record.state === 'in_progress') {
+      await this.state.storage.delete(this.studioKey(id));
+    }
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private studioKey(id: string): string {
+    return `studio:${id}`;
+  }
+
+  private async readChargeRecord(txId: string): Promise<AiChargeRecord | null> {
+    const key = this.chargeKey(txId);
+    const record = await this.state.storage.get<AiChargeRecord>(key);
+    if (record == null) {
+      return null;
+    }
+    if (record.expiresAt <= Date.now()) {
+      await this.state.storage.delete(key);
+      return null;
+    }
+    return record;
+  }
+
+  private chargeKey(txId: string): string {
+    return `charge:${txId}`;
+  }
+
+  private async readProviderBudgetStatus(provider: AiBudgetScope, dayKey: string, monthKey: string): Promise<BudgetStatus> {
     const [daily, monthly] = await Promise.all([
       this.state.storage.get<number | string>(this.providerDailyBudgetKey(provider, dayKey)),
       this.state.storage.get<number | string>(this.providerMonthlyBudgetKey(provider, monthKey)),
@@ -462,11 +798,11 @@ export class AiQuotaCoordinator {
     return `user:${userId}:daily:${dayKey}`;
   }
 
-  private providerDailyBudgetKey(provider: AiProviderName, dayKey: string): string {
+  private providerDailyBudgetKey(provider: AiBudgetScope, dayKey: string): string {
     return `provider:${provider}:daily:${dayKey}`;
   }
 
-  private providerMonthlyBudgetKey(provider: AiProviderName, monthKey: string): string {
+  private providerMonthlyBudgetKey(provider: AiBudgetScope, monthKey: string): string {
     return `provider:${provider}:monthly:${monthKey}`;
   }
 
@@ -484,8 +820,17 @@ export async function handleAiApiRequest(
     return null;
   }
 
+  if (url.pathname.startsWith('/api/ai/studio/')) {
+    return handleStudioRequest(request, url.pathname, env);
+  }
+
   if (request.method === 'GET' && url.pathname === '/api/ai/health') {
-    return handleAiHealth(env);
+    return handleAiHealth(request, env);
+  }
+
+  const chargeMatch = /^\/api\/ai\/charges\/([^/]+)$/.exec(url.pathname);
+  if (request.method === 'GET' && chargeMatch != null) {
+    return handleChargeEvidence(chargeMatch[1], env);
   }
 
   if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/api/ai/assets/')) {
@@ -515,9 +860,12 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
   }
 
   if (env.AI_IMAGES != null) {
-    const object = await env.AI_IMAGES.get(objectKey);
+    let object = await env.AI_IMAGES.get(objectKey);
+    if (object == null && (await ensureDeferredWatermark(objectKey, env))) {
+      object = await env.AI_IMAGES.get(objectKey);
+    }
     if (object == null) {
-      return aiError('generation_not_found', 404, 'Asset not found');
+      return assetNotFound(objectKey, env);
     }
     if (method === 'HEAD') {
       return new Response(null, {
@@ -537,9 +885,12 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
     });
   }
 
-  const encoded = await env.AI_STATE_KV.get(`ai:asset:${objectKey}`);
+  let encoded = await env.AI_STATE_KV.get(`ai:asset:${objectKey}`);
+  if (!isNonEmptyString(encoded) && (await ensureDeferredWatermark(objectKey, env))) {
+    encoded = await env.AI_STATE_KV.get(`ai:asset:${objectKey}`);
+  }
   if (!isNonEmptyString(encoded)) {
-    return aiError('generation_not_found', 404, 'Asset not found');
+    return assetNotFound(objectKey, env);
   }
   const bytes = fromBase64(encoded);
   if (method === 'HEAD') {
@@ -560,7 +911,34 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
   });
 }
 
-async function handleAiHealth(env: AiEnvBindings): Promise<Response> {
+async function assetNotFound(objectKey: string, env: AiEnvBindings): Promise<Response> {
+  const match = PUBLIC_ASSET_KEY_REGEX.exec(objectKey);
+  if (match != null && isNonEmptyString(await env.AI_STATE_KV.get(watermarkPendingKey(match[1])))) {
+    const response = aiError('provider_error', 503, 'Watermarked image is not ready yet');
+    response.headers.set('retry-after', '30');
+    return response;
+  }
+  return aiError('generation_not_found', 404, 'Asset not found');
+}
+
+async function handleChargeEvidence(rawTxId: string, env: AiEnvBindings): Promise<Response> {
+  const txId = chargeTxIdOrNull(rawTxId);
+  if (txId == null) {
+    return aiError('invalid_request', 404, 'Unknown charge id');
+  }
+  try {
+    const response = await sendQuotaRequest<AiQuotaChargeStatusResponse>(env, { op: 'charge_status', txId });
+    return aiJson({ status: response.status });
+  } catch (error) {
+    console.error('[ai] charge_status_failed', { error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+}
+
+async function handleAiHealth(request: Request, env: AiEnvBindings): Promise<Response> {
+  if (await parseAuth(request, env) == null) {
+    return aiJson({ ok: true });
+  }
   const config = await readRoutingConfig(env);
   let snapshots: Record<AiProviderName, ProviderBudgetSnapshot>;
   try {
@@ -603,6 +981,11 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
     return aiError('invalid_json', 400, 'Invalid JSON body');
   }
 
+  const charge = readChargeTxId(body.chargeTxId, env);
+  if (charge instanceof Response) {
+    return charge;
+  }
+
   const parsed = normalizeGenerateRequest(body);
   if (parsed == null) {
     return aiError('invalid_request', 400, 'Invalid generation payload');
@@ -615,6 +998,7 @@ async function handleGenerate(request: Request, env: AiEnvBindings): Promise<Res
   return executeGeneration({
     env,
     auth,
+    chargeTxId: charge,
     prompt: parsed.prompt,
     stylePreset: parsed.stylePreset,
     qualityTier: parsed.qualityTier,
@@ -642,6 +1026,11 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
     return aiError('invalid_json', 400, 'Invalid JSON body');
   }
 
+  const charge = readChargeTxId(body.chargeTxId, env);
+  if (charge instanceof Response) {
+    return charge;
+  }
+
   const variationPrompt = clipText(sanitizeText(body.variationPrompt ?? ''), 160);
   const strength = clampNumber(asNumber(body.strength, 0.45), 0.1, 1.0);
   const mergedPrompt = variationPrompt.length === 0
@@ -654,6 +1043,7 @@ async function handleVariation(request: Request, env: AiEnvBindings, parentGener
   return executeGeneration({
     env,
     auth,
+    chargeTxId: charge,
     prompt: mergedPrompt,
     stylePreset: original.stylePreset,
     qualityTier: original.qualityTier,
@@ -694,7 +1084,7 @@ async function handlePrefill(request: Request, env: AiEnvBindings): Promise<Resp
   });
 }
 
-async function executeGeneration(params: {
+interface ExecuteGenerationParams {
   env: AiEnvBindings;
   auth: AuthContext;
   prompt: string;
@@ -703,12 +1093,158 @@ async function executeGeneration(params: {
   targetSize: string;
   seed: number;
   parentGenerationId?: string;
-}): Promise<Response> {
+  chargeTxId?: string;
+}
+
+function studioIdOrNull(value: unknown): string | null {
+  return typeof value === 'string' && STUDIO_ID_REGEX.test(value) ? value : null;
+}
+
+function chargeTxIdOrNull(value: unknown): string | null {
+  return typeof value === 'string' && CHARGE_TX_ID_REGEX.test(value) ? value : null;
+}
+
+function effectiveChargeState(record: AiChargeRecord): 'in_progress' | 'succeeded' | 'failed' {
+  if (record.state === 'in_progress' && Date.now() - record.at > CHARGE_STALE_IN_PROGRESS_MS) {
+    return 'failed';
+  }
+  return record.state;
+}
+
+function readChargeTxId(value: unknown, env: AiEnvBindings): string | undefined | Response {
+  if (value == null) {
+    return env.AI_REQUIRE_CHARGE === 'true'
+      ? aiError('charge_required', 402, 'A paid charge id is required')
+      : undefined;
+  }
+  const txId = chargeTxIdOrNull(value);
+  return txId ?? aiError('invalid_request', 400, 'Invalid chargeTxId');
+}
+
+async function executeGeneration(params: ExecuteGenerationParams): Promise<Response> {
+  const txId = params.chargeTxId;
+  if (txId == null) {
+    return runQuotaGatedGeneration(params);
+  }
+
+  let claim: AiQuotaChargeClaimResponse;
+  try {
+    claim = await sendQuotaRequest<AiQuotaChargeClaimResponse>(params.env, { op: 'charge_claim', txId });
+  } catch (error) {
+    console.error('[ai] charge_claim_failed', { userId: params.auth.userId, error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+  if (claim.status === 'done') {
+    return new Response(claim.response ?? '', {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
+  if (claim.status === 'in_progress') {
+    return aiError('charge_in_progress', 409, 'This charge is already being processed');
+  }
+  if (claim.status === 'failed') {
+    return aiError('charge_invalid', 402, 'This charge already failed. Request a refund.');
+  }
+
+  const verdict = await verifyCharge(txId, params.qualityTier, params.auth, params.env);
+  if (verdict !== 'ok') {
+    await sendChargeMutation(params.env, { op: 'charge_release', txId });
+    return verdict === 'invalid'
+      ? aiError('charge_invalid', 402, 'Charge could not be verified')
+      : aiError('provider_error', 502, 'Charge verification unavailable');
+  }
+
+  let response: Response;
+  try {
+    response = await runQuotaGatedGeneration(params);
+  } catch (error) {
+    await sendChargeMutation(params.env, { op: 'charge_finish', txId, outcome: 'failed' });
+    throw error;
+  }
+  await sendChargeMutation(
+    params.env,
+    response.ok
+      ? { op: 'charge_finish', txId, outcome: 'succeeded', response: await response.clone().text() }
+      : { op: 'charge_finish', txId, outcome: 'failed' },
+  );
+  return response;
+}
+
+async function sendChargeMutation(env: AiEnvBindings, body: AiQuotaChargeRequest | AiQuotaChargeFinishRequest): Promise<void> {
+  try {
+    await sendQuotaRequest<AiQuotaChargeMutationResponse>(env, body);
+  } catch (error) {
+    console.error('[ai] charge_update_failed', { op: body.op, txId: body.txId, error: `${error ?? ''}` });
+  }
+}
+
+async function verifyCharge(
+  txId: string,
+  qualityTier: AiQualityTier,
+  auth: AuthContext,
+  env: AiEnvBindings,
+): Promise<'ok' | 'invalid' | 'unavailable'> {
+  if (!isNonEmptyString(env.FIREBASE_PROJECT_ID)) {
+    console.error('[ai] charge_verify_missing_project_id');
+    return 'unavailable';
+  }
+  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}`
+    + `/databases/(default)/documents/coinTransactions/${encodeURIComponent(txId)}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { authorization: `Bearer ${auth.token}` },
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch (error) {
+    console.error('[ai] charge_verify_fetch_failed', { error: `${error ?? ''}` });
+    return 'unavailable';
+  }
+  if (response.status === 404 || response.status === 403 || response.status === 401) {
+    return 'invalid';
+  }
+  if (!response.ok) {
+    console.error('[ai] charge_verify_http_error', { status: response.status });
+    return 'unavailable';
+  }
+  const doc = await readJson<{ fields?: Record<string, Record<string, unknown> | undefined> }>(response);
+  const fields = doc?.fields;
+  if (fields == null) {
+    return 'invalid';
+  }
+  const delta = firestoreNumber(fields.delta);
+  const createdAtMs = typeof fields.createdAt?.timestampValue === 'string'
+    ? Date.parse(fields.createdAt.timestampValue)
+    : Number.NaN;
+  const ageMs = Date.now() - createdAtMs;
+  const matches = fields.userId?.stringValue === auth.userId
+    && fields.action?.stringValue === 'aiGeneration'
+    && fields.type?.stringValue === 'debit'
+    && fields.status?.stringValue === 'completed'
+    && delta != null
+    && -delta === AI_COIN_COST_BY_TIER[qualityTier]
+    && Number.isFinite(ageMs)
+    && ageMs >= -CHARGE_CLOCK_SKEW_MS
+    && ageMs <= CHARGE_MAX_AGE_MS;
+  return matches ? 'ok' : 'invalid';
+}
+
+function firestoreNumber(field: Record<string, unknown> | undefined): number | null {
+  if (field == null) {
+    return null;
+  }
+  const raw = field.integerValue ?? field.doubleValue;
+  const value = typeof raw === 'string' ? Number(raw) : raw;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+async function runQuotaGatedGeneration(params: ExecuteGenerationParams): Promise<Response> {
   const config = await readRoutingConfig(params.env);
   if (!config.enabled) {
     return aiError('service_disabled', 503, 'AI generation is disabled');
   }
-  let dailyCapStatus: { allowed: boolean; current: number };
+  let dailyCapStatus: { allowed: boolean; current: number; dayKey: string };
   try {
     dailyCapStatus = await checkAndIncrementUserDailyCap(params.auth.userId, config.hardUserDailyCap, params.env);
   } catch (error) {
@@ -722,6 +1258,27 @@ async function executeGeneration(params: {
     return aiError('rate_limited', 429, 'User daily generation limit reached');
   }
 
+  const billing = { billed: false };
+  let response: Response;
+  try {
+    response = await runGenerationAttempts(params, config, billing);
+  } catch (error) {
+    if (!billing.billed) {
+      await releaseUserDailyCap(params.auth.userId, dailyCapStatus.dayKey, params.env);
+    }
+    throw error;
+  }
+  if (!response.ok && !billing.billed) {
+    await releaseUserDailyCap(params.auth.userId, dailyCapStatus.dayKey, params.env);
+  }
+  return response;
+}
+
+async function runGenerationAttempts(
+  params: ExecuteGenerationParams,
+  config: AiRoutingConfig,
+  billing: { billed: boolean },
+): Promise<Response> {
   let routingPlan: RoutingPlan;
   try {
     routingPlan = await buildProviderAttemptOrder(config, params.qualityTier, params.env);
@@ -736,6 +1293,15 @@ async function executeGeneration(params: {
     return aiError('service_disabled', 503, 'No AI providers are enabled');
   }
   const effectiveQualityTier = routingPlan.effectiveQualityTier;
+  if (params.chargeTxId != null && effectiveQualityTier !== params.qualityTier) {
+    console.warn('[ai] paid_request_not_downgraded', {
+      userId: params.auth.userId,
+      requestedQualityTier: params.qualityTier,
+      effectiveQualityTier,
+      guardrailLevel: routingPlan.guardrailLevel,
+    });
+    return aiError('budget_exhausted', 429, 'The requested quality is unavailable right now');
+  }
   const attemptedProviders: AiProviderName[] = [];
   const requestStartedAt = Date.now();
   if (routingPlan.guardrailLevel > 0) {
@@ -790,6 +1356,18 @@ async function executeGeneration(params: {
     const model = providerConfig.modelByQuality[effectiveQualityTier];
     const startedAt = Date.now();
     let shouldReleaseReservation = true;
+    let reservationCommitted = false;
+    const markBilled = async (): Promise<void> => {
+      if (reservationCommitted) {
+        return;
+      }
+      reservationCommitted = true;
+      if (isNonEmptyString(reservationId)) {
+        await commitBilledReservation(reservationId, providerName, estimatedCost, params.env);
+      }
+      shouldReleaseReservation = false;
+      billing.billed = true;
+    };
     try {
       const result = await adapter.generate({
         prompt: params.prompt,
@@ -801,7 +1379,10 @@ async function executeGeneration(params: {
         stylePreset: params.stylePreset,
         timeoutMs: providerConfig.timeoutMs,
         env: params.env,
+        onProviderBilled: markBilled,
       });
+
+      await markBilled();
 
       if (!isOutputSafe(result.imageBytes, result.contentType)) {
         lastErrorCode = 'unsafe_output';
@@ -811,7 +1392,7 @@ async function executeGeneration(params: {
           model: result.model,
           contentType: result.contentType,
         });
-        continue;
+        break;
       }
 
       const generationId = createId('gen');
@@ -824,7 +1405,6 @@ async function executeGeneration(params: {
         params.env,
       );
       const latencyMs = Date.now() - startedAt;
-      const billedCost = result.estimatedCostUsd > 0 ? result.estimatedCostUsd : estimatedCost;
 
       const record: AiGenerationRecord = {
         generationId,
@@ -845,23 +1425,11 @@ async function executeGeneration(params: {
           promptSafe: true,
           outputSafe: true,
         },
-        estimatedCostUsd: billedCost,
+        estimatedCostUsd: estimatedCost,
         latencyMs,
       };
 
       await saveGenerationRecord(record, params.env);
-      if (isNonEmptyString(reservationId)) {
-        try {
-          await commitProviderBudgetReservation(reservationId, billedCost, params.env);
-        } catch (commitError) {
-          console.error('[ai] budget_reservation_commit_failed', {
-            provider: providerName,
-            reservationId,
-            error: `${commitError ?? ''}`,
-          });
-        }
-      }
-      shouldReleaseReservation = false;
 
       console.info('[ai] generation_success', {
         generationId: record.generationId,
@@ -903,6 +1471,9 @@ async function executeGeneration(params: {
         effectiveQualityTier,
         error: `${error ?? ''}`,
       });
+      if (reservationCommitted) {
+        break;
+      }
     } finally {
       if (shouldReleaseReservation && isNonEmptyString(reservationId)) {
         try {
@@ -1302,6 +1873,23 @@ async function commitProviderBudgetReservation(
   });
 }
 
+async function commitBilledReservation(
+  reservationId: string,
+  provider: AiProviderName,
+  billedCostUsd: number,
+  env: AiEnvBindings,
+): Promise<void> {
+  try {
+    await commitProviderBudgetReservation(reservationId, billedCostUsd, env);
+  } catch (commitError) {
+    console.error('[ai] budget_reservation_commit_failed', {
+      provider,
+      reservationId,
+      error: `${commitError ?? ''}`,
+    });
+  }
+}
+
 async function releaseProviderBudgetReservation(reservationId: string, env: AiEnvBindings): Promise<void> {
   await sendQuotaRequest<AiQuotaProviderBudgetReleaseResponse>(env, {
     op: 'provider_budget_release',
@@ -1313,17 +1901,31 @@ async function checkAndIncrementUserDailyCap(
   userId: string,
   cap: number,
   env: AiEnvBindings,
-): Promise<{ allowed: boolean; current: number }> {
+): Promise<{ allowed: boolean; current: number; dayKey: string }> {
+  const dayKey = utcDayKey();
   const response = await sendQuotaRequest<AiQuotaUserDailyCapResponse>(env, {
     op: 'user_daily_cap_try_increment',
     userId,
-    dayKey: utcDayKey(),
+    dayKey,
     cap,
   });
   return {
     allowed: response.allowed,
     current: Math.max(0, Math.round(asNumber(response.current, 0))),
+    dayKey,
   };
+}
+
+async function releaseUserDailyCap(userId: string, dayKey: string, env: AiEnvBindings): Promise<void> {
+  try {
+    await sendQuotaRequest<AiQuotaUserDailyCapReleaseResponse>(env, {
+      op: 'user_daily_cap_release',
+      userId,
+      dayKey,
+    });
+  } catch (error) {
+    console.error('[ai] quota_cap_release_failed', { userId, error: `${error ?? ''}` });
+  }
 }
 
 async function sendQuotaRequest<T extends AiQuotaRpcResponse>(env: AiEnvBindings, body: AiQuotaRpcRequest): Promise<T> {
@@ -1347,9 +1949,419 @@ async function sendQuotaRequest<T extends AiQuotaRpcResponse>(env: AiEnvBindings
   return parsed as T;
 }
 
+export async function bumpRateLimit(env: AiEnvBindings, key: string, limit: number, ttlSeconds: number): Promise<boolean> {
+  const response = await sendQuotaRequest<AiQuotaRateLimitResponse>(env, {
+    op: 'rate_limit_bump',
+    key,
+    limit,
+    ttlSeconds,
+  });
+  return response.allowed;
+}
+
 function quotaCoordinatorStub(env: AiEnvBindings): DurableObjectStub {
   const id = env.AI_QUOTA_DO.idFromName(AI_QUOTA_OBJECT_NAME);
   return env.AI_QUOTA_DO.get(id);
+}
+
+interface StudioModel {
+  costUsd: number;
+  imageSize?: (width: number, height: number) => { width: number; height: number };
+  buildBody(prompt: string, width: number, height: number, seed?: number): Record<string, unknown>;
+}
+
+interface StudioGenerateRequest {
+  id: string;
+  prompt: string;
+  model: string;
+  width: number;
+  height: number;
+  seed?: number;
+}
+
+interface StudioGenerationResult {
+  response: Response;
+  terminal: boolean;
+}
+
+// Models the internal studio pipeline may call. Adding a model is one entry here.
+const STUDIO_MODELS: Record<string, StudioModel> = {
+  // Default studio model: first on the LMArena and Artificial Analysis image boards (Oct 2026), exact phone sizes.
+  'openai/gpt-image-2.5/sunburst/text-to-image': {
+    costUsd: 0.07,
+    imageSize: gptImageSize,
+    // GPT Image 2.5 has no seed input.
+    buildBody: (prompt, width, height) => ({
+      prompt,
+      image_size: { width, height },
+      quality: 'high',
+      num_images: 1,
+      output_format: 'png',
+      background: 'opaque',
+      enable_safety_checker: true,
+    }),
+  },
+  'fal-ai/bytedance/seedream/v4.5/text-to-image': {
+    costUsd: 0.04,
+    imageSize: seedreamImageSize,
+    buildBody: (prompt, width, height, seed) => ({
+      prompt,
+      image_size: { width, height },
+      seed,
+      num_images: 1,
+      enable_safety_checker: true,
+    }),
+  },
+  'fal-ai/bytedance/seedream/v5/lite/text-to-image': {
+    costUsd: 0.04,
+    imageSize: seedreamImageSize,
+    // v5 lite documents no seed input, so no seed is sent.
+    buildBody: (prompt, width, height) => ({
+      prompt,
+      image_size: { width, height },
+      num_images: 1,
+      enable_safety_checker: true,
+    }),
+  },
+};
+const STUDIO_PROMPT_MAX_CHARS = 2000;
+const STUDIO_MIN_EDGE = 512;
+const STUDIO_MAX_EDGE = 4096;
+const STUDIO_MAX_SEED = 2147483647;
+const STUDIO_TIMEOUT_MS = 90000;
+const STUDIO_DEFAULT_DAILY_BUDGET_USD = 2;
+const STUDIO_DEFAULT_MONTHLY_BUDGET_USD = 60;
+const STUDIO_ASSETS_PATH_PREFIX = '/api/ai/studio/assets/';
+const STUDIO_UPLOAD_KEY_REGEX = /^ai\/studio\/[A-Za-z0-9_-]+\.(jpg|webp|png)$/;
+const STUDIO_DELETE_KEY_REGEX = /^ai\/studio\/(?:raw\/)?[A-Za-z0-9_-]+\.(jpg|webp|png)$/;
+const STUDIO_UPLOAD_MIN_BYTES = 1024;
+const STUDIO_UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
+const STUDIO_EXTENSION_BY_CONTENT_TYPE = new Map([['image/jpeg', 'jpg'], ['image/webp', 'webp'], ['image/png', 'png']]);
+
+// Service routes for the daily content pipeline. They use a shared secret, never Firebase auth, coins or watermarks.
+async function handleStudioRequest(request: Request, pathname: string, env: AiEnvBindings): Promise<Response> {
+  if (!isNonEmptyString(env.STUDIO_SECRET)) {
+    return aiError('service_disabled', 503, 'Studio routes are disabled');
+  }
+  if (!(await isStudioSecretValid(request.headers.get('x-studio-secret'), env.STUDIO_SECRET))) {
+    return aiError('unauthorized', 401, 'Missing or invalid studio secret');
+  }
+  if (env.AI_IMAGES == null) {
+    return aiError('service_disabled', 503, 'Studio asset storage is not configured');
+  }
+  if (request.method === 'POST' && pathname === '/api/ai/studio/generations') {
+    return handleStudioGenerate(request, env);
+  }
+  const assetKey = pathname.startsWith(STUDIO_ASSETS_PATH_PREFIX) ? pathname.slice(STUDIO_ASSETS_PATH_PREFIX.length) : null;
+  if (request.method === 'PUT' && assetKey != null) {
+    return handleStudioAssetPut(request, assetKey, env);
+  }
+  if (request.method === 'DELETE' && assetKey != null) {
+    return handleStudioAssetDelete(assetKey, env);
+  }
+  return aiError('invalid_request', 404, 'Unsupported studio endpoint');
+}
+
+// Studio can bill its own fal account. Without STUDIO_FAL_API_KEY it uses the consumer key.
+function studioFalKey(env: AiEnvBindings): string | undefined {
+  return isNonEmptyString(env.STUDIO_FAL_API_KEY) ? env.STUDIO_FAL_API_KEY : env.FAL_API_KEY;
+}
+
+async function isStudioSecretValid(provided: string | null, secret: string): Promise<boolean> {
+  if (provided == null) {
+    return false;
+  }
+  // Compare SHA-256 digests so the time taken does not depend on the length or content of the input.
+  const encoder = new TextEncoder();
+  const [left, right] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(provided)),
+    crypto.subtle.digest('SHA-256', encoder.encode(secret)),
+  ]);
+  const a = new Uint8Array(left);
+  const b = new Uint8Array(right);
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
+}
+
+async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promise<Response> {
+  const body = await readJson<Partial<StudioGenerateRequest>>(request);
+  if (body == null) {
+    return aiError('invalid_json', 400, 'Invalid JSON body');
+  }
+  const parsed = normalizeStudioGenerateRequest(body);
+  if (parsed == null) {
+    return aiError('invalid_request', 400, 'Invalid studio generation payload');
+  }
+  if (!Object.hasOwn(STUDIO_MODELS, parsed.model)) {
+    return aiError('invalid_request', 400, 'Unsupported studio model');
+  }
+  if (!isNonEmptyString(studioFalKey(env))) {
+    return aiError('service_disabled', 503, 'FAL_API_KEY missing');
+  }
+
+  let claim: AiQuotaChargeClaimResponse;
+  try {
+    claim = await sendQuotaRequest<AiQuotaChargeClaimResponse>(env, { op: 'studio_claim', id: parsed.id });
+  } catch (error) {
+    console.error('[ai] studio_claim_failed', { id: parsed.id, error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+  if (claim.status === 'done' || claim.status === 'failed') {
+    return new Response(claim.response ?? '', {
+      status: claim.responseStatus ?? (claim.status === 'done' ? 200 : 502),
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
+  if (claim.status !== 'new') {
+    return aiError('in_progress', 409, 'This studio generation is already running');
+  }
+
+  const result = await runStudioGeneration(parsed, STUDIO_MODELS[parsed.model], env);
+  await sendStudioMutation(
+    env,
+    result.terminal
+      ? {
+        op: 'studio_finish',
+        id: parsed.id,
+        outcome: result.response.ok ? 'succeeded' : 'failed',
+        responseStatus: result.response.status,
+        response: await result.response.clone().text(),
+      }
+      : { op: 'studio_release', id: parsed.id },
+  );
+  return result.response;
+}
+
+function normalizeStudioGenerateRequest(body: Partial<StudioGenerateRequest>): StudioGenerateRequest | null {
+  const { id, prompt, model, width, height, seed } = body;
+  if (typeof id !== 'string' || !STUDIO_ID_REGEX.test(id)) {
+    return null;
+  }
+  if (typeof prompt !== 'string' || prompt.trim().length === 0 || prompt.length > STUDIO_PROMPT_MAX_CHARS) {
+    return null;
+  }
+  if (typeof model !== 'string' || !isStudioEdge(width) || !isStudioEdge(height)) {
+    return null;
+  }
+  if (seed != null && !(Number.isInteger(seed) && seed >= 0 && seed <= STUDIO_MAX_SEED)) {
+    return null;
+  }
+  return { id, prompt, model, width, height, seed: seed ?? undefined };
+}
+
+function isStudioEdge(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= STUDIO_MIN_EDGE && value <= STUDIO_MAX_EDGE;
+}
+
+async function runStudioGeneration(
+  request: StudioGenerateRequest,
+  studioModel: StudioModel,
+  env: AiEnvBindings,
+): Promise<StudioGenerationResult> {
+  let reservation: AiQuotaProviderBudgetReserveResponse;
+  try {
+    reservation = await sendQuotaRequest<AiQuotaProviderBudgetReserveResponse>(env, {
+      op: 'provider_budget_reserve',
+      provider: 'studio',
+      dayKey: utcDayKey(),
+      monthKey: utcMonthKey(),
+      estimatedCostUsd: studioModel.costUsd,
+      dailyBudgetUsd: asNumber(env.STUDIO_DAILY_BUDGET_USD, STUDIO_DEFAULT_DAILY_BUDGET_USD),
+      monthlyBudgetUsd: asNumber(env.STUDIO_MONTHLY_BUDGET_USD, STUDIO_DEFAULT_MONTHLY_BUDGET_USD),
+    });
+  } catch (error) {
+    console.error('[ai] studio_budget_reservation_failed', { id: request.id, error: `${error ?? ''}` });
+    return { response: aiError('provider_error', 502, 'Quota coordinator unavailable'), terminal: false };
+  }
+  const reservationId = reservation.reservationId;
+  if (!reservation.allowed || !isNonEmptyString(reservationId)) {
+    console.warn('[ai] studio_budget_exhausted', {
+      id: request.id,
+      model: request.model,
+      dailySpentUsd: reservation.dailySpentUsd,
+      monthlySpentUsd: reservation.monthlySpentUsd,
+    });
+    return { response: aiError('budget_exhausted', 429, 'Studio budget exhausted'), terminal: false };
+  }
+
+  const size = studioModel.imageSize?.(request.width, request.height) ?? { width: request.width, height: request.height };
+  const falBody = studioModel.buildBody(request.prompt, size.width, size.height, request.seed);
+  const startedAt = Date.now();
+  let providerRequestStarted = false;
+  try {
+    providerRequestStarted = true;
+    const response = await fetchWithTimeout(`https://fal.run/${request.model}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Key ${studioFalKey(env)}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(falBody),
+    }, STUDIO_TIMEOUT_MS);
+    if (!response.ok) {
+      throw new Error(`fal_failed_${response.status}${await readErrorDetails(response)}`);
+    }
+    const payload = await response.json() as {
+      images?: Array<{ url?: string; width?: number; height?: number }>;
+      seed?: number;
+    };
+    const image = payload.images?.[0];
+    if (image == null || !isNonEmptyString(image.url)) {
+      throw new Error('fal_missing_image');
+    }
+    const imageResponse = await fetchWithTimeout(image.url, { method: 'GET' }, STUDIO_TIMEOUT_MS);
+    if (!imageResponse.ok) {
+      throw new Error(`fal_image_fetch_${imageResponse.status}`);
+    }
+    const contentType = (imageResponse.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+    const extension = STUDIO_EXTENSION_BY_CONTENT_TYPE.get(contentType);
+    if (extension == null) {
+      throw new Error(`fal_unsupported_content_type_${contentType}`);
+    }
+    const imageBytes = await readBoundedBytes(imageResponse.body, STUDIO_UPLOAD_MAX_BYTES);
+    if (imageBytes == null) {
+      throw new Error('fal_image_too_large');
+    }
+    if (!isOutputSafe(imageBytes, contentType)) {
+      return { response: aiError('unsafe_output', 502, 'Studio output blocked by safety policy'), terminal: true };
+    }
+    const key = `ai/studio/raw/${request.id}.${extension}`;
+    await storeAsset(key, imageBytes, contentType, env);
+
+    const actualSize = Number.isInteger(image.width) && Number.isInteger(image.height)
+      ? { width: image.width, height: image.height }
+      : size;
+    const seed = Number.isInteger(payload.seed) ? payload.seed : falBody.seed;
+    console.info('[ai] studio_generation_success', {
+      id: request.id,
+      model: request.model,
+      latencyMs: Date.now() - startedAt,
+      costUsd: studioModel.costUsd,
+    });
+    return { response: aiJson({
+      id: request.id,
+      imageUrl: `https://prismwalls.com/api/ai/assets/${key}`,
+      key,
+      width: actualSize.width,
+      height: actualSize.height,
+      contentType,
+      bytes: imageBytes.length,
+      model: request.model,
+      provider: 'fal',
+      seed: seed ?? null,
+      costUsd: studioModel.costUsd,
+    }), terminal: true };
+  } catch (error) {
+    console.warn('[ai] studio_generation_failed', {
+      id: request.id,
+      model: request.model,
+      providerRequestStarted,
+      error: `${error ?? ''}`,
+    });
+    return {
+      response: aiError(isTimeoutError(error) ? 'provider_timeout' : 'provider_error', 502, 'Studio generation failed'),
+      terminal: providerRequestStarted,
+    };
+  } finally {
+    if (providerRequestStarted) {
+      await commitBilledReservation(reservationId, 'fal', studioModel.costUsd, env);
+    } else {
+      try {
+        await releaseProviderBudgetReservation(reservationId, env);
+      } catch (releaseError) {
+        console.error('[ai] studio_budget_release_failed', { id: request.id, error: `${releaseError ?? ''}` });
+      }
+    }
+  }
+}
+
+async function sendStudioMutation(env: AiEnvBindings, body: AiQuotaStudioRequest | AiQuotaStudioFinishRequest): Promise<void> {
+  try {
+    await sendQuotaRequest<AiQuotaChargeMutationResponse>(env, body);
+  } catch (error) {
+    console.error('[ai] studio_update_failed', { op: body.op, id: body.id, error: `${error ?? ''}` });
+  }
+}
+
+async function handleStudioAssetPut(request: Request, key: string, env: AiEnvBindings): Promise<Response> {
+  const keyMatch = STUDIO_UPLOAD_KEY_REGEX.exec(key);
+  if (keyMatch == null) {
+    return aiError('invalid_request', 400, 'Invalid studio asset key');
+  }
+  const contentType = (request.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+  if (STUDIO_EXTENSION_BY_CONTENT_TYPE.get(contentType) !== keyMatch[1]) {
+    return aiError('invalid_request', 415, 'Content type must be image/jpeg, image/webp or image/png and match the key');
+  }
+  if (asNumber(request.headers.get('content-length'), 0) > STUDIO_UPLOAD_MAX_BYTES) {
+    return aiError('invalid_request', 413, 'Studio asset must be 1 KB to 15 MB');
+  }
+  const bytes = await readBoundedBytes(request.body, STUDIO_UPLOAD_MAX_BYTES);
+  if (bytes == null) {
+    return aiError('invalid_request', 413, 'Studio asset must be 1 KB to 15 MB');
+  }
+  if (bytes.length < STUDIO_UPLOAD_MIN_BYTES) {
+    return aiError('invalid_request', 400, 'Studio asset must be 1 KB to 15 MB');
+  }
+  await storeAsset(key, bytes, contentType, env);
+  return aiJson({ key, url: `https://prismwalls.com/api/ai/assets/${key}` });
+}
+
+async function handleStudioAssetDelete(key: string, env: AiEnvBindings): Promise<Response> {
+  if (!STUDIO_DELETE_KEY_REGEX.test(key)) {
+    return aiError('invalid_request', 400, 'Invalid studio asset key');
+  }
+  await env.AI_IMAGES?.delete(key);
+  return aiJson({ deleted: true });
+}
+
+async function readBoundedBytes(
+  body: ReadableStream<Uint8Array> | null,
+  maxBytes: number,
+): Promise<Uint8Array | null> {
+  if (body == null) {
+    return new Uint8Array();
+  }
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let byteCount = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      byteCount += value.byteLength;
+      if (byteCount > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(byteCount);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
+const WATERMARK_MIN_BYTES = 1024;
+const WATERMARK_RENDER_ATTEMPTS = 2;
+const WATERMARK_PENDING_TTL_SECONDS = 60 * 60 * 24 * 30;
+const PUBLIC_ASSET_KEY_REGEX = /^ai\/public\/([A-Za-z0-9_-]+)\.png$/;
+const ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+
+interface WatermarkPendingRecord {
+  contentType: string;
+  width: number;
+  height: number;
 }
 
 async function persistGenerationArtifacts(
@@ -1362,39 +2374,95 @@ async function persistGenerationArtifacts(
 ): Promise<{ imageUrl: string; watermarkedImageUrl: string }> {
   const originalKey = `ai/original/${generationId}.png`;
   const publicKey = `ai/public/${generationId}.png`;
-  const cacheControl = 'public, max-age=31536000, immutable';
-  const watermarked = await renderPublicWatermarkedBytes(imageBytes, contentType, width, height, env);
-  if (watermarked.bytes.length < 1024) {
-    throw new Error('watermark_generation_failed');
+  await storeAsset(originalKey, imageBytes, contentType, env);
+
+  let watermarked: { bytes: Uint8Array; contentType: string } | null = null;
+  for (let attempt = 1; attempt <= WATERMARK_RENDER_ATTEMPTS && watermarked == null; attempt += 1) {
+    try {
+      const rendered = await renderPublicWatermarkedBytes(imageBytes, contentType, width, height, env);
+      if (rendered.bytes.length >= WATERMARK_MIN_BYTES) {
+        watermarked = rendered;
+      }
+    } catch (error) {
+      console.warn('[ai] watermark_attempt_failed', { generationId, attempt, error: `${error ?? ''}` });
+    }
   }
 
-  if (env.AI_IMAGES != null) {
-    await env.AI_IMAGES.put(originalKey, imageBytes, {
-      httpMetadata: {
-        contentType,
-        cacheControl,
-      },
+  if (watermarked != null) {
+    await storeAsset(publicKey, watermarked.bytes, watermarked.contentType, env);
+  } else {
+    const pending: WatermarkPendingRecord = { contentType, width, height };
+    await env.AI_STATE_KV.put(watermarkPendingKey(generationId), JSON.stringify(pending), {
+      expirationTtl: WATERMARK_PENDING_TTL_SECONDS,
     });
-    await env.AI_IMAGES.put(publicKey, watermarked.bytes, {
-      httpMetadata: {
-        contentType: watermarked.contentType,
-        cacheControl,
-      },
-    });
-    return {
-      imageUrl: `https://prismwalls.com/api/ai/assets/${originalKey}`,
-      watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${publicKey}`,
-    };
+    console.warn('[ai] watermark_deferred', { generationId });
   }
 
-  await env.AI_STATE_KV.put(`ai:asset:${originalKey}`, toBase64(imageBytes), { expirationTtl: 60 * 60 * 24 * 30 });
-  await env.AI_STATE_KV.put(`ai:asset:${publicKey}`, toBase64(watermarked.bytes), {
-    expirationTtl: 60 * 60 * 24 * 30,
-  });
   return {
     imageUrl: `https://prismwalls.com/api/ai/assets/${originalKey}`,
     watermarkedImageUrl: `https://prismwalls.com/api/ai/assets/${publicKey}`,
   };
+}
+
+function watermarkPendingKey(generationId: string): string {
+  return `ai:wmpending:${generationId}`;
+}
+
+async function storeAsset(key: string, bytes: Uint8Array, contentType: string, env: AiEnvBindings): Promise<void> {
+  if (env.AI_IMAGES != null) {
+    await env.AI_IMAGES.put(key, bytes, { httpMetadata: { contentType, cacheControl: ASSET_CACHE_CONTROL } });
+    return;
+  }
+  await env.AI_STATE_KV.put(`ai:asset:${key}`, toBase64(bytes), { expirationTtl: 60 * 60 * 24 * 30 });
+}
+
+async function readAssetBytes(key: string, env: AiEnvBindings): Promise<Uint8Array | null> {
+  if (env.AI_IMAGES != null) {
+    const object = await env.AI_IMAGES.get(key);
+    return object == null ? null : new Uint8Array(await object.arrayBuffer());
+  }
+  const encoded = await env.AI_STATE_KV.get(`ai:asset:${key}`);
+  return isNonEmptyString(encoded) ? fromBase64(encoded) : null;
+}
+
+async function ensureDeferredWatermark(objectKey: string, env: AiEnvBindings): Promise<boolean> {
+  const match = PUBLIC_ASSET_KEY_REGEX.exec(objectKey);
+  if (match == null) {
+    return false;
+  }
+  const generationId = match[1];
+  const rawPending = await env.AI_STATE_KV.get(watermarkPendingKey(generationId));
+  if (!isNonEmptyString(rawPending)) {
+    return false;
+  }
+  let pending: WatermarkPendingRecord;
+  try {
+    pending = JSON.parse(rawPending) as WatermarkPendingRecord;
+  } catch {
+    return false;
+  }
+  const original = await readAssetBytes(`ai/original/${generationId}.png`, env);
+  if (original == null) {
+    return false;
+  }
+  try {
+    const rendered = await renderPublicWatermarkedBytes(
+      original,
+      asString(pending.contentType),
+      asNumber(pending.width, 1080),
+      asNumber(pending.height, 1920),
+      env,
+    );
+    if (rendered.bytes.length < WATERMARK_MIN_BYTES) {
+      return false;
+    }
+    await storeAsset(objectKey, rendered.bytes, rendered.contentType, env);
+  } catch (error) {
+    console.warn('[ai] watermark_deferred_failed', { generationId, error: `${error ?? ''}` });
+    return false;
+  }
+  await env.AI_STATE_KV.delete(watermarkPendingKey(generationId));
+  return true;
 }
 
 async function renderPublicWatermarkedBytes(
@@ -1678,13 +2746,7 @@ async function readGenerationRecord(generationId: string, env: AiEnvBindings): P
 }
 
 function isPromptSafe(prompt: string): boolean {
-  const normalized = prompt.toLowerCase();
-  for (const token of BLOCKED_PROMPT_TERMS) {
-    if (normalized.includes(token)) {
-      return false;
-    }
-  }
-  return true;
+  return !BLOCKED_PROMPT_REGEX.test(prompt);
 }
 
 function isOutputSafe(imageBytes: Uint8Array, contentType: string): boolean {
@@ -1737,17 +2799,16 @@ class FalProviderAdapter implements AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult> {
     if (!isNonEmptyString(params.env.FAL_API_KEY)) {
       throw new Error('FAL_API_KEY missing');
     }
     const endpoint = `https://fal.run/${params.model}`;
-    const { width: rawWidth, height: rawHeight } = parseSize(params.targetSize);
-    const isSeedream = params.model.includes('seedream');
-    // Seedream requires dimensions between 1920–4096; scale up if below minimum.
-    const SEEDREAM_MIN = 1920;
-    const width = isSeedream ? Math.max(rawWidth, SEEDREAM_MIN) : rawWidth;
-    const height = isSeedream ? Math.max(rawHeight, SEEDREAM_MIN) : rawHeight;
+    const requestedSize = parseSize(params.targetSize);
+    const { width, height } = params.model.includes('seedream')
+      ? seedreamImageSize(requestedSize.width, requestedSize.height)
+      : requestedSize;
     const requestBody = {
       prompt: `${params.prompt}, ${params.stylePreset} style`,
       image_size: { width, height },
@@ -1766,6 +2827,7 @@ class FalProviderAdapter implements AiProviderAdapter {
       const details = await readErrorDetails(response);
       throw new Error(`fal_failed_${response.status}${details}`);
     }
+    await params.onProviderBilled();
     const payload = await response.json() as {
       images?: Array<{ url?: string }>;
       image?: { url?: string };
@@ -1805,6 +2867,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
     stylePreset: string;
     timeoutMs: number;
     env: AiEnvBindings;
+    onProviderBilled: () => Promise<void>;
   }): Promise<AiProviderResult> {
     if (!isNonEmptyString(params.env.GEMINI_API_KEY)) {
       throw new Error('GEMINI_API_KEY missing');
@@ -1832,6 +2895,7 @@ class GeminiProviderAdapter implements AiProviderAdapter {
       const details = await readErrorDetails(response);
       throw new Error(`gemini_failed_${response.status}${details}`);
     }
+    await params.onProviderBilled();
     const payload = await response.json() as {
       candidates?: Array<{
         content?: {
@@ -1872,6 +2936,53 @@ function parseSize(raw: string): { width: number; height: number } {
     width: Number.parseInt(match[1], 10),
     height: Number.parseInt(match[2], 10),
   };
+}
+
+// fal Seedream needs at least 2560x1440 total pixels and at most 4096 on each edge.
+const SEEDREAM_MIN_PIXELS = 2560 * 1440;
+const SEEDREAM_MAX_EDGE = 4096;
+
+export function seedreamImageSize(width: number, height: number): { width: number; height: number } {
+  // One factor for both edges keeps the requested aspect ratio.
+  const scale = Math.min(
+    Math.max(1, Math.sqrt(SEEDREAM_MIN_PIXELS / (width * height))),
+    SEEDREAM_MAX_EDGE / Math.max(width, height),
+  );
+  const size = { width: roundUpToMultipleOf8(width * scale), height: roundUpToMultipleOf8(height * scale) };
+  if (size.width * size.height < SEEDREAM_MIN_PIXELS) {
+    // Past about 1:4.5 the edge cap blocks the pixel minimum; widen the short edge so fal still accepts the size.
+    if (size.width <= size.height) {
+      size.width = roundUpToMultipleOf8(SEEDREAM_MIN_PIXELS / size.height);
+    } else {
+      size.height = roundUpToMultipleOf8(SEEDREAM_MIN_PIXELS / size.width);
+    }
+  }
+  return size;
+}
+
+// fal GPT Image 2.5: both edges a multiple of 16, at most 3840, aspect at most 3:1, 655,360 to 8,294,400 pixels.
+const GPT_IMAGE_MIN_PIXELS = 655360;
+const GPT_IMAGE_MAX_PIXELS = 8294400;
+const GPT_IMAGE_MAX_EDGE = 3840;
+const GPT_IMAGE_MAX_ASPECT = 3;
+
+export function gptImageSize(width: number, height: number): { width: number; height: number } {
+  let long = Math.max(width, height);
+  let short = Math.max(Math.min(width, height), long / GPT_IMAGE_MAX_ASPECT);
+  // One factor for both edges keeps the aspect ratio inside the pixel and edge limits.
+  const scale = Math.min(
+    Math.max(1, Math.sqrt(GPT_IMAGE_MIN_PIXELS / (long * short))),
+    Math.sqrt(GPT_IMAGE_MAX_PIXELS / (long * short)),
+    GPT_IMAGE_MAX_EDGE / long,
+  );
+  long = Math.min(GPT_IMAGE_MAX_EDGE, Math.max(16, Math.round((long * scale) / 16) * 16));
+  short = Math.min(long, Math.max(16, Math.round((short * scale) / 16) * 16));
+  return width >= height ? { width: long, height: short } : { width: short, height: long };
+}
+
+function roundUpToMultipleOf8(value: number): number {
+  // The small offset stops float noise such as 1440.0000000002 from adding a whole step.
+  return Math.ceil(value / 8 - 1e-9) * 8;
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {

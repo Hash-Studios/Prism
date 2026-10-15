@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
+import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -135,7 +136,30 @@ void main() {
 
     await tester.drag(find.text('Sunset'), const Offset(-300, 0), warnIfMissed: false);
     await tester.pumpAndSettle();
-    verify(() => bloc.add(any(that: isA<ReviewBatchSwipeRejected>()))).called(1);
+    verifyNever(() => bloc.add(any(that: isA<ReviewBatchSwipeRejected>())));
+    await tester.tap(find.text('Watermark'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
+    await tester.pumpAndSettle();
+    verify(
+      () =>
+          bloc.add(any(that: isA<ReviewBatchSwipeRejected>().having((e) => e.reason, 'reason', rejectReasons[1].text))),
+    ).called(1);
+  });
+
+  testWidgets('cancelling the reason sheet snaps the card back without rejecting', (tester) async {
+    await pump(
+      tester,
+      ReviewBatchState(status: ReviewBatchStatus.loaded, walls: <FirestoreDocument>[_wall('a', 'Sunset')]),
+    );
+
+    await tester.drag(find.text('Sunset'), const Offset(-300, 0), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PrismButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    verifyNever(() => bloc.add(any(that: isA<ReviewBatchSwipeRejected>())));
+    expect(find.text('Sunset'), findsOneWidget);
   });
 
   testWidgets('the approve stamp appears while dragging right', (tester) async {

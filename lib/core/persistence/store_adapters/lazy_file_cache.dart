@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// A self-contained key-value store backed by a single JSON file in the app
@@ -9,13 +10,19 @@ import 'package:path_provider/path_provider.dart';
 /// block startup. All mutations persist asynchronously (fire-and-forget write
 /// after the in-memory state is updated).
 class LazyFileCache {
-  LazyFileCache(this._fileName);
+  LazyFileCache(this._fileName, {bool Function(String key, Object? value)? pruneOnLoad}) : _pruneOnLoad = pruneOnLoad;
 
   final String _fileName;
+
+  /// Entries this returns true for are dropped when the file is first loaded.
+  final bool Function(String key, Object? value)? _pruneOnLoad;
 
   Map<String, Object?> _data = {};
   bool _loaded = false;
   Completer<void>? _loadCompleter;
+  Future<void> _lastWrite = Future<void>.value();
+  bool _dirty = false;
+  int _writeCount = 0;
 
   Future<void> _ensureLoaded() async {
     if (_loaded) return;
@@ -33,6 +40,12 @@ class LazyFileCache {
         final decoded = jsonDecode(contents);
         if (decoded is Map) {
           _data = decoded.cast<String, Object?>();
+          final bool Function(String key, Object? value)? shouldPrune = _pruneOnLoad;
+          if (shouldPrune != null) {
+            final int before = _data.length;
+            _data.removeWhere(shouldPrune);
+            if (_data.length != before) unawaited(_persist());
+          }
         }
       }
     } catch (_) {
@@ -66,12 +79,29 @@ class LazyFileCache {
     unawaited(_persist());
   }
 
-  Future<void> _persist() async {
+  @visibleForTesting
+  Future<void> flush() => _lastWrite;
+
+  /// How many times the file was written.
+  @visibleForTesting
+  int get writeCount => _writeCount;
+
+  /// Marks the data changed and queues a write. Changes made before the queued write runs share that one write.
+  Future<void> _persist() {
+    _dirty = true;
+    final Future<void> next = _lastWrite.then((_) => _dirty ? _write() : null);
+    _lastWrite = next;
+    return next;
+  }
+
+  Future<void> _write() async {
     try {
       final dir = await getApplicationSupportDirectory();
       final tempPath = '${dir.path}/$_fileName.json.tmp';
       final finalPath = '${dir.path}/$_fileName.json';
       final tempFile = File(tempPath);
+      _dirty = false;
+      _writeCount++;
       await tempFile.writeAsString(jsonEncode(_data));
       await tempFile.rename(finalPath);
     } catch (_) {

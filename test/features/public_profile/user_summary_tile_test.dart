@@ -1,3 +1,4 @@
+import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/fake_app_analytics.dart';
 import '../../support/profile_user_fixture.dart';
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
@@ -18,10 +20,13 @@ void main() {
   setUpAll(() => registerFallbackValue(const PublicProfileEvent.refreshRequested()));
 
   setUp(() {
+    AnalyticsRuntime.instance = FakeAppAnalytics();
     bloc = _MockPublicProfileBloc();
     when(() => bloc.state).thenReturn(PublicProfileState.initial());
     app_state.prismUser = profileUser(id: 'me');
   });
+
+  tearDown(AnalyticsRuntime.reset);
 
   Future<void> pumpTile(WidgetTester tester, UserSummaryEntity user, {VoidCallback? onTap}) async {
     await tester.pumpWidget(
@@ -35,6 +40,15 @@ void main() {
       ),
     );
   }
+
+  UserSummaryEntity namedUser({String name = '', String username = ''}) => UserSummaryEntity(
+    id: 'u1',
+    email: 'ana@example.com',
+    name: name,
+    username: username,
+    profilePhoto: '',
+    isFollowedByCurrentUser: false,
+  );
 
   UserSummaryEntity user({bool following = false, String email = 'ana@example.com'}) => UserSummaryEntity(
     id: 'u1',
@@ -111,5 +125,22 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Following'), findsOneWidget);
+  });
+
+  testWidgets('shows the name', (tester) async {
+    await pumpTile(tester, namedUser(name: 'Ana', username: 'ana_w'));
+    expect(find.text('Ana'), findsOneWidget);
+  });
+
+  testWidgets('falls back to the username, not the email', (tester) async {
+    await pumpTile(tester, namedUser(username: 'ana_w'));
+    expect(find.text('ana_w'), findsOneWidget);
+    expect(find.textContaining('@example.com'), findsNothing);
+  });
+
+  testWidgets('falls back to Prism creator when there is no name or username', (tester) async {
+    await pumpTile(tester, namedUser());
+    expect(find.text('Prism creator'), findsOneWidget);
+    expect(find.textContaining('ana@example.com'), findsNothing);
   });
 }

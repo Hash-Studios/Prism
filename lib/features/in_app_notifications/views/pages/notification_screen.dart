@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -82,20 +81,30 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         sourceContext: 'notification_screen',
       ),
     );
-    showPrismSheet<void>(context: context, isScrollControlled: true, builder: (_) => const NotificationSettingsSheet());
+    showNotificationSettingsSheet(context);
   }
 
-  Future<void> _clearInbox(int count) async {
-    final bool confirmed = await showPrismConfirm(
-      context,
-      title: 'Clear your inbox?',
-      message: "You'll remove every notification from this list on this device. This can't be undone.",
-      confirmLabel: 'Clear inbox',
-      destructive: true,
-    );
-    if (!confirmed || !mounted) return;
-    analytics.track(NotificationClearAllConfirmedEvent(count: count));
+  /// Clears at once. The snack bar offers Undo, which puts every removed notification back.
+  void _clearInbox(List<InAppNotificationEntity> notifications) {
+    PrismHaptics.tap();
+    analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
     context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
+    _showUndoSnackBar(context, 'Inbox cleared', notifications);
+  }
+
+  void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {
+    final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () => bloc.add(InAppNotificationsEvent.restoreRequested(items: removed)),
+          ),
+        ),
+      );
   }
 
   @override
@@ -108,12 +117,21 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         return PrismPage(
           title: 'Notifications',
           actions: <Widget>[
+            if (state.unreadCount > 0)
+              PrismIconButton(
+                icon: Icons.done_all_rounded,
+                tooltip: 'Mark all as read',
+                onPressed: () {
+                  PrismHaptics.tap();
+                  context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
+                },
+              ),
             PrismIconButton(icon: Icons.tune_rounded, tooltip: 'Notification preferences', onPressed: _openPreferences),
             if (!initialLoading && notifications.isNotEmpty)
               PrismIconButton(
                 icon: Icons.delete_sweep_rounded,
                 tooltip: 'Clear inbox',
-                onPressed: () => _clearInbox(notifications.length),
+                onPressed: () => _clearInbox(notifications),
               ),
           ],
           body: _body(context, state, initialLoading),
@@ -208,18 +226,13 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Dismissible(
       key: ValueKey<String>(notification.id),
-      confirmDismiss: (DismissDirection direction) => showPrismConfirm(
-        context,
-        title: 'Remove from inbox?',
-        message: 'This notification will be removed from your list on this device.',
-        confirmLabel: 'Remove',
-        destructive: true,
-      ),
       onDismissed: (_) {
+        PrismHaptics.impact();
         analytics.track(
           NotificationItemDismissedEvent(type: notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
         );
         context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
+        _showUndoSnackBar(context, 'Notification removed', <InAppNotificationEntity>[notification]);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
@@ -242,19 +255,14 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     final InAppNotificationEntity first = group.items.first;
     return Dismissible(
       key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
-      confirmDismiss: (DismissDirection direction) => showPrismConfirm(
-        context,
-        title: 'Remove this summary?',
-        message: 'All ${group.items.length} notifications in this group will be removed from your list on this device.',
-        confirmLabel: 'Remove',
-        destructive: true,
-      ),
       onDismissed: (_) {
+        PrismHaptics.impact();
         context.read<InAppNotificationsBloc>().add(
           InAppNotificationsEvent.deleteManyRequested(
             ids: group.items.map((InAppNotificationEntity e) => e.id).toList(),
           ),
         );
+        _showUndoSnackBar(context, '${group.items.length} notifications removed', group.items);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
@@ -272,6 +280,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
               type: MaterialType.transparency,
               child: InkWell(
                 onTap: () {
+                  PrismHaptics.tap();
                   setState(() {
                     if (expanded) {
                       _expandedNotificationGroups.remove(group.key);

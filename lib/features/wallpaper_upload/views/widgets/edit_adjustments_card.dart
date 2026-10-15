@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
@@ -137,6 +138,7 @@ class _SliderRow extends StatelessWidget {
                 child: Slider(
                   label: '$label ${value.toStringAsFixed(2)}',
                   onChanged: onChanged,
+                  onChangeEnd: (_) => PrismHaptics.selection(),
                   divisions: 50,
                   value: value,
                   min: min,

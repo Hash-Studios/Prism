@@ -28,6 +28,8 @@ void main() {
   late Directory root;
   late CacheMaintenanceService service;
   late _MockImageCache imageCache;
+  late _MockImageCache thumbnailCache;
+  late _MockImageCache fullImageCache;
   late _MockNotificationsLocal notifications;
   late _MockFeedCacheLocal feeds;
   late _MockAppIconsLocal icons;
@@ -53,15 +55,26 @@ void main() {
       return call.method == 'getTemporaryDirectory' ? '${root.path}/temp' : '${root.path}/documents';
     });
     imageCache = _MockImageCache();
+    thumbnailCache = _MockImageCache();
+    fullImageCache = _MockImageCache();
     notifications = _MockNotificationsLocal();
     feeds = _MockFeedCacheLocal();
     icons = _MockAppIconsLocal();
     when(() => imageCache.emptyCache()).thenAnswer((_) async {});
+    when(() => thumbnailCache.emptyCache()).thenAnswer((_) async {});
+    when(() => fullImageCache.emptyCache()).thenAnswer((_) async {});
     when(() => notifications.clearAll()).thenAnswer((_) async {});
     when(() => notifications.clearLastFetchAtUtc()).thenAnswer((_) async {});
     when(() => feeds.clearAllFeedCaches()).thenAnswer((_) async {});
     when(() => icons.clear()).thenAnswer((_) async {});
-    service = CacheMaintenanceService(notifications, feeds, icons, imageCache: imageCache);
+    service = CacheMaintenanceService(
+      notifications,
+      feeds,
+      icons,
+      imageCache: imageCache,
+      thumbnailCache: thumbnailCache,
+      fullImageCache: fullImageCache,
+    );
   });
 
   tearDown(() async {
@@ -116,6 +129,26 @@ void main() {
     expect(await link.exists(), isTrue);
     await service.clearTransientCache();
     verify(() => imageCache.emptyCache()).called(2);
+    verify(() => thumbnailCache.emptyCache()).called(2);
+  });
+
+  test('clearing cache deletes tinted wallpapers and keeps the other temp folders', () async {
+    final tinted = File('${root.path}/temp/prism_tint/1_0.png')..createSync(recursive: true);
+    tinted.writeAsBytesSync(<int>[1, 2, 3]);
+    final editing = File('${root.path}/temp/prism_edit/source_active/source.img')..createSync(recursive: true);
+    editing.writeAsStringSync('keep these bytes');
+
+    await service.clearTransientCache();
+
+    expect(tinted.existsSync(), isFalse);
+    expect(Directory('${root.path}/temp/prism_tint').existsSync(), isFalse);
+    expect(editing.readAsStringSync(), 'keep these bytes');
+  });
+
+  test('clearing cache also empties the full-size wallpaper cache', () async {
+    await service.clearTransientCache();
+
+    verify(() => fullImageCache.emptyCache()).called(1);
   });
 
   test('clearing cache does not create a missing documents directory', () async {
@@ -123,6 +156,7 @@ void main() {
 
     expect(await Directory('${root.path}/documents').exists(), isFalse);
     verify(() => imageCache.emptyCache()).called(1);
+    verify(() => thumbnailCache.emptyCache()).called(1);
   });
 
   test('continues deleting sibling scratch files after one deletion fails', () async {
@@ -206,11 +240,19 @@ void main() {
     verify(() => notifications.clearAll()).called(2);
   });
 
-  for (final stage in ['image cache', 'notifications', 'notification timestamp', 'feed cache', 'app icons']) {
+  for (final stage in [
+    'image cache',
+    'thumbnail cache',
+    'notifications',
+    'notification timestamp',
+    'feed cache',
+    'app icons',
+  ]) {
     test('continues clearing caches and legacy scratch after $stage fails, then retries', () async {
       var failOnce = true;
       final clear = switch (stage) {
         'image cache' => imageCache.emptyCache,
+        'thumbnail cache' => thumbnailCache.emptyCache,
         'notifications' => notifications.clearAll,
         'notification timestamp' => notifications.clearLastFetchAtUtc,
         'feed cache' => feeds.clearAllFeedCaches,
@@ -228,6 +270,7 @@ void main() {
 
       expect(await scratchFile.exists(), isFalse);
       verify(() => imageCache.emptyCache()).called(1);
+      verify(() => thumbnailCache.emptyCache()).called(1);
       verify(() => notifications.clearAll()).called(1);
       verify(() => notifications.clearLastFetchAtUtc()).called(1);
       verify(() => feeds.clearAllFeedCaches()).called(1);

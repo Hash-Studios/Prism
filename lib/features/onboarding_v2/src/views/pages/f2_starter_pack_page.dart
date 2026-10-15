@@ -1,7 +1,6 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
-import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/creator_card.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:flutter/material.dart';
@@ -20,16 +19,19 @@ class F2StarterPackPage extends StatelessWidget {
           prev.actionStatus != curr.actionStatus,
       builder: (context, state) {
         final OnboardingStarterPackData data = state.starterPackData;
-        final bool loading = data.creators.isEmpty && state.loadStatus != LoadStatus.success;
+        final bool loading =
+            data.creators.isEmpty && (state.loadStatus == LoadStatus.loading || state.loadStatus == LoadStatus.initial);
         final bool empty = data.creators.isEmpty && !loading;
         final OnboardingV2Bloc bloc = context.read<OnboardingV2Bloc>();
         return OnboardingFrame(
           title: 'Find your people',
-          body: 'We picked a few creators for you. Follow at least ${OnboardingV2Config.minFollows}.',
+          body: empty
+              ? 'We could not load creators. You can skip this step.'
+              : 'We picked a few creators for you. Follow at least ${data.requiredCount}.',
           primaryLabel: 'Continue',
           primaryLoading: state.actionStatus == ActionStatus.inProgress,
           onPrimary: data.canContinue ? () => bloc.add(const OnboardingV2Event.starterPackConfirmed()) : null,
-          onSkip: empty ? () => bloc.add(const OnboardingV2Event.aiGenerationStepContinued()) : null,
+          onSkip: () => bloc.add(const OnboardingV2Event.starterPackSkipped()),
           child: loading
               ? PrismSkeleton.cards(height: 190)
               : empty
@@ -39,7 +41,7 @@ class F2StarterPackPage extends StatelessWidget {
                     title: 'No creators to suggest yet',
                     body: 'You can follow creators from their profiles later.',
                     actionLabel: 'Try again',
-                    onAction: () => bloc.add(const OnboardingV2Event.started()),
+                    onAction: () => bloc.add(const OnboardingV2Event.loadRetried()),
                   ),
                 )
               : _CreatorList(data: data, bloc: bloc),
@@ -58,8 +60,8 @@ class _CreatorList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int followed = data.selectedEmails.length;
-    final String counter = followed < OnboardingV2Config.minFollows
-        ? '$followed of ${OnboardingV2Config.minFollows} followed'
+    final String counter = followed < data.requiredCount
+        ? '$followed of ${data.requiredCount} followed'
         : '$followed followed';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

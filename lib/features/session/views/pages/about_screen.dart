@@ -1,14 +1,19 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
+import 'package:Prism/features/session/data/report_problem_service.dart' show supportEmail;
+import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -16,6 +21,70 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:github/github.dart';
+
+/// A mailto link with the app version and platform in the body so reports carry the context.
+@visibleForTesting
+String buildFeedbackLink({required String version, required String build, required String platform}) {
+  final String body = '\n\n---\nPrism $version+$build\n$platform';
+  final String query = <String, String>{
+    'subject': 'Prism feedback',
+    'body': body,
+  }.entries.map((MapEntry<String, String> e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+  return 'mailto:$supportEmail?$query';
+}
+
+Future<List<Contributor>> _loadContributors() =>
+    GitHub().repositories.listContributors(RepositorySlug('Hash-Studios', 'Prism')).toList();
+
+/// Loads the contributor list. Tests replace it.
+@visibleForTesting
+Future<List<Contributor>> Function() contributorsLoader = _loadContributors;
+
+Future<List<Contributor>>? _sessionContributors;
+Future<List<Contributor>> Function()? _sessionLoader;
+
+/// The GitHub API allows 60 unauthenticated requests per hour per IP, so the list loads once per session. A failed
+/// load is not kept.
+Future<List<Contributor>> _fetchSessionContributors() {
+  final Future<List<Contributor>>? cached = _sessionContributors;
+  if (cached != null && identical(_sessionLoader, contributorsLoader)) return cached;
+  final Future<List<Contributor>> loading = contributorsLoader();
+  _sessionContributors = loading;
+  _sessionLoader = contributorsLoader;
+  unawaited(
+    loading.then<void>(
+      (_) {},
+      onError: (Object _) {
+        if (identical(_sessionContributors, loading)) _sessionContributors = null;
+      },
+    ),
+  );
+  return loading;
+}
+
+/// Opens [target]. When nothing can open it, shows the address with a Copy action.
+Future<bool> _openOrExplain(BuildContext context, String target, {required String address}) async {
+  bool launched = false;
+  try {
+    launched = await openPrismLink(context, target);
+  } catch (error, stackTrace) {
+    logger.w('Opening $target failed.', error: error, stackTrace: stackTrace);
+  }
+  if (!launched && context.mounted) {
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text("Couldn't open $address"),
+        action: SnackBarAction(
+          label: 'Copy',
+          onPressed: () => Clipboard.setData(ClipboardData(text: address)),
+        ),
+      ),
+    );
+  }
+  return launched;
+}
 
 @RoutePage()
 class AboutScreen extends StatefulWidget {
@@ -51,7 +120,7 @@ class _AboutScreenState extends State<AboutScreen> {
     if (_versionTapCount >= 5) {
       _versionTapCount = 0;
       if (!app_state.isAdminUser()) return;
-      HapticFeedback.mediumImpact();
+      PrismHaptics.impact();
       context.router.pushPath('/debug-panel');
     }
   }
@@ -68,9 +137,7 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  Future<List<Contributor>> _fetchContributors() =>
-      widget.loadContributors?.call() ??
-      GitHub().repositories.listContributors(RepositorySlug('Hash-Studios', 'Prism')).toList();
+  Future<List<Contributor>> _fetchContributors() => widget.loadContributors?.call() ?? _fetchSessionContributors();
 
   void _trackContributorsLoaded(AsyncSnapshot<List<Contributor>> snapshot) {
     if (snapshot.hasError) {
@@ -152,6 +219,23 @@ class _AboutScreenState extends State<AboutScreen> {
               text: 'Instagram',
               link: 'https://www.instagram.com/prismwallpapers',
             ),
+            ActionButton(
+              icon: Icons.mail_outline_rounded,
+              text: 'Feedback',
+              link: buildFeedbackLink(
+                version: app_state.currentAppVersion,
+                build: app_state.currentAppVersionCode,
+                platform: '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+              ),
+              onLaunchFailed: (BuildContext context) =>
+                  unawaited(showReportProblemSheet(context, source: 'about_feedback')),
+            ),
+            const ActionButton(
+              icon: Icons.privacy_tip_rounded,
+              text: 'Privacy',
+              link: 'https://prismwalls.com/privacy',
+            ),
+            const ActionButton(icon: Icons.description_rounded, text: 'Terms', link: 'https://prismwalls.com/terms'),
             const ActionButton(icon: JamIcons.paper_plane, text: 'Telegram', link: 'http://t.me/PrismWallpapers'),
           ],
         ),
@@ -193,9 +277,11 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   void _openContributorLink(Contributor c) {
+    PrismHaptics.tap();
     _trackAction(AnalyticsActionValue.contributorProfileTapped, sourceContext: 'about_screen_other_contributor');
     unawaited(() async {
-      final bool launched = await openPrismLink(context, c.htmlUrl!);
+      final String profileUrl = c.htmlUrl ?? '';
+      final bool launched = await _openOrExplain(context, profileUrl, address: profileUrl);
       await analytics.track(
         ExternalLinkOpenResultEvent(
           surface: AnalyticsSurfaceValue.aboutScreen,
@@ -307,6 +393,7 @@ class _TeamMember extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
+            PrismHaptics.tap();
             unawaited(
               analytics.track(
                 SurfaceActionTappedEvent(
@@ -345,11 +432,25 @@ class _TeamMember extends StatelessWidget {
 
 /// A link chip: an icon and a label that opens [link] and tracks the result.
 class ActionButton extends StatelessWidget {
-  const ActionButton({super.key, required this.icon, required this.link, required this.text, this.analyticsName});
+  const ActionButton({
+    super.key,
+    required this.icon,
+    required this.link,
+    required this.text,
+    this.analyticsName,
+    this.onTap,
+    this.onLaunchFailed,
+  });
 
   final IconData icon;
   final String text;
   final String link;
+
+  /// Runs instead of opening [link].
+  final void Function(BuildContext context)? onTap;
+
+  /// Runs instead of the Copy snackbar when [link] cannot be opened.
+  final void Function(BuildContext context)? onLaunchFailed;
 
   /// Name used in the analytics source context. Defaults to the lower-case [text].
   final String? analyticsName;
@@ -393,8 +494,27 @@ class ActionButton extends StatelessWidget {
             ),
           ),
         );
-        final String target = link.contains('@gmail.com') ? 'mailto:$link' : link;
-        final bool launched = await openPrismLink(context, target);
+        final void Function(BuildContext context)? customTap = onTap;
+        if (customTap != null) {
+          customTap(context);
+          return;
+        }
+        final String target = link.contains('@gmail.com') && !link.startsWith('mailto:') ? 'mailto:$link' : link;
+        final Uri? targetUri = Uri.tryParse(target);
+        final String address = targetUri != null && targetUri.scheme == 'mailto' ? targetUri.path : target;
+        final bool launched;
+        if (onLaunchFailed == null) {
+          launched = await _openOrExplain(context, target, address: address);
+        } else {
+          bool opened = false;
+          try {
+            opened = await openPrismLink(context, target);
+          } catch (error) {
+            logger.w('Opening $target failed.', error: error);
+          }
+          launched = opened;
+          if (!opened && context.mounted) onLaunchFailed!(context);
+        }
         unawaited(
           analytics.track(
             ExternalLinkOpenResultEvent(

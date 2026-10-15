@@ -4,11 +4,21 @@ import 'package:flutter/material.dart';
 
 /// Skeleton for a wallpaper grid. It uses the shared [PrismWallGrid] layout, so content lands where the skeleton was.
 class LoadingCards extends StatelessWidget {
-  const LoadingCards({super.key, this.childAspectRatio, this.borderRadius = PrismWallGrid.tileRadius, this.columns});
+  const LoadingCards({
+    super.key,
+    this.childAspectRatio,
+    this.borderRadius = PrismWallGrid.tileRadius,
+    this.columns,
+    this.useFeedLayout = false,
+  });
 
   final double? childAspectRatio;
   final BorderRadius borderRadius;
   final int? columns;
+
+  /// Kept for feed callers. It has no effect: every skeleton already uses the shared [PrismWallGrid] layout and never
+  /// scrolls by itself.
+  final bool useFeedLayout;
 
   @override
   Widget build(BuildContext context) {

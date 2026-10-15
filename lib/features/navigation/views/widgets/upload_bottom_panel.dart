@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -23,14 +25,18 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickWallpaperImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (!mounted || pickedFile == null) {
+    final int limit = uploadPickLimit(
+      isPremium: app_state.prismUser.premium,
+      remainingFree: UploadQuota.remainingFreeUploadsThisWeek(),
+    );
+    final List<XFile> picked = await _picker.pickMultiImage(limit: limit);
+    if (!mounted || picked.isEmpty) {
       return;
     }
-    final wallpaper = File(pickedFile.path);
+    final List<File> wallpapers = picked.take(limit).map((file) => File(file.path)).toList();
     final router = context.router;
     Navigator.pop(context);
-    router.push(EditWallRoute(image: wallpaper));
+    router.push(EditWallRoute(image: wallpapers.first, batch: wallpapers.length > 1 ? UploadBatch(wallpapers) : null));
   }
 
   Future<void> _onWallpaperTap() async {
@@ -41,7 +47,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       ),
     );
     if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
-      toasts.success('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+      toasts.error('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
       if (mounted) {
         Navigator.of(context).pop();
         await PaywallOrchestrator.instance.present(
@@ -51,10 +57,12 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       }
       return;
     }
+    PrismHaptics.tap();
     await _pickWallpaperImage();
   }
 
   void _onAiTap() {
+    PrismHaptics.tap();
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadAiSelected,

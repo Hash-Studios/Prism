@@ -1,8 +1,8 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Accent colours the user can pick from.
 const List<Color> prismAccentSwatches = <Color>[
@@ -183,7 +183,7 @@ class _Swatch extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            HapticFeedback.selectionClick();
+            PrismHaptics.selection();
             onTap();
           },
           child: SizedBox(
@@ -312,7 +312,7 @@ class _AccentDot extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            HapticFeedback.selectionClick();
+            PrismHaptics.selection();
             onTap();
           },
           child: SizedBox(

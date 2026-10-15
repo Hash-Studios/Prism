@@ -1,7 +1,15 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -10,7 +18,6 @@ import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
-import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
@@ -20,6 +27,8 @@ import 'package:Prism/features/onboarding_v2/src/views/pages/f3_ai_generate_page
 import 'package:Prism/features/onboarding_v2/src/views/pages/f4_first_wallpaper_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_background.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
@@ -40,6 +49,7 @@ class OnboardingV2Shell extends StatefulWidget {
 class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   late final OnboardingV2Bloc _bloc;
   late final TapGestureRecognizer _legalTap;
+  late final TapGestureRecognizer _privacyTap;
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _imagesPrecached = false;
   bool _termsAccepted = false;
@@ -54,6 +64,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     _termsAccepted = _settingsLocal.get<bool>(OnboardingV2Config.termsAcceptedKey, defaultValue: false);
     _legalTap = TapGestureRecognizer()
       ..onTap = () => launchUrl(Uri.parse(OnboardingV2Config.termsUrl), mode: LaunchMode.externalApplication);
+    _privacyTap = TapGestureRecognizer()
+      ..onTap = () => launchUrl(Uri.parse(OnboardingV2Config.privacyUrl), mode: LaunchMode.externalApplication);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -76,6 +88,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   @override
   void dispose() {
     _legalTap.dispose();
+    _privacyTap.dispose();
     _bloc.close();
     super.dispose();
   }
@@ -94,22 +107,76 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       case OnboardingV2NavRequest.completeOnboarding:
         if (!context.mounted) return;
         context.router.replaceAll([const SplashWidgetRoute()]);
+
+      case OnboardingV2NavRequest.openDashboardAsGuest:
+        if (!context.mounted) return;
+        context.router.replaceAll([const DashboardRoute()]);
+
+      case OnboardingV2NavRequest.exitApp:
+        SystemNavigator.pop();
     }
   }
 
-  Future<void> _handleGoogleSignIn() => _runSignIn(globalGoogleAuth.signInWithGoogle, _googleErrorMessage);
-
-  Future<void> _handleAppleSignIn() => _runSignIn(globalAppleAuth.signInWithApple, (_) => _genericSignInError);
-
-  static const String _genericSignInError = 'Something went wrong. Try again.';
-
-  String _googleErrorMessage(Object error) {
-    final String message = error.toString();
-    final bool isPlayServicesError =
-        defaultTargetPlatform == TargetPlatform.android &&
-        (message.contains('providerConfigurationError') || message.contains('no provider dependencies'));
-    return isPlayServicesError ? 'Google Play services on this device cannot sign in.' : _genericSignInError;
+  Future<void> _onFirstWallpaperSaved(BuildContext context, OnboardingWallpaperData wallpaperData) async {
+    toasts.success(_firstWallpaperSuccessMessage(wallpaperData.target));
+    showGlintToast(context, mood: GlintMood.celebrate);
+    // iOS cannot set the wallpaper from the app, so show how to finish in Photos. The guide skips itself elsewhere.
+    await showIosSetWallpaperGuide(context);
+    if (!context.mounted) return;
+    await _continueAfterFirstWallpaper(context);
   }
+
+  static String _firstWallpaperSuccessMessage(WallpaperTarget? target) {
+    if (defaultTargetPlatform != TargetPlatform.android) return 'Saved to Photos!';
+    return switch (target) {
+      WallpaperTarget.both => 'Wallpaper set on your home and lock screens.',
+      WallpaperTarget.home => 'Wallpaper set on your home screen.',
+      WallpaperTarget.lock => 'Wallpaper set on your lock screen.',
+      null => 'Wallpaper set!',
+    };
+  }
+
+  void _onFirstWallpaperFailed(BuildContext context, OnboardingWallpaperData wallpaperData) {
+    if (defaultTargetPlatform == TargetPlatform.iOS && isPhotosPermissionDenied(wallpaperData.errorCode)) {
+      showPhotosPermissionDenied(context);
+      return;
+    }
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    PrismHaptics.error();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            defaultTargetPlatform == TargetPlatform.android
+                ? "Couldn't set your wallpaper. Try again or skip."
+                : "Couldn't save your wallpaper. Try again or skip.",
+          ),
+          action: SnackBarAction(
+            label: 'Try again',
+            onPressed: () => _bloc.add(const OnboardingV2Event.firstWallpaperActionRequested()),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _continueAfterFirstWallpaper(BuildContext context) async {
+    try {
+      await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+        context,
+        sourceTag: 'onboarding_v2.first_wallpaper',
+      );
+    } catch (error, stackTrace) {
+      logger.w('Onboarding notification prompt failed.', tag: 'OnboardingV2', error: error, stackTrace: stackTrace);
+    }
+    if (!mounted) return;
+    _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
+  }
+
+  Future<void> _handleGoogleSignIn() => _runSignIn(globalGoogleAuth.signInWithGoogle, googleSignInErrorMessage);
+
+  Future<void> _handleAppleSignIn() => _runSignIn(globalAppleAuth.signInWithApple, (_) => genericSignInErrorMessage);
 
   Future<void> _runSignIn(Future<SignInOutcome> Function() signIn, String Function(Object error) errorMessage) async {
     _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
@@ -117,7 +184,6 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       final result = await signIn();
       if (!mounted) return;
       if (result == SignInOutcome.cancelled) {
-        toasts.error('Sign in cancelled.');
         _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
       } else {
         app_state.prismUser.loggedIn = true;
@@ -131,17 +197,16 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   }
 
   void _setTermsAccepted(bool accepted) {
+    if (accepted && !_termsAccepted) unawaited(analytics.track(const TermsAcceptedEvent()));
     setState(() => _termsAccepted = accepted);
     _settingsLocal.set(OnboardingV2Config.termsAcceptedKey, accepted);
   }
 
-  /// iOS-only guest path (Guideline 5.1.1(v)): browsing must not require an
-  /// account. Marks onboarding done the same way a completed sign-in flow
-  /// does, then goes straight to the dashboard signed out.
-  Future<void> _handleBrowseWithoutAccount() async {
-    await _settingsLocal.set(OnboardingV2Keys.onboardedNew, true);
-    if (!mounted) return;
-    context.router.replaceAll([const DashboardRoute()]);
+  /// iOS-only guest path (Guideline 5.1.1(v)): browsing must not require an account. The guest picks interests
+  /// first, then the bloc marks onboarding done and the shell opens the dashboard signed out.
+  void _handleBrowseWithoutAccount() {
+    unawaited(analytics.track(const BrowseAsGuestTappedEvent()));
+    _bloc.add(const OnboardingV2Event.guestBrowseStarted());
   }
 
   Widget _pageFor(OnboardingV2Step step) => KeyedSubtree(
@@ -151,6 +216,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         termsAccepted: _termsAccepted,
         onTermsChanged: _setTermsAccepted,
         legalTap: _legalTap,
+        privacyTap: _privacyTap,
         onGoogle: _handleGoogleSignIn,
         onApple: _handleAppleSignIn,
         onBrowse: _handleBrowseWithoutAccount,
@@ -187,21 +253,15 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                 curr.wallpaperData.status == FirstWallpaperStatus.success,
             listener: (context, state) {
               if (state.navRequest != null) return;
-              toasts.success(defaultTargetPlatform == TargetPlatform.android ? 'Wallpaper set!' : 'Saved to Photos!');
-              showGlintToast(context, mood: GlintMood.celebrate);
-              _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
+              _onFirstWallpaperSaved(context, state.wallpaperData);
             },
           ),
           BlocListener<OnboardingV2Bloc, OnboardingV2State>(
             listenWhen: (prev, curr) =>
                 curr.step == OnboardingV2Step.firstWallpaper &&
-                prev.wallpaperData.status != curr.wallpaperData.status &&
+                prev.wallpaperData.status != FirstWallpaperStatus.failure &&
                 curr.wallpaperData.status == FirstWallpaperStatus.failure,
-            listener: (context, state) => toasts.error(
-              defaultTargetPlatform == TargetPlatform.android
-                  ? 'Could not set the wallpaper. Try again.'
-                  : 'Could not save the wallpaper. Try again.',
-            ),
+            listener: (context, state) => _onFirstWallpaperFailed(context, state.wallpaperData),
           ),
           BlocListener<OnboardingV2Bloc, OnboardingV2State>(
             listenWhen: (prev, curr) =>
@@ -212,10 +272,12 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           ),
           BlocListener<OnboardingV2Bloc, OnboardingV2State>(
             listenWhen: (prev, curr) =>
-                prev.actionStatus != curr.actionStatus &&
-                curr.actionStatus == ActionStatus.failure &&
-                curr.step != OnboardingV2Step.firstWallpaper,
-            listener: (context, state) => toasts.error('Something went wrong. Try again.'),
+                prev.actionStatus != curr.actionStatus && curr.actionStatus == ActionStatus.failure,
+            listener: (context, state) => toasts.error(
+              state.navRequest == OnboardingV2NavRequest.completeOnboarding
+                  ? "Couldn't save your setup. We will try again."
+                  : "Couldn't save that. Please try again.",
+            ),
           ),
         ],
         child: BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
@@ -232,32 +294,47 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                 onPopInvokedWithResult: (didPop, result) {
                   _bloc.add(const OnboardingV2Event.stepBack());
                 },
-                child: Material(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      RepaintBoundary(child: OnboardingStepBackground(visible: welcome)),
-                      _StepSwitcher(step: step, child: _pageFor(step)),
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: SafeArea(
-                          bottom: false,
-                          child: IgnorePointer(
-                            child: AnimatedOpacity(
-                              duration: context.motion(PrismDurations.base),
-                              opacity: welcome ? 0 : 1,
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, 0),
-                                child: OnboardingProgressBar(step: _progressFor(step)),
+                child: MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: OnboardingLayout.maxTextScale,
+                  // A Scaffold gives the snackbars a place to show.
+                  child: Scaffold(
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    resizeToAvoidBottomInset: false,
+                    body: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        RepaintBoundary(child: OnboardingStepBackground(visible: welcome)),
+                        _StepSwitcher(step: step, child: _pageFor(step)),
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: SafeArea(
+                            bottom: false,
+                            child: IgnorePointer(
+                              child: AnimatedOpacity(
+                                duration: context.motion(PrismDurations.base),
+                                opacity: welcome ? 0 : 1,
+                                child: Center(
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(maxWidth: OnboardingLayout.maxContentWidth),
+                                    child: Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        PrismSpace.page,
+                                        PrismSpace.xs,
+                                        PrismSpace.page,
+                                        0,
+                                      ),
+                                      child: OnboardingProgressBar(step: _progressFor(step)),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

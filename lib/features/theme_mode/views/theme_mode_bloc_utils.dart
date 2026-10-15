@@ -1,18 +1,25 @@
 import 'package:Prism/features/theme_mode/theme_mode.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-ThemeData _withAccent(ThemeData baseTheme, int accentColorValue) {
+/// Applies the user accent to [baseTheme]. An accent that nearly matches the theme background (black on AMOLED)
+/// is replaced by the theme's own accent. The colour scheme and the chip theme follow the accent.
+ThemeData withPrismAccent(ThemeData baseTheme, int accentColorValue) {
   final ColorScheme base = baseTheme.colorScheme;
+  Color accentColor = Color(accentColorValue);
+  if (contrastRatio(accentColor, baseTheme.primaryColor) < 1.5) {
+    accentColor = base.primary;
+  }
   return baseTheme.withPrismScheme(
     prismColorScheme(
       brightness: base.brightness,
       background: base.surface,
       foreground: base.onSurface,
-      accent: Color(accentColorValue),
+      accent: accentColor,
     ),
   );
 }
@@ -28,7 +35,7 @@ extension PrismThemeContextX on BuildContext {
 
   ThemeData prismLightTheme({bool listen = true}) {
     final light = _themeState(listen).light;
-    return _withAccent(
+    return withPrismAccent(
       (prismThemeById(prismLightThemes, light.themeId) ?? prismLightThemes.first).theme,
       light.accentColorValue,
     );
@@ -36,7 +43,7 @@ extension PrismThemeContextX on BuildContext {
 
   ThemeData prismDarkTheme({bool listen = true}) {
     final dark = _themeState(listen).dark;
-    return _withAccent(
+    return withPrismAccent(
       (prismThemeById(prismDarkThemes, dark.themeId) ?? prismDarkThemes.first).theme,
       dark.accentColorValue,
     );

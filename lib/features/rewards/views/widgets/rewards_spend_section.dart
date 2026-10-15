@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -63,6 +64,7 @@ class RewardsSpendSection extends StatelessWidget {
         price: '${CoinPolicy.streakFreezeCost}',
         spokenPrice: '${CoinPolicy.streakFreezeCost} coins',
         onTap: onStreakFreeze,
+        haptic: false,
       ),
       _SpendTile(
         icon: Icons.download_rounded,
@@ -139,6 +141,7 @@ class _SpendTile extends StatelessWidget {
     required this.price,
     required this.spokenPrice,
     required this.onTap,
+    this.haptic = true,
   });
 
   final IconData icon;
@@ -146,12 +149,18 @@ class _SpendTile extends StatelessWidget {
   final String price;
   final String spokenPrice;
   final VoidCallback? onTap;
+  final bool haptic;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    void handleTap() {
+      if (haptic) PrismHaptics.tap();
+      onTap?.call();
+    }
+
     return PrismCard(
-      onTap: onTap,
+      onTap: onTap == null ? null : handleTap,
       semanticLabel: '$label, $spokenPrice',
       padding: const EdgeInsets.all(14),
       child: ConstrainedBox(

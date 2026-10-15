@@ -1,25 +1,37 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' show max, min;
+import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
+import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
+import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/detail_panel.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/detail_wallpaper_image.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -29,7 +41,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
-class WallpaperDetailScreen extends StatefulWidget {
+class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   const WallpaperDetailScreen({
     super.key,
     this.entity,
@@ -38,6 +50,7 @@ class WallpaperDetailScreen extends StatefulWidget {
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
+    this.localFile,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -49,6 +62,17 @@ class WallpaperDetailScreen extends StatefulWidget {
   /// Set when opened from a grid tile, so the tile image flies into this screen.
   final String? heroTag;
 
+  /// Set when opened from Downloads: shown instead of the network image, and the fallback if loading fails.
+  final File? localFile;
+
+  // One bloc per route: a shared bloc showed the last wallpaper while the new one loaded.
+  @override
+  Widget wrappedRoute(BuildContext context) => BlocProvider<WallpaperDetailBloc>(
+    key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
+    create: (_) => getIt<WallpaperDetailBloc>(),
+    child: this,
+  );
+
   @override
   State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
 }
@@ -57,8 +81,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   /// The Glint "love" moment plays once per app session, on the first favourite.
   static bool _favouriteGlintShown = false;
 
+  /// Gap between the Live chip and the top edge of the panel.
+  static const double _chipGap = PrismSpace.sm;
+
   final ShakeController _shake = ShakeController();
+  final SimilarWallpapersLoader _similarLoader = SimilarWallpapersLoader.fromGetIt();
   final ValueNotifier<bool> _panelContentVisible = ValueNotifier<bool>(false);
+
+  /// 0 when the panel is collapsed, 1 when open. The Live chip rides on the top edge of the panel.
+  final ValueNotifier<double> _panelPosition = ValueNotifier<double>(0);
 
   PanelController panelController = PanelController();
   bool _accentToastShown = false;
@@ -111,6 +142,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   void _handlePanelSlide(double position) {
+    _panelPosition.value = position;
     final bool visible = position > 0.12;
     if (_panelContentVisible.value != visible) _panelContentVisible.value = visible;
   }
@@ -135,12 +167,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
     if (colors == null || colors.isEmpty || !colors.contains(accent)) return;
 
+    PrismHaptics.selection();
     context.read<WallpaperDetailBloc>().add(const CycleAccentColor());
-    _setStatusBarIconBrightness(state.accent ?? Colors.white);
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
     if (!_accentToastShown) {
-      toasts.success('Long press to reset');
+      toasts.success('Long press to reset', haptic: false);
       _accentToastShown = true;
     }
   }
@@ -148,29 +180,58 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   void _handleAccentLongPress(BuildContext context, WallpaperDetailLoaded state) {
     context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
     _trackAction(state, AnalyticsActionValue.paletteResetLongPressed);
-    HapticFeedback.vibrate();
+    PrismHaptics.impact();
     _shake.shake();
   }
 
   void _handleColorSelected(BuildContext context, WallpaperDetailLoaded state, Color color) {
     context.read<WallpaperDetailBloc>().add(SelectAccentColor(color: color));
-    _setStatusBarIconBrightness(color);
   }
 
-  void _handleColorReset(BuildContext context, WallpaperDetailLoaded state) {
+  void _handleColorReset(BuildContext context) {
     context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
-    _setStatusBarIconBrightness(state.accent ?? Colors.white);
   }
 
   void _handleColorCopy(Color color) {
-    HapticFeedback.vibrate();
+    PrismHaptics.impact();
     Clipboard.setData(ClipboardData(text: '#${color.rgbHex.toUpperCase()}')).then((_) => toasts.color(color));
   }
 
-  void _setStatusBarIconBrightness(Color color) {
-    applyEdgeToEdgeOverlayStyle(
-      statusBarIconBrightness: onColor(color) == Colors.black ? Brightness.dark : Brightness.light,
-    );
+  void _onWallpaperSet(FeedItemEntity entity) {
+    _recordTaste(TasteAction.set, entity);
+    if (entity.source == WallpaperSource.prism) {
+      unawaited(getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set));
+    }
+  }
+
+  /// "Match accent" on the success snackbar: sets Prism's accent to the first palette colour of this wallpaper.
+  VoidCallback? _matchAccentAction(BuildContext context, WallpaperDetailLoaded state) {
+    final Color? color = state.colors?.firstOrNull;
+    if (color == null) return null;
+    final ThemeBloc? themeBloc = _themeBloc(context);
+    if (themeBloc == null) return null;
+    final bool dark = Theme.of(context).brightness == Brightness.dark;
+    return () {
+      themeBloc.add(
+        dark
+            ? ThemeEvent.darkAccentChanged(accentColorValue: color.toARGB32())
+            : ThemeEvent.lightAccentChanged(accentColorValue: color.toARGB32()),
+      );
+      unawaited(analytics.track(const AccentMatchedFromWallEvent()));
+    };
+  }
+
+  ThemeBloc? _themeBloc(BuildContext context) {
+    try {
+      return context.read<ThemeBloc>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Opens Make it live. The first palette colour seeds its gradients, so they follow this wallpaper.
+  void _openMakeItLive(BuildContext context, WallpaperDetailLoaded state) {
+    context.router.push(LiveWallpaperRoute(imageUrl: state.entity.fullUrl, accentSeed: state.colors?.firstOrNull));
   }
 
   @override
@@ -183,6 +244,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   void dispose() {
     _shake.dispose();
     _panelContentVisible.dispose();
+    _panelPosition.dispose();
     super.dispose();
   }
 
@@ -190,9 +252,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final bloc = context.read<WallpaperDetailBloc>();
     final entity = widget.entity;
     if (entity != null) {
-      bloc.add(LoadFromEntity(entity: entity));
+      bloc.add(LoadFromEntity(entity: entity, localFilePath: widget.localFile?.path));
     } else {
-      bloc.add(LoadFromId(wallId: widget.wallId!, source: widget.source!, thumbnailUrl: widget.thumbnailUrl));
+      bloc.add(
+        LoadFromId(
+          wallId: widget.wallId!,
+          source: widget.source!,
+          thumbnailUrl: widget.thumbnailUrl,
+          localFilePath: widget.localFile?.path,
+        ),
+      );
     }
   }
 
@@ -205,17 +274,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   Widget build(BuildContext context) {
     return BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
       listener: (context, state) {
+        if (state is WallpaperDetailError &&
+            widget.localFile?.existsSync() == true &&
+            ModalRoute.of(context)?.isCurrent == true) {
+          context.router.replace(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: widget.localFile!));
+          return;
+        }
         if (state is WallpaperDetailLoaded && !_openRecorded) {
           _openRecorded = true;
           _recordTaste(TasteAction.open, state.entity);
         }
-        if (state is WallpaperDetailLoaded && state.colors != null && state.accent != null) {
-          _setStatusBarIconBrightness(state.accent!);
-        }
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
+          final entity = widget.entity;
           return switch (state) {
+            // Build the entity on the first frame too, so the hero flight shows the tapped wallpaper.
+            WallpaperDetailInitial() when entity != null => _buildLoadedState(
+              context,
+              WallpaperDetailLoaded(entity: entity),
+            ),
             WallpaperDetailInitial() || WallpaperDetailLoading() => _buildLoadingState(state),
             WallpaperDetailLoaded() => _buildLoadedState(context, state),
             WallpaperDetailError() => _buildErrorState(state),
@@ -256,6 +334,25 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? '',
     );
     void back() => Navigator.pop(context);
+    final File? localFile = widget.localFile;
+    if (localFile != null) {
+      return Scaffold(
+        backgroundColor: cs.surface,
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Image.file(
+              localFile,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) =>
+                  const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
+            ),
+            const Align(alignment: Alignment.bottomCenter, child: DetailPanelSkeleton()),
+            _chrome(context, onBack: back),
+          ],
+        ),
+      );
+    }
     if (thumbnailUrl.isEmpty) {
       return Scaffold(
         backgroundColor: cs.surface,
@@ -275,6 +372,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         children: <Widget>[
           _withHero(
             CachedNetworkImage(
+              cacheManager: PrismImageCache.instance,
               imageUrl: thumbnailUrl,
               fit: BoxFit.cover,
               fadeInDuration: context.motion(PrismDurations.fast),
@@ -310,11 +408,22 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   Widget _buildErrorState(WallpaperDetailError state) {
     final message = state.message.trim();
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final String thumbnailUrl = normalizeWallpaperThumbnailUrl(state.thumbnailUrl ?? '');
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: cs.surface,
       body: Stack(
         fit: StackFit.expand,
         children: <Widget>[
+          if (thumbnailUrl.isNotEmpty)
+            CachedNetworkImage(
+              cacheManager: PrismImageCache.instance,
+              imageUrl: thumbnailUrl,
+              fit: BoxFit.cover,
+              placeholder: (ctx, _) => ColoredBox(color: cs.surfaceContainerHigh),
+              errorWidget: (ctx, _, _) => ColoredBox(color: cs.surfaceContainerHigh),
+            ),
+          ColoredBox(color: cs.surface.withValues(alpha: thumbnailUrl.isEmpty ? 1 : 0.8)),
           GlintState(
             kind: GlintStateKind.error,
             title: "Couldn't load this wallpaper",
@@ -333,48 +442,68 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final bool paletteLoading = state.paletteLoading;
     final double minHeight = DetailPanel.collapsedHeight(context);
     final double maxHeight = max(minHeight + 240, min(MediaQuery.sizeOf(context).height * 0.66, 560));
+    final Color backgroundColor = paletteLoading ? cs.surface : (state.accent ?? cs.surface);
 
-    return Scaffold(
-      backgroundColor: paletteLoading ? cs.surface : (state.accent ?? cs.surface),
-      body: SlidingUpPanel(
-        onPanelOpened: () => _handlePanelOpened(context, state),
-        onPanelClosed: () => _handlePanelClosed(context, state),
-        onPanelSlide: _handlePanelSlide,
-        // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
-        renderPanelSheet: false,
-        boxShadow: const [],
-        minHeight: minHeight,
-        parallaxEnabled: true,
-        parallaxOffset: 0,
-        color: Colors.transparent,
-        maxHeight: maxHeight,
-        controller: panelController,
-        panel: SizedBox(
-          height: maxHeight,
-          child: DetailPanel(
-            state: state,
-            sourceContext: _getSourceContext(state),
-            contentVisible: _panelContentVisible,
-            onToggle: () => _togglePanel(state),
-            onScrollStart: () => context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart()),
-            onScrollEnd: () => Future<void>.delayed(context.motion(PrismDurations.base), () {
-              if (!context.mounted) return;
-              context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
-            }),
-            onResetColor: () => _handleColorReset(context, state),
-            onSelectColor: (color) => _handleColorSelected(context, state, color),
-            onCopyColor: _handleColorCopy,
-            onDownloaded: () => _recordTaste(TasteAction.download, state.entity),
-            onSet: () => _recordTaste(TasteAction.set, state.entity),
-            onFavourited: () => _onFavourited(state.entity),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Per route, so a covered detail screen cannot change the status bar of the one on top.
+      value: edgeToEdgeOverlayStyle(
+        statusBarIconBrightness: onColor(backgroundColor) == Colors.black ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: SlidingUpPanel(
+          onPanelOpened: () => _handlePanelOpened(context, state),
+          onPanelClosed: () => _handlePanelClosed(context, state),
+          onPanelSlide: _handlePanelSlide,
+          // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
+          renderPanelSheet: false,
+          boxShadow: const [],
+          minHeight: minHeight,
+          parallaxEnabled: true,
+          parallaxOffset: 0,
+          color: Colors.transparent,
+          maxHeight: maxHeight,
+          controller: panelController,
+          panel: SizedBox(
+            height: maxHeight,
+            child: DetailPanel(
+              state: state,
+              sourceContext: _getSourceContext(state),
+              contentVisible: _panelContentVisible,
+              onToggle: () => _togglePanel(state),
+              onScrollStart: () => context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart()),
+              onScrollEnd: () => Future<void>.delayed(context.motion(PrismDurations.base), () {
+                if (!context.mounted) return;
+                context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
+              }),
+              onResetColor: () => _handleColorReset(context),
+              onSelectColor: (color) => _handleColorSelected(context, state, color),
+              onCopyColor: _handleColorCopy,
+              onDownloaded: () => _recordTaste(TasteAction.download, state.entity),
+              onSet: () => _onWallpaperSet(state.entity),
+              onFavourited: () => _onFavourited(state.entity),
+              localFile: widget.localFile,
+              onMatchAccent: _matchAccentAction(context, state),
+              onTagTap: (tag) => openTagSearch(context, tag),
+              onMakeItLive: () => _openMakeItLive(context, state),
+              similarLoader: _similarLoader.load,
+              onOpenSimilar: (item) =>
+                  context.router.push(WallpaperDetailRoute(entity: item, thumbnailUrl: item.thumbnailUrl)),
+            ),
           ),
+          body: _buildImageBody(context, paletteLoading, state, minHeight: minHeight, maxHeight: maxHeight),
         ),
-        body: _buildImageBody(context, paletteLoading, state),
       ),
     );
   }
 
-  Widget _buildImageBody(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
+  Widget _buildImageBody(
+    BuildContext context,
+    bool paletteLoading,
+    WallpaperDetailLoaded state, {
+    required double minHeight,
+    required double maxHeight,
+  }) {
     final entity = state.entity;
     return Stack(
       children: [
@@ -391,7 +520,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 },
                 onLongPress: () => _handleAccentLongPress(context, state),
                 onTap: () {
-                  HapticFeedback.vibrate();
                   if (!paletteLoading) _handleAccentTap(context, state);
                   _shake.shake();
                 },
@@ -403,8 +531,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                       DetailWallpaperImage(
                         entity: entity,
                         accent: state.accent,
-                        tinted: state.colorChanged,
+                        tint: state.tint,
                         paletteLoading: paletteLoading,
+                        localFile: widget.localFile,
                       ),
                     ),
                   ),
@@ -423,13 +552,29 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
             pushClockPreview(
               context,
-              link: entity.fullUrl,
-              file: false,
-              accent: state.accent,
-              colorChanged: state.colorChanged,
+              link: widget.localFile?.path ?? entity.fullUrl,
+              file: widget.localFile != null,
+              thumbnailUrl: entity.thumbnailUrl,
+              tint: state.tint,
             );
           },
         ),
+        if (!hideSetWallpaperUi && entity.fullUrl.trim().isNotEmpty)
+          ValueListenableBuilder<double>(
+            valueListenable: _panelPosition,
+            child: MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)),
+            builder: (BuildContext context, double position, Widget? chip) => Positioned(
+              left: PrismSpace.page,
+              bottom:
+                  lerpDouble(minHeight, maxHeight, position)! +
+                  _chipGap -
+                  (MakeItLiveChip.hitSize - MakeItLiveChip.pillHeight) / 2,
+              child: IgnorePointer(
+                ignoring: position > 0,
+                child: Opacity(opacity: (1 - position * 2).clamp(0.0, 1.0), child: chip),
+              ),
+            ),
+          ),
       ],
     );
   }

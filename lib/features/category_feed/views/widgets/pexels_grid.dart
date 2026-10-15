@@ -12,6 +12,7 @@ class PexelsGrid extends StatelessWidget {
       surface: AnalyticsSurfaceValue.homePexelsGrid,
       listName: ScrollListNameValue.pexelsGrid,
       sourceContextPrefix: 'home_pexels_grid',
+      includePrism: true,
     );
   }
 }

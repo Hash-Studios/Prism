@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/account/account_copy.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -42,22 +44,36 @@ class ProfileDrawer extends StatelessWidget {
     unawaited(router.push(route));
   }
 
+  Future<void> _shareProfile(BuildContext context) async {
+    try {
+      await createUserDynamicLink(
+        app_state.prismUser.name,
+        app_state.prismUser.username,
+        app_state.prismUser.email,
+        app_state.prismUser.bio,
+        app_state.prismUser.profilePhoto,
+        context: context,
+      );
+    } catch (_) {
+      toasts.error("Couldn't create the link. Try again.");
+    }
+  }
+
   Future<void> _logOut(BuildContext context) async {
     _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
     final bool confirmed = await showPrismConfirm(
       context,
       title: 'Log out of Prism?',
-      message: 'You can sign back in any time.',
+      message: logoutConfirmMessage,
       confirmLabel: 'Log out',
     );
     if (!confirmed || !context.mounted) return;
     // Finish signing out before the restart, or the restarted app still sees the old
     // session and stays on the splash screen. The restart closes this drawer.
     if (!await globalGoogleAuth.signOutGoogle()) {
-      toasts.error('Could not log out. Please try again.');
+      toasts.error(logoutFailedMessage);
       return;
     }
-    toasts.success('Logged out');
     await resetOnboardingLocalState(getIt<SettingsLocalDataSource>());
     if (context.mounted) {
       main.RestartWidget.restartApp(context);
@@ -121,25 +137,11 @@ class ProfileDrawer extends StatelessWidget {
           PrismGroup(
             children: <Widget>[
               PrismRow(
-                icon: Icons.favorite_border_rounded,
-                title: 'Favourites',
+                icon: Icons.photo_library_outlined,
+                title: 'Library',
                 onTap: () {
-                  _trackDrawerAction(
-                    AnalyticsActionValue.drawerFavWallsTapped,
-                    sourceContext: 'profile_drawer_fav_walls',
-                  );
-                  _go(context, const FavouriteWallpaperRoute());
-                },
-              ),
-              PrismRow(
-                icon: Icons.download_rounded,
-                title: 'Downloads',
-                onTap: () {
-                  _trackDrawerAction(
-                    AnalyticsActionValue.drawerDownloadsTapped,
-                    sourceContext: 'profile_drawer_downloads',
-                  );
-                  _go(context, const DownloadRoute());
+                  _trackDrawerAction(AnalyticsActionValue.drawerLibraryTapped, sourceContext: 'profile_drawer_library');
+                  _go(context, LibraryRoute());
                 },
               ),
             ],
@@ -151,20 +153,12 @@ class ProfileDrawer extends StatelessWidget {
                 icon: Icons.ios_share_rounded,
                 title: 'Share profile',
                 onTap: () {
+                  PrismHaptics.tap();
                   _trackDrawerAction(
                     AnalyticsActionValue.drawerSharePrismTapped,
                     sourceContext: 'profile_drawer_share_profile',
                   );
-                  unawaited(
-                    createUserDynamicLink(
-                      app_state.prismUser.name,
-                      app_state.prismUser.username,
-                      app_state.prismUser.email,
-                      app_state.prismUser.bio,
-                      app_state.prismUser.profilePhoto,
-                      context: context,
-                    ),
-                  );
+                  unawaited(_shareProfile(context));
                 },
               ),
               PrismRow(
@@ -183,7 +177,7 @@ class ProfileDrawer extends StatelessWidget {
                 title: 'About',
                 onTap: () {
                   _trackDrawerAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_drawer_about');
-                  _go(context, const AboutRoute());
+                  _go(context, AboutRoute());
                 },
               ),
             ],

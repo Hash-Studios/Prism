@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
@@ -7,7 +8,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 /// The bottom half of the wallpaper editor: a Filters tab with a strip of filter thumbnails and an Adjust tab with
-/// four sliders. It holds no state: the editor owns the filter stack and the adjustments.
+/// five sliders. It holds no state: the editor owns the filter stack and the adjustments.
 class FilterEditorPanel extends StatelessWidget {
   const FilterEditorPanel({
     super.key,
@@ -33,7 +34,10 @@ class FilterEditorPanel extends StatelessWidget {
   final Map<KernelEffect, ui.ImageFilter> kernelThumbFilters;
   final VoidCallback onClear;
   final ValueChanged<WallpaperFilter> onToggle;
-  final ValueChanged<WallpaperAdjustments> onAdjust;
+
+  /// Gets a change to the adjustments. It receives the current adjustments, not the ones this panel was built with, so
+  /// two changes in one frame both stay.
+  final ValueChanged<WallpaperAdjustments Function(WallpaperAdjustments)> onAdjust;
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +50,10 @@ class FilterEditorPanel extends StatelessWidget {
           padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
           child: Column(
             children: [
-              const TabBar(
+              TabBar(
+                onTap: (_) => PrismHaptics.selection(),
                 indicatorSize: TabBarIndicatorSize.label,
-                tabs: [
+                tabs: const [
                   Tab(text: 'Filters'),
                   Tab(text: 'Adjust'),
                 ],
@@ -63,7 +68,18 @@ class FilterEditorPanel extends StatelessWidget {
 
   Widget _buildFiltersTab(BuildContext context, ColorScheme cs) {
     final List<Widget> tiles = <Widget>[
-      _buildTile(context, cs, name: 'None', selected: stack.isEmpty, order: 0, onTap: onClear, thumb: _thumb()),
+      _buildTile(
+        context,
+        cs,
+        name: 'None',
+        selected: stack.isEmpty,
+        order: 0,
+        onTap: () {
+          PrismHaptics.selection();
+          onClear();
+        },
+        thumb: _thumb(),
+      ),
       for (final ColorPreset preset in colorPresets)
         _buildTile(
           context,
@@ -183,6 +199,8 @@ class FilterEditorPanel extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
       children: [
+        if (!effectsAvailable)
+          Text('Lightness is unavailable on this device.', style: PrismTextStyles.caption(context)),
         _adjustRow(
           context,
           cs,
@@ -192,8 +210,8 @@ class FilterEditorPanel extends StatelessWidget {
           min: 0,
           max: 100,
           text: '${(a.blur * 100).round()}',
-          onChanged: (v) => onAdjust(a.copyWith(blur: v / 100)),
-          onReset: () => onAdjust(a.copyWith(blur: 0)),
+          onChanged: (v) => onAdjust((current) => current.copyWith(blur: v / 100)),
+          onReset: () => onAdjust((current) => current.copyWith(blur: 0)),
         ),
         _adjustRow(
           context,
@@ -204,8 +222,8 @@ class FilterEditorPanel extends StatelessWidget {
           min: -180,
           max: 180,
           text: '${a.hue.round()}°',
-          onChanged: (v) => onAdjust(a.copyWith(hue: v)),
-          onReset: () => onAdjust(a.copyWith(hue: 0)),
+          onChanged: (v) => onAdjust((current) => current.copyWith(hue: v)),
+          onReset: () => onAdjust((current) => current.copyWith(hue: 0)),
         ),
         _adjustRow(
           context,
@@ -216,8 +234,21 @@ class FilterEditorPanel extends StatelessWidget {
           min: -100,
           max: 100,
           text: signed(a.saturation * 100),
-          onChanged: (v) => onAdjust(a.copyWith(saturation: v / 100)),
-          onReset: () => onAdjust(a.copyWith(saturation: 0)),
+          onChanged: (v) => onAdjust((current) => current.copyWith(saturation: v / 100)),
+          onReset: () => onAdjust((current) => current.copyWith(saturation: 0)),
+        ),
+        _adjustRow(
+          context,
+          cs,
+          icon: Icons.light_mode_outlined,
+          label: 'Lightness',
+          value: a.lightness * 100,
+          min: -100,
+          max: 100,
+          text: signed(a.lightness * 100),
+          enabled: effectsAvailable,
+          onChanged: (v) => onAdjust((current) => current.copyWith(lightness: v / 100)),
+          onReset: () => onAdjust((current) => current.copyWith(lightness: 0)),
         ),
         _adjustRow(
           context,
@@ -228,8 +259,8 @@ class FilterEditorPanel extends StatelessWidget {
           min: -100,
           max: 100,
           text: signed(a.brightness * 100),
-          onChanged: (v) => onAdjust(a.copyWith(brightness: v / 100)),
-          onReset: () => onAdjust(a.copyWith(brightness: 0)),
+          onChanged: (v) => onAdjust((current) => current.copyWith(brightness: v / 100)),
+          onReset: () => onAdjust((current) => current.copyWith(brightness: 0)),
         ),
       ],
     );
@@ -244,6 +275,7 @@ class FilterEditorPanel extends StatelessWidget {
     required double min,
     required double max,
     required String text,
+    bool enabled = true,
     required ValueChanged<double> onChanged,
     required VoidCallback onReset,
   }) {
@@ -266,7 +298,17 @@ class FilterEditorPanel extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: Slider(value: value.clamp(min, max), min: min, max: max, onChanged: onChanged),
+          child: Semantics(
+            label: label,
+            child: Slider(
+              value: value.clamp(min, max),
+              min: min,
+              max: max,
+              semanticFormatterCallback: (v) => '${v.round()}',
+              onChanged: enabled ? onChanged : null,
+              onChangeEnd: (_) => PrismHaptics.selection(),
+            ),
+          ),
         ),
         SizedBox(
           width: 44,

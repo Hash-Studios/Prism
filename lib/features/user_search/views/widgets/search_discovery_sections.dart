@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
@@ -23,6 +24,9 @@ const double _trendingWidth = 120;
 const double _trendingHeight = _trendingWidth * 2;
 const double _categoryWidth = 140;
 const double _categoryHeight = 190;
+
+/// Decode height, in physical pixels, for a portrait card of [width] and twice that height.
+int _decodeHeight(BuildContext context, double width) => (width * 2 * MediaQuery.devicePixelRatioOf(context)).round();
 
 /// A horizontal row that starts at the page margin and scrolls off the right edge.
 Widget _hRow({required double height, required int count, required IndexedWidgetBuilder builder}) {
@@ -96,13 +100,18 @@ class _TrendingList extends StatelessWidget {
           width: _trendingWidth,
           child: PrismWallTile(
             url: wall.thumbnailUrl,
+            fallbackUrl: wall.core.fullUrl,
+            memCacheHeight: _decodeHeight(context, _trendingWidth),
             semanticLabel: wallpaperSemanticLabel(wall.core.authorName),
-            onTap: () => context.router.push(
-              WallpaperDetailRoute(
-                entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
-                analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-              ),
-            ),
+            onTap: () {
+              PrismHaptics.tap();
+              context.router.push(
+                WallpaperDetailRoute(
+                  entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
+                  analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                ),
+              );
+            },
           ),
         );
       },
@@ -128,8 +137,11 @@ class CategorySection extends StatelessWidget {
             return _CategoryCard(
               name: name,
               image: categoryDefinitions[index].imageUrl,
-              onTap: () =>
-                  context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(name)}')),
+              fallbackImage: categoryDefinitions[index].secondaryImageUrl,
+              onTap: () {
+                PrismHaptics.tap();
+                context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(name)}'));
+              },
             );
           },
         ),
@@ -139,10 +151,11 @@ class CategorySection extends StatelessWidget {
 }
 
 class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.name, required this.image, required this.onTap});
+  const _CategoryCard({required this.name, required this.image, required this.fallbackImage, required this.onTap});
 
   final String name;
   final String image;
+  final String fallbackImage;
   final VoidCallback onTap;
 
   @override
@@ -164,7 +177,12 @@ class _CategoryCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: <Widget>[
-                PrismImageTile(url: image, borderRadius: radius),
+                PrismImageTile(
+                  url: image,
+                  fallbackUrl: fallbackImage,
+                  memCacheHeight: _decodeHeight(context, _categoryWidth),
+                  borderRadius: radius,
+                ),
                 DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: radius,
@@ -230,6 +248,11 @@ class ColourSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    void openSwatch(_ColourSwatch swatch) {
+      PrismHaptics.tap();
+      context.router.push(ColorRoute(hexColor: swatch.color.rgbHex, name: swatch.name));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -250,10 +273,10 @@ class ColourSection extends StatelessWidget {
                   button: true,
                   label: '${swatch.name} wallpapers',
                   excludeSemantics: true,
-                  onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex)),
+                  onTap: () => openSwatch(swatch),
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex)),
+                    onTap: () => openSwatch(swatch),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: swatch.color,

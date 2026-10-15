@@ -1,7 +1,6 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
-import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/interest_category_tile.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -39,16 +38,20 @@ class F1InterestsPage extends StatelessWidget {
           prev.actionStatus != curr.actionStatus,
       builder: (context, state) {
         final OnboardingInterestsData data = state.interestsData;
-        final bool loading = data.available.isEmpty && state.loadStatus != LoadStatus.success;
+        final bool loading =
+            data.available.isEmpty &&
+            (state.loadStatus == LoadStatus.loading || state.loadStatus == LoadStatus.initial);
         final bool empty = data.available.isEmpty && !loading;
         final OnboardingV2Bloc bloc = context.read<OnboardingV2Bloc>();
         return OnboardingFrame(
           title: 'Pick your vibe',
-          body: 'Choose at least ${OnboardingV2Config.minInterests} to shape your feed.',
+          body: empty
+              ? 'We could not load categories. You can skip this step.'
+              : 'Choose at least ${data.requiredCount} to shape your feed.',
           primaryLabel: 'Continue',
           primaryLoading: state.actionStatus == ActionStatus.inProgress,
           onPrimary: data.canContinue ? () => bloc.add(const OnboardingV2Event.interestsConfirmed()) : null,
-          onSkip: empty ? () => bloc.add(const OnboardingV2Event.aiGenerationStepContinued()) : null,
+          onSkip: () => bloc.add(const OnboardingV2Event.interestsSkipped()),
           child: loading
               ? const _GridSkeleton()
               : empty
@@ -58,7 +61,7 @@ class F1InterestsPage extends StatelessWidget {
                     title: 'Could not load categories',
                     body: 'Check your connection and try again.',
                     actionLabel: 'Try again',
-                    onAction: () => bloc.add(const OnboardingV2Event.started()),
+                    onAction: () => bloc.add(const OnboardingV2Event.loadRetried()),
                   ),
                 )
               : _Grid(data: data, bloc: bloc),
@@ -77,9 +80,7 @@ class _Grid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int picked = data.selected.length;
-    final String counter = picked < OnboardingV2Config.minInterests
-        ? '$picked of ${OnboardingV2Config.minInterests} picked'
-        : '$picked picked';
+    final String counter = picked < data.requiredCount ? '$picked of ${data.requiredCount} picked' : '$picked picked';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[

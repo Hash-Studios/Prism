@@ -1,9 +1,10 @@
+import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// One category in the interests grid: an image with its name bottom-left on a scrim. Selected tiles get a 2 point
 /// accent border, a tick and a slight shrink.
@@ -28,7 +29,7 @@ class InterestCategoryTile extends StatelessWidget {
     final Widget placeholder = ColoredBox(color: cs.surfaceContainerHigh);
     final String? url = imageUrl;
     void select() {
-      HapticFeedback.selectionClick();
+      PrismHaptics.selection();
       onTap();
     }
 
@@ -54,12 +55,16 @@ class InterestCategoryTile extends StatelessWidget {
                     if (url == null || url.isEmpty)
                       placeholder
                     else
-                      CachedNetworkImage(
-                        imageUrl: url,
-                        fit: BoxFit.cover,
-                        fadeInDuration: context.motion(PrismDurations.fast),
-                        placeholder: (_, _) => placeholder,
-                        errorWidget: (_, _, _) => placeholder,
+                      LayoutBuilder(
+                        builder: (context, constraints) => CachedNetworkImage(
+                          imageUrl: url,
+                          cacheManager: PrismImageCache.instance,
+                          memCacheWidth: (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context)).round(),
+                          fit: BoxFit.cover,
+                          fadeInDuration: context.motion(PrismDurations.fast),
+                          placeholder: (_, _) => placeholder,
+                          errorWidget: (_, _, _) => placeholder,
+                        ),
                       ),
                     DecoratedBox(
                       decoration: BoxDecoration(

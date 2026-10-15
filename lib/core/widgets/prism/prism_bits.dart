@@ -1,9 +1,9 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// A quiet empty or error state for one section of a page that already shows Glint elsewhere.
 class PrismInlineState extends StatelessWidget {
@@ -198,7 +198,7 @@ class PrismSegmented<T> extends StatelessWidget {
                       onTap: onChanged == null || value == selected
                           ? null
                           : () {
-                              HapticFeedback.selectionClick();
+                              PrismHaptics.selection();
                               onChanged!(value);
                             },
                       child: ConstrainedBox(

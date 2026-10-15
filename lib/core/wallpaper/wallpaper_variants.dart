@@ -4,6 +4,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 final class PrismWallpaper {
   const PrismWallpaper({
     required this.core,
+    this.title,
     this.collections,
     this.review,
     this.tags,
@@ -15,6 +16,9 @@ final class PrismWallpaper {
   });
 
   final WallpaperCore core;
+
+  /// Name the creator gave the wallpaper on upload. Null for older uploads.
+  final String? title;
   final List<String>? collections;
   final bool? review;
   final List<String>? tags;

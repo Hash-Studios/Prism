@@ -1,13 +1,8 @@
 import {createHash} from "node:crypto";
+import * as admin from "firebase-admin";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {
-  emailToTopic,
-  isLoggedOut,
-  sendNotification,
-  sendToUidAndEmailTopics,
-  userIdToTopic,
-} from "./notificationHelper";
+import {emailHash, isLoggedOut, sendToUser} from "./notificationHelper";
 import {usernameLowerOf} from "./usernameLower";
 import {db, findUserByEmail, REGION, str} from "./common";
 
@@ -18,7 +13,8 @@ import {db, findUserByEmail, REGION, str} from "./common";
  * user documents (not as a subcollection), so we detect new follows by
  * diffing `before.followers` vs `after.followers`.
  *
- * It also keeps `usernameLower` equal to the lowercased username.
+ * It also keeps `usernameLower` and `nameLower` equal to the lowercased username and name. When a new follower
+ * is blocked by the followed user, the follow is removed from both users instead of notified.
  *
  * For each newly added follower email:
  *   1. Look up the follower's display name from their user doc.
@@ -38,14 +34,18 @@ export const onFollowCreated = onDocumentUpdated(
       return;
     }
 
-    // Keep usernameLower in sync for follower/following search. The write
-    // re-fires this trigger once, and that run finds nothing to change.
+    // Keep usernameLower and nameLower in sync for search. The write re-fires this trigger once, and that run
+    // finds nothing to change.
+    const lowerFields: Record<string, string> = {};
     const usernameLower = usernameLowerOf(after.username);
-    if (after.usernameLower !== usernameLower) {
+    if (after.usernameLower !== usernameLower) lowerFields.usernameLower = usernameLower;
+    const nameLower = usernameLowerOf(after.name);
+    if (typeof after.name === "string" && after.nameLower !== nameLower) lowerFields.nameLower = nameLower;
+    if (Object.keys(lowerFields).length > 0) {
       try {
-        await event.data?.after.ref.update({usernameLower});
+        await event.data?.after.ref.update(lowerFields);
       } catch (err) {
-        logger.warn("onFollowCreated: usernameLower sync failed.", {err});
+        logger.warn("onFollowCreated: lowercase name sync failed.", {err});
       }
     }
 
@@ -70,7 +70,9 @@ export const onFollowCreated = onDocumentUpdated(
     }
 
     const followedUid = event.params.userId;
-    const pushEnabled = !isLoggedOut(after) && !(await followerAlertsMuted(followedUid));
+    // The event snapshot can be stale: read the user again so a sign-out since then stops the push.
+    const current = await currentUserData(followedUid, after);
+    const pushEnabled = !isLoggedOut(current) && !(await followerAlertsMuted(followedUid));
 
     for (const followerEmail of newFollowerEmailsRaw) {
       const followerUid = await resolveUserIdByEmail(followerEmail);
@@ -82,10 +84,11 @@ export const onFollowCreated = onDocumentUpdated(
           .doc(followerUid)
           .get();
         if (blockSnap.exists) {
-          logger.info("onFollowCreated: skipped — follower is blocked by followed user.", {
+          logger.info("onFollowCreated: follower is blocked by followed user; removing the follow.", {
             followedUid,
             followerUid,
           });
+          await removeFollow(followedUid, followedUserEmail, followerUid, followerEmail);
           continue;
         }
       }
@@ -102,20 +105,39 @@ export const onFollowCreated = onDocumentUpdated(
         modifier: followedUserEmail,
         channelId: "followers",
         collapseKey: followCollapseKey(followerEmail),
+        docId: followInboxDocId(followedUid, followerEmail),
       };
-      if (pushEnabled) {
-        await sendToUidAndEmailTopics(payload, userIdToTopic(followedUid), emailToTopic(followedUserEmail));
-      } else {
-        await sendNotification(payload);
-      }
+      await sendToUser(
+        payload,
+        {uid: followedUid, email: followedUserEmail, legacyToken: current.fcmToken},
+        pushEnabled,
+      );
 
       logger.info("onFollowCreated: follow notification sent.", {
-        followedUserEmail,
-        followerEmail: followerEmail.toLowerCase(),
+        followedHash: emailHash(followedUserEmail),
+        followerHash: emailHash(followerEmail),
       });
     }
   },
 );
+
+/** Takes the follow out of both arrays. A blocked user cannot stay a follower. */
+async function removeFollow(
+  followedUid: string,
+  followedEmail: string,
+  followerUid: string,
+  followerEmail: string,
+): Promise<void> {
+  const users = db.collection("usersv2");
+  try {
+    await users.doc(followedUid).update({followers: admin.firestore.FieldValue.arrayRemove(followerEmail)});
+    await users.doc(followerUid).update({
+      following: admin.firestore.FieldValue.arrayRemove(...new Set([followedEmail, followedEmail.toLowerCase()])),
+    });
+  } catch (err) {
+    logger.warn("onFollowCreated: could not remove a blocked follow.", {followedUid, followerUid, err});
+  }
+}
 
 /** Same key for both follow pushes, short enough for apns-collapse-id (64 bytes). */
 export function followCollapseKey(followerEmail: string): string {
@@ -123,9 +145,23 @@ export function followCollapseKey(followerEmail: string): string {
   return `follow_${hash}`;
 }
 
+/** One inbox doc per follower, so a retried trigger does not add a second one. */
+export function followInboxDocId(followedUid: string, followerEmail: string): string {
+  return `${followCollapseKey(followerEmail)}_${followedUid}`;
+}
+
 /** True only when the user explicitly turned Followers alerts off. */
 export function isFollowerAlertsOff(session: Record<string, unknown> | undefined): boolean {
   return session?.followerAlerts === false;
+}
+
+async function currentUserData(uid: string, fallback: Record<string, unknown>): Promise<Record<string, unknown>> {
+  try {
+    return (await db.doc(`usersv2/${uid}`).get()).data() ?? fallback;
+  } catch (err) {
+    logger.warn("onFollowCreated: could not re-read the followed user.", {uid, err});
+    return fallback;
+  }
 }
 
 async function followerAlertsMuted(uid: string): Promise<boolean> {
@@ -147,7 +183,7 @@ async function resolveUserIdByEmail(email: string): Promise<string | null> {
   try {
     return (await findUserByEmail(trimmed))?.id ?? null;
   } catch (err) {
-    logger.warn("onFollowCreated: could not resolve follower uid.", {email: trimmed, err});
+    logger.warn("onFollowCreated: could not resolve follower uid.", {emailHash: emailHash(trimmed), err});
     return null;
   }
 }
@@ -160,7 +196,7 @@ async function resolveUsername(email: string): Promise<string> {
     const name = str(data?.username) || str(data?.name);
     if (name) return name;
   } catch (err) {
-    logger.warn("onFollowCreated: could not resolve follower username.", {email, err});
+    logger.warn("onFollowCreated: could not resolve follower username.", {emailHash: emailHash(email), err});
   }
   return email.split("@")[0];
 }

@@ -11,6 +11,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -34,6 +35,9 @@ class _FakeConnectivityService implements ConnectivityService {
 
   @override
   Future<bool> hasConnection() => check?.call() ?? Future<bool>.value(true);
+
+  @override
+  Stream<bool> get onConnectionChange => const Stream<bool>.empty();
 }
 
 class _FakeFunctionsPlatform extends FirebaseFunctionsPlatform {
@@ -80,6 +84,7 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   final Future<AiGenerationRecord> Function()? generation;
   final Future<AiGenerationRecord> Function()? variation;
   final List<({AiStylePreset style, AiQualityTier quality, int coinsSpent})> requests = [];
+  final List<String?> chargeTxIds = <String?>[];
 
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async => <AiGenerationRecord>[
@@ -95,8 +100,10 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
+    String? chargeTxId,
   }) {
     requests.add((style: stylePreset, quality: qualityTier, coinsSpent: coinsSpent));
+    chargeTxIds.add(chargeTxId);
     return generation!.call();
   }
 
@@ -107,10 +114,14 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
     required int coinsSpent,
     String variationPrompt = '',
     double strength = 0.45,
-  }) => variation!.call();
+    String? chargeTxId,
+  }) {
+    chargeTxIds.add(chargeTxId);
+    return variation!.call();
+  }
 }
 
-AiGenerationRecord _record({String id = 'generation-1'}) => AiGenerationRecord(
+AiGenerationRecord _record({String id = 'generation-1', int width = 720, int height = 1280}) => AiGenerationRecord(
   id: id,
   userId: 'user-1',
   createdAt: DateTime.utc(2026),
@@ -120,8 +131,8 @@ AiGenerationRecord _record({String id = 'generation-1'}) => AiGenerationRecord(
   provider: 'test',
   model: 'test',
   seed: 1,
-  width: 720,
-  height: 1280,
+  width: width,
+  height: height,
   imageUrl: '',
   watermarkedImageUrl: '',
   chargeMode: AiChargeMode.freeTrial,
@@ -146,6 +157,7 @@ void main() {
     Future<dynamic> Function(String, dynamic) onCall, {
     _FakeAiGenerationRepository? repository,
     ConnectivityService? connectivity,
+    List<MethodCall>? toastCalls,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -155,7 +167,10 @@ void main() {
     getIt.registerSingleton<ConnectivityService>(connectivity ?? _FakeConnectivityService());
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
     functions.onCall = onCall;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      if (call.method == 'showToast') toastCalls?.add(call);
+      return true;
+    });
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-1'
       ..coins = 100
@@ -176,6 +191,119 @@ void main() {
   tearDownAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
   });
+
+  testWidgets('initial history failures do not play an error haptic', (tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    final List<MethodCall> toastCalls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{},
+      connectivity: _FakeConnectivityService(check: () async => false),
+      toastCalls: toastCalls,
+    );
+
+    expect(hapticTypes, isEmpty);
+    expect(
+      toastCalls.any(
+        (call) =>
+            (call.arguments as Map<Object?, Object?>)['msg'] ==
+            "You're offline. History will refresh when you're connected.",
+      ),
+      isTrue,
+    );
+
+    hapticTypes.clear();
+    toastCalls.clear();
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 400));
+    await tester.pumpAndSettle();
+
+    expect(hapticTypes, <Object?>['HapticFeedbackType.mediumImpact', 'HapticFeedbackType.errorNotification']);
+    expect(toastCalls, hasLength(1));
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('an empty description keeps Generate off and plays no haptic', (tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await setUpPage(tester, (name, parameters) async => <String, Object>{});
+
+    await tester.enterText(find.byType(TextField).first, '');
+    await tester.pump();
+    final Finder generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Generate')).onPressed, isNull);
+    hapticTypes.clear();
+    await tester.tap(generate, warnIfMissed: false);
+    await tester.pump();
+
+    expect(hapticTypes, isEmpty);
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('an empty refinement keeps Generate another off and plays no haptic', (tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await setUpPage(tester, (name, parameters) async => <String, Object>{});
+
+    await tester.tap(find.text('Try another'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '');
+    await tester.pump();
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Generate another')).onPressed, isNull);
+    hapticTypes.clear();
+    await tester.tap(find.text('Generate another'), warnIfMissed: false);
+    await tester.pump();
+
+    expect(hapticTypes, isEmpty);
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('a crop warning after successful generation does not add an error haptic', (tester) async {
+    final List<Object?> hapticTypes = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 90,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      },
+      repository: _FakeAiGenerationRepository(
+        _record(),
+        generation: () async => _record(id: 'generated-wide', width: 1600, height: 900),
+      ),
+    );
+
+    final Finder generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    // Reserving coins starts a short-lived local-balance timer; let the fake clock drain it.
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(hapticTypes, contains('HapticFeedbackType.successNotification'));
+    expect(hapticTypes, isNot(contains('HapticFeedbackType.errorNotification')));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('concurrent connectivity checks reserve and generate only once', (tester) async {
     final connection = Completer<bool>();
@@ -275,7 +403,7 @@ void main() {
     );
     final toasts = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toasts.add(call);
+      if (call.method == 'showToast') toasts.add(call);
       return true;
     });
     final generate = find.text('Generate');
@@ -344,7 +472,7 @@ void main() {
     }, repository: _FakeAiGenerationRepository(_record(), generation: () => generation.future));
     final toasts = <MethodCall>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      toasts.add(call);
+      if (call.method == 'showToast') toasts.add(call);
       return true;
     });
     final generate = find.text('Generate');
@@ -483,13 +611,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final Finder refine = find.text('Refine');
+    final Finder refine = find.text('Try another');
     await tester.ensureVisible(refine);
     await tester.tap(refine);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Warmer colors');
     await tester.pump();
-    await tester.tap(find.text('Generate refinement'));
+    await tester.tap(find.text('Generate another'));
     await tester.pump();
     await variationStarted.future;
     await tester.pump(const Duration(milliseconds: 1400));
@@ -560,5 +688,246 @@ void main() {
     expect(refunds, 0);
     expect(recorder.events.whereType<AiGenerateFailedEvent>(), isEmpty);
     expect(app_state.prismUser.coins, 90);
+  });
+
+  Map<String, Object> coinReply(String name, {bool refundChanged = true}) => <String, Object>{
+    'success': name != 'awardCoins' || refundChanged,
+    'changed': name != 'awardCoins' || refundChanged,
+    'currentBalance': name == 'awardCoins' ? 100 : 90,
+    'delta': name == 'awardCoins' ? 10 : -10,
+    'transactionId': 'reservation-1',
+  };
+
+  List<String> toastMessages(List<MethodCall> calls) =>
+      calls.map((call) => (call.arguments as Map<Object?, Object?>)['msg']! as String).toList();
+
+  testWidgets('a failed generation says the coins were refunded', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => throw StateError('provider failed')),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(toastMessages(toastCalls), contains('Something went wrong. Try again. Coins refunded.'));
+  });
+
+  testWidgets('a failed generation whose refund did not land says the refund is pending and keeps it', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async {
+        if (name == 'awardCoins') throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+        return coinReply(name);
+      },
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => throw StateError('provider failed')),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(toastMessages(toastCalls), contains('Something went wrong. Try again. Refund pending.'));
+    expect(
+      getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''),
+      contains('reservation-1'),
+    );
+
+    await getIt<SettingsLocalDataSource>().delete('pendingAiRefunds');
+    await tester.pump(const Duration(seconds: 31));
+  });
+
+  testWidgets('a failed generation that charged no coins does not mention a refund', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async => <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 100,
+        'delta': 0,
+        'transactionId': 'reservation-1',
+      },
+      repository: _FakeAiGenerationRepository(_record(), generation: () async => throw StateError('provider failed')),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(toastMessages(toastCalls), contains('Something went wrong. Try again.'));
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+  });
+
+  testWidgets('a charge with no reply queues a refund and tells the user', (tester) async {
+    final toastCalls = <MethodCall>[];
+    var generations = 0;
+    await setUpPage(
+      tester,
+      (name, parameters) async {
+        if (name == 'spendCoins') throw FirebaseFunctionsException(code: 'unavailable', message: 'no reply');
+        return coinReply(name);
+      },
+      repository: _FakeAiGenerationRepository(
+        _record(),
+        generation: () async {
+          generations++;
+          return _record();
+        },
+      ),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(generations, 0);
+    expect(toastMessages(toastCalls), contains("Couldn't confirm the charge. Any coins taken will be refunded."));
+    expect(
+      getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''),
+      contains('spend_${app_state.prismUser.id}_'),
+    );
+
+    await getIt<SettingsLocalDataSource>().delete('pendingAiRefunds');
+    await tester.pump(const Duration(seconds: 31));
+  });
+
+  testWidgets('free users see the watermark note and Pro users do not', (tester) async {
+    await setUpPage(tester, (name, parameters) async => <String, Object>{});
+    expect(find.text('Free images carry a Prism watermark. Pro removes it.'), findsOneWidget);
+
+    app_state.prismUser.premium = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record()), key: UniqueKey()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Free images carry a Prism watermark. Pro removes it.'), findsNothing);
+  });
+
+  testWidgets('the description field stops at 160 characters and shows a counter', (tester) async {
+    await setUpPage(tester, (name, parameters) async => <String, Object>{});
+    final field = tester.widget<TextField>(find.byType(TextField).first);
+    expect(field.maxLength, 160);
+
+    await tester.enterText(find.byType(TextField).first, 'x' * 200);
+    await tester.pump();
+    expect(tester.widget<TextField>(find.byType(TextField).first).controller!.text.length, 160);
+    expect(find.text('160/160'), findsOneWidget);
+  });
+
+  testWidgets('a refinement is charged at the parent generation tier, not the selected tier', (tester) async {
+    final spends = <Map<String, Object?>>[];
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'spendCoins') spends.add(Map<String, Object?>.from(parameters as Map<Object?, Object?>));
+      return coinReply(name);
+    }, repository: _FakeAiGenerationRepository(_record(), variation: () async => _record(id: 'variation-1')));
+    await tester.ensureVisible(find.text('Quality').last);
+    await tester.tap(find.text('Quality').last);
+    await tester.pump();
+    await tester.tap(find.text('Try another'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'warmer palette');
+    await tester.pump();
+    await tester.tap(find.text('Generate another'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(spends, hasLength(1));
+    expect(spends.single['amount'], AiQualityTier.fast.coinCost);
+  });
+
+  testWidgets('generate and Try another send the charge transaction id to the repository', (tester) async {
+    final repository = _FakeAiGenerationRepository(
+      _record(),
+      generation: () async => _record(id: 'generated-1'),
+      variation: () async => _record(id: 'variation-1'),
+    );
+    await setUpPage(tester, (name, parameters) async => coinReply(name), repository: repository);
+    final generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.ensureVisible(find.text('Try another'));
+    await tester.tap(find.text('Try another'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'warmer palette');
+    await tester.pump();
+    await tester.tap(find.text('Generate another'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(repository.chargeTxIds, <String?>['reservation-1', 'reservation-1']);
+  });
+
+  testWidgets('a worker error shows calm copy, never the worker message', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      repository: _FakeAiGenerationRepository(
+        _record(),
+        generation: () async => throw AiGenerationApiException(
+          message: 'Quota coordinator unavailable',
+          code: 'rate_limited',
+          statusCode: 429,
+        ),
+      ),
+      toastCalls: toastCalls,
+    );
+    toastCalls.clear();
+    final generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(toastMessages(toastCalls), contains("You reached today's AI limit. Coins refunded."));
+    expect(toastMessages(toastCalls).any((m) => m.contains('Quota coordinator')), isFalse);
+  });
+
+  testWidgets('a signed-out user gets the sign-in prompt and its sheet, not a toast', (tester) async {
+    final toastCalls = <MethodCall>[];
+    await setUpPage(
+      tester,
+      (name, parameters) async => coinReply(name),
+      repository: _FakeAiGenerationRepository(_record()),
+      toastCalls: toastCalls,
+    );
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    toastCalls.clear();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record()), key: UniqueKey()),
+      ),
+    );
+    // The Glint state animates for ever, so settle by time.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text('Generate'), findsNothing);
+    await tester.tap(find.text('Sign in'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.text('Sign in to Prism'), findsOneWidget);
+    expect(toastMessages(toastCalls), isEmpty);
   });
 }

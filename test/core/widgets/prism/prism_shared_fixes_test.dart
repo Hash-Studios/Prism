@@ -94,8 +94,8 @@ void main() {
     await tester.tap(find.text('Open reject sheet'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('Low quality'));
-    await tester.tap(find.text('Low quality'));
+    await tester.ensureVisible(find.text('Low resolution'));
+    await tester.tap(find.text('Low resolution'));
     final Finder rejectButton = find.text('Reject wallpaper').last;
     await tester.ensureVisible(rejectButton);
     expect(tester.getRect(rejectButton).bottom, lessThanOrEqualTo(375 - 216));

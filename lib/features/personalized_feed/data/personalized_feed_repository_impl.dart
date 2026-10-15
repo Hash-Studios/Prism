@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:Prism/core/constants/app_constants.dart';
@@ -63,6 +64,13 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   final Random _random = Random();
 
   static const int _cacheTtlHours = 2;
+  static const int _cacheCap = 48;
+  static const int _cachedPageSize = 24;
+  static const int _popularLimit = 40;
+  static const int _creatorChunkLimitCap = 30;
+  static const String _popularCollection = 'popular';
+  static const String _wallStatsCollection = 'wallpaper_stats';
+  static const Duration _poolTimeout = Duration(seconds: 6);
 
   /// Values the `onWallCategorize` Cloud Function writes to `walls.category`.
   static const List<String> _wallCategories = <String>[
@@ -107,6 +115,33 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   }
 
   @override
+  Future<void> undoLessLikeThis(FeedItemEntity item) =>
+      _impressions.unhide(PersonalizedRankingService.canonicalKey(item));
+
+  @override
+  Future<void> recordShown(Iterable<String> keys) =>
+      _impressions.recordShown(keys, DateTime.now().toUtc(), expectedRevision: _impressions.revision);
+
+  @override
+  Future<PersonalizedFeedPage?> readCached() async {
+    final String userId = app_state.prismUser.id.trim();
+    final _CachedFeed? cached = await _readCached(
+      scope: userId.isEmpty ? 'guest' : userId.toLowerCase(),
+      blocked: () async => _userBlockRepository.cachedBlockedCreatorEmails,
+    );
+    if (cached == null || cached.items.isEmpty) {
+      return null;
+    }
+    final List<FeedItemEntity> items = cached.items.take(_cachedPageSize).toList(growable: false);
+    return PersonalizedFeedPage(
+      items: items,
+      hasMore: true,
+      usedKeys: items.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+      isStale: DateTime.now().toUtc().difference(cached.cachedAt) > const Duration(hours: _cacheTtlHours),
+    );
+  }
+
+  @override
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request) async {
     final String userId = app_state.prismUser.id.trim();
     final int tasteRevision = _tasteSignals.revision;
@@ -143,6 +178,10 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         }
       }
 
+      if (!isGuest) {
+        _following = _followingFromSession() ?? _following;
+      }
+
       final DateTime now = DateTime.now().toUtc();
       final TasteProfile profile = TasteProfile.build(
         interests: _interests,
@@ -158,7 +197,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final List<List<RankingCandidate>> pools = await Future.wait(<Future<List<RankingCandidate>>>[
         _pool(
           CandidatePool.following,
-          _fetchCreatorItems(following: _following, page: request.page),
+          _fetchCreatorItems(following: _following, page: request.page).then((creators) => creators.items),
           onSuccess: _following.isEmpty ? null : () => successfulSources++,
           onFailure: () => failedSources++,
         ),
@@ -230,18 +269,17 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (failedSources > 0 && ranking.items.isEmpty) {
         throw StateError('Personalized feed sources failed without ranked candidates');
       }
-      await _impressions.recordShown(ranking.usedKeys, now, expectedRevision: impressionRevision);
-      if (!isCurrentSession()) {
-        return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
-      }
 
       final List<FeedItemEntity> merged = _mergeCachedAndNew(
         request.refresh ? const <FeedItemEntity>[] : request.existingItems,
         ranking.items,
       );
-      await _writeCachedItems(scope: cacheScope, cachedItems: merged);
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+      }
+      // Pages 1 and 2 fill the cap, so later pages would only rewrite the same items.
+      if (request.refresh || request.page <= 2) {
+        unawaited(_writeCachedItems(scope: cacheScope, cachedItems: merged.take(_cacheCap).toList(growable: false)));
       }
 
       logger.i(
@@ -264,7 +302,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
-      final List<FeedItemEntity> cachedItems = await _readCachedItems(scope: cacheScope);
+      // Only page one falls back to the cache. A later page replays items that are already on screen, which would
+      // end the feed as "caught up" while the network is down.
+      final List<FeedItemEntity> cachedItems = request.page == 1
+          ? await _readCachedItems(scope: cacheScope)
+          : const <FeedItemEntity>[];
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
@@ -296,7 +338,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     required void Function() onFailure,
   }) async {
     try {
-      final List<FeedItemEntity> result = await items;
+      final List<FeedItemEntity> result = await items.timeout(_poolTimeout);
       onSuccess?.call();
       return result.map((item) => RankingCandidate(item: item, pool: pool)).toList(growable: false);
     } catch (error) {
@@ -421,21 +463,24 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return PersonalizedInterestsCatalog.defaultSelection(catalog);
   }
 
-  List<String> _resolveFollowing(Map<String, dynamic> userDoc) {
+  List<String>? _followingFromSession() {
     final fromSession = app_state.prismUser.following.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    if (fromSession.isNotEmpty) {
-      return fromSession;
-    }
-    return _toStringList(userDoc['following']);
+    return fromSession.isEmpty ? null : fromSession;
   }
 
-  Future<List<FeedItemEntity>> _fetchCreatorItems({required List<String> following, required int page}) async {
+  List<String> _resolveFollowing(Map<String, dynamic> userDoc) =>
+      _followingFromSession() ?? _toStringList(userDoc['following']);
+
+  Future<({List<FeedItemEntity> items, bool hasMore})> _fetchCreatorItems({
+    required List<String> following,
+    required int page,
+  }) async {
     if (following.isEmpty) {
-      return const <FeedItemEntity>[];
+      return (items: const <FeedItemEntity>[], hasMore: false);
     }
 
     final chunks = following.toSet().slices(10).toList(growable: false);
-    final int perChunkLimit = ((12 * page) / chunks.length).ceil().clamp(10, 30);
+    final int perChunkLimit = ((12 * page) / chunks.length).ceil().clamp(10, _creatorChunkLimitCap);
 
     final chunkedRows = await Future.wait(
       chunks.mapIndexed(
@@ -458,7 +503,90 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final epoch = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
     final allRows = chunkedRows.expand((rows) => rows).toList()
       ..sort((a, b) => (b.dto.createdAt ?? epoch).compareTo(a.dto.createdAt ?? epoch));
-    return _dedupeByCanonicalKey(allRows);
+    return (
+      items: _dedupeByCanonicalKey(allRows),
+      hasMore: perChunkLimit < _creatorChunkLimitCap && chunkedRows.any((rows) => rows.length >= perChunkLimit),
+    );
+  }
+
+  @override
+  Future<Result<PersonalizedFeedPage>> fetchFollowing({required int page}) async {
+    try {
+      final creators = await _fetchCreatorItems(following: _followingFromSession() ?? _following, page: page);
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      return Result.success(
+        PersonalizedFeedPage(
+          items: BlockedCreatorsFilter.filterFeedItems(creators.items, blocked),
+          hasMore: creators.hasMore,
+        ),
+      );
+    } catch (error, stackTrace) {
+      logger.e('[PersonalizedFeed] following failed', error: error, stackTrace: stackTrace);
+      return Result.error(ServerFailure('Failed to fetch following feed: $error'));
+    }
+  }
+
+  @override
+  Future<Result<PersonalizedFeedPage>> fetchPopular() async {
+    try {
+      List<String> ids = const <String>[];
+      try {
+        final Map<String, dynamic>? doc = await _firestoreClient.getById<Map<String, dynamic>>(
+          _popularCollection,
+          'current',
+          (data, _) => data,
+          sourceTag: 'popular.current',
+        );
+        ids = _toStringList(doc?['wallIds']);
+      } catch (error) {
+        logger.w('[PersonalizedFeed] popular list unavailable: $error');
+      }
+      if (ids.isEmpty) {
+        ids = await _firestoreClient.query<String>(
+          const FirestoreQuerySpec(
+            collection: _wallStatsCollection,
+            sourceTag: 'popular.stats',
+            orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'views', descending: true)],
+            limit: _popularLimit,
+          ),
+          (_, docId) => docId,
+        );
+      }
+      ids = ids.map((id) => id.toUpperCase()).take(_popularLimit).toList(growable: false);
+      final List<List<FeedItemEntity>> chunks = await Future.wait(
+        ids
+            .slices(10)
+            .mapIndexed(
+              (index, chunk) => _queryWalls(
+                FirestoreQuerySpec(
+                  collection: FirebaseCollections.walls,
+                  sourceTag: 'popular.walls',
+                  filters: <FirestoreFilter>[
+                    const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+                    FirestoreFilter(field: 'id', op: FirestoreFilterOp.whereIn, value: chunk),
+                  ],
+                  limit: 10,
+                  cachePolicy: FirestoreCachePolicy.memoryFirst,
+                ),
+              ),
+            ),
+      );
+      final Map<String, FeedItemEntity> byId = <String, FeedItemEntity>{
+        for (final FeedItemEntity item in chunks.expand((chunk) => chunk)) item.id.toUpperCase(): item,
+      };
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      return Result.success(
+        PersonalizedFeedPage(
+          items: BlockedCreatorsFilter.filterFeedItems(<FeedItemEntity>[
+            for (final String id in ids) ?byId[id],
+          ], blocked),
+          hasMore: false,
+        ),
+      );
+    } catch (error, stackTrace) {
+      logger.e('[PersonalizedFeed] popular failed', error: error, stackTrace: stackTrace);
+      return Result.error(ServerFailure('Failed to fetch popular feed: $error'));
+    }
   }
 
   /// Newest reviewed uploads, so rare new walls still surface. Fatigue sinks
@@ -552,7 +680,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final List<List<RankingCandidate>> results = await Future.wait(
       entries.take(maxQueries).map((entry) async {
         try {
-          final List<FeedItemEntity> items = await _fetchExternalPage(source, entry.query, refresh: refresh);
+          final List<FeedItemEntity> items = await _fetchExternalPage(
+            source,
+            entry.query,
+            refresh: refresh,
+          ).timeout(_poolTimeout);
           succeeded++;
           return items
               .map((item) => RankingCandidate(item: item, pool: pool, extraTerms: <String>[entry.name]))
@@ -633,38 +765,69 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return merged.values.toList(growable: false);
   }
 
-  Future<List<FeedItemEntity>> _readCachedItems({required String scope}) async {
+  Future<List<FeedItemEntity>> _readCachedItems({required String scope}) async =>
+      (await _readCached(
+        scope: scope,
+        blocked: () => _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true),
+      ))?.items ??
+      const <FeedItemEntity>[];
+
+  Future<_CachedFeed?> _readCached({required String scope, required Future<Set<String>> Function() blocked}) async {
     final snapshot = await _feedCacheLocal.read(source: 'personalized', scope: scope);
     if (snapshot == null || snapshot.payload is! Map) {
-      return const <FeedItemEntity>[];
+      return null;
     }
-    final Object? rawItems = toJsonMap(snapshot.payload)['items'];
+    final Map<String, dynamic> payload = toJsonMap(snapshot.payload);
+    final Object? rawItems = payload['items'];
     if (rawItems is! List) {
-      return const <FeedItemEntity>[];
+      return null;
     }
+    // A cache written under other content filters may hold Wallhaven items the user now excludes.
+    final bool sameFilters = (payload['filters'] ?? '100.100') == _contentFilters();
     final List<FeedItemEntity> items = rawItems
         .whereType<Map>()
         .map((entry) => decodeFeedItem(toJsonMap(entry)))
         .whereType<FeedItemEntity>()
+        .where((item) => sameFilters || item is! WallhavenFeedItem)
         .toList(growable: false);
-    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    final Set<String> blockedEmails = await blocked();
     final Map<String, int> recentShows = _impressions.recentShows(DateTime.now().toUtc());
-    return BlockedCreatorsFilter.filterFeedItems(items, blocked)
-        .where(
-          (item) => (recentShows[PersonalizedRankingService.canonicalKey(item)] ?? 0) < FeedImpressionStore.hiddenShows,
-        )
-        .toList(growable: false);
-  }
-
-  Future<void> _writeCachedItems({required String scope, required List<FeedItemEntity> cachedItems}) {
-    return _feedCacheLocal.write(
-      source: 'personalized',
-      scope: scope,
-      ttlHours: _cacheTtlHours,
-      payload: <String, Object?>{'items': cachedItems.map(encodeFeedItem).toList(growable: false)},
+    return (
+      cachedAt: snapshot.cachedAtUtc,
+      items: BlockedCreatorsFilter.filterFeedItems(items, blockedEmails)
+          .where(
+            (item) =>
+                (recentShows[PersonalizedRankingService.canonicalKey(item)] ?? 0) < FeedImpressionStore.hiddenShows,
+          )
+          .toList(growable: false),
     );
   }
+
+  /// The Wallhaven category and purity settings, as one string.
+  String _contentFilters() {
+    final int categories = _settingsLocal.get<int>('WHcategories', defaultValue: 100);
+    final int purity = _settingsLocal.get<int>('WHpurity', defaultValue: 100);
+    return '$categories.$purity';
+  }
+
+  Future<void> _writeCachedItems({required String scope, required List<FeedItemEntity> cachedItems}) async {
+    try {
+      await _feedCacheLocal.write(
+        source: 'personalized',
+        scope: scope,
+        ttlHours: _cacheTtlHours,
+        payload: <String, Object?>{
+          'filters': _contentFilters(),
+          'items': cachedItems.map(encodeFeedItem).toList(growable: false),
+        },
+      );
+    } catch (error) {
+      logger.w('[PersonalizedFeed] cache write failed: $error');
+    }
+  }
 }
+
+typedef _CachedFeed = ({DateTime cachedAt, List<FeedItemEntity> items});
 
 typedef _WallRow = ({String docId, PrismWallDocDto dto});
 

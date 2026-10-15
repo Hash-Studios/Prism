@@ -1,0 +1,184 @@
+import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/features/ads/biz/coin_gate_port.dart';
+import 'package:Prism/features/ads/biz/rewarded_ad_flow.dart';
+import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
+
+/// In-memory [CoinGatePort]. Spends and awards move [balance]. Records every call in [log] and every toast.
+class FakeCoinGatePort implements CoinGatePort {
+  FakeCoinGatePort({this.balance = 0, this.isPremium = false});
+
+  @override
+  int balance;
+  @override
+  bool isPremium;
+
+  final List<String> log = <String>[];
+  final List<String> errors = <String>[];
+  final List<String> successes = <String>[];
+  final List<String> infos = <String>[];
+  final List<String> spendLabels = <String>[];
+  final List<String?> pendingDownloadLinks = <String?>[];
+
+  int awardAmount = CoinPolicy.rewardedAd;
+  bool adCompletes = true;
+  bool adThrows = false;
+  Future<void> Function()? afterAd;
+  bool spendThrows = false;
+  bool spendAlwaysInsufficient = false;
+  Future<void> Function()? afterSpend;
+  bool awardThrows = false;
+  bool awardChanges = true;
+  bool recordThrows = false;
+  Future<void> Function()? afterRecord;
+  bool refundApplies = true;
+  bool ledgerThrows = false;
+  bool consentGiven = true;
+  AdFailureReason? adFailure;
+  String awardReason = '';
+  String awardUnknownOutcome = '';
+
+  @override
+  int? adsRemaining;
+
+  @override
+  Future<bool> adsAllowed() async => consentGiven;
+
+  @override
+  Future<RewardedAdResult> watchRewardedAdResult() async {
+    log.add('ad');
+    if (adThrows) throw StateError('ad failed');
+    await afterAd?.call();
+    return adCompletes ? const RewardedAdResult.earned() : RewardedAdResult.notEarned(adFailure);
+  }
+
+  @override
+  Future<CoinMutationResult> spend(
+    CoinSpendAction action, {
+    required String sourceTag,
+    String? reason,
+    String? label,
+    String? pendingDownloadLink,
+  }) async {
+    log.add('spend:$sourceTag');
+    if (label != null) spendLabels.add(label);
+    pendingDownloadLinks.add(pendingDownloadLink);
+    if (spendThrows) throw StateError('spend failed');
+    final int cost = action.cost();
+    if (spendAlwaysInsufficient) {
+      return CoinMutationResult(
+        success: false,
+        changed: false,
+        previousBalance: balance,
+        currentBalance: balance,
+        delta: 0,
+        insufficientBalance: true,
+      );
+    }
+    if (balance < cost) {
+      return CoinMutationResult(
+        success: false,
+        changed: false,
+        previousBalance: balance,
+        currentBalance: balance,
+        delta: 0,
+        insufficientBalance: true,
+      );
+    }
+    final int previous = balance;
+    balance -= cost;
+    await afterSpend?.call();
+    return CoinMutationResult(
+      success: true,
+      changed: true,
+      previousBalance: previous,
+      currentBalance: balance,
+      delta: -cost,
+      transactionId: 'tx-$sourceTag',
+      pendingDownloadTxId: pendingDownloadLink == null ? '' : 'ledger-$sourceTag',
+    );
+  }
+
+  @override
+  Future<CoinMutationResult> award(CoinEarnAction action, {required String sourceTag}) async {
+    log.add('award:$sourceTag');
+    if (awardThrows) throw StateError('award failed');
+    if (!awardChanges) {
+      return CoinMutationResult.noChange(
+        balance: balance,
+        reason: awardReason,
+        unknownOutcomeTransactionId: awardUnknownOutcome,
+      );
+    }
+    final int reward = awardAmount;
+    final int previous = balance;
+    balance += reward;
+    return CoinMutationResult(
+      success: true,
+      changed: true,
+      previousBalance: previous,
+      currentBalance: balance,
+      delta: reward,
+    );
+  }
+
+  @override
+  Future<CoinMutationResult> refundSpend(
+    CoinSpendAction action, {
+    required String sourceTag,
+    required String transactionId,
+    required String reason,
+  }) async {
+    log.add('refund:$sourceTag:$transactionId:$reason');
+    if (!refundApplies) return CoinMutationResult.noChange(balance: balance, success: false, reason: 'refused');
+    final int previous = balance;
+    balance += action.cost();
+    return CoinMutationResult(
+      success: true,
+      changed: true,
+      previousBalance: previous,
+      currentBalance: balance,
+      delta: action.cost(),
+    );
+  }
+
+  @override
+  Future<void> clearPendingDownload(String txId) async {
+    log.add('clear:$txId');
+    if (ledgerThrows) throw StateError('ledger failed');
+  }
+
+  @override
+  Future<void> releasePendingDownload(String txId) async {
+    log.add('release:$txId');
+    if (ledgerThrows) throw StateError('ledger failed');
+  }
+
+  @override
+  Future<void> recordRewardedAdWatch({required String source}) async {
+    log.add('watch:$source');
+    await afterRecord?.call();
+    if (recordThrows) throw StateError('watch record failed');
+  }
+
+  @override
+  Future<void> presentLowBalancePaywall({required String source}) async => log.add('paywall:$source');
+
+  @override
+  void logLowBalanceNudge({required String sourceTag, required int requiredCoins}) =>
+      log.add('nudge:$sourceTag:$requiredCoins');
+
+  @override
+  void logCoinError({required String sourceTag, required Object error, StackTrace? stackTrace}) =>
+      log.add('error:$sourceTag');
+
+  @override
+  void showError(String message) => errors.add(message);
+
+  @override
+  void showSuccess(String message) => successes.add(message);
+
+  @override
+  void showInfo(String message) => infos.add(message);
+}

@@ -1,5 +1,37 @@
 ## Changelog
 
+### v3.4.0
+- Live wallpapers on Android: make any wallpaper move, pick a living gradient, or use your own video
+- Choose Fill or Fit when you set a wallpaper, crop it yourself on Android, and pick a default Home, Lock or Both
+- See clear messages and a Retry button when a wallpaper does not set
+- A new history of the wallpapers you set, so you can set one again
+- Auto-rotate can use your downloads and can run only while your phone charges
+- A new bar on the wallpaper screen with Set, Download, Favourite, Share and Edit
+- Find more like a wallpaper with tag chips and a More like this row
+- Search shows Prism wallpapers first, with filters, recent searches and a Retry button
+- Sort, filter and search your favourites, then pick many to remove, share or set
+- Pick many downloads to delete or share
+- Notifications show what is unread, have Mark all as read, and let you swipe to delete and undo
+- Deleted notifications stay deleted, and one preferences sheet covers all notifications
+- Wall of the Day arrives at 9 AM in your time zone
+- Prism asks for ad consent in the EEA and UK
+- Faster starts, an offline banner, and feeds that no longer show old pages after an error
+- On iPhone, a short guide shows how to use a saved wallpaper from Photos
+- Settings gets a Personalise section, a storage readout and Manage subscription, and About gets Send feedback
+- Trending and Popular wallpapers, updated through the day
+- Restore a long streak you missed, once a month
+- Security and stability fixes
+
+### v3.3.0
+- Earn badges for what you do in Prism, with coin rewards and a place in Rewards and on your profile
+- Share any wallpaper as a branded image card
+- Haptic feedback across the app, with a switch in Settings
+- A new Lightness slider in the wallpaper editor
+- Search colour wallpapers by colour name
+- Notifications now arrive on iPhone, and every inbox item is delivered
+- Wall of the Day stays fresh and downloads open in the detail screen
+- Security and stability fixes
+
 ### v3.2.0
 - Rewards brings your streak and coins together in one place
 - Your daily streak has no cap, and a streak freeze keeps it safe on days you miss

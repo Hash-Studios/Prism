@@ -58,6 +58,7 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
       wallId: widget.targetDocId,
       profileIdentifier: '',
       sourceTag: 'admin.content_report',
+      fallbackToInbox: false,
     );
     if (!context.mounted) {
       return;
@@ -94,7 +95,7 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
         if (removed) {
           toasts.success('Wallpaper removed');
         } else {
-          toasts.error('Wallpaper was already gone. Report closed.');
+          toasts.success('Wallpaper was already gone. Report closed.');
         }
       },
     );

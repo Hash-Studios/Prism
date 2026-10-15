@@ -4,19 +4,23 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/animated/shake_once.dart';
+import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
-import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
+import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 
 class CollectionViewGrid extends StatefulWidget {
   const CollectionViewGrid();
@@ -25,16 +29,31 @@ class CollectionViewGrid extends StatefulWidget {
 }
 
 class _CollectionViewGridState extends State<CollectionViewGrid> {
-  final ShakeController _shake = ShakeController();
   final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
   bool seeMoreLoader = false;
+  bool _loadMoreFailed = false;
 
   Object? _wallValue(Map<String, dynamic> wall, String key) => wall[key];
   String _wallString(Map<String, dynamic> wall, String key) => _wallValue(wall, key)?.toString() ?? '';
-  WallpaperSource _wallSource(Map<String, dynamic> wall) =>
-      WallpaperSourceX.fromWire(_wallString(wall, 'wallpaper_provider'));
+
+  /// The wall as the detail screen and the quick actions use it, so no second fetch is needed.
+  FeedItemEntity _entityFor(Map<String, dynamic> wall, String wallId) => PrismFeedItem(
+    id: wallId,
+    wallpaper: PrismWallDocDto.fromJson(wall).toDomain(docId: wallId),
+  );
+
+  Future<void> _refresh() async {
+    PrismHaptics.impact();
+    try {
+      await refreshCollectionWithName();
+    } catch (error, stackTrace) {
+      logger.w('Failed to refresh the collection.', error: error, stackTrace: stackTrace);
+      toasts.error("Couldn't refresh. Pull down to try again.");
+    }
+    if (mounted) setState(() => _loadMoreFailed = false);
+  }
 
   Future<void> _loadMore() async {
     if (seeMoreLoader || !collectionHasMore) {
@@ -42,9 +61,15 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     }
     setState(() {
       seeMoreLoader = true;
+      _loadMoreFailed = false;
     });
     try {
       await seeMoreCollectionWithName();
+    } catch (error, stackTrace) {
+      logger.w('Failed to load more collection walls.', error: error, stackTrace: stackTrace);
+      if (mounted) {
+        setState(() => _loadMoreFailed = true);
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -60,12 +85,6 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     _contentLoadTracker.start();
   }
 
-  @override
-  void dispose() {
-    _shake.dispose();
-    super.dispose();
-  }
-
   /// Curated collections show two wallpapers across on a phone, more on a wide screen.
   int _columns(BuildContext context) {
     final MediaQueryData media = MediaQuery.of(context);
@@ -76,14 +95,14 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> walls = anyCollectionWalls;
-    final bool showSeeMore = collectionHasMore && walls.length >= 24;
-    if (walls.isEmpty) {
+    if (walls.isEmpty && !collectionHasMore) {
       return const GlintState(
         kind: GlintStateKind.empty,
         title: 'Nothing in this collection yet',
         body: 'New wallpapers are added often. Check back soon.',
       );
     }
+    final bool showFooter = collectionHasMore;
     if (walls.isNotEmpty) {
       _contentLoadTracker.success(
         itemCount: walls.length,
@@ -101,109 +120,119 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       );
     }
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification notification) {
-        _scrollMilestoneTracker.onScroll(
-          metrics: notification.metrics,
-          itemCount: walls.length,
-          onMilestoneReached: (depth, {required int itemCount}) async {
-            await analytics.track(
-              ScrollMilestoneReachedEvent(
-                surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
-                listName: ScrollListNameValue.collectionsViewGrid,
-                depth: depth,
-                sourceContext: 'home_collections_grid_scroll',
-                itemCount: itemCount,
+    final int columns = _columns(context);
+    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns, aspectRatio: 0.6625);
+    return RefreshIndicator(
+      backgroundColor: cs.surfaceContainerHigh,
+      onRefresh: _refresh,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification notification) {
+          _scrollMilestoneTracker.onScroll(
+            metrics: notification.metrics,
+            itemCount: walls.length,
+            onMilestoneReached: (depth, {required int itemCount}) async {
+              await analytics.track(
+                ScrollMilestoneReachedEvent(
+                  surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
+                  listName: ScrollListNameValue.collectionsViewGrid,
+                  depth: depth,
+                  sourceContext: 'home_collections_grid_scroll',
+                  itemCount: itemCount,
+                ),
+              );
+            },
+          );
+          if (showFooter && !_loadMoreFailed && isNearFeedEnd(notification.metrics)) {
+            unawaited(_loadMore());
+          }
+          return false;
+        },
+        child: GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+          padding: PrismWallGrid.padding.copyWith(
+            top: PrismSpace.xxs,
+            bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
+          ),
+          itemCount: walls.length + (showFooter ? 1 : 0),
+          gridDelegate: PrismWallGrid.delegate(context, columns: columns, aspectRatio: 0.6625),
+          itemBuilder: (context, index) {
+            if (index == walls.length && showFooter) {
+              return SeeMoreButton(
+                seeMoreLoader: seeMoreLoader,
+                failed: _loadMoreFailed,
+                func: () {
+                  unawaited(
+                    analytics.track(
+                      const SurfaceActionTappedEvent(
+                        surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
+                        action: AnalyticsActionValue.seeMoreTapped,
+                        sourceContext: 'home_collections_grid_see_more',
+                      ),
+                    ),
+                  );
+                  _loadMore();
+                },
+              );
+            }
+            final Map<String, dynamic> wall = walls[index];
+            final String wallId = _wallString(wall, 'id');
+            final String wallpaperThumb = normalizeWallpaperThumbnailUrl(_wallString(wall, 'wallpaper_thumb'));
+            final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
+            final bool validPayload =
+                wallId.trim().isNotEmpty && isValidNetworkUrl(wallpaperThumb) && isValidNetworkUrl(wallpaperUrl);
+            if (!validPayload) {
+              logger.w(
+                'Skipping malformed collection tile payload.',
+                tag: 'CollectionsGrid',
+                fields: <String, Object?>{'wall_id': wallId, 'thumb': wallpaperThumb, 'url': wallpaperUrl},
+              );
+              return DecoratedBox(
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withValues(alpha: 0.06),
+                  borderRadius: PrismWallGrid.tileRadius,
+                ),
+                child: Center(child: Icon(Icons.broken_image_outlined, color: cs.onSurface.withValues(alpha: 0.4))),
+              );
+            }
+            return KeyedSubtree(
+              key: ValueKey<String>(wallId),
+              child: PrismWallTile(
+                url: wallpaperThumb,
+                fallbackUrl: wallpaperUrl,
+                memCacheHeight: decodeHeight,
+                heroTag: prismHeroTag(this, index, wallId),
+                semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by')),
+                onTap: () {
+                  PrismHaptics.tap();
+                  unawaited(
+                    analytics.track(
+                      SurfaceActionTappedEvent(
+                        surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
+                        action: AnalyticsActionValue.tileOpened,
+                        sourceContext: 'home_collections_grid_tile',
+                        itemType: ItemTypeValue.wallpaper,
+                        itemId: wallId,
+                        index: index,
+                      ),
+                    ),
+                  );
+                  context.router.push(
+                    WallpaperDetailRoute(
+                      entity: _entityFor(wall, wallId),
+                      analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+                      heroTag: prismHeroTag(this, index, wallId),
+                    ),
+                  );
+                },
+                onLongPress: () {
+                  PrismHaptics.impact();
+                  unawaited(showWallpaperQuickActions(context, _entityFor(wall, wallId)));
+                },
               ),
             );
           },
-        );
-        return false;
-      },
-      child: GridView.builder(
-        padding: PrismWallGrid.padding.copyWith(
-          top: PrismSpace.xxs,
-          bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
         ),
-        itemCount: walls.length + (showSeeMore ? 1 : 0),
-        gridDelegate: PrismWallGrid.delegate(context, columns: _columns(context), aspectRatio: 0.6625),
-        itemBuilder: (context, index) {
-          if (index == walls.length && showSeeMore) {
-            return SeeMoreButton(
-              seeMoreLoader: seeMoreLoader,
-              func: () {
-                unawaited(
-                  analytics.track(
-                    const SurfaceActionTappedEvent(
-                      surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
-                      action: AnalyticsActionValue.seeMoreTapped,
-                      sourceContext: 'home_collections_grid_see_more',
-                    ),
-                  ),
-                );
-                _loadMore();
-              },
-            );
-          }
-          final Map<String, dynamic> wall = walls[index];
-          final String wallId = _wallString(wall, 'id');
-          final String wallpaperThumb = normalizeWallpaperThumbnailUrl(_wallString(wall, 'wallpaper_thumb'));
-          final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
-          final WallpaperSource wallSource = _wallSource(wall);
-          final bool validPayload =
-              wallId.trim().isNotEmpty && isValidNetworkUrl(wallpaperThumb) && isValidNetworkUrl(wallpaperUrl);
-          if (!validPayload) {
-            logger.w(
-              'Skipping malformed collection tile payload.',
-              tag: 'CollectionsGrid',
-              fields: <String, Object?>{'wall_id': wallId, 'thumb': wallpaperThumb, 'url': wallpaperUrl},
-            );
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                color: cs.onSurface.withValues(alpha: 0.06),
-                borderRadius: PrismWallGrid.tileRadius,
-              ),
-              child: Center(child: Icon(Icons.broken_image_outlined, color: cs.onSurface.withValues(alpha: 0.4))),
-            );
-          }
-          return ShakeOnce(
-            controller: _shake,
-            target: index,
-            child: PrismWallTile(
-              url: wallpaperThumb,
-              heroTag: prismHeroTag(this, index, wallId),
-              semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by')),
-              onTap: () {
-                unawaited(
-                  analytics.track(
-                    SurfaceActionTappedEvent(
-                      surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
-                      action: AnalyticsActionValue.tileOpened,
-                      sourceContext: 'home_collections_grid_tile',
-                      itemType: ItemTypeValue.wallpaper,
-                      itemId: wallId,
-                      index: index,
-                    ),
-                  ),
-                );
-                context.router.push(
-                  WallpaperDetailRoute(
-                    wallId: wallId,
-                    source: wallSource,
-                    thumbnailUrl: wallpaperThumb,
-                    analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
-                    heroTag: prismHeroTag(this, index, wallId),
-                  ),
-                );
-              },
-              onLongPress: () {
-                _shake.shake(index);
-                HapticFeedback.vibrate();
-                createDynamicLink(wallId, wallSource, wallpaperUrl, wallpaperThumb);
-              },
-            ),
-          );
-        },
       ),
     );
   }

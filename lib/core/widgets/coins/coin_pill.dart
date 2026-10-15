@@ -90,7 +90,9 @@ class CoinBalancePill extends StatelessWidget {
       duration: context.motion(PrismDurations.base),
       curve: PrismCurves.pop,
       child: StatPill(
-        semanticLabel: '$balance Prism coins',
+        semanticLabel: delta == 0
+            ? '$balance Prism coins'
+            : '$balance Prism coins, ${earned ? 'up $delta' : 'down ${-delta}'}',
         onTap: onTap,
         tint: earned ? PrismColors.success.withValues(alpha: 0.12) : null,
         borderColor: accent?.withValues(alpha: 0.6),

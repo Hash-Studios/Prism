@@ -1,9 +1,19 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
-import {getAdminEmails} from "./adminConfig";
+import {isAdminCaller} from "./adminConfig";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, REGION} from "./common";
+
+/** A wall doc id: a non-empty string without a slash, at most 128 characters. */
+export function parseWallId(raw: unknown): string {
+  const wallId = typeof raw === "string" ? raw.trim() : "";
+  if (!wallId || wallId.length > 128 || wallId.includes("/") || wallId === "." || wallId === ".." ||
+      /^__.*__$/.test(wallId)) {
+    throw new HttpsError("invalid-argument", "wallId must be a valid wallpaper id.");
+  }
+  return wallId;
+}
 
 export const categorizeWallpaper = onCall(
   {
@@ -15,11 +25,7 @@ export const categorizeWallpaper = onCall(
       throw new HttpsError("unauthenticated", "Sign in to categorize wallpapers.");
     }
 
-    const {wallId} = request.data;
-
-    if (!wallId) {
-      throw new HttpsError("invalid-argument", "wallId is required.");
-    }
+    const wallId = parseWallId(request.data?.wallId);
 
     const wallDoc = await db.collection("walls").doc(wallId).get();
 
@@ -34,10 +40,7 @@ export const categorizeWallpaper = onCall(
 
     const callerEmail = (request.auth.token.email ?? "").toString().trim().toLowerCase();
     const wallEmail = (data.email ?? "").toString().trim().toLowerCase();
-    const configuredAdmins = await getAdminEmails();
-    const isAdmin = request.auth.token.admin === true || configuredAdmins.some((email) =>
-      email.trim().toLowerCase() === callerEmail,
-    );
+    const isAdmin = await isAdminCaller(request.auth);
     if (!isAdmin && callerEmail !== wallEmail) {
       throw new HttpsError("permission-denied", "You cannot categorize this wallpaper.");
     }

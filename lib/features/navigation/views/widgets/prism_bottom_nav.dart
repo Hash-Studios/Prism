@@ -1,11 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/features/navigation/views/widgets/nav_bar_surface.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// The floating pill with the four tab destinations. A circle slides behind the active one.
 class PrismBottomNav extends StatefulWidget {
@@ -63,6 +63,14 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     super.dispose();
   }
 
+  void _resetActiveTab(int index) {
+    PrismHaptics.selection();
+    final StackRouter? stack = _tabsRouter!.stackRouterOfIndex(index);
+    if (stack != null && stack.canPop()) {
+      stack.popUntilRoot();
+    }
+  }
+
   void _trackTabSelection({required int fromIndex, required int toIndex}) {
     analytics.track(NavTabSelectedEvent(fromTab: _tabs[fromIndex].value, toTab: _tabs[toIndex].value));
   }
@@ -70,9 +78,10 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   void _switchTab({required int toIndex}) {
     final fromIndex = _tabsRouter!.activeIndex;
     if (fromIndex == toIndex) {
+      _resetActiveTab(toIndex);
       return;
     }
-    HapticFeedback.selectionClick();
+    PrismHaptics.selection();
     _trackTabSelection(fromIndex: fromIndex, toIndex: toIndex);
     _tabsRouter!.setActiveIndex(toIndex);
   }
@@ -164,7 +173,7 @@ class _TabButton extends StatelessWidget {
                     isActive ? config.activeIcon : config.icon,
                     key: ValueKey<bool>(isActive),
                     size: 22,
-                    color: isActive ? ink : ink.withValues(alpha: 0.55),
+                    color: isActive ? ink : ink.withValues(alpha: 0.7),
                   ),
                 ),
               ),

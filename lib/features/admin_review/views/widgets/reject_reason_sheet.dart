@@ -1,14 +1,8 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
-
-const List<String> _quickReasons = <String>[
-  'Low quality',
-  'Not original',
-  'Inappropriate content',
-  'Wrong category',
-  'Watermark or logo',
-];
 
 /// Asks for a reason, then runs [onSubmit] with it. The sheet stays open, with the reason kept, when saving fails.
 Future<void> showRejectReasonSheet(
@@ -40,6 +34,7 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
   final TextEditingController _controller = TextEditingController();
   bool _isSaving = false;
   String? _errorMessage;
+  RejectReason? _picked;
 
   @override
   void dispose() {
@@ -47,10 +42,13 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
     super.dispose();
   }
 
-  void _pick(String reason) {
+  /// A preset fills the creator-facing text. "Other" clears it.
+  void _pick(RejectReason reason) {
+    PrismHaptics.selection();
     setState(() {
-      _controller.text = reason;
-      _controller.selection = TextSelection.collapsed(offset: reason.length);
+      _picked = reason;
+      _controller.text = reason.text;
+      _controller.selection = TextSelection.collapsed(offset: reason.text.length);
       _errorMessage = null;
     });
   }
@@ -62,6 +60,7 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
       setState(() => _errorMessage = 'Enter a reason before rejecting this item.');
       return;
     }
+    PrismHaptics.tap();
     setState(() {
       _isSaving = true;
       _errorMessage = null;
@@ -104,10 +103,10 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
               spacing: PrismSpace.xs,
               runSpacing: PrismSpace.xs,
               children: <Widget>[
-                for (final String reason in _quickReasons)
+                for (final RejectReason reason in rejectReasons)
                   PrismChip(
-                    label: reason,
-                    selected: _controller.text == reason,
+                    label: reason.label,
+                    selected: _picked == reason,
                     onTap: _isSaving ? null : () => _pick(reason),
                   ),
               ],
@@ -122,7 +121,10 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
               minLines: 2,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              onChanged: (_) => setState(() => _errorMessage = null),
+              onChanged: (_) => setState(() {
+                _picked = null;
+                _errorMessage = null;
+              }),
             ),
           ],
         ),

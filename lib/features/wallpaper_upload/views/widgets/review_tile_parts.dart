@@ -21,7 +21,8 @@ void showDeleteConfirm(BuildContext context, {required String title, required Fu
       confirmLabel: 'Delete wallpaper',
       destructive: true,
     ).then((bool confirmed) async {
-      if (confirmed) await onConfirm();
+      if (!confirmed) return;
+      await onConfirm();
     }),
   );
 }
@@ -47,7 +48,7 @@ class ReviewDownloadButton extends StatelessWidget {
   static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
 
   Future<void> _download() async {
-    toasts.success('Starting download');
+    toasts.success('Starting download', haptic: false);
     if (showNotification) main.localNotification.createDownloadNotification();
     try {
       final result = await _prismMediaApi.saveMedia(SaveMediaRequest(link: link, isLocalFile: false, kind: kind));

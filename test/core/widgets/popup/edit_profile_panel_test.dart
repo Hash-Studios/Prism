@@ -1,12 +1,27 @@
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../support/fake_firestore_client.dart';
 import '../../../support/profile_user_fixture.dart';
 
 void main() {
-  setUp(() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+  late FakeFirestoreClient firestore;
+
+  setUp(() async {
+    await getIt.reset();
+    firestore = FakeFirestoreClient();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      toastChannel,
+      (_) async => true,
+    );
     app_state.prismUser = profileUser(
       id: 'me',
       username: 'creator_01',
@@ -14,6 +29,11 @@ void main() {
       profilePhoto: '',
       links: const <String, String>{'custom link': 'https://example.com'},
     )..name = 'Me Myself';
+  });
+
+  tearDown(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+    await getIt.reset();
   });
 
   Future<void> pumpPanel(WidgetTester tester) async {
@@ -49,7 +69,7 @@ void main() {
     expect(find.widgetWithText(TextField, 'creator_01'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Hello'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'https://example.com'), findsOneWidget);
-    expect(find.text('Use 8 or more letters, numbers or underscores (_).'), findsOneWidget);
+    expect(find.text('Use 3 or more letters, numbers or underscores (_).'), findsOneWidget);
     expect(find.text('Change cover'), findsOneWidget);
     expect(find.byTooltip('Remove cover photo'), findsNothing);
     expect(saveEnabled(tester), isFalse);
@@ -79,7 +99,7 @@ void main() {
     await pumpPanel(tester);
 
     await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'Me Again');
-    await tester.enterText(find.widgetWithText(TextField, 'creator_01'), 'short');
+    await tester.enterText(find.widgetWithText(TextField, 'creator_01'), 'ab');
     await tester.pumpAndSettle();
 
     expect(saveEnabled(tester), isFalse);
@@ -97,14 +117,87 @@ void main() {
     expect(find.text('open'), findsOneWidget);
   });
 
-  testWidgets('a short username shows the rule as an error and keeps Save disabled', (tester) async {
-    await pumpPanel(tester);
+  group('username', () {
+    Finder usernameField() => find.widgetWithText(TextField, 'creator_01');
 
-    await tester.enterText(find.widgetWithText(TextField, 'creator_01'), 'short');
-    await tester.pumpAndSettle();
+    testWidgets('two characters show an inline error and cannot be saved', (tester) async {
+      await pumpPanel(tester);
 
-    expect(find.text('Use 8 or more letters, numbers or underscores (_).'), findsOneWidget);
-    expect(saveEnabled(tester), isFalse);
+      await tester.enterText(usernameField(), 'ab');
+      await tester.pump();
+
+      expect(find.text('Use at least 3 characters.'), findsOneWidget);
+      expect(saveEnabled(tester), isFalse);
+    });
+
+    testWidgets('three characters are accepted and saved once they are free', (tester) async {
+      firestore.onQuery = (_) => const <FakeDocRow>[];
+      await pumpPanel(tester);
+
+      await tester.enterText(usernameField(), 'abc');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('Use at least 3 characters.'), findsNothing);
+      expect(find.text('That username is taken.'), findsNothing);
+      expect(saveEnabled(tester), isTrue);
+
+      await tester.tap(find.text('Save changes'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
+      expect(firestore.writes.single.data, <String, dynamic>{'username': 'abc'});
+    });
+
+    testWidgets('a name another user holds shows an inline error', (tester) async {
+      firestore.onQuery = (_) => <FakeDocRow>[(id: 'someone-else', data: <String, dynamic>{})];
+      await pumpPanel(tester);
+
+      await tester.enterText(usernameField(), 'taken_name');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('That username is taken.'), findsOneWidget);
+      expect(saveEnabled(tester), isFalse);
+    });
+
+    testWidgets('spaces and symbols show an inline error', (tester) async {
+      await pumpPanel(tester);
+
+      await tester.enterText(usernameField(), 'bad name!');
+      await tester.pump();
+
+      expect(find.text('Use letters, numbers and underscores only.'), findsOneWidget);
+    });
+  });
+
+  group('links', () {
+    Finder linkField() => find.widgetWithText(TextField, 'https://example.com');
+
+    testWidgets('a link with an unsafe scheme shows an inline error and blocks saving', (tester) async {
+      await pumpPanel(tester);
+
+      await tester.enterText(linkField(), 'javascript:alert(1)');
+      await tester.pump();
+
+      expect(find.text('Enter a valid link.'), findsOneWidget);
+      expect(saveEnabled(tester), isFalse);
+    });
+
+    testWidgets('an https link clears the error and is saved as typed', (tester) async {
+      await pumpPanel(tester);
+
+      await tester.enterText(linkField(), 'javascript:alert(1)');
+      await tester.pump();
+      await tester.enterText(find.widgetWithText(TextField, 'javascript:alert(1)'), 'https://example.com/me');
+      await tester.pump();
+
+      expect(find.text('Enter a valid link.'), findsNothing);
+      expect(saveEnabled(tester), isTrue);
+      await tester.tap(find.text('Save changes'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
+      expect((firestore.writes.single.data!['links'] as Map)['custom link'], 'https://example.com/me');
+    });
   });
 
   testWidgets('bio and link can be removed, and each asks first', (tester) async {

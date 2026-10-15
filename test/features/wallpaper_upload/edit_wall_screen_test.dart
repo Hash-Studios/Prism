@@ -128,8 +128,9 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
     ) async {
-      final Map<Object?, Object?> arguments = call.arguments as Map<Object?, Object?>;
-      toastMessages.add(arguments['msg']! as String);
+      if (call.method == 'showToast') {
+        toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      }
       return true;
     });
     addTearDown(
@@ -170,5 +171,6 @@ void main() {
     final PrismButton save = tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Save'));
     expect(save.loading, isFalse);
     expect(save.onPressed, isNotNull);
+    await tester.pump(const Duration(seconds: 1));
   });
 }

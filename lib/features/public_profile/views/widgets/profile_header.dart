@@ -3,7 +3,9 @@ import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:flutter/material.dart';
@@ -52,7 +54,7 @@ class ProfileHeader extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final double coverHeight = _coverHeight + MediaQuery.paddingOf(context).top;
     const double avatarFull = _avatarSize + 2 * _avatarRing;
-    final String name = profile.name.trim();
+    final String name = creatorLabel(name: profile.name, username: profile.username);
     final List<String> linkKeys = profile.links.keys.where((k) => profile.links[k]!.trim().isNotEmpty).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +135,7 @@ class ProfileHeader extends StatelessWidget {
                     child: Semantics(
                       header: true,
                       child: Text(
-                        name.isEmpty ? profile.username : name,
+                        name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: PrismTextStyles.screenTitle(context).copyWith(fontSize: 24),
@@ -166,6 +168,7 @@ class ProfileHeader extends StatelessWidget {
                   ).copyWith(height: 1.4, color: cs.onSurface.withValues(alpha: 0.85)),
                 ),
               ],
+              ProfileBadgeRow(badgeIds: profile.badges),
               const SizedBox(height: PrismSpace.md),
               Wrap(
                 spacing: PrismSpace.lg,

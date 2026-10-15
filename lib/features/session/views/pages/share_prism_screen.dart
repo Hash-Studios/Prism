@@ -14,6 +14,10 @@ import 'package:flutter/services.dart';
 
 @RoutePage()
 class SharePrismScreen extends StatefulWidget {
+  /// A static seam, not a constructor argument, so `const SharePrismRoute()` stays valid.
+  @visibleForTesting
+  static Future<String> Function(String userId)? createLinkForTesting;
+
   @override
   _SharePrismScreenState createState() => _SharePrismScreenState();
 }
@@ -38,7 +42,13 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
       _failed = false;
     });
     try {
-      final value = await createSharingPrismLink(app_state.prismUser.id);
+      final value =
+          await (SharePrismScreen.createLinkForTesting?.call(app_state.prismUser.id) ??
+              createSharingPrismLink(
+                app_state.prismUser.id,
+                inviterName: app_state.prismUser.name,
+                inviterPhoto: app_state.prismUser.profilePhoto,
+              ));
       if (mounted) setState(() => link = value);
     } catch (_) {
       if (mounted) setState(() => _failed = true);

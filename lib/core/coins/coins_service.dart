@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -6,6 +8,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
+import 'package:Prism/core/coins/downloaded_link_lookup.dart';
+import 'package:Prism/core/coins/pending_download.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -13,6 +17,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
+import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
@@ -23,8 +28,9 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 class CoinMutationResult {
   const CoinMutationResult({
@@ -37,6 +43,9 @@ class CoinMutationResult {
     this.insufficientBalance = false,
     this.reason = '',
     this.transactionId = '',
+    this.unknownOutcomeTransactionId = '',
+    this.pendingDownloadTxId = '',
+    this.adsRemaining,
   });
 
   final bool success;
@@ -49,8 +58,38 @@ class CoinMutationResult {
   final String reason;
   final String transactionId;
 
+  /// Set when a spend got no answer: the debit may have committed under this server transaction id.
+  final String unknownOutcomeTransactionId;
+
+  /// The key of the ledger entry that a charged download spend wrote, exactly as the ledger stores it. Empty when the
+  /// spend was not a tracked download or did not charge.
+  final String pendingDownloadTxId;
+
+  /// Rewarded ads the user can still watch today. Only the `rewardedAd` award reply sets it.
+  final int? adsRemaining;
+
+  CoinMutationResult withPendingDownloadTxId(String txId) => CoinMutationResult(
+    success: success,
+    changed: changed,
+    bypassed: bypassed,
+    insufficientBalance: insufficientBalance,
+    previousBalance: previousBalance,
+    currentBalance: currentBalance,
+    delta: delta,
+    reason: reason,
+    transactionId: transactionId,
+    unknownOutcomeTransactionId: unknownOutcomeTransactionId,
+    pendingDownloadTxId: txId,
+    adsRemaining: adsRemaining,
+  );
+
   // ignore: prefer_constructors_over_static_methods
-  static CoinMutationResult noChange({required int balance, String reason = '', bool success = true}) {
+  static CoinMutationResult noChange({
+    required int balance,
+    String reason = '',
+    bool success = true,
+    String unknownOutcomeTransactionId = '',
+  }) {
     return CoinMutationResult(
       success: success,
       changed: false,
@@ -58,6 +97,7 @@ class CoinMutationResult {
       currentBalance: balance,
       delta: 0,
       reason: reason,
+      unknownOutcomeTransactionId: unknownOutcomeTransactionId,
     );
   }
 }
@@ -70,6 +110,9 @@ class _AiGenerationReservationResult {
   final String? transactionId;
 
   bool get success => mode != AiChargeMode.insufficient && mutation.success;
+
+  /// The charge may have gone through but the reply never arrived. A refund is queued for it.
+  bool get refundPending => mutation.unknownOutcomeTransactionId.isNotEmpty;
 
   int get coinsSpent => mode == AiChargeMode.coinSpend && mutation.changed ? -mutation.delta : 0;
 }
@@ -241,7 +284,7 @@ class StreakFreezePurchase {
   bool get isSuccess => outcome == StreakFreezeOutcome.success;
 }
 
-class CoinsService {
+class CoinsService with WidgetsBindingObserver {
   CoinsService._();
 
   static final CoinsService instance = CoinsService._();
@@ -249,11 +292,48 @@ class CoinsService {
   static const String _coinStateField = 'coinState';
   static const String _txCollection = FirebaseCollections.coinTransactions;
   static const String _pendingReferralInviterPrefKey = 'pendingReferralInviterId';
+  // The queue first held only AI refunds. The storage key stays so entries written by older builds still load.
+  static const String _pendingRefundsPrefKey = 'pendingAiRefunds';
+  static const String _pendingDownloadsPrefKey = 'pendingDownloads_v2';
+  // The first ledger design held one entry under this key. Reads still merge it and the next write removes it.
+  static const String _legacyPendingDownloadPrefKey = 'pendingDownloadMarker';
+  static const Duration _refundWindow = Duration(minutes: 10);
+  static const String _spendTransactionPrefix = 'spend_';
+  static const String _awardTransactionPrefix = 'award_';
+  static const int _maxLabelLength = 60;
+  static const Duration _pendingRewardWindow = Duration(hours: 24);
   static const String _streakReminderEnabledField = 'streakReminderEnabled';
   static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
   static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
-  static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
+  final Queue<Completer<void>> _refundQueueWaiters = Queue<Completer<void>>();
+  bool _refundQueueHeld = false;
+  bool _pendingRetryInFlight = false;
+  Timer? _pendingRetryTimer;
+  Timer? _downloadRecoveryTimer;
+  bool _downloadRecoveryInFlight = false;
+
+  /// Ids of paid downloads whose tap still runs in this process. Recovery skips them, because the native save may
+  /// still finish, for example while the Photos permission dialog stays open. An id leaves the set only after the
+  /// write that settles it is stored, so a failed write keeps the protection until the app restarts. The set is empty
+  /// after a restart, so recovery then treats every stored entry as abandoned.
+  final Set<String> _liveDownloadTxIds = <String>{};
+  StreamSubscription<bool>? _connectivitySubscription;
+  bool _observingLifecycle = false;
+
+  /// How long to wait before the next retry while the pending queue holds entries.
+  @visibleForTesting
+  Duration pendingRetryInterval = const Duration(seconds: 30);
+
+  /// How old a paid download must be before recovery counts it as abandoned and refunds it.
+  @visibleForTesting
+  Duration abandonedDownloadAfter = const Duration(minutes: 2);
+
+  /// Answers whether a link is already in the Downloads index. The Save pill reads it, and recovery asks it for an entry
+  /// moved in from an old marker. Tests replace it.
+  DownloadedLinkCheck isLinkDownloaded = isLinkInDownloadedIndex;
+  int? _adsRemaining;
+  String _adsRemainingDay = '';
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
@@ -374,6 +454,8 @@ class CoinsService {
     }
     _applyLocalBalance(parseIntOr(data['coins']), delta: 0);
     _syncStreakFromUserData(data);
+    startPendingRetryWatch();
+    await retryPendingRefunds();
   }
 
   Future<int> refreshBalance() async {
@@ -464,10 +546,12 @@ class CoinsService {
     int? amountOverride,
     String? reason,
     String? transactionId,
+    String? requestId,
   }) async {
     if (!_canMutateCoins()) {
       return _notLoggedIn;
     }
+    final String userId = app_state.prismUser.id;
     final bool isRefund = action == CoinEarnAction.refund;
     // Refunds are keyed by the debit's transactionId; the server ignores amount for them.
     final int? amount = isRefund ? null : (amountOverride ?? action.defaultAmount());
@@ -475,14 +559,23 @@ class CoinsService {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
     final CoinMutationResult result = await _callCoinMutation(
+      userId: userId,
       callableName: 'awardCoins',
       amount: amount,
       action: action.name,
       sourceTag: sourceTag,
       reason: reason ?? action.name,
       transactionId: transactionId,
+      requestId: requestId,
     );
     _applyLocalBalance(result.currentBalance, delta: result.delta);
+    if (action == CoinEarnAction.rewardedAd) {
+      _noteAdsRemaining(result.adsRemaining);
+      final String prefix = '$_awardTransactionPrefix${userId}_';
+      if (result.unknownOutcomeTransactionId.startsWith(prefix)) {
+        await _rememberPendingReward(result.unknownOutcomeTransactionId.substring(prefix.length), userId: userId);
+      }
+    }
     if (result.changed) _logEarn(action: action, amount: amount ?? result.delta, sourceTag: sourceTag, reason: reason);
     return result;
   }
@@ -492,6 +585,8 @@ class CoinsService {
     String sourceTag = 'coins.spend',
     int? amountOverride,
     String? reason,
+    String? label,
+    String? pendingDownloadLink,
   }) async {
     if (!_canMutateCoins()) {
       return _notLoggedIn;
@@ -501,19 +596,81 @@ class CoinsService {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
 
-    final CoinMutationResult result = await _callCoinMutation(
-      callableName: 'spendCoins',
-      amount: amount,
-      action: action.name,
-      sourceTag: sourceTag,
-      reason: reason ?? action.name,
-      allowPremiumBypass: true,
-    );
+    final String userId = app_state.prismUser.id;
+    final String? requestId = pendingDownloadLink == null ? null : _newRequestId();
+    final String? pendingTxId = requestId == null ? null : '$_spendTransactionPrefix${userId}_$requestId';
+    if (pendingDownloadLink != null && pendingTxId != null) {
+      final bool persisted = await _updatePendingDownloads('coins.download.ledger_write', (
+        Map<String, PendingDownload> ledger,
+      ) {
+        ledger[pendingTxId] = PendingDownload(
+          txId: pendingTxId,
+          userId: userId,
+          link: pendingDownloadLink,
+          action: action.name,
+          at: DateTime.now().millisecondsSinceEpoch,
+        );
+        _liveDownloadTxIds.add(pendingTxId);
+        return true;
+      });
+      if (!persisted) {
+        _liveDownloadTxIds.remove(pendingTxId);
+        return CoinMutationResult.noChange(
+          balance: app_state.prismUser.coins,
+          success: false,
+          reason: 'pending_download_storage_failed',
+        );
+      }
+    }
+    try {
+      final CoinMutationResult result = await _callCoinMutation(
+        userId: userId,
+        callableName: 'spendCoins',
+        amount: amount,
+        action: action.name,
+        sourceTag: sourceTag,
+        reason: reason ?? action.name,
+        allowPremiumBypass: true,
+        label: label,
+        requestId: requestId,
+      );
 
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed) _logSpend(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
-    return result;
+      _applyLocalBalance(result.currentBalance, delta: result.delta);
+      if (result.unknownOutcomeTransactionId.isNotEmpty) {
+        await _rememberPendingRefund(
+          result.unknownOutcomeTransactionId,
+          userId: userId,
+          action: action,
+          reason: _failedRefundReason(action),
+        );
+      }
+      final bool charged = result.success && result.changed;
+      if (pendingTxId != null && !charged) {
+        await _updatePendingDownloads(
+          'coins.download.ledger_remove',
+          (Map<String, PendingDownload> ledger) => ledger.remove(pendingTxId) != null,
+          onPersisted: () => _liveDownloadTxIds.remove(pendingTxId),
+        );
+      }
+      if (result.changed) _logSpend(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+      return pendingTxId != null && charged ? result.withPendingDownloadTxId(pendingTxId) : result;
+    } catch (_) {
+      // No caller gets the txId, so no save will run. The stored entry stays for recovery to refund.
+      if (pendingTxId != null) await releasePendingDownload(pendingTxId);
+      rethrow;
+    }
   }
+
+  /// Rewarded ads left today, as the last `rewardedAd` reply told. Null when unknown or from an earlier UTC day.
+  int? get adsRemainingToday => _adsRemainingDay == _utcDayKey() ? _adsRemaining : null;
+
+  void _noteAdsRemaining(int? remaining) {
+    if (remaining == null) return;
+    _adsRemaining = remaining;
+    _adsRemainingDay = _utcDayKey();
+  }
+
+  String _utcDayKey() => _offsetDayKey(DateTime.now().toUtc(), 0);
 
   Future<CoinMutationResult> refundSpend(
     CoinSpendAction action, {
@@ -549,7 +706,9 @@ class CoinsService {
       );
     }
     final int cost = qualityTier.coinCost;
+    final String reservingUserId = app_state.prismUser.id;
     final CoinMutationResult mutation = await _callCoinMutation(
+      userId: reservingUserId,
       callableName: 'spendCoins',
       amount: cost,
       action: CoinSpendAction.aiGeneration.name,
@@ -557,6 +716,9 @@ class CoinsService {
       reason: 'ai_generation_reserved',
     );
     _applyLocalBalance(mutation.currentBalance, delta: mutation.delta);
+    if (mutation.unknownOutcomeTransactionId.isNotEmpty) {
+      await _rememberPendingRefund(mutation.unknownOutcomeTransactionId, userId: reservingUserId);
+    }
     final _AiGenerationReservationResult result = _AiGenerationReservationResult(
       mode: mutation.changed ? AiChargeMode.coinSpend : AiChargeMode.insufficient,
       mutation: mutation,
@@ -601,11 +763,373 @@ class CoinsService {
             sourceTag: sourceTag,
           ),
         );
+      } else if (_isRetryableRefundFailure(refund)) {
+        await _rememberPendingRefund(reservationTransactionId ?? '');
       }
       return refund;
     }
 
     return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
+  }
+
+  bool _isRetryableRefundFailure(CoinMutationResult refund) =>
+      !refund.success &&
+      !const <String>{
+        'failed-precondition',
+        'invalid-argument',
+        'permission-denied',
+        'refund_daily_limit',
+        'missing_transaction_id',
+        'not_logged_in',
+      }.contains(refund.reason);
+
+  List<Map<String, dynamic>> _readPendingEntries() {
+    if (!_settings.isOpen) return <Map<String, dynamic>>[];
+    final String raw = _settings.get<String>(_pendingRefundsPrefKey, defaultValue: '');
+    if (raw.isEmpty) return <Map<String, dynamic>>[];
+    try {
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is! List) return <Map<String, dynamic>>[];
+      return decoded.whereType<Map>().map((Map e) => Map<String, dynamic>.from(e)).toList();
+    } catch (_) {
+      return <Map<String, dynamic>>[];
+    }
+  }
+
+  Future<void> _writePendingEntries(List<Map<String, dynamic>> entries) async {
+    if (!_settings.isOpen) return;
+    if (entries.isEmpty) {
+      await _settings.delete(_pendingRefundsPrefKey);
+    } else {
+      await _settings.set(_pendingRefundsPrefKey, jsonEncode(entries));
+    }
+  }
+
+  static bool _isRewardEntry(Map<String, dynamic> entry) => entry['kind'] == 'reward';
+
+  /// The id that names an entry: the debit for a refund, the request for a reward.
+  static String _entryKey(Map<String, dynamic> entry) =>
+      (_isRewardEntry(entry) ? entry['requestId'] : entry['transactionId'])?.toString() ?? '';
+
+  static String _failedRefundReason(CoinSpendAction action) =>
+      action == CoinSpendAction.aiGeneration ? 'ai_generation_failed_refund' : 'download_failed_refund';
+
+  Future<void> _rememberPendingRefund(
+    String transactionId, {
+    String? userId,
+    CoinSpendAction action = CoinSpendAction.aiGeneration,
+    String? reason,
+  }) => _rememberPending(
+    key: transactionId,
+    userId: userId,
+    entry: <String, dynamic>{
+      'transactionId': transactionId,
+      'action': action.name,
+      'reason': reason ?? _failedRefundReason(action),
+    },
+  );
+
+  Future<void> _rememberPendingReward(String requestId, {String? userId}) => _rememberPending(
+    key: requestId,
+    userId: userId,
+    entry: <String, dynamic>{'kind': 'reward', 'requestId': requestId},
+  );
+
+  Future<void> _rememberPending({required String key, required Map<String, dynamic> entry, String? userId}) {
+    final String ownerId = userId ?? app_state.prismUser.id;
+    if (key.isEmpty || ownerId.isEmpty || (userId == null && !_canMutateCoins())) return Future<void>.value();
+    return _withRefundQueueLock(() async {
+      final List<Map<String, dynamic>> entries = _readPendingEntries();
+      if (entries.any((Map<String, dynamic> e) => _entryKey(e) == key)) return;
+      entries.add(<String, dynamic>{'userId': ownerId, ...entry, 'atMs': DateTime.now().millisecondsSinceEpoch});
+      await _writePendingEntries(entries);
+      startPendingRetryWatch();
+    });
+  }
+
+  Future<void> _withRefundQueueLock(Future<void> Function() action) async {
+    if (_refundQueueHeld) {
+      final Completer<void> turn = Completer<void>();
+      _refundQueueWaiters.add(turn);
+      await turn.future;
+    } else {
+      _refundQueueHeld = true;
+    }
+    try {
+      await action();
+    } finally {
+      if (_refundQueueWaiters.isEmpty) {
+        _refundQueueHeld = false;
+      } else {
+        _refundQueueWaiters.removeFirst().complete();
+      }
+    }
+  }
+
+  /// Retries refunds and ad rewards that could not reach the server. The server only refunds debits younger than 10
+  /// minutes. It keeps a reward request for good, so a reward retries for 24 hours.
+  Future<void> retryPendingRefunds() async {
+    if (!_canMutateCoins() || _pendingRetryInFlight) return;
+    _pendingRetryInFlight = true;
+    try {
+      await _retryPendingEntries();
+    } finally {
+      _pendingRetryInFlight = false;
+      _schedulePendingRetry();
+    }
+  }
+
+  Future<void> _retryPendingEntries() async {
+    await refundAbandonedDownload();
+    final String userId = app_state.prismUser.id;
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    final List<Map<String, dynamic>> snapshot = <Map<String, dynamic>>[];
+    await _withRefundQueueLock(() async => snapshot.addAll(_readPendingEntries()));
+    final Set<String> resolvedKeys = <String>{};
+    for (final Map<String, dynamic> entry in snapshot) {
+      final String entryUser = entry['userId']?.toString() ?? '';
+      final String key = _entryKey(entry);
+      final bool isReward = _isRewardEntry(entry);
+      final int atMs = parseIntOr(entry['atMs']);
+      final Duration window = isReward ? _pendingRewardWindow : _refundWindow;
+      if (key.isEmpty || nowMs - atMs > window.inMilliseconds) {
+        if (key.isNotEmpty) resolvedKeys.add(key);
+        continue;
+      }
+      if (entryUser != userId) continue;
+      if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
+      final CoinMutationResult result;
+      if (isReward) {
+        result = await award(CoinEarnAction.rewardedAd, sourceTag: 'coins.reward.retry', requestId: key);
+        if (result.changed) toasts.success('Your ad reward was added.');
+      } else {
+        result = await refundSpend(
+          CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration,
+          sourceTag: 'coins.rollback.retry',
+          transactionId: key,
+          reason: entry['reason']?.toString() ?? 'ai_generation_failed_refund',
+        );
+      }
+      if (app_state.prismUser.id != userId) break;
+      if (result.changed || !_isRetryableRefundFailure(result)) resolvedKeys.add(key);
+    }
+    await _withRefundQueueLock(() async {
+      final List<Map<String, dynamic>> latest = _readPendingEntries();
+      latest.removeWhere((Map<String, dynamic> e) => resolvedKeys.contains(_entryKey(e)));
+      await _writePendingEntries(latest);
+    });
+  }
+
+  void _schedulePendingRetry() {
+    if (_pendingRetryTimer?.isActive ?? false) return;
+    if (_readPendingEntries().isEmpty && !_hasAbandonedDownloads()) return;
+    _pendingRetryTimer = Timer(pendingRetryInterval, () {
+      _pendingRetryTimer = null;
+      unawaited(retryPendingRefunds());
+    });
+  }
+
+  /// Retries pending refunds and rewards when the app resumes, when the network returns and on a timer while the
+  /// queue holds entries. Safe to call again.
+  void startPendingRetryWatch() {
+    if (!_observingLifecycle) {
+      try {
+        WidgetsBinding.instance.addObserver(this);
+        _observingLifecycle = true;
+      } catch (_) {
+        // No widgets binding yet. The next call tries again.
+      }
+    }
+    unawaited(_connectivitySubscription?.cancel());
+    _connectivitySubscription = null;
+    if (getIt.isRegistered<ConnectivityService>()) {
+      _connectivitySubscription = getIt<ConnectivityService>().onConnectionChange.listen((bool online) {
+        if (online) unawaited(retryPendingRefunds());
+      });
+    }
+    _pendingRetryTimer?.cancel();
+    _pendingRetryTimer = null;
+    _schedulePendingRetry();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(retryPendingRefunds());
+  }
+
+  Map<String, PendingDownload> _readPendingDownloads() {
+    final Map<String, PendingDownload> ledger = <String, PendingDownload>{};
+    if (!_settings.isOpen) return ledger;
+    final String legacy = _settings.get<String>(_legacyPendingDownloadPrefKey, defaultValue: '');
+    if (legacy.isNotEmpty) {
+      try {
+        final PendingDownload? migrated = PendingDownload.fromJson(jsonDecode(legacy));
+        if (migrated != null) ledger[migrated.txId] = migrated.asLegacy();
+      } on FormatException {
+        // An unreadable marker holds nothing to refund. The next write removes it.
+      }
+    }
+    for (final PendingDownload entry in PendingDownload.decodeList(
+      _settings.get<String>(_pendingDownloadsPrefKey, defaultValue: ''),
+    )) {
+      ledger[entry.txId] = entry;
+    }
+    return ledger;
+  }
+
+  Future<void> _writePendingDownloads(Map<String, PendingDownload> ledger) async {
+    if (ledger.isEmpty) {
+      await _settings.delete(_pendingDownloadsPrefKey);
+    } else {
+      await _settings.set(_pendingDownloadsPrefKey, PendingDownload.encodeList(ledger.values));
+    }
+    await _settings.delete(_legacyPendingDownloadPrefKey);
+  }
+
+  /// Runs [change] on the ledger under the queue lock and saves the result when [change] returns true or an old
+  /// marker still waits to move. Returns false when settings are closed or a read/write fails. [onPersisted] runs under
+  /// the lock once the save went through, or at once when nothing needed saving. Failures are logged.
+  Future<bool> _updatePendingDownloads(
+    String sourceTag,
+    bool Function(Map<String, PendingDownload> ledger) change, {
+    VoidCallback? onPersisted,
+  }) async {
+    bool persisted = false;
+    try {
+      if (!_settings.isOpen) return false;
+      await _withRefundQueueLock(() async {
+        final Map<String, PendingDownload> ledger = _readPendingDownloads();
+        final bool hasLegacyMarker = _settings.get<String>(_legacyPendingDownloadPrefKey, defaultValue: '').isNotEmpty;
+        if (change(ledger) || hasLegacyMarker) await _writePendingDownloads(ledger);
+        onPersisted?.call();
+        persisted = true;
+      });
+      _scheduleDownloadRecovery();
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
+    }
+    return persisted;
+  }
+
+  /// Marks the download paid by [txId] as saved. Call it as soon as the native save or enqueue reports success, so a
+  /// crash from here on never leads to a refund. An unknown [txId] changes nothing. The id stays protected from
+  /// recovery until the saved flag is stored.
+  Future<void> markPendingDownloadSaved(String txId) async {
+    await _updatePendingDownloads('coins.download.ledger_mark', (Map<String, PendingDownload> ledger) {
+      final PendingDownload? entry = ledger[txId];
+      if (entry == null || entry.saved) return false;
+      ledger[txId] = entry.asSaved();
+      return true;
+    }, onPersisted: () => _liveDownloadTxIds.remove(txId));
+  }
+
+  /// Drops the download paid by [txId]. Call it once the download finished or its refund was confirmed. An unknown
+  /// [txId] changes nothing. The id stays protected from recovery until the removal is stored.
+  Future<void> clearPendingDownload(String txId) async {
+    await _updatePendingDownloads(
+      'coins.download.ledger_clear',
+      (Map<String, PendingDownload> ledger) => ledger.remove(txId) != null,
+      onPersisted: () => _liveDownloadTxIds.remove(txId),
+    );
+  }
+
+  /// Ends the running status of the download paid by [txId] and starts a recovery pass. Call it when the tap that paid
+  /// ends with no confirmed save and no confirmed refund. The stored entry stays, so recovery refunds it once it is
+  /// older than [abandonedDownloadAfter].
+  Future<void> releasePendingDownload(String txId) async {
+    if (!_liveDownloadTxIds.remove(txId)) return;
+    await refundAbandonedDownload();
+  }
+
+  /// Refunds the paid downloads that never finished, for example when the app closed mid-download. An entry waits
+  /// [abandonedDownloadAfter] after its payment and is skipped while its tap still runs. A refund that may succeed on a later try keeps its entry for the
+  /// retry loop.
+  Future<void> refundAbandonedDownload() async {
+    if (_downloadRecoveryInFlight) return;
+    _downloadRecoveryInFlight = true;
+    try {
+      await _recoverPendingDownloads();
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.download.abandoned_refund', error: error, stackTrace: stackTrace);
+    } finally {
+      _downloadRecoveryInFlight = false;
+      _scheduleDownloadRecovery();
+      _schedulePendingRetry();
+    }
+  }
+
+  Future<void> _recoverPendingDownloads() async {
+    if (!_canMutateCoins() || !_settings.isOpen) return;
+    final String userId = app_state.prismUser.id;
+    final List<PendingDownload> snapshot = <PendingDownload>[];
+    await _updatePendingDownloads('coins.download.ledger_read', (Map<String, PendingDownload> ledger) {
+      snapshot.addAll(ledger.values.where((PendingDownload entry) => !_liveDownloadTxIds.contains(entry.txId)));
+      return false;
+    });
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    final Set<String> resolved = <String>{};
+    for (final PendingDownload entry in snapshot) {
+      if (entry.userId != userId) continue;
+      if (entry.saved) {
+        resolved.add(entry.txId);
+        continue;
+      }
+      if (entry.remaining(nowMs, abandonedDownloadAfter) > Duration.zero) continue;
+      if (entry.legacy && isLinkDownloaded(entry.link)) {
+        resolved.add(entry.txId);
+        continue;
+      }
+      if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
+      final CoinMutationResult refund = await refundSpend(
+        CoinSpendAction.values.asNameMap()[entry.action] ?? CoinSpendAction.wallpaperDownload,
+        sourceTag: 'coins.download.abandoned_refund',
+        transactionId: entry.txId,
+        reason: 'download_failed_refund',
+      );
+      if (refund.changed) toasts.info('Your last download did not finish. Coins returned.');
+      if (app_state.prismUser.id != userId) break;
+      if (refund.changed || !_isRetryableRefundFailure(refund)) resolved.add(entry.txId);
+    }
+    if (resolved.isEmpty) return;
+    await _updatePendingDownloads('coins.download.ledger_remove', (Map<String, PendingDownload> ledger) {
+      final int before = ledger.length;
+      ledger.removeWhere((String txId, PendingDownload _) => resolved.contains(txId));
+      return ledger.length != before;
+    });
+  }
+
+  /// Wakes the recovery when the soonest unsaved entry of the signed-in user comes of age. Entries that are of age
+  /// already belong to the retry loop, so they never arm this timer.
+  void _scheduleDownloadRecovery() {
+    _downloadRecoveryTimer?.cancel();
+    _downloadRecoveryTimer = null;
+    if (!_canMutateCoins()) return;
+    final String userId = app_state.prismUser.id;
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    Duration? soonest;
+    for (final PendingDownload entry in _readPendingDownloads().values) {
+      if (entry.userId != userId || entry.saved) continue;
+      final Duration wait = entry.remaining(nowMs, abandonedDownloadAfter);
+      if (wait > Duration.zero && (soonest == null || wait < soonest)) soonest = wait;
+    }
+    if (soonest == null) return;
+    _downloadRecoveryTimer = Timer(soonest, () {
+      _downloadRecoveryTimer = null;
+      unawaited(refundAbandonedDownload());
+    });
+  }
+
+  bool _hasAbandonedDownloads() {
+    if (!_canMutateCoins()) return false;
+    final String userId = app_state.prismUser.id;
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    return _readPendingDownloads().values.any(
+      (PendingDownload entry) =>
+          entry.userId == userId &&
+          !entry.saved &&
+          !_liveDownloadTxIds.contains(entry.txId) &&
+          entry.remaining(nowMs, abandonedDownloadAfter) == Duration.zero,
+    );
   }
 
   void commitAiGenerationReservation({
@@ -680,34 +1204,31 @@ class CoinsService {
         reason: 'premium_preview_already_unlocked',
       );
     }
-    final CoinMutationResult result = await _callCoinMutation(
-      callableName: 'spendCoins',
-      amount: CoinPolicy.premiumPreview24h,
-      action: CoinSpendAction.premiumPreview24h.name,
-      sourceTag: sourceTag,
-      reason: 'premium_preview_unlock_24h',
-      allowPremiumBypass: true,
-    );
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed || result.bypassed) {
-      final String userId = app_state.prismUser.id;
-      final Map<String, dynamic>? data = await firestoreClient.getById<Map<String, dynamic>>(
-        FirebaseCollections.usersV2,
-        userId,
-        (value, _) => value,
-        sourceTag: '$sourceTag.read_state',
+    // The server charges and writes the unlock in one transaction; the client never writes coinState.
+    const String reason = 'premium_preview_unlock_24h';
+    final CoinMutationResult result;
+    try {
+      final HttpsCallableResult<dynamic> response = await appFunctions.httpsCallable('unlockPremiumPreview').call(
+        <String, dynamic>{'collectionKey': normalizedKey, 'sourceTag': sourceTag},
       );
-      if (data == null) {
-        return result;
-      }
-      final Map<String, int> previewUnlocks = _previewUnlocksFromState(toJsonMap(data[_coinStateField]));
-      previewUnlocks[normalizedKey] =
-          DateTime.now().millisecondsSinceEpoch + _premiumPreviewAccessDuration.inMilliseconds;
-      // Rules only allow the client to write this nested leaf, never the whole coinState map.
-      await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-        '$_coinStateField.premiumPreviewUnlocks': previewUnlocks,
-      }, sourceTag: sourceTag);
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
+      final Map<String, dynamic> data = toJsonMap(response.data);
+      result = CoinMutationResult(
+        success: data['success'] == true,
+        changed: data['changed'] == true,
+        bypassed: data['bypassed'] == true,
+        insufficientBalance: data['insufficientBalance'] == true,
+        previousBalance: parseIntOr(data['previousBalance']),
+        currentBalance: parseIntOr(data['currentBalance']),
+        delta: parseIntOr(data['delta']),
+        reason: data['reason']?.toString() ?? reason,
+        transactionId: data['transactionId']?.toString() ?? '',
+      );
+    } on FirebaseFunctionsException catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: error.code);
     }
+    _applyLocalBalance(result.currentBalance, delta: result.delta);
     return result;
   }
 
@@ -948,7 +1469,13 @@ class CoinsService {
       callableName: 'processReferral',
       inviterUserId: pendingInviter,
     );
-    if (result.changed || result.reason == 'referral_already_processed') {
+    if (result.changed ||
+        const <String>{
+          'referral_already_processed',
+          'referral_caller_not_new',
+          'referral_inviter_not_older',
+          'referral_inviter_lifetime_limit',
+        }.contains(result.reason)) {
       await clearPendingReferralInviterId();
     }
     return result;
@@ -967,6 +1494,7 @@ class CoinsService {
     }
     final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await _callCoinMutation(
+      userId: userId,
       callableName: callableName,
       amount: action.defaultAmount(),
       action: action.name,
@@ -999,6 +1527,7 @@ class CoinsService {
   }
 
   Future<CoinMutationResult> _callCoinMutation({
+    required String userId,
     required String callableName,
     int? amount,
     required String action,
@@ -1007,37 +1536,73 @@ class CoinsService {
     bool allowPremiumBypass = false,
     String? inviterUserId,
     String? transactionId,
+    String? label,
+    String? requestId,
   }) async {
-    final String userId = app_state.prismUser.id;
-    try {
-      final HttpsCallable callable = appFunctions.httpsCallable(callableName);
-      final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
-        if (amount != null) 'amount': amount,
-        'action': action,
-        'reason': reason,
-        'sourceTag': sourceTag,
-        'allowPremiumBypass': allowPremiumBypass,
-        if (inviterUserId != null) 'inviterUserId': inviterUserId,
-        if (transactionId != null) 'transactionId': transactionId,
-      });
-      if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
-      final Map<String, dynamic> data = toJsonMap(response.data);
-      final int balance = parseIntOr(data['currentBalance']);
-      return CoinMutationResult(
-        success: data['success'] == true,
-        changed: data['changed'] == true,
-        bypassed: data['bypassed'] == true,
-        insufficientBalance: data['insufficientBalance'] == true,
-        previousBalance: parseIntOr(data['previousBalance']),
-        currentBalance: balance,
-        delta: parseIntOr(data['delta']),
-        reason: data['reason']?.toString() ?? reason,
-        transactionId: data['transactionId']?.toString() ?? '',
-      );
-    } on FirebaseFunctionsException catch (error, stackTrace) {
-      logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: error.code);
+    final bool idempotent = callableName == 'spendCoins' || (callableName == 'awardCoins' && action == 'rewardedAd');
+    final String transactionPrefix = callableName == 'spendCoins' ? _spendTransactionPrefix : _awardTransactionPrefix;
+    final String? effectiveRequestId = idempotent ? (requestId ?? _newRequestId()) : null;
+    final String? trimmedLabel = label?.trim();
+    final Map<String, dynamic> payload = <String, dynamic>{
+      if (amount != null) 'amount': amount,
+      'action': action,
+      'reason': reason,
+      'sourceTag': sourceTag,
+      'allowPremiumBypass': allowPremiumBypass,
+      if (inviterUserId != null) 'inviterUserId': inviterUserId,
+      if (transactionId != null) 'transactionId': transactionId,
+      if (effectiveRequestId != null) 'requestId': effectiveRequestId,
+      if (trimmedLabel != null && trimmedLabel.isNotEmpty)
+        'label': trimmedLabel.length > _maxLabelLength ? trimmedLabel.substring(0, _maxLabelLength) : trimmedLabel,
+    };
+    final int attempts = effectiveRequestId == null ? 1 : 2;
+    bool mayHaveCommitted = false;
+    CoinMutationResult signedOut({required bool mayHaveDebited}) => mayHaveDebited && effectiveRequestId != null
+        ? CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'not_logged_in',
+            unknownOutcomeTransactionId: '$transactionPrefix${userId}_$effectiveRequestId',
+          )
+        : _notLoggedIn;
+    for (int attempt = 1; attempt <= attempts; attempt++) {
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return signedOut(mayHaveDebited: mayHaveCommitted);
+      try {
+        final HttpsCallable callable = appFunctions.httpsCallable(callableName);
+        final HttpsCallableResult<dynamic> response = await callable.call(payload);
+        final Map<String, dynamic> data = toJsonMap(response.data);
+        if (!_canMutateCoins() || userId != app_state.prismUser.id) {
+          return signedOut(mayHaveDebited: data['changed'] == true);
+        }
+        final int balance = parseIntOr(data['currentBalance']);
+        return CoinMutationResult(
+          success: data['success'] == true,
+          changed: data['changed'] == true,
+          bypassed: data['bypassed'] == true,
+          insufficientBalance: data['insufficientBalance'] == true,
+          previousBalance: parseIntOr(data['previousBalance']),
+          currentBalance: balance,
+          delta: parseIntOr(data['delta']),
+          reason: data['reason']?.toString() ?? reason,
+          transactionId: data['transactionId']?.toString() ?? '',
+          adsRemaining: data['adsRemaining'] is num ? parseIntOr(data['adsRemaining']) : null,
+        );
+      } on FirebaseFunctionsException catch (error, stackTrace) {
+        logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
+        final bool retryable = error.code == 'deadline-exceeded' || error.code == 'unavailable';
+        mayHaveCommitted = mayHaveCommitted || retryable || error.code == 'internal';
+        if (retryable && attempt < attempts) continue;
+        return CoinMutationResult.noChange(
+          balance: app_state.prismUser.coins,
+          success: false,
+          reason: error.code,
+          unknownOutcomeTransactionId: effectiveRequestId != null && mayHaveCommitted
+              ? '$transactionPrefix${userId}_$effectiveRequestId'
+              : '',
+        );
+      }
     }
+    return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'unavailable');
   }
 
   bool _isProfileComplete() {
@@ -1175,6 +1740,16 @@ class CoinsService {
 
   String _normalizeCollectionKey(String rawKey) {
     return rawKey.trim().toLowerCase();
+  }
+
+  /// Applies a balance the server returned outside the coin callables, such as a badge reward.
+  void applyServerBalance(int balance) {
+    if (!_canMutateCoins()) return;
+    if (balance == app_state.prismUser.coins) {
+      balanceNotifier.value = balance;
+      return;
+    }
+    _applyLocalBalance(balance, delta: balance - app_state.prismUser.coins);
   }
 
   void _applyLocalBalance(int newBalance, {required int delta}) {

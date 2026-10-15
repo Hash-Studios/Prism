@@ -1,5 +1,6 @@
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
@@ -15,7 +16,6 @@ import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 final ValueNotifier<int> personalizedFeedSettingsRevision = ValueNotifier<int>(0);
 
@@ -118,7 +118,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   bool get _canSave => !_saving && _selectedInterests.length >= OnboardingV2Config.minInterests;
 
   void _toggleInterest(String name) {
-    HapticFeedback.selectionClick();
+    PrismHaptics.selection();
     setState(() {
       if (!_selectedInterests.remove(name)) {
         _selectedInterests.add(name);

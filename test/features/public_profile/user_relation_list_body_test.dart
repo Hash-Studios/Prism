@@ -112,5 +112,7 @@ void main() {
     await tester.tap(find.byTooltip('Clear search'));
     await tester.pump();
     expect(find.byTooltip('Clear search'), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    await tester.pump(const Duration(seconds: 1));
   });
 }

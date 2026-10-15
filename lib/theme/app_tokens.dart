@@ -13,9 +13,18 @@ abstract final class PrismColors {
   /// Status: needs attention (pending, streak at risk). Pair it with an icon or a label.
   static const Color warning = Color(0xFFFFB454);
 
-  /// Foreground color on primary / app-bar surfaces.
-  /// Always white so that content stays legible regardless of the active theme.
+  /// White for content over photography and scrims. Do not use it on theme surfaces such as `primaryColor`,
+  /// which is white in Frost White. Use `onColor` from `contrast.dart` there.
   static const Color onPrimary = Colors.white;
+
+  /// Destructive red for light surfaces. Also the fill for destructive buttons that carry white text.
+  static const Color destructiveLight = Color(0xFFD93036);
+
+  /// Destructive red for dark surfaces.
+  static const Color destructiveDark = Color(0xFFFF6369);
+
+  /// Text and icon colour for destructive actions such as Delete Account. It does not follow the user accent.
+  static Color destructive(Brightness brightness) => brightness == Brightness.dark ? destructiveDark : destructiveLight;
 }
 
 /// The spacing scale. Every gap and padding in new UI comes from here.
@@ -157,6 +166,43 @@ abstract final class PrismTextStyles {
     color: PrismColors.onPrimary,
     fontVariations: <FontVariation>[FontVariation('WONK', 1)],
   );
+}
+
+/// Metrics of the app-wide chip theme built by `withPrismChipTheme` in `theme.dart`.
+abstract final class PrismChipMetrics {
+  static const double fontSize = 14;
+
+  /// Line height factor. It fixes the label at 18 px, so the chip is 36 px high with [padding].
+  static const double labelHeight = 1.3;
+
+  static const double iconSize = 16;
+
+  /// Around the label and the icon. With [labelPadding] a chip has 14 px at each end. A chip that sets its own
+  /// padding keeps this label padding, so its text never touches the rounded end.
+  static const EdgeInsets padding = EdgeInsets.symmetric(horizontal: 6, vertical: 9);
+  static const EdgeInsets labelPadding = EdgeInsets.symmetric(horizontal: 8);
+
+  /// Alpha of the foreground colour for the fill of an unselected chip.
+  static const double restFillAlpha = 0.08;
+
+  /// Alpha of the foreground colour for the fill of a disabled chip.
+  static const double disabledFillAlpha = 0.08;
+
+  /// Alpha of the label of a disabled chip.
+  static const double disabledLabelAlpha = 0.5;
+
+  /// The avatar box is 24 px wide for a 16 px icon, so the icon keeps clear of the rounded end.
+  static const BoxConstraints avatarConstraints = BoxConstraints.tightFor(width: 24, height: 16);
+
+  /// Contrast an unselected label must reach against its fill. A theme foreground that is weaker is darkened
+  /// (or lightened) until it does.
+  static const double minLabelContrast = 4.5;
+}
+
+/// Secondary text in the theme foreground colour that sits on the page, such as an unselected tab or a count line.
+abstract final class PrismInk {
+  /// Alpha of secondary text. A theme whose ink falls under [PrismChipMetrics.minLabelContrast] at this alpha keeps full ink.
+  static const double softAlpha = 0.8;
 }
 
 /// Icon data constants so individual widgets don't scatter icon literals.

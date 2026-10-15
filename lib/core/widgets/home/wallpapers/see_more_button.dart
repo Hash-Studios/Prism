@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
@@ -6,9 +7,12 @@ import 'package:flutter/material.dart';
 
 /// "See more" as the last cell of a paged wallpaper grid. It fills its cell and has the tile shape.
 class SeeMoreButton extends StatelessWidget {
-  const SeeMoreButton({super.key, required this.seeMoreLoader, required this.func});
+  const SeeMoreButton({super.key, required this.seeMoreLoader, required this.func, this.failed = false});
 
   final bool seeMoreLoader;
+
+  /// The last page failed to load; the label asks for a retry.
+  final bool failed;
   final VoidCallback func;
 
   @override
@@ -22,7 +26,12 @@ class SeeMoreButton extends StatelessWidget {
         borderRadius: PrismWallGrid.tileRadius,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: seeMoreLoader ? null : func,
+          onTap: seeMoreLoader
+              ? null
+              : () {
+                  PrismHaptics.tap();
+                  func();
+                },
           child: Center(
             child: AnimatedSwitcher(
               duration: context.motion(PrismDurations.fast),
@@ -33,12 +42,16 @@ class SeeMoreButton extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2, color: cs.onSurface),
                     )
                   : Column(
-                      key: const ValueKey<String>('label'),
+                      key: ValueKey<String>(failed ? 'retry' : 'label'),
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        Icon(Icons.add_rounded, size: 22, color: cs.onSurface),
+                        Icon(failed ? Icons.refresh_rounded : Icons.add_rounded, size: 22, color: cs.onSurface),
                         const SizedBox(height: PrismSpace.xxs),
-                        Text('See more', style: PrismTextStyles.rowTitle(context)),
+                        Text(
+                          failed ? "Couldn't load more. Tap to retry" : 'See more',
+                          textAlign: TextAlign.center,
+                          style: PrismTextStyles.rowTitle(context),
+                        ),
                       ],
                     ),
             ),

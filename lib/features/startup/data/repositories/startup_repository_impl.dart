@@ -12,7 +12,64 @@ import 'package:Prism/features/startup/domain/entities/startup_config_entity.dar
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
+
+const Duration remoteConfigFetchBudget = Duration(seconds: 3);
+
+/// A successful fetch newer than this is fresh enough that the splash does not wait for the next one.
+const Duration remoteConfigFreshFor = Duration(hours: 24);
+
+/// Applies cached values at once, then waits at most [fetchBudget] for fresh ones. A slow fetch keeps running and
+/// activates on its own. Splash never waits on the network for long, and not at all when the last fetch is fresh.
+@visibleForTesting
+Future<void> prepareRemoteConfig(
+  FirebaseRemoteConfig remoteConfig, {
+  required bool release,
+  Duration fetchBudget = remoteConfigFetchBudget,
+  DateTime Function() now = DateTime.now,
+}) async {
+  await remoteConfig.setConfigSettings(
+    RemoteConfigSettings(
+      fetchTimeout: remoteConfigFetchBudget,
+      minimumFetchInterval: release ? const Duration(hours: 1) : Duration.zero,
+    ),
+  );
+  await remoteConfig.setDefaults(<String, dynamic>{
+    'topImageLink': defaultTopImageLink,
+    'bannerText': defaultBannerText,
+    'bannerTextOn': defaultBannerTextOn.toString(),
+    'bannerURL': defaultBannerUrl,
+    'obsoleteVersion': defaultObsoleteAppVersion,
+    'premiumCollections': defaultPremiumCollections.toString(),
+    'verifiedUsers': defaultVerifiedUsers.toString(),
+    'ai_enabled': defaultAiEnabled,
+    'ai_rollout_percent': defaultAiRolloutPercent,
+    'ai_submit_enabled': defaultAiSubmitEnabled,
+    'ai_variations_enabled': defaultAiVariationsEnabled,
+    'use_rc_paywalls': defaultUseRcPaywalls,
+    'onboarding_v2_enabled': defaultOnboardingV2Enabled,
+    OnboardingV2Config.remoteConfigStarterPackKey: defaultOnboardingStarterPack,
+    personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
+  });
+  try {
+    await remoteConfig.activate();
+  } catch (error) {
+    logger.w('Remote Config activate failed; using defaults.', tag: 'StartupRepository', error: error);
+  }
+  final Future<bool> fetch = remoteConfig.fetchAndActivate();
+  unawaited(fetch.then<void>((_) {}, onError: (Object _) {}));
+  final bool fresh =
+      remoteConfig.lastFetchStatus == RemoteConfigFetchStatus.success &&
+      now().difference(remoteConfig.lastFetchTime) < remoteConfigFreshFor;
+  if (fresh) return;
+  try {
+    await fetch.timeout(fetchBudget);
+  } catch (error) {
+    // Offline, throttled or slow: keep the defaults and last activated values instead of failing startup.
+    logger.w('Remote Config fetch failed; using cached values.', tag: 'StartupRepository', error: error);
+  }
+}
 
 @LazySingleton(as: StartupRepository)
 class StartupRepositoryImpl implements StartupRepository {
@@ -47,32 +104,7 @@ class StartupRepositoryImpl implements StartupRepository {
 
     try {
       if (remoteConfig != null) {
-        await remoteConfig.setConfigSettings(
-          RemoteConfigSettings(fetchTimeout: const Duration(seconds: 30), minimumFetchInterval: Duration.zero),
-        );
-        await remoteConfig.setDefaults(<String, dynamic>{
-          'topImageLink': defaultTopImageLink,
-          'bannerText': defaultBannerText,
-          'bannerTextOn': defaultBannerTextOn.toString(),
-          'bannerURL': defaultBannerUrl,
-          'obsoleteVersion': defaultObsoleteAppVersion,
-          'premiumCollections': defaultPremiumCollections.toString(),
-          'verifiedUsers': defaultVerifiedUsers.toString(),
-          'ai_enabled': defaultAiEnabled,
-          'ai_rollout_percent': defaultAiRolloutPercent,
-          'ai_submit_enabled': defaultAiSubmitEnabled,
-          'ai_variations_enabled': defaultAiVariationsEnabled,
-          'use_rc_paywalls': defaultUseRcPaywalls,
-          'onboarding_v2_enabled': defaultOnboardingV2Enabled,
-          OnboardingV2Config.remoteConfigStarterPackKey: defaultOnboardingStarterPack,
-          personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
-        });
-        try {
-          await remoteConfig.fetchAndActivate();
-        } catch (error) {
-          // Offline or throttled: keep the defaults and last activated values instead of failing startup.
-          logger.w('Remote Config fetch failed; using cached values.', tag: 'StartupRepository', error: error);
-        }
+        await prepareRemoteConfig(remoteConfig, release: kReleaseMode);
       } else {
         logger.w('Firebase not ready; using hardcoded default config values.', tag: 'StartupRepository');
       }

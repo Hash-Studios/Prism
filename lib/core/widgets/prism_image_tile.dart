@@ -1,3 +1,5 @@
+import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/logger/logger.dart';
@@ -8,6 +10,13 @@ import 'package:flutter/material.dart';
 /// shown twice never shares a tag.
 String prismHeroTag(Object scope, int index, String id) => 'wall-${identityHashCode(scope)}-$index-$id';
 
+/// Decode height, in physical pixels, for a grid tile that spans one of [crossAxisCount] equal columns of the screen
+/// and has the given [aspectRatio] (width / height).
+int gridTileDecodeHeight(BuildContext context, {required int crossAxisCount, double aspectRatio = 0.5}) {
+  final double tileWidth = MediaQuery.sizeOf(context).width / crossAxisCount;
+  return (tileWidth / aspectRatio * MediaQuery.devicePixelRatioOf(context)).round();
+}
+
 /// A grid image that fades in over the [PulseFill] skeleton. Fills its parent.
 class PrismImageTile extends StatefulWidget {
   const PrismImageTile({
@@ -15,6 +24,7 @@ class PrismImageTile extends StatefulWidget {
     required this.url,
     this.fallbackUrl,
     this.memCacheHeight,
+    this.memCacheWidth,
     this.heroTag,
     this.borderRadius,
   });
@@ -24,6 +34,7 @@ class PrismImageTile extends StatefulWidget {
   /// Tries the full wallpaper after a thumbnail failure, then offers retry if both fail.
   final String? fallbackUrl;
   final int? memCacheHeight;
+  final int? memCacheWidth;
   final String? heroTag;
   final BorderRadius? borderRadius;
 
@@ -36,10 +47,11 @@ class _PrismImageTileState extends State<PrismImageTile> {
   bool _retrying = false;
 
   Future<void> _retry() async {
+    PrismHaptics.tap();
     setState(() => _retrying = true);
     try {
       for (final url in {widget.url, widget.fallbackUrl}.whereType<String>().where((url) => url.isNotEmpty)) {
-        await CachedNetworkImage.evictFromCache(url);
+        await CachedNetworkImage.evictFromCache(url, cacheManager: PrismImageCache.instance);
       }
     } catch (error, stackTrace) {
       logger.w('Could not clear the wallpaper image cache for retry', error: error, stackTrace: stackTrace);
@@ -67,16 +79,16 @@ class _PrismImageTileState extends State<PrismImageTile> {
   Widget _network(BuildContext context, String url, int? decodeHeight, {String? fallback}) => CachedNetworkImage(
     key: ValueKey((url, _attempt)),
     imageUrl: url,
+    cacheManager: PrismImageCache.instance,
     fit: BoxFit.cover,
     fadeInDuration: context.motion(PrismDurations.fast),
     fadeInCurve: PrismCurves.enter,
     fadeOutDuration: context.motion(PrismDurations.fast),
     memCacheHeight: decodeHeight,
+    memCacheWidth: widget.memCacheWidth,
     placeholder: (_, _) => PulseFill(borderRadius: widget.borderRadius),
     errorWidget: (context, _, _) => fallback != null && fallback.isNotEmpty && fallback != url
         ? _network(context, fallback, decodeHeight)
-        : widget.fallbackUrl == null
-        ? PulseFill(borderRadius: widget.borderRadius)
         : ColoredBox(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Align(

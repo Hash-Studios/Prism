@@ -1,5 +1,6 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
@@ -49,6 +50,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   }
 
   void _retryStreams() {
+    PrismHaptics.tap();
     setState(_subscribeStreams);
   }
 
@@ -127,7 +129,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             context,
             onSubmit: (String reason) async {
               await _repository.rejectWall(wall, reason: reason);
-              toasts.error('Wallpaper rejected');
+              toasts.success('Wallpaper rejected');
             },
           ),
         );

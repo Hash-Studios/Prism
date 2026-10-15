@@ -1,31 +1,56 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/rewards/views/widgets/streak_cycle_strip.dart';
+import 'package:Prism/features/streak/data/streak_rescue_service.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 const double _kSmallScreenHeight = 700;
 
+enum _ClaimSheetExit { dismissed, seeRewards, earnCoins }
+
 /// Shows the sheet for one paid daily claim. [onSeeRewards] runs after the sheet closes.
-Future<void> showDailyClaimSheet(BuildContext context, StreakClaimResult result, {VoidCallback? onSeeRewards}) async {
-  final bool? seeRewards = await showPrismSheet<bool>(
+/// [onEarnCoins] runs when the user has too few coins for a streak rescue. It falls back to [onSeeRewards].
+Future<void> showDailyClaimSheet(
+  BuildContext context,
+  StreakClaimResult result, {
+  VoidCallback? onSeeRewards,
+  VoidCallback? onEarnCoins,
+  StreakRescueService? rescueService,
+}) async {
+  final _ClaimSheetExit? exit = await showPrismSheet<_ClaimSheetExit>(
     context: context,
     useSafeArea: true,
     isScrollControlled: true,
-    builder: (_) => DailyClaimSheet(result: result),
+    builder: (_) => DailyClaimSheet(result: result, rescueService: rescueService),
   );
-  if (seeRewards == true) onSeeRewards?.call();
+  switch (exit) {
+    case _ClaimSheetExit.seeRewards:
+      onSeeRewards?.call();
+    case _ClaimSheetExit.earnCoins:
+      (onEarnCoins ?? onSeeRewards)?.call();
+    case _ClaimSheetExit.dismissed:
+    case null:
+      break;
+  }
 }
 
 class DailyClaimSheet extends StatefulWidget {
-  const DailyClaimSheet({super.key, required this.result});
+  const DailyClaimSheet({super.key, required this.result, this.rescueService});
 
   final StreakClaimResult result;
+
+  /// Test hook. The app uses [StreakRescueService.instance].
+  final StreakRescueService? rescueService;
 
   @override
   State<DailyClaimSheet> createState() => _DailyClaimSheetState();
@@ -36,6 +61,18 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
   static final Duration _total = PrismDurations.slow * 3;
   late final AnimationController _c = AnimationController(vsync: this, duration: _total);
   bool _started = false;
+  late StreakRescueOffer? _offer = StreakRescueOffer.fromClaim(widget.result);
+  bool _restoring = false;
+  int? _restoredCount;
+
+  StreakRescueService get _rescue => widget.rescueService ?? StreakRescueService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    final StreakRescueOffer? offer = _offer;
+    if (offer != null) analytics.track(StreakRescueOfferedEvent(streakCount: offer.count));
+  }
 
   @override
   void didChangeDependencies() {
@@ -47,7 +84,7 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
     }
     if (_started) return;
     _started = true;
-    HapticFeedback.lightImpact();
+    PrismHaptics.tap();
     _c.forward();
   }
 
@@ -57,8 +94,47 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
     super.dispose();
   }
 
+  Future<void> _restore() async {
+    if (_restoring) return;
+    if (CoinsService.instance.balanceNotifier.value < kStreakRescueCost) {
+      Navigator.of(context).pop(_ClaimSheetExit.earnCoins);
+      return;
+    }
+    setState(() => _restoring = true);
+    final StreakRescueResult result = await _rescue.restore();
+    if (!mounted) return;
+    switch (result.outcome) {
+      case StreakRescueOutcome.restored:
+        PrismHaptics.success();
+        setState(() {
+          _restoring = false;
+          _restoredCount = result.streakCount > 0 ? result.streakCount : (_offer?.count ?? 0) + 1;
+        });
+        return;
+      case StreakRescueOutcome.insufficientBalance:
+        PrismHaptics.warning();
+        setState(() => _restoring = false);
+        Navigator.of(context).pop(_ClaimSheetExit.earnCoins);
+        return;
+      case StreakRescueOutcome.unavailable:
+        toasts.error(switch (result.reason) {
+          'streak_rescue_cooldown' => 'You can restore one streak every 30 days.',
+          'streak_rescue_expired' => 'The 48 hours to restore this streak are over.',
+          _ => "This streak can't be restored now.",
+        });
+        setState(() {
+          _restoring = false;
+          _offer = null;
+        });
+      case StreakRescueOutcome.failed:
+        toasts.error("Couldn't restore your streak. Try again.");
+        setState(() => _restoring = false);
+    }
+  }
+
   GlintMood get _mood {
     final StreakClaimResult r = widget.result;
+    if (_restoredCount != null) return GlintMood.celebrate;
     if (r.streakBroken) return GlintMood.sad;
     if (r.freezesUsed > 0) return GlintMood.proud;
     if (r.milestone != null || r.isWeekComplete) return GlintMood.celebrate;
@@ -67,6 +143,10 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
 
   ({String title, String? sub, bool showReward}) get _copy {
     final StreakClaimResult r = widget.result;
+    final int? restored = _restoredCount;
+    if (restored != null) {
+      return (title: 'Your streak is back', sub: 'You are on $restored days again.', showReward: false);
+    }
     if (r.streakBroken) {
       return (
         title: 'Your streak reset',
@@ -115,23 +195,28 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
       },
       child: Glint(mood: _mood, size: small ? 88 : 128),
     );
+    final bool offerOpen = _offer != null && _restoredCount == null;
     final PrismButton seeRewards = PrismButton(
       label: r.streakBroken ? 'Get a freeze for next time' : 'See rewards',
       expand: true,
-      variant: r.streakBroken ? PrismButtonVariant.primary : PrismButtonVariant.ghost,
-      onPressed: () => Navigator.of(context).pop(true),
+      variant: r.streakBroken && !offerOpen ? PrismButtonVariant.primary : PrismButtonVariant.ghost,
+      onPressed: _restoring ? null : () => Navigator.of(context).pop(_ClaimSheetExit.seeRewards),
     );
     final PrismButton done = PrismButton(
-      label: r.streakBroken ? 'OK' : 'Nice',
+      label: _restoredCount != null || !r.streakBroken ? 'Nice' : 'OK',
       expand: true,
-      variant: r.streakBroken ? PrismButtonVariant.ghost : PrismButtonVariant.primary,
-      onPressed: () => Navigator.of(context).pop(false),
+      variant: offerOpen
+          ? PrismButtonVariant.tonal
+          : r.streakBroken
+          ? PrismButtonVariant.ghost
+          : PrismButtonVariant.primary,
+      onPressed: _restoring ? null : () => Navigator.of(context).pop(_ClaimSheetExit.dismissed),
     );
     return PrismSheetBody(
       centered: true,
       scrollable: true,
       actions: <Widget>[
-        if (r.streakBroken) ...<Widget>[seeRewards, done] else ...<Widget>[done, seeRewards],
+        if (r.streakBroken && !offerOpen) ...<Widget>[seeRewards, done] else ...<Widget>[done, seeRewards],
       ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -173,8 +258,62 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
             showRewards: false,
             startDelay: PrismDurations.slow + PrismDurations.fast,
           ),
+          if (offerOpen) ...<Widget>[
+            const SizedBox(height: PrismSpace.md),
+            _RescueCard(offer: _offer!, busy: _restoring, onRestore: _restore),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _RescueCard extends StatelessWidget {
+  const _RescueCard({required this.offer, required this.busy, required this.onRestore});
+
+  final StreakRescueOffer offer;
+  final bool busy;
+  final VoidCallback onRestore;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: CoinsService.instance.balanceNotifier,
+      builder: (context, balance, _) {
+        final bool short = balance < kStreakRescueCost;
+        return PrismCard(
+          padding: const EdgeInsets.all(PrismSpace.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      'Restore your ${offer.count}-day streak · $kStreakRescueCost coins',
+                      style: PrismTextStyles.rowTitle(context),
+                    ),
+                  ),
+                  const SizedBox(width: PrismSpace.xs),
+                  const PrismCoinIcon(size: 18),
+                ],
+              ),
+              if (short) ...<Widget>[
+                const SizedBox(height: PrismSpace.xxs),
+                Text('You have $balance. You need $kStreakRescueCost.', style: PrismTextStyles.caption(context)),
+              ],
+              const SizedBox(height: PrismSpace.sm),
+              PrismButton(
+                label: short ? 'Earn coins' : 'Restore',
+                expand: true,
+                loading: busy,
+                size: PrismButtonSize.compact,
+                onPressed: busy ? null : onRestore,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -127,10 +127,10 @@ void main() {
     semantics.dispose();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('on iOS the main action is Download and there is no Set', (tester) async {
+  testWidgets('on iOS the main action is Save and there is no Set', (tester) async {
     await pumpDetail(tester, _loaded);
 
-    expect(find.widgetWithText(FilledButton, 'Download'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Save'), findsOneWidget);
     expect(find.text('Set wallpaper'), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 

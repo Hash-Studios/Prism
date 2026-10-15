@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -24,9 +25,12 @@ double feedCarouselCardHeight(BuildContext context) =>
 
 /// The home carousel: Wall of the Day, the promo banner and the first wallpapers, with page dots under the card.
 class FeedCarousel extends StatefulWidget {
-  const FeedCarousel({super.key, required this.previewWalls});
+  const FeedCarousel({super.key, required this.previewWalls, this.onWallShown});
 
   final List<PrismFeedItem> previewWalls;
+
+  /// Called when a preview wallpaper's page is built, so the feed can count it as seen.
+  final ValueChanged<PrismFeedItem>? onWallShown;
 
   @override
   State<FeedCarousel> createState() => _FeedCarouselState();
@@ -36,6 +40,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
   int _current = 0;
 
   void _openBanner() {
+    PrismHaptics.tap();
     unawaited(
       analytics.track(
         const SurfaceActionTappedEvent(
@@ -49,6 +54,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
   }
 
   void _openWall(PrismFeedItem wall, int feedIndex) {
+    PrismHaptics.tap();
     unawaited(
       analytics.track(
         SurfaceActionTappedEvent(
@@ -69,21 +75,26 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final bool hasWotd = context.select((WotdBloc bloc) => bloc.state.entity != null);
     final String bannerImage = app_state.topImageLink;
     final String bannerTitle = app_state.bannerTextOn ? app_state.bannerText : '';
+    final double height = feedCarouselCardHeight(context);
+    final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
     final List<Widget> pages = <Widget>[
       if (hasWotd) const WallOfTheDayCard(),
       if (bannerImage.trim().isNotEmpty)
         FeedHeroCard(
-          image: PrismImageTile(url: bannerImage),
+          image: PrismImageTile(url: bannerImage, memCacheHeight: memCacheHeight),
           semanticLabel: bannerTitle.isEmpty ? 'Announcement' : bannerTitle,
           title: bannerTitle,
           onTap: _openBanner,
         ),
-      for (int i = 0; i < widget.previewWalls.length; i++) _previewCard(widget.previewWalls[i], i),
+      for (int i = 0; i < widget.previewWalls.length; i++) _previewCard(widget.previewWalls[i], i, memCacheHeight),
     ];
     if (pages.isEmpty) return const SizedBox.shrink();
+    // The preview pages come last, so page `i` shows `previewWalls[i - firstPreviewPage]`.
+    final int firstPreviewPage = pages.length - widget.previewWalls.length;
     final int current = _current.clamp(0, pages.length - 1);
     final bool moving = pages.length > 1;
-    final double height = feedCarouselCardHeight(context);
+    // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see.
+    final bool visible = TickerMode.valuesOf(context).enabled && (ModalRoute.of(context)?.isCurrent ?? true);
     return Column(
       children: <Widget>[
         CarouselSlider.builder(
@@ -91,7 +102,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
           options: CarouselOptions(
             height: height,
             viewportFraction: 1.0,
-            autoPlay: moving && !context.reduceMotion,
+            autoPlay: moving && !context.reduceMotion && visible,
             autoPlayInterval: const Duration(seconds: 5),
             autoPlayCurve: PrismCurves.move,
             enableInfiniteScroll: moving,
@@ -99,21 +110,28 @@ class _FeedCarouselState extends State<FeedCarousel> {
               if (mounted) setState(() => _current = index);
             },
           ),
-          itemBuilder: (BuildContext context, int i, int realIndex) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: PrismWallGrid.margin),
-            child: pages[i],
-          ),
+          itemBuilder: (BuildContext context, int i, int realIndex) {
+            if (i >= firstPreviewPage) widget.onWallShown?.call(widget.previewWalls[i - firstPreviewPage]);
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: PrismWallGrid.margin),
+              child: pages[i],
+            );
+          },
         ),
-        if (moving) _CarouselDots(current: current, count: pages.length),
+        if (moving) FeedCarouselDots(current: current, count: pages.length),
       ],
     );
   }
 
-  Widget _previewCard(PrismFeedItem wall, int feedIndex) {
+  Widget _previewCard(PrismFeedItem wall, int feedIndex, int memCacheHeight) {
     final String? author = wall.wallpaper.core.authorName?.trim();
     final String category = wall.wallpaper.core.category?.trim() ?? '';
     return FeedHeroCard(
-      image: PrismImageTile(url: wall.wallpaper.thumbnailUrl),
+      image: PrismImageTile(
+        url: wall.wallpaper.thumbnailUrl,
+        fallbackUrl: wall.wallpaper.fullUrl,
+        memCacheHeight: memCacheHeight,
+      ),
       semanticLabel: wall.semanticLabel,
       title: category.isEmpty ? 'Wallpaper' : category,
       subtitle: author == null || author.isEmpty ? null : 'by $author',
@@ -123,8 +141,8 @@ class _FeedCarouselState extends State<FeedCarousel> {
   }
 }
 
-class _CarouselDots extends StatelessWidget {
-  const _CarouselDots({required this.current, required this.count});
+class FeedCarouselDots extends StatelessWidget {
+  const FeedCarouselDots({required this.current, required this.count});
 
   final int current;
   final int count;
@@ -142,11 +160,11 @@ class _CarouselDots extends StatelessWidget {
               AnimatedContainer(
                 duration: context.motion(PrismDurations.fast),
                 curve: PrismCurves.enter,
-                width: 6,
+                width: current == i ? 16 : 6,
                 height: 6,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(PrismRadius.pill),
                   color: current == i ? ink : ink.withValues(alpha: 0.25),
                 ),
               ),

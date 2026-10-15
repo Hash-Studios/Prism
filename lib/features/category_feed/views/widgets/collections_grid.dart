@@ -5,7 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
@@ -31,9 +31,10 @@ class CollectionsGrid extends StatefulWidget {
   State<CollectionsGrid> createState() => _CollectionsGridState();
 }
 
-enum _PremiumPreviewAction { none, unlockNow, watchAndUnlock, upgrade }
-
 class _CollectionsGridState extends State<CollectionsGrid> {
+  // ponytail: one preview operation per grid; per-collection locks if simultaneous unlocks become necessary.
+  bool _premiumPreviewInFlight = false;
+
   Future<void> _handleCollectionTap({required bool isPremium, required String collectionName}) async {
     final String normalizedCollectionName = collectionName.trim().toLowerCase();
     if (!isPremium) {
@@ -51,166 +52,109 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       return;
     }
 
-    bool hasPreviewAccess = false;
-    try {
-      hasPreviewAccess = await CoinsService.instance.hasPremiumPreviewAccessForCollection(normalizedCollectionName);
-    } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(
-        sourceTag: 'coins.preview.check.collections_grid',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-    if (hasPreviewAccess) {
-      _openCollection(normalizedCollectionName);
+    if (_premiumPreviewInFlight) {
       return;
     }
+    _premiumPreviewInFlight = true;
+    try {
+      bool hasPreviewAccess = false;
+      try {
+        hasPreviewAccess = await CoinsService.instance.hasPremiumPreviewAccessForCollection(normalizedCollectionName);
+      } catch (error, stackTrace) {
+        CoinsService.instance.logCoinError(
+          sourceTag: 'coins.preview.check.collections_grid',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      if (!mounted) {
+        return;
+      }
+      if (hasPreviewAccess) {
+        _openCollection(normalizedCollectionName);
+        return;
+      }
 
-    await _showPremiumPreviewSheet(
-      collectionName: normalizedCollectionName,
-      sourceTag: 'coins.preview.sheet.collections_grid',
-    );
+      await _unlockPreviewAndOpen(normalizedCollectionName);
+    } finally {
+      _premiumPreviewInFlight = false;
+    }
   }
 
   void _openCollection(String collectionName) {
     context.router.push(CollectionViewRoute(collectionName: collectionName.trim().toLowerCase()));
   }
 
-  Future<void> _showPremiumPreviewSheet({required String collectionName, required String sourceTag}) async {
-    if (!mounted) {
-      return;
-    }
-    final int balance = CoinsService.instance.balanceNotifier.value;
-    if (balance < CoinPolicy.premiumPreview24h) {
-      CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: CoinPolicy.premiumPreview24h);
-    }
-
-    final _PremiumPreviewAction action =
-        await showCoinGateSheet<_PremiumPreviewAction>(
-          context,
-          title: 'Premium collection',
-          cost: CoinPolicy.premiumPreview24h,
-          message: (missing) => missing > 0
-              ? 'A 24 hour preview costs ${CoinPolicy.premiumPreview24h} coins. You need $missing more.'
-              : 'Preview this premium collection for 24 hours for ${CoinPolicy.premiumPreview24h} coins.',
-          options: const [
-            CoinGateOption(
-              label: 'Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})',
-              value: _PremiumPreviewAction.unlockNow,
-            ),
-            CoinGateOption(
-              label: 'Watch an ad (+${CoinPolicy.rewardedAd}) and unlock',
-              value: _PremiumPreviewAction.watchAndUnlock,
-            ),
-            CoinGateOption(label: 'Upgrade to Pro', value: _PremiumPreviewAction.upgrade, outlined: true),
-          ],
-        ) ??
-        _PremiumPreviewAction.none;
-
-    switch (action) {
-      case _PremiumPreviewAction.unlockNow:
-        await _attemptPreviewUnlockAndOpen(
-          collectionName: collectionName,
-          sourceTag: 'coins.preview.unlock.collections_grid',
-        );
-        return;
-      case _PremiumPreviewAction.watchAndUnlock:
-        await _watchAdAndUnlockPreview(collectionName: collectionName);
-        return;
-      case _PremiumPreviewAction.upgrade:
-        if (mounted) {
-          await PaywallOrchestrator.instance.present(
-            placement: PaywallPlacement.lowBalance,
-            source: 'premium_preview_upgrade',
-          );
-        }
-        return;
-      case _PremiumPreviewAction.none:
-        return;
-    }
+  Future<CoinGateChoice> _choosePreviewAction(CoinGatePrompt prompt) async {
+    final CoinGateChoice? choice = await showCoinGateSheet<CoinGateChoice>(
+      context,
+      title: 'Premium collection',
+      cost: CoinPolicy.premiumPreview24h,
+      message: (missing) => missing > 0
+          ? 'A 24 hour preview costs ${CoinPolicy.premiumPreview24h} coins. You need $missing more.'
+          : 'Preview this premium collection for 24 hours for ${CoinPolicy.premiumPreview24h} coins.',
+      options: const [
+        CoinGateOption(label: 'Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})', value: CoinGateChoice.spend),
+        CoinGateOption(label: 'Watch an ad (+${CoinPolicy.rewardedAd}) and unlock', value: CoinGateChoice.watchAd),
+        CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+      ],
+    );
+    return choice ?? CoinGateChoice.cancel;
   }
 
-  Future<void> _attemptPreviewUnlockAndOpen({required String collectionName, required String sourceTag}) async {
-    analytics.track(CoinPreviewUnlockAttemptEvent(collection: collectionName, sourceTag: sourceTag));
-    CoinMutationResult result;
-    try {
-      result = await CoinsService.instance.unlockPremiumPreview24hForCollection(
+  Future<void> _unlockPreviewAndOpen(String collectionName) {
+    CoinGateSpec previewSpec({bool confirmFirst = true}) => CoinGateSpec(
+      action: CoinSpendAction.premiumPreview24h,
+      tags: CoinGateTags(
+        spend: confirmFirst ? 'coins.preview.unlock.collections_grid' : 'coins.preview.watch_and_unlock.unlock',
+        promptSpend: 'coins.preview.unlock.collections_grid',
+        retrySpend: 'coins.preview.watch_and_unlock.unlock',
+        ad: 'coins.preview.watch_and_unlock.rewarded_ad',
+        nudge: 'coins.preview.sheet.collections_grid',
+        insufficient: 'coins.preview.low_balance_nudge.collections_grid',
+      ),
+      upsellSource: 'premium_preview_watch_ad',
+      upgradeSource: 'premium_preview_upgrade',
+      nudgeBelow: confirmFirst ? CoinPolicy.premiumPreview24h : null,
+      confirmFirst: confirmFirst,
+      toastWhenInsufficient: true,
+      logInsufficientOnlyWhenLow: true,
+      spendErrorMessage: "Couldn't unlock the preview. Try again.",
+      refundOnFailure: false,
+      isMounted: () => mounted,
+      choose: _choosePreviewAction,
+      spend: (sourceTag) => CoinsService.instance.unlockPremiumPreview24hForCollection(
         collectionKey: collectionName,
         sourceTag: sourceTag,
-      );
-    } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't unlock the preview. Try again.");
-      return;
-    }
-
-    if (!result.success) {
-      if (result.insufficientBalance) {
-        final int missing = (CoinPolicy.premiumPreview24h - CoinsService.instance.balanceNotifier.value).clamp(
-          1,
-          CoinPolicy.premiumPreview24h,
-        );
-        toasts.error('You need $missing more coins.');
-        await _showPremiumPreviewSheet(
-          collectionName: collectionName,
-          sourceTag: 'coins.preview.low_balance_nudge.collections_grid',
-        );
-        return;
-      }
-      toasts.error("Couldn't unlock the preview. Try again.");
-      return;
-    }
-
-    if (result.changed) {
-      analytics.track(
-        CoinPreviewUnlockSuccessEvent(
-          collection: collectionName,
-          sourceTag: sourceTag,
-          coinsSpent: CoinPolicy.premiumPreview24h,
-        ),
-      );
-      toasts.success('Preview unlocked for 24 hours (-${CoinPolicy.premiumPreview24h} coins).');
-    }
-    _openCollection(collectionName);
-  }
-
-  Future<void> _watchAdAndUnlockPreview({required String collectionName}) async {
-    analytics.track(
-      CoinPreviewWatchAndUnlockUsedEvent(
-        collection: collectionName,
-        sourceTag: 'coins.preview.watch_and_unlock.collections_grid',
       ),
+      onAttempt: (sourceTag) =>
+          analytics.track(CoinPreviewUnlockAttemptEvent(collection: collectionName, sourceTag: sourceTag)),
+      onWatchChosen: () => analytics.track(
+        CoinPreviewWatchAndUnlockUsedEvent(
+          collection: collectionName,
+          sourceTag: 'coins.preview.watch_and_unlock.collections_grid',
+        ),
+      ),
+      onSpent: (sourceTag, _) {
+        analytics.track(
+          CoinPreviewUnlockSuccessEvent(
+            collection: collectionName,
+            sourceTag: sourceTag,
+            coinsSpent: CoinPolicy.premiumPreview24h,
+          ),
+        );
+        toasts.success('Preview unlocked for 24 hours (-${CoinPolicy.premiumPreview24h} coins).');
+      },
+      perform: () async {
+        if (mounted) {
+          _openCollection(collectionName);
+        }
+        return true;
+      },
+      retrySpec: () => previewSpec(confirmFirst: false),
     );
-    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
-    if (!watched) {
-      toasts.error("The ad didn't finish.");
-      return;
-    }
-    try {
-      final credit = await CoinsService.instance.award(
-        CoinEarnAction.rewardedAd,
-        sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
-      );
-      if (!credit.changed) {
-        toasts.error("Couldn't add the coins. Try again.");
-        return;
-      }
-      if (mounted) {
-        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'premium_preview_watch_ad');
-      }
-    } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(
-        sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      toasts.error("Couldn't add the coins. Try again.");
-      return;
-    }
-    await _attemptPreviewUnlockAndOpen(
-      collectionName: collectionName,
-      sourceTag: 'coins.preview.watch_and_unlock.unlock',
-    );
+
+    return CoinGate.forContext(context).run(previewSpec());
   }
 
   Future<void> refreshList() async {
@@ -225,6 +169,7 @@ class _CollectionsGridState extends State<CollectionsGrid> {
   }
 
   void _onTapCard(CollectionCardData data) {
+    PrismHaptics.tap();
     if (data.kind == CollectionCardKind.collection) {
       unawaited(_handleCollectionTap(isPremium: data.isPremium, collectionName: data.name));
       return;
@@ -238,7 +183,11 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       sliver: SliverGrid.builder(
         gridDelegate: collectionsGridDelegate(context),
         itemCount: cards.length,
-        itemBuilder: (context, index) => CollectionCard(data: cards[index], onTap: () => _onTapCard(cards[index])),
+        itemBuilder: (context, index) => CollectionCard(
+          key: ValueKey<String>('${cards[index].kind.name}:${cards[index].name}'),
+          data: cards[index],
+          onTap: () => _onTapCard(cards[index]),
+        ),
       ),
     );
   }
@@ -270,7 +219,10 @@ class _CollectionsGridState extends State<CollectionsGrid> {
         .toList(growable: false);
 
     return RefreshIndicator(
-      onRefresh: refreshList,
+      onRefresh: () {
+        PrismHaptics.impact();
+        return refreshList();
+      },
       color: Theme.of(context).colorScheme.primary,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       child: CustomScrollView(

@@ -145,10 +145,37 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Could not load categories'), findsOneWidget);
+      expect(find.byType(PrismSkeleton), findsNothing);
       await tester.tap(find.text('Try again'));
-      verify(() => bloc.add(const OnboardingV2Event.started())).called(1);
+      verify(() => bloc.add(const OnboardingV2Event.loadRetried())).called(1);
       await tester.tap(find.text('Skip'));
-      verify(() => bloc.add(const OnboardingV2Event.aiGenerationStepContinued())).called(1);
+      verify(() => bloc.add(const OnboardingV2Event.interestsSkipped())).called(1);
+    });
+
+    testWidgets('a failed load shows the retry state, not a skeleton that never ends', (tester) async {
+      await pumpPage(tester, const F1InterestsPage(), interests(load: LoadStatus.failure));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(PrismSkeleton), findsNothing);
+      expect(find.text('Could not load categories'), findsOneWidget);
+    });
+
+    testWidgets('Skip is offered while the list is showing too', (tester) async {
+      await pumpPage(tester, const F1InterestsPage(), interests(available: <String>['Nature', 'Space', 'Anime']));
+
+      await tester.tap(find.text('Skip'));
+      verify(() => bloc.add(const OnboardingV2Event.interestsSkipped())).called(1);
+    });
+
+    testWidgets('fewer categories than the minimum lower the bar to what exists', (tester) async {
+      await pumpPage(
+        tester,
+        const F1InterestsPage(),
+        interests(available: <String>['Nature', 'Space'], selected: <String>['Nature']),
+      );
+
+      expect(find.text('Choose at least 2 to shape your feed.'), findsOneWidget);
+      expect(find.text('1 of 2 picked'), findsOneWidget);
     });
   });
 
@@ -193,8 +220,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('No creators to suggest yet'), findsOneWidget);
+      await tester.tap(find.text('Try again'));
+      verify(() => bloc.add(const OnboardingV2Event.loadRetried())).called(1);
       await tester.tap(find.text('Skip'));
-      verify(() => bloc.add(const OnboardingV2Event.aiGenerationStepContinued())).called(1);
+      verify(() => bloc.add(const OnboardingV2Event.starterPackSkipped())).called(1);
+    });
+
+    testWidgets('Skip is offered while the creators are showing too', (tester) async {
+      final creators = <OnboardingStarterCreatorEntity>[_creator(1), _creator(2), _creator(3)];
+      await pumpPage(tester, const F2StarterPackPage(), pack(creators: creators), height: 1800);
+
+      await tester.tap(find.text('Skip'));
+      verify(() => bloc.add(const OnboardingV2Event.starterPackSkipped())).called(1);
     });
   });
 

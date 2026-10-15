@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -104,7 +105,12 @@ class ModerationDangerButton extends StatelessWidget {
     return PressScale(
       enabled: onPressed != null,
       child: FilledButton(
-        onPressed: onPressed,
+        onPressed: onPressed == null
+            ? null
+            : () {
+                PrismHaptics.tap();
+                onPressed!();
+              },
         style: FilledButton.styleFrom(
           backgroundColor: cs.onSurface.withValues(alpha: 0.08),
           foregroundColor: cs.error,

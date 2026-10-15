@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
@@ -30,7 +31,10 @@ class StreakPill extends StatelessWidget {
         return StatPill(
           compact: compact,
           semanticLabel: '${status.count} day streak, next reward $nextReward coins',
-          onTap: () => context.router.push(RewardsRoute()),
+          onTap: () {
+            PrismHaptics.tap();
+            context.router.push(RewardsRoute());
+          },
           tint: active ? PrismColors.warning.withValues(alpha: 0.14) : null,
           borderColor: active ? PrismColors.warning.withValues(alpha: 0.6) : null,
           child: Row(

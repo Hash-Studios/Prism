@@ -1,6 +1,16 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:flutter/material.dart';
 
+/// Makes every [CircularMenuButton] below it draw a bare icon button: no fill and no shadow.
+class FlatMenuButtons extends InheritedWidget {
+  const FlatMenuButtons({super.key, required super.child});
+
+  static bool of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<FlatMenuButtons>() != null;
+
+  @override
+  bool updateShouldNotify(FlatMenuButtons oldWidget) => false;
+}
+
 /// Shared skeleton for the round action buttons of the wallpaper detail screen: a 48 point neutral circle around
 /// [child], a spinner ring while [isLoading], and press feedback. The icon in [child] takes its colour and size from
 /// the button. With a [caption] the label is shown under the circle.
@@ -37,33 +47,37 @@ class CircularMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final Color fg = onImage ? Colors.white : cs.onSurface;
+    final bool flat = FlatMenuButtons.of(context);
     final Color bg = onImage ? Colors.black.withValues(alpha: 0.38) : cs.onSurface.withValues(alpha: 0.08);
+    final Widget face = Stack(
+      alignment: Alignment.center,
+      children: <Widget>[
+        IconTheme(
+          data: IconThemeData(color: fg, size: 22),
+          child: Center(child: child),
+        ),
+        IgnorePointer(
+          child: AnimatedSwitcher(
+            duration: context.motion(PrismDurations.fast),
+            child: isLoading
+                ? Padding(
+                    key: const ValueKey<bool>(true),
+                    padding: const EdgeInsets.all(PrismSpace.xxs),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+                  )
+                : const SizedBox.shrink(key: ValueKey<bool>(false)),
+          ),
+        ),
+      ],
+    );
     final Widget circle = SizedBox.square(
       dimension: size,
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-        child: Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            IconTheme(
-              data: IconThemeData(color: fg, size: 22),
-              child: Center(child: child),
+      child: flat
+          ? face
+          : DecoratedBox(
+              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+              child: face,
             ),
-            IgnorePointer(
-              child: AnimatedSwitcher(
-                duration: context.motion(PrismDurations.fast),
-                child: isLoading
-                    ? Padding(
-                        key: const ValueKey<bool>(true),
-                        padding: const EdgeInsets.all(PrismSpace.xxs),
-                        child: CircularProgressIndicator(strokeWidth: 2, color: fg),
-                      )
-                    : const SizedBox.shrink(key: ValueKey<bool>(false)),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
     final Widget content = caption == null
         ? circle

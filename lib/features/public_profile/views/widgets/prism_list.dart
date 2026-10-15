@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 typedef _ApiLink = ({IconData icon, String name, String url, LinkDestinationValue destination, String sourceContext});
@@ -98,7 +98,7 @@ class PrismList extends StatelessWidget {
                 title: link.name,
                 padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
                 onTap: () {
-                  HapticFeedback.selectionClick();
+                  PrismHaptics.tap();
                   Navigator.of(sheetContext).pop();
                   unawaited(_openApiLink(link));
                 },
@@ -128,6 +128,7 @@ class PrismList extends StatelessWidget {
           subtitle: 'Send a link to a friend',
           showChevron: false,
           onTap: () async {
+            PrismHaptics.tap();
             _trackAction(AnalyticsActionValue.drawerSharePrismTapped, sourceContext: 'profile_prism_list_share');
             await ShareService.shareText(text: _shareText, context: context);
           },

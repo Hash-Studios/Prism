@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/premium_wall_utils.dart';
@@ -51,6 +52,10 @@ class UserProfileGrid extends StatelessWidget {
           );
         }
         final bool viewerPremium = app_state.prismUser.premium;
+        final int decodeHeight = gridTileDecodeHeight(
+          context,
+          crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
+        );
         return SliverMainAxisGroup(
           slivers: <Widget>[
             if (failed)
@@ -80,17 +85,22 @@ class UserProfileGrid extends StatelessWidget {
                     wall.collections ?? const <String>[],
                   );
                   return PrismWallTile(
+                    key: ValueKey<String>(wall.id),
+                    memCacheHeight: decodeHeight,
                     url: thumb.startsWith('http://') || thumb.startsWith('https://') ? thumb : '',
                     heroTag: heroTag,
                     semanticLabel: wallpaperSemanticLabel(wall.by),
                     overlay: !viewerPremium && premiumWall ? const _PremiumMark() : null,
-                    onTap: () => context.router.push(
-                      WallpaperDetailRoute(
-                        entity: wall.toFeedItem(),
-                        analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
-                        heroTag: heroTag,
-                      ),
-                    ),
+                    onTap: () {
+                      PrismHaptics.tap();
+                      context.router.push(
+                        WallpaperDetailRoute(
+                          entity: wall.toFeedItem(),
+                          analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
+                          heroTag: heroTag,
+                        ),
+                      );
+                    },
                   );
                 },
               ),

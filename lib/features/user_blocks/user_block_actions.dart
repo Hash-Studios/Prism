@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/data/notifications/notifications.dart';
@@ -52,6 +53,7 @@ Future<void> confirmAndBlockUser({
   if (!ok || !context.mounted) {
     return;
   }
+  PrismHaptics.tap();
 
   final UserBlockRepository blocks = getIt<UserBlockRepository>();
   final Result<void> result = await blocks.blockUser(targetUserId: targetUserId);

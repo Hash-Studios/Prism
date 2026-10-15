@@ -16,6 +16,9 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakeConnectivityService implements ConnectivityService {
   @override
   Future<bool> hasConnection() async => true;
+
+  @override
+  Stream<bool> get onConnectionChange => const Stream<bool>.empty();
 }
 
 class _FakeRepository extends Fake implements AiGenerationRepositoryImpl {
@@ -126,7 +129,7 @@ void main() {
     await pumpPage(tester, history: <AiGenerationRecord>[_record()]);
 
     expect(find.text('Save'), findsOneWidget);
-    expect(find.text('Refine'), findsOneWidget);
+    expect(find.text('Try another'), findsOneWidget);
     expect(find.byTooltip('Set as wallpaper'), findsOneWidget);
     expect(find.bySemanticsLabel('Submit wallpaper for community review'), findsOneWidget);
     expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Save')).variant, PrismButtonVariant.primary);

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -15,15 +17,18 @@ import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
+import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_header.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -55,7 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return identifier == app_state.prismUser.email || identifier == app_state.prismUser.username;
   }
 
-  PublicProfileEntity get _ownProfile => PublicProfileEntity(
+  PublicProfileEntity _ownProfile({List<String>? badges}) => PublicProfileEntity(
     id: app_state.prismUser.id,
     name: app_state.prismUser.name,
     email: app_state.prismUser.email,
@@ -66,6 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     following: app_state.prismUser.following,
     links: app_state.prismUser.links,
     coverPhoto: app_state.prismUser.coverPhoto ?? '',
+    badges: badges ?? app_state.prismUser.badges.map((b) => b.id).toList(growable: false),
   );
 
   @override
@@ -81,6 +87,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!app_state.prismUser.loggedIn) {
       return PrismPage(
         title: 'Profile',
+        actions: <Widget>[
+          PrismIconButton(
+            icon: Icons.settings_rounded,
+            tooltip: 'Settings',
+            onPressed: () {
+              PrismHaptics.tap();
+              context.router.push(const SettingsRoute());
+            },
+          ),
+        ],
         body: SignInPrompt(feature: _isOwnProfile ? 'your profile' : 'profiles'),
       );
     }
@@ -103,7 +119,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return BlocProvider<PublicProfileBloc>(
       create: (_) => getIt<PublicProfileBloc>(),
       child: _isOwnProfile
-          ? _ProfileChild(ownProfile: true, onProfileEdited: () => setState(() {}), profile: _ownProfile)
+          ? StreamBuilder<PublicProfileEntity?>(
+              stream: _profileStream,
+              builder: (BuildContext context, AsyncSnapshot<PublicProfileEntity?> snapshot) => _ProfileChild(
+                ownProfile: true,
+                onProfileEdited: () => setState(() {}),
+                profile: _ownProfile(
+                  badges: snapshot.data?.id == app_state.prismUser.id ? snapshot.data?.badges : null,
+                ),
+              ),
+            )
           : StreamBuilder<PublicProfileEntity?>(
               stream: _profileStream,
               builder: (BuildContext context, AsyncSnapshot<PublicProfileEntity?> snapshot) {
@@ -165,10 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
                   builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
                     if (BlockedCreatorsFilter.hidesCreatorEmail(profile.email, blockSnap.data ?? <String>{})) {
-                      final String display = <String>[
-                        profile.name.trim(),
-                        profile.username.trim(),
-                      ].firstWhere((String value) => value.isNotEmpty, orElse: () => profile.email);
+                      final String display = creatorLabel(name: profile.name, username: profile.username);
                       return BlockedUserProfileShell(
                         targetUserId: profile.id,
                         targetEmail: profile.email,
@@ -235,16 +257,21 @@ class _ProfileChildState extends State<_ProfileChild> {
     }
   }
 
+  /// Opens a profile link. A link with an unsafe scheme or no host is refused with a calm toast.
+  Future<bool> _openProfileLink(String link) async {
+    final Uri? uri = safeProfileLinkUri(link);
+    try {
+      if (uri != null && await launchUrl(uri)) return true;
+    } catch (error, stackTrace) {
+      logger.w('Could not open a profile link.', error: error, stackTrace: stackTrace);
+    }
+    toasts.info("Couldn't open this link.");
+    return false;
+  }
+
   Future<void> _openLink(String key, String link) async {
     _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_screen_link_chip');
-    final String trimmed = link.trim();
-    final String target = trimmed.contains('@gmail.com') ? 'mailto:$trimmed' : trimmed;
-    bool launched = false;
-    try {
-      launched = await launchUrl(Uri.parse(target));
-    } catch (_) {
-      toasts.error('Could not open this link.');
-    }
+    final bool launched = await _openProfileLink(link);
     unawaited(
       analytics.track(
         ExternalLinkOpenResultEvent(
@@ -281,9 +308,15 @@ class _ProfileChildState extends State<_ProfileChild> {
         currentUserEmail: app_state.prismUser.email,
         targetUserId: _profile.id,
         targetUserEmail: _profile.email,
+        targetName: creatorLabel(name: _profile.name, username: _profile.username),
       ),
     );
-    toasts.success(following ? 'Unfollowed ${_profile.name}' : 'Following ${_profile.name}');
+  }
+
+  bool _isFollowing(PublicProfileState state) {
+    final String me = app_state.prismUser.email.trim().toLowerCase();
+    return state.followOverrides[_profile.email.trim().toLowerCase()] ??
+        _profile.followers.any((String e) => e.trim().toLowerCase() == me);
   }
 
   void _shareProfile() {
@@ -313,7 +346,12 @@ class _ProfileChildState extends State<_ProfileChild> {
         if (uid.isEmpty || email.isEmpty) {
           return;
         }
-        await confirmAndBlockUser(context: context, targetUserId: uid, targetEmail: email, displayName: _profile.name);
+        await confirmAndBlockUser(
+          context: context,
+          targetUserId: uid,
+          targetEmail: email,
+          displayName: creatorLabel(name: _profile.name, username: _profile.username),
+        );
     }
   }
 
@@ -347,7 +385,6 @@ class _ProfileChildState extends State<_ProfileChild> {
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
     final bool showCompleteness = ownProfile && !completeness.isComplete;
-    final bool following = _profile.followers.contains(app_state.prismUser.email);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -369,18 +406,36 @@ class _ProfileChildState extends State<_ProfileChild> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: <Widget>[
                   SliverToBoxAdapter(
-                    child: ProfileHeader(
-                      profile: _profile,
-                      ownProfile: ownProfile,
-                      following: following,
-                      isPro: ownProfile && app_state.prismUser.premium,
-                      onEdit: () => unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_edit_button')),
-                      onShare: _shareProfile,
-                      onToggleFollow: () => _toggleFollow(following: following),
-                      onOpenFollowers: () => context.router.push(FollowersRoute(followers: _profile.followers)),
-                      onOpenFollowing: () => context.router.push(FollowingListRoute(following: _profile.following)),
-                      onOpenPosts: _scrollToWalls,
-                      onOpenLink: _openLink,
+                    child: BlocConsumer<PublicProfileBloc, PublicProfileState>(
+                      listenWhen: (prev, curr) =>
+                          curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+                      listener: (context, state) => showFollowOutcomeToast(state.followOutcome!),
+                      buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
+                      builder: (context, state) {
+                        final bool following = _isFollowing(state);
+                        return ProfileHeader(
+                          profile: _profile,
+                          ownProfile: ownProfile,
+                          following: following,
+                          isPro: ownProfile && app_state.prismUser.premium,
+                          onEdit: () {
+                            PrismHaptics.tap();
+                            unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_edit_button'));
+                          },
+                          onShare: _shareProfile,
+                          onToggleFollow: () => _toggleFollow(following: following),
+                          onOpenFollowers: () {
+                            PrismHaptics.tap();
+                            context.router.push(FollowersRoute(followers: _profile.followers));
+                          },
+                          onOpenFollowing: () {
+                            PrismHaptics.tap();
+                            context.router.push(FollowingListRoute(following: _profile.following));
+                          },
+                          onOpenPosts: _scrollToWalls,
+                          onOpenLink: _openLink,
+                        );
+                      },
                     ),
                   ),
                   if (showCompleteness)
@@ -443,7 +498,10 @@ class _ProfileChildState extends State<_ProfileChild> {
                       icon: Icons.edit_rounded,
                       tooltip: 'Edit profile',
                       onImage: !_barScrolled,
-                      onPressed: () => unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit')),
+                      onPressed: () {
+                        PrismHaptics.tap();
+                        unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
+                      },
                     ),
                     const SizedBox(width: PrismSpace.xs),
                     PrismIconButton(

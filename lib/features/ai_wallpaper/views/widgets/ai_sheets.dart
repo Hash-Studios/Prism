@@ -8,7 +8,6 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Asks the user to confirm sharing [record]. Resolves with the metadata to submit, or null if they cancel.
 ///
@@ -107,7 +106,7 @@ AiSubmissionMetadata _submissionFrom(AiSubmissionMetadata metadata, String promp
   );
 }
 
-/// Asks what to change about the current wallpaper. Closes itself, then calls [onSubmit].
+/// Asks what to change for a new version of the current wallpaper. Closes itself, then calls [onSubmit].
 Future<void> showAiRefineSheet(
   BuildContext context, {
   required TextEditingController controller,
@@ -120,14 +119,15 @@ Future<void> showAiRefineSheet(
     context: context,
     isScrollControlled: true,
     builder: (sheetContext) => PrismSheetBody(
-      title: 'Refine this wallpaper',
-      message: 'Say what should change. We keep the rest of the composition as close as we can.',
+      title: 'Try another version',
+      message:
+          'Say what should change. This makes a new wallpaper from the same prompt with a new seed, so it can look quite different.',
       scrollable: true,
       actions: <Widget>[
         ListenableBuilder(
           listenable: controller,
           builder: (context, _) => PrismButton(
-            label: 'Generate refinement',
+            label: 'Generate another',
             expand: true,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -152,7 +152,7 @@ Future<void> showAiRefineSheet(
         hint: 'Darker sky, warmer palette, softer edges…',
         minLines: 2,
         maxLines: 4,
-        inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(maxChars)],
+        maxLength: maxChars,
       ),
     ),
   );

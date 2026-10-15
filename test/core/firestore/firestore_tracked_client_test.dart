@@ -18,6 +18,8 @@ class _MockDoc extends Mock implements DocumentReference<Map<String, dynamic>> {
 
 class _MockSnapshot extends Mock implements DocumentSnapshot<Map<String, dynamic>> {}
 
+class _MockQuerySnapshot extends Mock implements QuerySnapshot<Map<String, dynamic>> {}
+
 class _RecordingSink implements FirestoreTelemetrySink {
   final List<FirestoreTelemetryEvent> events = <FirestoreTelemetryEvent>[];
 
@@ -66,6 +68,29 @@ void main() {
     expect(failure.operation, FirestoreOperation.streamSubscribe);
     expect(failure.success, isFalse);
     expect(failure.errorCode, 'permission-denied');
+  });
+
+  test('a failed stale-while-revalidate refresh is recorded and does not escape as an unhandled error', () async {
+    final snapshot = _MockQuerySnapshot();
+    when(() => snapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+    var calls = 0;
+    when(() => collection.get()).thenAnswer((_) async {
+      if (++calls == 1) return snapshot;
+      throw FirebaseException(plugin: 'cloud_firestore', code: 'unavailable');
+    });
+    const spec = FirestoreQuerySpec(
+      collection: 'walls',
+      sourceTag: 'test.swr',
+      cachePolicy: FirestoreCachePolicy.staleWhileRevalidate,
+    );
+
+    await client.query<String>(spec, (data, id) => id);
+    expect(await client.query<String>(spec, (data, id) => id), isEmpty);
+    await pumpEventQueue();
+
+    expect(calls, 2);
+    expect(sink.events.last.success, isFalse);
+    expect(sink.events.last.errorCode, 'unavailable');
   });
 
   test('setDoc emits success telemetry with the doc id', () async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -10,23 +12,56 @@ import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.da
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 const Map<int, String> _intervalLabels = <int, String>{
+  15: 'Every 15 min (battery heavy)',
+  30: 'Every 30 min',
   60: 'Every hour',
+  180: 'Every 3 hours',
   360: 'Every 6 hours',
   720: 'Every 12 hours',
   1440: 'Every day',
+  4320: 'Every 3 days',
+  10080: 'Every week',
 };
 
 const Map<WallpaperTarget, String> _targetLabels = <WallpaperTarget, String>{
   WallpaperTarget.home: 'Home screen',
   WallpaperTarget.lock: 'Lock screen',
   WallpaperTarget.both: 'Both',
+};
+
+const Map<AutoRotateSource, String> _sourceLabels = <AutoRotateSource, String>{
+  AutoRotateSource.favourites: 'Favourites',
+  AutoRotateSource.downloads: 'Downloads',
+  AutoRotateSource.category: 'Category',
+  AutoRotateSource.wallOfTheDay: 'Wall of the Day',
+  AutoRotateSource.history: 'History',
+};
+
+const String _batteryTipSteps = 'Open Settings, then Apps, Prism, Battery. Set battery use to Unrestricted.';
+
+String _sourceNoun(AutoRotateConfig config) => switch (config.source) {
+  AutoRotateSource.favourites => 'favourites',
+  AutoRotateSource.downloads => 'downloads',
+  AutoRotateSource.category => '${config.categoryName} wallpapers',
+  AutoRotateSource.wallOfTheDay => 'Wall of the Day picks',
+  AutoRotateSource.history => 'wallpapers from your history',
+};
+
+String _tooFewText(AutoRotateSource source) => switch (source) {
+  AutoRotateSource.favourites => 'Favourite at least 2 wallpapers to rotate them.',
+  AutoRotateSource.downloads => 'Download at least 2 wallpapers to rotate them.',
+  AutoRotateSource.category => 'This category has fewer than 2 wallpapers. Pick another one.',
+  AutoRotateSource.wallOfTheDay => 'There are not enough past picks yet.',
+  AutoRotateSource.history => 'Set at least 2 wallpapers from Prism to rotate them.',
 };
 
 List<String> _urlsOf(FavouriteWallsState state) => state.items.map((item) => item.fullUrl).toList(growable: false);
@@ -148,7 +183,7 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                   return _Message(
                     kind: GlintStateKind.error,
                     text: 'Could not update auto-rotate.',
-                    buttonLabel: 'Try again',
+                    buttonLabel: 'Turn off',
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(false)),
                   );
                 }
@@ -162,7 +197,6 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                 }
                 if (!state.loaded) return PrismSkeleton.rows(avatar: false);
                 if (!state.isPro) return const _ProPrompt();
-                if (state.favouriteCount < AutoRotateBloc.minWallpapers) return const _EmptyState();
                 if (state.startFailed) {
                   return _Message(
                     kind: GlintStateKind.error,
@@ -189,20 +223,6 @@ class _Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlintState(kind: kind, title: text, actionLabel: buttonLabel, onAction: onPressed);
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return _Message(
-      kind: GlintStateKind.empty,
-      text: 'Favourite at least 2 wallpapers to rotate them.',
-      buttonLabel: 'Open favourites',
-      onPressed: () => context.router.push(const FavouriteWallpaperRoute()),
-    );
   }
 }
 
@@ -233,6 +253,7 @@ class _Controls extends StatelessWidget {
 
   String _statusText() {
     if (state.startFailed) return 'Could not start. Try again.';
+    if (state.starting) return 'Starting';
     if (!state.config.enabled) return 'Off';
     final int next = state.status.nextRunEpochMs;
     if (!state.status.isRunning || next <= 0) return 'Scheduled';
@@ -265,6 +286,12 @@ class _Controls extends StatelessWidget {
       ],
     );
 
+    final bool tooFew = state.sourceCount < AutoRotateBloc.minWallpapers;
+    final bool canToggle = !state.starting && (config.enabled || !tooFew);
+    final AutoRotateStatus status = state.status;
+    final bool caching = config.enabled && status.isRunning && status.totalCount > 0;
+    final int cached = status.cachedCount.clamp(0, status.totalCount);
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
       children: <Widget>[
@@ -273,17 +300,117 @@ class _Controls extends StatelessWidget {
             PrismSwitchRow(
               icon: Icons.autorenew_rounded,
               title: 'Auto-rotate wallpapers',
-              subtitle: '${state.favouriteCount} favourites in the mix',
-              value: config.enabled,
-              onChanged: (value) => bloc.add(AutoRotateEvent.toggled(value)),
+              subtitle: state.loadingSource
+                  ? 'Loading wallpapers'
+                  : '${state.sourceCount} ${_sourceNoun(config)} in the mix'
+                        '${state.sourcesCapped ? '. Using your first 100.' : ''}',
+              value: config.enabled || state.starting,
+              onChanged: canToggle ? (value) => bloc.add(AutoRotateEvent.toggled(value)) : null,
             ),
           ],
+        ),
+        if (state.starting)
+          _ProgressRow(label: 'Preparing ${state.sourceCount} wallpapers')
+        else if (caching && cached < status.totalCount)
+          _ProgressRow(
+            label: 'Downloaded $cached of ${status.totalCount} wallpapers',
+            value: cached / status.totalCount,
+          ),
+        if (state.sourceLoadFailed)
+          Padding(
+            padding: const EdgeInsets.only(top: PrismSpace.sm),
+            child: _Notice(
+              text: 'Could not load wallpapers. Check your connection.',
+              actions: <Widget>[
+                PrismButton(
+                  label: 'Try again',
+                  variant: PrismButtonVariant.tonal,
+                  size: PrismButtonSize.compact,
+                  onPressed: () => bloc.add(const AutoRotateEvent.toggled(true)),
+                ),
+              ],
+            ),
+          )
+        else if (tooFew && !config.enabled && !state.loadingSource)
+          Padding(
+            padding: const EdgeInsets.only(top: PrismSpace.sm),
+            child: _Notice(
+              text: _tooFewText(config.source),
+              actions: <Widget>[
+                switch (config.source) {
+                  AutoRotateSource.favourites => PrismButton(
+                    label: 'Open favourites',
+                    variant: PrismButtonVariant.tonal,
+                    size: PrismButtonSize.compact,
+                    onPressed: () => context.router.push(const FavouriteWallpaperRoute()),
+                  ),
+                  AutoRotateSource.downloads => PrismButton(
+                    label: 'Open downloads',
+                    variant: PrismButtonVariant.tonal,
+                    size: PrismButtonSize.compact,
+                    onPressed: () => context.router.push(const DownloadRoute()),
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
+              ],
+            ),
+          ),
+        if (state.showBatteryTip)
+          section(
+            'Keep it running',
+            _Notice(
+              text:
+                  'If wallpapers stop changing, set battery use for Prism to Unrestricted. '
+                  'Open settings, then Apps, Prism, Battery.',
+              actions: <Widget>[
+                PrismButton(
+                  label: 'Copy steps',
+                  variant: PrismButtonVariant.tonal,
+                  size: PrismButtonSize.compact,
+                  onPressed: () {
+                    unawaited(Clipboard.setData(const ClipboardData(text: _batteryTipSteps)));
+                    toasts.info('Steps copied.');
+                  },
+                ),
+                PrismButton(
+                  label: 'Got it',
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: () => bloc.add(const AutoRotateEvent.batteryTipDismissed()),
+                ),
+              ],
+            ),
+          ),
+        section(
+          'Source',
+          chips(
+            <AutoRotateSource, String>{
+              ..._sourceLabels,
+              AutoRotateSource.category: config.source == AutoRotateSource.category
+                  ? 'Category: ${config.categoryName}'
+                  : 'Category',
+            },
+            config.source,
+            (v) => v == AutoRotateSource.category
+                ? _pickCategory(context, config.categoryName)
+                : bloc.add(AutoRotateEvent.sourceChanged(v)),
+          ),
         ),
         section(
           'Change',
           chips(_intervalLabels, config.intervalMinutes, (v) => bloc.add(AutoRotateEvent.intervalChanged(v))),
         ),
-        section('Apply to', chips(_targetLabels, config.target, (v) => bloc.add(AutoRotateEvent.targetChanged(v)))),
+        section(
+          'Apply to',
+          chips(
+            <WallpaperTarget, String>{
+              for (final MapEntry<WallpaperTarget, String> entry in _targetLabels.entries)
+                if (state.supportedTargets.contains(entry.key)) entry.key: entry.value,
+            },
+            config.target,
+            (v) => bloc.add(AutoRotateEvent.targetChanged(v)),
+          ),
+        ),
         const SizedBox(height: PrismSpace.xl),
         PrismGroup(
           children: <Widget>[
@@ -294,12 +421,26 @@ class _Controls extends StatelessWidget {
               value: config.shuffle,
               onChanged: (value) => bloc.add(AutoRotateEvent.shuffleChanged(value)),
             ),
+            PrismSwitchRow(
+              icon: Icons.power_rounded,
+              title: 'Only while charging',
+              subtitle: 'Change when plugged in, at most once per interval',
+              value: config.chargingOnly,
+              onChanged: (value) => bloc.add(AutoRotateEvent.chargingOnlyChanged(value)),
+            ),
           ],
         ),
         section(
           'Status',
           PrismGroup(
-            children: <Widget>[PrismRow(icon: Icons.schedule_rounded, title: _statusText())],
+            children: <Widget>[
+              PrismRow(icon: Icons.schedule_rounded, title: _statusText()),
+              if (caching && cached >= status.totalCount)
+                PrismRow(
+                  icon: Icons.check_circle_outline_rounded,
+                  title: '$cached of ${status.totalCount} wallpapers ready',
+                ),
+            ],
           ),
         ),
         const SizedBox(height: PrismSpace.sm),
@@ -311,6 +452,82 @@ class _Controls extends StatelessWidget {
           onPressed: config.enabled ? () => bloc.add(const AutoRotateEvent.rotateNowPressed()) : null,
         ),
       ],
+    );
+  }
+}
+
+Future<void> _pickCategory(BuildContext context, String current) async {
+  final AutoRotateBloc bloc = context.read<AutoRotateBloc>();
+  final String? picked = await showPrismSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    builder: (sheetContext) => PrismSheetBody(
+      title: 'Pick a category',
+      scrollable: true,
+      child: PrismGroup(
+        children: <Widget>[
+          for (final String name in autoRotateCategories)
+            PrismRow(
+              title: name,
+              showChevron: false,
+              trailing: name == current ? const Icon(Icons.check_rounded, size: 20) : null,
+              onTap: () => Navigator.of(sheetContext).pop(name),
+            ),
+        ],
+      ),
+    ),
+  );
+  if (picked != null) bloc.add(AutoRotateEvent.categoryChanged(picked));
+}
+
+/// A short message in a card, with optional actions under it.
+class _Notice extends StatelessWidget {
+  const _Notice({required this.text, this.actions = const <Widget>[]});
+
+  final String text;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(text, style: PrismTextStyles.body(context)),
+          if (actions.isNotEmpty) ...<Widget>[
+            const SizedBox(height: PrismSpace.sm),
+            Wrap(spacing: PrismSpace.xs, runSpacing: PrismSpace.xs, children: actions),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgressRow extends StatelessWidget {
+  const _ProgressRow({required this.label, this.value});
+
+  final String label;
+  final double? value;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.sm, PrismSpace.xs, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(label, style: PrismTextStyles.caption(context)),
+          const SizedBox(height: PrismSpace.xs),
+          LinearProgressIndicator(
+            value: value,
+            color: cs.primary,
+            backgroundColor: cs.onSurface.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(PrismRadius.pill),
+          ),
+        ],
+      ),
     );
   }
 }

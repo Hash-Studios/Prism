@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -8,7 +9,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Opens the sign-in sheet. [func] runs after a successful sign-in.
 void googleSignInPopUp(BuildContext context, VoidCallback func) {
@@ -49,10 +49,9 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           }
           closeLoaderIfVisible();
           if (outcome == SignInOutcome.cancelled) {
-            toasts.error('Sign in cancelled.');
             return;
           }
-          toasts.success('Signed in.');
+          PrismHaptics.success();
           app_state.prismUser.loggedIn = true;
           app_state.persistPrismUser();
           func();
@@ -111,7 +110,7 @@ class _AppleButton extends StatelessWidget {
     return PressScale(
       child: FilledButton.icon(
         onPressed: () {
-          HapticFeedback.selectionClick();
+          PrismHaptics.selection();
           onPressed();
         },
         icon: const Icon(Icons.apple, size: 22),

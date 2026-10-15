@@ -37,7 +37,9 @@ class _ProfileCompletenessNudgeSheet extends StatelessWidget {
         PrismButton(
           label: 'Complete profile',
           expand: true,
-          onPressed: () => Navigator.of(context).pop(ProfileCompletenessNudgeAction.completeNow),
+          onPressed: () {
+            Navigator.of(context).pop(ProfileCompletenessNudgeAction.completeNow);
+          },
         ),
         PrismButton(
           label: 'Later',

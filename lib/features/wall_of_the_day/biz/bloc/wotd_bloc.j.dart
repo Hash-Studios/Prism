@@ -17,10 +17,14 @@ class WotdBloc extends Bloc<WotdEvent, WotdState> {
   }
 
   final FetchWallOfTheDayUseCase _fetchWallOfTheDayUseCase;
+  int _latestRequestId = 0;
 
   Future<void> _onStarted(_Started event, Emitter<WotdState> emit) async {
+    final requestId = ++_latestRequestId;
     emit(state.copyWith(status: LoadStatus.loading));
     final result = await _fetchWallOfTheDayUseCase(const NoParams());
+    if (requestId != _latestRequestId) return;
+
     result.fold(
       onSuccess: (entity) => emit(state.copyWith(status: LoadStatus.success, entity: entity)),
       onFailure: (_) => emit(state.copyWith(status: LoadStatus.failure)),

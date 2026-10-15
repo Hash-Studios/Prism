@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,7 @@ class _BlockedUserProfileShellState extends State<BlockedUserProfileShell> {
   bool _unblocking = false;
 
   Future<void> _unblock() async {
+    PrismHaptics.tap();
     setState(() => _unblocking = true);
     await unblockUserWithFeedback(context, widget.targetUserId);
     // On success the profile stream swaps this shell out, so only reset when it is still here.

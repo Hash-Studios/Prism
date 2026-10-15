@@ -1,148 +1,174 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
+import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
+import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-class ClockOverlay extends StatelessWidget {
+enum ClockPreviewMode {
+  lock('Lock'),
+  home('Home');
+
+  const ClockPreviewMode(this.label);
+
+  final String label;
+}
+
+/// Width of the decode used to pick the clock text colour.
+const int _sampleWidth = 32;
+
+/// Full-screen preview of the wallpaper under a lock screen clock or a home screen dock.
+/// The image is shown as it will be set. The clock text is black or white, whichever reads on the top third.
+class ClockOverlay extends StatefulWidget {
+  const ClockOverlay({required this.link, required this.file, this.thumbnailUrl, this.tint});
+
   final String link;
   final bool file;
-  final Color? accent;
-  final bool colorChanged;
-  const ClockOverlay({required this.link, required this.file, required this.accent, required this.colorChanged});
 
-  /// Superscript ordinal suffix for a day of the month: 1ˢᵗ, 2ⁿᵈ, 3ʳᵈ, 4ᵗʰ, 11ᵗʰ.
-  @visibleForTesting
-  static String ordinalSuffix(int day) {
-    if (day >= 11 && day <= 13) return 'ᵗʰ';
-    return switch (day % 10) {
-      1 => 'ˢᵗ',
-      2 => 'ⁿᵈ',
-      3 => 'ʳᵈ',
-      _ => 'ᵗʰ',
-    };
+  /// Shown while the full image loads.
+  final String? thumbnailUrl;
+
+  /// The colour variation the user picked. When set, the image is shown with this hue.
+  final Color? tint;
+
+  @override
+  State<ClockOverlay> createState() => _ClockOverlayState();
+}
+
+class _ClockOverlayState extends State<ClockOverlay> {
+  late ClockPreviewMode _mode = defaultTargetPlatform == TargetPlatform.iOS
+      ? ClockPreviewMode.lock
+      : ClockPreviewMode.home;
+  Color? _textColor;
+  ImageStream? _sampleStream;
+  ImageStreamListener? _sampleListener;
+
+  ImageProvider get _provider =>
+      widget.file ? FileImage(File(widget.link)) : CachedNetworkImageProvider(widget.link, cacheManager: _cache);
+
+  BaseCacheManager get _cache => PrismFullImageCache.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _sampleText();
+  }
+
+  void _sampleText() {
+    final ImageStream stream = ResizeImage(_provider, width: _sampleWidth).resolve(ImageConfiguration.empty);
+    final ImageStreamListener listener = ImageStreamListener(
+      (info, _) {
+        unawaited(_applySample(info.image));
+        _stopSampling();
+      },
+      onError: (error, stackTrace) {
+        logger.w('ClockOverlay: could not sample the image', error: error, stackTrace: stackTrace);
+        _stopSampling();
+      },
+    );
+    _sampleStream = stream;
+    _sampleListener = listener;
+    stream.addListener(listener);
+  }
+
+  Future<void> _applySample(ui.Image image) async {
+    final Color color = await textColorForTopThird(image, tint: widget.tint);
+    if (mounted) setState(() => _textColor = color);
+  }
+
+  void _stopSampling() {
+    final ImageStreamListener? listener = _sampleListener;
+    if (listener != null) _sampleStream?.removeListener(listener);
+    _sampleListener = null;
+    _sampleStream = null;
+  }
+
+  @override
+  void dispose() {
+    _stopSampling();
+    super.dispose();
+  }
+
+  Widget _tinted(Widget image) {
+    final Color? tint = widget.tint;
+    if (tint == null) return image;
+    return ColorFiltered(colorFilter: ColorFilter.mode(tint, BlendMode.hue), child: image);
+  }
+
+  Widget _tintedPhoto(BuildContext context, ImageProvider provider) => _tinted(
+    SizedBox.expand(
+      child: Image(image: provider, fit: BoxFit.cover),
+    ),
+  );
+
+  ImageWidgetBuilder? get _tintedBuilder => widget.tint == null ? null : _tintedPhoto;
+
+  Widget _image(BuildContext context, Size size) {
+    final Color placeholder = Theme.of(context).primaryColor;
+    final int cacheWidth = previewCacheWidth(size.width, MediaQuery.devicePixelRatioOf(context));
+    Widget error() => ColoredBox(
+      color: placeholder,
+      child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
+    );
+    if (widget.file) {
+      return SizedBox.expand(
+        child: _tinted(
+          Image.file(File(widget.link), fit: BoxFit.cover, cacheWidth: cacheWidth, errorBuilder: (_, _, _) => error()),
+        ),
+      );
+    }
+    final String thumbnail = widget.thumbnailUrl?.trim() ?? '';
+    return SizedBox.expand(
+      child: CachedNetworkImage(
+        cacheManager: _cache,
+        imageUrl: widget.link,
+        fit: BoxFit.cover,
+        memCacheWidth: cacheWidth,
+        imageBuilder: _tintedBuilder,
+        placeholder: (_, _) => thumbnail.isEmpty
+            ? ColoredBox(color: placeholder)
+            : CachedNetworkImage(
+                cacheManager: PrismImageCache.instance,
+                imageUrl: thumbnail,
+                fit: BoxFit.cover,
+                imageBuilder: _tintedBuilder,
+                errorWidget: (_, _, _) => ColoredBox(color: placeholder),
+              ),
+        errorWidget: (_, _, _) => error(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final day = DateFormat('EEEE').format(now);
-    final month = DateFormat('MMMM').format(now);
-    final Color textColor = accent == null ? Colors.white : onColor(accent!);
-    final bool iosPreview = defaultTargetPlatform == TargetPlatform.iOS;
-    final Size screen = MediaQuery.sizeOf(context);
-    final TextStyle base = PrismTextStyles.screenTitle(context).copyWith(color: textColor);
+    final size = MediaQuery.sizeOf(context);
+    final Color textColor = _textColor ?? Theme.of(context).colorScheme.secondary;
+    final bool lock = _mode == ClockPreviewMode.lock;
     return Material(
       color: Theme.of(context).colorScheme.surface,
       child: Stack(
         children: <Widget>[
-          if (!file)
-            CachedNetworkImage(
-              imageUrl: link,
-              imageBuilder: (context, imageProvider) => Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
-                    image: imageProvider,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            )
-          else
-            SizedBox(
-              height: screen.height,
-              width: screen.width,
-              child: Image.file(
-                File(link),
-                color: accent,
-                colorBlendMode: colorChanged ? BlendMode.color : null,
-                fit: BoxFit.cover,
-              ),
-            ),
-          if (textColor == Colors.white)
-            IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const <double>[0, 0.4, 0.8, 1],
-                    colors: <Color>[
-                      Colors.black.withValues(alpha: 0.35),
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.35),
-                    ],
-                  ),
-                ),
-                child: SizedBox(height: screen.height, width: screen.width),
-              ),
-            ),
-          if (iosPreview)
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: PrismSpace.xl),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(DateFormat('EEEE d MMMM').format(now), style: base.copyWith(fontSize: 20)),
-                      Text(DateFormat('h:mm').format(now), style: base.copyWith(fontSize: 96, height: 1.1)),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          else ...<Widget>[
-            SizedBox(
-              height: screen.height / 3,
-              width: screen.width,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text('$day,', textAlign: TextAlign.center, style: base.copyWith(fontSize: 24)),
-                    const SizedBox(height: PrismSpace.xxs),
-                    Text(
-                      '$month ${now.day}${ClockOverlay.ordinalSuffix(now.day)} | 27°C',
-                      textAlign: TextAlign.center,
-                      style: base.copyWith(fontSize: 24),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 100,
-              child: SizedBox(
-                width: screen.width,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    for (final String icon in <String>['dialer', 'messages', 'prism', 'playstore', 'chrome'])
-                      Image.asset('assets/images/$icon.webp', width: screen.width * 0.14),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          SafeArea(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: PrismSpace.md),
-                child: ExcludeSemantics(
-                  child: Text(
-                    'Tap anywhere to close',
-                    style: PrismTextStyles.caption(context).copyWith(color: textColor),
-                  ),
-                ),
-              ),
+          Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
+          Positioned.fill(
+            child: AnimatedSwitcher(
+              duration: context.motion(const Duration(milliseconds: 160)),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeOut.flipped,
+              layoutBuilder: (current, previous) =>
+                  Stack(fit: StackFit.expand, children: <Widget>[...previous, ?current]),
+              child: lock
+                  ? LockPreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor)
+                  : HomePreviewLayer(key: ValueKey<ClockPreviewMode>(_mode), textColor: textColor),
             ),
           ),
           Semantics(
@@ -151,10 +177,146 @@ class ClockOverlay extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
-              child: SizedBox(height: screen.height, width: screen.width),
+              child: SizedBox(height: size.height, width: size.width),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: _ModeToggle(mode: _mode, onChanged: (mode) => setState(() => _mode = mode)),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Lock and Home as a glass pill. The selected segment is marked by a solid light indicator that slides across.
+/// Both segments are as wide as the wider label, never under 84, so large text grows the pill instead of clipping.
+class _ModeToggle extends StatelessWidget {
+  const _ModeToggle({required this.mode, required this.onChanged});
+
+  final ClockPreviewMode mode;
+  final ValueChanged<ClockPreviewMode> onChanged;
+
+  static const double _height = 48;
+  static const double _minSegmentWidth = 84;
+  static const double _inset = 4;
+  static const Curve _slide = Cubic(0.23, 1, 0.32, 1);
+  static const Duration _slideDuration = Duration(milliseconds: 180);
+
+  @override
+  Widget build(BuildContext context) {
+    final Duration duration = context.motion(_slideDuration);
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.5,
+      child: PrismGlass(
+        borderRadius: _height / 2,
+        thickness: 16,
+        glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.6),
+        child: SizedBox(
+          height: _height,
+          child: Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double segment = constraints.maxWidth / ClockPreviewMode.values.length;
+                    return Stack(
+                      children: <Widget>[
+                        AnimatedPositionedDirectional(
+                          duration: duration,
+                          curve: _slide,
+                          start: segment * mode.index + _inset,
+                          top: _inset,
+                          bottom: _inset,
+                          width: segment - 2 * _inset,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: PrismColors.onPrimary.withValues(alpha: 0.92),
+                              borderRadius: BorderRadius.circular(_height / 2 - _inset),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              IntrinsicWidth(
+                child: Row(
+                  children: <Widget>[
+                    for (final ClockPreviewMode value in ClockPreviewMode.values)
+                      Expanded(
+                        child: _Segment(
+                          label: value.label,
+                          selected: value == mode,
+                          duration: duration,
+                          curve: _slide,
+                          onTap: () => onChanged(value),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Segment extends StatelessWidget {
+  const _Segment({
+    required this.label,
+    required this.selected,
+    required this.duration,
+    required this.curve,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final Duration duration;
+  final Curve curve;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      container: true,
+      excludeSemantics: true,
+      inMutuallyExclusiveGroup: true,
+      selected: selected,
+      label: label,
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: _ModeToggle._minSegmentWidth),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: PressScale(
+                child: AnimatedDefaultTextStyle(
+                  duration: duration,
+                  curve: curve,
+                  style: PrismTextStyles.rowTitle(
+                    context,
+                  ).copyWith(color: selected ? Colors.black87 : PrismColors.onPrimary.withValues(alpha: 0.88)),
+                  child: Text(label),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -165,8 +327,8 @@ Future<void> pushClockPreview(
   BuildContext context, {
   required String link,
   required bool file,
-  Color? accent,
-  bool colorChanged = false,
+  String? thumbnailUrl,
+  Color? tint,
 }) {
   return Navigator.push<void>(
     context,
@@ -175,7 +337,7 @@ Future<void> pushClockPreview(
       reverseTransitionDuration: context.motion(PrismDurations.fast),
       pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
         opacity: animation.drive(CurveTween(curve: PrismCurves.enter)),
-        child: ClockOverlay(colorChanged: colorChanged, accent: accent, link: link, file: file),
+        child: ClockOverlay(link: link, file: file, thumbnailUrl: thumbnailUrl, tint: tint),
       ),
       fullscreenDialog: true,
       opaque: false,

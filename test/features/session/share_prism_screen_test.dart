@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,7 +25,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
       call,
     ) async {
-      toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      if (call.method == 'showToast') toasts.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
       return true;
     });
     // No id: the page cannot create a link, which keeps the test off the network.
@@ -30,6 +34,7 @@ void main() {
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+    SharePrismScreen.createLinkForTesting = null;
     AnalyticsRuntime.reset();
   });
 
@@ -59,5 +64,69 @@ void main() {
 
     expect(toasts, contains('Sign in to get your invite link.'));
     expect(analytics.events.map((e) => e.eventName), contains('invite_share_tapped'));
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  void signIn() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'uid1'
+      ..loggedIn = true;
+  }
+
+  testWidgets('shows a loading state while the link is made, then offers Share invite', (tester) async {
+    signIn();
+    final link = Completer<String>();
+    SharePrismScreen.createLinkForTesting = (_) => link.future;
+
+    await pumpPage(tester);
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).loading, isTrue);
+
+    link.complete('https://prismwalls.com/s/abc');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Share invite'), findsOneWidget);
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).loading, isFalse);
+    expect(find.text('https://prismwalls.com/s/abc'), findsOneWidget);
+    expect(find.byTooltip('Copy link'), findsOneWidget);
+  });
+
+  testWidgets('a failed link shows a retry, never a sign in message, and recovers', (tester) async {
+    signIn();
+    var calls = 0;
+    SharePrismScreen.createLinkForTesting = (_) async {
+      calls++;
+      if (calls == 1) throw StateError('offline');
+      return 'https://prismwalls.com/s/abc';
+    };
+
+    await pumpPage(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Could not create your invite link.'), findsOneWidget);
+    expect(find.byTooltip('Try again'), findsOneWidget);
+    expect(find.textContaining('Sign in'), findsNothing);
+    expect(toasts.where((m) => m.contains('Sign in')), isEmpty);
+
+    await tester.tap(find.byTooltip('Try again'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('https://prismwalls.com/s/abc'), findsOneWidget);
+    expect(calls, 2);
+  });
+
+  testWidgets('a signed out user is asked to sign in and no link is requested', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    var called = false;
+    SharePrismScreen.createLinkForTesting = (_) async {
+      called = true;
+      return 'x';
+    };
+
+    await pumpPage(tester);
+    await tester.tap(find.text('Share invite'));
+    await tester.pump();
+
+    expect(called, isFalse);
+    expect(toasts, contains('Sign in to get your invite link.'));
+    await tester.pump(const Duration(seconds: 2));
   });
 }

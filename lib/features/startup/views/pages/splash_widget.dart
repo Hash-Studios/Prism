@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -161,7 +162,10 @@ class _StartupFailure extends StatelessWidget {
           title: 'Prism could not start',
           body: 'Check your connection and try again.',
           actionLabel: 'Try again',
-          onAction: onRetry,
+          onAction: () {
+            PrismHaptics.tap();
+            onRetry();
+          },
           padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xxl, vertical: PrismSpace.xl),
         ),
       ),

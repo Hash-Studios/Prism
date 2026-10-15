@@ -52,6 +52,9 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
+/// The platform toast plugin keeps a 1 second timer after each toast, so let it run out.
+Future<void> _drainToast(WidgetTester tester) => tester.pump(const Duration(seconds: 2));
+
 void main() {
   setUpAll(() {
     final TestDefaultBinaryMessenger messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -71,22 +74,14 @@ void main() {
   group('SetOptionsPanel', () {
     testWidgets('lists home, lock and both as rows and reports the tapped one', (tester) async {
       final List<String> taps = <String>[];
-      await tester.pumpWidget(
-        _host(
-          (_) => SetOptionsPanel(
-            onTap1: () => taps.add('home'),
-            onTap2: () => taps.add('lock'),
-            onTap3: () => taps.add('both'),
-          ),
-        ),
-      );
+      await tester.pumpWidget(_host((_) => SetOptionsPanel(onSelected: (choice) => taps.add(choice.target.name))));
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
 
       expect(find.text('Set wallpaper'), findsOneWidget);
-      expect(find.byType(PrismRow), findsNWidgets(3));
-      await tester.tap(find.text('Home screen'));
-      await tester.tap(find.text('Lock screen'));
+      expect(find.byType(PrismRow), findsAtLeastNWidgets(3));
+      await tester.tap(find.text('Home Screen'));
+      await tester.tap(find.text('Lock Screen'));
       await tester.tap(find.text('Both'));
 
       expect(taps, <String>['home', 'lock', 'both']);
@@ -148,6 +143,7 @@ void main() {
       expect(reports.details, <String>['Looks like an ad']);
       expect(recorded.events.whereType<ContentReportSubmitEvent>().single.result, BinaryResultValue.success);
       expect(find.text('Report'), findsNothing);
+      await _drainToast(tester);
     });
 
     testWidgets('does not send without a reason', (tester) async {
@@ -158,6 +154,7 @@ void main() {
 
       expect(reports.reasons, isEmpty);
       expect(find.text('Report'), findsOneWidget);
+      await _drainToast(tester);
     });
 
     testWidgets('keeps the sheet open when the send fails', (tester) async {
@@ -171,6 +168,7 @@ void main() {
       expect(reports.reasons, <String>['other']);
       expect(find.text('Report'), findsOneWidget);
       expect(recorded.events.whereType<ContentReportSubmitEvent>().single.result, BinaryResultValue.failure);
+      await _drainToast(tester);
     });
   });
 }

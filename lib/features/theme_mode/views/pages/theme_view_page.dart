@@ -1,5 +1,8 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/system_accent_channel.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
@@ -18,6 +21,48 @@ class ThemeView extends StatefulWidget {
 
 class _ThemeViewState extends State<ThemeView> {
   late bool changingLight = !context.isDarkMode;
+  SystemAccent? _systemAccent;
+  bool _matchSystemAccent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSystemAccent();
+  }
+
+  Future<void> _loadSystemAccent() async {
+    final SystemAccent? accent = await const SystemAccentChannel().read();
+    if (!mounted || accent == null) return;
+    final bool enabled = getIt<SettingsLocalDataSource>().get<bool>(
+      SystemAccentChannel.settingsKey,
+      defaultValue: false,
+    );
+    setState(() {
+      _systemAccent = accent;
+      _matchSystemAccent = enabled;
+    });
+    if (enabled) _applySystemAccent(accent);
+  }
+
+  void _applySystemAccent(SystemAccent accent) {
+    if (context.prismLightAccentValue(listen: false) != accent.light.toARGB32()) {
+      context.setPrismLightAccent(accent.light);
+    }
+    if (context.prismDarkAccentValue(listen: false) != accent.dark.toARGB32()) {
+      context.setPrismDarkAccent(accent.dark);
+    }
+  }
+
+  Future<void> _setMatchSystemAccent(bool enabled) async {
+    setState(() => _matchSystemAccent = enabled);
+    await getIt<SettingsLocalDataSource>().set(SystemAccentChannel.settingsKey, enabled);
+    final SystemAccent? accent = _systemAccent;
+    if (enabled && accent != null) _applySystemAccent(accent);
+  }
+
+  void _pickAccent() {
+    if (_matchSystemAccent) _setMatchSystemAccent(false);
+  }
 
   // Theme and accent taps apply live, so every way out (Back, swipe, the check) keeps them.
   void _trackAccent() {
@@ -77,7 +122,7 @@ class _ThemeViewState extends State<ThemeView> {
       child: PrismPage(
         title: 'Themes',
         actions: <Widget>[
-          PrismIconButton(icon: Icons.check_rounded, tooltip: 'Apply theme', onPressed: () => Navigator.pop(context)),
+          PrismIconButton(icon: Icons.check_rounded, tooltip: 'Done', onPressed: () => Navigator.pop(context)),
         ],
         body: ListView(
           padding: const EdgeInsets.only(top: PrismSpace.xs, bottom: PrismSpace.xxxl),
@@ -125,12 +170,20 @@ class _ThemeViewState extends State<ThemeView> {
                 },
               ),
             ],
+            if (_systemAccent != null)
+              PrismSwitchRow(
+                title: 'Match system colour',
+                subtitle: 'Use the accent colour of your phone',
+                value: _matchSystemAccent,
+                onChanged: _setMatchSystemAccent,
+              ),
             if (showLight) ...<Widget>[
               _heading(both ? 'Light accent' : 'Accent colour'),
               AccentWrap(
                 selected: lightAccent,
                 onSelect: (color) {
                   setState(() => changingLight = true);
+                  _pickAccent();
                   context.setPrismLightAccent(color);
                 },
               ),
@@ -141,6 +194,7 @@ class _ThemeViewState extends State<ThemeView> {
                 selected: darkAccent,
                 onSelect: (color) {
                   setState(() => changingLight = false);
+                  _pickAccent();
                   context.setPrismDarkAccent(color);
                 },
               ),

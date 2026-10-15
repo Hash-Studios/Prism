@@ -145,7 +145,7 @@ void main() {
     await tester.tap(find.byTooltip('Menu'));
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Favourites'), findsOneWidget);
+    expect(find.text('Library'), findsOneWidget);
     expect(find.text('Log out'), findsOneWidget);
   });
 
