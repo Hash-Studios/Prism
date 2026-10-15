@@ -6,10 +6,12 @@
 
 search() {
   local pattern="$1"
+  local search_status=0
   shift
   if command -v rg >/dev/null 2>&1; then
-    rg -n --no-heading -g '*.dart' -e "$pattern" "$@" 2>/dev/null || true
+    rg -n --no-heading -g '*.dart' -e "$pattern" "$@" || search_status=$?
   else
-    grep -rnE --include='*.dart' -e "$pattern" "$@" 2>/dev/null || true
+    grep -rnE --include='*.dart' -e "$pattern" "$@" || search_status=$?
   fi
+  if (( search_status > 1 )); then return "$search_status"; fi
 }
