@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -297,7 +297,10 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check guard-test env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check test
+repo-assets-check:
+	@python3 tool/check_repo_assets.py
+
+ci: get format-check guard-test env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check test
 
 .PHONY: native-android-check native-ios-check
 native-android-check: get
