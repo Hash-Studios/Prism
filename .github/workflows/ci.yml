@@ -189,7 +189,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ios == 'true' || needs.changes.outputs.workflow == 'true'
     runs-on: macos-26
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode 26.6
