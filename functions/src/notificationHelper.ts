@@ -30,7 +30,7 @@ export interface NotificationPayload {
 
 /**
  * Core notification helper — used by every Cloud Function that needs to
- * send a notification.  It does two things atomically:
+ * send a notification. It attempts two independent operations:
  *   1. Writes a document to the `notifications` Firestore collection so the
  *      notification appears in the user's in-app inbox.
  *   2. Sends an FCM push via the Admin SDK (unless fcmTarget is omitted).
