@@ -294,6 +294,28 @@ More details about these can be found in the [`pubspec.yaml`](https://github.com
 
 This repository pins Flutter via FVM in [`.fvmrc`](.fvmrc) (`3.47.5`).
 
+### Clone the repository
+
+Use a shallow, single-branch clone when you do not need old commit history:
+
+```sh
+git clone --depth 1 --single-branch https://github.com/Hash-Studios/Prism.git
+```
+
+Use a single-branch blobless clone when you need commit ancestry but can fetch file contents on demand:
+
+```sh
+git clone --filter=blob:none --single-branch https://github.com/Hash-Studios/Prism.git
+```
+
+A full clone fetches every branch, including `qa/screenshots`, and historical binaries. Sparse checkout limits files in your working tree, but does not avoid fetching history. Fetch another branch when you need it:
+
+```sh
+git fetch origin branch-name:refs/remotes/origin/branch-name
+```
+
+Keep tracked files at or below 1 MiB. Store APK, AAB, and IPA release files on [GitHub Releases](https://github.com/Hash-Studios/Prism/releases). Run `make repo-assets-check` to check tracked files before opening a pull request; `make ci` runs the same check.
+
 Run this single command from the project root:
 
 ```sh

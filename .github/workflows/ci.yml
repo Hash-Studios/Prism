@@ -78,6 +78,8 @@ jobs:
               - '**'
               - '!functions/**'
               - '!web/**'
+              - '!demo/**'
+              - '!examples/**'
               - '!docs/**'
               - '!.github/**'
               - '!.claude/**'
@@ -287,6 +289,18 @@ jobs:
       - name: Firestore rules smoke test
         run: npx --yes firebase-tools@15.15.0 emulators:exec --only firestore --project demo-prism "node tool/firestore_rules_smoke.mjs"
 
+  repo_assets:
+    name: Repository assets guard
+    needs: changes
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Check repository assets
+        run: python3 tool/check_repo_assets.py
+
   # Not part of the required `ci` check, so the merge does not wait for two
   # APK builds. A size regression still shows as a red check and a PR comment.
   app_size:
@@ -301,16 +315,22 @@ jobs:
     env:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       # The base commit may predate the script, so run the head copy.
       - name: Compute the base APK cache key
         id: base
         run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          if ! git fetch --no-tags --depth=1 origin "$HEAD_SHA"; then
+            git fetch --no-tags --depth=1 origin "refs/pull/$PR_NUMBER/head"
+            test "$(git rev-parse FETCH_HEAD)" = "$HEAD_SHA"
+          fi
           git checkout --force --detach "$HEAD_SHA"
           cp tool/build_size_apk.sh "$RUNNER_TEMP/"
           key=$("$RUNNER_TEMP/build_size_apk.sh" --key "$BASE_SHA")
@@ -483,7 +503,7 @@ jobs:
 
   ci:
     name: ci
-    needs: [changes, flutter, android, ios, functions, web, rules]
+    needs: [changes, flutter, android, ios, functions, web, rules, repo_assets]
     # `always()` so a cancelled or failed job reports red. A skipped required
     # check counts as passed, so `ci` must never skip on a non-draft PR.
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
@@ -492,9 +512,9 @@ jobs:
     steps:
       - name: Aggregate results
         env:
-          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }}
+          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }} ${{ needs.repo_assets.result }}
         run: |
-          echo "changes flutter android ios functions web rules: $RESULTS"
+          echo "changes flutter android ios functions web rules repo_assets: $RESULTS"
           [ "${{ needs.changes.result }}" = success ] || { echo 'Detect changes failed.'; exit 1; }
           for r in $RESULTS; do
             case "$r" in
