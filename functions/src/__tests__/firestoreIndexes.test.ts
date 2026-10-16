@@ -29,3 +29,11 @@ test("wall action rate docs and daily stats docs expire through a TTL policy on 
       o.ttl === true), collectionGroup);
   }
 });
+
+test("walls have the colour search index: colors contains, review, newest first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "walls" &&
+    i.fields[0]?.fieldPath === "colors" && i.fields[0].arrayConfig === "CONTAINS");
+  assert.ok(index);
+  assert.deepEqual(index.fields.slice(1).map((f) => [f.fieldPath, f.order]),
+    [["review", "ASCENDING"], ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]);
+});

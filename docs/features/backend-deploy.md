@@ -282,6 +282,36 @@ Only after the client that sends `chargeTxId` is the minimum supported build. Se
 | Flag flip before the client | Old builds get 402 `charge_required` on every AI generation. |
 | Functions before the worker | AI refunds fall back to the 10 minute rule. Nothing breaks. |
 
+## Colour search (discovery)
+
+Colour search needs wall colours in Firestore. Ship it in this order. Each step needs the human owner's yes.
+
+| Step | Action |
+|---|---|
+| 1 | Deploy the index: `firebase deploy --only firestore:indexes --project prism-wallpapers --account <email> --non-interactive`. Wait until the new `walls` index shows `READY`. |
+| 2 | Deploy the functions `onWallCategorize` and `categorizeWallpaper`. New walls then get a `colors` field. |
+| 3 | Run the backfill for old walls. Dry run first. Then apply. |
+| 4 | Release the client. |
+
+The new index is on `walls`: `colors` (array contains), `review` (ascending), `createdAt` (descending), `__name__` (descending). The client colour query uses it: `review == true`, `colors array-contains <id>`, newest first. Without the index the query fails with `failed-precondition`, and the app shows no result for a colour-only search.
+
+What the functions do:
+
+- `functions/src/wallColors.ts` reads the thumbnail (or the full image if there is no thumbnail) over https. The timeout is 15 seconds. The size cap is 15 MB.
+- It scales the image to 48 px, maps each pixel to the nearest of the 12 Prism colours (CIE76 distance in Lab), and keeps the colours with at least 12 percent of the pixels. The most dominant colour is always kept. The maximum is 3 colours.
+- `onWallCategorize` and `categorizeWallpaper` write `colors` in the same update as `category`. If a wall already has a category, `onWallCategorize` writes only `colors`. If the colour step fails, categorization still works and the wall has no `colors` field.
+
+Backfill for walls that exist now:
+
+```sh
+cd functions && npm run build
+node lib/scripts/backfillWallColors.js                       # dry run, writes nothing
+node lib/scripts/backfillWallColors.js --apply               # writes colors
+node lib/scripts/backfillWallColors.js --apply --start-after=<wallId>   # resume
+```
+
+Options: `--batch=<n>` (1 to 500, default 100), `--force` (recompute walls that already have `colors`). The script reads reviewed walls in document id order. It logs counts and the last id after each batch. It skips walls that already have `colors`, so a second run is safe. It needs Application Default Credentials for project `prism-wallpapers`. I did not run it with `--apply`.
+
 ## Rollback
 
 | Part | How to roll back | Note |

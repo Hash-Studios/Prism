@@ -3,6 +3,7 @@ import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, REGION} from "./common";
+import {wallColorsFor} from "./wallColors";
 
 export const onWallCategorize = onDocumentCreated(
   {
@@ -24,8 +25,13 @@ export const onWallCategorize = onDocumentCreated(
       return;
     }
 
+    const colors = await wallColorsFor(wallId, data);
+
     if (data.category && data.category !== DEFAULT_CATEGORY) {
       logger.info("onWallCategorize: category already set", {wallId, category: data.category});
+      if (colors && !Array.isArray(data.colors)) {
+        await db.collection("walls").doc(wallId).update({colors});
+      }
       return;
     }
 
@@ -34,7 +40,7 @@ export const onWallCategorize = onDocumentCreated(
 
       if (labels.length === 0) {
         logger.warn("onWallCategorize: no labels detected from Vision API", {wallId});
-        await updateWallpaperCategory(wallId, DEFAULT_CATEGORY, [DEFAULT_COLLECTION]);
+        await updateWallpaperCategory(wallId, DEFAULT_CATEGORY, [DEFAULT_COLLECTION], colors);
         return;
       }
 
@@ -47,13 +53,13 @@ export const onWallCategorize = onDocumentCreated(
         category,
       });
 
-      await updateWallpaperCategory(wallId, category, collections);
+      await updateWallpaperCategory(wallId, category, collections, colors);
     } catch (error) {
       logger.error("onWallCategorize: failed to categorize wallpaper", {
         wallId,
         error: error instanceof Error ? error.message : String(error),
       });
-      await updateWallpaperCategory(wallId, DEFAULT_CATEGORY, [DEFAULT_COLLECTION]);
+      await updateWallpaperCategory(wallId, DEFAULT_CATEGORY, [DEFAULT_COLLECTION], colors);
     }
   },
 );
@@ -62,12 +68,14 @@ async function updateWallpaperCategory(
   wallId: string,
   category: string,
   collections: string[],
+  colors?: string[],
 ): Promise<void> {
   await db.collection("walls").doc(wallId).update({
     category: category,
     collections: collections,
     categorizedAt: admin.firestore.FieldValue.serverTimestamp(),
     aiCategorized: true,
+    ...(colors ? {colors} : {}),
   });
 
   logger.info("Wallpaper category updated", {wallId, category, collections});
