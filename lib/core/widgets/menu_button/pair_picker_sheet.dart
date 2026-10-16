@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -80,7 +79,7 @@ List<PairCandidate> _historyCandidates() {
 
 Future<List<PairCandidate>> _downloadCandidates() async {
   try {
-    final DownloadItemsResult result = await PrismMediaApi().listDownloads();
+    final DownloadItemsResult result = await PrismMediaHostApi().listDownloads();
     if (!result.success) return const <PairCandidate>[];
     return result.items
         .where((path) => File(path).existsSync())

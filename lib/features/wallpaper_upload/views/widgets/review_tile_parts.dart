@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/logger/logger.dart';
@@ -46,7 +45,7 @@ class ReviewDownloadButton extends StatelessWidget {
   final String failLogSuffix;
   final bool showNotification;
 
-  static final PrismMediaHostApi _prismMediaApi = PrismMediaApi();
+  static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
 
   Future<void> _download() async {
     toasts.success('Starting download', haptic: false);

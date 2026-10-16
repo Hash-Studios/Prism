@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart' show isWallpaperTargetSupported;
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
@@ -131,7 +130,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   @override
   Future<List<String>> listDownloads() async {
     try {
-      final DownloadItemsResult result = await PrismMediaApi().listDownloads();
+      final DownloadItemsResult result = await PrismMediaHostApi().listDownloads();
       if (!result.success) return const <String>[];
       return result.items.where((path) => File(path).existsSync()).toList(growable: false);
     } catch (_) {

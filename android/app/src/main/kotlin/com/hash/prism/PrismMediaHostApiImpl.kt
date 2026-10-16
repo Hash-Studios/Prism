@@ -47,7 +47,7 @@ internal class PrismMediaHostApiImpl(
             runInBackground(callback, { operationError("SAVE_FAILED", it) }) {
                 withImage(request.link, request.isLocalFile) { image ->
                     val folder = if (request.kind == SaveMediaKind.SETUP) "Prism Setups" else "Prism"
-                    publish(image, folder, "prism_${UUID.randomUUID()}", this)
+                    publish(image, folder, "prism_${UUID.randomUUID()}")
                     mainHandler.post { Toast.makeText(context, "Saved in Pictures/$folder!", Toast.LENGTH_SHORT).show() }
                     OperationResult(success = true)
                 }
@@ -66,7 +66,7 @@ internal class PrismMediaHostApiImpl(
             // ponytail: in-process transfer; use WorkManager if downloads must survive process death.
             runInBackground(callback, { operationError("DOWNLOAD_FAILED", it) }) {
                 withImage(request.link, request.isLocalFile) { image ->
-                    publish(image, DOWNLOAD_FOLDER, request.filenameWithoutExtension, this)
+                    publish(image, DOWNLOAD_FOLDER, request.filenameWithoutExtension)
                     OperationResult(success = true)
                 }
             }
@@ -114,7 +114,8 @@ internal class PrismMediaHostApiImpl(
         }
     }
 
-    private fun publish(image: Image, folder: String, basename: String, operation: MediaOperation) {
+    private fun publish(image: Image, folder: String, basename: String) {
+        check(!closed) { ENGINE_DETACHED_MESSAGE }
         val filename = "$basename.${image.extension}"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val resolver = context.contentResolver
@@ -124,7 +125,6 @@ internal class PrismMediaHostApiImpl(
                 put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/$folder/")
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
-            operation.beforeMutation()
             val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: throw IOException("Could not create image")
             try {
                 val output = resolver.openOutputStream(uri) ?: throw IOException("Could not open image")
@@ -133,7 +133,7 @@ internal class PrismMediaHostApiImpl(
                     throw IOException("Could not publish image")
                 }
             } catch (error: Exception) {
-                operation.rollback(error) { resolver.delete(uri, null, null) > 0 }
+                try { resolver.delete(uri, null, null) } catch (cleanup: Exception) { error.addSuppressed(cleanup) }
                 throw error
             }
         } else {
@@ -142,14 +142,13 @@ internal class PrismMediaHostApiImpl(
             var target = File(directory, filename)
             var suffix = 1
             while (target.exists()) target = File(directory, "$basename (${suffix++}).${image.extension}")
-            operation.beforeMutation()
             try {
                 target.outputStream().use { copyImage(image.file, it) }
+                MediaScannerConnection.scanFile(context, arrayOf(target.absolutePath), arrayOf(image.mime), null)
             } catch (error: Exception) {
-                operation.rollback(error) { target.delete() || !target.exists() }
+                if (!target.delete() && target.exists()) Log.w(TAG, "Could not remove incomplete image")
                 throw error
             }
-            MediaScannerConnection.scanFile(context, arrayOf(target.absolutePath), arrayOf(image.mime), null)
         }
     }
 
@@ -190,7 +189,6 @@ internal class PrismMediaHostApiImpl(
             check(hasStorageAccess()) { "Storage access is required to clear legacy downloads" }
             var deleted = 0
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                beforeMutation()
                 deleted = context.contentResolver.delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     "$DOWNLOAD_SELECTION AND ${MediaStore.Images.Media.IS_PENDING}=0", downloadSelectionArgs)
                 File(context.cacheDir, DOWNLOAD_CACHE_DIRECTORY).listFiles()?.forEach { idDirectory ->
@@ -199,7 +197,6 @@ internal class PrismMediaHostApiImpl(
             } else {
                 legacyDownloadDirectories().forEach { directory ->
                     directory.listFiles()?.filter { it.isFile && isImageName(it.name) }?.forEach {
-                        beforeMutation()
                         if (!it.delete()) throw IOException("Could not delete downloaded image")
                         deleted++
                         MediaScannerConnection.scanFile(context, arrayOf(it.absolutePath), null, null)
@@ -214,24 +211,19 @@ internal class PrismMediaHostApiImpl(
     override fun deleteDownload(path: String, callback: (Result<OperationResult>) -> Unit) {
         runInBackground(callback, { operationError("DELETE_FAILED", it) }) {
             check(hasStorageAccess()) { "Storage access is required to delete downloads" }
-            val deleted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                deleteMediaStoreDownload(path, this)
-            } else {
-                deleteLegacyDownload(path, this)
-            }
+            val deleted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) deleteMediaStoreDownload(path) else deleteLegacyDownload(path)
             if (deleted) OperationResult(success = true)
             else OperationResult(success = false, errorCode = "NOT_FOUND", message = "Download not found")
         }
     }
 
-    private fun deleteMediaStoreDownload(path: String, operation: MediaOperation): Boolean {
+    private fun deleteMediaStoreDownload(path: String): Boolean {
         val resolver = context.contentResolver
         val cacheRoot = File(context.cacheDir, DOWNLOAD_CACHE_DIRECTORY).canonicalFile
         val cached = File(path).canonicalFile
         val idDirectory = cached.parentFile
         val id = idDirectory?.name?.toLongOrNull()
         val deleted = if (idDirectory != null && id != null && idDirectory.parentFile == cacheRoot) {
-            operation.beforeMutation()
             val rows = resolver.delete(
                 ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id),
                 "$DOWNLOAD_SELECTION AND ${MediaStore.Images.Media.IS_PENDING}=0", downloadSelectionArgs,
@@ -239,7 +231,6 @@ internal class PrismMediaHostApiImpl(
             if (!idDirectory.deleteRecursively()) throw IOException("Could not remove download cache")
             rows
         } else {
-            operation.beforeMutation()
             resolver.delete(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 "$DOWNLOAD_SELECTION AND ${MediaStore.Images.Media.IS_PENDING}=0 AND ${MediaStore.Images.Media.DATA}=?",
@@ -249,12 +240,11 @@ internal class PrismMediaHostApiImpl(
         return deleted > 0
     }
 
-    private fun deleteLegacyDownload(path: String, operation: MediaOperation): Boolean {
+    private fun deleteLegacyDownload(path: String): Boolean {
         val file = File(path).canonicalFile
         val inDownloads = legacyDownloadDirectories().any { it.canonicalFile == file.parentFile }
         require(inDownloads && isImageName(file.name)) { "Not a download" }
         if (!file.exists()) return false
-        operation.beforeMutation()
         if (!file.delete()) throw IOException("Could not delete downloaded image")
         MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, null)
         return true
@@ -275,20 +265,19 @@ internal class PrismMediaHostApiImpl(
         } finally { temporary.delete() }
     }
 
-    private fun <T> runInBackground(callback: (Result<T>) -> Unit, onError: (Throwable) -> T, task: MediaOperation.() -> T) {
+    private fun <T> runInBackground(callback: (Result<T>) -> Unit, onError: (Throwable) -> T, task: () -> T) {
         try {
             executor.execute {
-                val operation = MediaOperation { closed }
                 val result = try {
-                    operation.ensureOpen()
+                    check(!closed) { ENGINE_DETACHED_MESSAGE }
                     // ponytail: a process-wide lock serializes engine reattachments; split by storage scope if throughput matters.
                     synchronized(storageLock) {
-                        operation.ensureOpen()
-                        operation.task()
+                        check(!closed) { ENGINE_DETACHED_MESSAGE }
+                        task()
                     }
                 } catch (error: Throwable) {
                     Log.w(TAG, "Media operation failed", error)
-                    onError(operation.failure(error))
+                    onError(error)
                 }
                 mainHandler.post { callback(Result.success(result)) }
             }
@@ -316,30 +305,6 @@ internal class PrismMediaHostApiImpl(
 private const val DOWNLOAD_FOLDER = "Prism/Downloads"
 private const val ENGINE_DETACHED_MESSAGE = "App engine detached"
 
-internal class MediaOperation(private val isClosed: () -> Boolean) {
-    private var retrySafe = true
-
-    fun ensureOpen() {
-        if (retrySafe) check(!isClosed()) { ENGINE_DETACHED_MESSAGE }
-    }
-
-    fun beforeMutation() {
-        ensureOpen()
-        retrySafe = false
-    }
-
-    fun rollback(error: Throwable, removeMutation: () -> Boolean) {
-        try {
-            if (removeMutation()) retrySafe = true
-        } catch (cleanup: Exception) {
-            error.addSuppressed(cleanup)
-        }
-    }
-
-    fun failure(error: Throwable): Throwable =
-        if (retrySafe && isClosed()) IllegalStateException(ENGINE_DETACHED_MESSAGE) else error
-}
-
 private fun legacyDownloadDirectories() = listOf(
     File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), DOWNLOAD_FOLDER),
     File(Environment.getExternalStorageDirectory(), DOWNLOAD_FOLDER),
@@ -357,11 +322,8 @@ private fun copyFromUri(context: Context, uri: Uri, file: File) {
     input.use { source -> file.outputStream().use { PrismImageTransfer.copy(source, it) } }
 }
 
-internal fun mediaFailureCode(fallback: String, error: Throwable): String = when {
-    error is RejectedExecutionException -> "MEDIA_BUSY"
-    error is IllegalStateException && error.message == ENGINE_DETACHED_MESSAGE -> "ENGINE_DETACHED"
-    else -> fallback
-}
+internal fun mediaFailureCode(fallback: String, error: Throwable): String =
+    if (error is RejectedExecutionException) "MEDIA_BUSY" else fallback
 
 internal fun mediaFailureMessage(error: Throwable): String = when {
     error is RejectedExecutionException -> "Another media operation is in progress. Please try again."

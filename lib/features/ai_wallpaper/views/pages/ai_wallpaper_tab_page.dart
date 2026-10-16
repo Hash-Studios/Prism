@@ -10,7 +10,6 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
@@ -467,7 +466,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
       final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link), isLocalFile: false);
-      final result = await PrismMediaApi().enqueueDownload(request);
+      final result = await PrismMediaHostApi().enqueueDownload(request);
       if (result.success) {
         toasts.success(wallpaperSavedMessage);
         if (mounted) await showIosSetWallpaperGuide(context);
