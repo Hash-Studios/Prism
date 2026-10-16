@@ -1,52 +1,30 @@
 package com.hash.prism
 
+/**
+ * Gives the engine of an Activity destroyed by a config change to the Activity that replaces it.
+ * Android destroys and recreates the Activity in one main-thread message, so [post] runs after the
+ * replacement had its chance to [take] the engine. An engine nobody took is destroyed then.
+ */
 internal class ConfigurationEngineHandoff<T : Any>(
     private val destroy: (T) -> Unit,
-    private val postExpiry: (() -> Unit) -> Unit,
+    private val post: (() -> Unit) -> Unit,
 ) {
-    private class Pending<T>(val recreationKey: String, val engine: T, val frameworkHandlesBack: Boolean)
-    private var pending: Pending<T>? = null
+    class Retained<T>(val engine: T, val frameworkHandlesBack: Boolean)
 
-    fun owner(recreationKey: String): Owner = Owner(recreationKey)
+    private var retained: Retained<T>? = null
 
-    inner class Owner internal constructor(val recreationKey: String) {
-        private var restoredBackState: Boolean? = null
-        private var engine: T? = pending?.takeIf { it.recreationKey == recreationKey }?.let {
-            pending = null
-            restoredBackState = it.frameworkHandlesBack
-            it.engine
-        }
-        private var released = false
+    fun take(): Retained<T>? = retained.also { retained = null }
 
-        fun acquire(shellArgs: Array<String> = emptyArray(), create: (Array<String>) -> T): T {
-            check(!released)
-            return engine ?: create(shellArgs).also { engine = it }
-        }
-
-        fun restoreFrameworkHandlesBack(restore: (Boolean) -> Unit) {
-            restoredBackState?.let(restore)
-        }
-
-        /** Call only after the fragment and its Activity-bound plugins have detached. */
-        fun release(changingConfigurations: Boolean, finishing: Boolean, frameworkHandlesBack: Boolean? = null) {
-            if (released) return
-            released = true
-            val releasedEngine = engine ?: return
-            engine = null
-            if (!changingConfigurations || finishing) {
-                destroy(releasedEngine)
-                return
-            }
-
-            val previous = pending
-            val handoff = Pending(recreationKey, releasedEngine, frameworkHandlesBack ?: restoredBackState ?: false)
-            pending = handoff
-            previous?.let { destroy(it.engine) }
-            postExpiry {
-                if (pending === handoff) {
-                    pending = null
-                    destroy(handoff.engine)
-                }
+    /** Call after the fragment has detached from [engine]. Keeps it for the next Activity only if [keep]. */
+    fun release(engine: T, keep: Boolean, frameworkHandlesBack: Boolean) {
+        if (!keep) return destroy(engine)
+        retained?.let { destroy(it.engine) }
+        val handoff = Retained(engine, frameworkHandlesBack)
+        retained = handoff
+        post {
+            if (retained === handoff) {
+                retained = null
+                destroy(engine)
             }
         }
     }
