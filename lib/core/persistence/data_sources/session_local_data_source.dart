@@ -15,7 +15,7 @@ class SessionLocalDataSource {
   static const String _corruptSessionPayloadKey = 'session.current_user.corrupt_payload';
 
   PrismUsersV2 readCurrentUser() {
-    final dynamic raw = _store.get(PersistenceKeys.sessionCurrentUser);
+    final Object? raw = _store.get(PersistenceKeys.sessionCurrentUser);
     if (raw is Map) {
       final map = toJsonMap(raw);
       try {

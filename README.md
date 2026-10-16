@@ -144,7 +144,7 @@ See [docs/features](docs/features/README.md) for a short page on each feature.
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-- `CHANGELOG.md` is auto-updated on every push to `master` (adds the latest commit under `### Unreleased`).
+- `CHANGELOG.md` gets a `### vX.Y.Z` section in each release bump PR (see `.claude/skills/prism-release/SKILL.md`).
 - In-app changelog popup fetches the latest `CHANGELOG.md` from GitHub and caches it locally.
 - App version is sourced from `pubspec.yaml` and synced into `lib/core/constants/app_constants.dart` via `python3 tool/sync_app_version.py`.
 
@@ -293,6 +293,28 @@ More details about these can be found in the [`pubspec.yaml`](https://github.com
 ## Development Setup (FVM)
 
 This repository pins Flutter via FVM in [`.fvmrc`](.fvmrc) (`3.47.5`).
+
+### Clone the repository
+
+Use a shallow, single-branch clone when you do not need old commit history:
+
+```sh
+git clone --depth 1 --single-branch https://github.com/Hash-Studios/Prism.git
+```
+
+Use a single-branch blobless clone when you need commit ancestry but can fetch file contents on demand:
+
+```sh
+git clone --filter=blob:none --single-branch https://github.com/Hash-Studios/Prism.git
+```
+
+A full clone fetches every branch, including `qa/screenshots`, and historical binaries. Sparse checkout limits files in your working tree, but does not avoid fetching history. Fetch another branch when you need it:
+
+```sh
+git fetch origin branch-name:refs/remotes/origin/branch-name
+```
+
+Keep tracked files at or below 1 MiB. Store APK, AAB, and IPA release files on [GitHub Releases](https://github.com/Hash-Studios/Prism/releases). Run `make repo-assets-check` to check tracked files before opening a pull request; `make ci` runs the same check.
 
 Run this single command from the project root:
 

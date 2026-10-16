@@ -11,9 +11,15 @@ export interface AiEnvBindings {
   FIREBASE_PROJECT_ID?: string;
   FIREBASE_AUTH_DEBUG?: string;
   AI_REQUIRE_CHARGE?: string;
+  STUDIO_SECRET?: string;
+  STUDIO_FAL_API_KEY?: string;
+  STUDIO_DAILY_BUDGET_USD?: string;
+  STUDIO_MONTHLY_BUDGET_USD?: string;
 }
 
 type AiProviderName = 'fal' | 'gemini';
+// 'studio' keeps the internal content pipeline spend apart from the consumer provider budgets.
+type AiBudgetScope = AiProviderName | 'studio';
 type AiQualityTier = 'fast' | 'balanced' | 'quality';
 type AiErrorCode =
   | 'unauthorized'
@@ -29,7 +35,8 @@ type AiErrorCode =
   | 'service_disabled'
   | 'charge_required'
   | 'charge_invalid'
-  | 'charge_in_progress';
+  | 'charge_in_progress'
+  | 'in_progress';
 type BudgetThresholdLevel = 0 | 70 | 85 | 95;
 
 interface AuthContext {
@@ -199,6 +206,8 @@ const CHARGE_STALE_IN_PROGRESS_MS = 5 * 60 * 1000;
 const CHARGE_MAX_AGE_MS = 15 * 60 * 1000;
 const CHARGE_CLOCK_SKEW_MS = 60 * 1000;
 
+const STUDIO_ID_REGEX = /^[A-Za-z0-9_-]{8,64}$/;
+
 const AI_QUOTA_OBJECT_NAME = 'global';
 const AI_QUOTA_RPC_URL = 'https://quota.internal/rpc';
 
@@ -213,7 +222,10 @@ type AiQuotaRpcOp =
   | 'charge_status'
   | 'charge_finish'
   | 'charge_release'
-  | 'rate_limit_bump';
+  | 'rate_limit_bump'
+  | 'studio_claim'
+  | 'studio_finish'
+  | 'studio_release';
 
 interface AiQuotaRpcBaseRequest {
   op: AiQuotaRpcOp;
@@ -241,7 +253,7 @@ interface AiQuotaProviderBudgetReadRequest extends AiQuotaRpcBaseRequest {
 
 interface AiQuotaProviderBudgetReserveRequest extends AiQuotaRpcBaseRequest {
   op: 'provider_budget_reserve';
-  provider: AiProviderName;
+  provider: AiBudgetScope;
   dayKey: string;
   monthKey: string;
   estimatedCostUsd: number;
@@ -274,7 +286,22 @@ interface AiQuotaRateLimitRequest extends AiQuotaRpcBaseRequest {
   ttlSeconds: number;
 }
 
+interface AiQuotaStudioRequest extends AiQuotaRpcBaseRequest {
+  op: 'studio_claim' | 'studio_release';
+  id: string;
+}
+
+interface AiQuotaStudioFinishRequest extends AiQuotaRpcBaseRequest {
+  op: 'studio_finish';
+  id: string;
+  response: string;
+  responseStatus: number;
+  outcome: 'succeeded' | 'failed';
+}
+
 type AiQuotaRpcRequest =
+  | AiQuotaStudioRequest
+  | AiQuotaStudioFinishRequest
   | AiQuotaChargeRequest
   | AiQuotaChargeFinishRequest
   | AiQuotaRateLimitRequest
@@ -331,6 +358,7 @@ interface AiQuotaChargeClaimResponse {
   ok: true;
   status: AiChargeClaimStatus;
   response?: string;
+  responseStatus?: number;
 }
 
 interface AiQuotaChargeStatusResponse {
@@ -353,6 +381,7 @@ interface AiChargeRecord {
   at: number;
   expiresAt: number;
   response?: string;
+  responseStatus?: number;
 }
 
 interface AiRateLimitRecord {
@@ -374,7 +403,7 @@ type AiQuotaRpcResponse =
   | AiQuotaProviderBudgetCommitResponse;
 
 interface AiQuotaReservationRecord {
-  provider: AiProviderName;
+  provider: AiBudgetScope;
   dayKey: string;
   monthKey: string;
   costUsd: number;
@@ -426,6 +455,12 @@ export class AiQuotaCoordinator {
           return this.handleChargeRelease(body);
         case 'rate_limit_bump':
           return this.handleRateLimitBump(body);
+        case 'studio_claim':
+          return this.handleStudioClaim(body);
+        case 'studio_finish':
+          return this.handleStudioFinish(body);
+        case 'studio_release':
+          return this.handleStudioRelease(body);
       }
     } catch (error) {
       console.error('[ai] quota_coordinator_error', { error: `${error ?? ''}` });
@@ -476,7 +511,8 @@ export class AiQuotaCoordinator {
     const provider = request.provider;
     const dayKey = clipText(asString(request.dayKey), 16);
     const monthKey = clipText(asString(request.monthKey), 16);
-    if (!isNonEmptyString(dayKey) || !isNonEmptyString(monthKey) || (provider !== 'fal' && provider !== 'gemini')) {
+    const isKnownScope = provider === 'fal' || provider === 'gemini' || provider === 'studio';
+    if (!isNonEmptyString(dayKey) || !isNonEmptyString(monthKey) || !isKnownScope) {
       return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
     }
     const estimatedCostUsd = Math.max(0, asNumber(request.estimatedCostUsd, 0));
@@ -647,6 +683,79 @@ export class AiQuotaCoordinator {
     return quotaJson<AiQuotaRateLimitResponse>({ ok: true, allowed: true, current: count + 1 });
   }
 
+  private async handleStudioClaim(request: AiQuotaStudioRequest): Promise<Response> {
+    const id = studioIdOrNull(request.id);
+    if (id == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const now = Date.now();
+    const record = await this.state.storage.get<AiChargeRecord>(this.studioKey(id));
+    if (record != null) {
+      if (record.state === 'succeeded') {
+        return quotaJson<AiQuotaChargeClaimResponse>({
+          ok: true,
+          status: 'done',
+          response: record.response ?? '',
+          responseStatus: record.responseStatus ?? 200,
+        });
+      }
+      if (record.state === 'failed') {
+        return quotaJson<AiQuotaChargeClaimResponse>({
+          ok: true,
+          status: 'failed',
+          response: record.response ?? '',
+          responseStatus: record.responseStatus ?? 502,
+        });
+      }
+      return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'in_progress' });
+    }
+    await this.state.storage.put<AiChargeRecord>(this.studioKey(id), {
+      state: 'in_progress',
+      at: now,
+      expiresAt: Number.MAX_SAFE_INTEGER,
+    });
+    return quotaJson<AiQuotaChargeClaimResponse>({ ok: true, status: 'new' });
+  }
+
+  private async handleStudioFinish(request: AiQuotaStudioFinishRequest): Promise<Response> {
+    const id = studioIdOrNull(request.id);
+    if (
+      id == null
+      || !isNonEmptyString(request.response)
+      || !Number.isInteger(request.responseStatus)
+      || request.responseStatus < 100
+      || request.responseStatus > 599
+      || (request.outcome !== 'succeeded' && request.outcome !== 'failed')
+    ) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const now = Date.now();
+    await this.state.storage.put<AiChargeRecord>(this.studioKey(id), {
+      state: request.outcome,
+      at: now,
+      expiresAt: Number.MAX_SAFE_INTEGER,
+      response: request.response,
+      responseStatus: request.responseStatus,
+    });
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private async handleStudioRelease(request: AiQuotaStudioRequest): Promise<Response> {
+    const id = studioIdOrNull(request.id);
+    if (id == null) {
+      return quotaJson<AiQuotaRpcErrorResponse>({ ok: false, error: 'invalid_request' }, 400);
+    }
+    const record = await this.state.storage.get<AiChargeRecord>(this.studioKey(id));
+    if (record != null && record.state === 'in_progress') {
+      await this.state.storage.delete(this.studioKey(id));
+    }
+    return quotaJson<AiQuotaChargeMutationResponse>({ ok: true });
+  }
+
+  private studioKey(id: string): string {
+    return `studio:${id}`;
+  }
+
   private async readChargeRecord(txId: string): Promise<AiChargeRecord | null> {
     const key = this.chargeKey(txId);
     const record = await this.state.storage.get<AiChargeRecord>(key);
@@ -664,7 +773,7 @@ export class AiQuotaCoordinator {
     return `charge:${txId}`;
   }
 
-  private async readProviderBudgetStatus(provider: AiProviderName, dayKey: string, monthKey: string): Promise<BudgetStatus> {
+  private async readProviderBudgetStatus(provider: AiBudgetScope, dayKey: string, monthKey: string): Promise<BudgetStatus> {
     const [daily, monthly] = await Promise.all([
       this.state.storage.get<number | string>(this.providerDailyBudgetKey(provider, dayKey)),
       this.state.storage.get<number | string>(this.providerMonthlyBudgetKey(provider, monthKey)),
@@ -689,11 +798,11 @@ export class AiQuotaCoordinator {
     return `user:${userId}:daily:${dayKey}`;
   }
 
-  private providerDailyBudgetKey(provider: AiProviderName, dayKey: string): string {
+  private providerDailyBudgetKey(provider: AiBudgetScope, dayKey: string): string {
     return `provider:${provider}:daily:${dayKey}`;
   }
 
-  private providerMonthlyBudgetKey(provider: AiProviderName, monthKey: string): string {
+  private providerMonthlyBudgetKey(provider: AiBudgetScope, monthKey: string): string {
     return `provider:${provider}:monthly:${monthKey}`;
   }
 
@@ -709,6 +818,10 @@ export async function handleAiApiRequest(
 ): Promise<Response | null> {
   if (!url.pathname.startsWith('/api/ai')) {
     return null;
+  }
+
+  if (url.pathname.startsWith('/api/ai/studio/')) {
+    return handleStudioRequest(request, url.pathname, env);
   }
 
   if (request.method === 'GET' && url.pathname === '/api/ai/health') {
@@ -981,6 +1094,10 @@ interface ExecuteGenerationParams {
   seed: number;
   parentGenerationId?: string;
   chargeTxId?: string;
+}
+
+function studioIdOrNull(value: unknown): string | null {
+  return typeof value === 'string' && STUDIO_ID_REGEX.test(value) ? value : null;
 }
 
 function chargeTxIdOrNull(value: unknown): string | null {
@@ -1847,6 +1964,394 @@ function quotaCoordinatorStub(env: AiEnvBindings): DurableObjectStub {
   return env.AI_QUOTA_DO.get(id);
 }
 
+interface StudioModel {
+  costUsd: number;
+  imageSize?: (width: number, height: number) => { width: number; height: number };
+  buildBody(prompt: string, width: number, height: number, seed?: number): Record<string, unknown>;
+}
+
+interface StudioGenerateRequest {
+  id: string;
+  prompt: string;
+  model: string;
+  width: number;
+  height: number;
+  seed?: number;
+}
+
+interface StudioGenerationResult {
+  response: Response;
+  terminal: boolean;
+}
+
+// Models the internal studio pipeline may call. Adding a model is one entry here.
+const STUDIO_MODELS: Record<string, StudioModel> = {
+  // Default studio model: first on the LMArena and Artificial Analysis image boards (Oct 2026), exact phone sizes.
+  'openai/gpt-image-2.5/sunburst/text-to-image': {
+    costUsd: 0.07,
+    imageSize: gptImageSize,
+    // GPT Image 2.5 has no seed input.
+    buildBody: (prompt, width, height) => ({
+      prompt,
+      image_size: { width, height },
+      quality: 'high',
+      num_images: 1,
+      output_format: 'png',
+      background: 'opaque',
+      enable_safety_checker: true,
+    }),
+  },
+  'fal-ai/bytedance/seedream/v4.5/text-to-image': {
+    costUsd: 0.04,
+    imageSize: seedreamImageSize,
+    buildBody: (prompt, width, height, seed) => ({
+      prompt,
+      image_size: { width, height },
+      seed,
+      num_images: 1,
+      enable_safety_checker: true,
+    }),
+  },
+  'fal-ai/bytedance/seedream/v5/lite/text-to-image': {
+    costUsd: 0.04,
+    imageSize: seedreamImageSize,
+    // v5 lite documents no seed input, so no seed is sent.
+    buildBody: (prompt, width, height) => ({
+      prompt,
+      image_size: { width, height },
+      num_images: 1,
+      enable_safety_checker: true,
+    }),
+  },
+};
+const STUDIO_PROMPT_MAX_CHARS = 2000;
+const STUDIO_MIN_EDGE = 512;
+const STUDIO_MAX_EDGE = 4096;
+const STUDIO_MAX_SEED = 2147483647;
+const STUDIO_TIMEOUT_MS = 90000;
+const STUDIO_DEFAULT_DAILY_BUDGET_USD = 2;
+const STUDIO_DEFAULT_MONTHLY_BUDGET_USD = 60;
+const STUDIO_ASSETS_PATH_PREFIX = '/api/ai/studio/assets/';
+const STUDIO_UPLOAD_KEY_REGEX = /^ai\/studio\/[A-Za-z0-9_-]+\.(jpg|webp|png)$/;
+const STUDIO_DELETE_KEY_REGEX = /^ai\/studio\/(?:raw\/)?[A-Za-z0-9_-]+\.(jpg|webp|png)$/;
+const STUDIO_UPLOAD_MIN_BYTES = 1024;
+const STUDIO_UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
+const STUDIO_EXTENSION_BY_CONTENT_TYPE = new Map([['image/jpeg', 'jpg'], ['image/webp', 'webp'], ['image/png', 'png']]);
+
+// Service routes for the daily content pipeline. They use a shared secret, never Firebase auth, coins or watermarks.
+async function handleStudioRequest(request: Request, pathname: string, env: AiEnvBindings): Promise<Response> {
+  if (!isNonEmptyString(env.STUDIO_SECRET)) {
+    return aiError('service_disabled', 503, 'Studio routes are disabled');
+  }
+  if (!(await isStudioSecretValid(request.headers.get('x-studio-secret'), env.STUDIO_SECRET))) {
+    return aiError('unauthorized', 401, 'Missing or invalid studio secret');
+  }
+  if (env.AI_IMAGES == null) {
+    return aiError('service_disabled', 503, 'Studio asset storage is not configured');
+  }
+  if (request.method === 'POST' && pathname === '/api/ai/studio/generations') {
+    return handleStudioGenerate(request, env);
+  }
+  const assetKey = pathname.startsWith(STUDIO_ASSETS_PATH_PREFIX) ? pathname.slice(STUDIO_ASSETS_PATH_PREFIX.length) : null;
+  if (request.method === 'PUT' && assetKey != null) {
+    return handleStudioAssetPut(request, assetKey, env);
+  }
+  if (request.method === 'DELETE' && assetKey != null) {
+    return handleStudioAssetDelete(assetKey, env);
+  }
+  return aiError('invalid_request', 404, 'Unsupported studio endpoint');
+}
+
+// Studio can bill its own fal account. Without STUDIO_FAL_API_KEY it uses the consumer key.
+function studioFalKey(env: AiEnvBindings): string | undefined {
+  return isNonEmptyString(env.STUDIO_FAL_API_KEY) ? env.STUDIO_FAL_API_KEY : env.FAL_API_KEY;
+}
+
+async function isStudioSecretValid(provided: string | null, secret: string): Promise<boolean> {
+  if (provided == null) {
+    return false;
+  }
+  // Compare SHA-256 digests so the time taken does not depend on the length or content of the input.
+  const encoder = new TextEncoder();
+  const [left, right] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(provided)),
+    crypto.subtle.digest('SHA-256', encoder.encode(secret)),
+  ]);
+  const a = new Uint8Array(left);
+  const b = new Uint8Array(right);
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
+}
+
+async function handleStudioGenerate(request: Request, env: AiEnvBindings): Promise<Response> {
+  const body = await readJson<Partial<StudioGenerateRequest>>(request);
+  if (body == null) {
+    return aiError('invalid_json', 400, 'Invalid JSON body');
+  }
+  const parsed = normalizeStudioGenerateRequest(body);
+  if (parsed == null) {
+    return aiError('invalid_request', 400, 'Invalid studio generation payload');
+  }
+  if (!Object.hasOwn(STUDIO_MODELS, parsed.model)) {
+    return aiError('invalid_request', 400, 'Unsupported studio model');
+  }
+  if (!isNonEmptyString(studioFalKey(env))) {
+    return aiError('service_disabled', 503, 'FAL_API_KEY missing');
+  }
+
+  let claim: AiQuotaChargeClaimResponse;
+  try {
+    claim = await sendQuotaRequest<AiQuotaChargeClaimResponse>(env, { op: 'studio_claim', id: parsed.id });
+  } catch (error) {
+    console.error('[ai] studio_claim_failed', { id: parsed.id, error: `${error ?? ''}` });
+    return aiError('provider_error', 502, 'Quota coordinator unavailable');
+  }
+  if (claim.status === 'done' || claim.status === 'failed') {
+    return new Response(claim.response ?? '', {
+      status: claim.responseStatus ?? (claim.status === 'done' ? 200 : 502),
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
+  if (claim.status !== 'new') {
+    return aiError('in_progress', 409, 'This studio generation is already running');
+  }
+
+  const result = await runStudioGeneration(parsed, STUDIO_MODELS[parsed.model], env);
+  await sendStudioMutation(
+    env,
+    result.terminal
+      ? {
+        op: 'studio_finish',
+        id: parsed.id,
+        outcome: result.response.ok ? 'succeeded' : 'failed',
+        responseStatus: result.response.status,
+        response: await result.response.clone().text(),
+      }
+      : { op: 'studio_release', id: parsed.id },
+  );
+  return result.response;
+}
+
+function normalizeStudioGenerateRequest(body: Partial<StudioGenerateRequest>): StudioGenerateRequest | null {
+  const { id, prompt, model, width, height, seed } = body;
+  if (typeof id !== 'string' || !STUDIO_ID_REGEX.test(id)) {
+    return null;
+  }
+  if (typeof prompt !== 'string' || prompt.trim().length === 0 || prompt.length > STUDIO_PROMPT_MAX_CHARS) {
+    return null;
+  }
+  if (typeof model !== 'string' || !isStudioEdge(width) || !isStudioEdge(height)) {
+    return null;
+  }
+  if (seed != null && !(Number.isInteger(seed) && seed >= 0 && seed <= STUDIO_MAX_SEED)) {
+    return null;
+  }
+  return { id, prompt, model, width, height, seed: seed ?? undefined };
+}
+
+function isStudioEdge(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= STUDIO_MIN_EDGE && value <= STUDIO_MAX_EDGE;
+}
+
+async function runStudioGeneration(
+  request: StudioGenerateRequest,
+  studioModel: StudioModel,
+  env: AiEnvBindings,
+): Promise<StudioGenerationResult> {
+  let reservation: AiQuotaProviderBudgetReserveResponse;
+  try {
+    reservation = await sendQuotaRequest<AiQuotaProviderBudgetReserveResponse>(env, {
+      op: 'provider_budget_reserve',
+      provider: 'studio',
+      dayKey: utcDayKey(),
+      monthKey: utcMonthKey(),
+      estimatedCostUsd: studioModel.costUsd,
+      dailyBudgetUsd: asNumber(env.STUDIO_DAILY_BUDGET_USD, STUDIO_DEFAULT_DAILY_BUDGET_USD),
+      monthlyBudgetUsd: asNumber(env.STUDIO_MONTHLY_BUDGET_USD, STUDIO_DEFAULT_MONTHLY_BUDGET_USD),
+    });
+  } catch (error) {
+    console.error('[ai] studio_budget_reservation_failed', { id: request.id, error: `${error ?? ''}` });
+    return { response: aiError('provider_error', 502, 'Quota coordinator unavailable'), terminal: false };
+  }
+  const reservationId = reservation.reservationId;
+  if (!reservation.allowed || !isNonEmptyString(reservationId)) {
+    console.warn('[ai] studio_budget_exhausted', {
+      id: request.id,
+      model: request.model,
+      dailySpentUsd: reservation.dailySpentUsd,
+      monthlySpentUsd: reservation.monthlySpentUsd,
+    });
+    return { response: aiError('budget_exhausted', 429, 'Studio budget exhausted'), terminal: false };
+  }
+
+  const size = studioModel.imageSize?.(request.width, request.height) ?? { width: request.width, height: request.height };
+  const falBody = studioModel.buildBody(request.prompt, size.width, size.height, request.seed);
+  const startedAt = Date.now();
+  let providerRequestStarted = false;
+  try {
+    providerRequestStarted = true;
+    const response = await fetchWithTimeout(`https://fal.run/${request.model}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Key ${studioFalKey(env)}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(falBody),
+    }, STUDIO_TIMEOUT_MS);
+    if (!response.ok) {
+      throw new Error(`fal_failed_${response.status}${await readErrorDetails(response)}`);
+    }
+    const payload = await response.json() as {
+      images?: Array<{ url?: string; width?: number; height?: number }>;
+      seed?: number;
+    };
+    const image = payload.images?.[0];
+    if (image == null || !isNonEmptyString(image.url)) {
+      throw new Error('fal_missing_image');
+    }
+    const imageResponse = await fetchWithTimeout(image.url, { method: 'GET' }, STUDIO_TIMEOUT_MS);
+    if (!imageResponse.ok) {
+      throw new Error(`fal_image_fetch_${imageResponse.status}`);
+    }
+    const contentType = (imageResponse.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+    const extension = STUDIO_EXTENSION_BY_CONTENT_TYPE.get(contentType);
+    if (extension == null) {
+      throw new Error(`fal_unsupported_content_type_${contentType}`);
+    }
+    const imageBytes = await readBoundedBytes(imageResponse.body, STUDIO_UPLOAD_MAX_BYTES);
+    if (imageBytes == null) {
+      throw new Error('fal_image_too_large');
+    }
+    if (!isOutputSafe(imageBytes, contentType)) {
+      return { response: aiError('unsafe_output', 502, 'Studio output blocked by safety policy'), terminal: true };
+    }
+    const key = `ai/studio/raw/${request.id}.${extension}`;
+    await storeAsset(key, imageBytes, contentType, env);
+
+    const actualSize = Number.isInteger(image.width) && Number.isInteger(image.height)
+      ? { width: image.width, height: image.height }
+      : size;
+    const seed = Number.isInteger(payload.seed) ? payload.seed : falBody.seed;
+    console.info('[ai] studio_generation_success', {
+      id: request.id,
+      model: request.model,
+      latencyMs: Date.now() - startedAt,
+      costUsd: studioModel.costUsd,
+    });
+    return { response: aiJson({
+      id: request.id,
+      imageUrl: `https://prismwalls.com/api/ai/assets/${key}`,
+      key,
+      width: actualSize.width,
+      height: actualSize.height,
+      contentType,
+      bytes: imageBytes.length,
+      model: request.model,
+      provider: 'fal',
+      seed: seed ?? null,
+      costUsd: studioModel.costUsd,
+    }), terminal: true };
+  } catch (error) {
+    console.warn('[ai] studio_generation_failed', {
+      id: request.id,
+      model: request.model,
+      providerRequestStarted,
+      error: `${error ?? ''}`,
+    });
+    return {
+      response: aiError(isTimeoutError(error) ? 'provider_timeout' : 'provider_error', 502, 'Studio generation failed'),
+      terminal: providerRequestStarted,
+    };
+  } finally {
+    if (providerRequestStarted) {
+      await commitBilledReservation(reservationId, 'fal', studioModel.costUsd, env);
+    } else {
+      try {
+        await releaseProviderBudgetReservation(reservationId, env);
+      } catch (releaseError) {
+        console.error('[ai] studio_budget_release_failed', { id: request.id, error: `${releaseError ?? ''}` });
+      }
+    }
+  }
+}
+
+async function sendStudioMutation(env: AiEnvBindings, body: AiQuotaStudioRequest | AiQuotaStudioFinishRequest): Promise<void> {
+  try {
+    await sendQuotaRequest<AiQuotaChargeMutationResponse>(env, body);
+  } catch (error) {
+    console.error('[ai] studio_update_failed', { op: body.op, id: body.id, error: `${error ?? ''}` });
+  }
+}
+
+async function handleStudioAssetPut(request: Request, key: string, env: AiEnvBindings): Promise<Response> {
+  const keyMatch = STUDIO_UPLOAD_KEY_REGEX.exec(key);
+  if (keyMatch == null) {
+    return aiError('invalid_request', 400, 'Invalid studio asset key');
+  }
+  const contentType = (request.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+  if (STUDIO_EXTENSION_BY_CONTENT_TYPE.get(contentType) !== keyMatch[1]) {
+    return aiError('invalid_request', 415, 'Content type must be image/jpeg, image/webp or image/png and match the key');
+  }
+  if (asNumber(request.headers.get('content-length'), 0) > STUDIO_UPLOAD_MAX_BYTES) {
+    return aiError('invalid_request', 413, 'Studio asset must be 1 KB to 15 MB');
+  }
+  const bytes = await readBoundedBytes(request.body, STUDIO_UPLOAD_MAX_BYTES);
+  if (bytes == null) {
+    return aiError('invalid_request', 413, 'Studio asset must be 1 KB to 15 MB');
+  }
+  if (bytes.length < STUDIO_UPLOAD_MIN_BYTES) {
+    return aiError('invalid_request', 400, 'Studio asset must be 1 KB to 15 MB');
+  }
+  await storeAsset(key, bytes, contentType, env);
+  return aiJson({ key, url: `https://prismwalls.com/api/ai/assets/${key}` });
+}
+
+async function handleStudioAssetDelete(key: string, env: AiEnvBindings): Promise<Response> {
+  if (!STUDIO_DELETE_KEY_REGEX.test(key)) {
+    return aiError('invalid_request', 400, 'Invalid studio asset key');
+  }
+  await env.AI_IMAGES?.delete(key);
+  return aiJson({ deleted: true });
+}
+
+async function readBoundedBytes(
+  body: ReadableStream<Uint8Array> | null,
+  maxBytes: number,
+): Promise<Uint8Array | null> {
+  if (body == null) {
+    return new Uint8Array();
+  }
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let byteCount = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      byteCount += value.byteLength;
+      if (byteCount > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(byteCount);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 const WATERMARK_MIN_BYTES = 1024;
 const WATERMARK_RENDER_ATTEMPTS = 2;
 const WATERMARK_PENDING_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -2453,6 +2958,26 @@ export function seedreamImageSize(width: number, height: number): { width: numbe
     }
   }
   return size;
+}
+
+// fal GPT Image 2.5: both edges a multiple of 16, at most 3840, aspect at most 3:1, 655,360 to 8,294,400 pixels.
+const GPT_IMAGE_MIN_PIXELS = 655360;
+const GPT_IMAGE_MAX_PIXELS = 8294400;
+const GPT_IMAGE_MAX_EDGE = 3840;
+const GPT_IMAGE_MAX_ASPECT = 3;
+
+export function gptImageSize(width: number, height: number): { width: number; height: number } {
+  let long = Math.max(width, height);
+  let short = Math.max(Math.min(width, height), long / GPT_IMAGE_MAX_ASPECT);
+  // One factor for both edges keeps the aspect ratio inside the pixel and edge limits.
+  const scale = Math.min(
+    Math.max(1, Math.sqrt(GPT_IMAGE_MIN_PIXELS / (long * short))),
+    Math.sqrt(GPT_IMAGE_MAX_PIXELS / (long * short)),
+    GPT_IMAGE_MAX_EDGE / long,
+  );
+  long = Math.min(GPT_IMAGE_MAX_EDGE, Math.max(16, Math.round((long * scale) / 16) * 16));
+  short = Math.min(long, Math.max(16, Math.round((short * scale) / 16) * 16));
+  return width >= height ? { width: long, height: short } : { width: short, height: long };
 }
 
 function roundUpToMultipleOf8(value: number): number {

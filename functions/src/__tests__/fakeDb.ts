@@ -153,6 +153,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
     limitTo?: number;
     offsetBy: number;
     startAt?: unknown;
+    startAfter?: string;
   };
 
   function query(path: string, state: QueryState) {
@@ -169,6 +170,8 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
         docs = docs.sort((x, y) => (key(x) < key(y) ? -1 : key(x) > key(y) ? 1 : 0) * (dir === "desc" ? -1 : 1));
       }
       if (state.startAt !== undefined) docs = docs.filter((d) => d.id >= (state.startAt as string));
+      const startAfter = state.startAfter;
+      if (startAfter !== undefined) docs = docs.filter((d) => d.id > startAfter);
       docs = docs.slice(state.offsetBy);
       return state.limitTo === undefined ? docs : docs.slice(0, state.limitTo);
     };
@@ -180,6 +183,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {}) {
       limit: (n: number) => next({limitTo: n}),
       offset: (n: number) => next({offsetBy: n}),
       startAt: (value: unknown) => next({startAt: value}),
+      startAfter: (value: {id: string}) => next({startAfter: value.id}),
       select: () => q,
       count: () => ({get: async () => ({data: () => ({count: rows().length})})}),
       get: async () => {

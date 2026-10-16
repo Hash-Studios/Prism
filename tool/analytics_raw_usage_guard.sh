@@ -13,7 +13,8 @@ forbid() {
   local pattern="$1"
   local message="$2"
   local matches
-  matches="$(search "$pattern" lib test | grep -Ev '^(lib|test)/core/analytics/' || true)"
+  matches="$(search "$pattern" lib test)"
+  matches="$(printf '%s\n' "$matches" | grep -Ev '^(lib|test)/core/analytics/' || [[ $? == 1 ]])"
 
   if [[ -n "$matches" ]]; then
     echo "$message"

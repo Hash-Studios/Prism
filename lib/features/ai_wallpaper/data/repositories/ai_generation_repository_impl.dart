@@ -274,10 +274,14 @@ class AiGenerationRepositoryImpl {
     final imageUrls = data['imageUrls'] is Map<String, dynamic>
         ? data['imageUrls'] as Map<String, dynamic>
         : <String, dynamic>{};
-    final imageUrl = (imageUrls['imageUrl'] ?? '').toString();
-    final watermarkedImageUrl = (imageUrls['watermarkedImageUrl'] ?? imageUrl).toString();
-    final generationId = (data['generationId'] ?? '').toString();
-    if (generationId.trim().isEmpty || imageUrl.trim().isEmpty) {
+    final imageUrl = imageUrls['imageUrl'];
+    final watermarkedImageUrl = imageUrls['watermarkedImageUrl'] ?? imageUrl;
+    final generationId = data['generationId'];
+    if (generationId is! String ||
+        generationId.trim().isEmpty ||
+        imageUrl is! String ||
+        imageUrl.trim().isEmpty ||
+        watermarkedImageUrl is! String) {
       throw AiGenerationApiException(
         message: 'AI generation response was incomplete. Please retry.',
         code: 'provider_error',

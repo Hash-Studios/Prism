@@ -9,7 +9,7 @@ if command -v rg >/dev/null 2>&1; then
       -g '!**/*.g.dart' \
       -g '!**/*.freezed.dart' \
       -g '!**/*.gr.dart' \
-      -g '!**/*.config.dart' || true
+      -g '!**/*.config.dart' || [[ $? == 1 ]]
   )"
 else
   matches="$(
@@ -19,7 +19,7 @@ else
       --exclude='*.g.dart' \
       --exclude='*.freezed.dart' \
       --exclude='*.gr.dart' \
-      --exclude='*.config.dart' || true
+      --exclude='*.config.dart' || [[ $? == 1 ]]
   )"
 fi
 

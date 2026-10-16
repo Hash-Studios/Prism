@@ -39,8 +39,6 @@ class StreakRescueResult {
   final StreakRescueOutcome outcome;
   final int streakCount;
   final String reason;
-
-  bool get isRestored => outcome == StreakRescueOutcome.restored;
 }
 
 typedef StreakRescueCall = Future<Map<String, dynamic>> Function(Map<String, dynamic> data);

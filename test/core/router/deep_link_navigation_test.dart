@@ -82,6 +82,28 @@ void main() {
     expect(route, isNull);
   });
 
+  test('a nested canonical short link stops after one request', () async {
+    var calls = 0;
+    final client = MockClient((_) async {
+      calls++;
+      return http.Response(jsonEncode(<String, String>{'canonical_url': 'prism://l/other'}), 200);
+    });
+    final navigation = DeepLinkNavigation(httpClient: client);
+    expect(await navigation.mapUriToRoute(Uri.parse('prism://l/abc')), isNull);
+    expect(calls, 1);
+  });
+
+  test('resolves a canonical custom-scheme user link', () async {
+    final client = MockClient(
+      (_) async => http.Response(jsonEncode(<String, String>{'canonical_url': 'prism://user/alice'}), 200),
+    );
+    final navigation = DeepLinkNavigation(httpClient: client);
+    final route = await navigation.mapUriToRoute(Uri.parse('prism://l/abc'));
+    expect(route, isA<ProfileRoute>());
+    expect((route! as ProfileRoute).args?.profileIdentifier, 'alice');
+    client.close();
+  });
+
   test('a referral link keeps the inviter and opens Rewards instead of Not found', () async {
     final List<String> inviters = <String>[];
     final DeepLinkNavigation navigation = DeepLinkNavigation(onReferral: (String id) async => inviters.add(id));

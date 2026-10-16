@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl.dart';
@@ -9,28 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-class _NoFeedCache extends Fake implements FeedCacheLocalDataSource {
-  final List<String> scopes = <String>[];
-  final Map<String, FeedSnapshot> snapshots = <String, FeedSnapshot>{};
-
-  @override
-  Future<FeedSnapshot?> read({required String source, required String scope}) async => snapshots['$source:$scope'];
-
-  @override
-  Future<void> write({
-    required String source,
-    required String scope,
-    required Object? payload,
-    required int ttlHours,
-  }) async {
-    scopes.add('$source:$scope');
-    snapshots['$source:$scope'] = FeedSnapshot(
-      payload: payload,
-      cachedAtUtc: DateTime.now().toUtc(),
-      ttlHours: ttlHours,
-    );
-  }
-}
+import '../../../../support/fake_feed_cache_local_data_source.dart';
 
 void main() {
   test('the home feed asks Pexels for 30 photos a page and the category grids ask for 80', () async {
@@ -39,7 +17,7 @@ void main() {
       perPage.add(request.url.queryParameters['per_page']!);
       return http.Response('{"page":1,"per_page":30,"total_results":0,"photos":[]}', 200);
     });
-    final repository = PexelsWallpaperRepositoryImpl(_NoFeedCache());
+    final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
 
     await http.runWithClient(() async {
       await repository.fetchFeed(categoryName: 'Nature', refresh: true, paginationKey: 'personalized:Nature');
@@ -58,7 +36,7 @@ void main() {
         200,
       );
     });
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     final repository = PexelsWallpaperRepositoryImpl(cache);
 
     await http.runWithClient(() async {
@@ -102,7 +80,7 @@ void main() {
         200,
       );
     });
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     final repository = PexelsWallpaperRepositoryImpl(cache);
 
     final results = await http.runWithClient(() async {
@@ -133,12 +111,12 @@ void main() {
         <String?>['red wallpaper', '#b71c1c', '1'],
       ],
     );
-    expect(cache.snapshots.keys.toSet(), <String>{'pexels:color_b71c1c.portrait', 'pexels:color_0000ff.portrait'});
+    expect(cache.snapshots.keys.toSet(), <String>{'pexels/color_b71c1c.portrait', 'pexels/color_0000ff.portrait'});
   });
 
   test('a failed refresh falls back to the cached first page and keeps its candidate pool', () async {
     final List<int> pages = <int>[];
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     final http.Client client = MockClient((http.Request request) async {
       final int page = int.parse(request.url.queryParameters['page']!);
       pages.add(page);
@@ -173,7 +151,7 @@ void main() {
   });
 
   test('a failed fetch-more returns an error instead of the cached first page', () async {
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     bool offline = false;
     final http.Client client = MockClient((http.Request request) async {
       if (offline) return http.Response('offline', 503);
@@ -197,7 +175,7 @@ void main() {
       queries.add(request.url.queryParameters);
       return _page(1);
     });
-    final cache = _NoFeedCache();
+    final cache = FakeFeedCacheLocalDataSource();
     final repository = PexelsWallpaperRepositoryImpl(cache);
 
     await http.runWithClient(() async {
@@ -207,12 +185,12 @@ void main() {
 
     expect(queries[0]['orientation'], 'portrait');
     expect(queries[1].containsKey('orientation'), isFalse);
-    expect(cache.scopes.toSet(), <String>{'pexels:nature.portrait', 'pexels:nature'});
+    expect(cache.scopes.toSet(), <String>{'pexels/nature.portrait', 'pexels/nature'});
   });
 
   testWidgets('a request that never answers fails with a timeout instead of hanging', (tester) async {
     final http.Client client = MockClient((http.Request request) => Completer<http.Response>().future);
-    final repository = PexelsWallpaperRepositoryImpl(_NoFeedCache());
+    final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
 
     final Future<Result<List<PexelsWallpaper>>> pending = http.runWithClient(
       () => repository.fetchFeed(categoryName: 'Nature', refresh: true),
@@ -245,7 +223,7 @@ void main() {
         200,
       ),
     );
-    final repository = PexelsWallpaperRepositoryImpl(_NoFeedCache());
+    final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
 
     final result = await http.runWithClient(
       () => repository.fetchFeed(categoryName: 'Nature', refresh: true),

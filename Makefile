@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -37,7 +37,7 @@ FIREBASE_PROJECT ?= prism-wallpapers
 FIREBASE_ACCOUNT ?=
 FIREBASE_ARGS = --project $(FIREBASE_PROJECT) $(if $(FIREBASE_ACCOUNT),--account $(FIREBASE_ACCOUNT),)
 FUNCTIONS_DOPPLER_CONFIG ?= prd
-FUNCTIONS_SECRETS ?= GH_TOKEN REVENUECAT_SECRET_KEY
+FUNCTIONS_SECRETS ?= GH_TOKEN REVENUECAT_SECRET_KEY STUDIO_SECRET
 FUNCTIONS_ENV_KEYS ?= GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS
 
 # Ensure POSIX shell recipes work when running make from PowerShell/cmd on Windows.
@@ -135,6 +135,9 @@ rules-test: ## Run the Firestore rules smoke test on the emulator (needs Java)
 no-shape-parse-guard:
 	@./tool/no_shape_parse_guard.sh
 
+guard-test:
+	@bash tool/search_guard_test.sh
+
 env-guard:
 	@./tool/env_define_guard.sh
 	@bash ./tool/system_ui_guard.sh
@@ -212,7 +215,7 @@ functions-secrets-sync:
 	@set -e; for k in $(FUNCTIONS_SECRETS); do \
 		v="$$(doppler secrets get $$k --plain --project $(DOPPLER_PROJECT) --config $(FUNCTIONS_DOPPLER_CONFIG))"; \
 		[ -n "$$v" ] || { echo "Doppler $(FUNCTIONS_DOPPLER_CONFIG) has no value for $$k"; exit 1; }; \
-		printf '%s' "$$v" | firebase functions:secrets:set $$k --data-file=- $(FIREBASE_ARGS) >/dev/null; \
+		out="$$(printf '%s' "$$v" | firebase functions:secrets:set $$k --data-file=- $(FIREBASE_ARGS) 2>&1)" || { echo "$$out"; exit 1; }; \
 		echo "Synced $$k from Doppler $(FUNCTIONS_DOPPLER_CONFIG)"; \
 	done
 
@@ -294,7 +297,10 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check test
+repo-assets-check:
+	@python3 tool/check_repo_assets.py
+
+ci: get format-check guard-test env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check test
 
 .PHONY: native-android-check native-ios-check
 native-android-check: get
@@ -312,9 +318,9 @@ native-ios-check: get
 		packages/cloud_functions/ios/cloud_functions/Sources/cloud_functions/FunctionsArguments.swift \
 		packages/cloud_functions/native_tests/NativeSwiftCheck.swift \
 		-o "$$check_dir/cloud-functions-check" && "$$check_dir/cloud-functions-check"
-	@$(FLUTTER) build ios --debug --no-codesign --dart-define=SKIP_FIREBASE_INIT=true
+	@$(FLUTTER) build ios --config-only --debug --no-codesign --dart-define=SKIP_FIREBASE_INIT=true
 	@xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Debug \
-		-sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+		-sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES COMPILATION_CACHE_ENABLE_CACHING=YES \
 		-derivedDataPath build/ios/native-tests build-for-testing CODE_SIGNING_ALLOWED=NO FLUTTER_BUILD_MODE=debug
 
 test: ensure-fvm

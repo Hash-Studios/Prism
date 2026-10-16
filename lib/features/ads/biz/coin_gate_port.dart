@@ -34,6 +34,12 @@ abstract interface class CoinGatePort {
     required String transactionId,
     required String reason,
   });
+
+  /// Removes the ledger entry of a paid download whose save finished or whose refund was confirmed.
+  Future<void> clearPendingDownload(String txId);
+
+  /// Hands a paid download that ended with no confirmed save and no confirmed refund to recovery.
+  Future<void> releasePendingDownload(String txId);
   Future<void> recordRewardedAdWatch({required String source});
   Future<void> presentLowBalancePaywall({required String source});
   void logLowBalanceNudge({required String sourceTag, required int requiredCoins});
@@ -90,6 +96,12 @@ class AppCoinGatePort implements CoinGatePort {
     required String transactionId,
     required String reason,
   }) => CoinsService.instance.refundSpend(action, sourceTag: sourceTag, transactionId: transactionId, reason: reason);
+
+  @override
+  Future<void> clearPendingDownload(String txId) => CoinsService.instance.clearPendingDownload(txId);
+
+  @override
+  Future<void> releasePendingDownload(String txId) => CoinsService.instance.releasePendingDownload(txId);
 
   @override
   Future<void> recordRewardedAdWatch({required String source}) =>

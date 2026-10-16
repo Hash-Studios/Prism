@@ -2,6 +2,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 
 /// In-memory [FeedCacheLocalDataSource]: keeps the last snapshot per source and scope.
 class FakeFeedCacheLocalDataSource extends FeedCacheLocalDataSource {
+  final List<String> scopes = <String>[];
   final Map<String, FeedSnapshot> snapshots = <String, FeedSnapshot>{};
 
   @override
@@ -14,6 +15,7 @@ class FakeFeedCacheLocalDataSource extends FeedCacheLocalDataSource {
     required Object? payload,
     required int ttlHours,
   }) async {
+    scopes.add('$source/$scope');
     snapshots['$source/$scope'] = FeedSnapshot(
       payload: payload,
       cachedAtUtc: DateTime.now().toUtc(),

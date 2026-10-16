@@ -46,8 +46,7 @@ void main() {
     );
 
     await tester.tap(find.bySemanticsLabel('Share'));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
 
     expect(calls, <String?>['https://img.test/full.jpg', 'by Akshay']);
     final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
@@ -80,8 +79,7 @@ void main() {
     );
 
     await tester.tap(find.bySemanticsLabel('Share'));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
 
     final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
     expect(result.result, EventResultValue.cancelled);
