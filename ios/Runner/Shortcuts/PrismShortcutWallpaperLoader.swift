@@ -44,6 +44,7 @@ enum PrismShortcutWallpaperLoader {
     else {
       throw PrismShortcutLoadError.badResponse
     }
+    try Task.checkCancellation()
     return try Data(contentsOf: file)
   }
 

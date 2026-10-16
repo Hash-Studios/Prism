@@ -283,7 +283,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         }
         setOnClickPendingIntent(R.id.wotd_root, PendingIntent.getActivity(context, widgetId, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         val set = Intent(context, WotdWidgetProvider::class.java).setAction(ACTION_SET_WALLPAPER)
-        shown?.let { set.putExtra(EXTRA_WALL_URL, it.wall.url) }
+        shown?.let { set.setData(Uri.parse(it.wall.url)).putExtra(EXTRA_WALL_URL, it.wall.url) }
         setOnClickPendingIntent(R.id.wotd_set, PendingIntent.getBroadcast(context, widgetId, set, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
     }
 
