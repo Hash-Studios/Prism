@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 const double _coverHeight = 140;
 const double _avatarSize = 84;
 const double _avatarRing = 3;
+const double _coverScrimHeight = 52;
 
 /// The cover preview and avatar of the profile editor. Both open the image picker.
 class EditProfileHeader extends StatelessWidget {
@@ -31,6 +33,9 @@ class EditProfileHeader extends StatelessWidget {
   final VoidCallback onRemoveCover;
   final VoidCallback onChangePhoto;
 
+  /// Key of the tap target that opens the cover picker. It is the whole cover.
+  static const Key changeCoverKey = ValueKey<String>('edit_profile_change_cover');
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
@@ -51,16 +56,19 @@ class EditProfileHeader extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: <Widget>[
-                    ProfileCover(url: coverUrl, file: coverFile),
-                    Positioned(
-                      right: PrismSpace.xs,
-                      bottom: PrismSpace.xs,
-                      child: _OnImagePill(
-                        icon: Icons.photo_camera_rounded,
-                        label: 'Change cover',
+                    Semantics(
+                      button: true,
+                      label: 'Change cover photo',
+                      excludeSemantics: true,
+                      onTap: onChangeCover,
+                      child: GestureDetector(
+                        key: changeCoverKey,
+                        behavior: HitTestBehavior.opaque,
                         onTap: onChangeCover,
+                        child: ProfileCover(url: coverUrl, file: coverFile),
                       ),
                     ),
+                    const _EditCoverHint(),
                     if (hasCustomCover)
                       Positioned(
                         top: PrismSpace.xxs,
@@ -132,40 +140,39 @@ class EditProfileHeader extends StatelessWidget {
   }
 }
 
-/// A pill button for use on top of an image: dark translucent fill, white label, on every theme.
-class _OnImagePill extends StatelessWidget {
-  const _OnImagePill({required this.icon, required this.label, required this.onTap});
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
+/// The "Edit cover" hint along the bottom of the cover: a black fade, a camera and a white label, always legible over
+/// any cover image. It does not take taps; the whole cover is the tap target.
+class _EditCoverHint extends StatelessWidget {
+  const _EditCoverHint();
 
   @override
   Widget build(BuildContext context) {
-    return PressScale(
-      child: Semantics(
-        button: true,
-        label: 'Change cover photo',
-        excludeSemantics: true,
-        onTap: onTap,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Container(
-            height: 44,
-            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.38),
-              borderRadius: BorderRadius.circular(PrismRadius.pill),
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: IgnorePointer(
+        child: Container(
+          height: _coverScrimHeight,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.5)],
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(icon, size: 18, color: Colors.white),
-                const SizedBox(width: 6),
-                Text(label, style: PrismTextStyles.button.copyWith(fontSize: 14, color: Colors.white)),
-              ],
-            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(JamIcons.camera, color: Colors.white.withValues(alpha: 0.85), size: 15),
+              const SizedBox(width: 6),
+              Text(
+                'Edit cover',
+                style: PrismTextStyles.caption(
+                  context,
+                ).copyWith(color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w600),
+              ),
+            ],
           ),
         ),
       ),
