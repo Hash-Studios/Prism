@@ -12,15 +12,22 @@ import io.flutter.plugin.common.PluginRegistry
  * Keeps the media API for the life of the engine. A config-change relaunch moves the engine to a new
  * Activity, so it must not cancel saves and downloads. Only the permission prompt needs the current Activity.
  */
-internal class PrismMediaPlugin : FlutterPlugin, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
+internal class PrismMediaPlugin(
+    private val attachApi: (FlutterPlugin.FlutterPluginBinding, ((Boolean) -> Unit) -> Unit) -> AutoCloseable = { binding, requestPermission ->
+        PrismMediaHostApiImpl(binding.applicationContext, requestPermission).also {
+            PrismMediaHostApi.setUp(binding.binaryMessenger, it)
+        }
+    },
+    private val launchPermission: (ActivityPluginBinding) -> Unit = { binding ->
+        binding.activity.requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_REQUEST)
+    },
+) : FlutterPlugin, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
     private val storagePermissions = LegacyStoragePermissionGate()
     private var activity: ActivityPluginBinding? = null
-    private var api: PrismMediaHostApiImpl? = null
+    private var api: AutoCloseable? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        val api = PrismMediaHostApiImpl(binding.applicationContext, ::requestStoragePermission)
-        this.api = api
-        PrismMediaHostApi.setUp(binding.binaryMessenger, api)
+        api = attachApi(binding, ::requestStoragePermission)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -32,8 +39,7 @@ internal class PrismMediaPlugin : FlutterPlugin, ActivityAware, PluginRegistry.R
 
     // A prompt that is open stays pending: Android gives its result to the replacement Activity.
     fun requestStoragePermission(callback: (Boolean) -> Unit) = storagePermissions.request(callback) {
-        checkNotNull(activity) { "No Activity attached" }.activity
-            .requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_REQUEST)
+        launchPermission(checkNotNull(activity) { "No Activity attached" })
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray): Boolean {
