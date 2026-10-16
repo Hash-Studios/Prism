@@ -357,10 +357,12 @@ class GoogleAuth {
         logger.w('Wallpaper history clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
     }
-    try {
-      await ShortcutsFavouritesStore.clear();
-    } catch (e, st) {
-      logger.w('Shortcuts favourites clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      try {
+        await ShortcutsFavouritesStore.clear();
+      } catch (e, st) {
+        logger.w('Shortcuts favourites clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
     }
   }
 
