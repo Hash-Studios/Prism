@@ -69,10 +69,10 @@ packages:
     dependency: "direct main"
     description:
       name: async_wallpaper
-      sha256: "5d5866d01226f8b84a0a18e56aade9bffa450d5a7905ccb0f0811afc86812bd5"
+      sha256: a28cdf44a3dbd59f88d0c8b0e2baba06ac8dca5ac0da3b7d7609970bb4a1820d
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.0"
+    version: "3.5.0"
   audioplayers:
     dependency: "direct main"
     description:

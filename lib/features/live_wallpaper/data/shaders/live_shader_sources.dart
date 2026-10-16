@@ -55,7 +55,7 @@ const vec3 bg = {{BG}};
 uniform sampler2D u_texture0;
 
 vec4 samplePhoto(vec2 uv) {
-  return texture2D(u_texture0, vec2(uv.x, 1.0 - uv.y));
+  return texture2D(u_texture0, uv);
 }
 ''';
 
