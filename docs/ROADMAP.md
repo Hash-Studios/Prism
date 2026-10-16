@@ -69,7 +69,7 @@ Everything below must ship together as the v3.0.0 release. This is the minimum v
 |---|------|-----|--------|
 | D1 | [x] **Text-to-image generation** | "Describe your wallpaper" → AI generates it. THE feature of 2025-2026. | High |
 | D2 | [x] **Style presets** | Anime, minimal, cyberpunk, watercolor, mesh gradient, abstract, nature | Medium |
-| D3 | [ ] **Device-resolution output** | Auto-detect device resolution, generate at correct aspect ratio | Low |
+| D3 | [x] **Device-resolution output** | Auto-detect device resolution, generate at correct aspect ratio | Low |
 | D4 | [x] **"Made with Prism" watermark (free tier)** | Every shared AI wallpaper = free marketing. Pro removes watermark. | Low |
 | D5 | [x] **Save to gallery + share** | One-tap save, one-tap share to Instagram/Twitter with Prism branding | Low |
 | D6 | [x] **Generation history** | View past generations, regenerate with tweaks | Medium |
@@ -106,7 +106,7 @@ These are important but not blocking the 3.0.0 release.
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
 | G1 | [x] **Badge system activation** | 12 badges with triggers — infrastructure already exists in code. Unlock animations. | Medium | Month 1 |
-| G2 | [x] **Auto wallpaper rotation (Pro)** | Schedule-based wallpaper changing from favorites or downloads, with a charging-only option. Android only. THE loyalty feature. | High | Month 1-2 |
+| G2 | [x] **Auto wallpaper rotation (Pro)** | Schedule-based wallpaper changing from favorites or downloads, with a charging-only option. Android only. On iOS the app rotates through Shortcuts ("Get Prism Wallpaper" in a Shortcuts automation). THE loyalty feature. | High | Month 1-2 |
 | G3 | [x] **"For You" personalized feed** | Tag-based matching from interests + favorites + download history | High | Month 2 |
 | G4 | [ ] **Weekly challenges** | Rotating challenges with coin + badge rewards. Drives feature exploration. | Medium | Month 2 |
 | G5 | [ ] **Collection subscribe + notifications** | "New in [collection]" push when content is added | Low | Month 1 |

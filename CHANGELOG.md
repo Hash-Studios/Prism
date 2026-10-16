@@ -1,5 +1,11 @@
 ## Changelog
 
+### Unreleased
+- On iPhone, a new "Get Prism Wallpaper" action for Shortcuts: pick Wall of the Day or a random favourite, then add Set Wallpaper to change your wallpaper on a schedule
+- A short guide in Settings, "Change automatically", shows how to make that automation
+- The Android Wall of the Day widget now loads today's wall on its own, updates every few hours, opens the wall when you tap it, and has a Set button
+- A widget preview in the widget picker, and rounded corners that match your launcher
+
 ### v3.4.1
 - The floating glass panel is back on the wallpaper screen
 - Set, Save and Edit now use the tinted wallpaper, and each colour saves as its own download

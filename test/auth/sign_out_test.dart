@@ -8,14 +8,17 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/fake_app_analytics.dart';
 import '../support/fake_error_reporter.dart';
@@ -193,6 +196,20 @@ void main() {
     AnalyticsRuntime.reset();
     MonitoringRuntime.reset();
     await getIt.reset();
+  });
+
+  test('clears the Shortcuts favourites list so the next user does not inherit it', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      PersistenceKeys.shortcutsFavourites: '[{"id":"one","url":"https://example.com/one.jpg"}]',
+    });
+    app_state.prismUser = profileUser();
+
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    await auth.signOutGoogle();
+
+    expect((await SharedPreferences.getInstance()).getString(PersistenceKeys.shortcutsFavourites), '[]');
   });
 
   test('marks the user logged out and drops their topics before Firebase sign-out', () async {

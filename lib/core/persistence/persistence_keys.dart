@@ -67,4 +67,8 @@ class PersistenceKeys {
   static const String quickTileFavsTarget = 'quick_tile.favs.target';
   // JSON-encoded list of full-resolution URLs from the user's favourites.
   static const String quickTileFavWallUrls = 'quick_tile.favs.wall_urls';
+
+  // JSON list of {id, url} for the user's favourites, newest first. Written as a raw string so the iOS
+  // Shortcuts intent reads it from UserDefaults as `flutter.shortcuts.favourites`.
+  static const String shortcutsFavourites = 'shortcuts.favourites';
 }
