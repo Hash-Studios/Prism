@@ -1,6 +1,6 @@
 # Search
 
-The user types a word and gets wallpapers from Wallhaven, with Pexels as a fallback. Matching Prism catalogue wallpapers show first in a "From Prism" row. The user can narrow results with filters.
+The user types a word and gets wallpapers from Wallhaven, with Pexels as a fallback. Matching Prism catalogue wallpapers show first in a "From Prism" row. The user can narrow results with filters, and can search by colour.
 
 ## Where to find it
 
@@ -21,13 +21,15 @@ Search is free. The search files contain no premium or coin gate.
 | Path | Role |
 |---|---|
 | `lib/features/user_search/views/pages/search_screen.dart` | Search bar, discover view, results, error and empty states. |
-| `lib/features/user_search/views/widgets/search_discovery_widget.dart` | Discover view: recent searches, tag suggestions, trending, categories, colours. |
+| `lib/features/user_search/views/widgets/search_discovery_widget.dart` | Discover view: recent searches, tag suggestions, "Browse by colour", trending, categories. |
 | `lib/features/user_search/data/search_tags.dart` | The fixed list of tag suggestions. |
 | `lib/features/category_feed/views/widgets/wallpaper_quick_actions.dart` | The long-press sheet on a result tile. |
 | `lib/features/user_search/views/widgets/search_grid.dart` | Result grid, "From Prism" row, pagination, pull to refresh. |
 | `lib/features/user_search/views/widgets/search_filter_sheet.dart` | Filter sheet and the mapping from choices to `SearchFilters`. |
 | `lib/features/user_search/data/recent_searches_store.dart` | Recent searches in local settings. |
 | `lib/features/user_search/data/search_filters.dart` | `SearchFilters` and `SearchSort`. |
+| `lib/core/color/prism_palette.dart` | The 12 palette colours and `nearestPaletteColor`. |
+| `lib/features/user_search/views/widgets/palette_swatch.dart` | The round colour swatch. |
 | `lib/features/user_search/data/wallpaper_search_service.dart` | Runs the search. Falls back to Pexels. Throws on total failure. |
 | `lib/features/user_search/data/repositories/user_search_repository_impl.dart` | Finds creators by name or username. |
 | `lib/features/prism_feed/data/prism_wall_search.dart` | Finds Prism walls by tag or category in Firestore. |
@@ -76,6 +78,7 @@ query + SearchFilters
 | Portrait only | On or off | On |
 | Min resolution | Any, 1080p, 1440p, 4K | Any |
 | Sort | Relevance, Latest, Top | Relevance |
+| Colour | One of 12 palette colours, or none | None |
 
 The sheet has **Reset** and **Apply**. Reset returns all filters to the defaults. If a search is on screen, a changed filter runs it again.
 
@@ -90,6 +93,38 @@ Mapping of `SearchFilters` to each source:
 | Sort | `sorting=date_added` (Latest), `sorting=toplist` (Top). Relevance sends no `sorting`. | Not used. | Not used. |
 
 A wall with an unknown resolution passes the client filters.
+
+The colour filter is in the next section.
+
+### Colour
+
+Search by colour uses one palette of 12 colours: red, orange, yellow, green, teal, blue, purple, pink, brown, black, grey and white. The palette is in `lib/core/color/prism_palette.dart`. Each colour has an id, a hex value for Wallhaven, and a name for Pexels.
+
+How to use it:
+
+- Open **Filters**. The **Colour** row shows 12 round swatches. Each swatch has the colour name as its screen reader label. The selected swatch has a ring.
+- Tap a swatch to choose it. Tap the same swatch again to clear it. The user can choose one colour at a time.
+- **My accent** picks the palette colour that is nearest to the accent colour of the user. The distance is CIE76 in Lab space (`nearestPaletteColor`).
+- In the discover view, **Browse by colour** shows the same 12 swatches in a row. A tap on a swatch opens results for that colour. No query is needed.
+- When a colour is active, a chip with the colour name shows above the results. The chip has a **Clear colour** button.
+- The colour is part of `SearchFilters`. It lives in the screen state like the other filters. It does not survive a restart of the app.
+- Back from a colour-only search returns to the discover view and drops the colour. Back from a text search keeps the colour.
+
+Mapping of the colour to each source:
+
+| Source | Parameter | Query |
+|---|---|---|
+| Wallhaven | `colors=<hex>` (for example `0066cc`) | Optional. An empty query sends no `q`. |
+| Pexels | `color=<name>` (for example `violet` for purple, `gray` for grey) | Required. A colour-only search skips Pexels. |
+| Prism catalogue | `where colors array-contains <id>` | Optional. |
+
+The colour-only Prism query is `review == true`, `colors array-contains <id>`, newest first. It needs the index `colors` (array contains), `review`, `createdAt` (descending). The index is in `firestore.indexes.json`.
+
+A text query with a colour cannot use one Firestore query. Firestore does not allow two array filters in one query. The Prism search runs the tag and category queries with a limit of 48, then keeps the walls that have the colour. A wall without the `colors` field matches no colour filter.
+
+The backend writes `walls.colors` (1 to 3 palette ids, most dominant first). An old wall has the field only after the backfill script runs. See `docs/features/backend-deploy.md`.
+
+The page cursor key for a colour search is `search:<query>:color:<id>`. The Wallhaven cache scope also holds the colour.
 
 ### Pagination
 
@@ -130,7 +165,7 @@ A wall with an unknown resolution passes the client filters.
 | State | What the user sees |
 |---|---|
 | Search throws (Wallhaven and Pexels both failed) | Error state "Couldn't search right now", text "Check your connection and try again.", and a **Try again** button. Pull to refresh also retries. |
-| No results from any source | `No wallpapers found for "<query>".` With non-default filters, the text "Try fewer filters." and a **Reset filters** button. |
+| No results from any source | `No wallpapers found for "<query>".` A colour-only search says `No <colour> wallpapers found`. With non-default filters, the text "Try fewer filters." and a **Reset filters** button. |
 | Loading | Loading cards. They also show while a new search or a changed filter loads. The old results go away at once, so filtered results never mix with the old page. |
 
 `WallpaperSearchService.search` throws `WallpaperSearchException` only when both providers fail. A Wallhaven failure alone moves the search to Pexels. A Prism query failure never makes the search fail.
@@ -148,6 +183,10 @@ The Prism tag query needs the Firestore index on `walls`: `tags` (array contains
 - The "From Prism" row opens a wallpaper without a hero animation. It reports index 0 in analytics for every tile.
 - The detail screen loads the original Wallhaven image. Grid tiles use the smaller `lg` thumbnail, so a tile can look softer than the detail view.
 - Name search for creators depends on `nameLower`. Profiles without it match only by exact-case name or by username until the backend writes `nameLower` for them.
+- A colour-only search sends no search analytics event, because the event needs a query. A colour-only search is not saved in recent searches.
+- A Prism wall has colours only after the backend writes `colors`. Until the backfill runs, the "From Prism" row has few walls for a colour.
+- Pexels matches a colour with its own colour model. Results can include photos with a different main colour.
+- The old colour screen (`ColorRoute`) is still in the router. The discover view does not open it any more.
 - The search analytics event always names Wallhaven as the provider for a submitted query (`SearchSubmittedEvent`).
 
 ## How to test
@@ -164,6 +203,10 @@ The Prism tag query needs the Firestore index on `walls`: `tags` (array contains
 10. Open **Find Creators**, type "john" in lowercase. Make sure a creator saved as "John" shows.
 11. Run a search, tap the X button, and look at "Trending right now". Make sure it does not show a skeleton again.
 12. Long press a result tile. Make sure the quick actions sheet opens.
+13. In the discover view, tap the blue swatch in **Browse by colour**. Make sure results show with a "Blue" chip and an empty search field.
+14. Tap **Clear colour** on the chip. Make sure the discover view shows.
+15. Type "forest" and submit. Open **Filters**, choose **My accent**, and tap **Apply**. Make sure the results reload and the Filters icon has a badge.
+16. Open **Filters** and tap the selected swatch. Make sure the swatch ring goes away. Tap **Apply**. Make sure the results have no colour.
 
 Automated tests:
 
@@ -177,6 +220,10 @@ Automated tests:
 - `test/features/user_search/search_filter_sheet_test.dart`
 - `test/features/user_search/search_filters_test.dart`
 - `test/features/user_search/recent_searches_store_test.dart`
+- `test/features/user_search/search_discovery_recent_test.dart` (Browse by colour)
+- `test/core/color/prism_palette_test.dart`
+- `test/features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl_test.dart`
+- `test/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl_test.dart`
 - `test/features/user_search/wallpaper_search_service_test.dart`
 - `test/features/wallpaper_detail/views/widgets/wallpaper_detail_widgets_test.dart` (tag chips)
 

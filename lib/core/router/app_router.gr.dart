@@ -275,60 +275,6 @@ class CollectionViewRouteArgs {
 }
 
 /// generated route for
-/// [ColorScreen]
-class ColorRoute extends PageRouteInfo<ColorRouteArgs> {
-  ColorRoute({
-    Key? key,
-    required String hexColor,
-    required String name,
-    List<PageRouteInfo>? children,
-  }) : super(
-         ColorRoute.name,
-         args: ColorRouteArgs(key: key, hexColor: hexColor, name: name),
-         initialChildren: children,
-       );
-
-  static const String name = 'ColorRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<ColorRouteArgs>();
-      return ColorScreen(
-        key: args.key,
-        hexColor: args.hexColor,
-        name: args.name,
-      );
-    },
-  );
-}
-
-class ColorRouteArgs {
-  const ColorRouteArgs({this.key, required this.hexColor, required this.name});
-
-  final Key? key;
-
-  final String hexColor;
-
-  final String name;
-
-  @override
-  String toString() {
-    return 'ColorRouteArgs{key: $key, hexColor: $hexColor, name: $name}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! ColorRouteArgs) return false;
-    return key == other.key && hexColor == other.hexColor && name == other.name;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ hexColor.hashCode ^ name.hashCode;
-}
-
-/// generated route for
 /// [DashboardPage]
 class DashboardRoute extends PageRouteInfo<void> {
   const DashboardRoute({List<PageRouteInfo>? children})
@@ -1087,6 +1033,22 @@ class ThemeViewRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return ThemeView();
+    },
+  );
+}
+
+/// generated route for
+/// [TrendingPage]
+class TrendingRoute extends PageRouteInfo<void> {
+  const TrendingRoute({List<PageRouteInfo>? children})
+    : super(TrendingRoute.name, initialChildren: children);
+
+  static const String name = 'TrendingRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return WrappedRoute(child: const TrendingPage());
     },
   );
 }

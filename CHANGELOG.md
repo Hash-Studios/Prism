@@ -1,5 +1,12 @@
 ## Changelog
 
+### Unreleased
+- Search by colour: pick one of 12 colours in the search filters, or tap My accent, and see matching wallpapers from Prism, Wallhaven and Pexels
+- A Browse by colour row on the search screen opens results for a colour
+- Prism now finds the main colours of each new wallpaper, so colour search covers your uploads
+- A new Trending this week row on the home feed shows what people use most on Prism, with See all
+- A Trending page with This week and All time lists, pull to refresh, and a saved copy for when you are offline
+
 ### v3.4.1
 - The floating glass panel is back on the wallpaper screen
 - Set, Save and Edit now use the tinted wallpaper, and each colour saves as its own download

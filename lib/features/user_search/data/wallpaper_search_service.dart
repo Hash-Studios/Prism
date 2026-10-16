@@ -37,7 +37,8 @@ class WallpaperSearchService {
   final SettingsLocalDataSource _settingsLocal;
   final PrismWallSearch _prismSearch;
 
-  /// First page of [query]. When Wallhaven fails the search moves to Pexels so the user still gets results.
+  /// First page of [query]. An empty [query] is allowed with a colour filter. Pexels needs a query, so a colour-only
+  /// search skips it. When Wallhaven fails the search moves to Pexels so the user still gets results.
   /// When both providers fail but Prism has matches, the page has provider [SearchProviderValue.prism], no
   /// [WallpaperSearchPage.results] and no external pagination. Throws [WallpaperSearchException] when Prism is empty too.
   Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) async {
@@ -51,20 +52,24 @@ class WallpaperSearchService {
     } catch (error, stackTrace) {
       logger.w('Wallhaven search failed; falling back to Pexels.', error: error, stackTrace: stackTrace);
     }
-    try {
-      return (
-        provider: SearchProviderValue.pexels,
-        results: await fetchPage(SearchProviderValue.pexels, query, refresh: true, filters: filters),
-        prismResults: await prism,
-      );
-    } catch (error, stackTrace) {
-      logger.e('Pexels search failed.', error: error, stackTrace: stackTrace);
-      final List<FeedItemEntity> prismResults = await prism;
-      if (prismResults.isNotEmpty) {
-        return (provider: SearchProviderValue.prism, results: const <FeedItemEntity>[], prismResults: prismResults);
+    Object failure = 'Wallhaven failed and there is no query for Pexels.';
+    if (query.trim().isNotEmpty) {
+      try {
+        return (
+          provider: SearchProviderValue.pexels,
+          results: await fetchPage(SearchProviderValue.pexels, query, refresh: true, filters: filters),
+          prismResults: await prism,
+        );
+      } catch (error, stackTrace) {
+        logger.e('Pexels search failed.', error: error, stackTrace: stackTrace);
+        failure = error;
       }
-      throw WallpaperSearchException('Wallhaven and Pexels both failed: $error');
     }
+    final List<FeedItemEntity> prismResults = await prism;
+    if (prismResults.isNotEmpty) {
+      return (provider: SearchProviderValue.prism, results: const <FeedItemEntity>[], prismResults: prismResults);
+    }
+    throw WallpaperSearchException('Wallhaven and Pexels both failed: $failure');
   }
 
   /// One page from [provider]. The repository keeps the page cursor per [query]; [refresh] restarts it.
@@ -79,8 +84,9 @@ class WallpaperSearchService {
       final result = await _pexelsRepository.fetchFeed(
         categoryName: query,
         refresh: refresh,
-        paginationKey: _paginationKey(query),
+        paginationKey: _paginationKey(query, filters),
         portraitOnly: filters.portraitOnly,
+        color: filters.color?.pexelsName,
       );
       return result.fold(
         onSuccess: (walls) => walls
@@ -93,12 +99,13 @@ class WallpaperSearchService {
     final result = await _wallhavenRepository.fetchFeed(
       categoryName: query,
       refresh: refresh,
-      paginationKey: _paginationKey(query),
+      paginationKey: _paginationKey(query, filters),
       categories: _settingsLocal.get<int>('WHcategories', defaultValue: 100),
       purity: _settingsLocal.get<int>('WHpurity', defaultValue: 100),
       portraitOnly: filters.portraitOnly,
       minResolution: filters.minResolution,
       sorting: filters.wallhavenSorting,
+      colors: filters.color?.hex,
     );
     return result.fold(
       onSuccess: (walls) =>
@@ -107,10 +114,11 @@ class WallpaperSearchService {
     );
   }
 
-  String _paginationKey(String query) => 'search:$query';
+  String _paginationKey(String query, SearchFilters filters) =>
+      filters.color == null ? 'search:$query' : 'search:$query:color:${filters.color!.id}';
 
   Future<List<FeedItemEntity>> _prismResults(String query, SearchFilters filters) async {
-    final List<PrismWallpaper> walls = await _prismSearch.search(query);
+    final List<PrismWallpaper> walls = await _prismSearch.search(query, colorId: filters.color?.id);
     return walls
         .where((wall) => filters.acceptsResolution(wall.core.resolution))
         .map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall))

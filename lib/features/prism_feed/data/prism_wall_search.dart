@@ -23,31 +23,36 @@ class PrismWallSearch {
   /// `array-contains-any` and `whereIn` take at most 30 values: 10 words with 3 spellings each.
   static const int _maxTokens = 10;
   static const int _maxFilterValues = 30;
+
+  /// A colour is checked after the query, so the query asks for more walls to keep enough matches.
+  static const int _colorOverfetch = 4;
   static const String _failedPrecondition = 'failed-precondition';
 
   /// Never throws. A failed query, such as a missing index, counts as no match.
-  Future<List<PrismWallpaper>> search(String query, {int limit = 12}) async {
+  ///
+  /// [colorId] limits the walls to one palette colour. An empty [query] with a [colorId] lists that colour's walls.
+  /// Firestore cannot combine two array filters, so with a query the colour is checked on the matches.
+  Future<List<PrismWallpaper>> search(String query, {int limit = 12, String? colorId}) async {
     final String trimmed = query.trim();
-    if (trimmed.length < _minQueryLength) {
+    final bool colorOnly = colorId != null && trimmed.isEmpty;
+    if (trimmed.length < _minQueryLength && !colorOnly) {
       return const <PrismWallpaper>[];
     }
     try {
-      final List<List<PrismWallpaper>> matches = await Future.wait(<Future<List<PrismWallpaper>>>[
-        _run(
-          'tags',
-          limit,
-          FirestoreFilter(field: 'tags', op: FirestoreFilterOp.arrayContainsAny, value: _tagVariants(trimmed)),
-        ),
-        _run(
-          'category',
-          limit,
-          FirestoreFilter(field: 'category', op: FirestoreFilterOp.whereIn, value: _categoryVariants(trimmed)),
-        ),
-      ]);
+      final List<List<PrismWallpaper>> matches = colorOnly
+          ? <List<PrismWallpaper>>[
+              await _run(
+                'color',
+                limit,
+                FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
+              ),
+            ]
+          : await _textMatches(trimmed, colorId == null ? limit : limit * _colorOverfetch);
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails();
       final Map<String, PrismWallpaper> unique = <String, PrismWallpaper>{};
       for (final PrismWallpaper wall in matches.expand((List<PrismWallpaper> walls) => walls)) {
-        if (!BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
+        final bool hasColor = colorId == null || (wall.colors?.contains(colorId) ?? false);
+        if (hasColor && !BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
           unique.putIfAbsent(wall.id, () => wall);
         }
       }
@@ -56,6 +61,21 @@ class PrismWallSearch {
       logger.w('[PrismWallSearch] search failed', error: error, stackTrace: stackTrace);
       return const <PrismWallpaper>[];
     }
+  }
+
+  Future<List<List<PrismWallpaper>>> _textMatches(String query, int limit) {
+    return Future.wait(<Future<List<PrismWallpaper>>>[
+      _run(
+        'tags',
+        limit,
+        FirestoreFilter(field: 'tags', op: FirestoreFilterOp.arrayContainsAny, value: _tagVariants(query)),
+      ),
+      _run(
+        'category',
+        limit,
+        FirestoreFilter(field: 'category', op: FirestoreFilterOp.whereIn, value: _categoryVariants(query)),
+      ),
+    ]);
   }
 
   Future<List<PrismWallpaper>> _run(String kind, int limit, FirestoreFilter match) async {

@@ -29,6 +29,7 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
       : const FirestoreStringListConverter().fromJson(json['collections']),
   tags: json['tags'] == null ? const <String>[] : const FirestoreStringListConverter().fromJson(json['tags']),
   category: json['category'] == null ? '' : const FirestoreStringConverter().fromJson(json['category']),
+  colors: json['colors'] == null ? const <String>[] : const FirestoreStringListConverter().fromJson(json['colors']),
   review: json['review'] as bool? ?? false,
   aiMetadata: json['aiMetadata'] == null
       ? const <String, Object?>{}
@@ -55,6 +56,7 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'collections': const FirestoreStringListConverter().toJson(instance.collections),
   'tags': const FirestoreStringListConverter().toJson(instance.tags),
   'category': const FirestoreStringConverter().toJson(instance.category),
+  'colors': const FirestoreStringListConverter().toJson(instance.colors),
   'review': instance.review,
   'aiMetadata': const FirestoreJsonMapConverter().toJson(instance.aiMetadata),
   'is_streak_exclusive': instance.isStreakExclusive,

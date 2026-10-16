@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
@@ -66,7 +67,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _triggerSearch(String query, {String? sourceContext, bool fromSuggestion = false}) {
     final String trimmed = query.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty && _filters.color == null) return;
     final Future<WallpaperSearchPage> search = getIt<WallpaperSearchService>().search(trimmed, filters: _filters)
       ..ignore();
     setState(() {
@@ -92,13 +93,16 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       );
     }
-    unawaited(_recents.add(trimmed).then((recents) => mounted ? setState(() => _recentSearches = recents) : null));
+    if (trimmed.isNotEmpty) {
+      unawaited(_recents.add(trimmed).then((recents) => mounted ? setState(() => _recentSearches = recents) : null));
+    }
   }
 
   void _backToDiscover() {
     setState(() {
       isSubmitted = false;
       _search = null;
+      if (_submittedQuery.isEmpty) _filters = _filters.copyWith(clearColor: true);
     });
     _discoveryBloc.add(const SearchDiscoveryEvent.fetchRequested());
   }
@@ -116,7 +120,27 @@ class _SearchScreenState extends State<SearchScreen> {
     final SearchFilters? picked = await showSearchFilterSheet(context, _filters);
     if (picked == null || picked == _filters || !mounted) return;
     setState(() => _filters = picked);
-    if (isSubmitted) _triggerSearch(_submittedQuery);
+    final String query = (isSubmitted ? _submittedQuery : searchController.text).trim();
+    if (query.isEmpty && picked.color == null) {
+      if (isSubmitted) _backToDiscover();
+    } else if (isSubmitted || query.isEmpty) {
+      _triggerSearch(query);
+    }
+  }
+
+  void _searchByColor(PrismPaletteColor color) {
+    searchController.clear();
+    setState(() => _filters = _filters.copyWith(color: color));
+    _triggerSearch('', sourceContext: 'search_color');
+  }
+
+  void _clearColor() {
+    setState(() => _filters = _filters.copyWith(clearColor: true));
+    if (_submittedQuery.isEmpty) {
+      _backToDiscover();
+    } else {
+      _triggerSearch(_submittedQuery);
+    }
   }
 
   Future<void> _clearRecents() async {
@@ -126,7 +150,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _resetFilters() {
     setState(() => _filters = const SearchFilters());
-    _triggerSearch(_submittedQuery);
+    if (_submittedQuery.isEmpty) {
+      _backToDiscover();
+    } else {
+      _triggerSearch(_submittedQuery);
+    }
   }
 
   /// Runs a search that another screen asked for, for example a tag chip on the wallpaper detail screen.
@@ -156,6 +184,28 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _results() {
+    final PrismPaletteColor? color = _filters.color;
+    if (color == null) return _resultsBody();
+    return Column(
+      children: <Widget>[
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+            child: InputChip(
+              avatar: CircleAvatar(backgroundColor: color.color),
+              label: Text(color.name),
+              deleteButtonTooltipMessage: 'Clear colour',
+              onDeleted: _clearColor,
+            ),
+          ),
+        ),
+        Expanded(child: _resultsBody()),
+      ],
+    );
+  }
+
+  Widget _resultsBody() {
     return FutureBuilder<WallpaperSearchPage>(
       future: _search,
       builder: (context, snapshot) {
@@ -179,7 +229,9 @@ class _SearchScreenState extends State<SearchScreen> {
         if (page.results.isEmpty && page.prismResults.isEmpty) {
           return GlintState(
             kind: GlintStateKind.empty,
-            title: 'No wallpapers found for "$_submittedQuery"',
+            title: _submittedQuery.isEmpty
+                ? 'No ${_filters.color?.name.toLowerCase()} wallpapers found'
+                : 'No wallpapers found for "$_submittedQuery"',
             body: _filters == const SearchFilters() ? null : 'Try fewer filters.',
             actionLabel: _filters == const SearchFilters() ? null : 'Reset filters',
             onAction: _resetFilters,
@@ -280,6 +332,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   selectedTag: searchController.text,
                   recentSearches: _recentSearches,
                   onClearRecents: () => unawaited(_clearRecents()),
+                  onColorPressed: _searchByColor,
                   onRecentPressed: (query) {
                     searchController.text = query;
                     _triggerSearch(query, sourceContext: 'search_recent', fromSuggestion: true);

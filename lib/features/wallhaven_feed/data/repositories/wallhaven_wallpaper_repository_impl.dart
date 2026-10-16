@@ -42,6 +42,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     bool portraitOnly = true,
     String? minResolution,
     String? sorting,
+    String? colors,
   }) async {
     final String pageKey = paginationKey ?? categoryName;
     if (refresh) {
@@ -56,16 +57,18 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       portraitOnly: portraitOnly,
       minResolution: minResolution,
       sorting: sorting,
+      colors: colors,
     );
     final int page = refresh ? startPage : _cache.pageFor(pageKey);
     final Uri uri = Uri.https(_host, _searchPath, <String, String>{
-      'q': categoryName,
+      if (categoryName.isNotEmpty) 'q': categoryName,
       'page': page.toString(),
       'categories': categories.toString(),
       'purity': purity.toString(),
       if (portraitOnly) 'ratios': 'portrait',
       'atleast': ?minResolution,
       'sorting': ?sorting,
+      'colors': ?colors,
       // The toplist covers only the last month by default, so most searches came back empty. 1y is the widest range.
       if (sorting == 'toplist') 'topRange': '1y',
     });
@@ -249,6 +252,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     String? paginationKey,
     String? minResolution,
     String? sorting,
+    String? colors,
   }) {
     final String cacheKey = paginationKey == null || paginationKey == categoryName
         ? categoryName
@@ -260,6 +264,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       if (portraitOnly) 'portrait' else 'any',
       if (minResolution != null) 'min_${feedCacheSlug(minResolution)}',
       if (sorting != null) 'sort_${feedCacheSlug(sorting)}',
+      if (colors != null) 'color_${feedCacheSlug(colors)}',
     ].join('.');
   }
 }

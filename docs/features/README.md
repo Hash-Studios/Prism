@@ -32,6 +32,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [ai-charge.md](ai-charge.md) | AI charge check on the worker, refund evidence |
 | [studio.md](studio.md) | Prism Studio: daily AI wallpapers, checks, review queue, setup (backend) |
 | [popular-and-trending.md](popular-and-trending.md) | Engagement counters and the trending and popular lists (backend) |
+| [trending.md](trending.md) | Trending this week row on home, Trending page with This week and All time |
 | [moderation.md](moderation.md) | Report auto-hold, sweeper, username dedupe, WOTD creator notice (backend) |
 
 ## Page rules

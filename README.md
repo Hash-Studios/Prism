@@ -9,6 +9,7 @@ Prism is an open-source wallpaper app for Android and iOS, built with Flutter an
 - Browse community wallpapers, Wallhaven, and Pexels, with a personalized home feed and a Wall of the Day.
 - Search by keyword, color, or tag, with filters and recent searches. Open "More like this" to find similar wallpapers.
 - Browse categories and collections, and follow creators.
+- See what is trending on Prism this week and of all time, from a row on the home feed.
 - Save favourites to your account, then sort, filter, search, and select many at once. Share or delete many downloads at once.
 - Preview wallpapers with a clock overlay. Set them with Fill or Fit, crop them, or pick a default target on supported platforms.
 - Make any wallpaper move, pick a living gradient, or use a video as a live wallpaper (Android).

@@ -43,6 +43,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     int startPage = 1,
     String? paginationKey,
     bool portraitOnly = true,
+    String? color,
   }) {
     return _fetchPage(
       categoryName,
@@ -56,30 +57,9 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
               query: categoryName,
               page: page,
               portraitOnly: portraitOnly,
+              color: color,
               perPage: (paginationKey ?? '').startsWith(_personalizedKeyPrefix) ? _personalizedPerPage : _perPage,
             ),
-    );
-  }
-
-  @override
-  Future<Result<List<PexelsWallpaper>>> fetchColorFeed({
-    required String hex,
-    required String name,
-    required bool refresh,
-  }) {
-    final String color = hex.trim().replaceFirst('#', '').toLowerCase();
-    if (!RegExp(r'^[0-9a-f]{6}$').hasMatch(color)) {
-      return Future<Result<List<PexelsWallpaper>>>.value(Result.error(ValidationFailure('Invalid color: $hex')));
-    }
-    return _fetchPage(
-      'color: $color',
-      refresh: refresh,
-      buildUri: (page) => _searchUri(
-        query: '${name.trim().toLowerCase()} wallpaper'.trim(),
-        page: page,
-        color: '#$color',
-        portraitOnly: true,
-      ),
     );
   }
 

@@ -35,4 +35,20 @@ void main() {
       expect(dto().toDomain(docId: 'a').title, isNull);
     });
   });
+
+  group('colors', () {
+    test('are read from the document, most dominant first', () {
+      final parsed = PrismWallDocDto.fromJson(<String, dynamic>{
+        'wallpaper_url': 'https://x/y.jpg',
+        'colors': <String>['blue', 'white'],
+      });
+
+      expect(parsed.toDomain(docId: 'a').colors, <String>['blue', 'white']);
+    });
+
+    test('are null when the wall has none', () {
+      expect(dto().toDomain(docId: 'a').colors, isNull);
+      expect(PrismWallDocDto.fromJson(<String, dynamic>{'wallpaper_url': 'https://x/y.jpg'}).colors, isEmpty);
+    });
+  });
 }

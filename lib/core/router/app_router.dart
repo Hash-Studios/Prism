@@ -17,7 +17,6 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
-import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
@@ -39,6 +38,7 @@ import 'package:Prism/features/session/views/pages/settings_screen.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
+import 'package:Prism/features/trending/views/pages/trending_page.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
@@ -124,6 +124,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/ai', page: AiTabRoute.page),
     AutoRoute(path: '/wallpaper-detail', page: WallpaperDetailRoute.page),
     AutoRoute(path: '/wotd-archive', page: WotdArchiveRoute.page),
+    AutoRoute(path: '/trending', page: TrendingRoute.page),
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
     // Standalone path so Edit Profile works when ProfileScreen was opened via
@@ -144,7 +145,6 @@ class AppRouter extends RootStackRouter {
     RedirectRoute(path: '/coin-transactions', redirectTo: '/rewards'),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
     AutoRoute(path: '/notifications', page: NotificationRoute.page),
-    AutoRoute(path: '/color', page: ColorRoute.page),
     AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/followers', page: FollowersRoute.page),
