@@ -1,14 +1,11 @@
 package com.hash.prism
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
-import com.hash.prism.pigeon.PrismMediaHostApi
 import io.flutter.embedding.android.FlutterFragment
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -28,12 +25,10 @@ internal fun copyWallpaperCropFile(source: File, folder: File): File {
 }
 
 class MainActivity : FlutterFragmentActivity() {
-    private var mediaApi: PrismMediaHostApiImpl? = null
     private var hapticsChannel: MethodChannel? = null
     private var quickSettingsChannel: MethodChannel? = null
     private var systemColorsChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
-    private val storagePermissions = LegacyStoragePermissionGate()
     private var engine: FlutterEngine? = null
     private var retainedBackState: Boolean? = null
     private val flutterFragment get() = supportFragmentManager.fragments.firstNotNullOfOrNull { it as? FlutterFragment }
@@ -54,7 +49,10 @@ class MainActivity : FlutterFragmentActivity() {
         val retained = engineHandoff.take()
         retainedBackState = retained?.frameworkHandlesBack
         val shellArgs = FlutterShellArgs.fromIntent(intent).toArray()
-        return (retained?.engine ?: FlutterEngine(context.applicationContext, shellArgs)).also { engine = it }
+        val provided = retained?.engine ?: FlutterEngine(context.applicationContext, shellArgs).apply {
+            plugins.add(PrismMediaPlugin())
+        }
+        return provided.also { engine = it }
     }
 
     override fun onDestroy() {
@@ -69,16 +67,6 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        val api = PrismMediaHostApiImpl(applicationContext) { callback ->
-            storagePermissions.request(callback) {
-                requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_REQUEST)
-            }
-        }
-        mediaApi = api
-        PrismMediaHostApi.setUp(
-            flutterEngine.dartExecutor.binaryMessenger,
-            api,
-        )
         val haptics = PrismHaptics(applicationContext)
         hapticsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/haptics").apply {
             setMethodCallHandler { call, result ->
@@ -130,15 +118,7 @@ class MainActivity : FlutterFragmentActivity() {
         return FileProvider.getUriForFile(this, "$packageName.wallpaper_crop", copy).toString()
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == STORAGE_PERMISSION_REQUEST) {
-            storagePermissions.resolve(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
-        }
-    }
-
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
-        PrismMediaHostApi.setUp(flutterEngine.dartExecutor.binaryMessenger, null)
         hapticsChannel?.setMethodCallHandler(null)
         hapticsChannel = null
         quickSettingsChannel?.setMethodCallHandler(null)
@@ -147,15 +127,10 @@ class MainActivity : FlutterFragmentActivity() {
         systemColorsChannel = null
         wallpaperCropChannel?.setMethodCallHandler(null)
         wallpaperCropChannel = null
-        storagePermissions.close()
-        mediaApi?.close()
-        mediaApi = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
     private companion object {
-        const val STORAGE_PERMISSION_REQUEST = 4201
-
         val engineHandoff = ConfigurationEngineHandoff<FlutterEngine>(
             destroy = { it.destroy() },
             post = { task -> Handler(Looper.getMainLooper()).post { task() } },
