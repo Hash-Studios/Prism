@@ -14,6 +14,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -99,7 +100,7 @@ Future<int?> _imageCacheBytes() async {
 
 Future<int?> _downloadsCount() async {
   try {
-    final DownloadItemsResult result = await PrismMediaHostApi().listDownloads();
+    final DownloadItemsResult result = await PrismMediaApi().listDownloads();
     return result.success ? result.items.length : null;
   } catch (_) {
     return null;
@@ -488,7 +489,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!confirmed) return;
     OperationResult? result;
     try {
-      result = await PrismMediaHostApi().clearDownloads();
+      result = await PrismMediaApi().clearDownloads();
     } catch (e) {
       logger.w('Clearing downloads failed.', error: e);
     }

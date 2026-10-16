@@ -9,6 +9,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
@@ -294,7 +295,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         return false;
       }
       final request = SaveMediaRequest(link: imageFile.path, isLocalFile: true, kind: SaveMediaKind.wallpaper);
-      final result = await PrismMediaHostApi().saveMedia(request);
+      final result = await PrismMediaApi().saveMedia(request);
       if (result.success) {
         try {
           analytics.track(DownloadWallpaperEvent(link: imageFile.path));

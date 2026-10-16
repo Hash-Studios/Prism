@@ -277,7 +277,8 @@ internal class PrismMediaHostApiImpl(
                     }
                 } catch (error: Throwable) {
                     Log.w(TAG, "Media operation failed", error)
-                    onError(error)
+                    // close() interrupts a running transfer. Report it as detached so Dart tries again.
+                    onError(if (closed) IllegalStateException(ENGINE_DETACHED_MESSAGE) else error)
                 }
                 mainHandler.post { callback(Result.success(result)) }
             }
@@ -322,8 +323,12 @@ private fun copyFromUri(context: Context, uri: Uri, file: File) {
     input.use { source -> file.outputStream().use { PrismImageTransfer.copy(source, it) } }
 }
 
-internal fun mediaFailureCode(fallback: String, error: Throwable): String =
-    if (error is RejectedExecutionException) "MEDIA_BUSY" else fallback
+internal fun mediaFailureCode(fallback: String, error: Throwable): String = when {
+    error is RejectedExecutionException -> "MEDIA_BUSY"
+    // Dart tries once more on this code: the Activity relaunched and a new media API took over.
+    error is IllegalStateException && error.message == ENGINE_DETACHED_MESSAGE -> "ENGINE_DETACHED"
+    else -> fallback
+}
 
 internal fun mediaFailureMessage(error: Throwable): String = when {
     error is RejectedExecutionException -> "Another media operation is in progress. Please try again."
