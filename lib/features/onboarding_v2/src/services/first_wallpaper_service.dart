@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
@@ -29,7 +30,7 @@ class FirstWallpaperService {
     @ignoreParam Future<OperationResult> Function(SaveMediaRequest request)? saveMedia,
   }) : _getCapabilities = getCapabilities ?? aw.AsyncWallpaper.getCapabilities,
        _setWallpaper = setWallpaper ?? WallpaperService.setWallpaper,
-       _saveMedia = saveMedia ?? ((request) => PrismMediaHostApi().saveMedia(request));
+       _saveMedia = saveMedia ?? ((request) => PrismMediaApi().saveMedia(request));
 
   final CategoryFeedRepository _categoryFeedRepository;
   final WallOfTheDayRepository _wallOfTheDayRepository;

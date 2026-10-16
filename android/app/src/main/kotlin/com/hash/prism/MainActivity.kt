@@ -1,13 +1,18 @@
 package com.hash.prism
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
 import com.hash.prism.pigeon.PrismMediaHostApi
+import io.flutter.embedding.android.FlutterFragment
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
@@ -29,10 +34,37 @@ class MainActivity : FlutterFragmentActivity() {
     private var systemColorsChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
     private val storagePermissions = LegacyStoragePermissionGate()
+    private var engine: FlutterEngine? = null
+    private var retainedBackState: Boolean? = null
+    private val flutterFragment get() = supportFragmentManager.fragments.firstNotNullOfOrNull { it as? FlutterFragment }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // The restored FlutterFragment turned Back handling off. Dart does not send it again for a kept engine.
+        retainedBackState?.let { flutterFragment?.setFrameworkHandlesBack(it) }
+    }
+
+    // The default fragment destroys even a provided engine when it detaches. onDestroy owns the engine instead.
+    override fun createFlutterFragment(): FlutterFragment =
+        super.createFlutterFragment().apply { requireArguments().putBoolean("destroy_engine_with_fragment", false) }
+
+    override fun provideFlutterEngine(context: Context): FlutterEngine {
+        engine?.let { return it }
+        val retained = engineHandoff.take()
+        retainedBackState = retained?.frameworkHandlesBack
+        val shellArgs = FlutterShellArgs.fromIntent(intent).toArray()
+        return (retained?.engine ?: FlutterEngine(context.applicationContext, shellArgs)).also { engine = it }
+    }
+
+    override fun onDestroy() {
+        val frameworkHandlesBack = flutterFragment?.backCallbackState ?: false
+        super.onDestroy()
+        val engine = engine ?: return
+        this.engine = null
+        // A new wallpaper changes the system colours and Android relaunches this Activity. Give the
+        // engine to the new Activity so Dart keeps running. Any other destroy (Back) ends it.
+        engineHandoff.release(engine, keep = isChangingConfigurations && !isFinishing, frameworkHandlesBack)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -121,5 +153,12 @@ class MainActivity : FlutterFragmentActivity() {
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
-    private companion object { const val STORAGE_PERMISSION_REQUEST = 4201 }
+    private companion object {
+        const val STORAGE_PERMISSION_REQUEST = 4201
+
+        val engineHandoff = ConfigurationEngineHandoff<FlutterEngine>(
+            destroy = { it.destroy() },
+            post = { task -> Handler(Looper.getMainLooper()).post { task() } },
+        )
+    }
 }

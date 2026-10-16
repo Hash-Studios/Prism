@@ -6,7 +6,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -76,7 +76,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
     _contentLoadTracker.start();
     List<File>? found;
     try {
-      final result = await PrismMediaHostApi().listDownloads();
+      final result = await PrismMediaApi().listDownloads();
       if (!result.success) {
         logger.w(result.message ?? 'Unable to list downloads');
       } else {
@@ -191,7 +191,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
     if (!confirmed || !mounted) return;
     PrismHaptics.tap();
     final Set<String> deleted = <String>{};
-    final api = PrismMediaHostApi();
+    final api = PrismMediaApi();
     for (final String path in paths) {
       try {
         final result = await api.deleteDownload(path);

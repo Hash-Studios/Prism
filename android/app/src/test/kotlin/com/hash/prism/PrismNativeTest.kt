@@ -118,6 +118,11 @@ internal class PrismNativeTest {
         assertEquals("This image is too large to process.", mediaFailureMessage(OutOfMemoryError("heap")))
     }
 
+    @Test internal fun closedMediaApiFailuresReportEngineDetached() {
+        assertEquals("ENGINE_DETACHED", mediaFailureCode("SAVE_FAILED", IllegalStateException("App engine detached")))
+        assertEquals("LIST_FAILED", mediaFailureCode("LIST_FAILED", IllegalStateException("Storage access is required")))
+    }
+
     @Test internal fun tileErrorsMapToFixedStrings() {
         assertEquals(R.string.tile_error_offline, tileErrorMessage(java.net.UnknownHostException("host")))
         assertEquals(R.string.tile_error_timeout, tileErrorMessage(java.net.SocketTimeoutException("slow")))
