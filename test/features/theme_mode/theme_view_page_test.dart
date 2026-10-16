@@ -46,7 +46,7 @@ void main() {
     expect(find.text('Dark Themes'), findsOneWidget);
     expect(find.text('Light Accent Color'), findsOneWidget);
     expect(find.text('Dark Accent Color'), findsOneWidget);
-    expect(find.text('System'), findsOneWidget);
+    expect(find.text('System (Light/Dark)'), findsOneWidget);
   });
 
   testWidgets('light mode hides the dark pickers', (tester) async {
@@ -65,13 +65,29 @@ void main() {
     verify(() => themeBloc.add(const ThemeEvent.lightThemeChanged(themeId: 'kLCoffee'))).called(1);
   });
 
-  testWidgets('the mode control changes the theme mode', (tester) async {
+  testWidgets('the preference sheet changes the theme mode', (tester) async {
     await pumpPage(tester, ThemeMode.dark);
 
-    await tester.tap(find.text('Light'));
+    await tester.tap(find.text('Theme Preference'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Light').last);
     await tester.pumpAndSettle();
 
     verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.light))).called(1);
+    expect(find.text('Theme Preference'), findsOneWidget);
+  });
+
+  testWidgets('the preference sheet marks the selected mode with the accent, not the error red', (tester) async {
+    await pumpPage(tester, ThemeMode.dark);
+
+    await tester.tap(find.text('Theme Preference'));
+    await tester.pumpAndSettle();
+
+    final ColorScheme scheme = Theme.of(tester.element(find.text('Dark').last)).colorScheme;
+    final Finder option = find.ancestor(of: find.text('Dark').last, matching: find.byType(Container)).first;
+    final BoxDecoration selected = tester.widget<Container>(option).decoration! as BoxDecoration;
+    expect(selected.border!.top.color, scheme.primary);
+    expect(selected.border!.top.color, isNot(scheme.error));
   });
 
   testWidgets('the selected accent is derived from the bloc state', (tester) async {

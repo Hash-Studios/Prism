@@ -40,7 +40,15 @@ class PrimaryActionPill extends StatelessWidget {
                     : Icon(icon, color: foreground, size: 20),
               ),
               const SizedBox(width: 8),
-              Text(label, style: PrismTextStyles.button.copyWith(color: foreground)),
+              Text(
+                label,
+                style: TextStyle(
+                  color: foreground,
+                  fontFamily: PrismFonts.proximaNova,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),

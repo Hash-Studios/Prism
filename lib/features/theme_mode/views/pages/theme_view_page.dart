@@ -5,15 +5,34 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/system_accent_channel.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
-import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
+/// The text roles this page used on the current app. The redesign theme sets its own roles, so the page names them.
+TextStyle _titleStyle(Color color) =>
+    TextStyle(fontFamily: PrismFonts.proximaNova, fontSize: 20, fontWeight: FontWeight.w500, color: color);
+
+TextStyle _sectionStyle(Color color) =>
+    TextStyle(fontFamily: PrismFonts.proximaNova, fontSize: 16, fontWeight: FontWeight.w500, color: color);
+
+TextStyle _panelTitleStyle(Color color) =>
+    TextStyle(fontFamily: PrismFonts.proximaNova, fontSize: 24, fontWeight: FontWeight.w500, color: color);
+
+TextStyle _chipLabelStyle(Color color) => TextStyle(
+  fontFamily: PrismFonts.roboto,
+  fontSize: 14,
+  fontWeight: FontWeight.w500,
+  letterSpacing: 0.1,
+  color: color,
+);
 
 String _themePreviewSvg(ThemeData theme, Color accent) => themePicture
     .replaceAll('181818', theme.primaryColor.rgbHex)
@@ -91,18 +110,6 @@ class _ThemeViewState extends State<ThemeView> {
     });
   }
 
-  static String _modeLabel(ThemeMode mode) => switch (mode) {
-    ThemeMode.system => 'System',
-    ThemeMode.light => 'Light',
-    ThemeMode.dark => 'Dark',
-  };
-
-  static IconData _modeIcon(ThemeMode mode) => switch (mode) {
-    ThemeMode.system => Icons.brightness_auto_rounded,
-    ThemeMode.light => Icons.light_mode_rounded,
-    ThemeMode.dark => Icons.dark_mode_rounded,
-  };
-
   @override
   Widget build(BuildContext context) {
     final ThemeMode themeMode = context.prismThemeMode();
@@ -128,24 +135,37 @@ class _ThemeViewState extends State<ThemeView> {
             ),
           ],
           elevation: 0,
-          title: Text(
-            'Themes',
-            style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-          ),
+          title: Text('Themes', style: _titleStyle(Theme.of(context).colorScheme.secondary)),
         ),
         backgroundColor: Theme.of(context).primaryColor,
         body: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            Padding(
-              padding: PrismSpace.pageInsets,
-              child: PrismSegmented<ThemeMode>(
-                values: ThemeMode.values,
-                selected: themeMode,
-                labelOf: _modeLabel,
-                iconOf: _modeIcon,
-                onChanged: _selectThemeMode,
+            ListTile(
+              onTap: () {
+                showPrismSheet(
+                  isScrollControlled: true,
+                  context: context,
+                  builder: (context) => _PreferencePanel(
+                    selected: themeMode,
+                    onSelected: (mode) {
+                      PrismHaptics.selection();
+                      Navigator.pop(context);
+                      _selectThemeMode(mode);
+                    },
+                  ),
+                );
+              },
+              leading: const Icon(JamIcons.brightness),
+              title: Text(
+                'Theme Preference',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Proxima Nova',
+                ),
               ),
+              subtitle: Text(context.prismModeAbs(), style: const TextStyle(fontSize: 12)),
             ),
             Center(
               child: Container(
@@ -244,7 +264,7 @@ class _SectionTitle extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(text, style: Theme.of(context).textTheme.headlineMedium),
+      child: Text(text, style: _sectionStyle(Theme.of(context).colorScheme.onSurface)),
     );
   }
 }
@@ -294,12 +314,7 @@ class _ThemeChipRow extends StatelessWidget {
                         children: [
                           Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: Text(
-                              option.label,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.titleSmall!.copyWith(color: option.theme.colorScheme.secondary),
-                            ),
+                            child: Text(option.label, style: _chipLabelStyle(option.theme.colorScheme.secondary)),
                           ),
                         ],
                       ),
@@ -384,6 +399,121 @@ class _AccentRow extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PreferencePanel extends StatelessWidget {
+  const _PreferencePanel({required this.selected, required this.onSelected});
+
+  final ThemeMode selected;
+  final ValueChanged<ThemeMode> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height / 2;
+    return Container(
+      height: height > 400 ? height : 400,
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+      ),
+      child: Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Container(
+                  height: 5,
+                  width: 30,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text('Theme Preference', style: _panelTitleStyle(Theme.of(context).colorScheme.onSurface)),
+          const Spacer(flex: 2),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _PreferenceOption(
+                label: 'System',
+                selected: selected == ThemeMode.system,
+                onTap: () => onSelected(ThemeMode.system),
+              ),
+              _PreferenceOption(
+                label: 'Light',
+                selected: selected == ThemeMode.light,
+                onTap: () => onSelected(ThemeMode.light),
+              ),
+              _PreferenceOption(
+                label: 'Dark',
+                selected: selected == ThemeMode.dark,
+                onTap: () => onSelected(ThemeMode.dark),
+              ),
+            ],
+          ),
+          const Spacer(flex: 2),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.8,
+              child: Text(
+                'Select your preferred theme mode. System mode automatically switches between light and dark depending on your device mode.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary),
+              ),
+            ),
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceOption extends StatelessWidget {
+  const _PreferenceOption({required this.label, required this.selected, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final double width = MediaQuery.of(context).size.width * 0.85;
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: GestureDetector(
+        onTap: onTap,
+        child: SizedBox(
+          width: width - 20,
+          height: 60,
+          child: Container(
+            width: width - 14,
+            height: 60,
+            decoration: BoxDecoration(
+              color: selected ? colors.primary.withValues(alpha: 0.2) : colors.secondary.withValues(alpha: 0.2),
+              border: Border.all(color: selected ? colors.primary : colors.secondary, width: 3),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 16, color: colors.secondary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -8,6 +8,8 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/animated/favourite_icon.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -119,6 +121,25 @@ void main() {
       tester.getRect(find.byType(SetWallpaperButton)).bottom,
       lessThanOrEqualTo(tester.view.physicalSize.height / tester.view.devicePixelRatio),
     );
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the action icons keep the current look: bare 20 point icons and the 30 point heart', (tester) async {
+    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+
+    for (final Type button in <Type>[EditButton, ShareButton, DownloadButton]) {
+      final IconThemeData icon = IconTheme.of(
+        tester.element(find.descendant(of: find.byType(button), matching: find.byType(Icon)).first),
+      );
+      expect(icon.size, 20, reason: '$button');
+      expect(
+        tester.getSize(find.descendant(of: find.byType(button), matching: find.byType(CircularMenuButton))),
+        const Size.square(54),
+      );
+    }
+    final FavoriteIcon heart = tester.widget<FavoriteIcon>(find.byType(FavoriteIcon));
+    expect(heart.iconSize, 30);
+    expect(heart.tapTargetExtent, 53);
+    expect(heart.iconColor, Theme.of(tester.element(find.byType(FavoriteIcon))).colorScheme.onSurface);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the action bar stays at the bottom when the details panel opens', (tester) async {

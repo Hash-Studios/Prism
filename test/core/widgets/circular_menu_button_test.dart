@@ -96,7 +96,8 @@ void main() {
       ),
     );
     final Offset centre = tester.getCenter(find.byType(CircularMenuButton));
-    expect(tester.getSize(find.byType(CircularMenuButton)), const Size.square(CircularMenuButton.size));
+    // The bare look of the glass bar is the current app's: a 20 point icon with 17 points around it.
+    expect(tester.getSize(find.byType(CircularMenuButton)), const Size.square(54));
 
     await tester.tapAt(centre + const Offset(14, 0));
     await tester.tapAt(centre + const Offset(0, -14));
@@ -104,5 +105,37 @@ void main() {
 
     await tester.tapAt(centre + const Offset(40, 0));
     expect(taps, 2);
+  });
+
+  testWidgets('a flat button draws a 20 point icon in the theme ink, with no circle', (tester) async {
+    final ThemeData theme = ThemeData(
+      colorScheme: const ColorScheme.dark().copyWith(secondary: const Color(0xFFABCDEF)),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: const Center(
+          child: FlatMenuButtons(
+            child: CircularMenuButton(label: 'Edit', isLoading: false, child: Icon(Icons.edit)),
+          ),
+        ),
+      ),
+    );
+
+    final IconThemeData icon = IconTheme.of(tester.element(find.byIcon(Icons.edit)));
+    expect(icon.size, 20);
+    expect(icon.color, const Color(0xFFABCDEF));
+    expect(
+      find.descendant(
+        of: find.byType(CircularMenuButton),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is DecoratedBox &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).shape == BoxShape.circle,
+        ),
+      ),
+      findsNothing,
+    );
   });
 }

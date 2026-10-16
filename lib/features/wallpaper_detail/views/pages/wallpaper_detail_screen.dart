@@ -1091,10 +1091,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         if (!hideSetWallpaperUi) WallpaperBarAction(label: 'Download', child: downloadButton()),
         WallpaperBarAction(
           label: 'Favourite',
-          child: FavouriteWallpaperButton(
-            wall: FavouriteWallEntity.fromFeedItem(entity),
-            trash: false,
-            onFavourited: () => _recordTaste(TasteAction.favourite, entity),
+          child: PressScale(
+            child: FavouriteWallpaperButton(
+              wall: FavouriteWallEntity.fromFeedItem(entity),
+              trash: false,
+              onFavourited: () => _recordTaste(TasteAction.favourite, entity),
+            ),
           ),
         ),
         WallpaperBarAction(

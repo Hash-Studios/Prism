@@ -1,7 +1,9 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:flutter/material.dart';
 
-/// Makes every [CircularMenuButton] below it draw a bare icon button: no fill and no shadow.
+/// Makes every [CircularMenuButton] below it draw a bare icon button: no fill and no shadow. This is the look of the
+/// glass action bar on the wallpaper detail screen, and it keeps the metrics of the current app: a 20 point icon in the
+/// theme ink with [CircularMenuButton.padding] around it.
 class FlatMenuButtons extends InheritedWidget {
   const FlatMenuButtons({super.key, required super.child});
 
@@ -21,6 +23,7 @@ class CircularMenuButton extends StatelessWidget {
     required this.child,
     this.onTap,
     required this.isLoading,
+    this.padding = const EdgeInsets.all(17),
     this.selected,
     this.caption,
     this.onImage = false,
@@ -31,6 +34,9 @@ class CircularMenuButton extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
   final bool isLoading;
+
+  /// Space around [child] in the bare look.
+  final EdgeInsets padding;
 
   /// For toggle actions such as Favourite, so screen readers announce the current state.
   final bool? selected;
@@ -48,6 +54,7 @@ class CircularMenuButton extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final Color fg = onImage ? Colors.white : cs.onSurface;
     final bool flat = FlatMenuButtons.of(context);
+    if (flat) return _flatButton(context);
     final Color bg = onImage ? Colors.black.withValues(alpha: 0.38) : cs.onSurface.withValues(alpha: 0.08);
     final Widget face = Stack(
       alignment: Alignment.center,
@@ -105,6 +112,41 @@ class CircularMenuButton extends StatelessWidget {
             ? content
             : GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: content),
       ),
+    );
+  }
+
+  /// The bare look of the glass action bar, as on the current app.
+  Widget _flatButton(BuildContext context) {
+    final Widget button = Stack(
+      children: <Widget>[
+        Padding(
+          padding: padding,
+          child: IconTheme(
+            data: IconThemeData(color: Theme.of(context).colorScheme.secondary, size: 20),
+            child: child,
+          ),
+        ),
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: context.motion(const Duration(milliseconds: 120)),
+            child: isLoading
+                ? const CircularProgressIndicator(key: ValueKey<bool>(true), strokeWidth: 2)
+                : const SizedBox.shrink(key: ValueKey<bool>(false)),
+          ),
+        ),
+      ],
+    );
+    return Semantics(
+      button: true,
+      label: label,
+      selected: selected,
+      child: onTap == null
+          ? button
+          : GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTap,
+              child: PressScale(child: button),
+            ),
     );
   }
 }
