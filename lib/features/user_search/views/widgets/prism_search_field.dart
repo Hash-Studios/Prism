@@ -78,7 +78,9 @@ class _PrismSearchFieldState extends State<PrismSearchField> {
               onChanged: widget.onChanged,
               onSubmitted: widget.onSubmitted,
               decoration: InputDecoration(
+                // The theme pads fields 16 by 15. In a 48 pill that keeps the text off centre.
                 isCollapsed: true,
+                contentPadding: EdgeInsets.zero,
                 filled: false,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
