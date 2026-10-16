@@ -11,7 +11,6 @@ import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
-import 'package:Prism/features/wallpaper_detail/views/widgets/detail_panel.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -140,8 +139,15 @@ class _ActionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return DecoratedBox(
-      decoration: DetailPanel.surfaceDecoration(context),
+      decoration: ShapeDecoration(
+        color: cs.surfaceContainerLow.withValues(alpha: 0.94),
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(PrismRadius.xl)),
+          side: BorderSide(color: cs.onSurface.withValues(alpha: 0.08)),
+        ),
+      ),
       child: SafeArea(
         top: false,
         minimum: const EdgeInsets.only(bottom: PrismSpace.md),

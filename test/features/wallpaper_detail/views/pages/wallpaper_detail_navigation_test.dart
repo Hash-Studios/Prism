@@ -112,7 +112,7 @@ void main() {
     unawaited(router.push<void>(WallpaperDetailRoute(entity: _prism('FIRST'))));
     await tester.pumpAndSettle();
     expect(find.text('FIRST'), findsOneWidget);
-    expect(find.text('Prism'), findsWidgets);
+    expect(find.text('Prism'), findsOneWidget);
 
     unawaited(router.push<void>(WallpaperDetailRoute(entity: _wallhaven('SECOND'))));
     await tester.pumpAndSettle();
@@ -121,12 +121,12 @@ void main() {
     expect(blocs[0].events.single, isA<LoadFromEntity>());
     expect(blocs[1].events.single, isA<LoadFromEntity>());
     expect(find.text('SECOND'), findsOneWidget);
-    expect(find.text('Wallhaven'), findsWidgets);
+    expect(find.text('Wallhaven'), findsOneWidget);
 
     router.pop<void>();
     await tester.pumpAndSettle();
     expect(find.text('FIRST'), findsOneWidget);
-    expect(find.text('Prism'), findsWidgets);
+    expect(find.text('Prism'), findsOneWidget);
     expect(find.text('SECOND'), findsNothing);
     await disposeRouter(tester);
   });
@@ -138,7 +138,7 @@ void main() {
 
     unawaited(router.push(WallpaperDetailRoute(entity: _prism(id))));
     await tester.pumpAndSettle();
-    expect(find.text('Prism'), findsWidgets);
+    expect(find.text('Prism'), findsOneWidget);
 
     await router.navigate(WallpaperDetailRoute(wallId: id, source: WallpaperSource.wallhaven));
     await pumpTransition(tester);
@@ -153,7 +153,7 @@ void main() {
 
     blocs[1].states.add(WallpaperDetailLoaded(entity: _wallhaven(id)));
     await tester.pump();
-    expect(find.text('Wallhaven'), findsWidgets);
+    expect(find.text('Wallhaven'), findsOneWidget);
 
     await router.navigate(WallpaperDetailRoute(wallId: 'OTHER-ID', source: WallpaperSource.wallhaven));
     await pumpTransition(tester);
@@ -182,7 +182,7 @@ void main() {
     blocs.single.states.add(WallpaperDetailLoaded(entity: _wallhaven('FETCHED')));
     await tester.pump();
     expect(find.text('FETCHED'), findsOneWidget);
-    expect(find.text('Wallhaven'), findsWidgets);
+    expect(find.text('Wallhaven'), findsOneWidget);
     await disposeRouter(tester);
   });
 

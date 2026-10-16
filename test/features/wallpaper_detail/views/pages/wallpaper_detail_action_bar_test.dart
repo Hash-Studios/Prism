@@ -19,6 +19,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -100,41 +101,55 @@ void main() {
     return bloc;
   }
 
-  testWidgets('Android shows a labelled Set action in the collapsed row and the other actions in the panel', (
+  testWidgets('Android shows a labelled Set action and icon actions with tooltips, on the details panel', (
     tester,
   ) async {
     await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
 
-    expect(find.text('Set wallpaper'), findsOneWidget);
+    expect(find.text('Set'), findsOneWidget);
     expect(find.byType(SetWallpaperButton), findsOneWidget);
     expect(find.byType(DownloadButton), findsOneWidget);
     expect(find.byType(FavouriteWallpaperButton), findsOneWidget);
     expect(find.byType(ShareButton), findsOneWidget);
     expect(find.byType(EditButton), findsOneWidget);
+    for (final String tooltip in <String>['Set as wallpaper', 'Download', 'Favourite', 'Share', 'Edit']) {
+      expect(find.byTooltip(tooltip), findsOneWidget, reason: tooltip);
+    }
     expect(
       tester.getRect(find.byType(SetWallpaperButton)).bottom,
       lessThanOrEqualTo(tester.view.physicalSize.height / tester.view.devicePixelRatio),
     );
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('the action bar stays at the bottom when the details panel opens', (tester) async {
+    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    final Rect before = tester.getRect(find.byType(SetWallpaperButton));
+    final double chipTopBefore = tester.getRect(find.widgetWithText(ActionChip, 'space')).top;
+
+    await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(tester.getRect(find.byType(SetWallpaperButton)), before);
+    expect(tester.getRect(find.widgetWithText(ActionChip, 'space')).top, lessThan(chipTopBefore));
+    expect(tester.getRect(find.widgetWithText(ActionChip, 'space')).bottom, lessThanOrEqualTo(before.top));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('collapsed panel content is faded out and returns when the panel opens', (tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
-    await pumpDetail(
-      tester,
-      WallpaperDetailLoaded(entity: _prism(), paletteLoading: false, colors: const <Color>[Colors.teal]),
-    );
+    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
 
     expect(find.bySemanticsLabel('Original wallpaper colors'), findsNothing);
-    AnimatedOpacity chipFade() => tester.widget<AnimatedOpacity>(
-      find.ancestor(of: find.widgetWithText(ActionChip, 'space'), matching: find.byType(AnimatedOpacity)).first,
+    final Opacity chipFade = tester.widget<Opacity>(
+      find.ancestor(of: find.widgetWithText(ActionChip, 'space'), matching: find.byType(Opacity)).first,
     );
-    expect(chipFade().opacity, 0);
+    expect(chipFade.opacity, 0);
     expect(tester.getSemantics(find.bySemanticsLabel('Expand wallpaper details')).rect.height, lessThan(100));
 
     await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
-    expect(chipFade().opacity, 1);
     expect(find.bySemanticsLabel('Original wallpaper colors'), findsOneWidget);
     semantics.dispose();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
@@ -145,7 +160,7 @@ void main() {
       WallpaperDetailLoaded(entity: _prism(), paletteLoading: false, colors: const <Color>[Colors.teal]),
     );
     final Finder tealSwatch = find.byWidgetPredicate(
-      (widget) => widget is Semantics && widget.properties.label == 'Accent color #009688',
+      (widget) => widget is Semantics && widget.properties.label == 'Accent color',
     );
 
     expect(tealSwatch, findsOneWidget);
@@ -160,10 +175,46 @@ void main() {
     verify(() => bloc.add(const SelectAccentColor(color: Colors.teal))).called(1);
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
 
+  testWidgets('every button in the bar shrinks to 0.96 under the finger, not twice over', (tester) async {
+    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    Finder glyph(Type button) => find.descendant(of: find.byType(button), matching: find.byType(Icon)).first;
+    final Map<String, Finder> buttons = <String, Finder>{
+      'Set': find.byType(SetWallpaperButton),
+      'Download': glyph(DownloadButton),
+      'Favourite': glyph(FavouriteWallpaperButton),
+      'Share': glyph(ShareButton),
+      'Edit': glyph(EditButton),
+    };
+
+    for (final MapEntry<String, Finder> button in buttons.entries) {
+      final double width = tester.getSize(button.value).width;
+      final TestGesture finger = await tester.startGesture(tester.getCenter(button.value));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      final double shown = tester.getBottomRight(button.value).dx - tester.getTopLeft(button.value).dx;
+      await finger.cancel();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(shown / width, closeTo(0.96, 0.002), reason: button.key);
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('dragging the collapsed handle opens the panel without moving the action bar', (tester) async {
+    await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    final Rect actionBarBefore = tester.getRect(find.byType(WallpaperActionBar));
+
+    await tester.drag(find.bySemanticsLabel('Expand wallpaper details'), const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('Original wallpaper colors'), findsOneWidget);
+    expect(tester.getRect(find.byType(WallpaperActionBar)), actionBarBefore);
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
+
   testWidgets('iOS shows Save as the primary action and no Set action', (tester) async {
     await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
 
-    expect(find.widgetWithText(FilledButton, 'Save'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
     expect(find.byType(SetWallpaperButton), findsNothing);
     expect(find.byType(DownloadButton), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));

@@ -88,19 +88,18 @@ void main() {
       expect(find.text('PRISM-1'), findsNothing);
     });
 
-    testWidgets('falls back to the id, with the creator name on the line below', (tester) async {
+    testWidgets('falls back to Wallpaper by the creator name', (tester) async {
       final FeedItemEntity entity = _prism();
       await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
 
-      expect(find.text('PRISM-1'), findsOneWidget);
-      expect(find.text('by Akshay'), findsOneWidget);
+      expect(find.text('Wallpaper by Akshay'), findsOneWidget);
     });
 
-    testWidgets('never puts an email in the headline', (tester) async {
+    testWidgets('never shows an email as the creator', (tester) async {
       final FeedItemEntity entity = _prism(authorName: 'creator@example.com');
       await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
 
-      expect(find.text('PRISM-1'), findsOneWidget);
+      expect(find.text('Wallpaper by Prism creator'), findsOneWidget);
       expect(find.text('Wallpaper by creator@example.com'), findsNothing);
     });
 
@@ -108,16 +107,17 @@ void main() {
       final FeedItemEntity entity = _prism();
       await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false, setCount: 12), entity: entity);
 
-      expect(find.text('12 times'), findsOneWidget);
+      expect(find.text('Set 12 times'), findsOneWidget);
     });
 
     testWidgets('hides the set count below 5 and when unknown', (tester) async {
       final FeedItemEntity entity = _prism();
       await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false, setCount: 4), entity: entity);
-      expect(find.text('4 times'), findsNothing);
+      expect(find.textContaining('Set 4'), findsNothing);
+      expect(find.textContaining(RegExp(r'Set \d+ times')), findsNothing);
 
       await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
-      expect(find.textContaining(RegExp(r'^\d+ times$')), findsNothing);
+      expect(find.textContaining(RegExp(r'Set \d+ times')), findsNothing);
     });
   });
 

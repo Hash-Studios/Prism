@@ -6,7 +6,6 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -134,6 +133,8 @@ void main() {
     await tester.pump();
   }
 
+  final Finder accentSwatch = find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Accent color');
+
   Future<void> openPanel(WidgetTester tester) async {
     await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
     await tester.pumpAndSettle();
@@ -223,30 +224,23 @@ void main() {
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal, Colors.red], accent: Colors.teal));
       await openPanel(tester);
 
-      final List<CachedNetworkImage> originals = tester
+      final List<CachedNetworkImage> swatches = tester
           .widgetList<CachedNetworkImage>(
             find.byWidgetPredicate((w) => w is CachedNetworkImage && w.memCacheWidth == 240),
           )
           .toList();
-      expect(originals.map((swatch) => (swatch.imageUrl, swatch.color, swatch.colorBlendMode)), <Object>[
+      expect(swatches.map((swatch) => (swatch.imageUrl, swatch.color, swatch.colorBlendMode)), <Object>[
         ('https://img.test/thumb.jpg', null, null),
+        ('https://img.test/thumb.jpg', Colors.teal, BlendMode.hue),
+        ('https://img.test/thumb.jpg', Colors.red, BlendMode.hue),
       ]);
-      for (final Color color in <Color>[Colors.teal, Colors.red]) {
-        expect(
-          find.descendant(
-            of: find.bySemanticsLabel('Accent color #${color.rgbHex.toUpperCase()}'),
-            matching: find.byWidgetPredicate((w) => w is ColoredBox && w.color == color),
-          ),
-          findsOneWidget,
-        );
-      }
     });
 
     testWidgets('a long press on a swatch copies its hex colour', (tester) async {
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
       await openPanel(tester);
 
-      await tester.longPress(find.bySemanticsLabel('Accent color #009688'));
+      await tester.longPress(accentSwatch);
       await tester.pump();
 
       expect(copied, '#009688');
@@ -264,7 +258,7 @@ void main() {
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal], accent: Colors.teal));
       await openPanel(tester);
 
-      await tester.tap(find.bySemanticsLabel('Accent color #009688'));
+      await tester.tap(accentSwatch);
       await tester.tap(find.bySemanticsLabel('Original wallpaper colors'));
 
       expect(played, <String>['selection', 'selection']);

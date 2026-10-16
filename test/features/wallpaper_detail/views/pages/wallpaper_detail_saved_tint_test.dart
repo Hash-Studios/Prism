@@ -15,6 +15,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
+import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -186,7 +187,7 @@ void main() {
       await pumpReopened(tester, file);
       await tester.runAsync(() async {});
 
-      await tester.tap(find.byType(DownloadButton));
+      await tester.tap(find.byType(PrimaryActionPill));
       await settle(tester);
 
       expect(find.text('Already in Downloads'), findsOneWidget);
@@ -207,10 +208,7 @@ void main() {
       final File file = downloadedFile('full_tint-ff8800.png');
       await pumpReopened(tester, file);
 
-      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
-      await tester.tap(find.byType(EditButton));
+      await tester.tap(find.byTooltip('Edit'));
       await settle(tester);
 
       verify(() => router.push(WallpaperFilterRoute(filePath: file.path))).called(1);
@@ -246,10 +244,7 @@ void main() {
       expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).variant, isNull);
       expect(tester.widget<EditButton>(find.byType(EditButton)).prepareSource, isNotNull);
 
-      await tester.tap(find.bySemanticsLabel('Expand wallpaper details'));
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
-      await tester.tap(find.byType(EditButton));
+      await tester.tap(find.byTooltip('Edit'));
       await settle(tester);
 
       verify(() => router.push(WallpaperFilterRoute(filePath: file.path))).called(1);

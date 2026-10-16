@@ -1,10 +1,13 @@
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -34,6 +37,80 @@ const List<_TagScene> _tagScenes = <_TagScene>[
 ];
 
 void main() {
+  group('WallpaperActionBar', () {
+    testWidgets('shows the labelled primary action and an icon action with a tooltip for each button', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          const WallpaperActionBar(
+            primary: WallpaperBarAction(label: 'Set as wallpaper', child: Text('Set')),
+            actions: <WallpaperBarAction>[
+              WallpaperBarAction(label: 'Download', child: Icon(Icons.download)),
+              WallpaperBarAction(label: 'Favourite', child: Icon(Icons.favorite)),
+              WallpaperBarAction(label: 'Share', child: Icon(Icons.share)),
+              WallpaperBarAction(label: 'Edit', child: Icon(Icons.edit)),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.text('Set'), findsOneWidget);
+      for (final String label in <String>['Set as wallpaper', 'Download', 'Favourite', 'Share', 'Edit']) {
+        expect(find.byTooltip(label), findsOneWidget, reason: label);
+      }
+    });
+
+    testWidgets('draws menu buttons bare and the primary action as an accent pill', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          const WallpaperActionBar(
+            primary: WallpaperBarAction(
+              label: 'Set as wallpaper',
+              child: PrimaryActionPill(
+                icon: Icons.image,
+                label: 'Set',
+                semanticLabel: 'Set as wallpaper',
+                isLoading: false,
+              ),
+            ),
+            actions: <WallpaperBarAction>[
+              WallpaperBarAction(
+                label: 'Share',
+                child: CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.descendant(of: find.byType(CircularMenuButton), matching: find.byType(DecoratedBox)), findsNothing);
+      final DecoratedBox pill = tester.widget<DecoratedBox>(
+        find.descendant(of: find.byType(PrimaryActionPill), matching: find.byType(DecoratedBox)).first,
+      );
+      final Color accent = Theme.of(tester.element(find.byType(PrimaryActionPill))).colorScheme.primary;
+      expect((pill.decoration as ShapeDecoration).color, accent);
+    });
+
+    testWidgets('keeps every action inside a narrow screen', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        _host(
+          WallpaperActionBar(
+            primary: const WallpaperBarAction(label: 'Set as wallpaper', child: SizedBox(width: 54, height: 54)),
+            actions: List<WallpaperBarAction>.generate(
+              4,
+              (i) => WallpaperBarAction(label: 'a$i', child: const SizedBox(width: 54, height: 54)),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('SimilarWallpapersStrip', () {
     testWidgets('is hidden when nothing similar exists', (tester) async {
       await tester.pumpWidget(
