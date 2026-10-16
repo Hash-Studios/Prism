@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
@@ -58,6 +59,20 @@ void main() {
     return repo;
   }
 
+  List<Object?> captureHaptics(WidgetTester tester) {
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
+    return played;
+  }
+
   testWidgets('shows skeleton rows while loading', (tester) async {
     await pumpScreen(tester, Result.success(const <BlockedUserListRow>[]));
 
@@ -75,20 +90,25 @@ void main() {
     expect(find.textContaining('Blocking hides their posts from your feed.'), findsOneWidget);
   });
 
-  testWidgets('a failed load offers a retry that loads again', (tester) async {
+  testWidgets('retry loads rows after a failure with one tap haptic', (tester) async {
+    final List<Object?> played = captureHaptics(tester);
     final repo = await pumpScreen(tester, Result.error(const ServerFailure('down')));
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Could not load blocked accounts'), findsOneWidget);
-    repo.result = Result.success(const <BlockedUserListRow>[]);
+    repo.result = Result.success(const <BlockedUserListRow>[
+      BlockedUserListRow(blockedUid: 'u2', blockedEmail: 'ignored@example.com', blockedUsername: 'refreshed'),
+    ]);
     await tester.tap(find.text('Retry'));
     await tester.pump();
+    expect(played, <Object?>['tap']);
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('No blocked accounts'), findsOneWidget);
+    expect(find.text('@refreshed'), findsOneWidget);
   });
 
   testWidgets('unblocking asks first, then removes the row', (tester) async {
+    final List<Object?> played = captureHaptics(tester);
     final repo = await pumpScreen(
       tester,
       Result.success(const <BlockedUserListRow>[
@@ -101,6 +121,8 @@ void main() {
     expect(find.text('sam@example.com'), findsNothing);
     await tester.tap(find.text('Unblock'));
     await tester.pump();
+    expect(played, <Object?>['tap']);
+    played.clear();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Unblock sam_k?'), findsOneWidget);
     expect(find.textContaining('Their posts will appear in your feed again.'), findsOneWidget);
@@ -111,6 +133,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(repo.unblocked, <String>['u9']);
+    expect(played, <Object?>['tap', 'success']);
     expect(toasts, contains('Unblocked'));
     expect(find.text('No blocked accounts'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
@@ -153,6 +176,7 @@ void main() {
   });
 
   testWidgets('the blocked profile shell names the user and unblocks', (tester) async {
+    final List<Object?> played = captureHaptics(tester);
     final repo = _RowsRepository(Result.success(const <BlockedUserListRow>[]));
     getIt.registerSingleton<UserBlockRepository>(repo);
     await tester.pumpWidget(
@@ -166,7 +190,9 @@ void main() {
     await tester.tap(find.text('Unblock'));
     await tester.pump(const Duration(milliseconds: 400));
 
+    expect(played, <Object?>['tap', 'success']);
     expect(repo.unblocked, <String>['u9']);
+    expect(toasts, contains('Unblocked'));
     await tester.pump(const Duration(seconds: 2));
   });
 }

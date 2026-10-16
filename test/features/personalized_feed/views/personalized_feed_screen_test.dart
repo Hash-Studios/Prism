@@ -7,6 +7,7 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
@@ -30,7 +31,9 @@ import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dar
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/paged_chip_sliver.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
+import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -38,6 +41,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -58,6 +62,8 @@ class _MockCacheManager extends Mock implements BaseCacheManager {}
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
 
 class _MockFavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
+
+class _MockPagedFeedBloc extends MockBloc<PagedFeedEvent, PagedFeedState> implements PagedFeedBloc {}
 
 FeedItemEntity _item(String id, {List<String>? collections}) => FeedItemEntity.prism(
   id: id,
@@ -80,6 +86,22 @@ PersonalizedFeedPage _page(
 );
 
 void main() {
+  List<String> recordHaptics(WidgetTester tester) {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    final bool wasEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    final List<String> events = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'play') events.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      PrismHaptics.enabled = wasEnabled;
+    });
+    return events;
+  }
+
   late _MockFetchUseCase fetchUseCase;
   late _MockFeedRepository feedRepository;
   late _MockPrismRepository prismRepository;
@@ -344,6 +366,7 @@ void main() {
   });
 
   testWidgets('a feed with no items explains how to shape it and opens the tune sheet', (tester) async {
+    final List<String> haptics = recordHaptics(tester);
     when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(_page(<String>[])));
     var tuned = 0;
 
@@ -351,7 +374,9 @@ void main() {
 
     expect(find.text('Shape this feed'), findsOneWidget);
     await tester.tap(find.text('Tune your feed'));
+    await tester.pump();
     expect(tuned, 1);
+    expect(haptics, <String>['tap']);
   });
 
   testWidgets('content shows the For you header, a tune button, the grid and the caught up state', (tester) async {
@@ -392,6 +417,76 @@ void main() {
 
     expect(find.byType(FeedLoadingMore), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('For you load-more retry emits one tap haptic and requests another page', (tester) async {
+    final List<String> haptics = recordHaptics(tester);
+    int calls = 0;
+    final Completer<Result<PersonalizedFeedPage>> retriedPage = Completer<Result<PersonalizedFeedPage>>();
+    when(() => fetchUseCase(any())).thenAnswer((_) {
+      calls++;
+      if (calls == 1) return Future.value(Result.success(_page(<String>['a', 'b', 'c', 'd', 'e', 'f'], hasMore: true)));
+      if (calls == 2) return Future.value(Result.error(const NetworkFailure('offline')));
+      return retriedPage.future;
+    });
+    await pumpScreen(tester, disableAnimations: true);
+    tester
+        .element(find.byType(CustomScrollView))
+        .read<PersonalizedFeedBloc>()
+        .add(const PersonalizedFeedEvent.fetchMoreRequested());
+    await _settle(tester);
+    final Finder retry = find.text("Couldn't load more. Try again");
+    await tester.ensureVisible(retry);
+    haptics.clear();
+
+    await tester.tap(retry);
+    await _settle(tester);
+
+    expect(haptics, <String>['tap']);
+    expect(calls, 3);
+  });
+
+  testWidgets('a paged chip load-more retry emits one tap haptic and requests another page', (tester) async {
+    final List<String> haptics = recordHaptics(tester);
+    final _MockPagedFeedBloc paged = _MockPagedFeedBloc();
+    when(() => paged.state).thenReturn(
+      PagedFeedState.initial().copyWith(
+        status: LoadStatus.success,
+        actionStatus: ActionStatus.failure,
+        items: <FeedItemEntity>[_item('a')],
+      ),
+    );
+    final _MockFavouriteBloc favourites = _MockFavouriteBloc();
+    when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
+    tester.view.physicalSize = const Size(600, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BlocProvider<FavouriteWallsBloc>.value(
+            value: favourites,
+            child: CustomScrollView(
+              slivers: <Widget>[
+                PagedChipSliver(
+                  bloc: paged,
+                  failureTitle: 'Failed',
+                  emptyTitle: 'Empty',
+                  crossAxisCount: 3,
+                  tileMemCacheHeight: 400,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text("Couldn't load more. Try again"));
+    await tester.pump();
+
+    expect(haptics, <String>['tap']);
+    verify(() => paged.add(const PagedFeedEvent.fetchMoreRequested())).called(1);
   });
 
   testWidgets('the carousel shows Wall of the Day first, with dots under the card', (tester) async {

@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -349,7 +348,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<void> _retryUpload() async {
-    PrismHaptics.tap();
     if (_stage == _UploadStage.failedProcessing) {
       await _prepareImage();
     }
@@ -362,7 +360,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _leaving) {
       return;
     }
-    PrismHaptics.tap();
     setState(() {
       _stage = _UploadStage.uploading;
       _errorMessage = null;
@@ -374,7 +371,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   Future<void> _retrySubmit() async {
     if (_stage != _UploadStage.failedSubmission || _submitted || _leaving) return;
-    PrismHaptics.tap();
     await _saveRecord();
   }
 
@@ -478,7 +474,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   Future<void> _skip() async {
     final batch = widget.batch;
     if (batch == null || _isBusy || _submitted || _leaving) return;
-    PrismHaptics.tap();
     final failed =
         _stage == _UploadStage.failedProcessing ||
         _stage == _UploadStage.failedUpload ||

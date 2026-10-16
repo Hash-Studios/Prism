@@ -45,7 +45,6 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
   }
 
   Future<void> _unblock(BlockedUserListRow row, String name) async {
-    PrismHaptics.tap();
     final bool confirmed = await showPrismConfirm(
       context,
       title: 'Unblock $name?',
@@ -79,10 +78,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                 title: 'Could not load blocked accounts',
                 body: 'Check your connection and try again.',
                 actionLabel: 'Retry',
-                onAction: () {
-                  PrismHaptics.tap();
-                  _refresh();
-                },
+                onAction: _refresh,
               ),
             );
           }

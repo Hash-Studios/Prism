@@ -370,12 +370,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
         title: 'Shape this feed',
         body: 'Follow creators or choose interests so we can surface more of what you like.',
         actionLabel: widget.onTuneTap == null ? null : 'Tune your feed',
-        onAction: widget.onTuneTap == null
-            ? null
-            : () {
-                PrismHaptics.tap();
-                widget.onTuneTap!();
-              },
+        onAction: widget.onTuneTap,
       );
     }
 
@@ -388,7 +383,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
             variant: PrismButtonVariant.ghost,
             size: PrismButtonSize.compact,
             onPressed: () {
-              PrismHaptics.tap();
               context.read<PersonalizedFeedBloc>().add(const PersonalizedFeedEvent.fetchMoreRequested());
             },
           ),

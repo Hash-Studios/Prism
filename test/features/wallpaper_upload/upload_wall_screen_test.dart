@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -242,6 +243,55 @@ void main() {
     expect(find.text('Upload wallpaper'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('upload button plays one tap haptic and uploads both image files', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final List<String> haptics = <String>[];
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') haptics.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    final List<bool> uploadedThumbnails = <bool>[];
+    var saveCalls = 0;
+
+    await pumpRoutedUpload(
+      tester,
+      () => UploadWallRoute(
+        image: image,
+        prepareImageForTesting: () async {},
+        uploadFileForTesting: ({required isThumbnail}) async {
+          uploadedThumbnails.add(isThumbnail);
+          return isThumbnail
+              ? const GitHubContent(
+                  downloadUrl: 'https://example.test/thumb.png',
+                  path: 'thumb_pixel.png',
+                  sha: 'thumb-sha',
+                )
+              : const GitHubContent(downloadUrl: 'https://example.test/wall.png', path: 'pixel.png', sha: 'wall-sha');
+        },
+        createRecordForTesting: () async {
+          saveCalls++;
+          return wall_store.WallSubmissionResult.submitted;
+        },
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Upload'));
+    await tester.pumpAndSettle();
+
+    expect(uploadedThumbnails, <bool>[false, true]);
+    expect(saveCalls, 1);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
+    expect(find.text('review-stub'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('stage title has readable contrast in every legacy theme', (tester) async {
     await setViewport(tester);
@@ -632,6 +682,15 @@ void main() {
   testWidgets('reuses the wallpaper and retries only the failed thumbnail upload', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
+    final List<String> haptics = <String>[];
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') haptics.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     var wallpaperCalls = 0;
     var thumbnailCalls = 0;
     var saveCalls = 0;
@@ -665,16 +724,19 @@ void main() {
     await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     expect(find.text('Upload did not finish'), findsOneWidget);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
 
+    haptics.clear();
     await tester.ensureVisible(find.text('Try again'));
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
+    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
 
     expect(wallpaperCalls, 1);
     expect(thumbnailCalls, 2);
     expect(saveCalls, 1);
     expect(tester.takeException(), isNull);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('uses the requested path to discard a response missing URL and path', (tester) async {
     await setViewport(tester);
@@ -946,6 +1008,15 @@ void main() {
   testWidgets('an image that cannot be prepared shows the reason and a retry', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
+    final List<String> haptics = <String>[];
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') haptics.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     var attempts = 0;
 
     await tester.pumpWidget(
@@ -969,13 +1040,23 @@ void main() {
     await tester.tap(find.text('Try again'));
     await pumpImagePreparation(tester);
     await tester.pumpAndSettle();
+    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
 
     expect(attempts, 2);
     expect(find.text('Ready to submit'), findsOneWidget);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   testWidgets('Retry submit reuses the uploaded files and submits once the save works', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
+    final List<String> haptics = <String>[];
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') haptics.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     var uploadCalls = 0;
     var saveCalls = 0;
 
@@ -1006,16 +1087,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Retry submit'), findsOneWidget);
     expect(uploadCalls, 2);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
 
+    haptics.clear();
     await tester.ensureVisible(find.text('Retry submit'));
     await tester.tap(find.text('Retry submit'));
     await tester.pumpAndSettle();
 
+    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
     expect(saveCalls, 2);
     expect(uploadCalls, 2);
     expect(find.text('review-stub'), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('a weekly limit error from the server explains it and shows the paywall', (tester) async {
     await setViewport(tester);

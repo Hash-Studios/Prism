@@ -13,12 +13,16 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
 /// Opens the streak freeze buy flow. [onEarnCoins] runs when the user has too few coins and asks how to get more.
-Future<void> buyStreakFreezeFlow(BuildContext context, {required VoidCallback onEarnCoins}) async {
+Future<void> buyStreakFreezeFlow(
+  BuildContext context, {
+  required VoidCallback onEarnCoins,
+  bool playTapHaptic = true,
+}) async {
   if (CoinsService.instance.streakNotifier.value.freezes >= CoinPolicy.maxStreakFreezes) {
     toasts.error('You already hold ${CoinPolicy.maxStreakFreezes} freezes.');
     return;
   }
-  PrismHaptics.tap();
+  if (playTapHaptic) PrismHaptics.tap();
   final _FreezeSheetResult? result = await showPrismSheet<_FreezeSheetResult>(
     context: context,
     useSafeArea: true,
@@ -89,7 +93,9 @@ class FreezeCard extends StatelessWidget {
                       trailing: full ? null : const PrismCoinIcon(size: 16),
                       variant: PrismButtonVariant.tonal,
                       size: PrismButtonSize.compact,
-                      onPressed: full ? null : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins),
+                      onPressed: full
+                          ? null
+                          : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins, playTapHaptic: false),
                     ),
                   ],
                 ),
@@ -159,7 +165,6 @@ class _FreezeSheetState extends State<_FreezeSheet> {
   }
 
   Future<void> _buy() async {
-    PrismHaptics.tap();
     setState(() => _busy = true);
     final StreakFreezePurchase purchase = await CoinsService.instance.buyStreakFreeze();
     if (!mounted) return;

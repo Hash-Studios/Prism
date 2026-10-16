@@ -113,7 +113,6 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
       toasts.error('Choose a reason');
       return;
     }
-    PrismHaptics.tap();
     setState(() => _submitting = true);
     String appVersion = '';
     try {

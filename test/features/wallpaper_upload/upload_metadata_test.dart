@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
@@ -336,15 +337,29 @@ void main() {
     });
 
     testWidgets('Skip records the image as skipped and moves on', (tester) async {
+      final List<String> haptics = <String>[];
+      final bool previousHapticsEnabled = PrismHaptics.enabled;
+      PrismHaptics.enabled = true;
+      addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'HapticFeedback.vibrate') haptics.add(call.arguments! as String);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
       final batch = await pumpRoutedBatch(tester);
+      final skipButton = find.text('Skip this wallpaper');
 
-      await tester.tap(find.text('Skip this wallpaper'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(skipButton);
+      await tester.pumpAndSettle();
+      await tester.tap(skipButton);
       await tester.pumpAndSettle();
 
+      expect(haptics, <String>['HapticFeedbackType.lightImpact']);
       expect(find.text('edit-stub'), findsOneWidget);
       expect(batch.outcomes.first, UploadItemOutcome.skipped);
       expect(batch.position, 2);
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a single image shows no step and no Skip button', (tester) async {
       setViewport(tester);

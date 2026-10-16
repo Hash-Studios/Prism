@@ -1,7 +1,9 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -61,6 +63,30 @@ void main() {
     expect(result, rejectReasons[4].text);
     expect(find.byType(PrismSheetBody), findsNothing);
   });
+
+  testWidgets('the confirm button submits the exact reason with one tap haptic', (tester) async {
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
+    String? submittedReason;
+    await openSheet(tester, (reason) async => submittedReason = reason);
+
+    await tester.tap(find.text('Duplicate'));
+    await tester.pump();
+    played.clear();
+    await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(submittedReason, 'This wallpaper is a duplicate of one that is already on Prism.');
+    expect(played, <Object?>['tap']);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the sheet asks for a reason and submits nothing on cancel', (tester) async {
     String? result = 'unset';

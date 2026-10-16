@@ -200,7 +200,12 @@ class _DownloadButtonState extends State<DownloadButton> {
         label: semantics,
         excludeSemantics: true,
         onTap: _handleTap,
-        child: PrismButton(label: text, size: PrismButtonSize.compact, loading: isLoading, onPressed: _handleTap),
+        child: PrismButton(
+          label: text,
+          size: PrismButtonSize.compact,
+          loading: isLoading,
+          onPressed: () => _handleTap(playTapHaptic: false),
+        ),
       );
     }
     return GestureDetector(
@@ -210,7 +215,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     );
   }
 
-  Future<void> _handleTap() async {
+  Future<void> _handleTap({bool playTapHaptic = true}) async {
     if (isLoading) {
       toasts.error('Wait for download to complete!');
       return;
@@ -221,7 +226,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.error('No download link available.');
       return;
     }
-    PrismHaptics.tap();
+    if (playTapHaptic) PrismHaptics.tap();
 
     if (mounted) {
       setState(() => isLoading = true);
@@ -393,7 +398,6 @@ class _DownloadButtonState extends State<DownloadButton> {
       builder: (BuildContext sheetContext) => _GuestAdGateSheet(
         adsAllowed: adsAllowed,
         onBuyPremium: () {
-          PrismHaptics.tap();
           Navigator.of(sheetContext).pop();
           PaywallOrchestrator.instance.presentOrRequireSignIn(
             context,
@@ -613,7 +617,6 @@ class _GuestAdGateSheetState extends State<_GuestAdGateSheet> {
   bool _watching = false;
 
   Future<void> _watch() async {
-    PrismHaptics.tap();
     setState(() => _watching = true);
     final RewardedAdResult watched = await watchRewardedAdResult(context.read<AdsBloc>());
     if (mounted) setState(() => _watching = false);

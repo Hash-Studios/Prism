@@ -418,10 +418,10 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
-  Future<void> _start({bool forceSheet = false}) async {
+  Future<void> _start({bool forceSheet = false, bool playTapHaptic = true}) async {
     final String? url = widget.url;
     if (isLoading || url == null) return;
-    PrismHaptics.tap();
+    if (playTapHaptic) PrismHaptics.tap();
     String source = url;
     final Future<String> Function()? prepare = widget.prepareSource;
     if (prepare != null) {
@@ -474,7 +474,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
               label: label ?? 'Set wallpaper',
               size: PrismButtonSize.compact,
               loading: isLoading,
-              onPressed: _start,
+              onPressed: () => _start(playTapHaptic: false),
             ),
           )
         : label == null

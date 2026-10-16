@@ -60,7 +60,6 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
       setState(() => _errorMessage = 'Enter a reason before rejecting this item.');
       return;
     }
-    PrismHaptics.tap();
     setState(() {
       _isSaving = true;
       _errorMessage = null;

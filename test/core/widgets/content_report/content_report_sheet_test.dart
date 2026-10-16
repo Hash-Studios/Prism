@@ -4,6 +4,7 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
@@ -183,6 +184,34 @@ void main() {
     );
     await tester.pump(const Duration(seconds: 5));
   });
+
+  testWidgets('sending a report submits the exact payload with one tap haptic', (tester) async {
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    messenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(haptics, null));
+
+    await open(tester);
+    await tester.tap(find.text('Spam or misleading'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'More information');
+    played.clear();
+
+    await tester.tap(find.text('Send report'));
+    await tester.pumpAndSettle();
+
+    expect(reports.sent, <({String type, String id, String reason, String details})>[
+      (type: 'wall', id: 'wall-doc', reason: 'spam', details: 'More information'),
+    ]);
+    expect(played, <Object?>['tap', 'success']);
+    await tester.pump(const Duration(seconds: 2));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('a guest gets the sign-in sheet, not only a toast', (tester) async {
     await open(tester, signedIn: false);

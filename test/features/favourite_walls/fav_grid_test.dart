@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -85,6 +86,22 @@ void main() {
         ),
       ),
     );
+  }
+
+  List<String> recordHaptics(WidgetTester tester) {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    final bool wasEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    final List<String> haptics = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'play') haptics.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      PrismHaptics.enabled = wasEnabled;
+    });
+    return haptics;
   }
 
   testWidgets('shows loading cards until the favourites arrive, then the empty state', (tester) async {
@@ -245,6 +262,7 @@ void main() {
     });
 
     testWidgets('long press selects, Remove sends one batched delete and Undo restores', (tester) async {
+      final List<String> haptics = recordHaptics(tester);
       createBlocWith(<FavouriteWallEntity>[
         prismFav('a', author: 'Ada', createdAt: DateTime.utc(2025, 1, 3)),
         pexelsFav('b', author: 'Grace', createdAt: DateTime.utc(2025, 1, 2)),
@@ -258,6 +276,7 @@ void main() {
       await tester.pump();
       expect(find.text('2 selected'), findsOneWidget);
 
+      haptics.clear();
       await tester.tap(find.bySemanticsLabel('Remove from favourites'));
       await tester.pump();
       await tester.pump();
@@ -266,6 +285,7 @@ void main() {
       final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
       expect(params.wallIds, <String>['a', 'b']);
       expect(bloc.state.items.map((wall) => wall.id), <String>['c']);
+      expect(haptics, <String>['tap']);
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('Removed 2 favourites'), findsOneWidget);
 
@@ -274,6 +294,26 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(bloc.state.items.map((wall) => wall.id), <String>['a', 'b', 'c']);
+    });
+
+    testWidgets('an unavailable favourite Remove emits one tap haptic and removes the wall', (tester) async {
+      final List<String> haptics = recordHaptics(tester);
+      createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada')]);
+      await pumpLoaded(tester);
+      tester.widget<FavouriteTileImage>(find.byType(FavouriteTileImage)).onUnavailable();
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(PrismButton, 'Remove'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
+      expect(params.wallIds, <String>['a']);
+      expect(bloc.state.items, isEmpty);
+      expect(haptics, <String>['tap']);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Removed from favourites'), findsOneWidget);
     });
 
     testWidgets('legacy favourites explain themselves on tap and can be removed after a long press', (tester) async {
@@ -502,6 +542,24 @@ void main() {
       expect(find.text('Sign in to use favourites'), findsOneWidget);
       await tester.pump();
       await tester.pump();
+    });
+
+    testWidgets('the guest banner Sign in emits one tap haptic', (tester) async {
+      final List<String> haptics = recordHaptics(tester);
+      when(
+        () => fetchUseCase(any()),
+      ).thenAnswer((_) async => Result.success(<FavouriteWallEntity>[prismFav('a', author: 'Ada')]));
+      createBloc();
+      await pumpGrid(tester);
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(PrismButton, 'Sign in'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(haptics, <String>['tap']);
+      expect(find.text('Sign in to Prism'), findsOneWidget);
     });
 
     testWidgets('a guest with saved favourites sees the list and a banner that can be dismissed', (tester) async {

@@ -1,4 +1,3 @@
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -99,7 +98,6 @@ class PagedChipSliver extends StatelessWidget {
             variant: PrismButtonVariant.ghost,
             size: PrismButtonSize.compact,
             onPressed: () {
-              PrismHaptics.tap();
               bloc.add(const PagedFeedEvent.fetchMoreRequested());
             },
           ),

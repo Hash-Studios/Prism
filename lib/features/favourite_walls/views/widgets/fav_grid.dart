@@ -164,10 +164,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       );
   }
 
-  Future<void> _removeWalls(List<FavouriteWallEntity> walls) async {
+  Future<void> _removeWalls(List<FavouriteWallEntity> walls, {bool playTapHaptic = true}) async {
     final FavouriteWallsAdapter adapter = context.favouriteWallsAdapter(listen: false);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    PrismHaptics.tap();
+    if (playTapHaptic) PrismHaptics.tap();
     final bool removed = await adapter.removeWalls(walls.map((wall) => wall.id).toList(growable: false));
     if (!removed) {
       toasts.error("Couldn't remove favourites. Try again.");
@@ -254,7 +254,6 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                 variant: PrismButtonVariant.ghost,
                 size: PrismButtonSize.compact,
                 onPressed: () {
-                  PrismHaptics.tap();
                   googleSignInPopUp(context, () => main.RestartWidget.restartApp(context));
                 },
               ),
@@ -478,7 +477,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                           label: 'Remove',
                           variant: PrismButtonVariant.danger,
                           size: PrismButtonSize.compact,
-                          onPressed: () => unawaited(_removeWalls(<FavouriteWallEntity>[wall])),
+                          onPressed: () => unawaited(_removeWalls(<FavouriteWallEntity>[wall], playTapHaptic: false)),
                         ),
                       ),
                     ),
