@@ -487,3 +487,17 @@ test("backfill arguments fall back to safe values", () => {
   });
   assert.equal(parseBackfillArgs(["--apply"]).apply, true);
 });
+
+test("the backfill recomputes walls whose colours are not palette ids", async () => {
+  const png = await bandsPng([["cc0000", SIZE]]);
+  const fetchImpl: ColorFetch = async () => replyOf(png);
+  const walls: FakeWall[] = [
+    {id: "a", data: {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", colors: ["nope"]}},
+    {id: "b", data: {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/b.png", colors: []}},
+    {id: "c", data: {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/c.png", colors: ["blue"]}},
+  ];
+  const updates: Array<[string, Record<string, unknown>]> = [];
+  const counts = await backfillWallColors(fakeBackfillDb(walls, updates), parseBackfillArgs(["--apply"]), fetchImpl, () => undefined);
+  assert.equal(counts.skipped, 1);
+  assert.deepEqual(updates.map(([id]) => id).sort(), ["a", "b"]);
+});

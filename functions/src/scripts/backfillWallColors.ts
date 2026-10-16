@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 
-import {ColorFetch, wallColorsFor} from "../wallColors";
+import {ColorFetch, hasPaletteColors, wallColorsFor} from "../wallColors";
 
 export type BackfillOptions = {apply: boolean; batchSize: number; startAfter?: string; force: boolean};
 export type BackfillCounts = {scanned: number; skipped: number; colored: number; failed: number; written: number};
@@ -36,8 +36,7 @@ export async function backfillWallColors(
 
     const pending = snapshot.docs.filter((doc) => {
       counts.scanned += 1;
-      const hasColors = Array.isArray(doc.get("colors")) && doc.get("colors").length > 0;
-      if (hasColors && !options.force) {
+      if (hasPaletteColors(doc.get("colors")) && !options.force) {
         counts.skipped += 1;
         return false;
       }
