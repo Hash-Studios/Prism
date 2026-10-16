@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 
 function SubSection({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
-    <div className="mt-4">
+    <div className="first:mt-4">
       <h3 className="text-base font-semibold text-black">{heading}</h3>
       <div className="mt-2 space-y-2">{children}</div>
     </div>

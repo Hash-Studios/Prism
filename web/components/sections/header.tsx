@@ -6,7 +6,7 @@ export function Header() {
     <nav className="fixed w-full top-0 z-40 flex items-center justify-between animate-down transition-all duration-200 bg-transparent p-6">
       <div className="w-[140px] flex items-start">
         <a
-          className="relative w-12 h-12 squircle overflow-hidden group cursor-pointer block flex-shrink-0"
+          className="relative w-12 h-12 squircle overflow-hidden group cursor-pointer block shrink-0"
           href="/"
           aria-label="Prism Wallpapers"
         >
@@ -33,7 +33,7 @@ export function Header() {
 
       <div className="flex items-center gap-1">
         <a
-          className="flex items-center text-base justify-center font-semibold gap-2 py-2.5 px-4 rounded-xl sm:rounded-3xl transition-all flex-shrink-0 cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent"
+          className="flex items-center text-base justify-center font-semibold gap-2 py-2.5 px-4 rounded-xl sm:rounded-3xl transition-all shrink-0 cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent"
           target="_blank"
           rel="noopener noreferrer"
           href={PLAY_STORE_URL}
@@ -41,7 +41,7 @@ export function Header() {
           Google Play
         </a>
         <a
-          className="flex items-center text-base justify-center font-semibold gap-2 py-2.5 px-4 rounded-xl sm:rounded-3xl transition-all flex-shrink-0 cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent"
+          className="flex items-center text-base justify-center font-semibold gap-2 py-2.5 px-4 rounded-xl sm:rounded-3xl transition-all shrink-0 cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent"
           target="_blank"
           rel="noopener noreferrer"
           href={APP_STORE_URL}

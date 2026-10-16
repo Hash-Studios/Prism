@@ -269,10 +269,11 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - name: Install and typecheck
+      - name: Install, typecheck and build
         run: |
           npm ci
           npx tsc --noEmit
+          npm run build
 
   rules:
     name: Firestore rules verify
