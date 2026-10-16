@@ -67,6 +67,8 @@ struct GetPrismWallpaperIntent: AppIntent {
     do {
       let url = try await PrismShortcutWallpaperLoader.wallOfTheDayImageURL()
       return try await PrismShortcutWallpaperLoader.imageData(from: url)
+    } catch let error as CancellationError {
+      throw error
     } catch {
       throw PrismShortcutError.wallOfTheDayUnavailable
     }
@@ -86,6 +88,8 @@ struct GetPrismWallpaperIntent: AppIntent {
     let data: Data
     do {
       data = try await PrismShortcutWallpaperLoader.imageData(from: favourite.url)
+    } catch let error as CancellationError {
+      throw error
     } catch {
       throw PrismShortcutError.favouriteUnavailable
     }
