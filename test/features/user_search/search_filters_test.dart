@@ -1,3 +1,4 @@
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,5 +36,19 @@ void main() {
     expect(const SearchFilters(), const SearchFilters());
     expect(const SearchFilters().hashCode, const SearchFilters().hashCode);
     expect(filters, isNot(const SearchFilters()));
+  });
+
+  test('the colour is off by default, can be set and cleared, and takes part in equality', () {
+    final PrismPaletteColor blue = paletteColorById('blue')!;
+    final withBlue = const SearchFilters().copyWith(color: blue);
+
+    expect(const SearchFilters().color, isNull);
+    expect(withBlue.color, blue);
+    expect(withBlue, isNot(const SearchFilters()));
+    expect(withBlue, SearchFilters(color: blue));
+    expect(withBlue.hashCode, SearchFilters(color: blue).hashCode);
+    expect(withBlue.copyWith(sort: SearchSort.latest).color, blue);
+    expect(withBlue.copyWith(clearColor: true), const SearchFilters());
+    expect(withBlue.copyWith(color: paletteColorById('red')).color!.id, 'red');
   });
 }

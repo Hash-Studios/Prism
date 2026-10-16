@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -28,6 +29,9 @@ class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
   String? lastMinResolution;
   String? lastSorting;
   String? lastPaginationKey;
+  String? lastCategoryName;
+  String? lastColors;
+  int calls = 0;
 
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({
@@ -40,7 +44,11 @@ class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
     bool portraitOnly = true,
     String? minResolution,
     String? sorting,
+    String? colors,
   }) async {
+    calls++;
+    lastCategoryName = categoryName;
+    lastColors = colors;
     lastCategories = categories;
     lastPurity = purity;
     lastRefresh = refresh;
@@ -61,6 +69,8 @@ class _FakePexelsRepository implements PexelsWallpaperRepository {
   final Result<List<PexelsWallpaper>> result;
   bool? lastPortraitOnly;
   String? lastPaginationKey;
+  String? lastColor;
+  int calls = 0;
 
   @override
   Future<Result<List<PexelsWallpaper>>> fetchFeed({
@@ -69,7 +79,10 @@ class _FakePexelsRepository implements PexelsWallpaperRepository {
     int startPage = 1,
     String? paginationKey,
     bool portraitOnly = true,
+    String? color,
   }) async {
+    calls++;
+    lastColor = color;
     lastPortraitOnly = portraitOnly;
     lastPaginationKey = paginationKey;
     return result;
@@ -109,16 +122,21 @@ WallpaperSearchService _service({
   );
 }
 
-Map<String, dynamic> _prismDoc(String id, {String resolution = '1080x2400', String email = 'a@example.com'}) =>
-    <String, dynamic>{
-      'id': id,
-      'wallpaper_url': 'https://prism/$id.jpg',
-      'wallpaper_thumb': 'https://prism/$id-thumb.jpg',
-      'wallpaper_provider': 'prism',
-      'resolution': resolution,
-      'email': email,
-      'review': true,
-    };
+Map<String, dynamic> _prismDoc(
+  String id, {
+  String resolution = '1080x2400',
+  String email = 'a@example.com',
+  List<String> colors = const <String>[],
+}) => <String, dynamic>{
+  'id': id,
+  'wallpaper_url': 'https://prism/$id.jpg',
+  'wallpaper_thumb': 'https://prism/$id-thumb.jpg',
+  'wallpaper_provider': 'prism',
+  'resolution': resolution,
+  'email': email,
+  'review': true,
+  'colors': colors,
+};
 
 void main() {
   test('search returns Wallhaven results when Wallhaven answers', () async {
@@ -253,6 +271,126 @@ void main() {
     expect(results.map((wall) => wall.id), <String>['big', 'unknown']);
     expect(pexels.lastPortraitOnly, isTrue);
     expect(pexels.lastPaginationKey, 'search:nature');
+  });
+
+  group('colour', () {
+    test('Wallhaven gets the palette hex, and the page cursor is keyed by colour', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[]));
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+
+      await service.search('nature', filters: SearchFilters(color: paletteColorById('blue')));
+
+      expect(repository.lastColors, '0066cc');
+      expect(repository.lastPaginationKey, 'search:nature:color:blue');
+    });
+
+    test('Wallhaven gets no colour without a colour filter', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[]));
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+
+      await service.search('nature');
+
+      expect(repository.lastColors, isNull);
+    });
+
+    test('Pexels gets the Pexels colour name', () async {
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[]));
+      final service = _service(
+        wallhaven: Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')),
+        pexelsRepository: pexels,
+      );
+
+      await service.search('nature', filters: SearchFilters(color: paletteColorById('purple')));
+
+      expect(pexels.lastColor, 'violet');
+      expect(pexels.lastPaginationKey, 'search:nature:color:purple');
+    });
+
+    test('a colour with an empty query searches Wallhaven with no query', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+
+      final page = await service.search('', filters: SearchFilters(color: paletteColorById('red')));
+
+      expect(page.provider, SearchProviderValue.wallhaven);
+      expect(repository.lastCategoryName, '');
+      expect(repository.lastColors, 'cc0000');
+      expect(page.results.map((wall) => wall.id), <String>['a']);
+    });
+
+    test('a colour-only search skips Pexels when Wallhaven fails', () async {
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('p1')]));
+      final service = _service(
+        wallhaven: Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')),
+        pexelsRepository: pexels,
+      );
+
+      await expectLater(
+        service.search('', filters: SearchFilters(color: paletteColorById('red'))),
+        throwsA(isA<WallpaperSearchException>()),
+      );
+      expect(pexels.calls, 0);
+    });
+
+    test('a colour-only search falls back to Prism walls when Wallhaven fails', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.color'
+            ? <FakeDocRow>[
+                (id: 'd1', data: _prismDoc('w1', colors: ['red'])),
+              ]
+            : const <FakeDocRow>[],
+      );
+      final service = _service(
+        wallhaven: Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')),
+        firestore: firestore,
+      );
+
+      final page = await service.search('', filters: SearchFilters(color: paletteColorById('red')));
+
+      expect(page.provider, SearchProviderValue.prism);
+      expect(page.prismResults.map((wall) => wall.id), <String>['w1']);
+    });
+
+    test('an empty query without a colour does not search Prism', () async {
+      final firestore = FakeFirestoreClient();
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), firestore: firestore);
+
+      await service.search('');
+
+      expect(firestore.querySpecs, isEmpty);
+    });
+
+    test('the Prism catalogue gets where colors array-contains the id', () async {
+      final firestore = FakeFirestoreClient();
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), firestore: firestore);
+
+      await service.search('', filters: SearchFilters(color: paletteColorById('teal')));
+
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.color');
+      expect(spec.filters.map((f) => (f.field, f.op, f.value)), <(String, FirestoreFilterOp, Object?)>[
+        ('review', FirestoreFilterOp.isEqualTo, true),
+        ('colors', FirestoreFilterOp.arrayContains, 'teal'),
+      ]);
+    });
+
+    test('with a query the Prism matches are kept only when they have the colour', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+            ? <FakeDocRow>[
+                (id: 'd1', data: _prismDoc('blue1', colors: ['blue', 'white'])),
+                (id: 'd2', data: _prismDoc('red1', colors: ['red'])),
+                (id: 'd3', data: _prismDoc('none')),
+              ]
+            : const <FakeDocRow>[],
+      );
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), firestore: firestore);
+
+      final page = await service.search('nature', filters: SearchFilters(color: paletteColorById('blue')));
+
+      expect(page.prismResults.map((wall) => wall.id), <String>['blue1']);
+      expect(firestore.querySpecs.every((spec) => spec.filters.every((f) => f.field != 'colors')), isTrue);
+    });
   });
 
   group('prismResults', () {

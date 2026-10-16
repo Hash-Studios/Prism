@@ -145,6 +145,13 @@ import '../../features/theme_mode/data/repositories/theme_repository_impl.dart'
 import '../../features/theme_mode/domain/repositories/theme_repository.dart'
     as _i428;
 import '../../features/theme_mode/domain/usecases/theme_usecases.dart' as _i937;
+import '../../features/trending/biz/bloc/trending_bloc.j.dart' as _i203;
+import '../../features/trending/data/repositories/trending_repository_impl.dart'
+    as _i149;
+import '../../features/trending/domain/repositories/trending_repository.dart'
+    as _i72;
+import '../../features/trending/domain/usecases/fetch_trending_usecase.dart'
+    as _i886;
 import '../../features/user_blocks/domain/repositories/user_block_repository.dart'
     as _i112;
 import '../../features/user_search/biz/bloc/search_discovery_bloc.j.dart'
@@ -531,6 +538,16 @@ _i174.GetIt initGetIt(
       gh<_i428.ThemeRepository>(),
     ),
   );
+  gh.lazySingleton<_i72.TrendingRepository>(
+    () => _i149.TrendingRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i886.FetchTrendingUseCase>(
+    () => _i886.FetchTrendingUseCase(gh<_i72.TrendingRepository>()),
+  );
   gh.lazySingleton<_i563.CategoryFeedRepository>(
     () => _i307.CategoryFeedRepositoryImpl(
       gh<_i1073.SettingsLocalDataSource>(),
@@ -592,6 +609,12 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i456.StreakShopBloc>(
     () => _i456.StreakShopBloc(gh<_i727.PrismWallpaperRepository>()),
+  );
+  gh.factory<_i203.TrendingBloc>(
+    () => _i203.TrendingBloc(
+      gh<_i886.FetchTrendingUseCase>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
   );
   gh.lazySingleton<_i446.FetchPublicProfileWallsUseCase>(
     () => _i446.FetchPublicProfileWallsUseCase(

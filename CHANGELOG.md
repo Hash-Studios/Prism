@@ -5,6 +5,11 @@
 - A short guide in Settings, "Change automatically", shows how to make that automation
 - The Android Wall of the Day widget now loads today's wall on its own, updates every few hours, opens the wall when you tap it, and has a Set button
 - A widget preview in the widget picker, and rounded corners that match your launcher
+- Search by colour: pick one of 12 colours in the search filters, or tap My accent, and see matching wallpapers from Prism, Wallhaven and Pexels
+- A Browse by colour row on the search screen opens results for a colour
+- Prism now finds the main colours of each new wallpaper, so colour search covers your uploads
+- A new Trending this week row on the home feed shows what people use most on Prism, with See all
+- A Trending page with This week and All time lists, pull to refresh, and a saved copy for when you are offline
 
 ### v3.4.1
 - The floating glass panel is back on the wallpaper screen

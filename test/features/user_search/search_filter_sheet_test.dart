@@ -1,4 +1,6 @@
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
+import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -104,5 +106,121 @@ void main() {
 
     final NavigatorState root = tester.state<NavigatorState>(find.byType(Navigator).first);
     expect(ModalRoute.of(tester.element(find.text('Apply')))!.navigator, root);
+  });
+
+  group('colour', () {
+    Future<void> openSheet(
+      WidgetTester tester,
+      SearchFilters initial,
+      void Function(SearchFilters?) onResult, {
+      ThemeData? theme,
+    }) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async => onResult(await showSearchFilterSheet(context, initial)),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    Finder swatch(String name) => find.bySemanticsLabel(name);
+
+    testWidgets('shows twelve swatches, each with its colour name as the label', (tester) async {
+      await openSheet(tester, const SearchFilters(), (_) {});
+
+      for (final PrismPaletteColor entry in prismPalette) {
+        expect(swatch(entry.name), findsOneWidget, reason: entry.id);
+      }
+      expect(find.byType(PaletteSwatch), findsNWidgets(12));
+      expect(find.text('My accent'), findsOneWidget);
+    });
+
+    testWidgets('a tapped swatch is selected, and Apply returns it', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(), (value) => result = value);
+
+      await tester.tap(swatch('Purple'));
+      await tester.pump();
+      expect(
+        tester.widgetList<PaletteSwatch>(find.byType(PaletteSwatch)).where((s) => s.selected).single.color.id,
+        'purple',
+      );
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result, SearchFilters(color: paletteColorById('purple')));
+    });
+
+    testWidgets('only one colour is selected, and tapping it again clears it', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(), (value) => result = value);
+
+      await tester.tap(swatch('Red'));
+      await tester.pump();
+      await tester.tap(swatch('Green'));
+      await tester.pump();
+      final selected = tester.widgetList<PaletteSwatch>(find.byType(PaletteSwatch)).where((s) => s.selected);
+      expect(selected.map((s) => s.color.id), <String>['green']);
+
+      await tester.tap(swatch('Green'));
+      await tester.pump();
+      expect(tester.widgetList<PaletteSwatch>(find.byType(PaletteSwatch)).where((s) => s.selected), isEmpty);
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result!.color, isNull);
+    });
+
+    testWidgets('the sheet opens with the current colour selected', (tester) async {
+      await openSheet(tester, SearchFilters(color: paletteColorById('teal')), (_) {});
+
+      final selected = tester.widgetList<PaletteSwatch>(find.byType(PaletteSwatch)).where((s) => s.selected);
+      expect(selected.map((s) => s.color.id), <String>['teal']);
+    });
+
+    testWidgets('My accent picks the palette colour nearest to the accent', (tester) async {
+      SearchFilters? result;
+      await openSheet(
+        tester,
+        const SearchFilters(),
+        (value) => result = value,
+        theme: ThemeData(colorScheme: const ColorScheme.light(primary: Color(0xFF1E88E5))),
+      );
+
+      await tester.tap(find.text('My accent'));
+      await tester.pump();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result!.color!.id, 'blue');
+    });
+
+    testWidgets('Reset returns the default filters, with no colour', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, SearchFilters(color: paletteColorById('pink')), (value) => result = value);
+
+      await tester.tap(find.text('Reset'));
+      await tester.pumpAndSettle();
+
+      expect(result, const SearchFilters());
+    });
+
+    test('buildSearchFilters carries the colour', () {
+      final filters = buildSearchFilters(
+        portraitOnly: true,
+        shortSide: null,
+        sort: SearchSort.relevance,
+        color: paletteColorById('black'),
+      );
+
+      expect(filters.color!.id, 'black');
+    });
   });
 }

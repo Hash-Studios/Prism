@@ -206,6 +206,7 @@ class _EmptyWallhaven extends Fake implements WallhavenWallpaperRepository {
     bool portraitOnly = true,
     String? minResolution,
     String? sorting,
+    String? colors,
   }) async => Result.success(<WallhavenWallpaper>[]);
 }
 
@@ -221,6 +222,7 @@ class _HangingWallhaven extends Fake implements WallhavenWallpaperRepository {
     bool portraitOnly = true,
     String? minResolution,
     String? sorting,
+    String? colors,
   }) => Completer<Result<List<WallhavenWallpaper>>>().future;
 }
 
@@ -242,6 +244,7 @@ class _EmptyPexels extends Fake implements PexelsWallpaperRepository {
     int startPage = 1,
     String? paginationKey,
     bool portraitOnly = true,
+    String? color,
   }) async => Result.success(<PexelsWallpaper>[]);
 }
 
@@ -259,6 +262,7 @@ class _ToggleWallhaven extends Fake implements WallhavenWallpaperRepository {
     bool portraitOnly = true,
     String? minResolution,
     String? sorting,
+    String? colors,
   }) async => fail ? Result.error(const UnknownFailure('offline')) : Result.success(<WallhavenWallpaper>[]);
 }
 
@@ -272,6 +276,7 @@ class _TogglePexels extends Fake implements PexelsWallpaperRepository {
     int startPage = 1,
     String? paginationKey,
     bool portraitOnly = true,
+    String? color,
   }) async => fail ? Result.error(const UnknownFailure('offline')) : Result.success(<PexelsWallpaper>[]);
 }
 
@@ -287,6 +292,7 @@ class _OfflineWallhaven extends Fake implements WallhavenWallpaperRepository {
     bool portraitOnly = true,
     String? minResolution,
     String? sorting,
+    String? colors,
   }) async => Result.error(const UnknownFailure('offline'));
 }
 
@@ -298,6 +304,7 @@ class _OfflinePexels extends Fake implements PexelsWallpaperRepository {
     int startPage = 1,
     String? paginationKey,
     bool portraitOnly = true,
+    String? color,
   }) async => Result.error(const UnknownFailure('offline'));
 }
 

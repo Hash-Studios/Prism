@@ -33,6 +33,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.da
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
+import 'package:Prism/features/trending/views/widgets/trending_strip.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -56,6 +57,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
   late final PersonalizedFeedBloc _bloc;
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<TrendingStripSectionState> _trendingStripKey = GlobalKey<TrendingStripSectionState>();
   LatestFeedBloc? _latest;
   FollowingFeedBloc? _following;
   PopularFeedBloc? _popular;
@@ -135,6 +137,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   Future<void> _refresh() async {
     PrismHaptics.impact();
     final HomeFeedChip chip = _bloc.state.chip;
+    _trendingStripKey.currentState?.refresh();
     if (chip != HomeFeedChip.forYou) {
       if (_showsSignIn(chip)) {
         return;
@@ -245,6 +248,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                         ),
                       ),
                     ),
+                    SliverToBoxAdapter(child: TrendingStripSection(key: _trendingStripKey)),
                     SliverToBoxAdapter(
                       child: Column(
                         children: <Widget>[
