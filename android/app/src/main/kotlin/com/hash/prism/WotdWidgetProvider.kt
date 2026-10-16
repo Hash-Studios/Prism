@@ -48,7 +48,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
             try {
                 synchronized(updateLock) {
                     val shown = loadShown(app, deadline)
-                    appWidgetIds.forEach { manager.updateAppWidget(it, views(app, shown)) }
+                    appWidgetIds.forEach { manager.updateAppWidget(it, views(app, it, shown)) }
                 }
             } catch (error: Throwable) {
                 Log.w(TAG, "Could not update widget", error)
@@ -267,7 +267,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         null
     }
 
-    private fun views(context: Context, shown: Shown?): RemoteViews = RemoteViews(context.packageName, R.layout.wotd_widget).apply {
+    private fun views(context: Context, widgetId: Int, shown: Shown?): RemoteViews = RemoteViews(context.packageName, R.layout.wotd_widget).apply {
         if (shown != null) setImageViewBitmap(R.id.wotd_image, shown.bitmap)
         val withImage = if (shown != null) View.VISIBLE else View.GONE
         val empty = if (shown != null) View.GONE else View.VISIBLE
@@ -281,10 +281,10 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
             launch.action = Intent.ACTION_VIEW
             launch.data = Uri.parse(link)
         }
-        setOnClickPendingIntent(R.id.wotd_root, PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+        setOnClickPendingIntent(R.id.wotd_root, PendingIntent.getActivity(context, widgetId, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         val set = Intent(context, WotdWidgetProvider::class.java).setAction(ACTION_SET_WALLPAPER)
         shown?.let { set.putExtra(EXTRA_WALL_URL, it.wall.url) }
-        setOnClickPendingIntent(R.id.wotd_set, PendingIntent.getBroadcast(context, 1, set, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
+        setOnClickPendingIntent(R.id.wotd_set, PendingIntent.getBroadcast(context, widgetId, set, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
     }
 
     companion object {
