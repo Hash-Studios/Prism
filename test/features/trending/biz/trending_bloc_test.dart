@@ -155,6 +155,25 @@ void main() {
       expect(bloc.state.week.walls.map((wall) => wall.id), <String>['b']);
     });
 
+    test('unblocking them loads the loaded lists again and brings their walls back', () async {
+      when(() => fetch(any())).thenAnswer(
+        (_) async =>
+            Result.success(<PrismWallpaper>[_wall('a', email: 'bad@example.com'), _wall('b', email: 'ok@x.com')]),
+      );
+      bloc.add(const TrendingEvent.started());
+      await settle();
+      blocks.completeInitial(<String>{'bad@example.com'});
+      await settle();
+      expect(bloc.state.week.walls.map((wall) => wall.id), <String>['b']);
+
+      blocks.completeInitial(<String>{});
+      await settle();
+
+      expect(bloc.state.week.walls.map((wall) => wall.id), <String>['a', 'b']);
+      verify(() => fetch(TrendingRange.week)).called(2);
+      verifyNever(() => fetch(TrendingRange.allTime));
+    });
+
     test('leaves the lists alone when the set is empty or hits no wall', () async {
       when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('a', email: 'a@x.com')]));
       bloc.add(const TrendingEvent.started());

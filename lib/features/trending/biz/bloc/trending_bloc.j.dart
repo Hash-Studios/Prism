@@ -33,9 +33,19 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
   Set<String> _blocked = const <String>{};
   final Map<TrendingRange, int> _latestRequestIds = <TrendingRange, int>{};
 
-  /// Blocking a creator removes their walls from both lists at once, without waiting for the next load.
-  void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<TrendingState> emit) {
+  /// Blocking a creator removes their walls from both lists at once, without waiting for the next load. Unblocking one
+  /// loads the lists again, because their walls were dropped from the state.
+  Future<void> _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<TrendingState> emit) async {
+    final bool unblocked = _blocked.any((email) => !event.blocked.contains(email));
     _blocked = event.blocked;
+    if (unblocked) {
+      await Future.wait(
+        TrendingRange.values
+            .where((range) => state.section(range).status != LoadStatus.initial)
+            .map((range) => _load(range, emit)),
+      );
+      return;
+    }
     if (_blocked.isEmpty) return;
     for (final TrendingRange range in TrendingRange.values) {
       final TrendingSection section = state.section(range);

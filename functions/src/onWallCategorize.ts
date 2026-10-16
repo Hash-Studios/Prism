@@ -3,7 +3,7 @@ import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, REGION} from "./common";
-import {wallColorsFor} from "./wallColors";
+import {hasPaletteColors, wallColorsFor} from "./wallColors";
 
 export const onWallCategorize = onDocumentCreated(
   {
@@ -25,7 +25,7 @@ export const onWallCategorize = onDocumentCreated(
       return;
     }
 
-    const colors = Array.isArray(data.colors) ? undefined : await wallColorsFor(wallId, data);
+    const colors = hasPaletteColors(data.colors) ? undefined : await wallColorsFor(wallId, data);
 
     if (data.category && data.category !== DEFAULT_CATEGORY) {
       logger.info("onWallCategorize: category already set", {wallId, category: data.category});

@@ -50,7 +50,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
       final List<PrismWallpaper> walls = await _loadWalls(ids, range);
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       final List<PrismWallpaper> visible = _visible(walls, blocked);
-      await _writeCache(range, visible);
+      await _writeCache(range, walls);
       return Result.success(visible);
     } catch (error, stackTrace) {
       final List<PrismWallpaper>? cached = await _readCached(range);

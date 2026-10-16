@@ -343,6 +343,22 @@ test("a wall that already has a category still gets colours, once", async (t) =>
   assert.deepEqual(updates, []);
 });
 
+test("a wall with an empty or invalid colours list gets its colours again", async (t) => {
+  for (const colors of [[], ["nope"], ["blue", "nope"], "blue", [1]]) {
+    const updates: Array<Record<string, unknown>> = [];
+    fakeWallsCollection(t, updates);
+    const fetchMock = t.mock.method(globalThis, "fetch", async () => replyOf(await bandsPng([["cc0000", SIZE]])));
+    await onWallCategorize.run(created({
+      wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png",
+      category: "Space",
+      colors,
+    }));
+    assert.equal(fetchMock.mock.callCount(), 1, JSON.stringify(colors));
+    assert.deepEqual(updates, [{colors: ["red"]}], JSON.stringify(colors));
+    fetchMock.mock.restore();
+  }
+});
+
 test("a wall with a category and colours makes no request", async (t) => {
   const updates: Array<Record<string, unknown>> = [];
   fakeWallsCollection(t, updates);

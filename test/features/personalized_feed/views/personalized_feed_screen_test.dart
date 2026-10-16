@@ -219,6 +219,25 @@ void main() {
     verify(() => fetchTrending(TrendingRange.week)).called(1);
   });
 
+  for (final String chip in <String>['Latest', 'Popular', 'Following']) {
+    testWidgets('pull to refresh on the $chip chip reloads the Trending strip too', (tester) async {
+      await pumpScreen(tester);
+      await tester.tap(find.widgetWithText(ChoiceChip, chip));
+      await _settle(tester);
+      verify(() => fetchTrending(TrendingRange.week)).called(1);
+
+      await tester.drag(
+        find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(CustomScrollView)).first,
+        const Offset(0, 1200),
+      );
+      for (int i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      verify(() => fetchTrending(TrendingRange.week)).called(1);
+    });
+  }
+
   testWidgets('the Latest chip loads the newest Prism walls', (tester) async {
     await pumpScreen(tester);
     verifyNever(() => prismRepository.fetchFeed(refresh: any(named: 'refresh')));

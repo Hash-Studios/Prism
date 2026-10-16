@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/features/trending/data/repositories/trending_repository_impl.dart';
@@ -38,7 +40,7 @@ void main() {
     walls = <String, Map<String, dynamic>>{};
     client = FakeFirestoreClient(
       onQuery: (spec) => <FakeDocRow>[
-        for (final String id in _idsOf(spec))
+        for (final String id in _idsOf(spec).toList()..shuffle(Random(7)))
           if (walls.containsKey(id)) (id: 'doc-$id', data: walls[id]!),
       ],
     );
@@ -162,6 +164,19 @@ void main() {
 
     expect(offline.isSuccess, isTrue);
     expect(offline.data!.map((wall) => wall.id), <String>['A']);
+  });
+
+  test('saves the walls unfiltered, so a creator unblocked since gets their walls back offline', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
+    setList('trending', <Object?>['A', 'B']);
+    blocks.completeInitial(<String>{'later@example.com'});
+    expect((await repository.fetch(TrendingRange.week)).data!.map((wall) => wall.id), <String>['A']);
+
+    client.queryError = Exception('offline');
+    blocks.completeInitial(<String>{});
+    final offline = await repository.fetch(TrendingRange.week);
+
+    expect(offline.data!.map((wall) => wall.id), <String>['A', 'B']);
   });
 
   test('keeps a separate saved list for each range', () async {

@@ -137,6 +137,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   Future<void> _refresh() async {
     PrismHaptics.impact();
     final HomeFeedChip chip = _bloc.state.chip;
+    _trendingStripKey.currentState?.refresh();
     if (chip != HomeFeedChip.forYou) {
       if (_showsSignIn(chip)) {
         return;
@@ -148,7 +149,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       return;
     }
     final Future<PersonalizedFeedState> settled = _bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
-    _trendingStripKey.currentState?.refresh();
     _bloc.add(const PersonalizedFeedEvent.refreshRequested());
     final PersonalizedFeedState result = await settled.timeout(
       const Duration(seconds: 30),

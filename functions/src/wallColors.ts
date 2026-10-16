@@ -19,6 +19,11 @@ export const PALETTE: readonly PaletteColor[] = [
   {id: "white", hex: "ffffff"},
 ];
 
+/** True when the value is a non-empty list of palette ids, so the wall already has usable colours. */
+export function hasPaletteColors(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0 && value.every((id) => PALETTE.some((color) => color.id === id));
+}
+
 export const MIN_COLOR_SHARE = 0.12;
 export const MAX_WALL_COLORS = 3;
 const SAMPLE_SIZE = 48;
