@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
@@ -67,7 +68,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _triggerSearch(String query, {String? sourceContext, bool fromSuggestion = false}) {
     final String trimmed = query.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty && _filters.color == null) return;
     final Future<WallpaperSearchPage> search = getIt<WallpaperSearchService>().search(trimmed, filters: _filters)
       ..ignore();
     setState(() {
@@ -93,13 +94,16 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       );
     }
-    unawaited(_recents.add(trimmed).then((recents) => mounted ? setState(() => _recentSearches = recents) : null));
+    if (trimmed.isNotEmpty) {
+      unawaited(_recents.add(trimmed).then((recents) => mounted ? setState(() => _recentSearches = recents) : null));
+    }
   }
 
   void _backToDiscover() {
     setState(() {
       isSubmitted = false;
       _search = null;
+      if (_submittedQuery.isEmpty) _filters = _filters.copyWith(clearColor: true);
     });
     _discoveryBloc.add(const SearchDiscoveryEvent.fetchRequested());
   }
@@ -108,7 +112,27 @@ class _SearchScreenState extends State<SearchScreen> {
     final SearchFilters? picked = await showSearchFilterSheet(context, _filters);
     if (picked == null || picked == _filters || !mounted) return;
     setState(() => _filters = picked);
-    if (isSubmitted) _triggerSearch(_submittedQuery);
+    final String query = (isSubmitted ? _submittedQuery : searchController.text).trim();
+    if (query.isEmpty && picked.color == null) {
+      if (isSubmitted) _backToDiscover();
+    } else if (isSubmitted || query.isEmpty) {
+      _triggerSearch(query);
+    }
+  }
+
+  void _searchByColor(PrismPaletteColor color) {
+    searchController.clear();
+    setState(() => _filters = _filters.copyWith(color: color));
+    _triggerSearch('', sourceContext: 'search_color');
+  }
+
+  void _clearColor() {
+    setState(() => _filters = _filters.copyWith(clearColor: true));
+    if (_submittedQuery.isEmpty) {
+      _backToDiscover();
+    } else {
+      _triggerSearch(_submittedQuery);
+    }
   }
 
   Future<void> _clearRecents() async {
@@ -118,7 +142,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _resetFilters() {
     setState(() => _filters = const SearchFilters());
-    _triggerSearch(_submittedQuery);
+    if (_submittedQuery.isEmpty) {
+      _backToDiscover();
+    } else {
+      _triggerSearch(_submittedQuery);
+    }
   }
 
   /// Runs a search that another screen asked for, for example a tag chip on the wallpaper detail screen.
@@ -217,7 +245,9 @@ class _SearchScreenState extends State<SearchScreen> {
           final bool filtered = _filters != const SearchFilters();
           return GlintState(
             kind: GlintStateKind.empty,
-            title: 'No wallpapers found for "$_submittedQuery"',
+            title: _submittedQuery.isEmpty
+                ? 'No ${_filters.color?.name.toLowerCase()} wallpapers found'
+                : 'No wallpapers found for "$_submittedQuery"',
             body: filtered ? 'Try fewer filters.' : 'Try a shorter or a different word.',
             actionLabel: filtered ? 'Reset filters' : null,
             onAction: filtered ? _resetFilters : null,
@@ -255,11 +285,28 @@ class _SearchScreenState extends State<SearchScreen> {
                       _header(),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
-                        child: Text(
-                          'Results for "$_submittedQuery"',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: PrismTextStyles.caption(context),
+                        child: Row(
+                          children: <Widget>[
+                            if (_submittedQuery.isNotEmpty)
+                              Expanded(
+                                child: Text(
+                                  'Results for "$_submittedQuery"',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: PrismTextStyles.caption(context),
+                                ),
+                              ),
+                            if (_filters.color != null)
+                              Tooltip(
+                                message: 'Clear colour',
+                                child: PrismChip(
+                                  label: _filters.color!.name,
+                                  selected: true,
+                                  leading: _ColourDot(_filters.color!.color),
+                                  onTap: _clearColor,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                       Expanded(child: _results(context)),
@@ -271,6 +318,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     selectedTag: searchController.text,
                     recentSearches: _recentSearches,
                     onClearRecents: () => unawaited(_clearRecents()),
+                    onColorPressed: _searchByColor,
                     onRecentPressed: (query) {
                       searchController.text = query;
                       _triggerSearch(query, sourceContext: 'search_recent', fromSuggestion: true);
@@ -286,6 +334,25 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A small round colour sample, used in the active colour chip.
+class _ColourDot extends StatelessWidget {
+  const _ColourDot(this.color);
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        border: Border.all(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.4)),
+      ),
+      child: const SizedBox(width: 14, height: 14),
     );
   }
 }

@@ -1,5 +1,8 @@
+import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
+import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -32,12 +35,18 @@ int? shortSideOf(SearchFilters filters) {
   return width < height ? width : height;
 }
 
-/// [SearchFilters] after the user picks [portraitOnly], [shortSide] and [sort] in the sheet.
-SearchFilters buildSearchFilters({required bool portraitOnly, required int? shortSide, required SearchSort sort}) {
+/// [SearchFilters] after the user picks [portraitOnly], [shortSide], [sort] and [color] in the sheet.
+SearchFilters buildSearchFilters({
+  required bool portraitOnly,
+  required int? shortSide,
+  required SearchSort sort,
+  PrismPaletteColor? color,
+}) {
   return SearchFilters(
     portraitOnly: portraitOnly,
     minResolution: minResolutionFor(shortSide: shortSide, portraitOnly: portraitOnly),
     sort: sort,
+    color: color,
   );
 }
 
@@ -72,6 +81,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
   late bool _portraitOnly = widget.initial.portraitOnly;
   late int? _shortSide = shortSideOf(widget.initial);
   late SearchSort _sort = widget.initial.sort;
+  late PrismPaletteColor? _color = widget.initial.color;
 
   @override
   Widget build(BuildContext context) {
@@ -84,8 +94,9 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
     );
     Widget chip({required String label, required bool selected, required VoidCallback onSelected}) =>
         ChoiceChip(label: Text(label), selected: selected, onSelected: (_) => onSelected());
+    final PrismPaletteColor accentMatch = nearestPaletteColor(scheme.primary);
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -129,6 +140,32 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                   ),
               ],
             ),
+            const SizedBox(height: 16),
+            Text('Colour', style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            Wrap(
+              children: <Widget>[
+                for (final PrismPaletteColor entry in prismPalette)
+                  PaletteSwatch(
+                    color: entry,
+                    selected: _color == entry,
+                    onTap: () => setState(() => _color = _color == entry ? null : entry),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: PrismChip(
+                label: 'My accent',
+                selected: _color == accentMatch,
+                leading: DecoratedBox(
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primary),
+                  child: const SizedBox(width: 14, height: 14),
+                ),
+                onTap: () => setState(() => _color = accentMatch),
+              ),
+            ),
             const SizedBox(height: 20),
             Row(
               children: <Widget>[
@@ -138,9 +175,9 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 ),
                 const Spacer(),
                 FilledButton(
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).pop(buildSearchFilters(portraitOnly: _portraitOnly, shortSide: _shortSide, sort: _sort)),
+                  onPressed: () => Navigator.of(context).pop(
+                    buildSearchFilters(portraitOnly: _portraitOnly, shortSide: _shortSide, sort: _sort, color: _color),
+                  ),
                   child: const Text('Apply'),
                 ),
               ],

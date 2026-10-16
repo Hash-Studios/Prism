@@ -8,6 +8,7 @@ final class PrismWallpaper {
     this.collections,
     this.review,
     this.tags,
+    this.colors,
     this.aiMetadata,
     this.isStreakExclusive = false,
     this.requiredStreakDays,
@@ -22,6 +23,9 @@ final class PrismWallpaper {
   final List<String>? collections;
   final bool? review;
   final List<String>? tags;
+
+  /// Palette ids from `walls.colors`, most dominant first. Null when the wall has none.
+  final List<String>? colors;
   final JsonMap? aiMetadata;
   final bool isStreakExclusive;
   final int? requiredStreakDays;

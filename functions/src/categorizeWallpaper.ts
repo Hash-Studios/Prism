@@ -4,6 +4,7 @@ import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, REGION} from "./common";
+import {wallColorsFor} from "./wallColors";
 
 /** A wall doc id: a non-empty string without a slash, at most 128 characters. */
 export function parseWallId(raw: unknown): string {
@@ -56,12 +57,14 @@ export const categorizeWallpaper = onCall(
 
     const labels = await detectLabels(wallpaperUrl);
     const category = mapLabelsToCategory(labels);
+    const colors = await wallColorsFor(wallId, data);
 
     await db.collection("walls").doc(wallId).update({
       category: category,
       collections: [DEFAULT_COLLECTION],
       categorizedAt: admin.firestore.FieldValue.serverTimestamp(),
       aiCategorized: true,
+      ...(colors ? {colors} : {}),
     });
 
     logger.info("categorizeWallpaper: categorized", {wallId, category, labels: labels.slice(0, 5)});

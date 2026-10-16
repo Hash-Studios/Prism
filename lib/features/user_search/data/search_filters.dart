@@ -1,12 +1,17 @@
+import 'package:Prism/core/color/prism_palette.dart';
+
 enum SearchSort { relevance, latest, toplist }
 
 /// What the user narrowed a wallpaper search to. [minResolution] is `<width>x<height>`, for example `1080x1920`.
 class SearchFilters {
-  const SearchFilters({this.portraitOnly = true, this.minResolution, this.sort = SearchSort.relevance});
+  const SearchFilters({this.portraitOnly = true, this.minResolution, this.sort = SearchSort.relevance, this.color});
 
   final bool portraitOnly;
   final String? minResolution;
   final SearchSort sort;
+
+  /// One palette colour, or `null` for any colour.
+  final PrismPaletteColor? color;
 
   /// Wallhaven `sorting` value. `null` keeps the API default, which is relevance for a text query.
   String? get wallhavenSorting => switch (sort) {
@@ -33,11 +38,14 @@ class SearchFilters {
     String? minResolution,
     bool clearMinResolution = false,
     SearchSort? sort,
+    PrismPaletteColor? color,
+    bool clearColor = false,
   }) {
     return SearchFilters(
       portraitOnly: portraitOnly ?? this.portraitOnly,
       minResolution: clearMinResolution ? null : minResolution ?? this.minResolution,
       sort: sort ?? this.sort,
+      color: clearColor ? null : color ?? this.color,
     );
   }
 
@@ -46,10 +54,11 @@ class SearchFilters {
       other is SearchFilters &&
       other.portraitOnly == portraitOnly &&
       other.minResolution == minResolution &&
-      other.sort == sort;
+      other.sort == sort &&
+      other.color == color;
 
   @override
-  int get hashCode => Object.hash(portraitOnly, minResolution, sort);
+  int get hashCode => Object.hash(portraitOnly, minResolution, sort, color);
 
   static ({int width, int height})? _parse(String? value) {
     final Match? match = RegExp(r'^\s*(\d+)\s*[xX]\s*(\d+)\s*$').firstMatch(value ?? '');

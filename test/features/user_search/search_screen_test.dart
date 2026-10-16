@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -106,8 +107,8 @@ void main() {
     expect(find.text('Find creators'), findsOneWidget);
     expect(find.text('Trending now'), findsOneWidget);
     expect(find.text('Browse by category'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Search by colour'), 300, scrollable: find.byType(Scrollable).first);
-    expect(find.text('Search by colour'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Browse by colour'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('Browse by colour'), findsOneWidget);
     expect(find.byTooltip('Clear search'), findsNothing);
   });
 
@@ -454,5 +455,130 @@ void main() {
 
     expect(created, 1);
     verify(() => discovery.close()).called(1);
+  });
+
+  group('colour search', () {
+    final SearchFilters red = SearchFilters(color: paletteColorById('red'));
+
+    void answerWith(List<FeedItemEntity> results) {
+      when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
+        (_) async =>
+            (provider: SearchProviderValue.wallhaven, results: results, prismResults: const <FeedItemEntity>[]),
+      );
+    }
+
+    Future<void> tapSwatch(WidgetTester tester, String name) async {
+      await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel(name));
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('a Browse by colour swatch searches that colour with an empty query', (tester) async {
+      answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
+
+      await tapSwatch(tester, 'Red');
+
+      verify(() => service.search('', filters: red)).called(1);
+      expect(find.byType(SearchGrid), findsOneWidget);
+      expect(find.widgetWithText(PrismChip, 'Red'), findsOneWidget);
+      expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    });
+
+    testWidgets('a colour-only search is not saved as a recent search', (tester) async {
+      answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
+
+      await tapSwatch(tester, 'Red');
+
+      expect(store.data.keys.where((key) => key.contains('search.recent')), isEmpty);
+    });
+
+    testWidgets('an empty colour-only search says which colour had no wallpapers', (tester) async {
+      answerWith(const <FeedItemEntity>[]);
+
+      await tapSwatch(tester, 'Teal');
+
+      expect(find.text('No teal wallpapers found'), findsOneWidget);
+    });
+
+    testWidgets('clearing the colour chip returns to discover', (tester) async {
+      answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
+      await tapSwatch(tester, 'Red');
+
+      await tester.tap(find.byTooltip('Clear colour'));
+      await tester.pump();
+
+      expect(find.byType(SearchGrid), findsNothing);
+      expect(find.text('Browse by colour'), findsOneWidget);
+    });
+
+    testWidgets('clearing the colour on a text search searches the text again without the colour', (tester) async {
+      answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
+      when(() => service.search('forest', filters: red)).thenAnswer(
+        (_) async => (
+          provider: SearchProviderValue.wallhaven,
+          results: <FeedItemEntity>[_wallpaper('red-forest')],
+          prismResults: const <FeedItemEntity>[],
+        ),
+      );
+      await submit(tester, 'forest');
+      await tester.pump();
+      await tester.tap(find.byTooltip('Filters'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.bySemanticsLabel('Red'));
+      await tester.tap(find.text('Apply'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      expect(tester.widget<SearchGrid>(find.byType(SearchGrid)).initialResults.single.id, 'red-forest');
+
+      await tester.tap(find.byTooltip('Clear colour'));
+      await tester.pump();
+      await tester.pump();
+
+      verify(() => service.search('forest')).called(2);
+      expect(find.byTooltip('Clear colour'), findsNothing);
+    });
+
+    testWidgets('picking a colour in the filter sheet with an empty field runs a colour-only search', (tester) async {
+      answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
+      await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+
+      await tester.tap(find.byTooltip('Filters'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.bySemanticsLabel('Red')));
+      await tester.tap(find.text('Apply'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+
+      verify(() => service.search('', filters: red)).called(1);
+      expect(find.byType(SearchGrid), findsOneWidget);
+    });
+
+    testWidgets('going back from a colour-only search drops the colour', (tester) async {
+      answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
+      await tapSwatch(tester, 'Red');
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+
+      expect(find.byType(SearchGrid), findsNothing);
+      expect(find.text('Browse by colour'), findsOneWidget);
+      final Badge badge = tester.widget<Badge>(find.byType(Badge));
+      expect(badge.isLabelVisible, isFalse);
+    });
+
+    testWidgets('an empty field and no colour does not search', (tester) async {
+      answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
+      await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pump();
+
+      verifyNever(() => service.search(any(), filters: any(named: 'filters')));
+    });
   });
 }

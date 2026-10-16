@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -84,12 +86,24 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     showNotificationSettingsSheet(context);
   }
 
-  /// Clears at once. The snack bar offers Undo, which puts every removed notification back.
-  void _clearInbox(List<InAppNotificationEntity> notifications) {
+  /// Asks first. The snack bar then offers Undo, which puts every removed notification back.
+  Future<void> _clearInbox(int count) async {
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: count == 1 ? 'Clear 1 notification?' : 'Clear $count notifications?',
+      message: 'This removes them from this device.',
+      confirmLabel: 'Clear inbox',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    // A sync can add rows while the sheet is open, so Undo uses the list as it is now.
+    final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
+    final List<InAppNotificationEntity> removed = bloc.state.items;
+    if (removed.isEmpty) return;
     PrismHaptics.tap();
-    analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
-    context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
-    _showUndoSnackBar(context, 'Inbox cleared', notifications);
+    analytics.track(NotificationClearAllConfirmedEvent(count: removed.length));
+    bloc.add(const InAppNotificationsEvent.clearRequested());
+    _showUndoSnackBar(context, 'Inbox cleared', removed);
   }
 
   void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {
@@ -131,7 +145,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
               PrismIconButton(
                 icon: Icons.delete_sweep_rounded,
                 tooltip: 'Clear inbox',
-                onPressed: () => _clearInbox(notifications),
+                onPressed: () => unawaited(_clearInbox(notifications.length)),
               ),
           ],
           body: _body(context, state, initialLoading),

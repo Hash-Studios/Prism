@@ -24,6 +24,13 @@
 		C15845A222C3C334C3EA4BB9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5B930EBC7C844BB5EBE88886 /* GoogleService-Info.plist */; };
 		C979720DC55F8C99FA40444A /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 337217B02AF3CD4A996392A7 /* Pods_Runner.framework */; };
 		EDFEF042AE5A29766DF6F16E /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 902DE74569C91B07ADA011DE /* Pods_RunnerTests.framework */; };
+		A22B00012F00000200B2B2B2 /* PrismShortcutFavourites.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00022F00000200B2B2B2 /* PrismShortcutFavourites.swift */; };
+		A22B00032F00000200B2B2B2 /* PrismShortcutImageKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00042F00000200B2B2B2 /* PrismShortcutImageKind.swift */; };
+		A22B00052F00000200B2B2B2 /* PrismFirestoreREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00062F00000200B2B2B2 /* PrismFirestoreREST.swift */; };
+		A22B00072F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00082F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift */; };
+		A22B00092F00000200B2B2B2 /* GetPrismWallpaperIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B000A2F00000200B2B2B2 /* GetPrismWallpaperIntent.swift */; };
+		A22B000B2F00000200B2B2B2 /* PrismShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B000C2F00000200B2B2B2 /* PrismShortcuts.swift */; };
+		A22B000D2F00000200B2B2B2 /* PrismShortcutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +89,13 @@
 		BDEF4D472F75E279000D5834 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		C092B4C245239C1BAF0C8B09 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		E61BCD3C6B0EC8CCF0872892 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
+		A22B00022F00000200B2B2B2 /* PrismShortcutFavourites.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutFavourites.swift; sourceTree = "<group>"; };
+		A22B00042F00000200B2B2B2 /* PrismShortcutImageKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutImageKind.swift; sourceTree = "<group>"; };
+		A22B00062F00000200B2B2B2 /* PrismFirestoreREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismFirestoreREST.swift; sourceTree = "<group>"; };
+		A22B00082F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutWallpaperLoader.swift; sourceTree = "<group>"; };
+		A22B000A2F00000200B2B2B2 /* GetPrismWallpaperIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetPrismWallpaperIntent.swift; sourceTree = "<group>"; };
+		A22B000C2F00000200B2B2B2 /* PrismShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcuts.swift; sourceTree = "<group>"; };
+		A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +124,7 @@
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
 				A11A00142F00000100A1A1A1 /* MediaFixture.swift */,
 				A11A00162F00000100A1A1A1 /* MediaFilesTests.swift */,
+				A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -172,6 +187,7 @@
 				A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */,
 				A11A00122F00000100A1A1A1 /* PrismMediaFiles.swift */,
 				A11A00052F00000100A1A1A1 /* Pigeon */,
+				A22B000F2F00000200B2B2B2 /* Shortcuts */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -183,6 +199,27 @@
 				A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */,
 			);
 			path = Pigeon;
+			sourceTree = "<group>";
+		};
+		A22B000F2F00000200B2B2B2 /* Shortcuts */ = {
+			isa = PBXGroup;
+			children = (
+				A22B00102F00000200B2B2B2 /* Core */,
+				A22B00082F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift */,
+				A22B000A2F00000200B2B2B2 /* GetPrismWallpaperIntent.swift */,
+				A22B000C2F00000200B2B2B2 /* PrismShortcuts.swift */,
+			);
+			path = Shortcuts;
+			sourceTree = "<group>";
+		};
+		A22B00102F00000200B2B2B2 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				A22B00022F00000200B2B2B2 /* PrismShortcutFavourites.swift */,
+				A22B00042F00000200B2B2B2 /* PrismShortcutImageKind.swift */,
+				A22B00062F00000200B2B2B2 /* PrismFirestoreREST.swift */,
+			);
+			path = Core;
 			sourceTree = "<group>";
 		};
 		AF30F3DF74DBA2F685713FFA /* Pods */ = {
@@ -426,6 +463,7 @@
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
 				A11A00132F00000100A1A1A1 /* MediaFixture.swift in Sources */,
 				A11A00152F00000100A1A1A1 /* MediaFilesTests.swift in Sources */,
+				A22B000D2F00000200B2B2B2 /* PrismShortcutsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -436,6 +474,12 @@
 				A11A00012F00000100A1A1A1 /* PrismMediaApi.swift in Sources */,
 				A11A00022F00000100A1A1A1 /* PrismMediaHostApiImpl.swift in Sources */,
 				A11A00112F00000100A1A1A1 /* PrismMediaFiles.swift in Sources */,
+				A22B00012F00000200B2B2B2 /* PrismShortcutFavourites.swift in Sources */,
+				A22B00032F00000200B2B2B2 /* PrismShortcutImageKind.swift in Sources */,
+				A22B00052F00000200B2B2B2 /* PrismFirestoreREST.swift in Sources */,
+				A22B00072F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift in Sources */,
+				A22B00092F00000200B2B2B2 /* GetPrismWallpaperIntent.swift in Sources */,
+				A22B000B2F00000200B2B2B2 /* PrismShortcuts.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);

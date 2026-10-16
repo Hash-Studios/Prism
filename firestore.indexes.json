@@ -265,6 +265,28 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "colors",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "collections",
           "arrayConfig": "CONTAINS"
         },

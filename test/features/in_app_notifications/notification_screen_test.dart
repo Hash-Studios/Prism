@@ -3,6 +3,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/domain/usecases/notifications_usecases.dart';
@@ -114,17 +115,33 @@ void main() {
     expect(find.text('Unread title'), findsOneWidget);
   });
 
-  testWidgets('Clear inbox clears at once with no dialog, and Undo brings every notification back', (tester) async {
+  testWidgets('Clear inbox asks first, and Cancel keeps every notification', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Clear 2 notifications?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    verifyNever(() => clear(const NoParams()));
+    expect(find.text('Unread title'), findsOneWidget);
+    expect(find.text('Read title'), findsOneWidget);
+  });
+
+  testWidgets('confirming Clear inbox clears, and Undo brings every notification back', (tester) async {
     when(() => clear(const NoParams())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[]));
     when(() => restore(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread, read]));
     await pumpScreen(tester);
 
     await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PrismButton, 'Clear inbox'));
     // The empty state animates for ever, so pumpAndSettle would not finish.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(AlertDialog), findsNothing);
     verify(() => clear(const NoParams())).called(1);
     expect(find.text('Inbox cleared'), findsOneWidget);
     expect(find.text('Unread title'), findsNothing);
@@ -139,5 +156,31 @@ void main() {
     ).called(1);
     expect(find.text('Unread title'), findsOneWidget);
     expect(find.text('Read title'), findsOneWidget);
+  });
+
+  testWidgets('Undo restores what was in the inbox when Clear was confirmed, not when the dialog opened', (
+    tester,
+  ) async {
+    final late = notification('n1', title: 'Arrived during dialog');
+    when(() => clear(const NoParams())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[]));
+    when(() => restore(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[late, unread, read]));
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.pumpAndSettle();
+    when(() => fetch(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[late, unread, read]));
+    getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(PrismButton, 'Clear inbox'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    verify(
+      () => restore(
+        any(that: isA<RestoreNotificationsParams>().having((p) => p.items.map((i) => i.id), 'ids', ['n1', 'u1', 'r1'])),
+      ),
+    ).called(1);
   });
 }

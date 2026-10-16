@@ -21,6 +21,7 @@ import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
     show personalizedFeedSettingsRevision;
 import 'package:Prism/features/session/data/low_data_mode.dart';
@@ -251,6 +252,7 @@ void main() {
 
     expect(find.text('Personalise'), findsOneWidget);
     expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
+    expect(find.text('Change automatically'), findsNothing);
     expect(find.text('Live wallpapers'), findsOneWidget);
     expect(find.text('Quick tiles'), findsOneWidget);
     expect(find.text('Wallpaper history'), findsOneWidget);
@@ -261,15 +263,49 @@ void main() {
     expect(find.text('Notification preferences'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('iOS hides the whole personalise section, including wallpaper history', (tester) async {
+  testWidgets('iOS 16 personalise section has only Change automatically, no Android rows', (tester) async {
     useTallSurface(tester);
+    final Future<int?> Function() originalVersion = iosMajorVersion;
+    iosMajorVersion = () async => 16;
+    addTearDown(() => iosMajorVersion = originalVersion);
     await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pump();
 
-    expect(find.text('Personalise'), findsNothing);
+    expect(find.text('Personalise'), findsOneWidget);
+    expect(find.text('Change automatically'), findsOneWidget);
+    expect(find.text('Auto-rotate wallpapers'), findsNothing);
     expect(find.text('Wallpaper history'), findsNothing);
     expect(find.text('Live wallpapers'), findsNothing);
     expect(find.text('Quick tiles'), findsNothing);
     expect(find.text('Default action for Set'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('iOS 15 hides Change automatically', (tester) async {
+    useTallSurface(tester);
+    final Future<int?> Function() originalVersion = iosMajorVersion;
+    iosMajorVersion = () async => 15;
+    addTearDown(() => iosMajorVersion = originalVersion);
+    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pump();
+
+    expect(find.text('Personalise'), findsNothing);
+    expect(find.text('Change automatically'), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('iOS hides Change automatically until the version resolves', (tester) async {
+    useTallSurface(tester);
+    final Completer<int?> version = Completer<int?>();
+    final Future<int?> Function() originalVersion = iosMajorVersion;
+    iosMajorVersion = () => version.future;
+    addTearDown(() => iosMajorVersion = originalVersion);
+    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pump();
+    expect(find.text('Change automatically'), findsNothing);
+
+    version.complete(17);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Change automatically'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('the default action for Set is saved from the sheet', (tester) async {

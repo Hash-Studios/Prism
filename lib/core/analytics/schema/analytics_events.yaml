@@ -228,7 +228,6 @@ enums:
       - home_wallpaper_grid
       - home_wallhaven_grid
       - home_pexels_grid
-      - home_color_grid
       - home_collections_view_grid
       - home_latest_grid
       - home_following_grid
@@ -240,7 +239,6 @@ enums:
       - wallpaper_grid
       - wallhaven_grid
       - pexels_grid
-      - color_grid
       - collections_view_grid
       - favourite_walls_grid
   - name: scroll_depth_percent

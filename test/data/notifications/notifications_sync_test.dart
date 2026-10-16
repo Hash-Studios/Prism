@@ -5,6 +5,7 @@ import 'package:Prism/core/persistence/data_sources/notifications_local_data_sou
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/data/notifications/notifications.dart';
+import 'package:Prism/features/in_app_notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,6 +39,9 @@ class _MemoryNotificationsLocal extends NotificationsLocalDataSource {
   Future<void> removeWhere(bool Function(InAppNotificationEntity item) predicate) async {
     items = items.where((item) => !predicate(item)).toList(growable: false);
   }
+
+  @override
+  Future<void> clearAll() async => items = <InAppNotificationEntity>[];
 
   @override
   DateTime? lastFetchAtUtc() => lastFetch;
@@ -129,6 +133,19 @@ void main() {
     final since =
         client.querySpecs.single.filters.firstWhere((filter) => filter.field == 'createdAt').value! as DateTime;
     expect(since.isAtSameMomentAs(clearedAt), isTrue);
+  });
+
+  test('Undo after Clear inbox keeps the notifications through the next forced sync', () async {
+    final repo = NotificationsRepositoryImpl(local, tombstones);
+    await syncInAppNotificationsFromRemote(force: true);
+    final cleared = List<InAppNotificationEntity>.from(local.items);
+
+    await repo.clearAll();
+    await repo.restore(items: cleared);
+    clearInAppNotificationSyncGateAll();
+    await syncInAppNotificationsFromRemote(force: true);
+
+    expect(local.items.map((item) => item.title), unorderedEquals(<String>['first', 'second']));
   });
 
   test('read state survives a forced sync', () async {

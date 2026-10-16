@@ -9,6 +9,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [position-studio.md](position-studio.md) | Adjust position and preview: pan, zoom, fit modes, dim |
 | [wallpaper-history.md](wallpaper-history.md) | List of wallpapers you set, with re-apply |
 | [auto-rotate.md](auto-rotate.md) | Timed rotation from favourites, downloads, a category, Wall of the Day or history (Android, Pro) |
+| [ios-shortcuts.md](ios-shortcuts.md) | Change the wallpaper automatically with a Shortcuts automation (iOS) |
 | [quick-tiles.md](quick-tiles.md) | Android quick settings tiles |
 | [search.md](search.md) | Prism results, filters, recent searches, tag search |
 | [wallpaper-detail.md](wallpaper-detail.md) | Action bar, More like this, tag chips, preview |
@@ -20,7 +21,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [categories.md](categories.md) | Prism-first categories, AMOLED tile, tile quick actions |
 | [wall-of-the-day.md](wall-of-the-day.md) | Card, push, past picks archive |
 | [themes.md](themes.md) | Themes, accents, contrast rules, AMOLED, match system colour |
-| [home-screen-widget.md](home-screen-widget.md) | Wall of the Day home-screen widget (Android) |
+| [home-widget.md](home-widget.md) | Wall of the Day home screen widget (Android): loads by itself, opens the wall, one-tap Set |
 | [onboarding.md](onboarding.md) | Steps, first wallpaper, guest path on iOS, reduced motion |
 | [upload.md](upload.md) | Upload metadata, multi-upload, size warnings, rejected wall delete |
 | [profile.md](profile.md) | Profile links, username rules, share link, block and report |
@@ -32,6 +33,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [ai-charge.md](ai-charge.md) | AI charge check on the worker, refund evidence |
 | [studio.md](studio.md) | Prism Studio: daily AI wallpapers, checks, review queue, setup (backend) |
 | [popular-and-trending.md](popular-and-trending.md) | Engagement counters and the trending and popular lists (backend) |
+| [trending.md](trending.md) | Trending this week row on home, Trending page with This week and All time |
 | [moderation.md](moderation.md) | Report auto-hold, sweeper, username dedupe, WOTD creator notice (backend) |
 
 ## Page rules

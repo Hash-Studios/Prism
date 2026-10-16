@@ -1,14 +1,15 @@
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
+import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -219,75 +220,25 @@ class _CategoryCard extends StatelessWidget {
   }
 }
 
-class _ColourSwatch {
-  const _ColourSwatch(this.name, this.color);
-
-  final String name;
-  final Color color;
-}
-
-const List<_ColourSwatch> _presetColours = <_ColourSwatch>[
-  _ColourSwatch('Red', Color(0xFFb71c1c)),
-  _ColourSwatch('Blue', Color(0xFF1565c0)),
-  _ColourSwatch('Green', Color(0xFF2e7d32)),
-  _ColourSwatch('Purple', Color(0xFF6a1b9a)),
-  _ColourSwatch('Orange', Color(0xFFe65100)),
-  _ColourSwatch('Yellow', Color(0xFFf9a825)),
-  _ColourSwatch('Pink', Color(0xFFad1457)),
-  _ColourSwatch('Teal', Color(0xFF00695c)),
-  _ColourSwatch('White', Color(0xFFf5f5f5)),
-  _ColourSwatch('Black', Color(0xFF212121)),
-  _ColourSwatch('Brown', Color(0xFF4e342e)),
-  _ColourSwatch('Cyan', Color(0xFF00838f)),
-];
-
-/// "Search by colour": rounded swatches, four to a row.
+/// "Browse by colour": a row of round swatches. A tap runs a colour-only search.
 class ColourSection extends StatelessWidget {
-  const ColourSection({super.key});
+  const ColourSection({super.key, required this.onPressed});
+
+  final void Function(PrismPaletteColor color) onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    void openSwatch(_ColourSwatch swatch) {
-      PrismHaptics.tap();
-      context.router.push(ColorRoute(hexColor: swatch.color.rgbHex, name: swatch.name));
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(title: 'Search by colour', padding: _sectionHeaderPadding),
-        GridView.count(
-          crossAxisCount: 4,
-          mainAxisSpacing: PrismSpace.xs,
-          crossAxisSpacing: PrismSpace.xs,
-          padding: PrismSpace.pageInsets,
-          shrinkWrap: true,
-          primary: false,
-          physics: const NeverScrollableScrollPhysics(),
-          children: <Widget>[
-            for (final _ColourSwatch swatch in _presetColours)
-              PressScale(
-                scale: 0.94,
-                child: Semantics(
-                  button: true,
-                  label: '${swatch.name} wallpapers',
-                  excludeSemantics: true,
-                  onTap: () => openSwatch(swatch),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => openSwatch(swatch),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: swatch.color,
-                        borderRadius: BorderRadius.circular(PrismRadius.sm),
-                        border: Border.all(color: cs.onSurface.withValues(alpha: 0.12)),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        const PrismSectionHeader(title: 'Browse by colour', padding: _sectionHeaderPadding),
+        _hRow(
+          height: 48,
+          count: prismPalette.length,
+          builder: (context, index) {
+            final PrismPaletteColor entry = prismPalette[index];
+            return PaletteSwatch(color: entry, onTap: () => onPressed(entry));
+          },
         ),
       ],
     );

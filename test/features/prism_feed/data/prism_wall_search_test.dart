@@ -57,4 +57,32 @@ void main() {
     expect(tags, isNot(contains('')));
     expect(tags.where((tag) => tag == 'neon'), hasLength(1));
   });
+
+  group('colour', () {
+    test('a colour with an empty query lists that colour newest first, without text filters', () async {
+      await search.search('', colorId: 'blue');
+
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.color');
+      expect(spec.filters.map((f) => (f.field, f.op, f.value)), <(String, FirestoreFilterOp, Object?)>[
+        ('review', FirestoreFilterOp.isEqualTo, true),
+        ('colors', FirestoreFilterOp.arrayContains, 'blue'),
+      ]);
+      expect(spec.orderBy.single.field, 'createdAt');
+      expect(spec.orderBy.single.descending, isTrue);
+    });
+
+    test('an empty query without a colour asks nothing', () async {
+      expect(await search.search(''), isEmpty);
+      expect(firestore.querySpecs, isEmpty);
+    });
+
+    test('with a query the colour is never a Firestore filter, because two array filters cannot be combined', () async {
+      await search.search('forest', colorId: 'blue');
+
+      expect(firestore.querySpecs, hasLength(2));
+      expect(firestore.querySpecs.expand((spec) => spec.filters).map((f) => f.field), isNot(contains('colors')));
+      expect(firestore.querySpecs.every((spec) => spec.limit == 48), isTrue);
+    });
+  });
 }

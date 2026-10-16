@@ -11,6 +11,10 @@
     <string name="tile_error_unavailable">Wallpaper changes are not available on this device.</string>
     <string name="tile_error_generic">Could not apply the wallpaper. Try again.</string>
     <string name="wotd_widget_label">Prism</string>
-    <string name="wotd_widget_hint">Open Prism for today\'s wallpaper</string>
-    <string name="wotd_widget_description">Today\'s wallpaper. Tap to open Prism.</string>
+    <string name="wotd_widget_hint">Today\'s wallpaper appears here when you are online</string>
+    <string name="wotd_widget_description">Today\'s wallpaper. Tap to open it in Prism. Tap Set to use it as your wallpaper.</string>
+    <string name="wotd_widget_set">Set</string>
+    <string name="wotd_widget_set_description">Set today\'s wallpaper</string>
+    <string name="wotd_widget_set_done">Wallpaper set</string>
+    <string name="wotd_widget_set_failed">Could not set wallpaper</string>
 </resources>

@@ -1,3 +1,4 @@
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
 import 'package:auto_route/auto_route.dart';
@@ -19,18 +20,21 @@ class _DiscoveryRouter extends AppRouter {
         builder: (data) => Scaffold(body: Text(data.argsAs<CollectionViewRouteArgs>().collectionName)),
       ),
     ),
-    AutoRoute(
-      path: '/color',
-      page: PageInfo(ColorRoute.name, builder: (data) => Scaffold(body: Text(data.argsAs<ColorRouteArgs>().hexColor))),
-    ),
   ];
 }
+
+final List<PrismPaletteColor> _tappedColours = <PrismPaletteColor>[];
 
 class _DiscoveryHost extends StatelessWidget {
   const _DiscoveryHost();
 
   @override
-  Widget build(BuildContext context) => ListView(children: const <Widget>[CategorySection(), ColourSection()]);
+  Widget build(BuildContext context) => ListView(
+    children: <Widget>[
+      const CategorySection(),
+      ColourSection(onPressed: _tappedColours.add),
+    ],
+  );
 }
 
 void main() {
@@ -55,7 +59,8 @@ void main() {
     }
   });
 
-  testWidgets('colour semantic tap opens the matching colour route', (tester) async {
+  testWidgets('colour semantic tap reports the matching palette colour', (tester) async {
+    _tappedColours.clear();
     final router = _DiscoveryRouter();
     final SemanticsHandle semantics = tester.ensureSemantics();
     try {
@@ -63,14 +68,14 @@ void main() {
       await router.navigatePath('/');
       await tester.pumpAndSettle();
 
-      final SemanticsNode node = tester.getSemantics(find.bySemanticsLabel('Red wallpapers'));
+      final SemanticsNode node = tester.getSemantics(find.bySemanticsLabel('Red'));
       expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
       tester.binding.performSemanticsAction(
         SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: node.id),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('b71c1c'), findsOneWidget);
+      expect(_tappedColours.map((PrismPaletteColor c) => c.name), <String>['Red']);
     } finally {
       semantics.dispose();
     }

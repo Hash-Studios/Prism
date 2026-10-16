@@ -264,7 +264,6 @@ enum AnalyticsSurfaceValue {
   homeWallpaperGrid,
   homeWallhavenGrid,
   homePexelsGrid,
-  homeColorGrid,
   homeCollectionsViewGrid,
   homeLatestGrid,
   homeFollowingGrid,
@@ -278,7 +277,6 @@ enum ScrollListNameValue {
   wallpaperGrid,
   wallhavenGrid,
   pexelsGrid,
-  colorGrid,
   collectionsViewGrid,
   favouriteWallsGrid;
 

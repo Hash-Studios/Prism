@@ -4,6 +4,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 abstract class WallhavenWallpaperRepository {
   /// [portraitOnly] adds `ratios=portrait`. [minResolution] (for example `1080x1920`) maps to `atleast`.
   /// [sorting] is a raw Wallhaven value such as `date_added` or `toplist`; `null` keeps the API default.
+  /// [colors] is a Wallhaven colour hex such as `0066cc`. An empty [categoryName] searches without a query.
   /// Only a [refresh] reads or writes the cached first page. A failed later page is an error.
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({
     required String categoryName,
@@ -15,6 +16,7 @@ abstract class WallhavenWallpaperRepository {
     bool portraitOnly = true,
     String? minResolution,
     String? sorting,
+    String? colors,
   });
 
   Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1});

@@ -23,6 +23,7 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @FirestoreStringListConverter() @Default(<String>[]) List<String> collections,
     @FirestoreStringListConverter() @Default(<String>[]) List<String> tags,
     @FirestoreStringConverter() @Default('') String category,
+    @FirestoreStringListConverter() @Default(<String>[]) List<String> colors,
     @Default(false) bool review,
     @JsonKey(name: 'aiMetadata')
     @FirestoreJsonMapConverter()

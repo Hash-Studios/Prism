@@ -1,3 +1,4 @@
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -16,6 +17,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
     this.recentSearches = const <String>[],
     this.onRecentPressed,
     this.onClearRecents,
+    this.onColorPressed,
   });
 
   final List<String> tags;
@@ -27,6 +29,9 @@ class SearchDiscoveryWidget extends StatelessWidget {
 
   /// Scrolls with the content, above the tags. The search tab puts its title and field here.
   final Widget? header;
+
+  /// Called with the swatch the user taps in "Browse by colour". Without it the section is hidden.
+  final void Function(PrismPaletteColor color)? onColorPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +45,9 @@ class SearchDiscoveryWidget extends StatelessWidget {
           _TagsRow(tags: tags, selectedTag: selectedTag, onTagPressed: onTagPressed),
           const SizedBox(height: PrismSpace.md),
           const Padding(padding: PrismSpace.pageInsets, child: _FindCreatorsCard()),
+          if (onColorPressed != null) ColourSection(onPressed: onColorPressed!),
           const TrendingSection(),
           const CategorySection(),
-          const ColourSection(),
           const SizedBox(height: PrismSpace.bottomBarClearance),
         ],
       ),

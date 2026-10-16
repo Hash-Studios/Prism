@@ -27,6 +27,7 @@ import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
     show personalizedFeedSettingsRevision;
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
@@ -124,6 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _lowData = LowDataMode.enabled.value;
   bool _restoring = false;
   bool _adPrivacyChoices = false;
+  bool _iosShortcuts = false;
   int? _imageCacheSize;
   int? _downloads;
 
@@ -136,6 +138,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _defaultApplyTarget = _applyTargetLabels.containsKey(storedTarget) ? storedTarget : 'ask';
     _loadStorageStats();
     unawaited(_loadAdPrivacyChoices());
+    if (defaultTargetPlatform == TargetPlatform.iOS) unawaited(_loadIosShortcutsSupport());
+  }
+
+  Future<void> _loadIosShortcutsSupport() async {
+    final bool supported = await iosSupportsShortcuts();
+    if (!mounted || !supported) return;
+    setState(() => _iosShortcuts = true);
   }
 
   Future<void> _loadAdPrivacyChoices() async {
@@ -272,6 +281,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   List<Widget> _personaliseRows() => <Widget>[
+    if (_iosShortcuts)
+      PrismRow(
+        icon: Icons.autorenew_rounded,
+        title: 'Change automatically',
+        subtitle: 'Use a Shortcuts automation',
+        onTap: () => context.router.push(const IosShortcutsGuideRoute()),
+      ),
+    if (_isAndroid) ..._androidPersonaliseRows(),
+  ];
+
+  List<Widget> _androidPersonaliseRows() => <Widget>[
     PrismRow(
       icon: Icons.autorenew_rounded,
       title: 'Auto-rotate wallpapers',
@@ -837,7 +857,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           if (loggedIn) _group('Account', _accountRows()),
           _group('Appearance', _appearanceRows()),
-          if (_isAndroid) _group('Personalise', _personaliseRows()),
+          if (_isAndroid || _iosShortcuts) _group('Personalise', _personaliseRows()),
           _group('Content', _contentRows()),
           _group('Notifications', _notificationRows()),
           _group('Storage', _storageRows()),

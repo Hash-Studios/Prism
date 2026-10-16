@@ -194,6 +194,63 @@ void main() {
       expect(result.data, isNull);
     });
   });
+
+  group('colour search', () {
+    Future<(List<Uri>, FakeFeedCacheLocalDataSource)> run(
+      Future<void> Function(WallhavenWallpaperRepositoryImpl repository) body,
+    ) async {
+      final List<Uri> requests = <Uri>[];
+      final http.Client client = MockClient((http.Request request) async {
+        requests.add(request.url);
+        return _page(1);
+      });
+      final cache = FakeFeedCacheLocalDataSource();
+      final repository = WallhavenWallpaperRepositoryImpl(cache);
+      await http.runWithClient(() => body(repository), () => client);
+      return (requests, cache);
+    }
+
+    test('colors goes to Wallhaven with the query', () async {
+      final (requests, _) = await run((repository) async {
+        await repository.fetchFeed(categoryName: 'forest', refresh: true, colors: '0066cc');
+      });
+
+      expect(requests.single.queryParameters['q'], 'forest');
+      expect(requests.single.queryParameters['colors'], '0066cc');
+    });
+
+    test('without a colour there is no colors parameter', () async {
+      final (requests, _) = await run((repository) async {
+        await repository.fetchFeed(categoryName: 'forest', refresh: true);
+      });
+
+      expect(requests.single.queryParameters.containsKey('colors'), isFalse);
+    });
+
+    test('an empty query sends no q parameter', () async {
+      final (requests, _) = await run((repository) async {
+        await repository.fetchFeed(
+          categoryName: '',
+          refresh: true,
+          colors: 'cc0000',
+          paginationKey: 'search::color:red',
+        );
+      });
+
+      expect(requests.single.queryParameters.containsKey('q'), isFalse);
+      expect(requests.single.queryParameters['colors'], 'cc0000');
+    });
+
+    test('two colours do not share a cached first page', () async {
+      final (_, cache) = await run((repository) async {
+        await repository.fetchFeed(categoryName: 'forest', refresh: true, colors: '0066cc');
+        await repository.fetchFeed(categoryName: 'forest', refresh: true, colors: 'cc0000');
+        await repository.fetchFeed(categoryName: 'forest', refresh: true);
+      });
+
+      expect(cache.scopes.toSet(), hasLength(3));
+    });
+  });
 }
 
 http.Response _page(int page) => http.Response(
