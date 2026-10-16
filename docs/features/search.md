@@ -186,7 +186,6 @@ The Prism tag query needs the Firestore index on `walls`: `tags` (array contains
 - A colour-only search sends no search analytics event, because the event needs a query. A colour-only search is not saved in recent searches.
 - A Prism wall has colours only after the backend writes `colors`. Until the backfill runs, the "From Prism" row has few walls for a colour.
 - Pexels matches a colour with its own colour model. Results can include photos with a different main colour.
-- The old colour screen (`ColorRoute`) is still in the router. The discover view does not open it any more.
 - The search analytics event always names Wallhaven as the provider for a submitted query (`SearchSubmittedEvent`).
 
 ## How to test

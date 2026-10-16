@@ -12,21 +12,31 @@ import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.d
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../support/fake_user_block_repository.dart';
+
 class _MockFetchTrending extends Mock implements FetchTrendingUseCase {}
 
-PrismWallpaper _wall(String id) => PrismWallpaper(
-  core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: 'https://example.com/$id.jpg', thumbnailUrl: ''),
+PrismWallpaper _wall(String id, {String? email}) => PrismWallpaper(
+  core: WallpaperCore(
+    id: id,
+    source: WallpaperSource.prism,
+    fullUrl: 'https://example.com/$id.jpg',
+    thumbnailUrl: '',
+    authorEmail: email,
+  ),
 );
 
 void main() {
   late _MockFetchTrending fetch;
+  late FakeUserBlockRepository blocks;
   late TrendingBloc bloc;
 
   setUpAll(() => registerFallbackValue(TrendingRange.week));
 
   setUp(() {
     fetch = _MockFetchTrending();
-    bloc = TrendingBloc(fetch);
+    blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    bloc = TrendingBloc(fetch, blocks);
   });
 
   tearDown(() => bloc.close());
@@ -111,5 +121,51 @@ void main() {
     await settle();
 
     expect(bloc.state.week.walls.single.id, 'new');
+  });
+
+  group('blocking a creator', () {
+    test('removes their walls from both lists at once', () async {
+      when(() => fetch(any())).thenAnswer(
+        (_) async =>
+            Result.success(<PrismWallpaper>[_wall('a', email: 'Bad@Example.com'), _wall('b', email: 'ok@x.com')]),
+      );
+      bloc.add(const TrendingEvent.started());
+      await settle();
+      bloc.add(const TrendingEvent.rangeSelected(TrendingRange.allTime));
+      await settle();
+
+      blocks.completeInitial(<String>{'bad@example.com'});
+      await settle();
+
+      expect(bloc.state.week.walls.map((wall) => wall.id), <String>['b']);
+      expect(bloc.state.allTime.walls.map((wall) => wall.id), <String>['b']);
+    });
+
+    test('also hides their walls in a load that was already running', () async {
+      final Completer<Result<List<PrismWallpaper>>> pending = Completer<Result<List<PrismWallpaper>>>();
+      when(() => fetch(TrendingRange.week)).thenAnswer((_) => pending.future);
+      bloc.add(const TrendingEvent.started());
+      await settle();
+
+      blocks.completeInitial(<String>{'bad@example.com'});
+      await settle();
+      pending.complete(Result.success(<PrismWallpaper>[_wall('a', email: 'bad@example.com'), _wall('b')]));
+      await settle();
+
+      expect(bloc.state.week.walls.map((wall) => wall.id), <String>['b']);
+    });
+
+    test('leaves the lists alone when the set is empty or hits no wall', () async {
+      when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('a', email: 'a@x.com')]));
+      bloc.add(const TrendingEvent.started());
+      await settle();
+      final TrendingState before = bloc.state;
+
+      blocks.completeInitial(<String>{});
+      blocks.completeInitial(<String>{'other@x.com'});
+      await settle();
+
+      expect(bloc.state, before);
+    });
   });
 }

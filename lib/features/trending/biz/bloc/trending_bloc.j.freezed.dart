@@ -55,13 +55,14 @@ extension TrendingEventPatterns on TrendingEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RangeSelected value)?  rangeSelected,TResult Function( _RefreshRequested value)?  refreshRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RangeSelected value)?  rangeSelected,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RangeSelected() when rangeSelected != null:
 return rangeSelected(_that);case _RefreshRequested() when refreshRequested != null:
-return refreshRequested(_that);case _:
+return refreshRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that);case _:
   return orElse();
 
 }
@@ -79,13 +80,14 @@ return refreshRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RangeSelected value)  rangeSelected,required TResult Function( _RefreshRequested value)  refreshRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RangeSelected value)  rangeSelected,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _BlockedCreatorsChanged value)  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _RangeSelected():
 return rangeSelected(_that);case _RefreshRequested():
-return refreshRequested(_that);case _:
+return refreshRequested(_that);case _BlockedCreatorsChanged():
+return blockedCreatorsChanged(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -102,13 +104,14 @@ return refreshRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RangeSelected value)?  rangeSelected,TResult? Function( _RefreshRequested value)?  refreshRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RangeSelected value)?  rangeSelected,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RangeSelected() when rangeSelected != null:
 return rangeSelected(_that);case _RefreshRequested() when refreshRequested != null:
-return refreshRequested(_that);case _:
+return refreshRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that);case _:
   return null;
 
 }
@@ -125,12 +128,13 @@ return refreshRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( TrendingRange range)?  rangeSelected,TResult Function()?  refreshRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( TrendingRange range)?  rangeSelected,TResult Function()?  refreshRequested,TResult Function( Set<String> blocked)?  blockedCreatorsChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RangeSelected() when rangeSelected != null:
 return rangeSelected(_that.range);case _RefreshRequested() when refreshRequested != null:
-return refreshRequested();case _:
+return refreshRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that.blocked);case _:
   return orElse();
 
 }
@@ -148,12 +152,13 @@ return refreshRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( TrendingRange range)  rangeSelected,required TResult Function()  refreshRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( TrendingRange range)  rangeSelected,required TResult Function()  refreshRequested,required TResult Function( Set<String> blocked)  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _RangeSelected():
 return rangeSelected(_that.range);case _RefreshRequested():
-return refreshRequested();case _:
+return refreshRequested();case _BlockedCreatorsChanged():
+return blockedCreatorsChanged(_that.blocked);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -170,12 +175,13 @@ return refreshRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( TrendingRange range)?  rangeSelected,TResult? Function()?  refreshRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( TrendingRange range)?  rangeSelected,TResult? Function()?  refreshRequested,TResult? Function( Set<String> blocked)?  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RangeSelected() when rangeSelected != null:
 return rangeSelected(_that.range);case _RefreshRequested() when refreshRequested != null:
-return refreshRequested();case _:
+return refreshRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that.blocked);case _:
   return null;
 
 }
@@ -312,6 +318,78 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class _BlockedCreatorsChanged implements TrendingEvent {
+  const _BlockedCreatorsChanged({required final  Set<String> blocked}): _blocked = blocked;
+  
+
+ final  Set<String> _blocked;
+ Set<String> get blocked {
+  if (_blocked is EqualUnmodifiableSetView) return _blocked;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableSetView(_blocked);
+}
+
+
+/// Create a copy of TrendingEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$BlockedCreatorsChangedCopyWith<_BlockedCreatorsChanged> get copyWith => __$BlockedCreatorsChangedCopyWithImpl<_BlockedCreatorsChanged>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BlockedCreatorsChanged&&const DeepCollectionEquality().equals(other._blocked, _blocked));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_blocked));
+
+@override
+String toString() {
+  return 'TrendingEvent.blockedCreatorsChanged(blocked: $blocked)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$BlockedCreatorsChangedCopyWith<$Res> implements $TrendingEventCopyWith<$Res> {
+  factory _$BlockedCreatorsChangedCopyWith(_BlockedCreatorsChanged value, $Res Function(_BlockedCreatorsChanged) _then) = __$BlockedCreatorsChangedCopyWithImpl;
+@useResult
+$Res call({
+ Set<String> blocked
+});
+
+
+
+
+}
+/// @nodoc
+class __$BlockedCreatorsChangedCopyWithImpl<$Res>
+    implements _$BlockedCreatorsChangedCopyWith<$Res> {
+  __$BlockedCreatorsChangedCopyWithImpl(this._self, this._then);
+
+  final _BlockedCreatorsChanged _self;
+  final $Res Function(_BlockedCreatorsChanged) _then;
+
+/// Create a copy of TrendingEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? blocked = null,}) {
+  return _then(_BlockedCreatorsChanged(
+blocked: null == blocked ? _self._blocked : blocked // ignore: cast_nullable_to_non_nullable
+as Set<String>,
+  ));
+}
+
+
+}
 
 /// @nodoc
 mixin _$TrendingSection {

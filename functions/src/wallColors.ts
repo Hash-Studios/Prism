@@ -103,24 +103,60 @@ export async function dominantPaletteColors(imageBuffer: Buffer): Promise<string
   return (picked.length > 0 ? picked : ranked.slice(0, 1)).map((entry) => entry.id);
 }
 
-export type ColorFetch = (url: string, init: {signal: AbortSignal}) => Promise<Response>;
+export type ColorFetch = (url: string, init: {signal: AbortSignal; redirect?: "manual"}) => Promise<Response>;
 
-/** Downloads an https image. Fails on a slow host, a non-image reply or a body over the size cap. */
+/** Hosts that serve wall images: GitHub raw (app uploads) and prismwalls.com (Studio assets). */
+export const ALLOWED_IMAGE_HOSTS: readonly string[] = ["raw.githubusercontent.com", "prismwalls.com"];
+
+const MAX_REDIRECTS = 3;
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+function checkedImageUrl(value: string): URL {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("image url is not valid");
+  }
+  if (url.protocol !== "https:") {
+    throw new Error("image url must use https");
+  }
+  if (url.username || url.password || url.port) {
+    throw new Error("image url must not have credentials or a port");
+  }
+  if (!ALLOWED_IMAGE_HOSTS.includes(url.hostname)) {
+    throw new Error("image host is not allowed");
+  }
+  return url;
+}
+
+/**
+ * Downloads an image from an allowed https host. Redirects are followed by hand, at most 3, and every target passes
+ * the same check. Fails on a slow host, a non-image reply or a body over the size cap.
+ */
 export async function fetchImageBuffer(
   url: string,
   fetchImpl: ColorFetch = fetch,
   maxBytes: number = MAX_IMAGE_BYTES,
   timeoutMs: number = FETCH_TIMEOUT_MS,
 ): Promise<Buffer> {
-  if (!/^https:\/\//i.test(url)) {
-    throw new Error("image url must use https");
+  let target = checkedImageUrl(url);
+  const signal = AbortSignal.timeout(timeoutMs);
+  let response = await fetchImpl(target.href, {signal, redirect: "manual"});
+  for (let hops = 0; REDIRECT_STATUSES.has(response.status); hops++) {
+    await response.body?.cancel().catch(() => undefined);
+    if (hops >= MAX_REDIRECTS) {
+      throw new Error("image redirected too many times");
+    }
+    const location = response.headers.get("location");
+    if (!location) {
+      throw new Error("image redirect has no location");
+    }
+    target = checkedImageUrl(new URL(location, target).href);
+    response = await fetchImpl(target.href, {signal, redirect: "manual"});
   }
-  const response = await fetchImpl(url, {signal: AbortSignal.timeout(timeoutMs)});
   if (!response.ok || !response.body) {
     throw new Error(`image request failed with ${response.status}`);
-  }
-  if (response.url && !/^https:\/\//i.test(response.url)) {
-    throw new Error("image redirect left https");
   }
   const declared = Number(response.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > maxBytes) {
@@ -148,28 +184,30 @@ export async function fetchImageBuffer(
 export type WallImageUrls = {wallpaper_url?: unknown; wallpaper_thumb?: unknown};
 
 /**
- * Colours for a wall, read from its thumbnail when it has one (smaller download, same colours).
- * Never throws: a failure is logged and gives undefined, so it cannot fail categorization.
+ * Colours for a wall, read from its thumbnail when it has one (smaller download, same colours), then from the full
+ * image when the thumbnail cannot be read. Never throws: a failure is logged and gives undefined, so it cannot fail
+ * categorization.
  */
 export async function wallColorsFor(
   wallId: string,
   wall: WallImageUrls,
   fetchImpl: ColorFetch = fetch,
 ): Promise<string[] | undefined> {
-  const url = [wall.wallpaper_thumb, wall.wallpaper_url]
+  const urls = [wall.wallpaper_thumb, wall.wallpaper_url]
     .map((value) => (typeof value === "string" ? value.trim() : ""))
-    .find((value) => value.length > 0);
-  if (!url) {
-    return undefined;
+    .filter((value, index, all) => value.length > 0 && all.indexOf(value) === index);
+  for (const url of urls) {
+    try {
+      const colors = await dominantPaletteColors(await fetchImageBuffer(url, fetchImpl));
+      if (colors.length > 0) {
+        return colors;
+      }
+    } catch (error) {
+      logger.warn("wallColors: could not read colours", {
+        wallId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
-  try {
-    const colors = await dominantPaletteColors(await fetchImageBuffer(url, fetchImpl));
-    return colors.length > 0 ? colors : undefined;
-  } catch (error) {
-    logger.warn("wallColors: could not read colours", {
-      wallId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return undefined;
-  }
+  return undefined;
 }

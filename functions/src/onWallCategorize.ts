@@ -25,11 +25,11 @@ export const onWallCategorize = onDocumentCreated(
       return;
     }
 
-    const colors = await wallColorsFor(wallId, data);
+    const colors = Array.isArray(data.colors) ? undefined : await wallColorsFor(wallId, data);
 
     if (data.category && data.category !== DEFAULT_CATEGORY) {
       logger.info("onWallCategorize: category already set", {wallId, category: data.category});
-      if (colors && !Array.isArray(data.colors)) {
+      if (colors) {
         await db.collection("walls").doc(wallId).update({colors});
       }
       return;

@@ -129,7 +129,7 @@ void main() {
       ..registerFactory<LatestFeedBloc>(() => LatestFeedBloc(prismRepository))
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
       ..registerFactory<PopularFeedBloc>(() => PopularFeedBloc(feedRepository))
-      ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending))
+      ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending, FakeUserBlockRepository.pending()))
       ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
   });
 
@@ -202,6 +202,21 @@ void main() {
       tester.getTopLeft(find.text('Trending this week')).dy,
       lessThan(tester.getTopLeft(find.text('For you').first).dy),
     );
+  });
+
+  testWidgets('pull to refresh reloads the Trending strip too', (tester) async {
+    await pumpScreen(tester);
+    verify(() => fetchTrending(TrendingRange.week)).called(1);
+
+    await tester.drag(
+      find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(CustomScrollView)).first,
+      const Offset(0, 1200),
+    );
+    for (int i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    verify(() => fetchTrending(TrendingRange.week)).called(1);
   });
 
   testWidgets('the Latest chip loads the newest Prism walls', (tester) async {

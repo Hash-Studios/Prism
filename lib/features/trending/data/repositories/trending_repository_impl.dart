@@ -50,7 +50,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
       final List<PrismWallpaper> walls = await _loadWalls(ids, range);
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       final List<PrismWallpaper> visible = _visible(walls, blocked);
-      if (visible.isNotEmpty) await _writeCache(range, visible);
+      await _writeCache(range, visible);
       return Result.success(visible);
     } catch (error, stackTrace) {
       final List<PrismWallpaper>? cached = await _readCached(range);
@@ -122,7 +122,6 @@ class TrendingRepositoryImpl implements TrendingRepository {
           .whereType<PrismFeedItem>()
           .map((item) => item.wallpaper)
           .toList(growable: false);
-      if (walls.isEmpty) return null;
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       return _visible(walls, blocked);
     } catch (error) {

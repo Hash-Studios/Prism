@@ -9,6 +9,7 @@ import * as wallCategory from "../wallCategory";
 import {backfillWallColors, parseBackfillArgs} from "../scripts/backfillWallColors";
 import {
   ColorFetch,
+  ALLOWED_IMAGE_HOSTS,
   dominantPaletteColors,
   fetchImageBuffer,
   PALETTE,
@@ -113,18 +114,117 @@ function replyOf(body: Uint8Array | string, init: {status?: number; headers?: Re
 
 test("fetchImageBuffer reads an https image and rejects bad replies", async () => {
   const ok: ColorFetch = async () => replyOf(new Uint8Array([1, 2, 3]));
-  assert.deepEqual([...await fetchImageBuffer("https://img.example/a.png", ok)], [1, 2, 3]);
-  await assert.rejects(fetchImageBuffer("http://img.example/a.png", ok), /https/);
-  await assert.rejects(fetchImageBuffer("https://img.example/a.png", async () => replyOf("no", {status: 404})), /404/);
+  assert.deepEqual([...await fetchImageBuffer("https://raw.githubusercontent.com/o/r/main/a.png", ok)], [1, 2, 3]);
+  await assert.rejects(fetchImageBuffer("http://raw.githubusercontent.com/o/r/main/a.png", ok), /https/);
+  await assert.rejects(fetchImageBuffer("https://raw.githubusercontent.com/o/r/main/a.png", async () => replyOf("no", {status: 404})), /404/);
   const declared: ColorFetch = async () => replyOf(new Uint8Array(10), {headers: {"content-length": "999"}});
-  await assert.rejects(fetchImageBuffer("https://img.example/a.png", declared, 100), /too large/);
+  await assert.rejects(fetchImageBuffer("https://raw.githubusercontent.com/o/r/main/a.png", declared, 100), /too large/);
   const streamed: ColorFetch = async () => replyOf(new Uint8Array(200));
-  await assert.rejects(fetchImageBuffer("https://img.example/a.png", streamed, 100), /too large/);
+  await assert.rejects(fetchImageBuffer("https://raw.githubusercontent.com/o/r/main/a.png", streamed, 100), /too large/);
+});
+
+const GOOD = "https://raw.githubusercontent.com/o/r/main/a.png";
+
+function redirectTo(location: string, status = 302): Response {
+  return new Response(null, {status, headers: {location}});
+}
+
+test("only the GitHub raw and prismwalls.com hosts are allowed", () => {
+  assert.deepEqual([...ALLOWED_IMAGE_HOSTS], ["raw.githubusercontent.com", "prismwalls.com"]);
+});
+
+test("fetchImageBuffer refuses a bad url before any request", async () => {
+  let calls = 0;
+  const spy: ColorFetch = async () => {
+    calls += 1;
+    return replyOf(new Uint8Array([1]));
+  };
+  for (const url of [
+    "https://evil.example/a.png",
+    "https://raw.githubusercontent.com.evil.example/a.png",
+    "https://evil.example/raw.githubusercontent.com/a.png",
+    "https://169.254.169.254/latest/meta-data",
+    "https://127.0.0.1/a.png",
+    "https://[::1]/a.png",
+    "https://user:pass@raw.githubusercontent.com/a.png",
+    "https://raw.githubusercontent.com:8443/a.png",
+    "http://raw.githubusercontent.com/a.png",
+    "not a url",
+  ]) {
+    await assert.rejects(fetchImageBuffer(url, spy), {message: /^image/}, url);
+  }
+  assert.equal(calls, 0);
+});
+
+test("fetchImageBuffer sends every request with manual redirects", async () => {
+  const seen: Array<string | undefined> = [];
+  await fetchImageBuffer(GOOD, async (_url, init) => {
+    seen.push(init.redirect);
+    return replyOf(new Uint8Array([1]));
+  });
+  assert.deepEqual(seen, ["manual"]);
+});
+
+test("fetchImageBuffer follows a redirect inside the allowlist", async () => {
+  const urls: string[] = [];
+  const hop: ColorFetch = async (url) => {
+    urls.push(url);
+    if (urls.length === 1) return redirectTo("https://prismwalls.com/api/ai/assets/b.png", 301);
+    if (urls.length === 2) return redirectTo("/api/ai/assets/c.png", 307);
+    return replyOf(new Uint8Array([7]));
+  };
+  assert.deepEqual([...await fetchImageBuffer(GOOD, hop)], [7]);
+  assert.deepEqual(urls, [GOOD, "https://prismwalls.com/api/ai/assets/b.png", "https://prismwalls.com/api/ai/assets/c.png"]);
+});
+
+test("fetchImageBuffer refuses a redirect to http, a foreign host, an internal address or nowhere", async () => {
+  for (const location of [
+    "http://raw.githubusercontent.com/a.png",
+    "https://evil.example/a.png",
+    "https://169.254.169.254/latest/meta-data",
+    "http://localhost:8080/admin",
+    "https://raw.githubusercontent.com:8443/a.png",
+    "//evil.example/a.png",
+  ]) {
+    const urls: string[] = [];
+    await assert.rejects(fetchImageBuffer(GOOD, async (url) => {
+      urls.push(url);
+      return redirectTo(location);
+    }), {message: /^image/}, location);
+    assert.deepEqual(urls, [GOOD], location);
+  }
+  await assert.rejects(fetchImageBuffer(GOOD, async () => new Response(null, {status: 302})), /no location/);
+});
+
+test("fetchImageBuffer allows three redirects and refuses a fourth", async () => {
+  let calls = 0;
+  const loop: ColorFetch = async () => {
+    calls += 1;
+    return redirectTo(GOOD);
+  };
+  await assert.rejects(fetchImageBuffer(GOOD, loop), /too many/);
+  assert.equal(calls, 4);
+  calls = 0;
+  const three: ColorFetch = async () => {
+    calls += 1;
+    return calls <= 3 ? redirectTo(GOOD) : replyOf(new Uint8Array([1]));
+  };
+  assert.deepEqual([...await fetchImageBuffer(GOOD, three)], [1]);
+});
+
+test("wallColorsFor gives undefined for a wall image on a foreign host without a request", async () => {
+  let calls = 0;
+  const spy: ColorFetch = async () => {
+    calls += 1;
+    return replyOf(new Uint8Array([1]));
+  };
+  assert.equal(await wallColorsFor("w1", {wallpaper_thumb: "https://evil.example/t.png"}, spy), undefined);
+  assert.equal(calls, 0);
 });
 
 test("fetchImageBuffer gives the request a timeout signal", async () => {
   let signal: AbortSignal | undefined;
-  await fetchImageBuffer("https://img.example/a.png", async (_url, init) => {
+  await fetchImageBuffer("https://raw.githubusercontent.com/o/r/main/a.png", async (_url, init) => {
     signal = init.signal;
     return replyOf(new Uint8Array([1]));
   });
@@ -138,15 +238,41 @@ test("wallColorsFor reads the thumbnail first and never throws", async () => {
     urls.push(url);
     return replyOf(png);
   };
-  const wall = {wallpaper_url: "https://img.example/full.png", wallpaper_thumb: "https://img.example/thumb.png"};
+  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/full.png", wallpaper_thumb: "https://raw.githubusercontent.com/o/r/main/thumb.png"};
   assert.deepEqual(await wallColorsFor("w1", wall, ok), ["red"]);
-  assert.deepEqual(urls, ["https://img.example/thumb.png"]);
-  assert.deepEqual(await wallColorsFor("w1", {wallpaper_url: "https://img.example/full.png"}, ok), ["red"]);
+  assert.deepEqual(urls, ["https://raw.githubusercontent.com/o/r/main/thumb.png"]);
+  assert.deepEqual(await wallColorsFor("w1", {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/full.png"}, ok), ["red"]);
   assert.equal(await wallColorsFor("w1", {}, ok), undefined);
   assert.equal(await wallColorsFor("w1", wall, async () => {
     throw new Error("offline");
   }), undefined);
   assert.equal(await wallColorsFor("w1", wall, async () => replyOf("not an image")), undefined);
+});
+
+test("wallColorsFor falls back to the full image when the thumbnail cannot be read", async () => {
+  const png = await bandsPng([["cc0000", SIZE]]);
+  const thumb = "https://raw.githubusercontent.com/o/r/main/thumb.png";
+  const full = "https://raw.githubusercontent.com/o/r/main/full.png";
+  const urls: string[] = [];
+  const thumbFails: ColorFetch = async (url) => {
+    urls.push(url);
+    return url === thumb ? replyOf("gone", {status: 404}) : replyOf(png);
+  };
+  assert.deepEqual(await wallColorsFor("w1", {wallpaper_thumb: thumb, wallpaper_url: full}, thumbFails), ["red"]);
+  assert.deepEqual(urls, [thumb, full]);
+  urls.length = 0;
+  const thumbUndecodable: ColorFetch = async (url) => {
+    urls.push(url);
+    return url === thumb ? replyOf("not an image") : replyOf(png);
+  };
+  assert.deepEqual(await wallColorsFor("w1", {wallpaper_thumb: thumb, wallpaper_url: full}, thumbUndecodable), ["red"]);
+  assert.deepEqual(urls, [thumb, full]);
+  urls.length = 0;
+  assert.equal(await wallColorsFor("w1", {wallpaper_thumb: thumb, wallpaper_url: "https://evil.example/a.png"}, async (url) => {
+    urls.push(url);
+    return replyOf("gone", {status: 404});
+  }), undefined);
+  assert.deepEqual(urls, [thumb]);
 });
 
 function fakeWallsCollection(t: test.TestContext, updates: Array<Record<string, unknown>>, wall?: Record<string, unknown>) {
@@ -175,7 +301,7 @@ test("a new wall gets its colours in the same update as its category", async (t)
   const png = await bandsPng([["0066cc", 36], ["ffffff", 12]]);
   fakeFetch(t, async () => replyOf(png));
   t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);
-  await onWallCategorize.run(created({wallpaper_url: "https://img.example/a.png"}));
+  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"}));
   assert.equal(updates.length, 1);
   assert.equal(updates[0].category, "Nature");
   assert.deepEqual(updates[0].colors, ["blue", "white"]);
@@ -188,7 +314,7 @@ test("a colour failure does not stop categorization", async (t) => {
     throw new Error("offline");
   });
   t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);
-  await onWallCategorize.run(created({wallpaper_url: "https://img.example/a.png"}));
+  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"}));
   assert.equal(updates.length, 1);
   assert.equal(updates[0].category, "Nature");
   assert.equal("colors" in updates[0], false);
@@ -201,7 +327,7 @@ test("a label failure still saves the colours with the default category", async 
   t.mock.method(wallCategory, "detectLabels", async () => {
     throw new Error("vision down");
   });
-  await onWallCategorize.run(created({wallpaper_url: "https://img.example/a.png"}));
+  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"}));
   assert.equal(updates[0].category, "General");
   assert.deepEqual(updates[0].colors, ["red"]);
 });
@@ -210,16 +336,29 @@ test("a wall that already has a category still gets colours, once", async (t) =>
   const updates: Array<Record<string, unknown>> = [];
   fakeWallsCollection(t, updates);
   fakeFetch(t, async () => replyOf(await bandsPng([["cc0000", SIZE]])));
-  await onWallCategorize.run(created({wallpaper_url: "https://img.example/a.png", category: "Space"}));
+  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space"}));
   assert.deepEqual(updates, [{colors: ["red"]}]);
   updates.length = 0;
-  await onWallCategorize.run(created({wallpaper_url: "https://img.example/a.png", category: "Space", colors: ["blue"]}));
+  await onWallCategorize.run(created({wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space", colors: ["blue"]}));
+  assert.deepEqual(updates, []);
+});
+
+test("a wall with a category and colours makes no request", async (t) => {
+  const updates: Array<Record<string, unknown>> = [];
+  fakeWallsCollection(t, updates);
+  const fetchMock = t.mock.method(globalThis, "fetch", async () => replyOf(await bandsPng([["cc0000", SIZE]])));
+  await onWallCategorize.run(created({
+    wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png",
+    category: "Space",
+    colors: ["blue"],
+  }));
+  assert.equal(fetchMock.mock.callCount(), 0);
   assert.deepEqual(updates, []);
 });
 
 test("the categorize callable writes colours with the category", async (t) => {
   const updates: Array<Record<string, unknown>> = [];
-  fakeWallsCollection(t, updates, {email: "a@example.com", wallpaper_url: "https://img.example/a.png"});
+  fakeWallsCollection(t, updates, {email: "a@example.com", wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"});
   fakeFetch(t, async () => replyOf(await bandsPng([["000000", 24], ["ffffff", 24]])));
   t.mock.method(wallCategory, "detectLabels", async () => ["Night"]);
   const result = await categorizeWallpaper.run({
@@ -233,7 +372,11 @@ test("the categorize callable writes colours with the category", async (t) => {
 
 type FakeWall = {id: string; data: Record<string, unknown>};
 
-function fakeBackfillDb(walls: FakeWall[], updates: Array<[string, Record<string, unknown>]>) {
+function fakeBackfillDb(
+  walls: FakeWall[],
+  updates: Array<[string, Record<string, unknown>]>,
+  events?: string[],
+) {
   const docOf = (wall: FakeWall) => ({
     id: wall.id,
     ref: {id: wall.id},
@@ -267,6 +410,9 @@ function fakeBackfillDb(walls: FakeWall[], updates: Array<[string, Record<string
       update: async (ref: {id: string}, data: Record<string, unknown>) => {
         updates.push([ref.id, data]);
       },
+      flush: async () => {
+        events?.push("flush");
+      },
       close: async () => undefined,
     }),
   } as unknown as admin.firestore.Firestore;
@@ -276,9 +422,9 @@ test("the backfill is a dry run by default and skips walls that have colours", a
   const png = await bandsPng([["cc0000", SIZE]]);
   const fetchImpl: ColorFetch = async () => replyOf(png);
   const walls: FakeWall[] = [
-    {id: "a", data: {wallpaper_url: "https://img.example/a.png"}},
-    {id: "b", data: {wallpaper_url: "https://img.example/b.png", colors: ["blue"]}},
-    {id: "c", data: {wallpaper_url: "https://img.example/c.png"}},
+    {id: "a", data: {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"}},
+    {id: "b", data: {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/b.png", colors: ["blue"]}},
+    {id: "c", data: {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/c.png"}},
     {id: "d", data: {}},
   ];
   const updates: Array<[string, Record<string, unknown>]> = [];
@@ -294,11 +440,23 @@ test("the backfill is a dry run by default and skips walls that have colours", a
   assert.deepEqual(updates, [["a", {colors: ["red"]}], ["c", {colors: ["red"]}]]);
 });
 
+test("the backfill flushes its writes before it logs the batch cursor", async () => {
+  const png = await bandsPng([["cc0000", SIZE]]);
+  const fetchImpl: ColorFetch = async () => replyOf(png);
+  const walls: FakeWall[] = ["a", "b", "c"].map((id) => ({
+    id, data: {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/x.png"},
+  }));
+  const events: string[] = [];
+  await backfillWallColors(
+    fakeBackfillDb(walls, [], events), parseBackfillArgs(["--apply", "--batch=2"]), fetchImpl, (l) => events.push(l.split(" ")[0]));
+  assert.deepEqual(events, ["flush", "batch", "flush", "batch", "done"]);
+});
+
 test("the backfill resumes after a document id and can force a rewrite", async () => {
   const png = await bandsPng([["cc0000", SIZE]]);
   const fetchImpl: ColorFetch = async () => replyOf(png);
   const walls: FakeWall[] = ["a", "b", "c"].map((id) => ({
-    id, data: {wallpaper_url: "https://img.example/x.png", colors: ["blue"]},
+    id, data: {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/x.png", colors: ["blue"]},
   }));
   const updates: Array<[string, Record<string, unknown>]> = [];
   const resumed = await backfillWallColors(

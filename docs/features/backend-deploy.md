@@ -298,6 +298,7 @@ The new index is on `walls`: `colors` (array contains), `review` (ascending), `c
 What the functions do:
 
 - `functions/src/wallColors.ts` reads the thumbnail (or the full image if there is no thumbnail) over https. The timeout is 15 seconds. The size cap is 15 MB.
+- Owners control wall image links, so the fetch is limited. Only `raw.githubusercontent.com` (app uploads) and `prismwalls.com` (Studio assets) are allowed (`ALLOWED_IMAGE_HOSTS`). The link must use https with no user info and no port. The code follows at most 3 redirects by hand and checks each target in the same way. Any other link gives no colours and no request.
 - It scales the image to 48 px, maps each pixel to the nearest of the 12 Prism colours (CIE76 distance in Lab), and keeps the colours with at least 12 percent of the pixels. The most dominant colour is always kept. The maximum is 3 colours.
 - `onWallCategorize` and `categorizeWallpaper` write `colors` in the same update as `category`. If a wall already has a category, `onWallCategorize` writes only `colors`. If the colour step fails, categorization still works and the wall has no `colors` field.
 

@@ -14,16 +14,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Loads the trending list for [TrendingStrip]. It has no error UI: when the list is empty or fails, nothing shows.
-class TrendingStripSection extends StatelessWidget {
+/// Give it a `GlobalKey<TrendingStripSectionState>` to reload the list from outside, for example on pull to refresh.
+class TrendingStripSection extends StatefulWidget {
   const TrendingStripSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<TrendingBloc>(
-      create: (_) => getIt<TrendingBloc>()..add(const TrendingEvent.started()),
-      child: const TrendingStrip(),
-    );
+  State<TrendingStripSection> createState() => TrendingStripSectionState();
+}
+
+class TrendingStripSectionState extends State<TrendingStripSection> {
+  late final TrendingBloc _bloc = getIt<TrendingBloc>()..add(const TrendingEvent.started());
+
+  void refresh() => _bloc.add(const TrendingEvent.refreshRequested());
+
+  @override
+  void dispose() {
+    unawaited(_bloc.close());
+    super.dispose();
   }
+
+  @override
+  Widget build(BuildContext context) => BlocProvider<TrendingBloc>.value(value: _bloc, child: const TrendingStrip());
 }
 
 /// "Trending this week" on the home feed: a row of the top Prism wallpapers, with "See all".
@@ -98,40 +109,34 @@ class _StripTile extends StatelessWidget {
     return Semantics(
       button: true,
       label: wallpaperSemanticLabel(wall.core.authorName),
-      excludeSemantics: true,
       child: SizedBox(
         width: TrendingStrip._tileWidth,
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            PrismImageTile(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            splashColor: scheme.secondary.withValues(alpha: 0.3),
+            highlightColor: scheme.secondary.withValues(alpha: 0.1),
+            enableFeedback: false,
+            onTap: () {
+              PrismHaptics.tap();
+              unawaited(
+                context.router.push(
+                  WallpaperDetailRoute(
+                    entity: PrismFeedItem(id: wall.id, wallpaper: wall),
+                    heroTag: heroTag,
+                  ),
+                ),
+              );
+            },
+            child: PrismImageTile(
               url: wall.thumbnailUrl,
               fallbackUrl: wall.fullUrl,
               memCacheHeight: decodeHeight,
               heroTag: heroTag,
               borderRadius: BorderRadius.circular(12),
             ),
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                splashColor: scheme.secondary.withValues(alpha: 0.3),
-                highlightColor: scheme.secondary.withValues(alpha: 0.1),
-                enableFeedback: false,
-                onTap: () {
-                  PrismHaptics.tap();
-                  unawaited(
-                    context.router.push(
-                      WallpaperDetailRoute(
-                        entity: PrismFeedItem(id: wall.id, wallpaper: wall),
-                        heroTag: heroTag,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

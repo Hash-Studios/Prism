@@ -62,6 +62,7 @@ export async function backfillWallColors(
       }));
     }
 
+    await writer.flush();
     cursor = snapshot.docs[snapshot.docs.length - 1].id;
     log(`batch done last=${cursor} ${JSON.stringify(counts)}`);
     if (snapshot.size < options.batchSize) {

@@ -34,13 +34,14 @@ The Wallhaven content filters do not apply. The lists hold only Prism wallpapers
 
 ### Offline copy
 
-After a good load, the repository saves the list in the feed cache. The cache source is `trending` and the scope is `week` or `allTime`. If a later load fails, the repository returns the saved list and hides creators that the user blocked since. If there is no saved list, the load fails.
+After a good load, the repository saves the list in the feed cache. It saves an empty list too, so a list that went empty does not come back from the old copy. The cache source is `trending` and the scope is `week` or `allTime`. If a later load fails, the repository returns the saved list and hides creators that the user blocked since. A saved empty list gives an empty list. If there is no saved list at all, the load fails.
 
 ### The home row
 
 - The row shows up to 12 wallpapers, most trending first. A tap opens the wallpaper detail screen with the wallpaper that the row already loaded.
 - The row stays hidden until the list loads. If the list is empty or the load fails, it stays hidden. It shows no error.
-- The row loads once when the home feed opens. Pull to refresh on the home feed does not reload it.
+- The row loads when the home feed opens. Pull to refresh on the For you chip reloads it too.
+- When the user blocks a creator, the bloc removes that creator's walls from both lists at once.
 
 ### The page
 

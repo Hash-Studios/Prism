@@ -610,6 +610,12 @@ _i174.GetIt initGetIt(
   gh.factory<_i456.StreakShopBloc>(
     () => _i456.StreakShopBloc(gh<_i727.PrismWallpaperRepository>()),
   );
+  gh.factory<_i203.TrendingBloc>(
+    () => _i203.TrendingBloc(
+      gh<_i886.FetchTrendingUseCase>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
   gh.lazySingleton<_i446.FetchPublicProfileWallsUseCase>(
     () => _i446.FetchPublicProfileWallsUseCase(
       gh<_i817.PublicProfileRepository>(),
@@ -662,9 +668,6 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i226.PopularFeedBloc>(
     () => _i226.PopularFeedBloc(gh<_i567.PersonalizedFeedRepository>()),
-  );
-  gh.factory<_i203.TrendingBloc>(
-    () => _i203.TrendingBloc(gh<_i886.FetchTrendingUseCase>()),
   );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(

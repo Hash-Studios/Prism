@@ -122,7 +122,32 @@ void main() {
     expect(missing.data, isEmpty);
     expect(empty.data, isEmpty);
     expect(client.querySpecs, isEmpty);
-    expect(cache.snapshots, isEmpty);
+  });
+
+  test('a good empty list replaces the saved one, so a later failure does not bring old walls back', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A')};
+    setList('trending', <Object?>['A']);
+    expect((await repository.fetch(TrendingRange.week)).data, hasLength(1));
+
+    setList('trending', <Object?>[]);
+    expect((await repository.fetch(TrendingRange.week)).data, isEmpty);
+    setList('trending', <Object?>['A']);
+    client.queryError = Exception('offline');
+    final offline = await repository.fetch(TrendingRange.week);
+
+    expect(offline.isSuccess, isTrue);
+    expect(offline.data, isEmpty);
+  });
+
+  test('a saved empty list is a success, and a missing one is a failure', () async {
+    setList('trending', <Object?>[]);
+    await repository.fetch(TrendingRange.week);
+    setList('trending', <Object?>['A']);
+    setList('popular', <Object?>['A']);
+    client.queryError = Exception('offline');
+
+    expect((await repository.fetch(TrendingRange.week)).isSuccess, isTrue);
+    expect((await repository.fetch(TrendingRange.allTime)).isFailure, isTrue);
   });
 
   test('returns the saved list when the network fails, and hides creators blocked since', () async {

@@ -57,6 +57,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
   late final PersonalizedFeedBloc _bloc;
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<TrendingStripSectionState> _trendingStripKey = GlobalKey<TrendingStripSectionState>();
   LatestFeedBloc? _latest;
   FollowingFeedBloc? _following;
   PopularFeedBloc? _popular;
@@ -147,6 +148,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       return;
     }
     final Future<PersonalizedFeedState> settled = _bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
+    _trendingStripKey.currentState?.refresh();
     _bloc.add(const PersonalizedFeedEvent.refreshRequested());
     final PersonalizedFeedState result = await settled.timeout(
       const Duration(seconds: 30),
@@ -246,7 +248,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                         ),
                       ),
                     ),
-                    const SliverToBoxAdapter(child: TrendingStripSection()),
+                    SliverToBoxAdapter(child: TrendingStripSection(key: _trendingStripKey)),
                     SliverToBoxAdapter(
                       child: Column(
                         children: <Widget>[
