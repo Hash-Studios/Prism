@@ -3,34 +3,22 @@
 set -euo pipefail
 
 if command -v rg >/dev/null 2>&1; then
-  matches="$({
-    rg -n --no-heading "statusBarColor\\s*:" lib test \
+  matches="$(
+    rg -n --no-heading '(statusBarColor|systemNavigationBarColor|systemNavigationBarDividerColor)[[:space:]]*:' lib test \
       -g '!**/*.g.dart' \
       -g '!**/*.freezed.dart' \
       -g '!**/*.gr.dart' \
       -g '!**/*.config.dart' \
-      -g '!**/edge_to_edge_overlay_style.dart' || true
-    rg -n --no-heading "systemNavigationBarColor\\s*:" lib test \
-      -g '!**/*.g.dart' \
-      -g '!**/*.freezed.dart' \
-      -g '!**/*.gr.dart' \
-      -g '!**/*.config.dart' \
-      -g '!**/edge_to_edge_overlay_style.dart' || true
-    rg -n --no-heading "systemNavigationBarDividerColor\\s*:" lib test \
-      -g '!**/*.g.dart' \
-      -g '!**/*.freezed.dart' \
-      -g '!**/*.gr.dart' \
-      -g '!**/*.config.dart' \
-      -g '!**/edge_to_edge_overlay_style.dart' || true
-  } | sort -u)"
+      -g '!**/edge_to_edge_overlay_style.dart' || [[ $? == 1 ]]
+  )"
 else
   matches="$(
-    grep -rn --include='*.dart' \
-      -e 'statusBarColor\s*:' \
-      -e 'systemNavigationBarColor\s*:' \
-      -e 'systemNavigationBarDividerColor\s*:' \
-      lib test \
-      | grep -v 'edge_to_edge_overlay_style.dart' || true
+    grep -rnE --include='*.dart' \
+      --exclude='*.g.dart' --exclude='*.freezed.dart' \
+      --exclude='*.gr.dart' --exclude='*.config.dart' \
+      --exclude='edge_to_edge_overlay_style.dart' \
+      -e '(statusBarColor|systemNavigationBarColor|systemNavigationBarDividerColor)[[:space:]]*:' \
+      lib test || [[ $? == 1 ]]
   )"
 fi
 

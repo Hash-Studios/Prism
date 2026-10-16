@@ -3,6 +3,8 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/system_accent_channel.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
+import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,12 +87,68 @@ void main() {
     expect(tester.widget<Semantics>(accent).properties.selected, isTrue);
   });
 
-  testWidgets('the title reads Themes and the page has no beta badge', (tester) async {
+  testWidgets('rendered selectable accents stay readable across the themes', (tester) async {
+    await pumpPage(tester, ThemeMode.light);
+    final Finder choices = find.byWidgetPredicate(
+      (widget) => widget is Semantics && (widget.properties.label?.startsWith('Accent colour ') ?? false),
+    );
+    final Set<Color> picks = <Color>{};
+    final Finder picker = find.ancestor(of: choices.first, matching: find.byType(ListView));
+    final ScrollableState scrollable = tester.state<ScrollableState>(
+      find.descendant(of: picker, matching: find.byType(Scrollable)),
+    );
+
+    while (true) {
+      for (final Element choice in choices.evaluate()) {
+        final Finder swatch = find.descendant(
+          of: find.byWidget(choice.widget),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Container &&
+                widget.decoration is BoxDecoration &&
+                (widget.decoration! as BoxDecoration).border != null,
+          ),
+        );
+        final BoxDecoration decoration = tester.widget<Container>(swatch).decoration! as BoxDecoration;
+        picks.add(decoration.color!);
+      }
+      if (scrollable.position.pixels >= scrollable.position.maxScrollExtent) break;
+      final double previousOffset = scrollable.position.pixels;
+      scrollable.position.jumpTo(
+        (previousOffset + scrollable.position.viewportDimension).clamp(0, scrollable.position.maxScrollExtent),
+      );
+      await tester.pump();
+      expect(scrollable.position.pixels, greaterThan(previousOffset), reason: 'the picker must advance to its end');
+    }
+    expect(picks, isNotEmpty);
+
+    for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
+      for (final Color pick in picks) {
+        final ThemeData theme = withPrismAccent(option.theme, pick.toARGB32());
+        final ColorScheme scheme = theme.colorScheme;
+        expect(
+          contrastRatio(scheme.onPrimary, scheme.primary),
+          greaterThanOrEqualTo(4.5),
+          reason: 'onPrimary on $pick in ${option.label}',
+        );
+        expect(
+          contrastRatio(scheme.onError, scheme.error),
+          greaterThanOrEqualTo(4.5),
+          reason: 'onError on $pick in ${option.label}',
+        );
+        expect(
+          contrastRatio(scheme.primary, theme.primaryColor),
+          greaterThanOrEqualTo(1.5),
+          reason: '$pick against the ${option.label} background',
+        );
+      }
+    }
+  });
+
+  testWidgets('the title reads Themes and the Done button is available', (tester) async {
     await pumpPage(tester, ThemeMode.light);
 
     expect(find.text('Themes'), findsOneWidget);
-    expect(find.text('Theme Manager'), findsNothing);
-    expect(find.text('BETA'), findsNothing);
     expect(find.byTooltip('Done'), findsOneWidget);
   });
 

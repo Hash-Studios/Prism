@@ -27,9 +27,20 @@ export const sweepOpenReports = onSchedule(
     retryCount: 1,
   },
   async () => {
-    const open = await db.collection("contentReports").where("status", "==", "open").limit(MAX_REPORTS_PER_RUN).get();
     const nowMs = Date.now();
-    const due = open.docs.filter((doc) => isDueForEscalation(doc.data(), nowMs));
+    const query = db.collection("contentReports").where("status", "==", "open")
+      .orderBy(admin.firestore.FieldPath.documentId()).limit(MAX_REPORTS_PER_RUN);
+    const due: admin.firestore.QueryDocumentSnapshot[] = [];
+    let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
+    while (due.length < MAX_REPORTS_PER_RUN) {
+      const page = await (cursor ? query.startAfter(cursor) : query).get();
+      for (const doc of page.docs) {
+        if (isDueForEscalation(doc.data(), nowMs)) due.push(doc);
+        if (due.length === MAX_REPORTS_PER_RUN) break;
+      }
+      if (page.size < MAX_REPORTS_PER_RUN) break;
+      cursor = page.docs[page.docs.length - 1];
+    }
     if (due.length === 0) return;
 
     const adminEmails = await getAdminEmails();

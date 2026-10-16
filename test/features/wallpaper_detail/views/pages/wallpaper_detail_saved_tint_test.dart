@@ -127,7 +127,7 @@ void main() {
     messenger.setMockDecodedMessageHandler<Object?>(listChannel, null);
     messenger.setMockMethodCallHandler(toastChannel, null);
     AnalyticsRuntime.reset();
-    await getIt<SettingsLocalDataSource>().delete('pendingDownloadMarker');
+    await getIt<SettingsLocalDataSource>().delete('pendingDownloads_v2');
     await getIt<SettingsLocalDataSource>().delete('notificationPermissionPromptedV2');
     await getIt.reset();
     directory.deleteSync(recursive: true);

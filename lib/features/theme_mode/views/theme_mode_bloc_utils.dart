@@ -63,8 +63,6 @@ extension PrismThemeContextX on BuildContext {
 
   String prismModeAbs({bool listen = true}) => _modeAbsoluteLabel(_themeState(listen).mode);
 
-  bool prismIsAmoledDark({bool listen = true}) => prismDarkThemeId(listen: listen) == prismAmoledDarkThemeId;
-
   void setPrismThemeMode(ThemeMode mode) {
     read<ThemeBloc>().add(ThemeEvent.modeChanged(mode: mode));
   }

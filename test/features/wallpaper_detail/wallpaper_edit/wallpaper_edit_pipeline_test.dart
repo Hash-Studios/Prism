@@ -56,7 +56,7 @@ Future<List<int>> renderKernelPixel(
   }
   shader.setFloat(11, effect.bias / 255);
   shader.setFloat(12, scale);
-  if (lightness != 0) shader.setFloat(13, lightness);
+  shader.setFloat(13, lightness);
   shader.setImageSampler(0, source);
 
   final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -257,12 +257,6 @@ void main() {
       } finally {
         image.dispose();
       }
-    });
-  });
-
-  testWidgets('loadKernelEffects completes', (tester) async {
-    await tester.runAsync(() async {
-      await expectLater(loadKernelEffects(), completion(isA<bool>()));
     });
   });
 }

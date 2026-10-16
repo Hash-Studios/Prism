@@ -82,17 +82,48 @@ enum _SavedChoice { open, again }
 
 enum _GuestProChoice { signIn, pro }
 
+class _DownloadTap {
+  const _DownloadTap({
+    required this.link,
+    required this.identity,
+    required this.isPremiumContent,
+    required this.contentId,
+    required this.sourceContext,
+    required this.wallpaperTitle,
+    required this.creatorName,
+    required this.onDownloaded,
+  });
+
+  final String link;
+  final String identity;
+  final bool isPremiumContent;
+  final String? contentId;
+  final String? sourceContext;
+  final String? wallpaperTitle;
+  final String? creatorName;
+  final VoidCallback? onDownloaded;
+}
+
 class _DownloadButtonState extends State<DownloadButton> {
   bool isLoading = false;
   bool _saved = false;
   String? _preparedSource;
-  String _identity = '';
-  VoidCallback? _onDownloaded;
+  _DownloadTap? _activeTap;
+
+  /// The ledger id of the payment this tap made, or null when it paid nothing. Only a tap that paid marks an entry,
+  /// and only its own, so no other tap or button of the same wallpaper can settle it. The coin gate settles the entry
+  /// itself once the tap ends.
+  String? _paidTxId;
   String? _failureReason;
   String _failureStage = 'download';
 
   CoinSpendAction get _downloadSpendAction =>
       widget.isPremiumContent ? CoinSpendAction.premiumWallpaperDownload : CoinSpendAction.wallpaperDownload;
+
+  _DownloadTap get _tap => _activeTap!;
+
+  CoinSpendAction get _tapSpendAction =>
+      _tap.isPremiumContent ? CoinSpendAction.premiumWallpaperDownload : CoinSpendAction.wallpaperDownload;
 
   @override
   void initState() {
@@ -176,22 +207,31 @@ class _DownloadButtonState extends State<DownloadButton> {
     try {
       _preparedSource = null;
       final DownloadVariant? variant = widget.variant;
-      _identity = variant?.identityOf(link) ?? link;
-      _onDownloaded = widget.onDownloaded;
-      if (!await _confirmDownloadAgain(_identity)) return;
+      final _DownloadTap tap = _DownloadTap(
+        link: link,
+        identity: variant?.identityOf(link) ?? link,
+        isPremiumContent: widget.isPremiumContent,
+        contentId: widget.contentId,
+        sourceContext: widget.sourceContext,
+        wallpaperTitle: widget.wallpaperTitle,
+        creatorName: widget.creatorName,
+        onDownloaded: widget.onDownloaded,
+      );
+      _activeTap = tap;
+      _paidTxId = null;
+      if (!await _confirmDownloadAgain(tap.identity)) return;
       if (variant != null) {
         _preparedSource = await runPrepareSource(variant.prepare);
         if (_preparedSource == null || !mounted) return;
       }
       _failureReason = null;
       _failureStage = 'download';
-      _track(DownloadAttemptEvent(source: _sourceLabel, premium: widget.isPremiumContent));
+      _track(DownloadAttemptEvent(source: _sourceLabel, premium: tap.isPremiumContent));
       if (_isGuest) {
         await _runGuestFlow();
         return;
       }
       final CoinGateResult result = await _gatedDownload();
-      if (result != CoinGateResult.failedNotRefunded) await CoinsService.instance.clearPendingDownload();
       _trackGateResult(result);
     } finally {
       if (mounted) {
@@ -201,7 +241,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   String get _sourceLabel {
-    final String source = widget.sourceContext?.trim() ?? '';
+    final String source = _tap.sourceContext?.trim() ?? '';
     return source.isEmpty ? 'unknown' : source;
   }
 
@@ -234,7 +274,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   Future<bool> _confirmDownloadAgain(String identity) async {
     if (!_isSaved(identity) || !await _fileStillInDownloads(identity) || !mounted) return true;
     final bool free = app_state.prismUser.premium || _isGuest;
-    final int cost = _downloadSpendAction.cost();
+    final int cost = _tapSpendAction.cost();
     final _SavedChoice? choice = await showCoinGateSheet<_SavedChoice>(
       context,
       title: 'Already in Downloads',
@@ -278,7 +318,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<void> _runGuestFlow() async {
-    if (widget.isPremiumContent) {
+    if (_tap.isPremiumContent) {
       await _showGuestPremiumPrompt();
       _track(const DownloadResultEvent(result: 'cancelled', stage: 'gate'));
       return;
@@ -484,20 +524,20 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   String? get _ledgerLabel {
-    final String title = widget.wallpaperTitle?.trim() ?? '';
+    final String title = _tap.wallpaperTitle?.trim() ?? '';
     if (title.isNotEmpty) return title;
-    final String creator = widget.creatorName?.trim() ?? '';
+    final String creator = _tap.creatorName?.trim() ?? '';
     return creator.isEmpty ? null : 'Wallpaper by $creator';
   }
 
   Future<CoinGateResult> _gatedDownload() {
-    final String contentId = widget.contentId?.trim() ?? '';
+    final String contentId = _tap.contentId?.trim() ?? '';
     return CoinGate.forContext(context).run(
       CoinGateSpec(
-        action: _downloadSpendAction,
+        action: _tapSpendAction,
         reason: contentId.isEmpty ? null : 'content_$contentId',
         label: _ledgerLabel,
-        pendingDownloadLink: _identity,
+        pendingDownloadLink: _tap.identity,
         tags: const CoinGateTags(
           spend: 'coins.download.spend',
           retrySpend: 'coins.download.watch_and_download.spend',
@@ -508,11 +548,12 @@ class _DownloadButtonState extends State<DownloadButton> {
         upgradeSource: 'download_low_balance_upgrade',
         precheckBalance: true,
         repromptOnNudgeSpendInsufficient: false,
+        onPaid: (String txId) => _paidTxId = txId,
         isMounted: () => mounted,
         perform: _performDownload,
         choose: _chooseLowBalanceAction,
         onWatchChosen: () => CoinsService.instance.logWatchAndDownloadUsed(
-          isPremiumContent: widget.isPremiumContent,
+          isPremiumContent: _tap.isPremiumContent,
           sourceTag: 'coins.download.watch_and_download',
         ),
       ),
@@ -520,10 +561,11 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<bool> _performDownload() async {
-    final String link = widget.link?.trim() ?? '';
-    final String? sourceContext = widget.sourceContext;
-    final bool premiumContent = widget.isPremiumContent;
-    final VoidCallback? onDownloaded = _onDownloaded;
+    final _DownloadTap tap = _tap;
+    final String link = tap.link;
+    final String? sourceContext = tap.sourceContext;
+    final bool premiumContent = tap.isPremiumContent;
+    final VoidCallback? onDownloaded = tap.onDownloaded;
     if (link.isEmpty) {
       toasts.error('No download link available.');
       return false;
@@ -552,7 +594,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       } else {
         final DownloadRequest request = DownloadRequest(
           link: saveLink,
-          filenameWithoutExtension: downloadBaseName(_identity),
+          filenameWithoutExtension: downloadBaseName(tap.identity),
           isLocalFile: prepared,
         );
         final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
@@ -582,6 +624,9 @@ class _DownloadButtonState extends State<DownloadButton> {
       return false;
     }
 
+    final String? paidTxId = _paidTxId;
+    if (paidTxId != null) await CoinsService.instance.markPendingDownloadSaved(paidTxId);
+
     try {
       analytics.track(
         DownloadWallpaperEvent(
@@ -594,8 +639,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
     }
 
-    if (mounted && _identity == _currentIdentity) setState(() => _saved = true);
-    final String contentId = widget.contentId?.trim() ?? '';
+    if (mounted && tap.identity == _currentIdentity) setState(() => _saved = true);
+    final String contentId = tap.contentId?.trim() ?? '';
     if (contentId.isNotEmpty) {
       try {
         unawaited(getIt<RecordWallpaperActionUseCase>()(contentId, WallpaperAction.download));

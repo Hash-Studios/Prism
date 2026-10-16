@@ -308,16 +308,6 @@ abstract final class PrismFeedLayout {
   /// Grid tile aspect ratio (width : height).
   static const double gridTileAspectRatio = 0.5;
 
-  /// How many logical pixels from the scroll end to trigger next-page fetch.
-  static const double prefetchThreshold = 400;
-
-  /// Stroke width for the inline "fetching more" progress indicator.
-  static const double loadingIndicatorStrokeWidth = 2.4;
-
-  /// Padding for the error state (generous top space pushes the note to
-  /// roughly the vertical centre of the visible area).
-  static const EdgeInsets errorStatePadding = EdgeInsets.fromLTRB(24, 120, 24, 32);
-
   /// Padding for empty / end-of-feed messages.
   static const EdgeInsets contentStatePadding = EdgeInsets.fromLTRB(24, 12, 24, 28);
 
@@ -363,9 +353,6 @@ abstract final class PrismOverlay {
 /// language — drag handles, section labels, action bars, and spacing all
 /// derive from here.
 abstract final class PrismBottomSheet {
-  static const double dragHandleWidth = 32;
-  static const double dragHandleHeight = 4;
-
   /// Fully-rounded pill radius for the drag handle.
   static const double dragHandleRadius = 99;
 
@@ -374,9 +361,6 @@ abstract final class PrismBottomSheet {
 
   /// Space between the drag handle and the first content section.
   static const double headerGap = 16;
-
-  /// Vertical gap inserted before each new section heading.
-  static const double sectionTopGap = 16;
 
   /// Space between a section label and the content below it.
   static const double sectionLabelBottomGap = 4;
