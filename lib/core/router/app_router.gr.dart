@@ -831,18 +831,57 @@ class NotificationRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [OnboardingV2Shell]
-class OnboardingV2ShellRoute extends PageRouteInfo<void> {
-  const OnboardingV2ShellRoute({List<PageRouteInfo>? children})
-    : super(OnboardingV2ShellRoute.name, initialChildren: children);
+class OnboardingV2ShellRoute extends PageRouteInfo<OnboardingV2ShellRouteArgs> {
+  OnboardingV2ShellRoute({
+    Key? key,
+    Future<bool> Function()? signOutForRecovery,
+    List<PageRouteInfo>? children,
+  }) : super(
+         OnboardingV2ShellRoute.name,
+         args: OnboardingV2ShellRouteArgs(
+           key: key,
+           signOutForRecovery: signOutForRecovery,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'OnboardingV2ShellRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const OnboardingV2Shell();
+      final args = data.argsAs<OnboardingV2ShellRouteArgs>(
+        orElse: () => const OnboardingV2ShellRouteArgs(),
+      );
+      return OnboardingV2Shell(
+        key: args.key,
+        signOutForRecovery: args.signOutForRecovery,
+      );
     },
   );
+}
+
+class OnboardingV2ShellRouteArgs {
+  const OnboardingV2ShellRouteArgs({this.key, this.signOutForRecovery});
+
+  final Key? key;
+
+  final Future<bool> Function()? signOutForRecovery;
+
+  @override
+  String toString() {
+    return 'OnboardingV2ShellRouteArgs{key: $key, signOutForRecovery: $signOutForRecovery}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! OnboardingV2ShellRouteArgs) return false;
+    return key == other.key;
+  }
+
+  @override
+  int get hashCode => key.hashCode;
 }
 
 /// generated route for

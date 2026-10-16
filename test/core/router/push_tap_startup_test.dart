@@ -12,7 +12,7 @@ void main() {
     final router = StubAppRouter();
     await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
     await tester.pumpAndSettle();
-    unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+    unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
     await tester.pumpAndSettle();
 
     bool? result;
@@ -40,7 +40,7 @@ void main() {
     final router = StubAppRouter();
     await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
     await tester.pumpAndSettle();
-    unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+    unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
     await tester.pumpAndSettle();
     var mounted = true;
     bool? result;

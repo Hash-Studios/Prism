@@ -84,7 +84,7 @@ class _SplashWidgetState extends State<SplashWidget> {
       );
       if (showOnboarding) {
         _debugOnboardingShownThisSession = true;
-        context.router.replaceAll([const OnboardingV2ShellRoute()]);
+        context.router.replaceAll([OnboardingV2ShellRoute()]);
       } else {
         context.router.replaceAll([const DashboardRoute()]);
       }

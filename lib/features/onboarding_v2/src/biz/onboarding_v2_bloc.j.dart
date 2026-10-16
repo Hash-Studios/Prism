@@ -113,6 +113,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   Future<void> _onLoadRetried(_LoadRetried event, Emitter<OnboardingV2State> emit) => _loadData(emit);
 
   Future<void> _loadData(Emitter<OnboardingV2State> emit) async {
+    final wallpaperAtStart = state.wallpaperData;
     _onboardingStopwatch ??= Stopwatch()..start();
     emit(state.copyWith(loadStatus: LoadStatus.loading, navRequest: null));
     final catalog = await PersonalizedInterestsCatalog.load(remoteConfig: _remoteConfig, settingsLocal: _settingsLocal);
@@ -131,15 +132,19 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     }
 
     final starterPackData = await _fetchStarterPack();
-
     final wallpaperVm = await _firstWallpaperService.recommendForOnboarding(<String>[]);
 
+    final latest = state;
+    final loadedWallpaper = latest.wallpaperData == wallpaperAtStart
+        ? OnboardingWallpaperData(wallpaper: wallpaperVm, status: FirstWallpaperStatus.idle)
+        : latest.wallpaperData;
+
     emit(
-      state.copyWith(
+      latest.copyWith(
         loadStatus: LoadStatus.success,
-        interestsData: state.interestsData.copyWith(available: availableCategories, categoryImages: categoryImages),
+        interestsData: latest.interestsData.copyWith(available: availableCategories, categoryImages: categoryImages),
         starterPackData: starterPackData,
-        wallpaperData: OnboardingWallpaperData(wallpaper: wallpaperVm, status: FirstWallpaperStatus.idle),
+        wallpaperData: loadedWallpaper,
       ),
     );
     // A signed-in user who left onboarding part way resumes after sign-in.
