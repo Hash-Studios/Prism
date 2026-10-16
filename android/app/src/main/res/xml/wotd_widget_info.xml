@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:description="@string/wotd_widget_description"
     android:initialLayout="@layout/wotd_widget"
     android:minHeight="110dp"
     android:minWidth="110dp"
+    android:previewImage="@drawable/wotd_widget_preview_art"
+    android:previewLayout="@layout/wotd_widget_preview"
     android:resizeMode="horizontal|vertical"
-    android:updatePeriodMillis="86400000"
-    android:widgetCategory="home_screen" />
+    android:targetCellHeight="2"
+    android:targetCellWidth="2"
+    android:updatePeriodMillis="10800000"
+    android:widgetCategory="home_screen"
+    tools:ignore="UnusedAttribute" />
