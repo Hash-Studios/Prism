@@ -8,6 +8,7 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
@@ -15,7 +16,6 @@ import 'package:Prism/features/session/data/report_problem_service.dart' show su
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -114,8 +114,6 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   void _onVersionTap() {
-    Clipboard.setData(ClipboardData(text: _version));
-    toasts.success('Version copied');
     _versionTapCount++;
     if (_versionTapCount >= 5) {
       _versionTapCount = 0;
@@ -175,53 +173,41 @@ class _AboutScreenState extends State<AboutScreen> {
 
   Widget _header(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Glint(),
-        const SizedBox(height: PrismSpace.md),
-        Text('Prism', style: PrismTextStyles.sectionTitle(context)),
+        Image.asset('assets/images/prism.webp', height: 70),
+        const SizedBox(height: PrismSpace.sm),
+        Text('Prism Wallpapers', textAlign: TextAlign.center, style: PrismTextStyles.rowTitle(context)),
         Semantics(
           button: true,
-          label: 'Version $_version. Tap to copy.',
+          label: 'Version $_version',
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _onVersionTap,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 44),
-              child: Align(
-                alignment: Alignment.centerLeft,
+              child: Center(
                 widthFactor: 1,
-                child: Text('Version $_version', style: PrismTextStyles.caption(context)),
+                child: Text('Version $_version', textAlign: TextAlign.center, style: PrismTextStyles.caption(context)),
               ),
             ),
           ),
         ),
-        Text('A feature-rich wallpaper manager.', style: PrismTextStyles.body(context)),
+        Text('A feature-rich wallpaper manager.', textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
         const SizedBox(height: PrismSpace.md),
         Wrap(
+          alignment: WrapAlignment.center,
           spacing: PrismSpace.xs,
           runSpacing: PrismSpace.xs,
           children: <Widget>[
             const ActionButton(
               icon: JamIcons.github,
-              text: 'GitHub',
+              text: 'GITHUB',
               link: 'https://www.github.com/Hash-Studios/Prism',
             ),
-            ActionButton(icon: Icons.star_rounded, text: 'Rate Prism', link: _storeLink, analyticsName: 'rate'),
-            const ActionButton(
-              icon: JamIcons.twitter,
-              text: 'X',
-              link: 'https://twitter.com/PrismWallpapers',
-              analyticsName: 'twitter',
-            ),
-            const ActionButton(
-              icon: JamIcons.instagram,
-              text: 'Instagram',
-              link: 'https://www.instagram.com/prismwallpapers',
-            ),
+            ActionButton(icon: Icons.star_rounded, text: 'RATE', link: _storeLink),
             ActionButton(
               icon: Icons.mail_outline_rounded,
-              text: 'Feedback',
+              text: 'FEEDBACK',
               link: buildFeedbackLink(
                 version: app_state.currentAppVersion,
                 build: app_state.currentAppVersionCode,
@@ -230,43 +216,64 @@ class _AboutScreenState extends State<AboutScreen> {
               onLaunchFailed: (BuildContext context) =>
                   unawaited(showReportProblemSheet(context, source: 'about_feedback')),
             ),
+            ActionButton(
+              icon: Icons.refresh_rounded,
+              text: "WHAT'S NEW",
+              link: '',
+              onTap: (BuildContext context) => showChangelog(context),
+            ),
             const ActionButton(
               icon: Icons.privacy_tip_rounded,
-              text: 'Privacy',
+              text: 'PRIVACY',
               link: 'https://prismwalls.com/privacy',
             ),
-            const ActionButton(icon: Icons.description_rounded, text: 'Terms', link: 'https://prismwalls.com/terms'),
-            const ActionButton(icon: JamIcons.paper_plane, text: 'Telegram', link: 'http://t.me/PrismWallpapers'),
+            const ActionButton(icon: Icons.description_rounded, text: 'TERMS', link: 'https://prismwalls.com/terms'),
+            const ActionButton(icon: JamIcons.twitter, text: 'TWITTER', link: 'https://twitter.com/PrismWallpapers'),
+            const ActionButton(
+              icon: JamIcons.instagram,
+              text: 'INSTAGRAM',
+              link: 'https://www.instagram.com/prismwallpapers',
+            ),
+            const ActionButton(icon: JamIcons.paper_plane, text: 'TELEGRAM', link: 'http://t.me/PrismWallpapers'),
           ],
         ),
       ],
     );
   }
 
+  Widget _hairline(BuildContext context) =>
+      Divider(height: 1, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08));
+
+  /// The top three as a podium (second, first, third, with the first largest), then everyone else in a group.
   Widget _team(BuildContext context, List<Contributor> contributors) {
-    final List<Contributor> top = contributors.take(3).toList(growable: false);
     final List<Contributor> rest = contributors.skip(3).toList(growable: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const PrismSectionHeader(title: 'Team'),
-        if (top.isEmpty)
+        if (contributors.isEmpty)
           Text('No contributors to show yet.', style: PrismTextStyles.body(context))
         else
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[for (final Contributor c in top) _TeamMember(contributor: c)],
+            children: <Widget>[
+              for (final (int rank, double size) in const <(int, double)>[(1, 70), (0, 90), (2, 70)])
+                if (rank < contributors.length)
+                  Expanded(
+                    child: _TeamMember(contributor: contributors[rank], size: size),
+                  ),
+            ],
           ),
         if (rest.isNotEmpty) ...<Widget>[
-          const PrismSectionHeader(title: 'Contributors'),
+          const SizedBox(height: PrismSpace.md),
+          _hairline(context),
+          const PrismSectionHeader(title: 'Other Contributors'),
           PrismGroup(
             children: <Widget>[
               for (final Contributor c in rest)
                 PrismRow(
-                  leading: PrismAvatar(url: c.avatarUrl, name: c.login, size: 32),
+                  leading: PrismAvatar(url: c.avatarUrl, name: c.login, size: 40),
                   title: c.login ?? 'Contributor',
                   subtitle: _commits(c.contributions),
+                  showChevron: false,
                   onTap: () => _openContributorLink(c),
                 ),
             ],
@@ -294,54 +301,6 @@ class _AboutScreenState extends State<AboutScreen> {
     }());
   }
 
-  Widget _teamLoading() {
-    return PrismSkeleton(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const PrismSectionHeader(title: 'Team'),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              for (int i = 0; i < 3; i++)
-                const SizedBox(
-                  width: 88,
-                  child: Column(
-                    children: <Widget>[
-                      PrismBone.circle(size: 64),
-                      SizedBox(height: PrismSpace.xs),
-                      PrismBone(width: 64),
-                      SizedBox(height: 6),
-                      PrismBone(width: 48, height: 11),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _teamError(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const PrismSectionHeader(title: 'Team'),
-        Text("Couldn't load the team. Check your connection and try again.", style: PrismTextStyles.body(context)),
-        const SizedBox(height: PrismSpace.sm),
-        PrismButton(
-          label: 'Try again',
-          variant: PrismButtonVariant.tonal,
-          size: PrismButtonSize.compact,
-          onPressed: () => setState(() {
-            _contributors = _fetchContributors();
-          }),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return PrismPage(
@@ -350,26 +309,54 @@ class _AboutScreenState extends State<AboutScreen> {
         _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'about_screen_close');
         context.router.maybePop();
       },
+      bottomBar: Padding(
+        padding: const EdgeInsets.only(top: PrismSpace.xs),
+        child: Text(
+          'Made with ❤ in India with Flutter!',
+          textAlign: TextAlign.center,
+          style: PrismTextStyles.caption(context),
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
+        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.xl),
         children: <Widget>[
           _header(context),
+          const SizedBox(height: PrismSpace.md),
+          _hairline(context),
+          const PrismSectionHeader(title: 'The Team'),
           FutureBuilder<List<Contributor>>(
             future: _contributors,
             builder: (context, snapshot) {
               final bool waiting =
                   snapshot.connectionState == ConnectionState.waiting ||
                   snapshot.connectionState == ConnectionState.none;
-              if (waiting) return _teamLoading();
+              if (waiting) {
+                return const SizedBox(
+                  height: 250,
+                  child: GlintState(kind: GlintStateKind.loading, title: 'Loading the team'),
+                );
+              }
               _trackContributorsLoaded(snapshot);
-              if (snapshot.hasError) return _teamError(context);
+              if (snapshot.hasError) {
+                return SizedBox(
+                  height: 250,
+                  child: GlintState(
+                    kind: GlintStateKind.error,
+                    title: "Couldn't load the team",
+                    actionLabel: 'Try again',
+                    onAction: () => setState(() {
+                      _contributors = _fetchContributors();
+                    }),
+                  ),
+                );
+              }
               return _team(context, snapshot.data ?? const <Contributor>[]);
             },
           ),
-          const PrismSectionHeader(title: 'More'),
+          const SizedBox(height: PrismSpace.md),
+          _hairline(context),
+          const SizedBox(height: PrismSpace.md),
           const PrismList(),
-          const SizedBox(height: PrismSpace.xl),
-          Center(child: Text('Made in India with Flutter', style: PrismTextStyles.caption(context))),
         ],
       ),
     );
@@ -379,9 +366,10 @@ class _AboutScreenState extends State<AboutScreen> {
 String _commits(int? count) => count == 1 ? '1 commit' : '${count ?? 0} commits';
 
 class _TeamMember extends StatelessWidget {
-  const _TeamMember({required this.contributor});
+  const _TeamMember({required this.contributor, required this.size});
 
   final Contributor contributor;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -407,22 +395,23 @@ class _TeamMember extends StatelessWidget {
             );
             showContributorDetails(context, login);
           },
-          child: SizedBox(
-            width: 88,
-            child: Column(
-              children: <Widget>[
-                PrismAvatar(url: contributor.avatarUrl, name: login, size: 64),
-                const SizedBox(height: PrismSpace.xs),
-                Text(
-                  login,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: PrismTextStyles.rowTitle(context),
-                ),
-                Text(_commits(contributor.contributions), style: PrismTextStyles.caption(context)),
-              ],
-            ),
+          child: Column(
+            children: <Widget>[
+              PrismAvatar(url: contributor.avatarUrl, name: login, size: size),
+              const SizedBox(height: PrismSpace.xs),
+              Text(
+                login,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: PrismTextStyles.rowTitle(context),
+              ),
+              Text(
+                _commits(contributor.contributions),
+                textAlign: TextAlign.center,
+                style: PrismTextStyles.caption(context),
+              ),
+            ],
           ),
         ),
       ),
@@ -437,7 +426,6 @@ class ActionButton extends StatelessWidget {
     required this.icon,
     required this.link,
     required this.text,
-    this.analyticsName,
     this.onTap,
     this.onLaunchFailed,
   });
@@ -451,9 +439,6 @@ class ActionButton extends StatelessWidget {
 
   /// Runs instead of the Copy snackbar when [link] cannot be opened.
   final void Function(BuildContext context)? onLaunchFailed;
-
-  /// Name used in the analytics source context. Defaults to the lower-case [text].
-  final String? analyticsName;
 
   LinkDestinationValue _destination() {
     final String lower = link.toLowerCase();
@@ -480,7 +465,7 @@ class ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String sourceContext = 'about_screen_action_chip_${analyticsName ?? text.toLowerCase()}';
+    final String sourceContext = 'about_screen_action_chip_${text.toLowerCase()}';
     return PrismChip(
       label: text,
       icon: icon,

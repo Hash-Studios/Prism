@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,111 +33,6 @@ Contributor _contributor(String? login, {int commits = 5}) =>
     Contributor(login: login, htmlUrl: login == null ? null : 'https://github.com/$login', contributions: commits);
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-  const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
-  final List<String> copied = <String>[];
-
-  setUp(() {
-    copied.clear();
-    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(toastChannel, (call) async => true);
-    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      if (call.method == 'Clipboard.setData') {
-        copied.add((call.arguments as Map<Object?, Object?>)['text']! as String);
-      }
-      return null;
-    });
-  });
-
-  tearDown(() {
-    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(toastChannel, null);
-    messenger.setMockMethodCallHandler(SystemChannels.platform, null);
-  });
-
-  Future<void> pumpAbout(WidgetTester tester, Future<List<Contributor>> Function() loader) async {
-    tester.view.physicalSize = const Size(1000, 3200);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(home: AboutScreen(loadContributors: loader)));
-    await tester.pump(const Duration(milliseconds: 100));
-  }
-
-  testWidgets('shows the brand, links, team, contributors and more', (tester) async {
-    await pumpAbout(
-      tester,
-      () async => <Contributor>[
-        Contributor(login: 'ada', contributions: 120),
-        Contributor(login: 'grace', contributions: 80),
-        Contributor(login: 'linus', contributions: 1),
-        Contributor(login: 'extra', contributions: 7),
-      ],
-    );
-
-    expect(find.text('About'), findsOneWidget);
-    expect(find.text('Prism'), findsOneWidget);
-    for (final String chip in <String>[
-      'GitHub',
-      'Rate Prism',
-      'X',
-      'Instagram',
-      'Feedback',
-      'Privacy',
-      'Terms',
-      'Telegram',
-    ]) {
-      expect(find.text(chip), findsOneWidget, reason: chip);
-    }
-    expect(find.text('Team'), findsOneWidget);
-    expect(find.text('ada'), findsOneWidget);
-    expect(find.text('120 commits'), findsOneWidget);
-    expect(find.text('1 commit'), findsOneWidget);
-    expect(find.text('Contributors'), findsOneWidget);
-    expect(find.text('extra'), findsOneWidget);
-    expect(find.text('More'), findsOneWidget);
-    expect(find.text("What's new"), findsOneWidget);
-    expect(find.text('Privacy policy'), findsOneWidget);
-    expect(find.text('Wallpaper sources'), findsOneWidget);
-    expect(find.text('Made in India with Flutter'), findsOneWidget);
-  });
-
-  testWidgets('a failed team load offers a retry', (tester) async {
-    int calls = 0;
-    await pumpAbout(tester, () async {
-      calls++;
-      if (calls == 1) throw Exception('offline');
-      return <Contributor>[Contributor(login: 'ada', contributions: 3)];
-    });
-
-    expect(find.text('Try again'), findsOneWidget);
-    await tester.tap(find.text('Try again'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(find.text('ada'), findsOneWidget);
-  });
-
-  testWidgets('tapping the version copies it', (tester) async {
-    await pumpAbout(tester, () async => <Contributor>[]);
-
-    await tester.tap(find.textContaining('Version '));
-    await tester.pump();
-
-    expect(copied, hasLength(1));
-    expect(copied.single, contains('+'));
-    await tester.pump(const Duration(seconds: 2));
-  });
-
-  testWidgets('wallpaper sources opens a sheet with the API links', (tester) async {
-    await pumpAbout(tester, () async => <Contributor>[]);
-
-    await tester.tap(find.text('Wallpaper sources'));
-    await tester.pump(const Duration(milliseconds: 400));
-
-    expect(find.text('WallHaven API'), findsOneWidget);
-    expect(find.text('Pexels API'), findsOneWidget);
-  });
-
   test('the feedback link is a mailto with the version and platform prefilled', () {
     final link = buildFeedbackLink(version: '3.3.0', build: '339', platform: 'android 14');
     final uri = Uri.parse(link);
@@ -211,7 +107,7 @@ void main() {
       };
 
       await pumpAbout(tester);
-      expect(find.textContaining("Couldn't load the team"), findsOneWidget);
+      expect(find.text("Couldn't load the team"), findsOneWidget);
 
       await tester.tap(find.text('Try again'));
       await tester.pump();
@@ -234,7 +130,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('dave'), findsOneWidget);
-      expect(find.text('Contributors'), findsOneWidget);
+      expect(find.text('Other Contributors'), findsOneWidget);
     });
 
     testWidgets('a link that cannot open shows its address with a Copy action', (tester) async {
@@ -244,7 +140,7 @@ void main() {
       addTearDown(() => UrlLauncherPlatform.instance = previous);
       await pumpAbout(tester);
 
-      await tester.tap(find.text('GitHub'));
+      await tester.tap(find.text('GITHUB'));
       await tester.pump();
       await tester.pump();
 
@@ -279,7 +175,7 @@ void main() {
       );
       await pumpAbout(tester);
 
-      await tester.tap(find.text('Feedback'));
+      await tester.tap(find.text('FEEDBACK'));
       // Glint loops, so pump a bounded time instead of settling.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
@@ -290,15 +186,135 @@ void main() {
       expect(find.byKey(const Key('report_problem_preview')), findsOneWidget);
     });
 
-    testWidgets("What's new reopens the changelog popup", (tester) async {
+    testWidgets("WHAT'S NEW reopens the changelog popup", (tester) async {
       contributorsLoader = () async => <Contributor>[];
       await pumpAbout(tester);
 
-      await tester.tap(find.text("What's new"));
+      await tester.tap(find.text("WHAT'S NEW"));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('See the full changelog'), findsOneWidget);
+    });
+
+    testWidgets("keeps master's sections in master's order, built from Prism components", (tester) async {
+      contributorsLoader = () async => <Contributor>[
+        _contributor('ada', commits: 120),
+        _contributor('grace', commits: 80),
+        _contributor('linus', commits: 1),
+        _contributor('extra', commits: 7),
+      ];
+      await pumpAbout(tester);
+
+      expect(find.byType(PrismPage), findsOneWidget);
+      expect(find.byType(PrismChip), findsNWidgets(9));
+      expect(find.byType(PrismGroup), findsNWidgets(2));
+      expect(find.byType(PrismAvatar), findsNWidgets(4));
+      expect(find.byType(PrismSectionHeader), findsNWidgets(2));
+      for (final String chip in <String>[
+        'GITHUB',
+        'RATE',
+        'FEEDBACK',
+        "WHAT'S NEW",
+        'PRIVACY',
+        'TERMS',
+        'TWITTER',
+        'INSTAGRAM',
+        'TELEGRAM',
+      ]) {
+        expect(find.text(chip), findsOneWidget, reason: chip);
+      }
+
+      double top(Finder finder) => tester.getTopLeft(finder.first).dy;
+      final List<double> order = <double>[
+        top(find.text('About')),
+        top(find.byType(Image)),
+        top(find.text('Prism Wallpapers')),
+        top(find.textContaining('Version ')),
+        top(find.text('A feature-rich wallpaper manager.')),
+        top(find.text('GITHUB')),
+        top(find.text('The Team')),
+        top(find.text('ada')),
+        top(find.text('Other Contributors')),
+        top(find.text('extra')),
+        top(find.text('Wallpaper sources')),
+        top(find.text('Made with ❤ in India with Flutter!')),
+      ];
+      expect(order, orderedEquals(<double>[...order]..sort()), reason: "sections follow master's order");
+      expect(find.text('1 commit'), findsOneWidget);
+      expect(find.text('7 commits'), findsOneWidget);
+    });
+
+    testWidgets('the podium puts the top contributor in the middle and largest', (tester) async {
+      contributorsLoader = () async => <Contributor>[_contributor('ada'), _contributor('grace'), _contributor('linus')];
+      await pumpAbout(tester);
+
+      expect(tester.getCenter(find.text('grace')).dx, lessThan(tester.getCenter(find.text('ada')).dx));
+      expect(tester.getCenter(find.text('ada')).dx, lessThan(tester.getCenter(find.text('linus')).dx));
+      // The avatars sit in rank order 2, 1, 3 from left to right.
+      final Size middle = tester.getSize(find.byType(PrismAvatar).at(1));
+      expect(middle.width, greaterThan(tester.getSize(find.byType(PrismAvatar).at(0)).width));
+      expect(middle.width, greaterThan(tester.getSize(find.byType(PrismAvatar).at(2)).width));
+    });
+
+    testWidgets('tapping a podium member opens the contributor sheet', (tester) async {
+      contributorsLoader = () async => <Contributor>[_contributor('ada')];
+      await pumpAbout(tester);
+
+      await tester.tap(find.text('ada'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // The test binding blocks the GitHub lookup, so the sheet shows its error state.
+      expect(find.text('Could not load this profile'), findsOneWidget);
+    });
+
+    testWidgets('tapping an other contributor opens their profile link', (tester) async {
+      contributorsLoader = () async => <Contributor>[
+        _contributor('a'),
+        _contributor('b'),
+        _contributor('c'),
+        _contributor('dave'),
+      ];
+      final launcher = _RecordingUrlLauncher(opens: true);
+      final previous = UrlLauncherPlatform.instance;
+      UrlLauncherPlatform.instance = launcher;
+      addTearDown(() => UrlLauncherPlatform.instance = previous);
+      await pumpAbout(tester);
+
+      await tester.tap(find.text('dave'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(launcher.urls, contains('https://github.com/dave'));
+    });
+
+    testWidgets('the header shows a hairline only once the page is scrolled', (tester) async {
+      contributorsLoader = () async => <Contributor>[
+        for (final String login in <String>['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) _contributor(login),
+      ];
+      tester.view.physicalSize = const Size(800, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const MaterialApp(home: AboutScreen()));
+      await tester.pump();
+      await tester.pump();
+
+      double hairline() => tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first).opacity;
+      expect(hairline(), 0);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(hairline(), 1);
+    });
+
+    testWidgets('the header has the Prism back button', (tester) async {
+      contributorsLoader = () async => <Contributor>[];
+      await pumpAbout(tester);
+
+      expect(find.byTooltip('Back'), findsOneWidget);
     });
   });
 }
