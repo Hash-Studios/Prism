@@ -10,7 +10,6 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/platform/prism_media_api.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/rating/rate_prompt_service.dart';
@@ -331,7 +330,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   /// True when the Downloads list still holds a file with this identity's name. False when it cannot tell.
   Future<bool> _fileStillInDownloads(String identity) async {
     try {
-      final DownloadItemsResult result = await PrismMediaApi().listDownloads();
+      final DownloadItemsResult result = await PrismMediaHostApi().listDownloads();
       if (!result.success) return false;
       final String base = downloadBaseName(identity);
       final RegExp copySuffix = RegExp(r' \(\d+\)$');
@@ -499,7 +498,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           isLocalFile: true,
           kind: SaveMediaKind.wallpaper,
         );
-        final OperationResult result = await PrismMediaApi().saveMedia(request);
+        final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
           _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'save_failed';
           if (isPhotosPermissionDenied(result.errorCode)) {
@@ -515,7 +514,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           filenameWithoutExtension: downloadBaseName(tap.identity),
           isLocalFile: prepared,
         );
-        final OperationResult result = await PrismMediaApi().enqueueDownload(request);
+        final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
           _failureReason = isPhotosPermissionDenied(result.errorCode) ? 'permission_denied' : 'enqueue_failed';
           if (isPhotosPermissionDenied(result.errorCode)) {
