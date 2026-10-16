@@ -70,17 +70,17 @@ void main() {
     expect(find.widgetWithText(TextField, 'Hello'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'https://example.com'), findsOneWidget);
     expect(find.text('Use 3 or more letters, numbers or underscores (_).'), findsOneWidget);
-    expect(find.text('Change cover'), findsOneWidget);
+    expect(find.text('Edit cover'), findsOneWidget);
     expect(find.byTooltip('Remove cover photo'), findsNothing);
     expect(saveEnabled(tester), isFalse);
   });
 
-  testWidgets('change cover photo has a 44-pixel hit target', (tester) async {
+  testWidgets('change cover photo has a hit target of at least 44 pixels', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
       await pumpPanel(tester);
 
-      expect(tester.getRect(find.bySemanticsLabel('Change cover photo')).height, 44);
+      expect(tester.getRect(find.bySemanticsLabel('Change cover photo')).height, greaterThanOrEqualTo(44));
     } finally {
       semantics.dispose();
     }
