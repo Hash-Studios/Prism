@@ -109,7 +109,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       if (items.isEmpty) {
         return Result.error(const ValidationFailure('No notifications to restore'));
       }
-      await _tombstones.removeDeleted(items.map((item) => item.id));
+      await _tombstones.restore(items);
       await _notificationsLocal.upsertAll(items);
       return Result.success(await _readAll());
     } catch (error) {

@@ -209,7 +209,8 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                   tooltip: 'Clear inbox',
                   backgroundColor: colorScheme.error,
                   foregroundColor: colorScheme.onError,
-                  onPressed: () {
+                  onPressed: () async {
+                    if (!await _confirmClearInbox(context, notifications.length) || !context.mounted) return;
                     PrismHaptics.tap();
                     analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
                     context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
@@ -221,6 +222,24 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         );
       },
     );
+  }
+
+  Future<bool> _confirmClearInbox(BuildContext context, int count) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(count == 1 ? 'Clear 1 notification?' : 'Clear $count notifications?'),
+            content: const Text('This removes them from this device.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text('Clear inbox', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {

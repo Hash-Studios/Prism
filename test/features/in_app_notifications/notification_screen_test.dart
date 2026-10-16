@@ -113,17 +113,33 @@ void main() {
     expect(find.text('Unread title'), findsOneWidget);
   });
 
-  testWidgets('Clear inbox clears at once with no dialog, and Undo brings every notification back', (tester) async {
+  testWidgets('Clear inbox asks first, and Cancel keeps every notification', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Clear 2 notifications?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    verifyNever(() => clear(const NoParams()));
+    expect(find.text('Unread title'), findsOneWidget);
+    expect(find.text('Read title'), findsOneWidget);
+  });
+
+  testWidgets('confirming Clear inbox clears, and Undo brings every notification back', (tester) async {
     when(() => clear(const NoParams())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[]));
     when(() => restore(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread, read]));
     await pumpScreen(tester);
 
     await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Clear inbox'));
     // The empty state animates for ever, so pumpAndSettle would not finish.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(AlertDialog), findsNothing);
     verify(() => clear(const NoParams())).called(1);
     expect(find.text('Inbox cleared'), findsOneWidget);
     expect(find.text('Unread title'), findsNothing);
