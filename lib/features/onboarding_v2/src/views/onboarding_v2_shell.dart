@@ -21,6 +21,7 @@ import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/wallpaper_brightness.dart';
@@ -38,6 +39,7 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_scroll
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_staggered_fade.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
@@ -47,9 +49,40 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// True when an onboarding save failed and the user must act on it.
+bool _saveFailed(OnboardingV2State state) =>
+    state.actionStatus == ActionStatus.failure &&
+    (state.completionFailed || state.step == OnboardingV2Step.interests || state.step == OnboardingV2Step.starterPack);
+
+/// The starter pack loaded no creators, so there is nothing to follow until it is reloaded.
+bool _starterPackShort(OnboardingV2State state) =>
+    state.step == OnboardingV2Step.starterPack &&
+    !_saveFailed(state) &&
+    state.loadStatus == LoadStatus.success &&
+    state.starterPackData.creators.isEmpty;
+
+String _saveErrorHelper(OnboardingV2State state) {
+  if (state.sessionInvalid) return 'your session has expired. sign in again to continue';
+  if (state.completionFailed) return "couldn't finish setup. check your connection and try again";
+  return state.step == OnboardingV2Step.interests
+      ? "couldn't save your picks. check your connection and try again"
+      : "couldn't follow these creators. check your connection and try again";
+}
+
+String _saveErrorToast(OnboardingV2State state) {
+  if (state.sessionInvalid) return 'Your session has expired. Please sign in again.';
+  if (state.completionFailed) return "Couldn't finish setup. Try again.";
+  return state.step == OnboardingV2Step.interests
+      ? "Couldn't save your picks. Try again."
+      : "Couldn't follow these creators. Try again.";
+}
+
 @RoutePage(name: 'OnboardingV2ShellRoute')
 class OnboardingV2Shell extends StatefulWidget {
-  const OnboardingV2Shell({super.key});
+  const OnboardingV2Shell({super.key, @visibleForTesting this.signOutForRecovery});
+
+  @visibleForTesting
+  final Future<bool> Function()? signOutForRecovery;
 
   @override
   State<OnboardingV2Shell> createState() => _OnboardingV2ShellState();
@@ -62,6 +95,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _imagesPrecached = false;
   bool _termsAccepted = false;
+  bool _signingOut = false;
 
   static final _systemUiStyle = edgeToEdgeOverlayStyle(
     statusBarIconBrightness: Brightness.dark,
@@ -209,6 +243,36 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     }
   }
 
+  /// The account behind this session is gone or locked out, so no save can succeed.
+  /// Sign out the same way Settings does, then restart into a fresh onboarding.
+  Future<void> _signInAgain() async {
+    if (_signingOut) return;
+    setState(() => _signingOut = true);
+    var signedOut = false;
+    try {
+      signedOut = await (widget.signOutForRecovery ?? globalGoogleAuth.signOutGoogle)();
+    } catch (error, stackTrace) {
+      logger.w('Sign out from onboarding failed.', error: error, stackTrace: stackTrace);
+    }
+    if (!signedOut) {
+      if (mounted) {
+        setState(() => _signingOut = false);
+        toasts.error('Could not log out. Please try again.');
+      }
+      return;
+    }
+    try {
+      await resetOnboardingLocalState(_settingsLocal);
+      if (mounted) main.RestartWidget.restartApp(context);
+    } catch (error, stackTrace) {
+      logger.w('Could not reset onboarding state after sign out.', error: error, stackTrace: stackTrace);
+      if (mounted) {
+        setState(() => _signingOut = false);
+        toasts.error('Could not log out. Please try again.');
+      }
+    }
+  }
+
   void _setTermsAccepted(bool accepted) {
     if (accepted && !_termsAccepted) unawaited(analytics.track(const TermsAcceptedEvent()));
     setState(() => _termsAccepted = accepted);
@@ -223,6 +287,26 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   }
 
   void _handleCtaTap(OnboardingV2Step step) {
+    final state = _bloc.state;
+    if (step != state.step) return;
+    if (_signingOut || state.actionStatus == ActionStatus.inProgress) return;
+    if (_saveFailed(state) && state.sessionInvalid) {
+      _signInAgain();
+      return;
+    }
+    if (_starterPackShort(state)) {
+      _bloc.add(const OnboardingV2Event.starterPackReloadRequested());
+      return;
+    }
+    if (_saveFailed(state) && state.completionFailed) {
+      _bloc.add(const OnboardingV2Event.completionRetried());
+      return;
+    }
+    if ((step == OnboardingV2Step.auth && state.isAuthLoading) ||
+        (step == OnboardingV2Step.aiGenerate && state.aiData.status == AiGenerateStatus.loading) ||
+        (step == OnboardingV2Step.firstWallpaper && state.wallpaperData.status == FirstWallpaperStatus.loading)) {
+      return;
+    }
     switch (step) {
       case OnboardingV2Step.auth:
         _handleGoogleSignIn();
@@ -264,12 +348,20 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
-      child: BlocListener<OnboardingV2Bloc, OnboardingV2State>(
-        listenWhen: (prev, curr) =>
-            curr.step == OnboardingV2Step.firstWallpaper &&
-            prev.wallpaperData.status != FirstWallpaperStatus.failure &&
-            curr.wallpaperData.status == FirstWallpaperStatus.failure,
-        listener: (context, state) => _onFirstWallpaperFailed(context, state.wallpaperData),
+      child: MultiBlocListener(
+        listeners: <BlocListener<OnboardingV2Bloc, OnboardingV2State>>[
+          BlocListener<OnboardingV2Bloc, OnboardingV2State>(
+            listenWhen: (prev, curr) => !_saveFailed(prev) && _saveFailed(curr),
+            listener: (context, state) => toasts.error(_saveErrorToast(state)),
+          ),
+          BlocListener<OnboardingV2Bloc, OnboardingV2State>(
+            listenWhen: (prev, curr) =>
+                curr.step == OnboardingV2Step.firstWallpaper &&
+                prev.wallpaperData.status != FirstWallpaperStatus.failure &&
+                curr.wallpaperData.status == FirstWallpaperStatus.failure,
+            listener: (context, state) => _onFirstWallpaperFailed(context, state.wallpaperData),
+          ),
+        ],
         child: BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
           listenWhen: (prev, curr) {
             final navChanged = curr.navRequest != null && prev.navRequest != curr.navRequest;
@@ -281,17 +373,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                 curr.step == OnboardingV2Step.aiGenerate &&
                 prev.aiData.status != AiGenerateStatus.success &&
                 curr.aiData.status == AiGenerateStatus.success;
-            final actionFailed = curr.actionStatus == ActionStatus.failure && prev.actionStatus != ActionStatus.failure;
-            return navChanged || wallpaperSucceeded || aiGenerationSucceeded || actionFailed;
+            return navChanged || wallpaperSucceeded || aiGenerationSucceeded;
           },
           listener: (context, state) {
-            if (state.actionStatus == ActionStatus.failure) {
-              toasts.error(
-                state.navRequest == OnboardingV2NavRequest.completeOnboarding
-                    ? "Couldn't save your setup. We will try again."
-                    : "Couldn't save that. Please try again.",
-              );
-            }
             if (state.navRequest != null) _handleNavRequest(context, state.navRequest!);
             if (state.navRequest == null && state.wallpaperData.status == FirstWallpaperStatus.success) {
               _onFirstWallpaperSaved(context, state.wallpaperData);
@@ -304,6 +388,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               prev.step != curr.step ||
               prev.isAuthLoading != curr.isAuthLoading ||
               prev.actionStatus != curr.actionStatus ||
+              prev.sessionInvalid != curr.sessionInvalid ||
+              prev.completionFailed != curr.completionFailed ||
               prev.loadStatus != curr.loadStatus ||
               prev.interestsData.available.length != curr.interestsData.available.length ||
               prev.interestsData.selected.length != curr.interestsData.selected.length ||
@@ -318,6 +404,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               child: PopScope(
                 canPop: false,
                 onPopInvokedWithResult: (didPop, result) {
+                  if (_signingOut) return;
                   _bloc.add(const OnboardingV2Event.stepBack());
                 },
                 child: MediaQuery.withClampedTextScaling(
@@ -367,6 +454,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                                 termsAccepted: _termsAccepted,
                                 onTermsChanged: _setTermsAccepted,
                                 onBrowseTap: _handleBrowseWithoutAccount,
+                                signingOut: _signingOut,
                               ),
                             ),
                           ],
@@ -395,6 +483,7 @@ class _SharedOverlay extends StatefulWidget {
     required this.termsAccepted,
     required this.onTermsChanged,
     required this.onBrowseTap,
+    required this.signingOut,
   });
 
   final OnboardingV2State state;
@@ -405,6 +494,7 @@ class _SharedOverlay extends StatefulWidget {
   final bool termsAccepted;
   final ValueChanged<bool> onTermsChanged;
   final VoidCallback onBrowseTap;
+  final bool signingOut;
 
   @override
   State<_SharedOverlay> createState() => _SharedOverlayState();
@@ -465,6 +555,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               onTermsChanged: widget.onTermsChanged,
               legalTap: widget.legalTap,
               onBrowseTap: widget.onBrowseTap,
+              signingOut: widget.signingOut,
             ),
             _BottomText(
               step: step,
@@ -475,6 +566,11 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               onTermsChanged: widget.onTermsChanged,
               wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
               aiGenerateStatus: widget.state.aiData.status,
+              errorText: _saveFailed(widget.state)
+                  ? _saveErrorHelper(widget.state)
+                  : _starterPackShort(widget.state)
+                  ? "couldn't load creators. check your connection and tap reload"
+                  : null,
               interestsRequired: widget.state.interestsData.requiredCount,
               creatorCount: widget.state.starterPackData.creators.length,
             ),
@@ -595,6 +691,7 @@ class _CtaButton extends StatelessWidget {
     required this.onTermsChanged,
     required this.legalTap,
     required this.onBrowseTap,
+    required this.signingOut,
   });
 
   final OnboardingV2Step step;
@@ -613,24 +710,44 @@ class _CtaButton extends StatelessWidget {
   /// iOS-only guest entry point (Guideline 5.1.1(v)).
   final VoidCallback onBrowseTap;
 
+  /// "sign in again" is running the sign-out.
+  final bool signingOut;
+
   @override
   Widget build(BuildContext context) {
+    final saveFailed = _saveFailed(state);
     final isLoading = switch (step) {
-      OnboardingV2Step.auth => state.isAuthLoading,
-      OnboardingV2Step.interests || OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress,
-      OnboardingV2Step.aiGenerate => state.aiData.status == AiGenerateStatus.loading,
-      OnboardingV2Step.firstWallpaper => state.wallpaperData.status == FirstWallpaperStatus.loading,
+      OnboardingV2Step.auth =>
+        signingOut || (!saveFailed && (state.isAuthLoading || state.actionStatus == ActionStatus.inProgress)),
+      OnboardingV2Step.interests ||
+      OnboardingV2Step.starterPack => signingOut || (!saveFailed && state.actionStatus == ActionStatus.inProgress),
+      OnboardingV2Step.aiGenerate =>
+        signingOut ||
+            (!saveFailed &&
+                (state.aiData.status == AiGenerateStatus.loading || state.actionStatus == ActionStatus.inProgress)),
+      OnboardingV2Step.firstWallpaper =>
+        signingOut ||
+            (!saveFailed &&
+                (state.wallpaperData.status == FirstWallpaperStatus.loading ||
+                    state.actionStatus == ActionStatus.inProgress)),
     };
 
     final isEnabled = switch (step) {
-      OnboardingV2Step.auth => termsAccepted,
-      OnboardingV2Step.interests => state.interestsData.canContinue,
-      OnboardingV2Step.starterPack => state.starterPackData.canContinue,
+      OnboardingV2Step.auth =>
+        (_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) || termsAccepted,
+      OnboardingV2Step.interests =>
+        ((_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) || state.interestsData.canContinue),
+      OnboardingV2Step.starterPack =>
+        ((_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) ||
+            _starterPackShort(state) ||
+            state.starterPackData.canContinue),
       OnboardingV2Step.aiGenerate => true,
       OnboardingV2Step.firstWallpaper => true,
     };
 
     final label = switch (step) {
+      _ when _saveFailed(state) => state.sessionInvalid ? 'sign in again' : 'try again',
+      _ when _starterPackShort(state) => 'reload',
       OnboardingV2Step.auth => 'Continue with Google',
       OnboardingV2Step.interests => () {
         final selected = state.interestsData.selected.length;
@@ -644,7 +761,7 @@ class _CtaButton extends StatelessWidget {
 
     final bool isAuthStep = step == OnboardingV2Step.auth;
     // Apple sign-in and guest browsing are iOS-only: Android keeps mandatory Google sign-in.
-    final bool showIosAuthExtras = isAuthStep && defaultTargetPlatform == TargetPlatform.iOS;
+    final bool showIosAuthExtras = isAuthStep && defaultTargetPlatform == TargetPlatform.iOS && !_saveFailed(state);
     const double browseRowHeight = 36;
     final double extraHeight = showIosAuthExtras ? (OnboardingLayout.ctaHeight + 12) * sy + browseRowHeight * sy : 0.0;
     return Positioned(
@@ -683,7 +800,7 @@ class _CtaButton extends StatelessWidget {
                     height: browseRowHeight * sy,
                     child: Center(
                       child: TextButton(
-                        onPressed: termsAccepted
+                        onPressed: termsAccepted && !signingOut && state.actionStatus != ActionStatus.inProgress
                             ? () {
                                 PrismHaptics.tap();
                                 onBrowseTap();
@@ -702,7 +819,7 @@ class _CtaButton extends StatelessWidget {
               ],
             ),
             // Disabled buttons swallow taps silently; say why instead.
-            if (isAuthStep && !termsAccepted)
+            if (isAuthStep && !termsAccepted && !_saveFailed(state))
               Positioned.fill(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -799,6 +916,7 @@ class _BottomText extends StatelessWidget {
     required this.onTermsChanged,
     this.wallpaperCategory,
     this.aiGenerateStatus,
+    this.errorText,
     this.interestsRequired = OnboardingV2Config.minInterests,
     this.creatorCount = OnboardingV2Config.minFollows,
   });
@@ -813,6 +931,9 @@ class _BottomText extends StatelessWidget {
   final AiGenerateStatus? aiGenerateStatus;
   final int interestsRequired;
   final int creatorCount;
+
+  /// Replaces the helper text while a save error needs the user's attention.
+  final String? errorText;
 
   String _helperText() => switch (step) {
     OnboardingV2Step.interests =>
@@ -837,7 +958,7 @@ class _BottomText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget content;
-    if (step == OnboardingV2Step.auth) {
+    if (step == OnboardingV2Step.auth && errorText == null) {
       content = _TermsCheckboxRow(
         key: const ValueKey('legal'),
         accepted: termsAccepted,
@@ -846,7 +967,7 @@ class _BottomText extends StatelessWidget {
         privacyTap: privacyTap,
       );
     } else {
-      final text = _helperText();
+      final text = errorText ?? _helperText();
       content = OnboardingHelperText(key: ValueKey(text), text: text);
     }
 

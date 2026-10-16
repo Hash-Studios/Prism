@@ -123,7 +123,8 @@ class PrismUsersV2 {
       name: (data["name"] ?? user.displayName).toString(),
       username: sanitizeUsername((data["username"] ?? user.displayName).toString()),
       email: (data["email"] ?? user.email).toString(),
-      id: data["id"].toString(),
+      // The doc is keyed by the auth uid; its own "id" field can be blank or missing.
+      id: user.uid,
       createdAt: data["createdAt"].toString(),
       premium: premium,
       lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
