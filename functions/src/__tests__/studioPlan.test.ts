@@ -3,7 +3,7 @@ import test from "node:test";
 import {parseStudioConfig, STUDIO_MAX_CANDIDATES_PER_DAY} from "../studio/config";
 import {randomWallId, studioCandidateId} from "../studio/ids";
 import {buildDailyPlan, type StudioPlanInput, studioTags} from "../studio/plan";
-import {STUDIO_COMPOSITION, STUDIO_SERIES, type StudioSeries} from "../studio/series";
+import {STUDIO_COMPOSITION, STUDIO_SERIES, STUDIO_SUBJECT_COOLDOWN_DAYS, type StudioSeries} from "../studio/series";
 import {seededRng} from "./studioTestUtil";
 
 const plan = (patch: Partial<StudioPlanInput> = {}) => buildDailyPlan({
@@ -12,6 +12,7 @@ const plan = (patch: Partial<StudioPlanInput> = {}) => buildDailyPlan({
 const countBy = <T>(items: T[], key: (item: T) => string) => items.reduce((m, item) =>
   m.set(key(item), (m.get(key(item)) ?? 0) + 1), new Map<string, number>());
 const afterDark = STUDIO_SERIES.find((s) => s.id === "after-dark") as StudioSeries;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 test("subject ids are unique across all series, because cooldown docs are keyed by subject id", () => {
   const ids = STUDIO_SERIES.flatMap((s) => s.subjects.map((subject) => subject.id));
@@ -21,6 +22,24 @@ test("subject ids are unique across all series, because cooldown docs are keyed 
 test("the same rng gives the same plan, another seed gives another plan", () => {
   assert.deepEqual(plan({rng: seededRng(7)}), plan({rng: seededRng(7)}));
   assert.notDeepEqual(plan({rng: seededRng(7)}), plan({rng: seededRng(8)}));
+});
+
+test("the catalog fills ten candidates every day under the cooldown, for 120 days", () => {
+  for (const seed of [1, 2, 3]) {
+    const rng = seededRng(seed);
+    const lastUsed = new Map<string, number>();
+    for (let day = 0; day < 120; day++) {
+      const nowMs = day * DAY_MS;
+      const cutoff = nowMs - STUDIO_SUBJECT_COOLDOWN_DAYS * DAY_MS;
+      const recentSubjectIds = new Set([...lastUsed].filter(([, usedAt]) => usedAt >= cutoff)
+        .map(([id]) => id));
+      const items = plan({recentSubjectIds, rng});
+      assert.equal(items.length, 10, `seed ${seed}, day ${day}`);
+      assert.equal(new Set(items.map((item) => item.subjectId)).size, 10, `seed ${seed}, day ${day}`);
+      assert.ok(items.every((item) => !recentSubjectIds.has(item.subjectId)), `seed ${seed}, day ${day}`);
+      for (const item of items) lastUsed.set(item.subjectId, nowMs);
+    }
+  }
 });
 
 test("equal weights spread ten candidates 4/3/3, with no subject twice and at most two per category", () => {

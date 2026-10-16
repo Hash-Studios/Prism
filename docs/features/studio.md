@@ -34,7 +34,7 @@ Backend only. The walls work on Android and iOS, for free and Pro users, like ot
 6. The publish transaction checks the current attempt and all Studio signatures again. It updates `studioState/signatureIndex` to serialize concurrent publishers, creates `walls/{id}` with `review: false` and `studioSignatures/{candidateId}`, and sets the candidate to `pending_review`.
 7. An admin approves or rejects in the swipe review screen.
 
-Subjects on the 21-day cooldown never enter a plan. When no eligible subjects remain, the plan is shorter or empty. An invalid stored daily count closes that day's cap instead of resetting it.
+Subjects stay on cooldown while `lastUsedAt >= now - 21 days`; the exact 21-day cutoff is still blocked, and a subject becomes eligible just after it. When no eligible subjects remain, the plan is shorter or empty. The catalog has 240 subjects (80 per series) over 12 categories. At the same daily run time, 10 candidates need at least 220 subjects because the cutoff includes the exact timestamp 21 days later. Mixed-series plans of 10 or fewer candidates take at most 2 per category. A test runs 120 days with default equal series weights and checks that every day gets all 10 candidates. Add subjects before you raise `dailyCandidates`. An invalid stored daily count closes that day's cap instead of resetting it.
 
 The `runStudioBatch` callable accepts an `admin: true` custom claim. Email-list admin access also requires `email_verified: true`. Manual callable runs use unique ids even when requests arrive in the same millisecond.
 
@@ -144,6 +144,5 @@ Open items remain outside those repairs:
 
 - `.env.example` does not list `STUDIO_SECRET` or `STUDIO_FAL_API_KEY`. `CONTRIBUTING.md` requires those reference-schema entries. That file is outside this change's allowed write paths. Doppler provisioning is not verified here.
 - A worker crash or failed result write can leave a permanent in-flight claim. Automatic recovery needs a stored provider job or result and is not implemented.
-- The subject catalog cannot sustain the default 10 candidates per day over the strict 21-day cooldown. Owner options are to expand the catalog to at least 210 eligible subjects, or explicitly change the cadence or cooldown. Neither decision is included here.
 - Admin-rejected final images remain in R2 because the shipped undo action restores their URLs. Owner options are to retain them for undo, as now, or approve a retention window followed by asset deletion. Immediate deletion would break undo.
 - The AI-label gap, Studio-only duplicate scope and model visual comparison remain as described above. Live generation, review, feed placement and notification behavior still need post-deploy checks.
