@@ -1,11 +1,13 @@
 package com.hash.prism
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
 import com.hash.prism.pigeon.PrismMediaHostApi
+import io.flutter.embedding.android.FlutterFragment
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -29,10 +31,29 @@ class MainActivity : FlutterFragmentActivity() {
     private var systemColorsChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
     private val storagePermissions = LegacyStoragePermissionGate()
+    private var engine: FlutterEngine? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+    }
+
+    // The default fragment destroys even a provided engine when it detaches. onDestroy owns the engine instead.
+    override fun createFlutterFragment(): FlutterFragment =
+        super.createFlutterFragment().apply { requireArguments().putBoolean("destroy_engine_with_fragment", false) }
+
+    override fun provideFlutterEngine(context: Context): FlutterEngine =
+        (retainedEngine ?: FlutterEngine(context.applicationContext)).also {
+            retainedEngine = null
+            engine = it
+        }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // A new wallpaper changes the system colours and Android relaunches this Activity. Give the
+        // engine to the new Activity so Dart keeps running. Any other destroy (Back) ends it.
+        if (isChangingConfigurations) retainedEngine = engine else engine?.destroy()
+        engine = null
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -121,5 +142,10 @@ class MainActivity : FlutterFragmentActivity() {
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
-    private companion object { const val STORAGE_PERMISSION_REQUEST = 4201 }
+    private companion object {
+        const val STORAGE_PERMISSION_REQUEST = 4201
+
+        /** The engine of an Activity destroyed by a config change, until its replacement takes it. */
+        var retainedEngine: FlutterEngine? = null
+    }
 }
