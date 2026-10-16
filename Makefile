@@ -215,7 +215,7 @@ functions-secrets-sync:
 	@set -e; for k in $(FUNCTIONS_SECRETS); do \
 		v="$$(doppler secrets get $$k --plain --project $(DOPPLER_PROJECT) --config $(FUNCTIONS_DOPPLER_CONFIG))"; \
 		[ -n "$$v" ] || { echo "Doppler $(FUNCTIONS_DOPPLER_CONFIG) has no value for $$k"; exit 1; }; \
-		printf '%s' "$$v" | firebase functions:secrets:set $$k --data-file=- $(FIREBASE_ARGS) >/dev/null; \
+		out="$$(printf '%s' "$$v" | firebase functions:secrets:set $$k --data-file=- $(FIREBASE_ARGS) 2>&1)" || { echo "$$out"; exit 1; }; \
 		echo "Synced $$k from Doppler $(FUNCTIONS_DOPPLER_CONFIG)"; \
 	done
 
