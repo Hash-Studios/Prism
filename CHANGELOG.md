@@ -1,6 +1,6 @@
 ## Changelog
 
-### Unreleased
+### v3.5.0
 - On iPhone, a new "Get Prism Wallpaper" action for Shortcuts: pick Wall of the Day or a random favourite, then add Set Wallpaper to change your wallpaper on a schedule
 - A short guide in Settings, "Change automatically", shows how to make that automation
 - The Android Wall of the Day widget now loads today's wall on its own, updates every few hours, opens the wall when you tap it, and has a Set button
@@ -10,6 +10,9 @@
 - Prism now finds the main colours of each new wallpaper, so colour search covers your uploads
 - A new Trending this week row on the home feed shows what people use most on Prism, with See all
 - A Trending page with This week and All time lists, pull to refresh, and a saved copy for when you are offline
+- On Android, Prism keeps working when setting a wallpaper makes the app restart
+- Undo after you clear or delete notifications brings back the inbox as it was
+- Security and stability fixes
 
 ### v3.4.1
 - The floating glass panel is back on the wallpaper screen
