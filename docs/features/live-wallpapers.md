@@ -92,7 +92,7 @@ Apply button -> LiveWallpaperBloc -> Pro gate
 
 ### Shader contract
 
-Prism follows the plugin validator (`ShaderProgramValidator.kt` in `async_wallpaper` 3.3.0).
+Prism follows the plugin validator (`ShaderProgramValidator.kt` in `async_wallpaper` 3.5.0).
 
 | Rule | Value |
 |---|---|
@@ -101,6 +101,7 @@ Prism follows the plugin validator (`ShaderProgramValidator.kt` in `async_wallpa
 | Loops | No `while`. Only `for` with integer literal bounds. |
 | Source size | At most 64 KiB of UTF-8 source, enforced by the plugin validator. |
 | Plugin limits | Up to 4 textures, 32 uniform declarations, 128 static loop iterations. Prism uses at most one texture. |
+| Texture orientation | `texture2D(u_texture0, v_uv)` shows the image upright. Do not flip `v_uv.y`. Plugin versions before 3.5.0 showed it upside down. |
 
 ### Frame rate and battery saver
 

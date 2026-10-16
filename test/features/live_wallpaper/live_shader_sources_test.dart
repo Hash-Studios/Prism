@@ -63,6 +63,14 @@ void main() {
         expect(shader, contains('uniform sampler2D u_texture0;'));
       });
 
+      test('${style.name} samples the photo without a v flip', () {
+        // async_wallpaper 3.5 uploads textures bottom row first, so v_uv already samples them upright.
+        final String shader = LiveShaderSources.motion(style, darkPalette);
+        expect(RegExp(r'texture2D\(u_texture0, [^)]*\)').allMatches(shader).map((match) => match.group(0)), <String>[
+          'texture2D(u_texture0, uv)',
+        ]);
+      });
+
       test('${style.name} fails the contract with no texture', () {
         final String shader = LiveShaderSources.motion(style, darkPalette);
         expect(validateShaderContract(shader, textureCount: 0), isNotEmpty);
