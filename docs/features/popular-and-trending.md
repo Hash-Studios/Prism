@@ -1,6 +1,6 @@
 # Popular and trending
 
-The backend counts what users do with a wallpaper. Two scheduled lists, `trending` and `popular`, rank wallpapers from those counts. This page covers the backend only. The app does not read the counters or the lists yet.
+The backend counts what users do with a wallpaper. Two scheduled lists, `trending` and `popular`, rank wallpapers from those counts. This page covers the backend. The app reads the two lists. See [trending.md](trending.md). The app does not read the counters.
 
 ## Where to find it
 
@@ -48,8 +48,8 @@ Each doc holds `wallIds` (the top 100, best first) and `updatedAt`. The ids are 
 
 ## Limits
 
-- Backend only. No client code sends actions or reads the lists. Counts start when a client sends them.
-- The ids are upper case stats keys. The client must match them to the wall `id` field with a case-insensitive match.
+- The app reads the lists but does not send actions. Counts start when a client sends them.
+- The ids are upper case stats keys. The app makes the ids upper case and matches them to the wall `id` field.
 - Wall ids can collide for old walls (4 random characters). Colliding walls share one counter.
 - `popular` reads only the 500 walls with most views. A wall with many sets and few views can miss the list.
 - A retried favourite trigger can count a favourite twice. The count is display data.

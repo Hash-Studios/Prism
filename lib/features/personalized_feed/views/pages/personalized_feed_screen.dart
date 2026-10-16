@@ -33,6 +33,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.da
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
+import 'package:Prism/features/trending/views/widgets/trending_strip.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -245,6 +246,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                         ),
                       ),
                     ),
+                    const SliverToBoxAdapter(child: TrendingStripSection()),
                     SliverToBoxAdapter(
                       child: Column(
                         children: <Widget>[

@@ -28,6 +28,9 @@ import 'package:Prism/features/personalized_feed/domain/usecases/personalized_fe
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
+import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
+import 'package:Prism/features/trending/domain/entities/trending_range.dart';
+import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -47,6 +50,8 @@ class _MockFetchUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
 class _MockFeedRepository extends Mock implements PersonalizedFeedRepository {}
 
 class _MockPrismRepository extends Mock implements PrismWallpaperRepository {}
+
+class _MockFetchTrending extends Mock implements FetchTrendingUseCase {}
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
@@ -68,6 +73,7 @@ void main() {
   late _MockFetchUseCase fetchUseCase;
   late _MockFeedRepository feedRepository;
   late _MockPrismRepository prismRepository;
+  late _MockFetchTrending fetchTrending;
   late _MockCacheManager cache;
 
   setUpAll(() {
@@ -80,6 +86,7 @@ void main() {
       ),
     );
     registerFallbackValue(_item('fallback'));
+    registerFallbackValue(TrendingRange.week);
   });
 
   setUp(() {
@@ -112,6 +119,8 @@ void main() {
     when(
       () => fetchUseCase(any()),
     ).thenAnswer((_) async => Result.success(_page(<String>['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], hasMore: true)));
+    fetchTrending = _MockFetchTrending();
+    when(() => fetchTrending(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[]));
     app_state.prismUser = _user(loggedIn: true);
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
@@ -120,6 +129,7 @@ void main() {
       ..registerFactory<LatestFeedBloc>(() => LatestFeedBloc(prismRepository))
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
       ..registerFactory<PopularFeedBloc>(() => PopularFeedBloc(feedRepository))
+      ..registerFactory<TrendingBloc>(() => TrendingBloc(fetchTrending))
       ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
   });
 
@@ -170,6 +180,28 @@ void main() {
     }
     expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'For you')).selected, isTrue);
     expect(find.byType(WallpaperTile), findsWidgets);
+  });
+
+  testWidgets('hides the Trending strip when nothing is trending', (tester) async {
+    await pumpScreen(tester);
+
+    expect(find.text('Trending this week'), findsNothing);
+    expect(find.text('For you'), findsWidgets);
+  });
+
+  testWidgets('shows the Trending strip above the For you title', (tester) async {
+    when(
+      () => fetchTrending(TrendingRange.week),
+    ).thenAnswer((_) async => Result.success(<PrismWallpaper>[(_item('hot1') as PrismFeedItem).wallpaper]));
+
+    await pumpScreen(tester);
+
+    expect(find.text('Trending this week'), findsOneWidget);
+    expect(find.text('See all'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Trending this week')).dy,
+      lessThan(tester.getTopLeft(find.text('For you').first).dy),
+    );
   });
 
   testWidgets('the Latest chip loads the newest Prism walls', (tester) async {

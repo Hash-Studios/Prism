@@ -5,6 +5,7 @@ import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notification
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
+import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,8 @@ class _MockNotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNoti
 
 class _MockPersonalizedFeedBloc extends MockBloc<PersonalizedFeedEvent, PersonalizedFeedState>
     implements PersonalizedFeedBloc {}
+
+class _MockTrendingBloc extends MockBloc<TrendingEvent, TrendingState> implements TrendingBloc {}
 
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
 
@@ -77,6 +80,10 @@ void main() {
     whenListen(bloc, const Stream<PersonalizedFeedState>.empty(), initialState: loadedEmpty);
     when(() => bloc.close()).thenAnswer((_) async {});
     getIt.registerSingleton<PersonalizedFeedBloc>(bloc);
+    final _MockTrendingBloc trendingBloc = _MockTrendingBloc();
+    when(() => trendingBloc.state).thenReturn(TrendingState.initial());
+    when(trendingBloc.close).thenAnswer((_) async {});
+    getIt.registerSingleton<TrendingBloc>(trendingBloc);
     final _MockWotdBloc wotdBloc = _MockWotdBloc();
     when(() => wotdBloc.state).thenReturn(WotdState.initial());
     addTearDown(() async {
@@ -108,6 +115,10 @@ void main() {
     whenListen(bloc, const Stream<PersonalizedFeedState>.empty(), initialState: loadedEmpty);
     when(() => bloc.close()).thenAnswer((_) async {});
     getIt.registerSingleton<PersonalizedFeedBloc>(bloc);
+    final _MockTrendingBloc trendingBloc = _MockTrendingBloc();
+    when(() => trendingBloc.state).thenReturn(TrendingState.initial());
+    when(trendingBloc.close).thenAnswer((_) async {});
+    getIt.registerSingleton<TrendingBloc>(trendingBloc);
     final _MockWotdBloc wotdBloc = _MockWotdBloc();
     when(() => wotdBloc.state).thenReturn(WotdState.initial());
     addTearDown(() async {
