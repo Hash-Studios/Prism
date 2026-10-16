@@ -54,6 +54,7 @@ import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
@@ -999,29 +1000,31 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         ),
         const WotdQuickTileListener(),
       ],
-      child: FavouriteQuickTileListener(
-        child: ListenableBuilder(
-          listenable: DebugFlags.instance,
-          builder: (context, _) => MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            builder: (context, child) {
-              app_state.notchSize = MediaQuery.paddingOf(context).top;
-              return child ?? const SizedBox.shrink();
-            },
-            routerConfig: _appRouter.config(
-              deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
-              deepLinkBuilder: _routerDeepLinkBuilder,
-              navigatorObservers: () => [
-                ...AnalyticsRuntime.buildNavigatorObservers(),
-                if (MonitoringRuntime.reporter.isEnabled)
-                  SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
-              ],
+      child: ShortcutsFavouritesListener(
+        child: FavouriteQuickTileListener(
+          child: ListenableBuilder(
+            listenable: DebugFlags.instance,
+            builder: (context, _) => MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              builder: (context, child) {
+                app_state.notchSize = MediaQuery.paddingOf(context).top;
+                return child ?? const SizedBox.shrink();
+              },
+              routerConfig: _appRouter.config(
+                deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
+                deepLinkBuilder: _routerDeepLinkBuilder,
+                navigatorObservers: () => [
+                  ...AnalyticsRuntime.buildNavigatorObservers(),
+                  if (MonitoringRuntime.reporter.isEnabled)
+                    SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
+                ],
+              ),
+              showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
+              showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
+              theme: context.prismLightTheme(),
+              darkTheme: context.prismDarkTheme(),
+              themeMode: context.prismThemeMode(),
             ),
-            showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
-            showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
-            theme: context.prismLightTheme(),
-            darkTheme: context.prismDarkTheme(),
-            themeMode: context.prismThemeMode(),
           ),
         ),
       ),

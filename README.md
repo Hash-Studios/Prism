@@ -20,6 +20,7 @@ Prism is an open-source wallpaper app for Android and iOS, built with Flutter an
 - Read notifications in an inbox with unread marks, and set preferences in one sheet.
 - Customize the app's theme and accent, and manage cached images and downloads.
 - Rotate favourites or downloads on a timer, only while charging or in set hours, with Prism Pro on Android.
+- Change the wallpaper on its own on iPhone with a Shortcuts automation and the "Get Prism Wallpaper" action. See [iOS Shortcuts](docs/features/ios-shortcuts.md).
 
 Platform capabilities vary. Android supports home-screen and lock-screen wallpaper actions. iOS supports saving images for manual application.
 Premium access and coin costs depend on the action. The app shows the applicable gate before proceeding.

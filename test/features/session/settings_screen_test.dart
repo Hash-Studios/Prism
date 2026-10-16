@@ -238,6 +238,7 @@ void main() {
 
     expect(find.text('PERSONALISE'), findsOneWidget);
     expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
+    expect(find.text('Change automatically'), findsNothing);
     expect(find.text('Live wallpapers'), findsOneWidget);
     expect(find.text('Quick tiles'), findsOneWidget);
     expect(find.text('Wallpaper history'), findsOneWidget);
@@ -248,11 +249,13 @@ void main() {
     expect(find.text('Notification preferences'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('iOS hides the whole personalise section, including wallpaper history', (tester) async {
+  testWidgets('iOS personalise section has only Change automatically, no Android rows', (tester) async {
     useTallSurface(tester);
     await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
 
-    expect(find.text('PERSONALISE'), findsNothing);
+    expect(find.text('PERSONALISE'), findsOneWidget);
+    expect(find.text('Change automatically'), findsOneWidget);
+    expect(find.text('Auto-rotate wallpapers'), findsNothing);
     expect(find.text('Wallpaper history'), findsNothing);
     expect(find.text('Live wallpapers'), findsNothing);
     expect(find.text('Quick tiles'), findsNothing);

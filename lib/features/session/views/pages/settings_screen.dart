@@ -324,9 +324,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _personaliseSection() {
     final bool isAndroid = defaultTargetPlatform == TargetPlatform.android;
+    final bool isIOS = defaultTargetPlatform == TargetPlatform.iOS;
     return _sectionCard(
       title: 'PERSONALISE',
       children: [
+        if (isIOS)
+          ListTile(
+            leading: const Icon(Icons.autorenew_rounded),
+            title: Text('Change automatically', style: _titleStyle),
+            subtitle: const Text('Use a Shortcuts automation', style: _subtitleStyle),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.router.push(const IosShortcutsGuideRoute()),
+          ),
         if (isAndroid)
           ListTile(
             leading: const Icon(Icons.autorenew_rounded),
@@ -1025,7 +1034,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.only(top: 8, bottom: 32),
         children: [
           _appearanceSection(),
-          if (defaultTargetPlatform == TargetPlatform.android) _personaliseSection(),
+          if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)
+            _personaliseSection(),
           _contentFiltersSection(),
           _notificationsSection(),
           _storageSection(),
