@@ -597,6 +597,22 @@ class HomeTabRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [IosShortcutsGuideScreen]
+class IosShortcutsGuideRoute extends PageRouteInfo<void> {
+  const IosShortcutsGuideRoute({List<PageRouteInfo>? children})
+    : super(IosShortcutsGuideRoute.name, initialChildren: children);
+
+  static const String name = 'IosShortcutsGuideRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const IosShortcutsGuideScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [LibraryScreen]
 class LibraryRoute extends PageRouteInfo<LibraryRouteArgs> {
   LibraryRoute({

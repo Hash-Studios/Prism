@@ -20,6 +20,7 @@ import 'package:Prism/features/category_feed/views/pages/collection_view_screen.
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
+import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart';
 import 'package:Prism/features/live_wallpaper/views/pages/live_wallpaper_screen.dart';
 import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
@@ -155,6 +156,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
     AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
+    AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page),
     AutoRoute(path: '/wallpaper-history', page: WallpaperHistoryRoute.page),
     AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),

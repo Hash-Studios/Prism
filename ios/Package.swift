@@ -6,9 +6,10 @@ let package = Package(
   platforms: [.macOS(.v12), .iOS(.v15)],
   targets: [
     .target(name: "PrismMediaStorage", path: "Runner/Media"),
+    .target(name: "PrismShortcutsCore", path: "Runner/Shortcuts/Core"),
     .testTarget(
       name: "PrismMediaStorageTests",
-      dependencies: ["PrismMediaStorage"],
+      dependencies: ["PrismMediaStorage", "PrismShortcutsCore"],
       path: "RunnerTests",
       exclude: ["RunnerTests.swift"]
     )

@@ -47,6 +47,22 @@ class NotificationTombstones {
     await _store.set(PersistenceKeys.notificationsDeletedIds, kept);
   }
 
+  /// Forgets the tombstones of restored notifications. When an Undo restores items from a clear, the last
+  /// clear moves back to just before the oldest one, so the next sync does not drop them again.
+  Future<void> restore(Iterable<InAppNotificationEntity> items) async {
+    await removeDeleted(items.map((InAppNotificationEntity item) => item.id));
+    final DateTime? clearedAt = clearedAtUtc();
+    if (clearedAt == null || items.isEmpty) {
+      return;
+    }
+    final DateTime oldest = items
+        .map((InAppNotificationEntity item) => item.createdAt.toUtc())
+        .reduce((DateTime a, DateTime b) => a.isBefore(b) ? a : b);
+    if (!oldest.isAfter(clearedAt)) {
+      await _store.set(_clearedAtKey, oldest.subtract(const Duration(microseconds: 1)).toIso8601String());
+    }
+  }
+
   Future<void> markCleared(Iterable<String> currentIds, DateTime nowUtc) async {
     await addDeleted(currentIds);
     await _store.set(_clearedAtKey, nowUtc.toUtc().toIso8601String());

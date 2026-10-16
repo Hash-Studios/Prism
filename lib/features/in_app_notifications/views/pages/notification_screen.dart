@@ -209,11 +209,16 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                   tooltip: 'Clear inbox',
                   backgroundColor: colorScheme.error,
                   foregroundColor: colorScheme.onError,
-                  onPressed: () {
+                  onPressed: () async {
+                    if (!await _confirmClearInbox(context, notifications.length) || !context.mounted) return;
+                    // A sync can add rows while the dialog is open, so Undo uses the list as it is now.
+                    final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
+                    final List<InAppNotificationEntity> removed = bloc.state.items;
+                    if (removed.isEmpty) return;
                     PrismHaptics.tap();
-                    analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
-                    context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
-                    _showUndoSnackBar(context, 'Inbox cleared', notifications);
+                    analytics.track(NotificationClearAllConfirmedEvent(count: removed.length));
+                    bloc.add(const InAppNotificationsEvent.clearRequested());
+                    _showUndoSnackBar(context, 'Inbox cleared', removed);
                   },
                   child: const Icon(JamIcons.trash),
                 )
@@ -221,6 +226,24 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         );
       },
     );
+  }
+
+  Future<bool> _confirmClearInbox(BuildContext context, int count) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(count == 1 ? 'Clear 1 notification?' : 'Clear $count notifications?'),
+            content: const Text('This removes them from this device.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text('Clear inbox', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {

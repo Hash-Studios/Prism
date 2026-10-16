@@ -15,6 +15,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
+import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:Prism/logger/logger.dart';
@@ -354,6 +355,13 @@ class GoogleAuth {
         await getIt<WallpaperHistoryStore>().clear();
       } catch (e, st) {
         logger.w('Wallpaper history clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      try {
+        await ShortcutsFavouritesStore.clear();
+      } catch (e, st) {
+        logger.w('Shortcuts favourites clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
       }
     }
   }
