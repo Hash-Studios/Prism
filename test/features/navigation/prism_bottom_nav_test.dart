@@ -6,6 +6,7 @@ import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -102,6 +103,25 @@ void main() {
     expect(tester.getSemantics(find.bySemanticsLabel('Home')), isSemantics(isSelected: true, isButton: true));
     expect(tester.getSemantics(find.bySemanticsLabel('Search')), isSemantics(isSelected: false, isButton: true));
     handle.dispose();
+  });
+
+  testWidgets('the tabs use the current app icons, the same glyph whether active or not', (tester) async {
+    final router = _FakeTabsRouter();
+    await tester.pumpWidget(_host(router, const Center(child: PrismBottomNav())));
+
+    IconData iconOf(String label) =>
+        tester.widget<Icon>(find.descendant(of: find.byTooltip(label), matching: find.byType(Icon))).icon!;
+
+    expect(iconOf('Home'), JamIcons.home_f);
+    expect(iconOf('Search'), JamIcons.search);
+    expect(iconOf('Rewards'), JamIcons.gift_f);
+    expect(iconOf('Collections'), JamIcons.grid_f);
+
+    router.setActiveIndex(1);
+    await tester.pumpAndSettle();
+
+    expect(iconOf('Home'), JamIcons.home_f);
+    expect(iconOf('Search'), JamIcons.search);
   });
 
   testWidgets('tapping a tab switches to it and tapping the active tab does nothing', (tester) async {

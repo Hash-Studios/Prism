@@ -4,10 +4,12 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/features/navigation/views/widgets/nav_bar_surface.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// The floating pill with the four tab destinations. A circle slides behind the active one.
+/// The floating pill with the four tab destinations. A circle slides behind the active one. The icons are the
+/// current app's JamIcons.
 class PrismBottomNav extends StatefulWidget {
   const PrismBottomNav({super.key});
 
@@ -21,25 +23,10 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   static const double _height = 60;
 
   static const List<_NavTabConfig> _tabs = <_NavTabConfig>[
-    _NavTabConfig(label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home_rounded, value: NavTabValue.home),
-    _NavTabConfig(
-      label: 'Search',
-      icon: Icons.search_rounded,
-      activeIcon: Icons.search_rounded,
-      value: NavTabValue.search,
-    ),
-    _NavTabConfig(
-      label: 'Rewards',
-      icon: Icons.card_giftcard_outlined,
-      activeIcon: Icons.card_giftcard_rounded,
-      value: NavTabValue.streak,
-    ),
-    _NavTabConfig(
-      label: 'Collections',
-      icon: Icons.grid_view_outlined,
-      activeIcon: Icons.grid_view_rounded,
-      value: NavTabValue.collection,
-    ),
+    _NavTabConfig(label: 'Home', icon: JamIcons.home_f, value: NavTabValue.home),
+    _NavTabConfig(label: 'Search', icon: JamIcons.search, value: NavTabValue.search),
+    _NavTabConfig(label: 'Rewards', icon: JamIcons.gift_f, value: NavTabValue.streak),
+    _NavTabConfig(label: 'Collections', icon: JamIcons.grid_f, value: NavTabValue.collection),
   ];
 
   TabsRouter? _tabsRouter;
@@ -170,7 +157,7 @@ class _TabButton extends StatelessWidget {
                   switchInCurve: PrismCurves.enter,
                   switchOutCurve: PrismCurves.enter,
                   child: Icon(
-                    isActive ? config.activeIcon : config.icon,
+                    config.icon,
                     key: ValueKey<bool>(isActive),
                     size: 22,
                     color: isActive ? ink : ink.withValues(alpha: 0.7),
@@ -186,10 +173,10 @@ class _TabButton extends StatelessWidget {
 }
 
 class _NavTabConfig {
-  const _NavTabConfig({required this.label, required this.icon, required this.activeIcon, required this.value});
+  const _NavTabConfig({required this.label, required this.icon, required this.value});
 
+  /// The same glyph in both states, as on the current app. The active tab shows through the circle and the full ink.
   final String label;
   final IconData icon;
-  final IconData activeIcon;
   final NavTabValue value;
 }
