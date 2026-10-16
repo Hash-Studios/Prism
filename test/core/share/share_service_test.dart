@@ -109,9 +109,9 @@ void main() {
 Map<String, double> _origin(MethodCall call) {
   final Map<Object?, Object?> args = call.arguments as Map<Object?, Object?>;
   return <String, double>{
-    'originX': (args['originX'] as num).toDouble(),
-    'originY': (args['originY'] as num).toDouble(),
-    'originWidth': (args['originWidth'] as num).toDouble(),
-    'originHeight': (args['originHeight'] as num).toDouble(),
+    'originX': (args['originX']! as num).toDouble(),
+    'originY': (args['originY']! as num).toDouble(),
+    'originWidth': (args['originWidth']! as num).toDouble(),
+    'originHeight': (args['originHeight']! as num).toDouble(),
   };
 }

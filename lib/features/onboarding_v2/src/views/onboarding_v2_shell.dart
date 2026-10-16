@@ -15,9 +15,9 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
@@ -27,8 +27,10 @@ import 'package:Prism/features/onboarding_v2/src/views/pages/f3_ai_generate_page
 import 'package:Prism/features/onboarding_v2/src/views/pages/f4_first_wallpaper_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_background.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_recovery.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
@@ -38,9 +40,20 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+String _saveErrorToast(OnboardingV2State state) {
+  if (state.sessionInvalid) return 'Your session has expired. Please sign in again.';
+  if (state.completionFailed) return "Couldn't finish setup. Try again.";
+  return state.step == OnboardingV2Step.interests
+      ? "Couldn't save your picks. Try again."
+      : "Couldn't follow these creators. Try again.";
+}
+
 @RoutePage(name: 'OnboardingV2ShellRoute')
 class OnboardingV2Shell extends StatefulWidget {
-  const OnboardingV2Shell({super.key});
+  const OnboardingV2Shell({super.key, @visibleForTesting this.signOutForRecovery});
+
+  @visibleForTesting
+  final Future<bool> Function()? signOutForRecovery;
 
   @override
   State<OnboardingV2Shell> createState() => _OnboardingV2ShellState();
@@ -53,6 +66,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _imagesPrecached = false;
   bool _termsAccepted = false;
+  final ValueNotifier<bool> _signingOut = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -89,6 +103,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   void dispose() {
     _legalTap.dispose();
     _privacyTap.dispose();
+    _signingOut.dispose();
     _bloc.close();
     super.dispose();
   }
@@ -196,6 +211,36 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     }
   }
 
+  /// The account behind this session is gone or locked out, so no save can succeed.
+  /// Sign out the same way Settings does, then restart into a fresh onboarding.
+  Future<void> _signInAgain() async {
+    if (_signingOut.value) return;
+    _signingOut.value = true;
+    var signedOut = false;
+    try {
+      signedOut = await (widget.signOutForRecovery ?? globalGoogleAuth.signOutGoogle)();
+    } catch (error, stackTrace) {
+      logger.w('Sign out from onboarding failed.', error: error, stackTrace: stackTrace);
+    }
+    if (!signedOut) {
+      if (mounted) {
+        _signingOut.value = false;
+        toasts.error('Could not log out. Please try again.');
+      }
+      return;
+    }
+    try {
+      await resetOnboardingLocalState(_settingsLocal);
+      if (mounted) main.RestartWidget.restartApp(context);
+    } catch (error, stackTrace) {
+      logger.w('Could not reset onboarding state after sign out.', error: error, stackTrace: stackTrace);
+      if (mounted) {
+        _signingOut.value = false;
+        toasts.error('Could not log out. Please try again.');
+      }
+    }
+  }
+
   void _setTermsAccepted(bool accepted) {
     if (accepted && !_termsAccepted) unawaited(analytics.track(const TermsAcceptedEvent()));
     setState(() => _termsAccepted = accepted);
@@ -211,21 +256,26 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
 
   Widget _pageFor(OnboardingV2Step step) => KeyedSubtree(
     key: ValueKey(step),
-    child: switch (step) {
-      OnboardingV2Step.auth => F0AuthPage(
-        termsAccepted: _termsAccepted,
-        onTermsChanged: _setTermsAccepted,
-        legalTap: _legalTap,
-        privacyTap: _privacyTap,
-        onGoogle: _handleGoogleSignIn,
-        onApple: _handleAppleSignIn,
-        onBrowse: _handleBrowseWithoutAccount,
-      ),
-      OnboardingV2Step.interests => const F1InterestsPage(),
-      OnboardingV2Step.starterPack => const F2StarterPackPage(),
-      OnboardingV2Step.aiGenerate => const F3AiGeneratePage(),
-      OnboardingV2Step.firstWallpaper => const F4FirstWallpaperPage(),
-    },
+    child: _RecoveryHost(
+      bloc: _bloc,
+      signingOut: _signingOut,
+      signInAgain: _signInAgain,
+      child: switch (step) {
+        OnboardingV2Step.auth => F0AuthPage(
+          termsAccepted: _termsAccepted,
+          onTermsChanged: _setTermsAccepted,
+          legalTap: _legalTap,
+          privacyTap: _privacyTap,
+          onGoogle: _handleGoogleSignIn,
+          onApple: _handleAppleSignIn,
+          onBrowse: _handleBrowseWithoutAccount,
+        ),
+        OnboardingV2Step.interests => const F1InterestsPage(),
+        OnboardingV2Step.starterPack => const F2StarterPackPage(),
+        OnboardingV2Step.aiGenerate => const F3AiGeneratePage(),
+        OnboardingV2Step.firstWallpaper => const F4FirstWallpaperPage(),
+      },
+    ),
   );
 
   /// Steps 1 to 4 carry the progress bar. The fill runs to this many quarters.
@@ -271,13 +321,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
             listener: (context, state) => _bloc.add(const OnboardingV2Event.aiGenerationStepContinued()),
           ),
           BlocListener<OnboardingV2Bloc, OnboardingV2State>(
-            listenWhen: (prev, curr) =>
-                prev.actionStatus != curr.actionStatus && curr.actionStatus == ActionStatus.failure,
-            listener: (context, state) => toasts.error(
-              state.navRequest == OnboardingV2NavRequest.completeOnboarding
-                  ? "Couldn't save your setup. We will try again."
-                  : "Couldn't save that. Please try again.",
-            ),
+            listenWhen: (prev, curr) => !onboardingSaveFailed(prev) && onboardingSaveFailed(curr),
+            listener: (context, state) => toasts.error(_saveErrorToast(state)),
           ),
         ],
         child: BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
@@ -292,6 +337,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               child: PopScope(
                 canPop: false,
                 onPopInvokedWithResult: (didPop, result) {
+                  if (_signingOut.value) return;
                   _bloc.add(const OnboardingV2Event.stepBack());
                 },
                 child: MediaQuery.withClampedTextScaling(
@@ -340,6 +386,36 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Tells the step's frame what to do while a save error needs the user's attention.
+class _RecoveryHost extends StatelessWidget {
+  const _RecoveryHost({required this.bloc, required this.signingOut, required this.signInAgain, required this.child});
+
+  final OnboardingV2Bloc bloc;
+  final ValueListenable<bool> signingOut;
+  final VoidCallback signInAgain;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: signingOut,
+      builder: (context, signingOut, _) => BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
+        buildWhen: (prev, curr) =>
+            prev.step != curr.step ||
+            prev.actionStatus != curr.actionStatus ||
+            prev.sessionInvalid != curr.sessionInvalid ||
+            prev.completionFailed != curr.completionFailed ||
+            prev.loadStatus != curr.loadStatus ||
+            prev.starterPackData.creators.isEmpty != curr.starterPackData.creators.isEmpty,
+        builder: (context, state) => OnboardingRecoveryScope(
+          recovery: onboardingRecoveryFor(state, add: bloc.add, signInAgain: signInAgain, signingOut: signingOut),
+          child: child,
         ),
       ),
     );

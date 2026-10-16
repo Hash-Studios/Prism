@@ -915,7 +915,7 @@ class CoinsService with WidgetsBindingObserver {
     }
     await _withRefundQueueLock(() async {
       final List<Map<String, dynamic>> latest = _readPendingEntries();
-      latest.removeWhere((Map<String, dynamic> e) => resolvedKeys.contains(_entryKey(e)));
+      latest.removeWhere((Map<String, dynamic> e) => _entryKey(e).isEmpty || resolvedKeys.contains(_entryKey(e)));
       await _writePendingEntries(latest);
     });
   }
@@ -1145,10 +1145,6 @@ class CoinsService with WidgetsBindingObserver {
         sourceTag: sourceTag,
       ),
     );
-  }
-
-  Future<CoinMutationResult> spendForPremiumFilter({String sourceTag = 'coins.spend.premium_filter', String? reason}) {
-    return spend(CoinSpendAction.premiumFilter, sourceTag: sourceTag, reason: reason ?? 'premium_filter');
   }
 
   Future<bool> hasPremiumPreviewAccessForCollection(String collectionKey) async {

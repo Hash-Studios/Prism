@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_recovery.dart';
 import 'package:flutter/material.dart';
 
 /// The shared layout of onboarding steps 1 to 4: a skip button, a left-aligned title and one line of body text, the
@@ -38,6 +39,9 @@ class OnboardingFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A save error replaces the primary action with the way out, and says what went wrong above it.
+    final OnboardingRecovery? recovery = OnboardingRecoveryScope.maybeOf(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return SafeArea(
       child: Center(
         child: ConstrainedBox(
@@ -83,7 +87,24 @@ class OnboardingFrame extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    PrismButton(label: primaryLabel, expand: true, loading: primaryLoading, onPressed: onPrimary),
+                    if (recovery != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            recovery.helper,
+                            textAlign: TextAlign.center,
+                            style: PrismTextStyles.caption(context).copyWith(color: cs.error),
+                          ),
+                        ),
+                      ),
+                    PrismButton(
+                      label: recovery?.label ?? primaryLabel,
+                      expand: true,
+                      loading: recovery?.loading ?? primaryLoading,
+                      onPressed: recovery?.onPressed ?? onPrimary,
+                    ),
                     if (secondary != null) ...<Widget>[const SizedBox(height: PrismSpace.xxs), secondary!],
                   ],
                 ),

@@ -3,6 +3,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/creator_card.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_recovery.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,6 +23,9 @@ class F2StarterPackPage extends StatelessWidget {
         final bool loading =
             data.creators.isEmpty && (state.loadStatus == LoadStatus.loading || state.loadStatus == LoadStatus.initial);
         final bool empty = data.creators.isEmpty && !loading;
+        // While the primary button is the way out, the empty state needs no action of its own.
+        final bool recovering = OnboardingRecoveryScope.maybeOf(context) != null;
+        final bool short = recovering && onboardingStarterPackShort(state);
         final OnboardingV2Bloc bloc = context.read<OnboardingV2Bloc>();
         return OnboardingFrame(
           title: 'Find your people',
@@ -37,11 +41,13 @@ class F2StarterPackPage extends StatelessWidget {
               : empty
               ? Center(
                   child: GlintState(
-                    kind: GlintStateKind.empty,
-                    title: 'No creators to suggest yet',
-                    body: 'You can follow creators from their profiles later.',
-                    actionLabel: 'Try again',
-                    onAction: () => bloc.add(const OnboardingV2Event.loadRetried()),
+                    kind: short ? GlintStateKind.error : GlintStateKind.empty,
+                    title: short ? "Couldn't load creators" : 'No creators to suggest yet',
+                    body: short
+                        ? 'Check your connection and tap Reload.'
+                        : 'You can follow creators from their profiles later.',
+                    actionLabel: recovering ? null : 'Try again',
+                    onAction: recovering ? null : () => bloc.add(const OnboardingV2Event.loadRetried()),
                   ),
                 )
               : _CreatorList(data: data, bloc: bloc),

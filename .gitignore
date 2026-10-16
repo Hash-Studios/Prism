@@ -76,3 +76,8 @@ AuthKey.p8
 functions/node_modules/**
 dead_code_report.html
 web/node_modules/**
+
+# Release artifacts belong on GitHub Releases, not in Git.
+*.apk
+*.aab
+*.ipa

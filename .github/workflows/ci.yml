@@ -5,11 +5,12 @@ name: CI
 # the required check: it is green when every job that ran passed.
 #
 # Pushes to master run no checks. The PR already tested the same tree, so a
-# re-run after the merge was a second copy of every job. The one push job,
-# `app_size_base`, builds the master APK once so that PRs can compare against
-# it without a second build. It also writes the Flutter, pub and Gradle caches
-# in master scope, which every PR can read. A cache that a PR writes is visible
-# only to that PR.
+# re-run after the merge was a second copy of every job. Two push jobs warm
+# caches instead. `app_size_base` builds the master APK once so that PRs can
+# compare against it without a second build, and writes the Flutter, pub and
+# Gradle caches. `ios_cache_base` writes the iOS pods and Xcode build cache.
+# PRs read caches in master scope. A cache that a PR writes is visible only to
+# that PR.
 
 on:
   pull_request:
@@ -30,6 +31,8 @@ on:
       - '.fvmrc'
       - 'tool/build_size_apk.sh'
       - 'tool/write_firebase_options_stub.sh'
+      # ios_cache_base key.
+      - 'ios/Podfile.lock'
       - '.github/workflows/ci.yml'
 
 concurrency:
@@ -78,6 +81,8 @@ jobs:
               - '**'
               - '!functions/**'
               - '!web/**'
+              - '!demo/**'
+              - '!examples/**'
               - '!docs/**'
               - '!.github/**'
               - '!.claude/**'
@@ -180,6 +185,9 @@ jobs:
           flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
+          # Share master's Flutter caches on a hit. Misses can still save a PR-scoped copy.
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
       - uses: gradle/actions/setup-gradle@v4
       - run: tool/write_firebase_options_stub.sh
       - run: make native-android-check CI=true
@@ -189,7 +197,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.ios == 'true' || needs.changes.outputs.workflow == 'true'
     runs-on: macos-26
-    timeout-minutes: 45
+    # Warm (cache from ios_cache_base): about 8 minutes. A PR that changes ios/Podfile.lock,
+    # pubspec.lock or .fvmrc builds cold (about 15 minutes).
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode 26.6
@@ -202,6 +212,17 @@ jobs:
           flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      # Pods and Xcode's compilation cache (content-keyed, so new file times do not force a
+      # rebuild). Only ios_cache_base saves it.
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+            build/ios/native-tests
+          key: ios-build-v2-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock', '.fvmrc') }}
       - run: tool/write_firebase_options_stub.sh
       - run: make native-ios-check CI=true
 
@@ -248,10 +269,11 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - name: Install and typecheck
+      - name: Install, typecheck and build
         run: |
           npm ci
           npx tsc --noEmit
+          npm run build
 
   rules:
     name: Firestore rules verify
@@ -279,6 +301,18 @@ jobs:
       - name: Firestore rules smoke test
         run: npx --yes firebase-tools@15.15.0 emulators:exec --only firestore --project demo-prism "node tool/firestore_rules_smoke.mjs"
 
+  repo_assets:
+    name: Repository assets guard
+    needs: changes
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Check repository assets
+        run: python3 tool/check_repo_assets.py
+
   # Not part of the required `ci` check, so the merge does not wait for two
   # APK builds. A size regression still shows as a red check and a PR comment.
   app_size:
@@ -293,16 +327,22 @@ jobs:
     env:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       # The base commit may predate the script, so run the head copy.
       - name: Compute the base APK cache key
         id: base
         run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          if ! git fetch --no-tags --depth=1 origin "$HEAD_SHA"; then
+            git fetch --no-tags --depth=1 origin "refs/pull/$PR_NUMBER/head"
+            test "$(git rev-parse FETCH_HEAD)" = "$HEAD_SHA"
+          fi
           git checkout --force --detach "$HEAD_SHA"
           cp tool/build_size_apk.sh "$RUNNER_TEMP/"
           key=$("$RUNNER_TEMP/build_size_apk.sh" --key "$BASE_SHA")
@@ -406,6 +446,50 @@ jobs:
 
             Skipped: no app-size relevant files changed in this PR.
 
+  ios_cache_base:
+    name: iOS build cache (master)
+    if: github.event_name == 'push'
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Flutter version
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+      - name: Check for a cached build
+        id: cached
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+            build/ios/native-tests
+          key: ios-build-v2-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock', '.fvmrc') }}
+          lookup-only: true
+      - name: Select Xcode 26.6
+        if: steps.cached.outputs.cache-hit != 'true'
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+      - if: steps.cached.outputs.cache-hit != 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - if: steps.cached.outputs.cache-hit != 'true'
+        run: tool/write_firebase_options_stub.sh
+      - if: steps.cached.outputs.cache-hit != 'true'
+        run: make native-ios-check CI=true
+      - if: steps.cached.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+            build/ios/native-tests
+          key: ${{ steps.cached.outputs.cache-primary-key }}
+
   app_size_base:
     name: Android app size (master baseline)
     if: github.event_name == 'push'
@@ -475,7 +559,7 @@ jobs:
 
   ci:
     name: ci
-    needs: [changes, flutter, android, ios, functions, web, rules]
+    needs: [changes, flutter, android, ios, functions, web, rules, repo_assets]
     # `always()` so a cancelled or failed job reports red. A skipped required
     # check counts as passed, so `ci` must never skip on a non-draft PR.
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
@@ -484,9 +568,9 @@ jobs:
     steps:
       - name: Aggregate results
         env:
-          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }}
+          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }} ${{ needs.repo_assets.result }}
         run: |
-          echo "changes flutter android ios functions web rules: $RESULTS"
+          echo "changes flutter android ios functions web rules repo_assets: $RESULTS"
           [ "${{ needs.changes.result }}" = success ] || { echo 'Detect changes failed.'; exit 1; }
           for r in $RESULTS; do
             case "$r" in

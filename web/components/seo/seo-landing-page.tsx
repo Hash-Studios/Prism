@@ -42,7 +42,7 @@ export function SeoLandingPage({ content }: SeoLandingPageProps) {
             {content.bullets.map((item) => (
               <article
                 key={item}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+                className="rounded-2xl border border-white/10 bg-white/3 p-5"
               >
                 <Sparkles className="h-4 w-4 text-accent" aria-hidden="true" />
                 <p className="mt-3 text-sm leading-relaxed text-white/80">{item}</p>
@@ -91,7 +91,7 @@ export function SeoLandingPage({ content }: SeoLandingPageProps) {
                 <a
                   key={page.slug}
                   href={`/${page.slug}`}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-accent/35 hover:bg-white/[0.05]"
+                  className="rounded-2xl border border-white/10 bg-white/3 p-4 transition hover:border-accent/35 hover:bg-white/5"
                 >
                   <p className="text-sm font-semibold text-white">{page.navLabel}</p>
                   <p className="mt-1 text-xs leading-relaxed text-white/60">

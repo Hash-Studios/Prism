@@ -15,12 +15,6 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 /// instead of `gl_FragCoord`, and the starfield hash uses small constants.
 // ignore: avoid_classes_with_only_static_members
 abstract final class LiveShaderSources {
-  static const int maxBytes = 64 * 1024;
-
-  static const List<String> placeholders = <String>['{{C0}}', '{{C1}}', '{{C2}}', '{{C3}}', '{{BG}}'];
-
-  static const Set<String> allowedUniforms = <String>{'u_time', 'u_resolution', 'u_touch', 'u_offset', 'u_texture0'};
-
   static const String _header = '''
 precision mediump float;
 #ifdef GL_FRAGMENT_PRECISION_HIGH

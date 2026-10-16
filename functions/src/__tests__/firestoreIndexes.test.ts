@@ -6,7 +6,8 @@ import test from "node:test";
 type Index = {collectionGroup: string; fields: Array<{fieldPath: string; order?: string; arrayConfig?: string}>};
 type Override = {collectionGroup: string; fieldPath: string; ttl?: boolean};
 
-const config = JSON.parse(readFileSync(join(__dirname, "../../../firestore.indexes.json"), "utf8")) as {
+const fixtureRoot = process.env.PRISM_REPO_ROOT ?? join(__dirname, "../../..");
+const config = JSON.parse(readFileSync(join(fixtureRoot, "firestore.indexes.json"), "utf8")) as {
   indexes: Index[];
   fieldOverrides: Override[];
 };

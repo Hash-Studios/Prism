@@ -112,6 +112,29 @@ void main() {
 
   String stored(String key) => getIt<SettingsLocalDataSource>().get<String>(key, defaultValue: '');
 
+  test('retry prunes malformed entries while preserving another account queue', () async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final other = <String, Object>{'userId': 'other', 'transactionId': 'other-tx', 'atMs': now};
+    await getIt<SettingsLocalDataSource>().set(
+      _queueKey,
+      jsonEncode(<Object>[
+        <String, Object>{},
+        <String, Object>{'kind': 'reward', 'atMs': now},
+        <String, Object>{'transactionId': '', 'atMs': now},
+        other,
+        <String, Object>{'userId': app_state.prismUser.id, 'transactionId': 'current-tx', 'atMs': now},
+      ]),
+    );
+    final calls = <Map<String, dynamic>>[];
+    backend.onCall = (name, parameters) async {
+      calls.add(parameters);
+      return _refunded;
+    };
+    await service.retryPendingRefunds();
+    expect(calls.single['transactionId'], 'current-tx');
+    expect(jsonDecode(stored(_queueKey)), <Object>[other]);
+  });
+
   group('download spends', () {
     test('a download spend with no reply after both attempts is queued for refund', () async {
       final requestIds = <String>[];

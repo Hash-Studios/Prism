@@ -1,12 +1,10 @@
-import 'dart:convert';
-
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
+import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -65,51 +63,10 @@ class DeepLinkNavigation {
         await onReferral(action.inviterId);
         return const RewardsTabRoute();
       case ShortCodeIntent():
-        final DeepLinkActionEntity? resolved = await _resolveShortCode(action.code);
-        if (resolved == null) {
-          return null;
-        }
-        return _mapActionToRoute(resolved);
+        final result = await ShortLinkResolver(client: httpClient, parser: parser).resolve(action.code);
+        return result is ShortLinkResolved ? _mapActionToRoute(result.action) : null;
       case UnknownIntent():
         return null;
-    }
-  }
-
-  Future<DeepLinkActionEntity?> _resolveShortCode(String code) async {
-    final String shortCode = code.trim();
-    if (shortCode.isEmpty) {
-      return null;
-    }
-
-    final Uri endpoint = Uri.parse('$shortLinkApiUrl/$shortCode');
-    try {
-      final Future<http.Response> responseFuture = httpClient != null
-          ? httpClient!.get(endpoint, headers: const <String, String>{'Accept': 'application/json'})
-          : http.get(endpoint, headers: const <String, String>{'Accept': 'application/json'});
-      final http.Response response = await responseFuture.timeout(const Duration(seconds: 6));
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        return null;
-      }
-      final dynamic decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) {
-        return null;
-      }
-      final String canonicalUrl = decoded['canonical_url']?.toString() ?? '';
-      if (canonicalUrl.isEmpty) {
-        return null;
-      }
-      final Uri? canonicalUri = Uri.tryParse(canonicalUrl);
-      if (canonicalUri == null) {
-        return null;
-      }
-      final DeepLinkActionEntity canonicalAction = parser.parse(parser.transform(canonicalUri));
-      if (canonicalAction is UnknownIntent || canonicalAction is ShortCodeIntent) {
-        return null;
-      }
-      return canonicalAction;
-    } catch (_) {
-      return null;
     }
   }
 }

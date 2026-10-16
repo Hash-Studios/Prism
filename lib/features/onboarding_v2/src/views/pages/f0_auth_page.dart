@@ -1,9 +1,11 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_recovery.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_staggered_fade.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_terms_row.dart';
 import 'package:Prism/global/svg_assets.dart';
@@ -70,6 +72,7 @@ class _F0AuthPageState extends State<F0AuthPage> {
   @override
   Widget build(BuildContext context) {
     final bool ios = defaultTargetPlatform == TargetPlatform.iOS;
+    final OnboardingRecovery? recovery = OnboardingRecoveryScope.maybeOf(context);
     final TextStyle headline = PrismTextStyles.display(context).copyWith(color: Colors.white);
     final TextStyle body = PrismTextStyles.body(
       context,
@@ -138,9 +141,29 @@ class _F0AuthPageState extends State<F0AuthPage> {
                             OnboardingStaggeredFade(
                               delay: PrismDurations.stagger * 3,
                               child: BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
-                                buildWhen: (prev, curr) => prev.isAuthLoading != curr.isAuthLoading,
+                                buildWhen: (prev, curr) =>
+                                    prev.isAuthLoading != curr.isAuthLoading || prev.actionStatus != curr.actionStatus,
                                 builder: (context, state) {
-                                  final bool busy = state.isAuthLoading;
+                                  final bool busy =
+                                      state.isAuthLoading || state.actionStatus == ActionStatus.inProgress;
+                                  if (recovery != null) {
+                                    // Setup failed after sign-in: the terms are already accepted, so offer only the way out.
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: <Widget>[
+                                        Semantics(
+                                          liveRegion: true,
+                                          child: Text(recovery.helper, style: body.copyWith(fontSize: 14)),
+                                        ),
+                                        const SizedBox(height: PrismSpace.sm),
+                                        OnboardingPrimaryButton(
+                                          label: recovery.label,
+                                          loading: recovery.loading,
+                                          onPressed: recovery.onPressed,
+                                        ),
+                                      ],
+                                    );
+                                  }
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.stretch,
                                     children: <Widget>[
@@ -175,18 +198,19 @@ class _F0AuthPageState extends State<F0AuthPage> {
                               ),
                             ),
                             const SizedBox(height: PrismSpace.xs),
-                            OnboardingStaggeredFade(
-                              delay: PrismDurations.stagger * 4,
-                              child: ShakeOnce(
-                                controller: _shake,
-                                child: OnboardingTermsRow(
-                                  accepted: widget.termsAccepted,
-                                  onChanged: widget.onTermsChanged,
-                                  legalTap: widget.legalTap,
-                                  privacyTap: widget.privacyTap,
+                            if (recovery == null)
+                              OnboardingStaggeredFade(
+                                delay: PrismDurations.stagger * 4,
+                                child: ShakeOnce(
+                                  controller: _shake,
+                                  child: OnboardingTermsRow(
+                                    accepted: widget.termsAccepted,
+                                    onChanged: widget.onTermsChanged,
+                                    legalTap: widget.legalTap,
+                                    privacyTap: widget.privacyTap,
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       ),

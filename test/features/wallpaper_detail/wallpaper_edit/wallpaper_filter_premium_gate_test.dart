@@ -32,6 +32,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/in_memory_local_store.dart';
+import '../../../support/wait_for_real_io.dart';
 
 const String _functionsChannel = 'dev.flutter.pigeon.cloud_functions_platform_interface.CloudFunctionsHostApi.call';
 const String _mediaChannel = 'dev.flutter.pigeon.Prism.PrismMediaHostApi.saveMedia';
@@ -171,7 +172,7 @@ void main() {
     set.onPressed!();
     set.onPressed!();
     await tester.pump();
-    await _waitForSignal(tester, spendStarted, 'coin spend request');
+    await _waitForSignal(tester, spendStarted, 'premium filter spend starts');
 
     expect(spendCalls, 1);
     expect(saveCalls, 0);
@@ -184,10 +185,13 @@ void main() {
     expect(tester.widget<Slider>(firstSlider).value, sliderBefore);
 
     allowSpend.complete();
-    await _waitForSignal(tester, mediaSaved, 'native media save');
+    await _waitForSignal(tester, mediaSaved, 'native media save completes');
     expect(savedRequest?.kind, SaveMediaKind.wallpaper);
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
-    await tester.pump();
+    await waitForRealIo(
+      tester,
+      () => tester.widget<IconButton>(_iconButton('Reset')).onPressed != null,
+      reason: 'editor re-enabled after native save',
+    );
     expect(spendCalls, 1);
     expect(saveCalls, 1);
     await tester.pump(const Duration(seconds: 1));
@@ -254,13 +258,12 @@ void main() {
     await _tapInvert(tester);
     await tester.tap(_iconButton('Download'));
     await tester.pump();
-    await _waitForSignal(tester, spendStarted, 'coin spend request');
+    await _waitForSignal(tester, spendStarted, 'premium filter spend before screen disposal');
 
     await tester.pumpWidget(const SizedBox());
     allowSpend.complete();
     await _waitForCount(tester, () => refundCalls, 1, 'refund after screen disposal');
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
-    await tester.pump();
+    await _waitForCount(tester, () => CoinsService.instance.balanceNotifier.value, 20, 'refunded balance');
 
     expect(saveCalls, 0);
     expect(refundCalls, 1);
@@ -338,12 +341,12 @@ void main() {
     await _waitForCount(tester, () => refundCalls, 1, 'failed export refund');
     expect(spendCalls, 1);
     expect(CoinsService.instance.balanceNotifier.value, 20);
-    await tester.pump(const Duration(milliseconds: 100));
+    await _waitForEditorReady(tester);
 
     AnalyticsRuntime.instance = _ThrowOnDownloadAnalytics();
     await tester.tap(_iconButton('Download'));
     await _waitForCount(tester, () => saveCalls, 2, 'second native save');
-    await tester.pump(const Duration(milliseconds: 100));
+    await _waitForEditorReady(tester);
 
     expect(spendCalls, 2, reason: 'a failed export must not unlock premium filters for this session');
     expect(refundCalls, 1);
@@ -351,7 +354,7 @@ void main() {
 
     await tester.tap(_iconButton('Download'));
     await _waitForCount(tester, () => saveCalls, 3, 'session-unlocked native save');
-    await tester.pump(const Duration(milliseconds: 100));
+    await _waitForEditorReady(tester);
 
     expect(spendCalls, 2, reason: 'a successful export should unlock later exports in this session');
     expect(refundCalls, 1);
@@ -561,10 +564,7 @@ void main() {
     await tester.tap(_iconButton('Set as wallpaper'));
 
     final Finder optionsTitle = find.text('Set wallpaper');
-    for (var attempt = 0; attempt < 40 && optionsTitle.evaluate().isEmpty; attempt++) {
-      await tester.pump(const Duration(milliseconds: 25));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-    }
+    await waitForRealIo(tester, () => optionsTitle.evaluate().isNotEmpty, reason: 'wallpaper set options open');
     expect(optionsTitle, findsOneWidget);
 
     final List<File> editedFiles = directory
@@ -581,14 +581,11 @@ void main() {
     await tester.tapAt(const Offset(1, 1));
     await tester.pump(const Duration(milliseconds: 300));
     final Finder resetButton = _iconButton('Reset');
-    for (
-      var attempt = 0;
-      attempt < 40 && (editedFile.existsSync() || tester.widget<IconButton>(resetButton).onPressed == null);
-      attempt++
-    ) {
-      await tester.pump(const Duration(milliseconds: 25));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-    }
+    await waitForRealIo(
+      tester,
+      () => !editedFile.existsSync() && tester.widget<IconButton>(resetButton).onPressed != null,
+      reason: 'canceled export removed and editor re-enabled',
+    );
 
     expect(editedFile.existsSync(), isFalse);
     expect(Directory(editedFile.parent.path).existsSync(), isFalse);
@@ -599,17 +596,15 @@ void main() {
 }
 
 Future<void> _waitForEditorReady(WidgetTester tester) async {
-  for (var attempt = 0; attempt < 20; attempt++) {
-    await tester.pump();
+  await waitForRealIo(tester, () {
+    expect(find.text("Couldn't open this wallpaper."), findsNothing);
     final Finder preview = find.descendant(of: find.byType(AspectRatio).first, matching: find.byType(RawImage));
-    if (tester.widget<IconButton>(_iconButton('Download')).onPressed != null &&
+    return tester.widget<PopScope>(find.byType(PopScope)).canPop &&
+        tester.widget<IconButton>(_iconButton('Download')).onPressed != null &&
         preview.evaluate().isNotEmpty &&
-        tester.widget<RawImage>(preview).image != null) {
-      return;
-    }
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-  }
-  fail('Wallpaper editor preview did not decode');
+        tester.widget<RawImage>(preview).image != null;
+  }, reason: 'decoded editor preview and enabled Download');
+  await tester.pumpAndSettle();
 }
 
 Future<void> _tapInvert(WidgetTester tester) async {
@@ -622,28 +617,18 @@ Future<void> _tapInvert(WidgetTester tester) async {
   await tester.pump();
 }
 
-Future<void> _waitForSignal(WidgetTester tester, Completer<void> signal, String description) async {
-  for (var attempt = 0; attempt < 40 && !signal.isCompleted; attempt++) {
-    await tester.pump(const Duration(milliseconds: 25));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-  }
-  expect(signal.isCompleted, isTrue, reason: 'Timed out waiting for $description');
+Future<void> _waitForSignal(WidgetTester tester, Completer<void> signal, String reason) async {
+  await waitForRealIo(tester, () => signal.isCompleted, reason: reason);
   await signal.future;
 }
 
 Future<void> _waitForCount(WidgetTester tester, int Function() read, int expected, String description) async {
-  for (var attempt = 0; attempt < 40 && read() < expected; attempt++) {
-    await tester.pump(const Duration(milliseconds: 25));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-  }
-  expect(read(), expected, reason: 'Timed out waiting for $description');
+  await waitForRealIo(tester, () => read() >= expected, reason: description);
+  expect(read(), expected, reason: description);
 }
 
 Future<void> _waitForText(WidgetTester tester, String text) async {
-  for (var attempt = 0; attempt < 40 && find.text(text).evaluate().isEmpty; attempt++) {
-    await tester.pump(const Duration(milliseconds: 25));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
-  }
+  await waitForRealIo(tester, () => find.text(text).evaluate().isNotEmpty, reason: 'dialog "$text"');
   await tester.pump(const Duration(milliseconds: 500));
   expect(find.text(text), findsOneWidget);
 }

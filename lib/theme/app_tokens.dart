@@ -235,9 +235,6 @@ abstract final class PrismFeedLayout {
   /// Grid tile aspect ratio (width : height).
   static const double gridTileAspectRatio = 0.5;
 
-  /// How many logical pixels from the scroll end to trigger next-page fetch.
-  static const double prefetchThreshold = 400;
-
   /// Minimal spacer appended when the feed still has more pages to load.
   static const double endOfPageSpacerHeight = 22;
 }

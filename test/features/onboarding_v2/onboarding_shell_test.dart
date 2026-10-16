@@ -106,7 +106,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text("Couldn't save that. Please try again."), findsOneWidget);
+    expect(find.text("Couldn't save your picks. Try again."), findsOneWidget);
     await tester.pump(const Duration(seconds: 8));
   });
 
