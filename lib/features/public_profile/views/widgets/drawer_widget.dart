@@ -7,7 +7,6 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
@@ -113,23 +112,6 @@ class ProfileDrawer extends StatelessWidget {
                       : 'Unlock premium wallpapers, free downloads and free filters.',
                   style: PrismTextStyles.body(context),
                 ),
-                if (!premium) ...<Widget>[
-                  const SizedBox(height: PrismSpace.md),
-                  PrismButton(
-                    label: 'Get Pro',
-                    size: PrismButtonSize.compact,
-                    onPressed: () {
-                      Navigator.pop(context);
-                      unawaited(
-                        PaywallOrchestrator.instance.presentOrRequireSignIn(
-                          context,
-                          placement: PaywallPlacement.mainUpsell,
-                          source: 'profile_drawer',
-                        ),
-                      );
-                    },
-                  ),
-                ],
               ],
             ),
           ),

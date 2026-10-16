@@ -78,6 +78,14 @@ void main() {
     expect(find.text('Downloaded Walls'), findsNothing);
   });
 
+  testWidgets('the drawer has no paywall entry, as on the current app', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await openDrawer(tester);
+
+    expect(find.text('Prism Pro'), findsOneWidget);
+    expect(find.text('Get Pro'), findsNothing);
+  });
+
   testWidgets('tapping Library closes the drawer and opens the Library page', (tester) async {
     await openDrawer(tester);
 
