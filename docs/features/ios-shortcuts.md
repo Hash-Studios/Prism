@@ -13,8 +13,9 @@ On iPhone, Prism can change your wallpaper on its own. Prism gives the Shortcuts
 
 ## Where to find it
 
-- Settings, section PERSONALISE, row "Change automatically" (iOS only). It opens the guide "Change your wallpaper automatically". Code: `lib/features/session/views/pages/settings_screen.dart`.
+- Settings, section PERSONALISE, row "Change automatically" (iOS 16 or later only). It opens the guide "Change your wallpaper automatically". Code: `lib/features/session/views/pages/settings_screen.dart`.
 - Route `IosShortcutsGuideRoute`, path `/ios-shortcuts`. Screen: `lib/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart`.
+- The row reads the iOS version once through `device_info_plus` (`lib/features/ios_shortcuts/data/ios_shortcuts_support.dart`). It stays hidden until the version is known. It does not show on iOS 15 or when the version cannot be read.
 - On Android this row does not show. Android uses [auto-rotate.md](auto-rotate.md).
 
 ## How to use it
@@ -36,6 +37,7 @@ If Shortcuts does not open, Prism shows "Could not open Shortcuts. Open the app 
 | `lib/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart` | The guide: four steps, the two sources, the "Open Shortcuts" button (`shortcuts://`). |
 | `lib/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart` | On iOS, writes the favourites list when favourites or the session change. Wraps the app in `lib/main.dart`. |
 | `lib/features/ios_shortcuts/data/shortcuts_favourites_store.dart` | Builds the JSON and writes it to shared preferences. |
+| `lib/features/ios_shortcuts/data/ios_shortcuts_support.dart` | Reads the iOS major version once. Settings shows the row only on iOS 16 or later. |
 | `lib/core/persistence/persistence_keys.dart` | Key `shortcutsFavourites` (`shortcuts.favourites`). |
 | `ios/Runner/Shortcuts/` | The App Intent in Swift. It reads the list and Wall of the Day. |
 
@@ -54,6 +56,7 @@ FavouriteWallsBloc / SessionBloc -> ShortcutsFavouritesListener
 - Newest first. At most 200 items (`ShortcutsFavouritesStore.maxItems`).
 - A wall without an id or without an `https` URL is left out. A repeated id is kept once.
 - The value is `[]` when the user signs out, switches account, or has no favourites.
+- Sign-out clears it in `GoogleAuth.signOutGoogle` (`_clearPersonalization`). This is awaited, so it does not depend on the listener. The listener runs its writes one after another, so a slow save cannot land after a clear. It also clears the list when it starts with a guest session, in case the app restarted before it saw the sign-out.
 - The listener writes only after the favourites finish loading for the signed-in user. It does not change favourites.
 
 ### Wall of the Day
@@ -75,7 +78,7 @@ The Swift code reads Wall of the Day itself from the Firestore REST API. It does
 ## How to test
 
 1. Use an iPhone with iOS 16 or later. Sign in. Heart at least 3 wallpapers.
-2. Open Settings. Make sure PERSONALISE shows only "Change automatically".
+2. Open Settings. Make sure PERSONALISE shows only "Change automatically". On an iPhone with iOS 15, make sure the row does not show.
 3. Tap it. Make sure the four steps and both sources show.
 4. Tap "Open Shortcuts". Make sure the Shortcuts app opens.
 5. Make an automation with "Get Prism Wallpaper" (Wall of the Day) and "Set Wallpaper". Run it. Make sure the wallpaper changes.
@@ -89,9 +92,10 @@ Automated tests:
 - `test/features/ios_shortcuts/shortcuts_favourites_listener_test.dart`
 - `test/features/ios_shortcuts/ios_shortcuts_guide_screen_test.dart`
 - `test/features/session/settings_screen_test.dart`
+- `test/auth/sign_out_test.dart`
 
 Command:
 
 ```sh
-fvm flutter test --no-pub test/features/ios_shortcuts test/features/session/settings_screen_test.dart
+fvm flutter test --no-pub test/features/ios_shortcuts test/features/session/settings_screen_test.dart test/auth/sign_out_test.dart
 ```

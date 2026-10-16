@@ -39,12 +39,13 @@
         android:scaleType="centerCrop"
         android:visibility="gone" />
 
-    <View
+    <ImageView
         android:id="@+id/wotd_scrim"
         android:layout_width="match_parent"
         android:layout_height="72dp"
         android:layout_gravity="bottom"
-        android:background="@drawable/wotd_widget_scrim"
+        android:scaleType="fitXY"
+        android:src="@drawable/wotd_widget_scrim"
         android:importantForAccessibility="no"
         android:visibility="gone" />
 

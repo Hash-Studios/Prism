@@ -50,8 +50,9 @@ Code: `android/app/src/main/kotlin/com/hash/prism/WotdWidgetProvider.kt` (widget
 ### Tap and "Set"
 
 - The tap opens `MainActivity` with the link `prism://share?id=<wallId>&source=prism&url=<full image URL>`. `DeepLinkParser` turns it into the wall detail screen. If the widget has only the cached URL and no wall id, the tap opens the app home.
-- "Set" sends a broadcast to `WotdWidgetProvider` with the action `com.hash.prism.action.WOTD_SET_WALLPAPER`. The `PendingIntent` has an explicit component and `FLAG_IMMUTABLE`. The widget gets today's wall again (it uses the last shown wall if the network fails), downloads it, decodes it to the screen size, and calls `WallpaperManager.setBitmap` with `FLAG_SYSTEM`. This runs off the main thread. A second tap is ignored while the first one runs.
+- "Set" sends a broadcast to `WotdWidgetProvider` with the action `com.hash.prism.action.WOTD_SET_WALLPAPER`. The `PendingIntent` has an explicit component and `FLAG_IMMUTABLE`. The broadcast carries no data, because other apps can send to a widget provider. "Set" applies the URL of the wall that the widget shows, which the widget saved when it drew it. So it sets the image on screen even after the daily wall changes. Only when the widget has shown no wall does "Set" fetch the current wall, and then use the URL the app stored. The download uses the same deadline-bounded connection as the update. The whole "Set" work (fetch, download, decode) has a budget of 40 seconds, under the limit for a background broadcast. The widget checks that the file is an image, decodes it to the screen size, and calls `WallpaperManager.setBitmap` with `FLAG_SYSTEM`. This runs off the main thread. A second tap is ignored while the first one runs.
 - The receiver stays `exported="false"`.
+- The layouts use only classes that `RemoteViews` can inflate (`FrameLayout`, `LinearLayout`, `ImageView`, `TextView`). The scrim is an `ImageView` with a gradient drawable. A plain `View` makes the launcher show "Can't load widget". `test/android/widget_layout_test.dart` fails on any other class.
 
 ## Limits
 

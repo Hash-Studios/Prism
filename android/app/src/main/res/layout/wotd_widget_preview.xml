@@ -12,11 +12,12 @@
         android:scaleType="centerCrop"
         android:src="@drawable/wotd_widget_preview_art" />
 
-    <View
+    <ImageView
         android:layout_width="match_parent"
         android:layout_height="72dp"
         android:layout_gravity="bottom"
-        android:background="@drawable/wotd_widget_scrim"
+        android:scaleType="fitXY"
+        android:src="@drawable/wotd_widget_scrim"
         android:importantForAccessibility="no" />
 
     <TextView

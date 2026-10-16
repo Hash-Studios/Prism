@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
@@ -22,6 +20,7 @@ class ShortcutsFavouritesListener extends StatefulWidget {
 class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListener> {
   late bool _wasLoggedIn;
   late String _lastUserId;
+  Future<void> _writes = Future<void>.value();
 
   bool get _enabled => defaultTargetPlatform == TargetPlatform.iOS;
 
@@ -31,6 +30,7 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     final session = context.read<SessionBloc>().state.session;
     _wasLoggedIn = session.loggedIn;
     _lastUserId = session.userId;
+    if (_enabled && !session.loggedIn) _run(ShortcutsFavouritesStore.clear);
     _sync();
   }
 
@@ -39,15 +39,13 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     final session = context.read<SessionBloc>().state.session;
     final favourites = context.read<FavouriteWallsBloc>().state;
     if (!session.loggedIn || session.userId != favourites.userId || favourites.status != LoadStatus.success) return;
-    _run(ShortcutsFavouritesStore.save(favourites.items));
+    _run(() => ShortcutsFavouritesStore.save(favourites.items));
   }
 
-  void _run(Future<void> write) {
-    unawaited(
-      write.catchError((Object error, StackTrace stackTrace) {
-        logger.w('Could not update Shortcuts favourites', error: error, stackTrace: stackTrace);
-      }),
-    );
+  void _run(Future<void> Function() write) {
+    _writes = _writes.then((_) => write()).catchError((Object error, StackTrace stackTrace) {
+      logger.w('Could not update Shortcuts favourites', error: error, stackTrace: stackTrace);
+    });
   }
 
   void _onSessionChanged(SessionState current) {
@@ -57,7 +55,7 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     _lastUserId = current.session.userId;
     if (!_enabled) return;
     if (loggedOut || switchedAccount) {
-      _run(ShortcutsFavouritesStore.clear());
+      _run(ShortcutsFavouritesStore.clear);
     } else {
       _sync();
     }

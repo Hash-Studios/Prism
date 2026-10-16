@@ -30,6 +30,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
+import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart'
     show personalizedFeedSettingsRevision;
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
@@ -129,6 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _lowData = LowDataMode.enabled.value;
   bool _restoring = false;
   bool _adPrivacyChoices = false;
+  bool _iosShortcuts = false;
   int? _imageCacheSize;
   int? _downloads;
 
@@ -141,6 +143,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _defaultApplyTarget = _applyTargetLabels.containsKey(storedTarget) ? storedTarget : 'ask';
     _loadStorageStats();
     unawaited(_loadAdPrivacyChoices());
+    if (defaultTargetPlatform == TargetPlatform.iOS) unawaited(_loadIosShortcutsSupport());
+  }
+
+  Future<void> _loadIosShortcutsSupport() async {
+    final bool supported = await iosSupportsShortcuts();
+    if (!mounted || !supported) return;
+    setState(() => _iosShortcuts = true);
   }
 
   Future<void> _loadAdPrivacyChoices() async {
@@ -324,11 +333,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _personaliseSection() {
     final bool isAndroid = defaultTargetPlatform == TargetPlatform.android;
-    final bool isIOS = defaultTargetPlatform == TargetPlatform.iOS;
     return _sectionCard(
       title: 'PERSONALISE',
       children: [
-        if (isIOS)
+        if (_iosShortcuts)
           ListTile(
             leading: const Icon(Icons.autorenew_rounded),
             title: Text('Change automatically', style: _titleStyle),
@@ -1034,8 +1042,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.only(top: 8, bottom: 32),
         children: [
           _appearanceSection(),
-          if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)
-            _personaliseSection(),
+          if (defaultTargetPlatform == TargetPlatform.android || _iosShortcuts) _personaliseSection(),
           _contentFiltersSection(),
           _notificationsSection(),
           _storageSection(),

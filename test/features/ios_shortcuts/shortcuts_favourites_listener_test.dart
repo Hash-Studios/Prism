@@ -13,10 +13,28 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// ignore: depend_on_referenced_packages
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 class _FavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
 
 class _SessionBloc extends MockBloc<SessionEvent, SessionState> implements SessionBloc {}
+
+class _GatedFirstWriteStore extends InMemorySharedPreferencesStore {
+  _GatedFirstWriteStore() : super.empty();
+
+  final Completer<void> firstWriteGate = Completer<void>();
+  bool _gated = false;
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async {
+    if (!_gated) {
+      _gated = true;
+      await firstWriteGate.future;
+    }
+    return super.setValue(valueType, key, value);
+  }
+}
 
 FavouriteWallsState _favourites(String userId, String id) => FavouriteWallsState.initial().copyWith(
   status: LoadStatus.success,
@@ -100,6 +118,37 @@ void main() {
     sessionStates.add(SessionState.initial());
     await tester.pump();
     await tester.pump();
+    expect(await _stored(), '[]');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await favouriteStates.close();
+    await sessionStates.close();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('on iOS a guest start clears a stale favourites list', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{PersistenceKeys.shortcutsFavourites: _json('previous')});
+    final (favouriteStates, sessionStates) = await pump(tester, FavouriteWallsState.initial(), SessionState.initial());
+    expect(await _stored(), '[]');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await favouriteStates.close();
+    await sessionStates.close();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('on iOS a slow save cannot overwrite the clear that follows sign-out', (tester) async {
+    final _GatedFirstWriteStore store = _GatedFirstWriteStore();
+    SharedPreferencesStorePlatform.instance = store;
+    SharedPreferences.resetStatic();
+    final (favouriteStates, sessionStates) = await pump(tester, _favourites('a', 'one'), _session('a'));
+
+    sessionStates.add(SessionState.initial());
+    await tester.pump();
+    await tester.pump();
+    store.firstWriteGate.complete();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump();
+
+    SharedPreferences.resetStatic();
     expect(await _stored(), '[]');
 
     await tester.pumpWidget(const SizedBox.shrink());

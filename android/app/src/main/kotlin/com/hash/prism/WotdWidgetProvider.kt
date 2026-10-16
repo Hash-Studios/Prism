@@ -60,6 +60,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
 
     private fun setWallpaper(context: Context) {
         val pending = goAsync()
+        val deadline = monotonicMillis() + SET_BUDGET_MS
         val app = context.applicationContext
         if (!setting.compareAndSet(false, true)) {
             pending.finish()
@@ -68,7 +69,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         executor.execute {
             try {
                 val message = try {
-                    applyWallpaper(app)
+                    applyWallpaper(app, deadline)
                     R.string.wotd_widget_set_done
                 } catch (error: Throwable) {
                     Log.w(TAG, "Could not set wallpaper", error)
@@ -82,16 +83,16 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun applyWallpaper(context: Context) {
+    private fun applyWallpaper(context: Context, deadline: Long) {
         val manager = WallpaperManager.getInstance(context)
         if (!manager.isWallpaperSupported || !manager.isSetWallpaperAllowed) throw WallpaperUnavailableException()
-        val url = attempt("fetch for wallpaper") { fetchWall(context, monotonicMillis() + SET_FETCH_BUDGET_MS) }?.url
-            ?: widgetPrefs(context).getString(PREF_URL, null)?.takeIf { it.isNotBlank() }
+        val url = widgetPrefs(context).getString(PREF_URL, null)?.takeIf { it.isNotBlank() }
+            ?: attempt("fetch for wallpaper") { fetchWall(context, minOf(deadline, monotonicMillis() + SET_FETCH_BUDGET_MS)) }?.url
             ?: storedWall(context)?.url
             ?: throw IllegalStateException("No wallpaper to set")
         val file = File.createTempFile("prism-widget-wall-", ".tmp", context.cacheDir)
         try {
-            PrismImageTransfer.download(url, file)
+            downloadWithin(url, file, deadline)
             PrismImageValidation.mime(file)
             val bitmap = decodeForScreen(context, file)
             try {
@@ -213,18 +214,22 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         throw IOException("Too many redirects")
     }
 
+    private fun downloadWithin(url: String, file: File, deadline: Long) {
+        val connection = openConnection(url, emptyMap(), deadline)
+        try {
+            if (connection.contentLengthLong > PrismImageTransfer.MAX_IMAGE_BYTES) throw IOException("Image exceeds 100 MiB")
+            connection.inputStream.use { input ->
+                file.outputStream().use { copyWithin(input, it, PrismImageTransfer.MAX_IMAGE_BYTES, deadline) }
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     private fun downloadBitmap(context: Context, url: String, deadline: Long): Bitmap? {
         val file = File.createTempFile("prism-widget-", ".tmp", context.cacheDir)
         try {
-            val connection = openConnection(url, emptyMap(), deadline)
-            try {
-                if (connection.contentLengthLong > PrismImageTransfer.MAX_IMAGE_BYTES) throw IOException("Image exceeds 100 MiB")
-                connection.inputStream.use { input ->
-                    file.outputStream().use { copyWithin(input, it, PrismImageTransfer.MAX_IMAGE_BYTES, deadline) }
-                }
-            } finally {
-                connection.disconnect()
-            }
+            downloadWithin(url, file, deadline)
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(file.path, bounds)
             if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
@@ -241,8 +246,15 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         if (prefs.getString(PREF_KEY, null) == wall.key) BitmapFactory.decodeFile(cacheFile(context).path) else null
 
     private fun saveCache(context: Context, prefs: SharedPreferences, wall: WotdWall, bitmap: Bitmap) {
-        cacheFile(context).outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
-        prefs.edit().putString(PREF_KEY, wall.key).putString(PREF_ID, wall.id).putString(PREF_URL, wall.url).apply()
+        val target = cacheFile(context)
+        val temp = File(target.parentFile, "${target.name}.tmp")
+        try {
+            val written = temp.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            if (!written || !temp.renameTo(target)) throw IOException("Could not save widget image")
+        } finally {
+            temp.delete()
+        }
+        prefs.edit().putString(PREF_KEY, wall.key).putString(PREF_ID, wall.id).putString(PREF_URL, wall.url).commit()
     }
 
     private fun widgetPrefs(context: Context): SharedPreferences = context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
@@ -282,6 +294,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         private const val PREF_URL = "url"
         private const val UPDATE_BUDGET_MS = 8_500L
         private const val SET_FETCH_BUDGET_MS = 5_000L
+        private const val SET_BUDGET_MS = 40_000L
         private const val CONNECTION_TIMEOUT_MS = 4_000
         private const val MAX_JSON_BYTES = 256L * 1024
         private const val MAX_REDIRECTS = 3
