@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism/prism_bits.dart';
+import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
@@ -88,6 +89,7 @@ class _WotdCardContent extends StatelessWidget {
           ),
           semanticLabel: photographer.isEmpty ? 'Wall of the day' : 'Wall of the day by $photographer',
           title: photographer.isEmpty ? null : 'by $photographer',
+          textEndInset: _pillEnd + _pillWidth(context) - PrismSpace.md + PrismSpace.sm,
           tag: ClipRRect(
             borderRadius: BorderRadius.circular(PrismRadius.pill),
             child: ColoredBox(
@@ -101,9 +103,11 @@ class _WotdCardContent extends StatelessWidget {
           },
         ),
         // A sibling of the card, not a child, so the card's own semantics do not swallow it.
+        // Bottom right, as on the current app: the target is 16 from the end edge. Its bottom is 26 up, which keeps the
+        // centre of the image retry button (24 from the corner) out of reach of the pill.
         PositionedDirectional(
-          top: 6,
-          end: PrismSpace.sm,
+          bottom: _pillBottom,
+          end: _pillEnd,
           child: _PastPicksPill(onTap: () => _openArchive(context)),
         ),
       ],
@@ -111,7 +115,29 @@ class _WotdCardContent extends StatelessWidget {
   }
 }
 
-/// Opens the archive of earlier picks. A 36 point pill on the image inside a 48 point tap target.
+const double _pillEnd = 16;
+
+/// The label of the pill. The pill grows with it up to 1.5x text.
+TextStyle _pillLabelStyle(BuildContext context) =>
+    PrismTextStyles.caption(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: PrismColors.onPrimary);
+
+/// The width of the pill: 14 and 8 of padding, a 2 gap, an 18 chevron and the label.
+double _pillWidth(BuildContext context) {
+  final TextPainter label = TextPainter(
+    text: TextSpan(text: 'Past picks', style: _pillLabelStyle(context)),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.5),
+    maxLines: 1,
+  )..layout();
+  final double width = 14 + label.width + 2 + 18 + 8;
+  label.dispose();
+  return width;
+}
+
+const double _pillBottom = 26;
+
+/// Opens the archive of earlier picks. A 36 point glass pill on the image inside a 48 point tap target. Its look is the
+/// current app's: liquid glass over a scrim tint, with the label and chevron in the on-primary white.
 class _PastPicksPill extends StatelessWidget {
   const _PastPicksPill({required this.onTap});
 
@@ -136,28 +162,21 @@ class _PastPicksPill extends StatelessWidget {
               heightFactor: 1,
               child: MediaQuery.withClampedTextScaling(
                 maxScaleFactor: 1.5,
-                // On a wallpaper the theme does not apply: white on a dark translucent pill.
-                child: DecoratedBox(
-                  key: const ValueKey<String>('wotd-past-picks-pill'),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.38),
-                    borderRadius: BorderRadius.circular(PrismRadius.pill),
-                  ),
+                child: PrismGlass(
+                  borderRadius: 18,
+                  thickness: 16,
+                  glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.4),
                   child: SizedBox(
+                    key: const ValueKey<String>('wotd-past-picks-pill'),
                     height: 36,
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.only(start: PrismSpace.sm, end: PrismSpace.xxs),
+                      padding: const EdgeInsetsDirectional.only(start: 14, end: 8),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Text(
-                            'Past picks',
-                            maxLines: 1,
-                            style: PrismTextStyles.caption(
-                              context,
-                            ).copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-                          ),
-                          const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.white),
+                          Text('Past picks', maxLines: 1, style: _pillLabelStyle(context)),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.chevron_right_rounded, size: 18, color: PrismColors.onPrimary),
                         ],
                       ),
                     ),

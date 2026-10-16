@@ -14,6 +14,7 @@ class FeedHeroCard extends StatelessWidget {
     this.subtitle,
     this.tag,
     this.badge,
+    this.textEndInset = 0,
   });
 
   final Widget image;
@@ -23,6 +24,9 @@ class FeedHeroCard extends StatelessWidget {
   final String? subtitle;
   final Widget? tag;
   final Widget? badge;
+
+  /// Extra room kept free at the end of the bottom text, for a control a parent draws over the card.
+  final double textEndInset;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +66,7 @@ class FeedHeroCard extends StatelessWidget {
                   if (heading != null || support != null)
                     Positioned(
                       left: PrismSpace.md,
-                      right: PrismSpace.md,
+                      right: PrismSpace.md + textEndInset,
                       bottom: PrismSpace.md,
                       child: IgnorePointer(
                         child: Column(

@@ -6,10 +6,12 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wall_of_the_day_card.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -286,15 +288,39 @@ void main() {
       expect(tester.getRect(find.byType(WallOfTheDayCard)), Offset.zero & slot);
     });
 
-    testWidgets('the pill sits inside the card, 12 px from the end edge', (tester) async {
+    testWidgets(
+      'the pill sits at the bottom right of the card, 16 px from the end edge and clear of the retry button',
+      (tester) async {
+        await pumpCard(tester, _wall);
+
+        final Rect card = tester.getRect(find.byType(WallOfTheDayCard));
+        final Rect hitTarget = tester.getRect(pillTarget);
+        final Rect creator = tester.getRect(find.text('by Ana'));
+
+        expect(card.right - hitTarget.right, 16);
+        expect(hitTarget.top, greaterThanOrEqualTo(card.top));
+        expect(hitTarget.left, greaterThanOrEqualTo(card.left));
+        expect(hitTarget.center.dy, greaterThan(card.center.dy));
+        expect(hitTarget.left, greaterThan(creator.right));
+        expect(card.bottom - hitTarget.bottom, 26);
+        // The retry button of a failed image sits in the corner. The pill must not cover its centre.
+        expect(hitTarget.contains(card.bottomRight - const Offset(24, 24)), isFalse);
+      },
+    );
+
+    testWidgets('the pill is the current liquid glass pill with a scrim tint and white label', (tester) async {
       await pumpCard(tester, _wall);
 
-      final Rect card = tester.getRect(find.byType(WallOfTheDayCard));
-      final Rect hitTarget = tester.getRect(pillTarget);
-
-      expect(card.right - hitTarget.right, 12);
-      expect(hitTarget.top, greaterThanOrEqualTo(card.top));
-      expect(hitTarget.left, greaterThanOrEqualTo(card.left));
+      final PrismGlass glass = tester.widget<PrismGlass>(
+        find.ancestor(of: pill, matching: find.byType(PrismGlass)).first,
+      );
+      expect(glass.borderRadius, 18);
+      expect(glass.thickness, 16);
+      expect(glass.glassColor, Theme.of(tester.element(pill)).colorScheme.scrim.withValues(alpha: 0.4));
+      final TextStyle label = tester.widget<Text>(find.text('Past picks')).style!;
+      expect(label.color, PrismColors.onPrimary);
+      expect(label.fontSize, 13);
+      expect(tester.getSize(pill).height, 36);
     });
 
     for (final double textScale in <double>[1.3, 2]) {
@@ -342,6 +368,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(creator.left, greaterThanOrEqualTo(card.left));
       expect(creator.right, lessThanOrEqualTo(card.right));
+      expect(creator.right, lessThanOrEqualTo(tester.getRect(pill).left));
     });
   });
 }
