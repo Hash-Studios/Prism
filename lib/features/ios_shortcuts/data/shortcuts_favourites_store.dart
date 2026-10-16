@@ -26,13 +26,36 @@ class ShortcutsFavouritesStore {
     return jsonEncode(entries);
   }
 
-  static Future<void> save(Iterable<FavouriteWallEntity> items) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PersistenceKeys.shortcutsFavourites, encode(items));
+  static Future<void>? _tail;
+  static int _generation = 0;
+
+  /// Writes run one after another. A save that was called before a [clear] is dropped, so it cannot land after it.
+  static Future<void> save(Iterable<FavouriteWallEntity> items) {
+    final int generation = _generation;
+    final String encoded = encode(items);
+    return _enqueue(() async {
+      if (generation != _generation) return;
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(PersistenceKeys.shortcutsFavourites, encoded);
+    });
   }
 
-  static Future<void> clear() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(PersistenceKeys.shortcutsFavourites, '[]');
+  static Future<void> clear() {
+    _generation++;
+    return _enqueue(() async {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(PersistenceKeys.shortcutsFavourites, '[]');
+    });
+  }
+
+  static Future<void> _enqueue(Future<void> Function() write) {
+    final Future<void>? previous = _tail;
+    final Future<void> result = previous == null ? write() : previous.then((_) => write());
+    final Future<void> tail = result.catchError((Object _) {});
+    _tail = tail;
+    tail.whenComplete(() {
+      if (identical(_tail, tail)) _tail = null;
+    });
+    return result;
   }
 }

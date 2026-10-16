@@ -20,17 +20,17 @@ class ShortcutsFavouritesListener extends StatefulWidget {
 class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListener> {
   late bool _wasLoggedIn;
   late String _lastUserId;
-  Future<void> _writes = Future<void>.value();
 
   bool get _enabled => defaultTargetPlatform == TargetPlatform.iOS;
 
   @override
   void initState() {
     super.initState();
-    final session = context.read<SessionBloc>().state.session;
+    final sessionState = context.read<SessionBloc>().state;
+    final session = sessionState.session;
     _wasLoggedIn = session.loggedIn;
     _lastUserId = session.userId;
-    if (_enabled && !session.loggedIn) _run(ShortcutsFavouritesStore.clear);
+    if (_enabled && _isResolvedGuest(sessionState)) _run(ShortcutsFavouritesStore.clear);
     _sync();
   }
 
@@ -42,8 +42,10 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     _run(() => ShortcutsFavouritesStore.save(favourites.items));
   }
 
+  bool _isResolvedGuest(SessionState state) => state.status == LoadStatus.success && !state.session.loggedIn;
+
   void _run(Future<void> Function() write) {
-    _writes = _writes.then((_) => write()).catchError((Object error, StackTrace stackTrace) {
+    write().catchError((Object error, StackTrace stackTrace) {
       logger.w('Could not update Shortcuts favourites', error: error, stackTrace: stackTrace);
     });
   }
@@ -54,7 +56,7 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     _wasLoggedIn = current.session.loggedIn;
     _lastUserId = current.session.userId;
     if (!_enabled) return;
-    if (loggedOut || switchedAccount) {
+    if (loggedOut || switchedAccount || _isResolvedGuest(current)) {
       _run(ShortcutsFavouritesStore.clear);
     } else {
       _sync();
@@ -66,7 +68,9 @@ class _ShortcutsFavouritesListenerState extends State<ShortcutsFavouritesListene
     listeners: [
       BlocListener<SessionBloc, SessionState>(
         listenWhen: (previous, current) =>
-            previous.session.userId != current.session.userId || previous.session.loggedIn != current.session.loggedIn,
+            previous.status != current.status ||
+            previous.session.userId != current.session.userId ||
+            previous.session.loggedIn != current.session.loggedIn,
         listener: (_, state) => _onSessionChanged(state),
       ),
       BlocListener<FavouriteWallsBloc, FavouriteWallsState>(

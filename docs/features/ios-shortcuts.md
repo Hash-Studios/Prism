@@ -56,7 +56,7 @@ FavouriteWallsBloc / SessionBloc -> ShortcutsFavouritesListener
 - Newest first. At most 200 items (`ShortcutsFavouritesStore.maxItems`).
 - A wall without an id or without an `https` URL is left out. A repeated id is kept once.
 - The value is `[]` when the user signs out, switches account, or has no favourites.
-- Sign-out clears it in `GoogleAuth.signOutGoogle` (`_clearPersonalization`). This is awaited, so it does not depend on the listener. The listener runs its writes one after another, so a slow save cannot land after a clear. It also clears the list when it starts with a guest session, in case the app restarted before it saw the sign-out.
+- Sign-out clears it in `GoogleAuth.signOutGoogle` (`_clearPersonalization`). This is awaited, so it does not depend on the listener. The store runs all writes one after another. A save that was called before a clear is dropped, so a slow save cannot land after a clear. The listener also clears the list when the session resolves as a guest, in case the app restarted before it saw the sign-out. It does not clear while the session is still loading.
 - The listener writes only after the favourites finish loading for the signed-in user. It does not change favourites.
 
 ### Wall of the Day
@@ -71,6 +71,7 @@ The Swift code reads Wall of the Day itself from the Firestore REST API. It does
 - iOS decides if and when an automation runs. Time of Day is exact. Other triggers can be late.
 - "Random favourite" uses the list that Prism last wrote. Open Prism once after you change favourites on another device.
 - The list holds the 200 newest favourites.
+- The action fails for an image larger than 40 MiB. Prism saves the download to a temporary file first, so the whole image is not held in memory while it downloads.
 - With no favourites, "Random favourite" fails with a message: "No favourites yet. Open Prism and tap the heart on a wallpaper."
 - Prism does not have an iOS widget. That needs a WidgetKit extension with its own App ID and provisioning profile (`.github/workflows/testflight.yml`). It is not part of this feature.
 - The Swift code is built in CI. Nobody ran this feature on a device for this page.

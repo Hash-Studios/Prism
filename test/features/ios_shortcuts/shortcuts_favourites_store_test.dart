@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/persistence/persistence_keys.dart';
@@ -6,6 +7,26 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// ignore: depend_on_referenced_packages
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
+
+class _GatedFirstWriteStore extends InMemorySharedPreferencesStore {
+  _GatedFirstWriteStore() : super.empty();
+
+  final Completer<void> firstWriteGate = Completer<void>();
+  final Completer<void> firstWriteStarted = Completer<void>();
+  bool _gated = false;
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async {
+    if (!_gated) {
+      _gated = true;
+      firstWriteStarted.complete();
+      await firstWriteGate.future;
+    }
+    return super.setValue(valueType, key, value);
+  }
+}
 
 FavouriteWallEntity _wall(String id, {String? url, DateTime? at}) => LegacyFavouriteWall(
   id: id,
@@ -80,6 +101,47 @@ void main() {
       await ShortcutsFavouritesStore.clear();
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       expect(prefs.getString(PersistenceKeys.shortcutsFavourites), '[]');
+    });
+
+    test('a clear after a save that is already writing leaves an empty array', () async {
+      final _GatedFirstWriteStore store = _GatedFirstWriteStore();
+      SharedPreferencesStorePlatform.instance = store;
+      SharedPreferences.resetStatic();
+
+      final Future<void> save = ShortcutsFavouritesStore.save(<FavouriteWallEntity>[_wall('a')]);
+      await store.firstWriteStarted.future;
+      final Future<void> clear = ShortcutsFavouritesStore.clear();
+      store.firstWriteGate.complete();
+      await Future.wait(<Future<void>>[save, clear]);
+
+      SharedPreferences.resetStatic();
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(PersistenceKeys.shortcutsFavourites), '[]');
+    });
+
+    test('a save that is still queued when a clear runs is dropped', () async {
+      final _GatedFirstWriteStore store = _GatedFirstWriteStore();
+      SharedPreferencesStorePlatform.instance = store;
+      SharedPreferences.resetStatic();
+
+      final Future<void> first = ShortcutsFavouritesStore.save(<FavouriteWallEntity>[_wall('a')]);
+      await store.firstWriteStarted.future;
+      final Future<void> queued = ShortcutsFavouritesStore.save(<FavouriteWallEntity>[_wall('b')]);
+      final Future<void> clear = ShortcutsFavouritesStore.clear();
+      store.firstWriteGate.complete();
+      await Future.wait(<Future<void>>[first, queued, clear]);
+
+      SharedPreferences.resetStatic();
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(PersistenceKeys.shortcutsFavourites), '[]');
+    });
+
+    test('a save called after a clear still writes', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      await ShortcutsFavouritesStore.clear();
+      await ShortcutsFavouritesStore.save(<FavouriteWallEntity>[_wall('a')]);
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(PersistenceKeys.shortcutsFavourites), '[{"id":"a","url":"https://example.com/a.jpg"}]');
     });
   });
 }

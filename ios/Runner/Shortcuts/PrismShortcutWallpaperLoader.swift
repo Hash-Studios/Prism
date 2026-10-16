@@ -7,7 +7,7 @@ enum PrismShortcutLoadError: Error {
 }
 
 enum PrismShortcutWallpaperLoader {
-  static let maximumImageBytes = 100 * 1024 * 1024
+  static let maximumImageBytes = 40 * 1024 * 1024
   private static let session: URLSession = {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.timeoutIntervalForRequest = 30
@@ -31,13 +31,20 @@ enum PrismShortcutWallpaperLoader {
   }
 
   static func imageData(from url: URL) async throws -> Data {
-    let (data, response) = try await session.data(from: url)
+    let (file, response) = try await session.download(from: url)
+    defer { try? FileManager.default.removeItem(at: file) }
     guard let http = response as? HTTPURLResponse, http.statusCode == 200,
-      !data.isEmpty, data.count <= maximumImageBytes
+      response.expectedContentLength <= Int64(maximumImageBytes)
     else {
       throw PrismShortcutLoadError.badResponse
     }
-    return data
+    let attributes = try FileManager.default.attributesOfItem(atPath: file.path)
+    guard let size = (attributes[.size] as? NSNumber)?.int64Value,
+      size > 0, size <= Int64(maximumImageBytes)
+    else {
+      throw PrismShortcutLoadError.badResponse
+    }
+    return try Data(contentsOf: file)
   }
 
   private static func firebaseConfiguration() throws -> (projectID: String, apiKey: String) {

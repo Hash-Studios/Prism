@@ -36,6 +36,20 @@ class _GatedFirstWriteStore extends InMemorySharedPreferencesStore {
   }
 }
 
+class _RecordingStore extends InMemorySharedPreferencesStore {
+  _RecordingStore(super.data) : super.withData();
+
+  final List<Object> writes = <Object>[];
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) {
+    if (key == 'flutter.${PersistenceKeys.shortcutsFavourites}') writes.add(value);
+    return super.setValue(valueType, key, value);
+  }
+}
+
+SessionState _resolvedGuest() => SessionState.initial().copyWith(status: LoadStatus.success);
+
 FavouriteWallsState _favourites(String userId, String id) => FavouriteWallsState.initial().copyWith(
   status: LoadStatus.success,
   userId: userId,
@@ -49,8 +63,16 @@ FavouriteWallsState _favourites(String userId, String id) => FavouriteWallsState
 );
 
 SessionState _session(String userId) => SessionState.initial().copyWith(
+  status: LoadStatus.success,
   session: SessionEntity(userId: userId, loggedIn: true, premium: false, subscriptionTier: 'free'),
 );
+
+Future<void> _settle(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump();
+  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+  await tester.pump();
+}
 
 Future<String?> _stored() async =>
     (await SharedPreferences.getInstance()).getString(PersistenceKeys.shortcutsFavourites);
@@ -80,8 +102,7 @@ void main() {
         child: const ShortcutsFavouritesListener(child: SizedBox.shrink()),
       ),
     );
-    await tester.pump();
-    await tester.pump();
+    await _settle(tester);
     return (favouriteStates, sessionStates);
   }
 
@@ -91,33 +112,27 @@ void main() {
     expect(await _stored(), _json('one'));
 
     favouriteStates.add(_favourites('a', 'two'));
-    await tester.pump();
-    await tester.pump();
+    await _settle(tester);
     expect(await _stored(), _json('two'));
 
     favouriteStates.add(_favourites('a', 'two').copyWith(status: LoadStatus.loading));
-    await tester.pump();
-    await tester.pump();
+    await _settle(tester);
     expect(await _stored(), _json('two'));
 
     sessionStates.add(_session('b'));
-    await tester.pump();
-    await tester.pump();
+    await _settle(tester);
     expect(await _stored(), '[]');
 
     favouriteStates.add(_favourites('a', 'stale'));
-    await tester.pump();
-    await tester.pump();
+    await _settle(tester);
     expect(await _stored(), '[]');
 
     favouriteStates.add(_favourites('b', 'three'));
-    await tester.pump();
-    await tester.pump();
+    await _settle(tester);
     expect(await _stored(), _json('three'));
 
-    sessionStates.add(SessionState.initial());
-    await tester.pump();
-    await tester.pump();
+    sessionStates.add(_resolvedGuest());
+    await _settle(tester);
     expect(await _stored(), '[]');
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -125,9 +140,46 @@ void main() {
     await sessionStates.close();
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-  testWidgets('on iOS a guest start clears a stale favourites list', (tester) async {
+  testWidgets('on iOS a resolved guest start clears a stale favourites list', (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{PersistenceKeys.shortcutsFavourites: _json('previous')});
+    final (favouriteStates, sessionStates) = await pump(tester, FavouriteWallsState.initial(), _resolvedGuest());
+    expect(await _stored(), '[]');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await favouriteStates.close();
+    await sessionStates.close();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('on iOS an unresolved session does not clear the list before it resolves to signed in', (tester) async {
+    final _RecordingStore store = _RecordingStore(<String, Object>{
+      'flutter.${PersistenceKeys.shortcutsFavourites}': _json('previous'),
+    });
+    SharedPreferencesStorePlatform.instance = store;
+    SharedPreferences.resetStatic();
+    final (favouriteStates, sessionStates) = await pump(tester, FavouriteWallsState.initial(), SessionState.initial());
+    expect(store.writes, isEmpty);
+
+    sessionStates.add(SessionState.initial().copyWith(status: LoadStatus.loading));
+    await _settle(tester);
+    expect(store.writes, isEmpty);
+
+    sessionStates.add(_session('a'));
+    favouriteStates.add(_favourites('a', 'one'));
+    await _settle(tester);
+    expect(store.writes, <Object>[_json('one')]);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await favouriteStates.close();
+    await sessionStates.close();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('on iOS an unresolved start then a guest result clears the list', (tester) async {
     SharedPreferences.setMockInitialValues(<String, Object>{PersistenceKeys.shortcutsFavourites: _json('previous')});
     final (favouriteStates, sessionStates) = await pump(tester, FavouriteWallsState.initial(), SessionState.initial());
+    expect(await _stored(), _json('previous'));
+
+    sessionStates.add(_resolvedGuest());
+    await _settle(tester);
     expect(await _stored(), '[]');
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -141,12 +193,10 @@ void main() {
     SharedPreferences.resetStatic();
     final (favouriteStates, sessionStates) = await pump(tester, _favourites('a', 'one'), _session('a'));
 
-    sessionStates.add(SessionState.initial());
-    await tester.pump();
-    await tester.pump();
+    sessionStates.add(_resolvedGuest());
+    await _settle(tester);
     store.firstWriteGate.complete();
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-    await tester.pump();
+    await _settle(tester);
 
     SharedPreferences.resetStatic();
     expect(await _stored(), '[]');
@@ -160,11 +210,9 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final (favouriteStates, sessionStates) = await pump(tester, _favourites('a', 'one'), _session('a'));
     favouriteStates.add(_favourites('a', 'two'));
-    await tester.pump();
-    await tester.pump();
-    sessionStates.add(SessionState.initial());
-    await tester.pump();
-    await tester.pump();
+    await _settle(tester);
+    sessionStates.add(_resolvedGuest());
+    await _settle(tester);
     expect(await _stored(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

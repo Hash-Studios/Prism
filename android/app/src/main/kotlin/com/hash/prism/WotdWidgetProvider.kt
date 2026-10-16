@@ -37,7 +37,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
     private class Shown(val wall: WotdWall, val bitmap: Bitmap)
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == ACTION_SET_WALLPAPER) setWallpaper(context) else super.onReceive(context, intent)
+        if (intent.action == ACTION_SET_WALLPAPER) setWallpaper(context, intent.getStringExtra(EXTRA_WALL_URL)) else super.onReceive(context, intent)
     }
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -58,7 +58,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun setWallpaper(context: Context) {
+    private fun setWallpaper(context: Context, shownUrl: String?) {
         val pending = goAsync()
         val deadline = monotonicMillis() + SET_BUDGET_MS
         val app = context.applicationContext
@@ -69,7 +69,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         executor.execute {
             try {
                 val message = try {
-                    applyWallpaper(app, deadline)
+                    applyWallpaper(app, shownUrl, deadline)
                     R.string.wotd_widget_set_done
                 } catch (error: Throwable) {
                     Log.w(TAG, "Could not set wallpaper", error)
@@ -83,10 +83,11 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    private fun applyWallpaper(context: Context, deadline: Long) {
+    private fun applyWallpaper(context: Context, shownUrl: String?, deadline: Long) {
         val manager = WallpaperManager.getInstance(context)
         if (!manager.isWallpaperSupported || !manager.isSetWallpaperAllowed) throw WallpaperUnavailableException()
-        val url = widgetPrefs(context).getString(PREF_URL, null)?.takeIf { it.isNotBlank() }
+        val url = shownUrl?.takeIf { it.isNotBlank() }
+            ?: widgetPrefs(context).getString(PREF_URL, null)?.takeIf { it.isNotBlank() }
             ?: attempt("fetch for wallpaper") { fetchWall(context, minOf(deadline, monotonicMillis() + SET_FETCH_BUDGET_MS)) }?.url
             ?: storedWall(context)?.url
             ?: throw IllegalStateException("No wallpaper to set")
@@ -96,7 +97,7 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
             PrismImageValidation.mime(file)
             val bitmap = decodeForScreen(context, file)
             try {
-                manager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM)
+                if (manager.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM) == 0) throw IOException("Wallpaper was not set")
             } finally {
                 bitmap.recycle()
             }
@@ -282,12 +283,14 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         }
         setOnClickPendingIntent(R.id.wotd_root, PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
         val set = Intent(context, WotdWidgetProvider::class.java).setAction(ACTION_SET_WALLPAPER)
+        shown?.let { set.putExtra(EXTRA_WALL_URL, it.wall.url) }
         setOnClickPendingIntent(R.id.wotd_set, PendingIntent.getBroadcast(context, 1, set, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
     }
 
     companion object {
         private const val TAG = "PrismWidget"
         private const val ACTION_SET_WALLPAPER = "com.hash.prism.action.WOTD_SET_WALLPAPER"
+        private const val EXTRA_WALL_URL = "com.hash.prism.extra.WOTD_WALL_URL"
         private const val WIDGET_PREFS = "prism_wotd_widget"
         private const val PREF_KEY = "key"
         private const val PREF_ID = "id"
