@@ -211,10 +211,14 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                   foregroundColor: colorScheme.onError,
                   onPressed: () async {
                     if (!await _confirmClearInbox(context, notifications.length) || !context.mounted) return;
+                    // A sync can add rows while the dialog is open, so Undo uses the list as it is now.
+                    final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
+                    final List<InAppNotificationEntity> removed = bloc.state.items;
+                    if (removed.isEmpty) return;
                     PrismHaptics.tap();
-                    analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
-                    context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
-                    _showUndoSnackBar(context, 'Inbox cleared', notifications);
+                    analytics.track(NotificationClearAllConfirmedEvent(count: removed.length));
+                    bloc.add(const InAppNotificationsEvent.clearRequested());
+                    _showUndoSnackBar(context, 'Inbox cleared', removed);
                   },
                   child: const Icon(JamIcons.trash),
                 )

@@ -155,4 +155,30 @@ void main() {
     expect(find.text('Unread title'), findsOneWidget);
     expect(find.text('Read title'), findsOneWidget);
   });
+
+  testWidgets('Undo restores what was in the inbox when Clear was confirmed, not when the dialog opened', (
+    tester,
+  ) async {
+    final late = notification('n1', title: 'Arrived during dialog');
+    when(() => clear(const NoParams())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[]));
+    when(() => restore(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[late, unread, read]));
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.pumpAndSettle();
+    when(() => fetch(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[late, unread, read]));
+    getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Clear inbox'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    verify(
+      () => restore(
+        any(that: isA<RestoreNotificationsParams>().having((p) => p.items.map((i) => i.id), 'ids', ['n1', 'u1', 'r1'])),
+      ),
+    ).called(1);
+  });
 }
