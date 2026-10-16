@@ -109,6 +109,62 @@ void main() {
 
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('keeps icon actions at least 44 points wide with large text on a narrow screen', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const Scaffold(
+            body: WallpaperActionBar(
+              primary: WallpaperBarAction(
+                label: 'Set as wallpaper',
+                child: PrimaryActionPill(
+                  icon: Icons.image,
+                  label: 'Set',
+                  semanticLabel: 'Set as wallpaper',
+                  isLoading: false,
+                ),
+              ),
+              actions: <WallpaperBarAction>[
+                WallpaperBarAction(
+                  label: 'Download',
+                  child: CircularMenuButton(label: 'Download', isLoading: false, child: Icon(Icons.download)),
+                ),
+                WallpaperBarAction(
+                  label: 'Favourite',
+                  child: CircularMenuButton(label: 'Favourite', isLoading: false, child: Icon(Icons.favorite)),
+                ),
+                WallpaperBarAction(
+                  label: 'Share',
+                  child: CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)),
+                ),
+                WallpaperBarAction(
+                  label: 'Edit',
+                  child: CircularMenuButton(label: 'Edit', isLoading: false, child: Icon(Icons.edit)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      for (final String label in <String>['Download', 'Favourite', 'Share', 'Edit']) {
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)).rect.width,
+          greaterThanOrEqualTo(44),
+          reason: '$label tap target',
+        );
+      }
+      semantics.dispose();
+    });
   });
 
   group('SimilarWallpapersStrip', () {

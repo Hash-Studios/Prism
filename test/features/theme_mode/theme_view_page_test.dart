@@ -7,6 +7,7 @@ import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,6 +58,54 @@ void main() {
     expect(find.text('Dark Accent Color'), findsNothing);
   });
 
+  testWidgets('all light and dark theme chips use their scheme surface and readable text roles', (tester) async {
+    await pumpPage(tester, ThemeMode.system);
+
+    final List<List<PrismThemeOption>> themeGroups = <List<PrismThemeOption>>[prismLightThemes, prismDarkThemes];
+    for (int rowIndex = 0; rowIndex < themeGroups.length; rowIndex++) {
+      final Finder row = find.byType(ListView).at(rowIndex);
+      final Finder scrollable = find.descendant(of: row, matching: find.byType(Scrollable));
+      for (final PrismThemeOption option in themeGroups[rowIndex]) {
+        await tester.scrollUntilVisible(find.text(option.label), 200, scrollable: scrollable);
+
+        final Text label = tester.widget<Text>(find.text(option.label));
+        expect(label.style!.color, option.theme.colorScheme.onSurface);
+        expect(
+          contrastRatio(option.theme.colorScheme.onSurface, option.theme.colorScheme.surfaceContainerHigh),
+          greaterThanOrEqualTo(4.5),
+          reason: '${option.label} label must be readable against its chip fill',
+        );
+        expect(tester.takeException(), isNull, reason: '${option.label} chip must fit its row');
+      }
+    }
+  });
+
+  testWidgets('theme manager chip borders and preview shadows follow the active scheme', (tester) async {
+    const Color shadow = Color(0xff123456);
+    final ThemeData light = ThemeData.light();
+    final ThemeData hostTheme = light.copyWith(colorScheme: light.colorScheme.copyWith(shadow: shadow));
+    await tester.pumpWidget(
+      BlocProvider<ThemeBloc>.value(
+        value: themeBloc,
+        child: MaterialApp(theme: hostTheme, home: const ThemeView()),
+      ),
+    );
+
+    final Finder preview = find.byWidgetPredicate(
+      (widget) =>
+          widget is Container &&
+          widget.decoration is BoxDecoration &&
+          ((widget.decoration! as BoxDecoration).boxShadow?.isNotEmpty ?? false),
+    );
+    final BoxDecoration previewDecoration = tester.widget<Container>(preview.first).decoration! as BoxDecoration;
+    expect(previewDecoration.boxShadow!.first.color, shadow.withValues(alpha: 0.15));
+
+    final Finder label = find.text(prismLightThemes.first.label);
+    final Finder chip = find.ancestor(of: label, matching: find.byType(Container)).first;
+    final BoxDecoration chipDecoration = tester.widget<Container>(chip).decoration! as BoxDecoration;
+    expect(chipDecoration.border!.top.color, prismLightThemes.first.theme.colorScheme.scrim.withValues(alpha: 0.12));
+  });
+
   testWidgets('tapping a light theme chip dispatches themeChanged', (tester) async {
     await pumpPage(tester, ThemeMode.light);
 
@@ -90,6 +139,89 @@ void main() {
     expect(selected.border!.top.color, isNot(scheme.error));
   });
 
+  testWidgets('the preference sheet exposes each mode and its selection to accessibility', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    await pumpPage(tester, ThemeMode.dark);
+
+    await tester.tap(find.text('Theme Preference'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSemantics(find.text('Dark').last),
+      isSemantics(label: 'Dark', isButton: true, isSelected: true, hasTapAction: true),
+    );
+    expect(
+      tester.getSemantics(find.text('Light').last),
+      isSemantics(label: 'Light', isButton: true, isSelected: false, hasTapAction: true),
+    );
+    final SemanticsNode light = tester.getSemantics(find.text('Light').last);
+    tester.binding.performSemanticsAction(
+      SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: light.id),
+    );
+    await tester.pumpAndSettle();
+    verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.light))).called(1);
+    expect(find.text('Theme Preference'), findsOneWidget);
+    handle.dispose();
+  });
+
+  testWidgets('the preference sheet remains usable with large text on a short screen', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      BlocProvider<ThemeBloc>.value(
+        value: themeBloc,
+        child: MaterialApp(
+          theme: ThemeData.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const ThemeView(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Theme Preference'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('Dark').last);
+    await tester.tap(find.text('Dark').last);
+    await tester.pumpAndSettle();
+
+    verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.dark))).called(1);
+  });
+
+  testWidgets('the preference sheet remains usable with large text in landscape', (tester) async {
+    tester.view.physicalSize = const Size(568, 320);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      BlocProvider<ThemeBloc>.value(
+        value: themeBloc,
+        child: MaterialApp(
+          theme: ThemeData.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const ThemeView(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Theme Preference'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('Dark').last);
+    await tester.tap(find.text('Dark').last);
+    await tester.pumpAndSettle();
+
+    verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.dark))).called(1);
+  });
+
   testWidgets('the selected accent is derived from the bloc state', (tester) async {
     when(() => themeBloc.state).thenReturn(
       ThemeState.initial().copyWith(light: const ThemeSelection(themeId: 'kLRose', accentColorValue: 0xffff0000)),
@@ -98,6 +230,33 @@ void main() {
 
     final accent = find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Accent colour 2 of 22');
     expect(tester.widget<Semantics>(accent).properties.selected, isTrue);
+  });
+
+  testWidgets('accent targets stay at least 44 points tall on a short screen and remain selectable', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    when(() => themeBloc.state).thenReturn(themeBloc.state.copyWith(mode: ThemeMode.light));
+    await tester.pumpWidget(
+      BlocProvider<ThemeBloc>.value(
+        value: themeBloc,
+        child: MaterialApp(theme: ThemeData.light(), home: const ThemeView()),
+      ),
+    );
+
+    final Finder accent = find.bySemanticsLabel('Accent colour 2 of 22');
+    await tester.ensureVisible(accent);
+    await tester.pumpAndSettle();
+    await tester.tapAt(tester.getBottomRight(accent) - const Offset(4, 4));
+    await tester.pump();
+    final Rect targetBounds = tester.getSemantics(accent).rect;
+    semantics.dispose();
+
+    verify(() => themeBloc.add(const ThemeEvent.lightAccentChanged(accentColorValue: 0xFFFF0000))).called(1);
+    expect(targetBounds.width, greaterThanOrEqualTo(44));
+    expect(targetBounds.height, greaterThanOrEqualTo(44));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('rendered selectable accents stay readable across the themes', (tester) async {

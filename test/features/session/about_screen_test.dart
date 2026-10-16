@@ -316,5 +316,42 @@ void main() {
 
       expect(find.byTooltip('Back'), findsOneWidget);
     });
+
+    testWidgets('About sections stay reachable on a narrow screen at 2x text', (tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.reset);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final List<Contributor> contributors = <Contributor>[
+        _contributor('a_very_long_contributor_login_for_a_narrow_screen', commits: 120),
+        _contributor('another_long_contributor_login', commits: 80),
+        _contributor('third_long_contributor_login', commits: 40),
+        _contributor('other_contributor_login_for_the_list', commits: 7),
+      ];
+
+      await tester.pumpWidget(MaterialApp(home: AboutScreen(loadContributors: () async => contributors)));
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      final Finder aboutListScrollable = find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable));
+      await tester.scrollUntilVisible(find.text('The Team'), 100, scrollable: aboutListScrollable);
+      await tester.pump();
+      expect(find.text('The Team'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Other Contributors'), 100, scrollable: aboutListScrollable);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('other_contributor_login_for_the_list'), findsOneWidget);
+
+      await tester.scrollUntilVisible(find.text('Wallpaper sources'), 100, scrollable: aboutListScrollable);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Wallpaper sources'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(tester.takeException(), isNull);
+      expect(find.text('WallHaven API'), findsOneWidget);
+    });
   });
 }

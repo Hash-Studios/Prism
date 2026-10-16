@@ -326,6 +326,16 @@ class _ProfileChildState extends State<_ProfileChild> {
         _profile.followers.any((String e) => e.trim().toLowerCase() == me);
   }
 
+  void _openFollowingList() {
+    PrismHaptics.tap();
+    context.router.push(FollowingListRoute(following: _profile.following));
+  }
+
+  void _openFollowersList() {
+    PrismHaptics.tap();
+    context.router.push(FollowersRoute(followers: _profile.followers));
+  }
+
   Future<void> _onMenuSelected(_ProfileMenuAction action) async {
     final String uid = _profile.id.trim();
     switch (action) {
@@ -387,10 +397,13 @@ class _ProfileChildState extends State<_ProfileChild> {
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
     final bool ownProfile = widget.ownProfile;
     final List<String> linkKeys = _profile.links.keys.toList(growable: false);
-    final int badgeCount = _profile.badges.toSet().where((id) => badgeInfo(id) != null).length;
+    final double coverHeight = screen.height * 0.19;
+    final int badgeCount = _profile.badges.toSet().where((String id) => badgeInfo(id) != null).length;
     final int badgesPerRow = math.max(1, ((screen.width - 24 + 8) / 40).floor());
     final int badgeRows = (badgeCount / badgesPerRow).ceil();
     final double badgeHeight = badgeRows == 0 ? 0 : 10 + badgeRows * 32 + (badgeRows - 1) * 8;
+    final double minimumInfoHeight =
+        (linkKeys.isEmpty ? screen.height * 0.21 : screen.height * 0.27) - 37 + badgeHeight;
     // Own profile is pushed from the home avatar now, so it needs a way back like any other profile.
     final bool showBack = !ownProfile || Navigator.canPop(context);
     final Widget editButton = Padding(
@@ -498,7 +511,7 @@ class _ProfileChildState extends State<_ProfileChild> {
               ],
               backgroundColor: cs.surface,
               automaticallyImplyLeading: false,
-              expandedHeight: linkKeys.isEmpty ? screen.height * 0.4 + badgeHeight : screen.height * 0.46 + badgeHeight,
+              expandedHeight: coverHeight + 37,
               flexibleSpace: Stack(
                 children: <Widget>[
                   FlexibleSpaceBar(
@@ -508,139 +521,14 @@ class _ProfileChildState extends State<_ProfileChild> {
                           children: <Widget>[
                             SizedBox(
                               width: screen.width,
-                              height: screen.height * 0.19,
+                              height: coverHeight,
                               child: ProfileCover(url: _profile.coverPhoto),
                             ),
                             const SizedBox(width: double.maxFinite, height: 37),
-                            Container(
-                              padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-                              width: double.maxFinite,
-                              height: linkKeys.isEmpty
-                                  ? screen.height * 0.21 - 37 + badgeHeight
-                                  : screen.height * 0.27 - 37 + badgeHeight,
-                              child: Column(
-                                children: <Widget>[
-                                  SizedBox(
-                                    width: screen.width * 0.7,
-                                    child: Text(
-                                      creatorLabel(name: _profile.name, username: _profile.username),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily: PrismFonts.proximaNova,
-                                        color: cs.onSurface,
-                                        fontSize: 22,
-                                        // w600 gives the name more presence over the muted username below.
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  SizedBox(
-                                    width: screen.width * 0.7,
-                                    child: Text(
-                                      '@${_profile.username}',
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily: PrismFonts.proximaNova,
-                                        color: cs.onSurface.withValues(alpha: 0.55),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.normal,
-                                        letterSpacing: 0.2,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  if (_profile.bio.isNotEmpty) ...<Widget>[
-                                    SizedBox(
-                                      width: screen.width * 0.72,
-                                      child: Text(
-                                        _profile.bio,
-                                        textAlign: TextAlign.center,
-                                        // 2 lines: bios up to 150 chars deserve more space.
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontFamily: PrismFonts.proximaNova,
-                                          color: cs.onSurface.withValues(alpha: 0.65),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.normal,
-                                          height: 1.45,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                  ],
-                                  ProfileBadgeRow(badgeIds: _profile.badges),
-                                  const SizedBox(height: 8),
-                                  SizedBox(
-                                    width: screen.width * 0.7,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: <Widget>[
-                                        // Following count is tappable on own profile only.
-                                        GestureDetector(
-                                          onTap: ownProfile
-                                              ? () {
-                                                  PrismHaptics.tap();
-                                                  context.router.push(
-                                                    FollowingListRoute(following: _profile.following),
-                                                  );
-                                                }
-                                              : null,
-                                          child: _StatPill(count: _profile.following.length, label: 'Following'),
-                                        ),
-                                        Container(
-                                          width: 1,
-                                          height: 16,
-                                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                                          color: cs.onSurface.withValues(alpha: 0.2),
-                                        ),
-                                        // Followers count is tappable on both own and other profiles.
-                                        GestureDetector(
-                                          onTap: () {
-                                            PrismHaptics.tap();
-                                            context.router.push(FollowersRoute(followers: _profile.followers));
-                                          },
-                                          child: _StatPill(count: _profile.followers.length, label: 'Followers'),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (linkKeys.isNotEmpty) ...<Widget>[
-                                    const SizedBox(height: 8),
-                                    SizedBox(
-                                      width: screen.width,
-                                      height: 48,
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: <Widget>[
-                                          for (final String key in linkKeys.take(3))
-                                            _LinkButton(
-                                              tooltip: key,
-                                              icon: profileLinkIcon(key),
-                                              onPressed: () => _openLink(key, _profile.links[key].toString()),
-                                            ),
-                                          if (linkKeys.length > 3)
-                                            _LinkButton(
-                                              tooltip: 'More links',
-                                              icon: JamIcons.more_horizontal,
-                                              onPressed: _showMoreLinks,
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
                           ],
                         ),
                         Positioned(
-                          top: screen.height * 0.19 - 56,
+                          top: coverHeight - 56,
                           child: SizedBox(
                             width: screen.width,
                             child: Center(
@@ -681,6 +569,139 @@ class _ProfileChildState extends State<_ProfileChild> {
                     color: cs.surface.withValues(alpha: 0.5),
                   ),
                 ],
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: minimumInfoHeight),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      SizedBox(
+                        width: screen.width * 0.7,
+                        child: Text(
+                          creatorLabel(name: _profile.name, username: _profile.username),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: PrismFonts.proximaNova,
+                            color: cs.onSurface,
+                            fontSize: 22,
+                            // w600 gives the name more presence over the muted username below.
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      SizedBox(
+                        width: screen.width * 0.7,
+                        child: Text(
+                          '@${_profile.username}',
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: PrismFonts.proximaNova,
+                            color: cs.onSurface.withValues(alpha: 0.55),
+                            fontSize: 14,
+                            fontWeight: FontWeight.normal,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_profile.bio.isNotEmpty) ...<Widget>[
+                        SizedBox(
+                          width: screen.width * 0.72,
+                          child: Text(
+                            _profile.bio,
+                            textAlign: TextAlign.center,
+                            // 2 lines: bios up to 150 chars deserve more space.
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: PrismFonts.proximaNova,
+                              color: cs.onSurface.withValues(alpha: 0.65),
+                              fontSize: 13,
+                              fontWeight: FontWeight.normal,
+                              height: 1.45,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                      ],
+                      ProfileBadgeRow(badgeIds: _profile.badges),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: screen.width * 0.7,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Flexible(
+                              child: Semantics(
+                                excludeSemantics: true,
+                                label: '${formatCompactCount(_profile.following.length)} Following',
+                                button: ownProfile,
+                                onTap: ownProfile ? _openFollowingList : null,
+                                child: GestureDetector(
+                                  excludeFromSemantics: true,
+                                  onTap: ownProfile ? _openFollowingList : null,
+                                  child: _StatPill(count: _profile.following.length, label: 'Following'),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 1,
+                              height: 16,
+                              margin: const EdgeInsets.symmetric(horizontal: 16),
+                              color: cs.onSurface.withValues(alpha: 0.2),
+                            ),
+                            Flexible(
+                              child: Semantics(
+                                excludeSemantics: true,
+                                label: '${formatCompactCount(_profile.followers.length)} Followers',
+                                button: true,
+                                onTap: _openFollowersList,
+                                child: GestureDetector(
+                                  excludeFromSemantics: true,
+                                  onTap: _openFollowersList,
+                                  child: _StatPill(count: _profile.followers.length, label: 'Followers'),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (linkKeys.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: screen.width,
+                          height: 48,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              for (final String key in linkKeys.take(3))
+                                _LinkButton(
+                                  tooltip: key,
+                                  icon: profileLinkIcon(key),
+                                  onPressed: () => _openLink(key, _profile.links[key].toString()),
+                                ),
+                              if (linkKeys.length > 3)
+                                _LinkButton(
+                                  tooltip: 'More links',
+                                  icon: JamIcons.more_horizontal,
+                                  onPressed: _showMoreLinks,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
             if (showProfileCompletenessCard)
@@ -774,7 +795,7 @@ class _LinkButton extends StatelessWidget {
 /// Compact stat display used in the profile header (e.g. "9182 Followers").
 ///
 /// Separates the bold count from the muted label using clear weight and color
-/// contrast — no size difference needed since both are on one line.
+/// contrast without changing their relative type sizes.
 class _StatPill extends StatelessWidget {
   const _StatPill({required this.count, required this.label});
 
@@ -786,8 +807,7 @@ class _StatPill extends StatelessWidget {
     final Color ink = Theme.of(context).colorScheme.onSurface;
     return RichText(
       textAlign: TextAlign.center,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      textScaler: MediaQuery.textScalerOf(context),
       text: TextSpan(
         // Bold count — larger optical weight draws the eye first.
         text: formatCompactCount(count),
