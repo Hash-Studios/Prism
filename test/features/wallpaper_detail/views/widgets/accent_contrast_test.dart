@@ -17,7 +17,7 @@ void main() {
   testWidgets('PrimaryActionPill uses the same foreground as onColor', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(colorScheme: const ColorScheme.light(error: midGrey)),
+        theme: ThemeData(colorScheme: const ColorScheme.light(primary: midGrey)),
         home: const PrimaryActionPill(icon: Icons.check, label: 'Set', semanticLabel: 'Set', isLoading: false),
       ),
     );

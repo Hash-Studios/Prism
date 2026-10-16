@@ -16,7 +16,7 @@ import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/core/widgets/menu_button/set_options_panel.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
-import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/contrast.dart';
@@ -378,6 +378,12 @@ class SetWallpaperButton extends StatefulWidget {
   /// opens, and the path replaces [url]. If it throws, the user is told and nothing is set.
   final Future<String> Function()? prepareSource;
 
+  /// Draws a compact accent button with a label instead of a round icon button.
+  final bool primary;
+
+  /// Shows a caption under the round icon button.
+  final bool labelled;
+
   const SetWallpaperButton({
     super.key,
     required this.url,
@@ -389,6 +395,8 @@ class SetWallpaperButton extends StatefulWidget {
     this.notes = const <String>[],
     this.onMatchAccent,
     this.prepareSource,
+    this.primary = false,
+    this.labelled = false,
   });
 
   @override
@@ -410,10 +418,10 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
-  Future<void> _start({bool forceSheet = false}) async {
+  Future<void> _start({bool forceSheet = false, bool playTapHaptic = true}) async {
     final String? url = widget.url;
     if (isLoading || url == null) return;
-    PrismHaptics.tap();
+    if (playTapHaptic) PrismHaptics.tap();
     String source = url;
     final Future<String> Function()? prepare = widget.prepareSource;
     if (prepare != null) {
@@ -456,16 +464,30 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     final WallpaperTarget? saved = SetWallpaperFlow.defaultTarget();
     final String semanticLabel = saved == null ? 'Set as wallpaper' : 'Set as wallpaper on ${_targetLabel(saved)}';
     final String? label = widget.label;
-    final Widget button = label == null
+    final Widget button = widget.primary
+        ? Semantics(
+            button: true,
+            label: semanticLabel,
+            excludeSemantics: true,
+            onTap: _start,
+            child: PrismButton(
+              label: label ?? 'Set wallpaper',
+              size: PrismButtonSize.compact,
+              loading: isLoading,
+              onPressed: () => _start(playTapHaptic: false),
+            ),
+          )
+        : label == null
         ? CircularMenuButton(
             label: semanticLabel,
+            caption: widget.labelled ? 'Set' : null,
             isLoading: isLoading,
-            child: Icon(JamIcons.picture, color: theme.colorScheme.secondary, size: 20),
+            child: const Icon(JamIcons.picture),
           )
         : PrimaryActionPill(icon: JamIcons.picture, label: label, semanticLabel: semanticLabel, isLoading: isLoading);
     final Widget setTarget = GestureDetector(
-      behavior: label == null ? HitTestBehavior.deferToChild : HitTestBehavior.opaque,
-      onTap: _start,
+      behavior: label == null && !widget.primary ? HitTestBehavior.deferToChild : HitTestBehavior.opaque,
+      onTap: widget.primary ? null : _start,
       onLongPress: () => _start(forceSheet: true),
       child: button,
     );

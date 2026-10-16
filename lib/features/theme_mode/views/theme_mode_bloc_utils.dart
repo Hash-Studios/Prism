@@ -1,27 +1,25 @@
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/theme/contrast.dart';
+import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Applies the user accent to [baseTheme]. An accent that nearly matches the theme background (black on AMOLED)
-/// is replaced by the theme's own accent. The text colours on the accent are picked for contrast, and the chip
-/// theme follows the accent.
+/// is replaced by the theme's own accent. The colour scheme and the chip theme follow the accent.
 ThemeData withPrismAccent(ThemeData baseTheme, int accentColorValue) {
+  final ColorScheme base = baseTheme.colorScheme;
   Color accentColor = Color(accentColorValue);
   if (contrastRatio(accentColor, baseTheme.primaryColor) < 1.5) {
-    accentColor = baseTheme.colorScheme.primary;
+    accentColor = base.primary;
   }
-  final Color onAccent = onColor(accentColor);
-  return withPrismChipTheme(
-    baseTheme.copyWith(
-      colorScheme: baseTheme.colorScheme.copyWith(
-        primary: accentColor,
-        error: accentColor,
-        onPrimary: onAccent,
-        onError: onAccent,
-      ),
+  return baseTheme.withPrismScheme(
+    prismColorScheme(
+      brightness: base.brightness,
+      background: base.surface,
+      foreground: base.onSurface,
+      accent: accentColor,
     ),
   );
 }

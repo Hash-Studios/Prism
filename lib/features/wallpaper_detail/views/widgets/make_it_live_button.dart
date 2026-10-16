@@ -1,5 +1,4 @@
-import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:flutter/material.dart';
@@ -40,21 +39,18 @@ class _MakeItLiveButtonState extends State<MakeItLiveButton> {
   @override
   Widget build(BuildContext context) {
     if (!_supported) return const SizedBox.shrink();
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return OutlinedButton.icon(
+    return PrismButton(
+      label: 'Make it live',
+      icon: Icons.motion_photos_on_outlined,
+      variant: PrismButtonVariant.tonal,
+      size: PrismButtonSize.compact,
       onPressed: widget.onPressed,
-      icon: const Icon(Icons.motion_photos_on_outlined, size: 20),
-      label: const Text('Make it live'),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: scheme.secondary,
-        side: BorderSide(color: scheme.secondary.withValues(alpha: 0.4)),
-        shape: const StadiumBorder(),
-      ),
     );
   }
 }
 
-/// Small glass "Live" pill over the wallpaper. It opens Make it live and appears only when the device can run it.
+/// Small "Live" pill over the wallpaper, on a dark glass scrim like the other controls on the image. It opens Make it
+/// live and appears only when the device can run it.
 class MakeItLiveChip extends StatefulWidget {
   const MakeItLiveChip({required this.onPressed, this.supportProbe = _deviceSupportsOpenGlLive, super.key});
 
@@ -93,9 +89,6 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
   @override
   Widget build(BuildContext context) {
     if (!_supported) return const SizedBox.shrink();
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    final double glassAlpha = theme.brightness == Brightness.light ? 0.65 : 0.6;
     final Widget chip = Semantics(
       button: true,
       label: 'Make it live',
@@ -114,20 +107,19 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
                 child: PrismGlass(
                   borderRadius: MakeItLiveChip.pillHeight / 2,
                   thickness: 16,
-                  glassColor: theme.primaryColor.withValues(alpha: glassAlpha),
+                  glassColor: Colors.black.withValues(alpha: 0.5),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        Icon(Icons.motion_photos_on_outlined, size: 16, color: scheme.secondary),
+                        const Icon(Icons.motion_photos_on_outlined, size: 16, color: Colors.white),
                         const SizedBox(width: 6),
                         Text(
                           'Live',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: scheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: PrismTextStyles.caption(
+                            context,
+                          ).copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),

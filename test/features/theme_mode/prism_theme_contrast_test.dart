@@ -1,3 +1,4 @@
+import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/contrast.dart';
@@ -7,7 +8,36 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   final List<PrismThemeOption> themes = <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes];
+  const List<Color> picks = prismAccentSwatches;
+
+  test('the picker offers 22 colours and there are 12 themes', () {
+    expect(picks, hasLength(22));
+    expect(themes, hasLength(12));
+  });
+
   for (final PrismThemeOption option in themes) {
+    test('${option.label}: every picker accent keeps readable text and stays visible on the theme', () {
+      for (final Color pick in picks) {
+        final ColorScheme scheme = withPrismAccent(option.theme, pick.toARGB32()).colorScheme;
+        final ThemeData theme = withPrismAccent(option.theme, pick.toARGB32());
+        expect(
+          contrastRatio(scheme.onPrimary, scheme.primary),
+          greaterThanOrEqualTo(4.5),
+          reason: 'onPrimary on $pick in ${option.label}',
+        );
+        expect(
+          contrastRatio(scheme.onError, scheme.error),
+          greaterThanOrEqualTo(4.5),
+          reason: 'onError on $pick in ${option.label}',
+        );
+        expect(
+          contrastRatio(scheme.primary, theme.primaryColor),
+          greaterThanOrEqualTo(1.5),
+          reason: '$pick against the ${option.label} background',
+        );
+      }
+    });
+
     test('${option.label}: its own default accent is kept and readable', () {
       final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
 

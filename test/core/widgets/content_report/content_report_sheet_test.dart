@@ -4,6 +4,7 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
@@ -111,6 +112,10 @@ void main() {
 
   Future<void> open(WidgetTester tester, {VoidCallback? onBlockCreator, bool signedIn = true}) async {
     auth.signedIn = signedIn;
+    // The redesigned sheet is taller than the default 800x600 test surface.
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -130,23 +135,26 @@ void main() {
       ),
     );
     await tester.tap(find.text('report'));
-    await tester.pumpAndSettle();
+    // The sign-in sheet loops an animation, so a guest cannot settle.
+    if (signedIn) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump(const Duration(seconds: 1));
+    }
   }
 
   Future<void> submit(WidgetTester tester) async {
     await tester.tap(find.text('Spam or misleading'));
     await tester.pump();
-    await tester.tap(find.text('Submit report'));
+    await tester.tap(find.text('Send report'));
     await tester.pumpAndSettle();
   }
 
-  testWidgets('the title and the wall id use the shared text styles, not hard-coded sizes', (tester) async {
+  testWidgets('the sheet names the content type and the wall id', (tester) async {
     await open(tester);
 
-    final TextStyle? title = tester.widget<Text>(find.text('Report wallpaper')).style;
-    final TextStyle? subtitle = tester.widget<Text>(find.text('ABC123')).style;
-    expect((title?.fontSize, title?.fontWeight), (16, FontWeight.w700));
-    expect((subtitle?.fontSize, subtitle?.fontWeight), (14, FontWeight.w500));
+    expect(find.text('Report'), findsOneWidget);
+    expect(find.text('Why are you reporting this wallpaper (ABC123)?'), findsOneWidget);
   });
 
   testWidgets('after Report sent the snackbar offers Also block this creator', (tester) async {
@@ -177,15 +185,43 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
+  testWidgets('sending a report submits the exact payload with one tap haptic', (tester) async {
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    messenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(haptics, null));
+
+    await open(tester);
+    await tester.tap(find.text('Spam or misleading'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'More information');
+    played.clear();
+
+    await tester.tap(find.text('Send report'));
+    await tester.pumpAndSettle();
+
+    expect(reports.sent, <({String type, String id, String reason, String details})>[
+      (type: 'wall', id: 'wall-doc', reason: 'spam', details: 'More information'),
+    ]);
+    expect(played, <Object?>['tap', 'success']);
+    await tester.pump(const Duration(seconds: 2));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('a guest gets the sign-in sheet, not only a toast', (tester) async {
     await open(tester, signedIn: false);
 
-    expect(find.text('Signing in unlocks'), findsOneWidget);
+    expect(find.text('Sign in to Prism'), findsOneWidget);
     expect(
       toasts.any((call) => call.method == 'showToast' && (call.arguments as Map)['msg'] == 'Sign in to report content'),
       isTrue,
     );
-    expect(find.text('Submit report'), findsNothing);
+    expect(find.text('Send report'), findsNothing);
     expect(reports.sent, isEmpty);
     await tester.pump(const Duration(seconds: 5));
   });

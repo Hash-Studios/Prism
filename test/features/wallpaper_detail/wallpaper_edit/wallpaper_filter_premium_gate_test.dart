@@ -436,7 +436,7 @@ void main() {
     await _waitForEditorReady(tester);
     await _tapInvert(tester);
     await tester.tap(_iconButton('Set as wallpaper'));
-    await _waitForText(tester, 'Set Wallpaper as');
+    await _waitForText(tester, 'Set wallpaper');
 
     AnalyticsRuntime.instance = _ThrowOnSetWallpaperAnalytics();
     await tester.tap(find.text('Home Screen'));
@@ -515,10 +515,10 @@ void main() {
     await _waitForEditorReady(tester);
     await _tapInvert(tester);
     await tester.tap(_iconButton('Download'));
-    await _waitForText(tester, 'Need Coins for Premium Filter');
-    await tester.tap(find.text('Watch Ad (+10)'));
+    await _waitForText(tester, 'Need coins for premium filter');
+    await tester.tap(find.text('Watch ad (+10)'));
     await _waitForCount(tester, () => spendTags.length, 2, 'retry spend');
-    await _waitForText(tester, 'Need Coins for Premium Filter');
+    await _waitForText(tester, 'Need coins for premium filter');
 
     expect(spendTags, <String>['coins.filter.download.spend', 'coins.filter.download.watch_and_retry.retry.spend']);
     expect(awardTags, <String>['coins.filter.download.watch_and_retry.rewarded_ad']);
@@ -563,7 +563,7 @@ void main() {
     await _tapInvert(tester);
     await tester.tap(_iconButton('Set as wallpaper'));
 
-    final Finder optionsTitle = find.text('Set Wallpaper as');
+    final Finder optionsTitle = find.text('Set wallpaper');
     await waitForRealIo(tester, () => optionsTitle.evaluate().isNotEmpty, reason: 'wallpaper set options open');
     expect(optionsTitle, findsOneWidget);
 

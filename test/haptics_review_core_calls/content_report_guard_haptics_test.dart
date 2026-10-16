@@ -64,7 +64,8 @@ void main() {
       ),
     );
     await tester.tap(find.text('Report'));
-    await tester.pumpAndSettle();
+    // The sign-in sheet mascot loops an animation, so pump a fixed time instead of settling.
+    await tester.pump(const Duration(seconds: 1));
 
     expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
     expect(

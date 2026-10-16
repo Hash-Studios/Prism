@@ -6,12 +6,12 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/home/wallpapers/carousel_dots.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wall_of_the_day_card.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -57,6 +57,32 @@ void main() {
     expect(analytics.events.where((e) => e.eventName == 'wotd_viewed'), hasLength(1));
   });
 
+  testWidgets('the card carries a Wall of the day tag and names the photographer', (tester) async {
+    final handle = tester.ensureSemantics();
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(AnalyticsRuntime.reset);
+    final bloc = _MockWotdBloc();
+    when(() => bloc.state).thenReturn(
+      WotdState.initial().copyWith(
+        status: LoadStatus.success,
+        entity: const WallOfTheDayEntity(wallId: 'wotd-2', url: '', thumbnailUrl: '', photographer: 'Ana'),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<WotdBloc>.value(
+          value: bloc,
+          child: const SizedBox(width: 366, height: 205, child: WallOfTheDayCard()),
+        ),
+      ),
+    );
+
+    expect(find.text('Wall of the day'), findsOneWidget);
+    expect(find.text('by Ana'), findsOneWidget);
+    expect(find.bySemanticsLabel('Wall of the day by Ana'), findsOneWidget);
+    handle.dispose();
+  });
   testWidgets('keeps the old card through refresh and failure, then renders the new or empty result', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
@@ -91,7 +117,7 @@ void main() {
 
     states.add(initial.copyWith(status: LoadStatus.success, entity: null));
     await tester.pump();
-    expect(find.text('WALL OF THE DAY'), findsNothing);
+    expect(find.text('Wall of the day'), findsNothing);
   });
 
   group('navigation', () {
@@ -113,17 +139,12 @@ void main() {
     tearDown(AnalyticsRuntime.reset);
 
     final Finder pillTarget = find.ancestor(of: find.text('Past picks'), matching: find.byType(GestureDetector)).first;
+    final Finder pill = find.byKey(const ValueKey<String>('wotd-past-picks-pill'));
 
     const Size slot = Size(360, 240);
-    const int slideCount = 5;
 
-    /// The card in a 360 by 240 slot at the top of a 360 wide phone, stacked with the dots as the home carousel does.
-    Future<void> pumpCard(
-      WidgetTester tester,
-      WallOfTheDayEntity entity, {
-      double textScale = 1,
-      bool withDots = false,
-    }) async {
+    /// The card in a 360 by 240 slot at the top of a 360 wide phone, like a page of the home carousel.
+    Future<void> pumpCard(WidgetTester tester, WallOfTheDayEntity entity, {double textScale = 1}) async {
       tester.view.physicalSize = const Size(360, 640);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -142,16 +163,7 @@ void main() {
               value: bloc,
               child: Align(
                 alignment: Alignment.topLeft,
-                child: SizedBox.fromSize(
-                  size: slot,
-                  child: Stack(
-                    alignment: AlignmentDirectional.bottomEnd,
-                    children: [
-                      const SizedBox.expand(child: WallOfTheDayCard()),
-                      if (withDots) const CarouselDots(current: 0, count: slideCount),
-                    ],
-                  ),
-                ),
+                child: SizedBox.fromSize(size: slot, child: const WallOfTheDayCard()),
               ),
             ),
           ),
@@ -221,10 +233,10 @@ void main() {
       await pumpCard(tester, _wall);
 
       final Rect hitTarget = tester.getRect(pillTarget);
-      final Rect glass = tester.getRect(find.byType(PrismGlass));
+      final Rect visible = tester.getRect(pill);
       expect(hitTarget.size.height, 48);
-      expect(glass.height, 36);
-      expect(hitTarget.center, glass.center);
+      expect(visible.height, 36);
+      expect(hitTarget.center, visible.center);
 
       await tester.tapAt(hitTarget.topCenter + const Offset(0, 2));
       await tester.pump();
@@ -251,21 +263,21 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('the caption reads by the creator, with the overline above it', (tester) async {
+    testWidgets('the card names the creator under the Wall of the day tag', (tester) async {
       await pumpCard(tester, _wall);
 
       expect(find.text('by Ana'), findsOneWidget);
-      expect(find.text('WALL OF THE DAY'), findsOneWidget);
+      expect(find.text('Wall of the day'), findsOneWidget);
       expect(
-        tester.getRect(find.text('WALL OF THE DAY')).bottom,
+        tester.getRect(find.text('Wall of the day')).bottom,
         lessThanOrEqualTo(tester.getRect(find.text('by Ana')).top),
       );
     });
 
-    testWidgets('a pick with no creator shows only the overline', (tester) async {
+    testWidgets('a pick with no creator shows only the tag and the pill', (tester) async {
       await pumpCard(tester, const WallOfTheDayEntity(wallId: 'anon', url: '', thumbnailUrl: '', photographer: ''));
 
-      expect(find.text('WALL OF THE DAY'), findsOneWidget);
+      expect(find.text('Wall of the day'), findsOneWidget);
       expect(find.textContaining('by '), findsNothing);
       expect(find.text('Past picks'), findsOneWidget);
     });
@@ -276,88 +288,65 @@ void main() {
       expect(tester.getRect(find.byType(WallOfTheDayCard)), Offset.zero & slot);
     });
 
-    testWidgets('the caption row sits 16 px from the sides and clear of the real dot row', (tester) async {
-      await pumpCard(tester, _wall, withDots: true);
+    testWidgets(
+      'the pill sits at the bottom right of the card, 16 px from the end edge and clear of the retry button',
+      (tester) async {
+        await pumpCard(tester, _wall);
 
-      final Rect card = tester.getRect(find.byType(WallOfTheDayCard));
-      final Rect dotRow = tester.getRect(find.descendant(of: find.byType(CarouselDots), matching: find.byType(Row)));
-      final Rect pill = tester.getRect(pillTarget);
-      final Rect creator = tester.getRect(find.text('by Ana'));
+        final Rect card = tester.getRect(find.byType(WallOfTheDayCard));
+        final Rect hitTarget = tester.getRect(pillTarget);
+        final Rect creator = tester.getRect(find.text('by Ana'));
 
-      expect(card, Offset.zero & slot);
-      expect(dotRow, const Rect.fromLTRB(0, 210, 360, 240));
-      expect(tester.getRect(find.text('WALL OF THE DAY')).left - card.left, 16);
-      expect(card.right - pill.right, 16);
-      expect(pill.bottom, lessThanOrEqualTo(dotRow.top));
-      expect(creator.bottom, lessThanOrEqualTo(dotRow.top));
+        expect(card.right - hitTarget.right, 16);
+        expect(hitTarget.top, greaterThanOrEqualTo(card.top));
+        expect(hitTarget.left, greaterThanOrEqualTo(card.left));
+        expect(hitTarget.center.dy, greaterThan(card.center.dy));
+        expect(hitTarget.left, greaterThan(creator.right));
+        expect(card.bottom - hitTarget.bottom, 26);
+        // The retry button of a failed image sits in the corner. The pill must not cover its centre.
+        expect(hitTarget.contains(card.bottomRight - const Offset(24, 24)), isFalse);
+      },
+    );
+
+    testWidgets('the pill is the current liquid glass pill with a scrim tint and white label', (tester) async {
+      await pumpCard(tester, _wall);
+
+      final PrismGlass glass = tester.widget<PrismGlass>(
+        find.ancestor(of: pill, matching: find.byType(PrismGlass)).first,
+      );
+      expect(glass.borderRadius, 18);
+      expect(glass.thickness, 16);
+      expect(glass.glassColor, Theme.of(tester.element(pill)).colorScheme.scrim.withValues(alpha: 0.4));
+      final TextStyle label = tester.widget<Text>(find.text('Past picks')).style!;
+      expect(label.color, PrismColors.onPrimary);
+      expect(label.fontSize, 13);
+      expect(tester.getSize(pill).height, 36);
     });
 
     for (final double textScale in <double>[1.3, 2]) {
-      group('at $textScale times text', () {
-        testWidgets('the caption and the pill stay inside the card and clear of the dots', (tester) async {
-          await pumpCard(tester, _wall, textScale: textScale, withDots: true);
+      testWidgets('at $textScale times text the pill keeps a 48 by 48 target and its label inside', (tester) async {
+        await pumpCard(tester, _wall, textScale: textScale);
 
-          final Rect card = tester.getRect(find.byType(WallOfTheDayCard));
-          final Rect dotRow = tester.getRect(
-            find.descendant(of: find.byType(CarouselDots), matching: find.byType(Row)),
-          );
-          final Rect pill = tester.getRect(pillTarget);
-          final Rect eyebrow = tester.getRect(find.text('WALL OF THE DAY'));
-          final Rect creator = tester.getRect(find.textContaining('by '));
+        final Rect hitTarget = tester.getRect(pillTarget);
+        final Rect visible = tester.getRect(pill);
+        final Rect label = tester.getRect(find.text('Past picks'));
 
-          expect(tester.takeException(), isNull);
-          expect(card, Offset.zero & slot);
-          expect(eyebrow.top, greaterThanOrEqualTo(card.top));
-          expect(eyebrow.left - card.left, 16);
-          expect(eyebrow.right, lessThanOrEqualTo(pill.left));
-          expect(creator.right, lessThanOrEqualTo(pill.left));
-          expect(creator.bottom, lessThanOrEqualTo(dotRow.top));
-          expect(pill.bottom, lessThanOrEqualTo(dotRow.top));
-          expect(card.right - pill.right, 16);
-        });
-
-        testWidgets('the pill keeps a 48 by 48 hit target and its label inside the glass', (tester) async {
-          await pumpCard(tester, _wall, textScale: textScale);
-
-          final Rect hitTarget = tester.getRect(pillTarget);
-          final Rect glass = tester.getRect(find.byType(PrismGlass));
-          final Rect label = tester.getRect(find.text('Past picks'));
-
-          expect(hitTarget.width, greaterThanOrEqualTo(48));
-          expect(hitTarget.height, 48);
-          expect(glass.height, 36);
-          expect(label.left, greaterThan(glass.left));
-          expect(label.right, lessThan(glass.right));
-          expect(label.top, greaterThanOrEqualTo(glass.top));
-          expect(label.bottom, lessThanOrEqualTo(glass.bottom));
-        });
+        expect(tester.takeException(), isNull);
+        expect(hitTarget.width, greaterThanOrEqualTo(48));
+        expect(hitTarget.height, 48);
+        expect(visible.height, 36);
+        expect(label.left, greaterThan(visible.left));
+        expect(label.right, lessThan(visible.right));
+        expect(label.top, greaterThanOrEqualTo(visible.top));
+        expect(label.bottom, lessThanOrEqualTo(visible.bottom));
       });
     }
-
-    testWidgets('the caption scales with the system text up to 1.5x and no further', (tester) async {
-      double scaleOf(String text) => tester.renderObject<RenderParagraph>(find.text(text)).textScaler.scale(10);
-
-      await pumpCard(tester, _wall, textScale: 1.3);
-      expect(scaleOf('WALL OF THE DAY'), 13);
-      expect(scaleOf('by Ana'), 13);
-
-      await tester.pumpWidget(const SizedBox());
-      await pumpCard(tester, _wall, textScale: 2);
-      expect(scaleOf('WALL OF THE DAY'), 15);
-      expect(scaleOf('by Ana'), 15);
-    });
-
-    testWidgets('the Past picks glass is the thin 16 refraction of a small pill', (tester) async {
-      await pumpCard(tester, _wall);
-
-      expect(tester.widget<PrismGlass>(find.byType(PrismGlass)).thickness, 16);
-    });
 
     testWidgets('the pill grows with its label up to 1.5x text and no further', (tester) async {
       Future<double> pillWidth(double textScale) async {
         await tester.pumpWidget(const SizedBox());
         await pumpCard(tester, _wall, textScale: textScale);
-        return tester.getSize(find.byType(PrismGlass)).width;
+        return tester.getSize(pill).width;
       }
 
       final double normal = await pillWidth(1);
@@ -369,42 +358,17 @@ void main() {
       expect(tester.renderObject<RenderParagraph>(find.text('Past picks')).textScaler.scale(10), 15);
     });
 
-    testWidgets('the scrim covers the bottom 60 percent and is at least 30 percent dark under the eyebrow', (
-      tester,
-    ) async {
-      await pumpCard(tester, _wall);
-
-      final Finder scrimBox = find.byWidgetPredicate(
-        (w) => w is DecoratedBox && w.decoration is BoxDecoration && (w.decoration as BoxDecoration).gradient != null,
-      );
-      final LinearGradient scrim =
-          (tester.widget<DecoratedBox>(scrimBox).decoration as BoxDecoration).gradient! as LinearGradient;
-      final Rect scrimRect = tester.getRect(scrimBox);
-      final double eyebrowCentre = tester.getRect(find.text('WALL OF THE DAY')).center.dy;
-      final double depth = (eyebrowCentre - scrimRect.top) / scrimRect.height;
-      final List<double> stops = scrim.stops!;
-      final int segment = stops.indexWhere((stop) => depth <= stop);
-      final double along = (depth - stops[segment - 1]) / (stops[segment] - stops[segment - 1]);
-      final double alphaUnderEyebrow =
-          scrim.colors[segment - 1].a + along * (scrim.colors[segment].a - scrim.colors[segment - 1].a);
-
-      expect(scrimRect, const Rect.fromLTRB(0, 96, 360, 240));
-      expect(depth, inExclusiveRange(stops[1], 1));
-      expect(alphaUnderEyebrow, greaterThanOrEqualTo(0.3));
-      expect(scrim.colors.last.a, closeTo(0.65, 0.001));
-    });
-
     testWidgets('a long creator name ellipsizes and leaves the pill in place', (tester) async {
       final String name = 'Ana Maria Rodriguez-Fernandez ' * 4;
       await pumpCard(tester, WallOfTheDayEntity(wallId: 'long', url: '', thumbnailUrl: '', photographer: name));
 
       final Rect card = tester.getRect(find.byType(WallOfTheDayCard));
-      final Rect pill = tester.getRect(pillTarget);
-      final Rect creator = tester.getRect(find.text('by $name'));
+      final Rect creator = tester.getRect(find.byWidgetPredicate((w) => w is Text && (w.data ?? '').startsWith('by ')));
 
       expect(tester.takeException(), isNull);
-      expect(creator.right, lessThanOrEqualTo(pill.left));
-      expect(card.right - pill.right, 16);
+      expect(creator.left, greaterThanOrEqualTo(card.left));
+      expect(creator.right, lessThanOrEqualTo(card.right));
+      expect(creator.right, lessThanOrEqualTo(tester.getRect(pill).left));
     });
   });
 }

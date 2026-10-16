@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -154,8 +155,8 @@ void main() {
       await pumpSheet(tester, _FakePermissions(granted: true));
 
       expect(find.text('Sign in to turn on'), findsNWidgets(3));
-      final List<SwitchListTile> tiles = tester.widgetList<SwitchListTile>(find.byType(SwitchListTile)).toList();
-      expect(tiles.where((SwitchListTile tile) => tile.onChanged == null), hasLength(3));
+      final List<PrismSwitchRow> rows = tester.widgetList<PrismSwitchRow>(find.byType(PrismSwitchRow)).toList();
+      expect(rows.where((PrismSwitchRow row) => row.onChanged == null), hasLength(3));
 
       await tester.tap(find.text('Followers'));
       await tester.pump();
@@ -217,12 +218,11 @@ void main() {
     });
   });
 
-  testWidgets('the sheet title uses the secondary colour, not the titleMedium colour', (tester) async {
+  testWidgets('the sheet title keeps the readable ink, not the titleMedium colour', (tester) async {
     tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final ThemeData theme = ThemeData.dark().copyWith(
-      colorScheme: const ColorScheme.dark(secondary: Colors.orange),
       textTheme: ThemeData.dark().textTheme.copyWith(titleMedium: const TextStyle(color: Color(0xFF2F2F2F))),
     );
     await tester.pumpWidget(
@@ -233,6 +233,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(tester.widget<Text>(find.text('Notification preferences')).style?.color, Colors.orange);
+    final Color? color = tester.widget<Text>(find.text('Notification preferences')).style?.color;
+    expect(color, theme.colorScheme.onSurface);
+    expect(color, isNot(const Color(0xFF2F2F2F)));
   });
 }

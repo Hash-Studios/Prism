@@ -4,14 +4,12 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -157,6 +155,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final Color textColor = _textColor ?? Theme.of(context).colorScheme.secondary;
     final bool lock = _mode == ClockPreviewMode.lock;
     return Material(
+      color: Theme.of(context).colorScheme.surface,
       child: Stack(
         children: <Widget>[
           Positioned(left: 0, top: 0, width: size.width, height: size.height, child: _image(context, size)),
@@ -321,4 +320,27 @@ class _Segment extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Opens the lock screen preview over the current page.
+Future<void> pushClockPreview(
+  BuildContext context, {
+  required String link,
+  required bool file,
+  String? thumbnailUrl,
+  Color? tint,
+}) {
+  return Navigator.push<void>(
+    context,
+    PageRouteBuilder<void>(
+      transitionDuration: context.motion(PrismDurations.base),
+      reverseTransitionDuration: context.motion(PrismDurations.fast),
+      pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
+        opacity: animation.drive(CurveTween(curve: PrismCurves.enter)),
+        child: ClockOverlay(link: link, file: file, thumbnailUrl: thumbnailUrl, tint: tint),
+      ),
+      fullscreenDialog: true,
+      opaque: false,
+    ),
+  );
 }

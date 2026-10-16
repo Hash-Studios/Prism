@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -14,6 +15,7 @@ import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/fake_app_analytics.dart';
@@ -73,7 +75,9 @@ void main() {
     final pending = Completer<DownloadItemsResult>();
     onList = () => pending.future;
     await pumpScreen(tester);
+    expect(find.text('Downloads'), findsOneWidget);
     expect(find.byType(LoadingCards), findsOneWidget);
+    expect(find.text('No downloads yet'), findsNothing);
 
     pending.complete(DownloadItemsResult(success: true, items: const <String>[]));
     await tester.pump();
@@ -81,22 +85,37 @@ void main() {
 
     expect(find.byType(LoadingCards), findsNothing);
     expect(find.text('No downloads yet'), findsOneWidget);
+    expect(find.text('Wallpapers you download are kept here.'), findsOneWidget);
     expect(find.text('Browse wallpapers'), findsOneWidget);
+    expect(find.byType(Glint), findsOneWidget);
+    expect(find.byType(SvgPicture), findsNothing);
   });
 
   testWidgets('a failed list shows an error that Retry recovers from', (tester) async {
     onList = () async => DownloadItemsResult(success: false, items: const <String>[], message: 'no access');
     await pumpScreen(tester);
-    expect(find.text("Couldn't load downloads"), findsOneWidget);
+    expect(find.text("Couldn't load your downloads"), findsOneWidget);
+    expect(listCalls, 1);
 
     final File file = makeFile('a.png');
     onList = () async => DownloadItemsResult(success: true, items: <String>[file.path]);
-    await tester.tap(find.text('Retry'));
+    await tester.tap(find.text('Try again'));
     await tester.pump();
     await tester.pump();
 
-    expect(find.text("Couldn't load downloads"), findsNothing);
+    expect(listCalls, 2);
+    expect(find.text("Couldn't load your downloads"), findsNothing);
     expect(find.text('1 download · 3 B'), findsOneWidget);
+  });
+
+  testWidgets('downloaded files fill the shared wallpaper grid', (tester) async {
+    final List<String> paths = <String>[makeFile('wall_0.png').path, makeFile('wall_1.png').path];
+    onList = () async => DownloadItemsResult(success: true, items: paths);
+    await pumpScreen(tester);
+
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.byType(Image), findsNWidgets(2));
+    expect(find.text('No downloads yet'), findsNothing);
   });
 
   testWidgets('a failed refresh keeps the files that are already shown', (tester) async {
@@ -299,10 +318,10 @@ void main() {
     expect(find.text('They are removed from this device. You can download them again later.'), findsOneWidget);
   });
 
-  testWidgets('the download count uses the secondary colour, not the hint colour', (tester) async {
+  testWidgets('the download count uses the secondary text colour, not the hint colour', (tester) async {
     onList = () async => DownloadItemsResult(success: true, items: <String>[makeFile('a.png').path]);
     final ThemeData theme = ThemeData.dark().copyWith(
-      colorScheme: const ColorScheme.dark(secondary: Colors.orange),
+      colorScheme: const ColorScheme.dark(onSurfaceVariant: Colors.orange),
       hintColor: Colors.purple,
     );
     await tester.pumpWidget(MaterialApp(theme: theme, home: DownloadScreen()));
@@ -310,7 +329,7 @@ void main() {
     await tester.pump();
 
     final Color? color = tester.widget<Text>(find.text('1 download · 3 B')).style?.color;
-    expect(color, Colors.orange.withValues(alpha: 0.6));
+    expect(color, Colors.orange);
     expect(color, isNot(theme.hintColor));
   });
 }

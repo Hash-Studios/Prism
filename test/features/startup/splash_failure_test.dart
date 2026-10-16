@@ -33,18 +33,18 @@ void main() {
     );
   }
 
-  testWidgets('a failed bootstrap shows a retry button that starts bootstrap again', (tester) async {
+  testWidgets('a failed bootstrap shows a try again button that starts bootstrap again', (tester) async {
     await pumpSplash(tester, LoadStatus.failure);
 
-    expect(find.text("Prism couldn't start"), findsOneWidget);
-    await tester.tap(find.text('Retry'));
+    expect(find.text("Prism could not start"), findsOneWidget);
+    await tester.tap(find.text('Try again'));
 
     verify(() => bloc.add(StartupEvent.started(currentVersion: app_state.currentAppVersion))).called(1);
   });
 
-  testWidgets('a loading bootstrap shows no retry button', (tester) async {
+  testWidgets('a loading bootstrap shows no try again button', (tester) async {
     await pumpSplash(tester, LoadStatus.loading);
 
-    expect(find.text('Retry'), findsNothing);
+    expect(find.text('Try again'), findsNothing);
   });
 }

@@ -7,6 +7,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/views/widgets/trending_strip.dart';
@@ -108,7 +109,7 @@ void main() {
 
     expect(find.text('Trending this week'), findsOneWidget);
     expect(find.text('See all'), findsOneWidget);
-    expect(find.byType(InkWell), findsAtLeastNWidgets(3));
+    expect(find.byType(PrismWallTile), findsAtLeastNWidgets(3));
     expect(find.bySemanticsLabel(RegExp('Ana')), findsAtLeastNWidgets(3));
   });
 

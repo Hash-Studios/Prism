@@ -4,7 +4,12 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/core/widgets/prism/prism_bits.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_card.dart';
+import 'package:Prism/core/widgets/prism/prism_row.dart';
+import 'package:Prism/core/widgets/prism/prism_section.dart';
+import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -51,8 +56,9 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
     }
     _inFlight = true;
     final user = app_state.prismUser;
+    // Keep the rows on screen while a refresh runs: only a first load shows the skeleton.
     setState(() {
-      _loading = true;
+      _loading = _items.isEmpty;
       _failed = false;
     });
     try {
@@ -77,6 +83,10 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
 
   void _seeAll() {
     PrismHaptics.tap();
+    _openHistory();
+  }
+
+  void _openHistory() {
     final VoidCallback? override = widget.onSeeAll;
     if (override != null) {
       override();
@@ -87,75 +97,52 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
     final Widget body;
     if (_loading) {
       body = const _ActivitySkeleton();
     } else if (_failed) {
-      body = Row(
-        children: <Widget>[
-          Expanded(child: Text("Couldn't load activity.", style: PrismTextStyles.body(context))),
-          TextButton(
-            onPressed: () {
-              PrismHaptics.tap();
-              _load();
-            },
-            child: const Text('Try again'),
-          ),
-        ],
+      body = PrismInlineState(
+        icon: Icons.cloud_off_rounded,
+        title: "Couldn't load activity.",
+        body: 'Check your connection and try again.',
+        actionLabel: 'Try again',
+        onAction: _load,
       );
     } else if (_items.isEmpty) {
-      body = Text('No coin activity yet.', style: PrismTextStyles.body(context));
+      body = const PrismInlineState(
+        icon: Icons.receipt_long_rounded,
+        title: 'No coin activity yet.',
+        body: 'Watch a video or keep your streak to earn your first coins.',
+      );
     } else {
       final int shown = _items.length.clamp(0, _kActivityCollapsed);
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
-            ),
-            child: Column(
-              children: <Widget>[
-                for (int i = 0; i < shown; i++) ...<Widget>[
-                  if (i > 0) Divider(height: 1, thickness: 1, color: scheme.onSurface.withValues(alpha: 0.08)),
-                  _ActivityRow(entry: _items[i]),
-                ],
-              ],
-            ),
-          ),
+          PrismGroup(children: <Widget>[for (int i = 0; i < shown; i++) _ActivityRow(entry: _items[i])]),
           if (_items.length > _kActivityCollapsed)
             Center(
-              child: TextButton(
-                onPressed: _seeAll,
-                child: Text('Show more', style: PrismTextStyles.rowTitle(context)),
+              child: PrismButton(
+                label: 'Show more',
+                variant: PrismButtonVariant.ghost,
+                size: PrismButtonSize.compact,
+                onPressed: _openHistory,
               ),
             ),
         ],
       );
     }
-    return Padding(
-      padding: const EdgeInsets.only(top: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(child: Text('Activity', style: PrismTextStyles.sectionTitle(context))),
-              if (!_loading && !_failed && _items.isNotEmpty)
-                TextButton(
-                  onPressed: _seeAll,
-                  child: Text('See all', style: PrismTextStyles.rowTitle(context)),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          body,
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        PrismSectionHeader(
+          title: 'Activity',
+          padding: const EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
+          actionLabel: !_loading && !_failed && _items.isNotEmpty ? 'See all' : null,
+          onAction: _seeAll,
+        ),
+        body,
+      ],
     );
   }
 }
@@ -167,9 +154,7 @@ class _ActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    final Color amountColor = entry.isCredit ? scheme.tertiary : scheme.onSurface.withValues(alpha: 0.6);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final String amount = entry.delta > 0 ? '+${entry.delta}' : '${entry.delta}';
     final String label = coinTransactionLabel(entry);
     final String date = _relativeDate(entry.createdAt);
@@ -177,26 +162,15 @@ class _ActivityRow extends StatelessWidget {
       container: true,
       label: '$label, $date, $amount coins',
       excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
-                  const SizedBox(height: 2),
-                  Text(date, style: PrismTextStyles.caption(context)),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              amount,
-              style: PrismTextStyles.rowTitle(context).copyWith(color: amountColor, fontWeight: FontWeight.w700),
-            ),
-          ],
+      child: PrismRow(
+        icon: entry.isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+        title: label,
+        subtitle: date,
+        trailing: Text(
+          amount,
+          style: PrismTextStyles.rowTitle(
+            context,
+          ).copyWith(color: entry.isCredit ? scheme.tertiary : scheme.onSurface, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -222,18 +196,34 @@ class _ActivitySkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PulsePlaceholder(
-      builder: (context, _) => Column(
-        children: <Widget>[
-          for (int i = 0; i < 3; i++) ...<Widget>[
-            if (i > 0) const SizedBox(height: 8),
-            const SizedBox(
-              height: 52,
-              width: double.infinity,
-              child: PulseFill(borderRadius: BorderRadius.all(Radius.circular(12))),
-            ),
+    return PrismSkeleton(
+      child: PrismCard(
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.xs),
+        child: Column(
+          children: <Widget>[
+            for (int i = 0; i < 3; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
+                child: Row(
+                  children: <Widget>[
+                    const PrismBone(width: 32, height: 32, radius: PrismRadius.xs + 2),
+                    const SizedBox(width: PrismSpace.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          PrismBone(width: 120.0 + (i % 2) * 40),
+                          const SizedBox(height: PrismSpace.xs),
+                          const PrismBone(width: 70, height: 11),
+                        ],
+                      ),
+                    ),
+                    const PrismBone(width: 32),
+                  ],
+                ),
+              ),
           ],
-        ],
+        ),
       ),
     );
   }

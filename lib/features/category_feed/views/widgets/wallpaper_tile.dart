@@ -4,20 +4,19 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// One wallpaper of a feed grid. It opens the wallpaper detail page and records the tap.
 class WallpaperTile extends StatelessWidget {
   const WallpaperTile({
     super.key,
@@ -32,6 +31,8 @@ class WallpaperTile extends StatelessWidget {
 
   final FeedItemEntity item;
   final int index;
+
+  /// Optional decode-height override in physical pixels.
   final int? memCacheHeight;
 
   /// Long press opens the quick actions sheet, and a heart marks a wallpaper that is already a favourite.
@@ -43,7 +44,7 @@ class WallpaperTile extends StatelessWidget {
   /// Replaces the analytics source context that the tile derives from the wallpaper source.
   final String? sourceContext;
 
-  /// When null, uses the app's standard grid (3 columns portrait, 5 landscape).
+  /// Legacy grid-column hint for callers that need a fixed decode size.
   final int? crossAxisCount;
 
   AnalyticsSurfaceValue get _surface => switch (item.source) {
@@ -62,54 +63,40 @@ class WallpaperTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final columns = crossAxisCount ?? wallpaperGridColumns(MediaQuery.sizeOf(context).width);
-    final height = memCacheHeight ?? gridTileDecodeHeight(context, crossAxisCount: columns);
     final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
-    return Semantics(
-      button: true,
-      label: item.semanticLabel,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-          onTap: () {
-            PrismHaptics.tap();
-            unawaited(
-              analytics.track(
-                SurfaceActionTappedEvent(
-                  surface: _surface,
-                  action: AnalyticsActionValue.tileOpened,
-                  sourceContext: _sourceContext,
-                  itemType: ItemTypeValue.wallpaper,
-                  itemId: item.id,
-                  index: index,
-                ),
-              ),
-            );
-            context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag));
-          },
-          onLongPress: quickActions
-              ? () {
-                  PrismHaptics.impact();
-                  unawaited(showWallpaperQuickActions(context, item, onShowLessLikeThis: onShowLessLikeThis));
-                }
-              : null,
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              HeroMode(
-                enabled: !context.reduceMotion,
-                child: Hero(
-                  tag: heroTag,
-                  child: PrismImageTile(url: item.thumbnailUrl, fallbackUrl: item.fullUrl, memCacheHeight: height),
-                ),
-              ),
-              if (quickActions) _FavouriteBadge(itemId: item.id),
-            ],
+    final int? columns = crossAxisCount;
+    final int? decodeHeight =
+        memCacheHeight ??
+        (columns == null || columns <= 0 ? null : (MediaQuery.sizeOf(context).width / columns * 3).round());
+    return PrismWallTile(
+      url: item.thumbnailUrl,
+      fallbackUrl: item.fullUrl,
+      heroTag: heroTag,
+      semanticLabel: item.semanticLabel,
+      memCacheHeight: decodeHeight,
+      overlay: quickActions ? _FavouriteBadge(itemId: item.id) : null,
+      onTap: () {
+        PrismHaptics.tap();
+        unawaited(
+          analytics.track(
+            SurfaceActionTappedEvent(
+              surface: _surface,
+              action: AnalyticsActionValue.tileOpened,
+              sourceContext: _sourceContext,
+              itemType: ItemTypeValue.wallpaper,
+              itemId: item.id,
+              index: index,
+            ),
           ),
-        ),
-      ),
+        );
+        context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag));
+      },
+      onLongPress: quickActions
+          ? () {
+              PrismHaptics.impact();
+              unawaited(showWallpaperQuickActions(context, item, onShowLessLikeThis: onShowLessLikeThis));
+            }
+          : null,
     );
   }
 }

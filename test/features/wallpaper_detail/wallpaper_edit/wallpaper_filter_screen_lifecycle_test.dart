@@ -53,7 +53,7 @@ Future<void> _waitForReady(WidgetTester tester) async {
 Future<void> _waitForFailure(WidgetTester tester) async {
   await waitForRealIo(
     tester,
-    () => find.text("Couldn't open this wallpaper.").evaluate().isNotEmpty,
+    () => find.text("Couldn't open this wallpaper").evaluate().isNotEmpty,
     reason: 'source image decode error',
   );
 }

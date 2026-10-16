@@ -19,7 +19,7 @@ class PrimaryActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color background = Theme.of(context).colorScheme.error;
+    final Color background = Theme.of(context).colorScheme.primary;
     final Color foreground = onColor(background);
     return Semantics(
       button: true,

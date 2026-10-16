@@ -7,9 +7,11 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -74,122 +76,68 @@ class _WotdCardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      child: GestureDetector(
-        onTap: () {
-          PrismHaptics.tap();
-          _openWallpaper(context);
-        },
-        child: SizedBox.expand(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              PrismImageTile(
-                url: entity.thumbnailUrl,
-                fallbackUrl: entity.url,
-                memCacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
-              ),
-              const _BottomScrim(),
-              Positioned(
-                left: _sidePadding,
-                right: _sidePadding,
-                bottom: _bottomPadding,
-                child: Row(
-                  children: [
-                    Expanded(child: _Caption(photographer: entity.photographer)),
-                    const SizedBox(width: 12),
-                    _PastPicksPill(onTap: () => _openArchive(context)),
-                  ],
-                ),
-              ),
-            ],
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final String photographer = entity.photographer.trim();
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        FeedHeroCard(
+          image: PrismImageTile(
+            url: entity.thumbnailUrl,
+            fallbackUrl: entity.url,
+            memCacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The carousel dots take the bottom 30 px of every slide, so the caption row starts above them.
-const double _sidePadding = 16;
-const double _bottomPadding = 34;
-
-class _BottomScrim extends StatelessWidget {
-  const _BottomScrim();
-
-  @override
-  Widget build(BuildContext context) {
-    final Color scrim = Theme.of(context).colorScheme.scrim;
-    return IgnorePointer(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: FractionallySizedBox(
-          widthFactor: 1,
-          heightFactor: 0.6,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [scrim.withValues(alpha: 0), scrim.withValues(alpha: 0.3), scrim.withValues(alpha: 0.65)],
-                stops: const [0, 0.45, 1],
-              ),
+          semanticLabel: photographer.isEmpty ? 'Wall of the day' : 'Wall of the day by $photographer',
+          title: photographer.isEmpty ? null : 'by $photographer',
+          textEndInset: _pillEnd + _pillWidth(context) - PrismSpace.md + PrismSpace.sm,
+          tag: ClipRRect(
+            borderRadius: BorderRadius.circular(PrismRadius.pill),
+            child: ColoredBox(
+              color: cs.surfaceContainerHigh,
+              child: const PrismTag(label: 'Wall of the day'),
             ),
           ),
+          onTap: () {
+            PrismHaptics.tap();
+            _openWallpaper(context);
+          },
         ),
-      ),
+        // A sibling of the card, not a child, so the card's own semantics do not swallow it.
+        // Bottom right, as on the current app: the target is 16 from the end edge. Its bottom is 26 up, which keeps the
+        // centre of the image retry button (24 from the corner) out of reach of the pill.
+        PositionedDirectional(
+          bottom: _pillBottom,
+          end: _pillEnd,
+          child: _PastPicksPill(onTap: () => _openArchive(context)),
+        ),
+      ],
     );
   }
 }
 
-class _Caption extends StatelessWidget {
-  const _Caption({required this.photographer});
+const double _pillEnd = 16;
 
-  final String photographer;
+/// The label of the pill. The pill grows with it up to 1.5x text.
+TextStyle _pillLabelStyle(BuildContext context) =>
+    PrismTextStyles.caption(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: PrismColors.onPrimary);
 
-  @override
-  Widget build(BuildContext context) {
-    final List<Shadow> shadows = [
-      Shadow(color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.4), blurRadius: 6),
-    ];
-    return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.5,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'WALL OF THE DAY',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: PrismTextStyles.eyebrow(
-              context,
-            ).copyWith(color: PrismColors.onPrimary.withValues(alpha: 0.94), shadows: shadows),
-          ),
-          if (photographer.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              'by $photographer',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: PrismFonts.fraunces,
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                fontVariations: const [FontVariation('wght', 500)],
-                height: 1.2,
-                color: PrismColors.onPrimary,
-                shadows: shadows,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+/// The width of the pill: 14 and 8 of padding, a 2 gap, an 18 chevron and the label.
+double _pillWidth(BuildContext context) {
+  final TextPainter label = TextPainter(
+    text: TextSpan(text: 'Past picks', style: _pillLabelStyle(context)),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.5),
+    maxLines: 1,
+  )..layout();
+  final double width = 14 + label.width + 2 + 18 + 8;
+  label.dispose();
+  return width;
 }
 
+const double _pillBottom = 26;
+
+/// Opens the archive of earlier picks. A 36 point glass pill on the image inside a 48 point tap target. Its look is the
+/// current app's: liquid glass over a scrim tint, with the label and chevron in the on-primary white.
 class _PastPicksPill extends StatelessWidget {
   const _PastPicksPill({required this.onTap});
 
@@ -219,19 +167,14 @@ class _PastPicksPill extends StatelessWidget {
                   thickness: 16,
                   glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.4),
                   child: SizedBox(
+                    key: const ValueKey<String>('wotd-past-picks-pill'),
                     height: 36,
                     child: Padding(
                       padding: const EdgeInsetsDirectional.only(start: 14, end: 8),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Past picks',
-                            maxLines: 1,
-                            style: PrismTextStyles.caption(
-                              context,
-                            ).copyWith(fontSize: 13, fontWeight: FontWeight.w600, color: PrismColors.onPrimary),
-                          ),
+                        children: <Widget>[
+                          Text('Past picks', maxLines: 1, style: _pillLabelStyle(context)),
                           const SizedBox(width: 2),
                           const Icon(Icons.chevron_right_rounded, size: 18, color: PrismColors.onPrimary),
                         ],

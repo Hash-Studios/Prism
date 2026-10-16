@@ -8,13 +8,12 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -185,11 +184,13 @@ class _SearchGridState extends State<SearchGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final bool showFooter = _hasMore && _results.length >= 24;
     final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
+      color: cs.primary,
+      backgroundColor: cs.surfaceContainerHigh,
       onRefresh: () {
         PrismHaptics.impact();
         return refreshList();
@@ -212,43 +213,29 @@ class _SearchGridState extends State<SearchGrid> {
                 child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper),
               ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+              padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
               sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, childAspectRatio: 0.5),
+                gridDelegate: PrismWallGrid.delegate(context),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   if (showFooter && index == _results.length) {
                     return SeeMoreButton(seeMoreLoader: seeMoreLoader, failed: _loadMoreFailed, func: _requestNextPage);
                   }
                   final FeedItemEntity wallpaper = _results[index];
-                  return KeyedSubtree(
+                  return PrismWallTile(
                     key: ValueKey<String>(wallpaper.id),
-                    child: Semantics(
-                      button: true,
-                      label: wallpaperSemanticLabel(_authorName(wallpaper)),
-                      // The image is the InkWell's child, so its Retry button stays tappable.
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                          enableFeedback: false,
-                          onTap: () {
-                            PrismHaptics.tap();
-                            _openWallpaper(wallpaper, index);
-                          },
-                          onLongPress: () {
-                            PrismHaptics.impact();
-                            unawaited(showWallpaperQuickActions(context, wallpaper));
-                          },
-                          child: PrismImageTile(
-                            url: wallpaper.thumbnailUrl,
-                            fallbackUrl: wallpaper.fullUrl,
-                            memCacheHeight: decodeHeight,
-                            heroTag: prismHeroTag(this, index, wallpaper.id),
-                          ),
-                        ),
-                      ),
-                    ),
+                    url: wallpaper.thumbnailUrl,
+                    fallbackUrl: wallpaper.fullUrl,
+                    memCacheHeight: decodeHeight,
+                    heroTag: prismHeroTag(this, index, wallpaper.id),
+                    semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                    onTap: () {
+                      PrismHaptics.tap();
+                      _openWallpaper(wallpaper, index);
+                    },
+                    onLongPress: () {
+                      PrismHaptics.impact();
+                      unawaited(showWallpaperQuickActions(context, wallpaper));
+                    },
                   );
                 }, childCount: _results.length + (showFooter ? 1 : 0)),
               ),
@@ -260,6 +247,7 @@ class _SearchGridState extends State<SearchGrid> {
   }
 }
 
+/// Prism catalogue walls that match the query, as a sideways row above the provider results.
 class _FromPrismRow extends StatelessWidget {
   const _FromPrismRow({required this.results, required this.onOpen});
 
@@ -268,54 +256,42 @@ class _FromPrismRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          child: Text('From Prism', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+        const PrismSectionHeader(
+          title: 'From Prism',
+          small: true,
+          padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
         ),
         SizedBox(
           height: 176,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: PrismWallGrid.padding,
             itemCount: results.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 6),
+            separatorBuilder: (_, _) => const SizedBox(width: PrismWallGrid.spacing),
             itemBuilder: (context, index) {
               final FeedItemEntity wallpaper = results[index];
-              return KeyedSubtree(
-                key: ValueKey<String>('prism-${wallpaper.id}'),
-                child: Semantics(
-                  button: true,
-                  label: wallpaperSemanticLabel(_authorName(wallpaper)),
-                  child: AspectRatio(
-                    aspectRatio: 0.5,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        splashColor: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                        highlightColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
-                        onTap: () {
-                          PrismHaptics.tap();
-                          onOpen(wallpaper, index);
-                        },
-                        child: PrismImageTile(
-                          url: wallpaper.thumbnailUrl,
-                          fallbackUrl: wallpaper.fullUrl,
-                          memCacheHeight: 400,
-                          heroTag: prismHeroTag(results, index, wallpaper.id),
-                        ),
-                      ),
-                    ),
-                  ),
+              return AspectRatio(
+                aspectRatio: 0.5,
+                child: PrismWallTile(
+                  key: ValueKey<String>('prism-${wallpaper.id}'),
+                  url: wallpaper.thumbnailUrl,
+                  fallbackUrl: wallpaper.fullUrl,
+                  memCacheHeight: 400,
+                  heroTag: prismHeroTag(results, index, wallpaper.id),
+                  semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                  onTap: () {
+                    PrismHaptics.tap();
+                    onOpen(wallpaper, index);
+                  },
                 ),
               );
             },
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: PrismSpace.xs),
       ],
     );
   }

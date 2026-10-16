@@ -3,10 +3,12 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/domain/usecases/notifications_usecases.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
+import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -75,7 +77,7 @@ void main() {
     final FontWeight? readWeight = tester.widget<Text>(find.text('Read title')).style?.fontWeight;
     expect(unreadWeight, FontWeight.w700);
     expect(readWeight, FontWeight.w500);
-    expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString() == '_UnreadDot'), findsOneWidget);
+    expect(find.byType(UnreadDot), findsOneWidget);
   });
 
   testWidgets('Mark all as read calls the use case', (tester) async {
@@ -135,7 +137,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Clear inbox'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Clear inbox'));
+    await tester.tap(find.widgetWithText(PrismButton, 'Clear inbox'));
     // The empty state animates for ever, so pumpAndSettle would not finish.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -169,7 +171,7 @@ void main() {
     when(() => fetch(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[late, unread, read]));
     getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Clear inbox'));
+    await tester.tap(find.widgetWithText(PrismButton, 'Clear inbox'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Undo'));

@@ -35,8 +35,10 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_copy.d
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_progress_indicator.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_recovery.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_scrollable_canvas.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_staggered_fade.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_background.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -48,18 +50,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-/// True when an onboarding save failed and the user must act on it.
-bool _saveFailed(OnboardingV2State state) =>
-    state.actionStatus == ActionStatus.failure &&
-    (state.completionFailed || state.step == OnboardingV2Step.interests || state.step == OnboardingV2Step.starterPack);
-
-/// The starter pack loaded no creators, so there is nothing to follow until it is reloaded.
-bool _starterPackShort(OnboardingV2State state) =>
-    state.step == OnboardingV2Step.starterPack &&
-    !_saveFailed(state) &&
-    state.loadStatus == LoadStatus.success &&
-    state.starterPackData.creators.isEmpty;
 
 String _saveErrorHelper(OnboardingV2State state) {
   if (state.sessionInvalid) return 'your session has expired. sign in again to continue';
@@ -97,6 +87,13 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   bool _termsAccepted = false;
   bool _signingOut = false;
 
+  /// The welcome art is dark under the pitch, so its icons are light.
+  static final _welcomeUiStyle = edgeToEdgeOverlayStyle(
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarIconBrightness: Brightness.light,
+  );
+
+  /// Steps 1 to 4 sit on the blurred, light art, so the status bar icons are dark.
   static final _systemUiStyle = edgeToEdgeOverlayStyle(
     statusBarIconBrightness: Brightness.dark,
     systemNavigationBarIconBrightness: Brightness.light,
@@ -118,7 +115,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       if (!mounted) return;
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       applyEdgeToEdgeOverlayStyle(
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
         systemNavigationBarIconBrightness: Brightness.light,
       );
     });
@@ -290,26 +287,26 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     final state = _bloc.state;
     if (step != state.step) return;
     if (_signingOut || state.actionStatus == ActionStatus.inProgress) return;
-    if (_saveFailed(state) && state.sessionInvalid) {
+    if (onboardingSaveFailed(state) && state.sessionInvalid) {
       _signInAgain();
       return;
     }
-    if (_starterPackShort(state)) {
+    if (onboardingStarterPackShort(state)) {
       _bloc.add(const OnboardingV2Event.starterPackReloadRequested());
       return;
     }
-    if (_saveFailed(state) && state.completionFailed) {
+    if (onboardingSaveFailed(state) && state.completionFailed) {
       _bloc.add(const OnboardingV2Event.completionRetried());
       return;
     }
-    if ((step == OnboardingV2Step.auth && state.isAuthLoading) ||
-        (step == OnboardingV2Step.aiGenerate && state.aiData.status == AiGenerateStatus.loading) ||
+    if ((step == OnboardingV2Step.aiGenerate && state.aiData.status == AiGenerateStatus.loading) ||
         (step == OnboardingV2Step.firstWallpaper && state.wallpaperData.status == FirstWallpaperStatus.loading)) {
       return;
     }
     switch (step) {
       case OnboardingV2Step.auth:
-        _handleGoogleSignIn();
+        // The welcome page has its own buttons.
+        return;
       case OnboardingV2Step.interests:
         _bloc.add(const OnboardingV2Event.interestsConfirmed());
       case OnboardingV2Step.starterPack:
@@ -333,10 +330,31 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     return aiTargetSize(size: media.size, devicePixelRatio: media.devicePixelRatio);
   }
 
+  /// The welcome page keeps the redesign. It draws its own art, copy and buttons, so it takes no part in the shared
+  /// overlay of steps 1 to 4.
+  Widget _welcomePage() => KeyedSubtree(
+    key: const ValueKey(true),
+    child: _RecoveryHost(
+      bloc: _bloc,
+      signingOut: _signingOut,
+      signInAgain: _signInAgain,
+      child: F0AuthPage(
+        termsAccepted: _termsAccepted,
+        onTermsChanged: _setTermsAccepted,
+        legalTap: _legalTap,
+        privacyTap: _privacyTap,
+        onGoogle: _handleGoogleSignIn,
+        onApple: _handleAppleSignIn,
+        onBrowse: _handleBrowseWithoutAccount,
+      ),
+    ),
+  );
+
   Widget _pageFor(OnboardingV2Step step) => KeyedSubtree(
     key: ValueKey(step),
     child: switch (step) {
-      OnboardingV2Step.auth => const F0AuthPage(),
+      // Never built: the welcome page replaces the whole canvas.
+      OnboardingV2Step.auth => const SizedBox.shrink(),
       OnboardingV2Step.interests => const F1InterestsPage(),
       OnboardingV2Step.starterPack => const F2StarterPackPage(),
       OnboardingV2Step.aiGenerate => const F3AiGeneratePage(),
@@ -351,7 +369,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       child: MultiBlocListener(
         listeners: <BlocListener<OnboardingV2Bloc, OnboardingV2State>>[
           BlocListener<OnboardingV2Bloc, OnboardingV2State>(
-            listenWhen: (prev, curr) => !_saveFailed(prev) && _saveFailed(curr),
+            listenWhen: (prev, curr) => !onboardingSaveFailed(prev) && onboardingSaveFailed(curr),
             listener: (context, state) => toasts.error(_saveErrorToast(state)),
           ),
           BlocListener<OnboardingV2Bloc, OnboardingV2State>(
@@ -399,8 +417,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               prev.wallpaperData.wallpaper?.thumbnailUrl != curr.wallpaperData.wallpaper?.thumbnailUrl ||
               prev.aiData != curr.aiData,
           builder: (context, state) {
+            final bool welcome = state.step == OnboardingV2Step.auth;
             return AnnotatedRegion<SystemUiOverlayStyle>(
-              value: _systemUiStyle,
+              value: welcome ? _welcomeUiStyle : _systemUiStyle,
               child: PopScope(
                 canPop: false,
                 onPopInvokedWithResult: (didPop, result) {
@@ -417,7 +436,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                       fit: StackFit.expand,
                       children: [
                         // Layer 0: animated background (blur + image cross-fade), isolated in a
-                        // RepaintBoundary from page content and overlay layers.
+                        // RepaintBoundary from page content and overlay layers. It runs from the first frame, so
+                        // it has settled by the time the welcome art fades out.
                         RepaintBoundary(
                           child: OnboardingStepBackground(
                             step: state.step,
@@ -425,39 +445,45 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                           ),
                         ),
 
-                        // Layers 1 and 2 share one scrollable canvas, so a short screen or large text
-                        // scrolls the page and its overlay together instead of overlapping them.
-                        OnboardingScrollableCanvas(
-                          children: [
-                            // Layer 1: unique page content, fades between steps.
-                            AnimatedSwitcher(
-                              duration: context.motion(const Duration(milliseconds: 300)),
-                              switchInCurve: Curves.easeOut,
-                              switchOutCurve: Curves.easeIn,
-                              transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
-                              layoutBuilder: (currentChild, previousChildren) => Stack(
-                                fit: StackFit.expand,
-                                children: [...previousChildren, if (currentChild != null) currentChild],
-                              ),
-                              child: _pageFor(state.step),
-                            ),
+                        // The redesign's welcome art sits over layer 0 and fades out after the welcome step.
+                        RepaintBoundary(child: WelcomeBackground(visible: welcome)),
 
-                            // Layer 2: shared animated overlay (headline, progress, button, helper),
-                            // isolated in a RepaintBoundary from the background and page layers.
-                            RepaintBoundary(
-                              child: _SharedOverlay(
-                                state: state,
-                                legalTap: _legalTap,
-                                privacyTap: _privacyTap,
-                                onCtaTap: () => _handleCtaTap(state.step),
-                                onAppleTap: _handleAppleSignIn,
-                                termsAccepted: _termsAccepted,
-                                onTermsChanged: _setTermsAccepted,
-                                onBrowseTap: _handleBrowseWithoutAccount,
-                                signingOut: _signingOut,
-                              ),
-                            ),
-                          ],
+                        _StepSwitcher(
+                          welcome: welcome,
+                          child: welcome
+                              ? _welcomePage()
+                              : KeyedSubtree(
+                                  key: const ValueKey(false),
+                                  // Layers 1 and 2 share one scrollable canvas, so a short screen or large text
+                                  // scrolls the page and its overlay together instead of overlapping them.
+                                  child: OnboardingScrollableCanvas(
+                                    children: [
+                                      // Layer 1: unique page content, fades between steps.
+                                      AnimatedSwitcher(
+                                        duration: context.motion(const Duration(milliseconds: 300)),
+                                        switchInCurve: Curves.easeOut,
+                                        switchOutCurve: Curves.easeIn,
+                                        transitionBuilder: (child, animation) =>
+                                            FadeTransition(opacity: animation, child: child),
+                                        layoutBuilder: (currentChild, previousChildren) => Stack(
+                                          fit: StackFit.expand,
+                                          children: [...previousChildren, if (currentChild != null) currentChild],
+                                        ),
+                                        child: _pageFor(state.step),
+                                      ),
+
+                                      // Layer 2: shared animated overlay (headline, progress, button, helper),
+                                      // isolated in a RepaintBoundary from the background and page layers.
+                                      RepaintBoundary(
+                                        child: _SharedOverlay(
+                                          state: state,
+                                          onCtaTap: () => _handleCtaTap(state.step),
+                                          signingOut: _signingOut,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                         ),
                       ],
                     ),
@@ -472,28 +498,73 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   }
 }
 
-/// Shared elements (headline, progress, button, helper text) that persist across all steps.
+/// Tells the welcome page what to do while a save error needs the user's attention.
+class _RecoveryHost extends StatelessWidget {
+  const _RecoveryHost({required this.bloc, required this.signingOut, required this.signInAgain, required this.child});
+
+  final OnboardingV2Bloc bloc;
+  final bool signingOut;
+  final VoidCallback signInAgain;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
+      buildWhen: (prev, curr) =>
+          prev.step != curr.step ||
+          prev.actionStatus != curr.actionStatus ||
+          prev.sessionInvalid != curr.sessionInvalid ||
+          prev.completionFailed != curr.completionFailed ||
+          prev.loadStatus != curr.loadStatus ||
+          prev.starterPackData.creators.isEmpty != curr.starterPackData.creators.isEmpty,
+      builder: (context, state) => OnboardingRecoveryScope(
+        recovery: onboardingRecoveryFor(state, add: bloc.add, signInAgain: signInAgain, signingOut: signingOut),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Cross-fades between the welcome page and steps 1 to 4. The side that arrives also rises 8 points.
+class _StepSwitcher extends StatelessWidget {
+  const _StepSwitcher({required this.welcome, required this.child});
+
+  final bool welcome;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: context.motion(PrismDurations.base),
+      switchInCurve: PrismCurves.enter,
+      switchOutCurve: PrismCurves.exit,
+      transitionBuilder: (child, animation) {
+        final bool arriving = child.key == ValueKey(welcome);
+        return FadeTransition(
+          opacity: animation,
+          child: arriving
+              ? AnimatedBuilder(
+                  animation: animation,
+                  child: child,
+                  builder: (context, child) =>
+                      Transform.translate(offset: Offset(0, 8 * (1 - animation.value)), child: child),
+                )
+              : child,
+        );
+      },
+      layoutBuilder: (currentChild, previousChildren) =>
+          Stack(fit: StackFit.expand, children: [...previousChildren, if (currentChild != null) currentChild]),
+      child: child,
+    );
+  }
+}
+
+/// Shared elements (headline, progress, button, helper text) that persist across steps 1 to 4.
 class _SharedOverlay extends StatefulWidget {
-  const _SharedOverlay({
-    required this.state,
-    required this.legalTap,
-    required this.privacyTap,
-    required this.onCtaTap,
-    required this.onAppleTap,
-    required this.termsAccepted,
-    required this.onTermsChanged,
-    required this.onBrowseTap,
-    required this.signingOut,
-  });
+  const _SharedOverlay({required this.state, required this.onCtaTap, required this.signingOut});
 
   final OnboardingV2State state;
-  final TapGestureRecognizer legalTap;
-  final TapGestureRecognizer privacyTap;
   final VoidCallback onCtaTap;
-  final VoidCallback onAppleTap;
-  final bool termsAccepted;
-  final ValueChanged<bool> onTermsChanged;
-  final VoidCallback onBrowseTap;
   final bool signingOut;
 
   @override
@@ -550,25 +621,16 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               sy: sy,
               state: widget.state,
               onCtaTap: widget.onCtaTap,
-              onAppleTap: widget.onAppleTap,
-              termsAccepted: widget.termsAccepted,
-              onTermsChanged: widget.onTermsChanged,
-              legalTap: widget.legalTap,
-              onBrowseTap: widget.onBrowseTap,
               signingOut: widget.signingOut,
             ),
             _BottomText(
               step: step,
               sy: sy,
-              legalTap: widget.legalTap,
-              privacyTap: widget.privacyTap,
-              termsAccepted: widget.termsAccepted,
-              onTermsChanged: widget.onTermsChanged,
               wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
               aiGenerateStatus: widget.state.aiData.status,
-              errorText: _saveFailed(widget.state)
+              errorText: onboardingSaveFailed(widget.state)
                   ? _saveErrorHelper(widget.state)
-                  : _starterPackShort(widget.state)
+                  : onboardingStarterPackShort(widget.state)
                   ? "couldn't load creators. check your connection and tap reload"
                   : null,
               interestsRequired: widget.state.interestsData.requiredCount,
@@ -605,16 +667,12 @@ class _Progress extends StatelessWidget {
       top: OnboardingLayout.progressY * sy,
       left: 0,
       right: 0,
-      child: AnimatedOpacity(
-        duration: context.motion(OnboardingMotion.normal),
-        opacity: step == OnboardingV2Step.auth ? 0.0 : 1.0,
-        child: Center(
-          child: Transform.scale(
-            scaleX: sx,
-            scaleY: sy,
-            alignment: Alignment.topCenter,
-            child: OnboardingProgressIndicator(step: progressStep, totalSteps: 4, color: color),
-          ),
+      child: Center(
+        child: Transform.scale(
+          scaleX: sx,
+          scaleY: sy,
+          alignment: Alignment.topCenter,
+          child: OnboardingProgressIndicator(step: progressStep, totalSteps: 4, color: color),
         ),
       ),
     );
@@ -631,12 +689,7 @@ class _Headline extends StatelessWidget {
   /// Color used for the headline on the firstWallpaper step, derived from the wallpaper palette.
   final Color wallpaperColor;
 
-  static double _headlineY(OnboardingV2Step step) =>
-      step == OnboardingV2Step.auth ? OnboardingLayout.welcomeHeadlineY : OnboardingLayout.stepTitleY;
-
   static double _headlineX(OnboardingV2Step step) => switch (step) {
-    // Auth: no horizontal constraint — the explicit \n is the only line break.
-    // Applying padding here would squeeze "Your screen," onto a second line.
     OnboardingV2Step.auth => 0,
     OnboardingV2Step.interests => OnboardingLayout.interestsTitleX,
     OnboardingV2Step.starterPack => OnboardingLayout.starterPackTitleX,
@@ -645,7 +698,7 @@ class _Headline extends StatelessWidget {
   };
 
   static String _headlineText(OnboardingV2Step step) => switch (step) {
-    OnboardingV2Step.auth => 'Your screen,\nreimagined.',
+    OnboardingV2Step.auth => '',
     OnboardingV2Step.interests => 'Pick your vibe',
     OnboardingV2Step.starterPack => 'Find your people',
     OnboardingV2Step.aiGenerate => 'Create your\nfirst wallpaper',
@@ -661,7 +714,7 @@ class _Headline extends StatelessWidget {
     return AnimatedPositioned(
       duration: context.motion(OnboardingMotion.normal),
       curve: OnboardingMotion.emphasized,
-      top: _headlineY(step) * sy,
+      top: OnboardingLayout.stepTitleY * sy,
       left: _headlineX(step) * sx,
       right: _headlineX(step) * sx,
       child: OnboardingStaggeredFade(
@@ -686,11 +739,6 @@ class _CtaButton extends StatelessWidget {
     required this.sy,
     required this.state,
     required this.onCtaTap,
-    required this.onAppleTap,
-    required this.termsAccepted,
-    required this.onTermsChanged,
-    required this.legalTap,
-    required this.onBrowseTap,
     required this.signingOut,
   });
 
@@ -699,26 +747,15 @@ class _CtaButton extends StatelessWidget {
   final double sy;
   final OnboardingV2State state;
   final VoidCallback onCtaTap;
-  final VoidCallback onAppleTap;
-
-  /// Terms and Privacy policy gate. Google, Apple and the guest button
-  /// all stay disabled until this is ticked.
-  final bool termsAccepted;
-  final ValueChanged<bool> onTermsChanged;
-  final TapGestureRecognizer legalTap;
-
-  /// iOS-only guest entry point (Guideline 5.1.1(v)).
-  final VoidCallback onBrowseTap;
 
   /// "sign in again" is running the sign-out.
   final bool signingOut;
 
   @override
   Widget build(BuildContext context) {
-    final saveFailed = _saveFailed(state);
+    final saveFailed = onboardingSaveFailed(state);
     final isLoading = switch (step) {
-      OnboardingV2Step.auth =>
-        signingOut || (!saveFailed && (state.isAuthLoading || state.actionStatus == ActionStatus.inProgress)),
+      OnboardingV2Step.auth ||
       OnboardingV2Step.interests ||
       OnboardingV2Step.starterPack => signingOut || (!saveFailed && state.actionStatus == ActionStatus.inProgress),
       OnboardingV2Step.aiGenerate =>
@@ -733,23 +770,21 @@ class _CtaButton extends StatelessWidget {
     };
 
     final isEnabled = switch (step) {
-      OnboardingV2Step.auth =>
-        (_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) || termsAccepted,
-      OnboardingV2Step.interests =>
-        ((_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) || state.interestsData.canContinue),
+      OnboardingV2Step.auth || OnboardingV2Step.interests =>
+        ((onboardingSaveFailed(state) && (state.sessionInvalid || state.completionFailed)) ||
+            state.interestsData.canContinue),
       OnboardingV2Step.starterPack =>
-        ((_saveFailed(state) && (state.sessionInvalid || state.completionFailed)) ||
-            _starterPackShort(state) ||
+        ((onboardingSaveFailed(state) && (state.sessionInvalid || state.completionFailed)) ||
+            onboardingStarterPackShort(state) ||
             state.starterPackData.canContinue),
       OnboardingV2Step.aiGenerate => true,
       OnboardingV2Step.firstWallpaper => true,
     };
 
     final label = switch (step) {
-      _ when _saveFailed(state) => state.sessionInvalid ? 'sign in again' : 'try again',
-      _ when _starterPackShort(state) => 'reload',
-      OnboardingV2Step.auth => 'Continue with Google',
-      OnboardingV2Step.interests => () {
+      _ when onboardingSaveFailed(state) => state.sessionInvalid ? 'sign in again' : 'try again',
+      _ when onboardingStarterPackShort(state) => 'reload',
+      OnboardingV2Step.auth || OnboardingV2Step.interests => () {
         final selected = state.interestsData.selected.length;
         return selected < state.interestsData.requiredCount ? 'continue ($selected selected)' : 'continue';
       }(),
@@ -759,148 +794,14 @@ class _CtaButton extends StatelessWidget {
         defaultTargetPlatform == TargetPlatform.android ? 'set as wallpaper' : 'save to photos',
     };
 
-    final bool isAuthStep = step == OnboardingV2Step.auth;
-    // Apple sign-in and guest browsing are iOS-only: Android keeps mandatory Google sign-in.
-    final bool showIosAuthExtras = isAuthStep && defaultTargetPlatform == TargetPlatform.iOS && !_saveFailed(state);
-    const double browseRowHeight = 36;
-    final double extraHeight = showIosAuthExtras ? (OnboardingLayout.ctaHeight + 12) * sy + browseRowHeight * sy : 0.0;
     return Positioned(
-      top: OnboardingLayout.ctaY * sy - extraHeight,
+      top: OnboardingLayout.ctaY * sy,
       left: OnboardingLayout.ctaX * sx,
       right: OnboardingLayout.ctaX * sx,
-      height: OnboardingLayout.ctaHeight * sy + extraHeight,
+      height: OnboardingLayout.ctaHeight * sy,
       child: OnboardingStaggeredFade(
         delay: const Duration(milliseconds: 750),
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                if (showIosAuthExtras) ...[
-                  Expanded(
-                    child: OnboardingPrimaryButton(
-                      label: 'Continue with Apple',
-                      icon: Icons.apple,
-                      onPressed: onAppleTap,
-                      enabled: isEnabled,
-                      loading: isLoading,
-                    ),
-                  ),
-                  SizedBox(height: 12 * sy),
-                ],
-                Expanded(
-                  child: OnboardingPrimaryButton(
-                    label: label,
-                    onPressed: onCtaTap,
-                    enabled: isEnabled,
-                    loading: isLoading,
-                  ),
-                ),
-                if (showIosAuthExtras)
-                  SizedBox(
-                    height: browseRowHeight * sy,
-                    child: Center(
-                      child: TextButton(
-                        onPressed: termsAccepted && !signingOut && state.actionStatus != ActionStatus.inProgress
-                            ? () {
-                                PrismHaptics.tap();
-                                onBrowseTap();
-                              }
-                            : null,
-                        child: Text(
-                          'Browse without an account',
-                          style: OnboardingTypography.helper.copyWith(
-                            fontSize: 13,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            // Disabled buttons swallow taps silently; say why instead.
-            if (isAuthStep && !termsAccepted && !_saveFailed(state))
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => toasts.error('Please agree to the Terms and Privacy policy first.'),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TermsCheckboxRow extends StatelessWidget {
-  const _TermsCheckboxRow({
-    required this.accepted,
-    required this.onChanged,
-    required this.legalTap,
-    required this.privacyTap,
-    super.key,
-  });
-
-  final bool accepted;
-  final ValueChanged<bool> onChanged;
-  final TapGestureRecognizer legalTap;
-  final TapGestureRecognizer privacyTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        PrismHaptics.selection();
-        onChanged(!accepted);
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 22,
-            height: 22,
-            child: Checkbox(
-              value: accepted,
-              onChanged: (value) {
-                PrismHaptics.selection();
-                onChanged(value ?? false);
-              },
-              fillColor: WidgetStateProperty.resolveWith(
-                (states) => states.contains(WidgetState.selected)
-                    ? OnboardingColors.buttonBackground
-                    : OnboardingColors.transparent,
-              ),
-              checkColor: OnboardingColors.buttonText,
-              side: const BorderSide(color: OnboardingColors.textOnDark),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: RichText(
-              textAlign: TextAlign.center,
-              text: TextSpan(
-                style: OnboardingTypography.helper,
-                children: [
-                  const TextSpan(text: 'By continuing you agree to the '),
-                  TextSpan(
-                    text: 'Terms',
-                    style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
-                    recognizer: legalTap,
-                  ),
-                  const TextSpan(text: ' and '),
-                  TextSpan(
-                    text: 'Privacy policy',
-                    style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
-                    recognizer: privacyTap,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        child: OnboardingPrimaryButton(label: label, onPressed: onCtaTap, enabled: isEnabled, loading: isLoading),
       ),
     );
   }
@@ -910,10 +811,6 @@ class _BottomText extends StatelessWidget {
   const _BottomText({
     required this.step,
     required this.sy,
-    required this.legalTap,
-    required this.privacyTap,
-    required this.termsAccepted,
-    required this.onTermsChanged,
     this.wallpaperCategory,
     this.aiGenerateStatus,
     this.errorText,
@@ -923,10 +820,6 @@ class _BottomText extends StatelessWidget {
 
   final OnboardingV2Step step;
   final double sy;
-  final TapGestureRecognizer legalTap;
-  final TapGestureRecognizer privacyTap;
-  final bool termsAccepted;
-  final ValueChanged<bool> onTermsChanged;
   final String? wallpaperCategory;
   final AiGenerateStatus? aiGenerateStatus;
   final int interestsRequired;
@@ -936,7 +829,7 @@ class _BottomText extends StatelessWidget {
   final String? errorText;
 
   String _helperText() => switch (step) {
-    OnboardingV2Step.interests =>
+    OnboardingV2Step.auth || OnboardingV2Step.interests =>
       interestsRequired == 0
           ? 'we could not load categories, you can skip this step'
           : 'select at least $interestsRequired categories to personalize your feed',
@@ -957,20 +850,7 @@ class _BottomText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget content;
-    if (step == OnboardingV2Step.auth && errorText == null) {
-      content = _TermsCheckboxRow(
-        key: const ValueKey('legal'),
-        accepted: termsAccepted,
-        onChanged: onTermsChanged,
-        legalTap: legalTap,
-        privacyTap: privacyTap,
-      );
-    } else {
-      final text = errorText ?? _helperText();
-      content = OnboardingHelperText(key: ValueKey(text), text: text);
-    }
-
+    final text = errorText ?? _helperText();
     return AnimatedPositioned(
       duration: context.motion(OnboardingMotion.normal),
       curve: OnboardingMotion.emphasized,
@@ -979,7 +859,10 @@ class _BottomText extends StatelessWidget {
       right: 0,
       child: OnboardingStaggeredFade(
         delay: const Duration(milliseconds: 900),
-        child: AnimatedSwitcher(duration: context.motion(OnboardingMotion.short), child: content),
+        child: AnimatedSwitcher(
+          duration: context.motion(OnboardingMotion.short),
+          child: OnboardingHelperText(key: ValueKey(text), text: text),
+        ),
       ),
     );
   }

@@ -4,19 +4,16 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
+import 'package:Prism/features/in_app_notifications/views/widgets/notification_row.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -74,176 +71,39 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.started(syncRemote: true));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<InAppNotificationsBloc, InAppNotificationsState>(
-      builder: (context, state) {
-        final theme = Theme.of(context);
-        final colorScheme = theme.colorScheme;
-        final notifications = state.items;
-        final groups = groupInAppNotificationsByTitle(notifications);
-        final bool initialLoading =
-            (state.status == LoadStatus.initial || state.status == LoadStatus.loading) && notifications.isEmpty;
-
-        Widget body;
-        if (initialLoading) {
-          body = const GlintState(kind: GlintStateKind.loading, title: 'Loading notifications');
-        } else if (state.status == LoadStatus.failure && notifications.isEmpty) {
-          body = GlintState(
-            kind: GlintStateKind.error,
-            title: "We couldn't load your notifications.",
-            body: 'Check your connection and try again.',
-            actionLabel: 'Try again',
-            onAction: () {
-              context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.refreshRequested());
-            },
-          );
-        } else {
-          body = Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (state.status == LoadStatus.failure && state.failure != null)
-                Material(
-                  color: colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "Couldn't load new notifications. What you see below is saved on this device.",
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onErrorContainer,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            PrismHaptics.tap();
-                            context.read<InAppNotificationsBloc>().add(
-                              const InAppNotificationsEvent.refreshRequested(),
-                            );
-                          },
-                          style: TextButton.styleFrom(foregroundColor: colorScheme.onErrorContainer),
-                          child: const Text('Try again'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              Expanded(
-                child: notifications.isEmpty
-                    ? const GlintState(
-                        kind: GlintStateKind.nothingNew,
-                        title: "You're all caught up",
-                        body: 'Giveaways, updates, and alerts from Prism will show up here.',
-                      )
-                    : ListView.builder(
-                        itemCount: groups.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final InAppNotificationTitleGroup group = groups[index];
-                          if (group.isSingle) {
-                            return _buildDismissibleNotificationTile(
-                              context,
-                              colorScheme: colorScheme,
-                              notification: group.items.single,
-                            );
-                          }
-                          return _buildDismissibleGroupTile(
-                            context,
-                            theme: theme,
-                            colorScheme: colorScheme,
-                            group: group,
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        }
-
-        return Scaffold(
-          backgroundColor: theme.primaryColor,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            elevation: 0,
-            iconTheme: IconThemeData(color: colorScheme.secondary),
-            title: Text('Notifications', style: theme.textTheme.displaySmall?.copyWith(color: colorScheme.secondary)),
-            leading: IconButton(
-              tooltip: 'Close',
-              icon: const Icon(JamIcons.close),
-              onPressed: () {
-                context.router.maybePop();
-              },
-            ),
-            actions: <Widget>[
-              if (state.unreadCount > 0)
-                IconButton(
-                  tooltip: 'Mark all as read',
-                  icon: const Icon(JamIcons.check),
-                  onPressed: () {
-                    PrismHaptics.tap();
-                    context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
-                  },
-                ),
-              IconButton(
-                tooltip: 'Notification preferences',
-                icon: const Icon(JamIcons.settings_alt),
-                onPressed: () {
-                  analytics.track(
-                    SettingsActionTappedEvent(
-                      action: AnalyticsActionValue.notificationSettingsOpened,
-                      isSignedIn: app_state.prismUser.loggedIn,
-                      sourceContext: 'notification_screen',
-                    ),
-                  );
-                  showNotificationSettingsSheet(context);
-                },
-              ),
-            ],
-          ),
-          body: body,
-          floatingActionButton: !initialLoading && notifications.isNotEmpty
-              ? FloatingActionButton.small(
-                  tooltip: 'Clear inbox',
-                  backgroundColor: colorScheme.error,
-                  foregroundColor: colorScheme.onError,
-                  onPressed: () async {
-                    if (!await _confirmClearInbox(context, notifications.length) || !context.mounted) return;
-                    // A sync can add rows while the dialog is open, so Undo uses the list as it is now.
-                    final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
-                    final List<InAppNotificationEntity> removed = bloc.state.items;
-                    if (removed.isEmpty) return;
-                    PrismHaptics.tap();
-                    analytics.track(NotificationClearAllConfirmedEvent(count: removed.length));
-                    bloc.add(const InAppNotificationsEvent.clearRequested());
-                    _showUndoSnackBar(context, 'Inbox cleared', removed);
-                  },
-                  child: const Icon(JamIcons.trash),
-                )
-              : null,
-        );
-      },
-    );
+  void _refresh() {
+    context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.refreshRequested());
   }
 
-  Future<bool> _confirmClearInbox(BuildContext context, int count) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(count == 1 ? 'Clear 1 notification?' : 'Clear $count notifications?'),
-            content: const Text('This removes them from this device.'),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancel')),
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text('Clear inbox', style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+  void _openPreferences() {
+    analytics.track(
+      SettingsActionTappedEvent(
+        action: AnalyticsActionValue.notificationSettingsOpened,
+        isSignedIn: app_state.prismUser.loggedIn,
+        sourceContext: 'notification_screen',
+      ),
+    );
+    showNotificationSettingsSheet(context);
+  }
+
+  /// Asks first. The snack bar then offers Undo, which puts every removed notification back.
+  Future<void> _clearInbox(int count) async {
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: count == 1 ? 'Clear 1 notification?' : 'Clear $count notifications?',
+      message: 'This removes them from this device.',
+      confirmLabel: 'Clear inbox',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    // A sync can add rows while the sheet is open, so Undo uses the list as it is now.
+    final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
+    final List<InAppNotificationEntity> removed = bloc.state.items;
+    if (removed.isEmpty) return;
+    PrismHaptics.tap();
+    analytics.track(NotificationClearAllConfirmedEvent(count: removed.length));
+    bloc.add(const InAppNotificationsEvent.clearRequested());
+    _showUndoSnackBar(context, 'Inbox cleared', removed);
   }
 
   void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {
@@ -261,40 +121,137 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
       );
   }
 
-  Widget _dismissBackground(ColorScheme colorScheme, Alignment alignment) {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<InAppNotificationsBloc, InAppNotificationsState>(
+      builder: (context, state) {
+        final notifications = state.items;
+        final bool initialLoading =
+            (state.status == LoadStatus.initial || state.status == LoadStatus.loading) && notifications.isEmpty;
+        return PrismPage(
+          title: 'Notifications',
+          actions: <Widget>[
+            if (state.unreadCount > 0)
+              PrismIconButton(
+                icon: Icons.done_all_rounded,
+                tooltip: 'Mark all as read',
+                onPressed: () {
+                  PrismHaptics.tap();
+                  context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
+                },
+              ),
+            PrismIconButton(icon: Icons.tune_rounded, tooltip: 'Notification preferences', onPressed: _openPreferences),
+            if (!initialLoading && notifications.isNotEmpty)
+              PrismIconButton(
+                icon: Icons.delete_sweep_rounded,
+                tooltip: 'Clear inbox',
+                onPressed: () => unawaited(_clearInbox(notifications.length)),
+              ),
+          ],
+          body: _body(context, state, initialLoading),
+        );
+      },
+    );
+  }
+
+  Widget _body(BuildContext context, InAppNotificationsState state, bool initialLoading) {
+    final notifications = state.items;
+    if (initialLoading) return PrismSkeleton.rows();
+    if (state.status == LoadStatus.failure && notifications.isEmpty) {
+      return GlintState(
+        kind: GlintStateKind.error,
+        title: "We couldn't load your notifications",
+        body: 'Check your connection and try again.',
+        actionLabel: 'Try again',
+        onAction: _refresh,
+      );
+    }
+    if (notifications.isEmpty) {
+      return const GlintState(
+        kind: GlintStateKind.nothingNew,
+        title: 'No notifications',
+        body: 'New followers, approvals and the Wall of the Day show up here.',
+      );
+    }
+    final List<InAppNotificationTitleGroup> groups = groupInAppNotificationsByTitle(notifications);
+    final List<Object> entries = <Object>[];
+    String? lastDay;
+    for (final InAppNotificationTitleGroup group in groups) {
+      final String day = wallOfTheDayRowDayLabel(group.items.first.createdAt);
+      if (day != lastDay) {
+        entries.add(day);
+        lastDay = day;
+      }
+      entries.add(group);
+    }
+    final bool stale = state.status == LoadStatus.failure && state.failure != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (stale) _StaleBanner(onRetry: _refresh),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.only(bottom: PrismSpace.xxxl),
+            itemCount: entries.length,
+            itemBuilder: (BuildContext context, int index) {
+              final Object entry = entries[index];
+              if (entry is String) {
+                return PrismSectionHeader(
+                  title: entry,
+                  small: true,
+                  padding: EdgeInsets.fromLTRB(
+                    PrismSpace.page,
+                    index == 0 ? PrismSpace.xs : PrismSpace.lg,
+                    PrismSpace.page,
+                    PrismSpace.xxs,
+                  ),
+                );
+              }
+              final InAppNotificationTitleGroup group = entry as InAppNotificationTitleGroup;
+              return group.isSingle
+                  ? _dismissibleNotification(context, group.items.single)
+                  : _dismissibleGroup(context, group);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dismissBackground(ColorScheme cs, Alignment alignment) {
     return ColoredBox(
-      color: colorScheme.error,
+      color: cs.error,
       child: Align(
         alignment: alignment,
         child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Icon(JamIcons.trash, color: colorScheme.onError),
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+          child: Icon(Icons.delete_rounded, color: cs.onError),
         ),
       ),
     );
   }
 
-  Widget _buildDismissibleNotificationTile(
-    BuildContext context, {
-    required ColorScheme colorScheme,
-    required InAppNotificationEntity notification,
+  Widget _dismissibleNotification(
+    BuildContext context,
+    InAppNotificationEntity notification, {
     bool compactInGroup = false,
     String? compactBodyOverride,
   }) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return Dismissible(
       key: ValueKey<String>(notification.id),
       onDismissed: (_) {
         PrismHaptics.impact();
         analytics.track(
-          NotificationItemDismissedEvent(type: _notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
+          NotificationItemDismissedEvent(type: notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
         );
         context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
         _showUndoSnackBar(context, 'Notification removed', <InAppNotificationEntity>[notification]);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
-      secondaryBackground: _dismissBackground(colorScheme, Alignment.centerRight),
-      background: _dismissBackground(colorScheme, Alignment.centerLeft),
-      child: _NotificationCard(
+      secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
+      background: _dismissBackground(cs, Alignment.centerLeft),
+      child: NotificationRow(
         notification: notification,
         compactInGroup: compactInGroup,
         compactBodyOverride: compactBodyOverride,
@@ -305,13 +262,11 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     );
   }
 
-  Widget _buildDismissibleGroupTile(
-    BuildContext context, {
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-    required InAppNotificationTitleGroup group,
-  }) {
+  Widget _dismissibleGroup(BuildContext context, InAppNotificationTitleGroup group) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final bool expanded = _expandedNotificationGroups.contains(group.key);
+    final String title = cleanNotificationTitle(group.displayTitle);
+    final InAppNotificationEntity first = group.items.first;
     return Dismissible(
       key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
       onDismissed: (_) {
@@ -324,19 +279,19 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         _showUndoSnackBar(context, '${group.items.length} notifications removed', group.items);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
-      secondaryBackground: _dismissBackground(colorScheme, Alignment.centerRight),
-      background: _dismissBackground(colorScheme, Alignment.centerLeft),
+      secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
+      background: _dismissBackground(cs, Alignment.centerLeft),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
-        children: [
+        children: <Widget>[
           Semantics(
             button: true,
             expanded: expanded,
             label:
-                '${group.displayTitle}. ${groupedListCountActionLine(group, expanded: expanded)}. ${expanded ? 'Expanded' : 'Collapsed'}. ${group.unreadCount > 0 ? 'Has unread. ' : ''}Activate to ${expanded ? 'collapse' : 'expand'}.',
+                '$title. ${groupedListCountActionLine(group, expanded: expanded)}. ${expanded ? 'Expanded' : 'Collapsed'}. ${group.unreadCount > 0 ? 'Has unread. ' : ''}Activate to ${expanded ? 'collapse' : 'expand'}.',
             child: Material(
-              color: theme.primaryColor,
+              type: MaterialType.transparency,
               child: InkWell(
                 onTap: () {
                   PrismHaptics.tap();
@@ -348,351 +303,114 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                     }
                   });
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ExcludeSemantics(
-                        child: CircleAvatar(
-                          backgroundImage: const AssetImage('assets/images/prism.webp'),
-                          backgroundColor: theme.primaryColor,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (group.unreadCount > 0) ...<Widget>[
-                                  ExcludeSemantics(child: _UnreadDot(color: colorScheme.error)),
-                                  const SizedBox(width: 6),
-                                ],
-                                Expanded(
-                                  child: Text(
-                                    group.displayTitle,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.headlineMedium?.copyWith(
-                                      color: colorScheme.secondary,
-                                      fontWeight: group.unreadCount > 0 ? FontWeight.w700 : FontWeight.w500,
+                child: ExcludeSemantics(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        NotificationIconTile(title: group.displayTitle, body: first.body),
+                        const SizedBox(width: PrismSpace.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              NotificationTitleLine(
+                                title: title,
+                                time: notificationTimeLabel(first.createdAt),
+                                unread: group.unreadCount > 0,
+                                trailing: Padding(
+                                  padding: const EdgeInsets.only(left: PrismSpace.xxs),
+                                  child: AnimatedRotation(
+                                    turns: expanded ? 0.5 : 0,
+                                    duration: context.motion(PrismDurations.fast),
+                                    curve: PrismCurves.move,
+                                    child: Icon(
+                                      Icons.expand_more_rounded,
+                                      size: 20,
+                                      color: cs.onSurface.withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                groupedListCountActionLine(group, expanded: expanded),
+                                style: PrismTextStyles.caption(context),
+                              ),
+                              if (!expanded) ...<Widget>[
+                                const SizedBox(height: PrismSpace.xxs),
                                 Text(
-                                  notificationTimeLabel(group.items.first.createdAt),
-                                  maxLines: 2,
+                                  collapsedGroupSummaryLine(group),
+                                  maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontSize: 12,
-                                    color: colorScheme.secondary.withValues(alpha: 0.8),
-                                  ),
+                                  style: PrismTextStyles.body(context),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              groupedListCountActionLine(group, expanded: expanded),
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontSize: 12,
-                                color: colorScheme.secondary.withValues(alpha: 0.85),
-                              ),
-                            ),
-                            if (!expanded) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                collapsedGroupSummaryLine(group),
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontSize: 12,
-                                  height: 1.25,
-                                  color: colorScheme.secondary,
-                                ),
-                              ),
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        expanded ? JamIcons.chevron_up : JamIcons.chevron_down,
-                        size: 20,
-                        color: colorScheme.secondary.withValues(alpha: 0.75),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          if (expanded)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(start: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: group.items
-                    .map(
-                      (InAppNotificationEntity n) => _buildDismissibleNotificationTile(
-                        context,
-                        colorScheme: colorScheme,
-                        notification: n,
-                        compactInGroup: true,
-                        compactBodyOverride: _compactLineForGroupedChild(group, n),
-                      ),
-                    )
-                    .toList(growable: false),
-              ),
-            ),
+          AnimatedSwitcher(
+            duration: context.motion(PrismDurations.fast),
+            child: expanded
+                ? Column(
+                    key: ValueKey<String>('open:${group.key}'),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: group.items
+                        .map(
+                          (InAppNotificationEntity n) => _dismissibleNotification(
+                            context,
+                            n,
+                            compactInGroup: true,
+                            compactBodyOverride: _compactLineForGroupedChild(group, n),
+                          ),
+                        )
+                        .toList(growable: false),
+                  )
+                : SizedBox.shrink(key: ValueKey<String>('closed:${group.key}')),
+          ),
         ],
       ),
     );
   }
 }
 
-class _UnreadDot extends StatelessWidget {
-  const _UnreadDot({required this.color});
+class _StaleBanner extends StatelessWidget {
+  const _StaleBanner({required this.onRetry});
 
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        child: const SizedBox.square(dimension: 8),
-      ),
-    );
-  }
-}
-
-class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({
-    required this.notification,
-    this.onMarkRead,
-    this.compactInGroup = false,
-    this.compactBodyOverride,
-  });
-
-  final InAppNotificationEntity notification;
-  final VoidCallback? onMarkRead;
-
-  /// When true (child under an expanded title group): no avatar, title, or image—body + time only.
-  final bool compactInGroup;
-
-  /// When set with [compactInGroup], replaces the default body/title line (e.g. follower name only).
-  final String? compactBodyOverride;
-  static const NotificationRouteMapper _routeMapper = NotificationRouteMapper();
-
-  static bool _hasValidImageUrl(String? url) => Uri.tryParse(url?.trim() ?? '')?.host.isNotEmpty ?? false;
-
-  Future<void> _onTap(BuildContext context) async {
-    PrismHaptics.tap();
-    onMarkRead?.call();
-    analytics.track(
-      NotificationItemOpenedEvent(
-        type: _notificationTypeFor(notification),
-        destination: _destinationFor(notification),
-        hasExternalUrl: notification.url.trim().isNotEmpty,
-      ),
-    );
-    if (notification.url.trim().isNotEmpty) {
-      await openPrismLink(context, notification.url);
-      return;
-    }
-    final String route = (notification.route ?? notification.pageName).trim();
-    final PageRouteInfo? mappedRoute = await _routeMapper.fromRoute(
-      route: route,
-      wallId: notification.wallId,
-      profileIdentifier: notification.followerEmail,
-      sourceTag: 'notification.route_mapper',
-    );
-    if (!context.mounted) return;
-    context.router.navigate(mappedRoute ?? const NotificationRoute());
-  }
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final String timeStr = notificationTimeLabel(notification.createdAt);
-
-    if (compactInGroup) {
-      final String trimmedOverride = compactBodyOverride?.trim() ?? '';
-      final String displayBody = trimmedOverride.isNotEmpty
-          ? trimmedOverride
-          : (notification.body.trim().isEmpty ? notification.title.trim() : notification.body.trim());
-      final String semanticLine = notification.body.trim().isNotEmpty
-          ? notification.body.trim()
-          : (notification.title.trim().isNotEmpty ? notification.title.trim() : displayBody);
-      return Semantics(
-        button: true,
-        label: '$semanticLine. $timeStr. ${notification.read ? 'Already read' : 'Not read yet'}',
-        child: Material(
-          color: theme.primaryColor,
-          child: InkWell(
-            onTap: () => _onTap(context),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!notification.read) ...<Widget>[
-                    ExcludeSemantics(child: _UnreadDot(color: colorScheme.error)),
-                    const SizedBox(width: 6),
-                  ],
-                  Expanded(
-                    child: Text(
-                      displayBody,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontSize: 13,
-                        height: 1.25,
-                        color: colorScheme.secondary,
-                        fontWeight: notification.read ? null : FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    timeStr,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontSize: 12,
-                      color: colorScheme.secondary.withValues(alpha: 0.75),
-                    ),
-                  ),
-                ],
-              ),
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.xs, PrismSpace.xs, PrismSpace.xs),
+      decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(PrismRadius.md)),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              "Couldn't load new notifications. What you see below is saved on this device.",
+              style: PrismTextStyles.body(context).copyWith(color: cs.onErrorContainer),
             ),
           ),
-        ),
-      );
-    }
-
-    final bool showImage = _hasValidImageUrl(notification.imageUrl);
-    final double dpr = MediaQuery.devicePixelRatioOf(context);
-    final int memCacheWidth = (MediaQuery.sizeOf(context).width * dpr).round().clamp(1, 4096);
-
-    return Semantics(
-      button: true,
-      label:
-          '${notification.title}. ${notification.body}. $timeStr. ${notification.read ? 'Already read' : 'Not read yet'}',
-      child: Material(
-        color: theme.primaryColor,
-        child: InkWell(
-          onTap: () => _onTap(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    ExcludeSemantics(
-                      child: CircleAvatar(
-                        backgroundImage: const AssetImage('assets/images/prism.webp'),
-                        backgroundColor: theme.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              if (!notification.read) ...<Widget>[
-                                ExcludeSemantics(child: _UnreadDot(color: colorScheme.error)),
-                                const SizedBox(width: 6),
-                              ],
-                              Expanded(
-                                child: Text(
-                                  notification.title,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.headlineMedium?.copyWith(
-                                    color: colorScheme.secondary,
-                                    fontWeight: notification.read ? FontWeight.w500 : FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                timeStr,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontSize: 12,
-                                  color: colorScheme.secondary.withValues(alpha: 0.8),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            notification.body,
-                            maxLines: 6,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(fontSize: 12, color: colorScheme.secondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (showImage) ...<Widget>[
-                  const SizedBox(height: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: MediaQuery.sizeOf(context).width * 9 / 16,
-                      child: CachedNetworkImage(
-                        imageUrl: notification.imageUrl,
-                        fit: BoxFit.cover,
-                        memCacheWidth: memCacheWidth,
-                        placeholder: (_, _) =>
-                            Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.error)),
-                        errorWidget: (_, _, _) => const SizedBox.shrink(),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+          const SizedBox(width: PrismSpace.xs),
+          PrismButton(
+            label: 'Try again',
+            variant: PrismButtonVariant.ghost,
+            size: PrismButtonSize.compact,
+            onPressed: onRetry,
           ),
-        ),
+        ],
       ),
     );
   }
-}
-
-NotificationTypeValue _notificationTypeFor(InAppNotificationEntity notification) {
-  if (notification.url.trim().isNotEmpty) {
-    return NotificationTypeValue.externalUrl;
-  }
-  if (notification.pageName.trim().isNotEmpty || (notification.route?.trim().isNotEmpty ?? false)) {
-    return NotificationTypeValue.route;
-  }
-  return NotificationTypeValue.unknown;
-}
-
-String _destinationFor(InAppNotificationEntity notification) {
-  if (notification.url.trim().isNotEmpty) {
-    return notification.url;
-  }
-  final route = (notification.route ?? notification.pageName).trim();
-  if (route.isNotEmpty) {
-    return route;
-  }
-  return '';
 }

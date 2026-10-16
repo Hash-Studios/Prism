@@ -1,8 +1,7 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
@@ -120,13 +119,8 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: theme.primaryColor,
-      appBar: const PreferredSize(
-        preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: 'Live wallpapers'),
-      ),
+    return PrismPage(
+      title: 'Live wallpapers',
       body: BlocConsumer<LiveWallpaperBloc, LiveWallpaperState>(
         listenWhen: (previous, current) => current.outcome != null && previous.outcome != current.outcome,
         listener: (context, state) => _onOutcome(context, state.outcome!),

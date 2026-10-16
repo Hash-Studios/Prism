@@ -1,4 +1,5 @@
 import 'package:Prism/core/startup/startup_sheet.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +43,12 @@ void main() {
       StartupModalSlot.reset();
     });
 
+    // Glint loops, so pumpAndSettle would never finish. Pump past the sheet motion instead.
+    Future<void> settle(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+    }
+
     Future<Future<int?>> openPrompt(WidgetTester tester) async {
       late BuildContext context;
       await tester.pumpWidget(
@@ -58,16 +65,18 @@ void main() {
         context,
         requestPermission: request,
       );
-      await tester.pumpAndSettle();
+      await settle(tester);
       return result;
     }
 
     testWidgets('asks in one line, and Not now never calls the system prompt', (WidgetTester tester) async {
       final Future<int?> result = await openPrompt(tester);
 
-      expect(find.text('Get the Wall of the Day and streak reminders?'), findsOneWidget);
+      expect(find.byType(Glint), findsOneWidget);
+      expect(find.text('Get the Wall of the Day'), findsOneWidget);
+      expect(find.text('Turn on notifications'), findsOneWidget);
       await tester.tap(find.text('Not now'));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       expect(await result, isNull);
       expect(requests, 0);
@@ -76,8 +85,8 @@ void main() {
     testWidgets('Turn on calls the system prompt once', (WidgetTester tester) async {
       final Future<int?> result = await openPrompt(tester);
 
-      await tester.tap(find.text('Turn on'));
-      await tester.pumpAndSettle();
+      await tester.tap(find.text('Turn on notifications'));
+      await settle(tester);
 
       expect(await result, 1);
       expect(requests, 1);
@@ -87,7 +96,7 @@ void main() {
       final Future<int?> result = await openPrompt(tester);
 
       await tester.tapAt(const Offset(10, 10));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       expect(await result, isNull);
       expect(requests, 0);
@@ -97,7 +106,7 @@ void main() {
       StartupModalSlot.shown.value = true;
       final Future<int?> result = await openPrompt(tester);
 
-      expect(find.text('Turn on'), findsNothing);
+      expect(find.text('Turn on notifications'), findsNothing);
       expect(await result, isNull);
       expect(requests, 0);
     });
@@ -105,7 +114,7 @@ void main() {
     testWidgets('claims the slot so the next startup sheet waits for another session', (WidgetTester tester) async {
       final Future<int?> result = await openPrompt(tester);
       await tester.tap(find.text('Not now'));
-      await tester.pumpAndSettle();
+      await settle(tester);
       await result;
 
       expect(StartupModalSlot.shown.value, isTrue);

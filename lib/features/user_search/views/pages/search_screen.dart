@@ -5,19 +5,18 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/data/recent_searches_store.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/search_tags.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
+import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_widget.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,9 +31,11 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchController = TextEditingController();
+  final FocusNode _focus = FocusNode();
+  final GlobalKey _fieldKey = GlobalKey();
   late final RecentSearchesStore _recents = RecentSearchesStore(getIt<SettingsLocalDataSource>());
   late List<String> _recentSearches = _recents.read();
-  // One bloc for the screen, so "Trending right now" does not reload each time the user returns from a search.
+  // One bloc for the screen, so "Trending now" does not reload each time the user returns from a search.
   late final SearchDiscoveryBloc _discoveryBloc = getIt<SearchDiscoveryBloc>()
     ..add(const SearchDiscoveryEvent.fetchRequested());
   Future<WallpaperSearchPage>? _search;
@@ -107,15 +108,6 @@ class _SearchScreenState extends State<SearchScreen> {
     _discoveryBloc.add(const SearchDiscoveryEvent.fetchRequested());
   }
 
-  void _clearQuery() {
-    searchController.clear();
-    if (isSubmitted) {
-      _backToDiscover();
-    } else {
-      setState(() {});
-    }
-  }
-
   Future<void> _openFilters() async {
     final SearchFilters? picked = await showSearchFilterSheet(context, _filters);
     if (picked == null || picked == _filters || !mounted) return;
@@ -179,33 +171,56 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     pendingTagSearch.removeListener(_consumePendingTag);
     searchController.dispose();
+    _focus.dispose();
     unawaited(_discoveryBloc.close());
     super.dispose();
   }
 
-  Widget _results() {
-    final PrismPaletteColor? color = _filters.color;
-    if (color == null) return _resultsBody();
+  Widget _header() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-            child: InputChip(
-              avatar: CircleAvatar(backgroundColor: color.color),
-              label: Text(color.name),
-              deleteButtonTooltipMessage: 'Clear colour',
-              onDeleted: _clearColor,
-            ),
+        const PrismHeader(title: 'Search', showBack: false),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.xs, PrismSpace.sm),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: PrismSearchField(
+                  key: _fieldKey,
+                  controller: searchController,
+                  focusNode: _focus,
+                  hint: 'Search wallpapers',
+                  onChanged: (text) {
+                    if (text.trim().isEmpty && isSubmitted) {
+                      _backToDiscover();
+                    } else {
+                      setState(() {});
+                    }
+                  },
+                  onSubmitted: (text) {
+                    final String query = text.trim();
+                    if (query.isEmpty) return;
+                    _triggerSearch(query, sourceContext: 'search_textfield');
+                  },
+                ),
+              ),
+              const SizedBox(width: PrismSpace.xxs),
+              Badge(
+                isLabelVisible: _filters != const SearchFilters(),
+                smallSize: 8,
+                alignment: AlignmentDirectional.topEnd,
+                offset: const Offset(-8, 8),
+                child: PrismIconButton(icon: Icons.tune_rounded, tooltip: 'Filters', onPressed: _openFilters),
+              ),
+            ],
           ),
         ),
-        Expanded(child: _resultsBody()),
       ],
     );
   }
 
-  Widget _resultsBody() {
+  Widget _results(BuildContext context) {
     return FutureBuilder<WallpaperSearchPage>(
       future: _search,
       builder: (context, snapshot) {
@@ -227,14 +242,15 @@ class _SearchScreenState extends State<SearchScreen> {
           return const LoadingCards(useFeedLayout: true);
         }
         if (page.results.isEmpty && page.prismResults.isEmpty) {
+          final bool filtered = _filters != const SearchFilters();
           return GlintState(
             kind: GlintStateKind.empty,
             title: _submittedQuery.isEmpty
                 ? 'No ${_filters.color?.name.toLowerCase()} wallpapers found'
                 : 'No wallpapers found for "$_submittedQuery"',
-            body: _filters == const SearchFilters() ? null : 'Try fewer filters.',
-            actionLabel: _filters == const SearchFilters() ? null : 'Reset filters',
-            onAction: _resetFilters,
+            body: filtered ? 'Try fewer filters.' : 'Try a shorter or a different word.',
+            actionLabel: filtered ? 'Reset filters' : null,
+            onAction: filtered ? _resetFilters : null,
           );
         }
         return SearchGrid(
@@ -251,102 +267,92 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final TextStyle? fieldStyle = theme.textTheme.headlineSmall?.copyWith(
-      fontFamily: 'Satoshi',
-      color: theme.colorScheme.secondary,
-    );
     return PopScope(
       canPop: !isSubmitted,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _backToDiscover();
       },
       child: Scaffold(
-        backgroundColor: theme.primaryColor,
-        appBar: AppBar(
-          backgroundColor: theme.primaryColor,
-          elevation: 0,
-          surfaceTintColor: theme.primaryColor,
-          automaticallyImplyLeading: false,
-          titleSpacing: 0,
-          title: Row(
-            children: <Widget>[
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 10, 4, 4),
-                  child: TextField(
-                    cursorColor: theme.colorScheme.error,
-                    style: fieldStyle,
-                    controller: searchController,
-                    textInputAction: TextInputAction.search,
-                    onChanged: (text) {
-                      if (text.trim().isEmpty && isSubmitted) {
-                        _backToDiscover();
-                      } else {
-                        setState(() {});
-                      }
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: SafeArea(
+          bottom: false,
+          child: BlocProvider<SearchDiscoveryBloc>.value(
+            value: _discoveryBloc,
+            child: isSubmitted
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      _header(),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+                        child: Row(
+                          children: <Widget>[
+                            if (_submittedQuery.isNotEmpty)
+                              Expanded(
+                                child: Text(
+                                  'Results for "$_submittedQuery"',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: PrismTextStyles.caption(context),
+                                ),
+                              ),
+                            if (_filters.color != null)
+                              Tooltip(
+                                message: 'Clear colour',
+                                child: PrismChip(
+                                  label: _filters.color!.name,
+                                  selected: true,
+                                  leading: _ColourDot(_filters.color!.color),
+                                  onTap: _clearColor,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Expanded(child: _results(context)),
+                    ],
+                  )
+                : SearchDiscoveryWidget(
+                    header: _header(),
+                    tags: curatedSearchTags,
+                    selectedTag: searchController.text,
+                    recentSearches: _recentSearches,
+                    onClearRecents: () => unawaited(_clearRecents()),
+                    onColorPressed: _searchByColor,
+                    onRecentPressed: (query) {
+                      searchController.text = query;
+                      _triggerSearch(query, sourceContext: 'search_recent', fromSuggestion: true);
                     },
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.only(left: 24, top: 12),
-                      border: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      hintText: 'Search...',
-                      hintStyle: fieldStyle,
-                      suffixIcon: searchController.text.isEmpty
-                          ? Icon(JamIcons.search, color: theme.colorScheme.secondary)
-                          : IconButton(
-                              tooltip: 'Clear search',
-                              onPressed: _clearQuery,
-                              icon: Icon(Icons.close_rounded, color: theme.colorScheme.secondary),
-                            ),
-                    ),
-                    onSubmitted: (tex) {
-                      final String query = tex.trim();
-                      if (query.isEmpty) return;
-                      _triggerSearch(query, sourceContext: 'search_textfield');
+                    onTagPressed: (tag) {
+                      analytics.track(
+                        SearchTagSelectedEvent(provider: SearchProviderValue.wallhaven, tag: tag.toLowerCase()),
+                      );
+                      searchController.text = tag;
+                      _triggerSearch(tag, sourceContext: 'search_tag', fromSuggestion: true);
                     },
                   ),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Filters',
-                onPressed: _openFilters,
-                icon: Badge(
-                  isLabelVisible: _filters != const SearchFilters(),
-                  smallSize: 8,
-                  child: Icon(Icons.tune_rounded, color: theme.colorScheme.secondary),
-                ),
-              ),
-              const SizedBox(width: 6),
-            ],
           ),
         ),
-        body: isSubmitted
-            ? _results()
-            : BlocProvider<SearchDiscoveryBloc>.value(
-                value: _discoveryBloc,
-                child: SearchDiscoveryWidget(
-                  tags: curatedSearchTags,
-                  selectedTag: searchController.text,
-                  recentSearches: _recentSearches,
-                  onClearRecents: () => unawaited(_clearRecents()),
-                  onColorPressed: _searchByColor,
-                  onRecentPressed: (query) {
-                    searchController.text = query;
-                    _triggerSearch(query, sourceContext: 'search_recent', fromSuggestion: true);
-                  },
-                  onTagPressed: (tag) {
-                    analytics.track(
-                      SearchTagSelectedEvent(provider: SearchProviderValue.wallhaven, tag: tag.toLowerCase()),
-                    );
-                    searchController.text = tag;
-                    _triggerSearch(tag, sourceContext: 'search_tag', fromSuggestion: true);
-                  },
-                ),
-              ),
       ),
+    );
+  }
+}
+
+/// A small round colour sample, used in the active colour chip.
+class _ColourDot extends StatelessWidget {
+  const _ColourDot(this.color);
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        border: Border.all(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.4)),
+      ),
+      child: const SizedBox(width: 14, height: 14),
     );
   }
 }

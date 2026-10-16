@@ -1,15 +1,14 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -85,7 +84,7 @@ class _SplashWidgetState extends State<SplashWidget> {
       );
       if (showOnboarding) {
         _debugOnboardingShownThisSession = true;
-        context.router.replaceAll([const OnboardingV2ShellRoute()]);
+        context.router.replaceAll([OnboardingV2ShellRoute()]);
       } else {
         context.router.replaceAll([const DashboardRoute()]);
       }
@@ -103,7 +102,7 @@ class _SplashWidgetState extends State<SplashWidget> {
       builder: (context, state) {
         final Widget content;
         if (state.status == LoadStatus.success && state.isObsoleteVersion) {
-          content = KeyedSubtree(key: const ValueKey<String>('old'), child: OldVersion());
+          content = const KeyedSubtree(key: ValueKey<String>('old'), child: OldVersion());
         } else if (state.status == LoadStatus.failure) {
           content = _StartupFailure(
             key: const ValueKey<String>('failure'),
@@ -113,7 +112,12 @@ class _SplashWidgetState extends State<SplashWidget> {
         } else {
           content = const _SecondarySplash(key: ValueKey<String>('splash'));
         }
-        return AnimatedSwitcher(duration: context.motion(const Duration(milliseconds: 300)), child: content);
+        return AnimatedSwitcher(
+          duration: context.motion(PrismDurations.slow),
+          switchInCurve: PrismCurves.enter,
+          switchOutCurve: PrismCurves.exit,
+          child: content,
+        );
       },
     );
   }
@@ -124,16 +128,18 @@ class _SecondarySplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double size = MediaQuery.sizeOf(context).width * 0.29074074074;
     return Container(
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-      color: Theme.of(context).primaryColor,
+      width: double.infinity,
+      height: double.infinity,
+      color: Theme.of(context).colorScheme.surface,
       child: Center(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.29074074074,
-          height: MediaQuery.of(context).size.width * 0.29074074074,
-          decoration: const BoxDecoration(
-            image: DecorationImage(image: AssetImage('assets/images/ic_launcher.webp'), fit: BoxFit.cover),
+        child: Semantics(
+          label: 'Prism',
+          image: true,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(size * 0.225),
+            child: Image.asset('assets/images/ic_launcher.webp', width: size, height: size, fit: BoxFit.cover),
           ),
         ),
       ),
@@ -149,30 +155,18 @@ class _StartupFailure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text("Prism couldn't start", style: PrismTextStyles.cardTitle(context), textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Text(
-                'Check your connection and try again.',
-                style: PrismTextStyles.body(context),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () {
-                  PrismHaptics.tap();
-                  onRetry();
-                },
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SafeArea(
+        child: GlintState(
+          kind: GlintStateKind.error,
+          title: 'Prism could not start',
+          body: 'Check your connection and try again.',
+          actionLabel: 'Try again',
+          onAction: () {
+            PrismHaptics.tap();
+            onRetry();
+          },
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xxl, vertical: PrismSpace.xl),
         ),
       ),
     );

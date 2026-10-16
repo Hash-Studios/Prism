@@ -3,7 +3,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:flutter/material.dart';
 
-/// A round swatch for one [PrismPaletteColor]. A selected swatch gets a ring in the theme text colour.
+/// A round swatch for one [PrismPaletteColor]. A selected swatch gets a ring in the accent colour.
 class PaletteSwatch extends StatelessWidget {
   const PaletteSwatch({super.key, required this.color, required this.onTap, this.selected = false, this.size = 40});
 
@@ -38,13 +38,13 @@ class PaletteSwatch extends StatelessWidget {
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: selected ? scheme.secondary : Colors.transparent, width: 2),
+                border: Border.all(color: selected ? scheme.primary : Colors.transparent, width: 2),
               ),
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: color.color,
-                  border: Border.all(color: scheme.secondary.withValues(alpha: 0.2)),
+                  border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
                 ),
               ),
             ),

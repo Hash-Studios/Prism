@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
@@ -90,6 +91,9 @@ void main() {
   }
 
   void setViewport(WidgetTester tester) {
+    // Glint and the step spinner loop forever, so these tests run with motion off.
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     tester.view.physicalSize = const Size(360, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -145,7 +149,7 @@ void main() {
     );
 
     expect(find.text('Details (optional)'), findsOneWidget);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
 
     expect(savedId, hasLength(10));
@@ -179,7 +183,7 @@ void main() {
     expect(find.widgetWithText(InputChip, 'sand'), findsOneWidget);
     expect(find.widgetWithText(InputChip, 'desert'), findsOneWidget);
 
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
 
     expect(savedMetadata!.title, 'Calm dunes');
@@ -210,7 +214,7 @@ void main() {
     await tester.pump();
     expect(find.byType(InputChip), findsNWidgets(maxSubmissionTags - 1));
 
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     expect(savedMetadata!.tags, hasLength(7));
     expect(savedMetadata!.tags, isNot(contains('a1')));
@@ -240,7 +244,7 @@ void main() {
 
       expect(find.textContaining('720x1600'), findsWidgets);
       expect(find.textContaining('soft on a phone'), findsOneWidget);
-      await tester.tap(find.text('Submit for review'));
+      await tester.tap(find.text('Upload'));
       await tester.pumpAndSettle();
       expect(saved, isTrue);
     });
@@ -258,7 +262,7 @@ void main() {
     testWidgets('tracks the upload stages up to submitted', (tester) async {
       setViewport(tester);
       await pumpScreen(tester, await makeImage(tester));
-      await tester.tap(find.text('Submit for review'));
+      await tester.tap(find.text('Upload'));
       await tester.pumpAndSettle();
 
       expect(recorder.events.whereType<UploadStageEvent>().map((e) => e.stage), <String>[
@@ -277,7 +281,7 @@ void main() {
         await makeImage(tester),
         upload: ({required isThumbnail}) async => throw StateError('offline'),
       );
-      await tester.tap(find.text('Submit for review'));
+      await tester.tap(find.text('Upload'));
       await tester.pumpAndSettle();
 
       expect(recorder.events.whereType<UploadFailedEvent>().map((e) => e.reason), <String>['upload']);
@@ -290,7 +294,7 @@ void main() {
         await makeImage(tester),
         save: ({required id, required metadata}) async => throw StateError('lost'),
       );
-      await tester.tap(find.text('Submit for review'));
+      await tester.tap(find.text('Upload'));
       await tester.pumpAndSettle();
 
       expect(recorder.events.whereType<UploadFailedEvent>().map((e) => e.reason), <String>['submission']);
@@ -324,7 +328,7 @@ void main() {
       final batch = await pumpRoutedBatch(tester);
 
       expect(find.text('Wallpaper 1 of 2'), findsOneWidget);
-      await tester.tap(find.text('Submit for review'));
+      await tester.tap(find.text('Upload'));
       await tester.pumpAndSettle();
 
       expect(find.text('edit-stub'), findsOneWidget);
@@ -333,15 +337,29 @@ void main() {
     });
 
     testWidgets('Skip records the image as skipped and moves on', (tester) async {
+      final List<String> haptics = <String>[];
+      final bool previousHapticsEnabled = PrismHaptics.enabled;
+      PrismHaptics.enabled = true;
+      addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'HapticFeedback.vibrate') haptics.add(call.arguments! as String);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
       final batch = await pumpRoutedBatch(tester);
+      final skipButton = find.text('Skip this wallpaper');
 
-      await tester.tap(find.text('Skip this wallpaper'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(skipButton);
+      await tester.pumpAndSettle();
+      await tester.tap(skipButton);
       await tester.pumpAndSettle();
 
+      expect(haptics, <String>['HapticFeedbackType.lightImpact']);
       expect(find.text('edit-stub'), findsOneWidget);
       expect(batch.outcomes.first, UploadItemOutcome.skipped);
       expect(batch.position, 2);
-    });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('a single image shows no step and no Skip button', (tester) async {
       setViewport(tester);
@@ -374,11 +392,12 @@ void main() {
       await pumpReady(tester);
 
       expect(find.text('Wallpaper 2 of 2'), findsOneWidget);
-      await tester.tap(find.text('Submit for review'));
+      await tester.tap(find.text('Upload'));
       await tester.pumpAndSettle();
 
       expect(find.text('review-stub'), findsOneWidget);
       expect(toastMessages, contains('2 of 2 wallpapers submitted'));
+      await tester.pump(const Duration(seconds: 1));
     });
   });
 }

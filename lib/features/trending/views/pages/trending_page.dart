@@ -4,15 +4,12 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/entities/trending_range.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,35 +38,20 @@ class TrendingPage extends StatelessWidget implements AutoRouteWrapper {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: const PreferredSize(
-        preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: 'Trending'),
-      ),
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return PrismPage(
+      title: 'Trending',
       body: Column(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.sm),
             child: BlocBuilder<TrendingBloc, TrendingState>(
               buildWhen: (previous, current) => previous.range != current.range,
-              builder: (context, state) => SegmentedButton<TrendingRange>(
-                segments: <ButtonSegment<TrendingRange>>[
-                  for (final TrendingRange range in TrendingRange.values)
-                    ButtonSegment<TrendingRange>(value: range, label: Text(_label(range))),
-                ],
-                selected: <TrendingRange>{state.range},
-                showSelectedIcon: false,
-                expandedInsets: EdgeInsets.zero,
-                onSelectionChanged: (selection) {
-                  PrismHaptics.selection();
-                  context.read<TrendingBloc>().add(TrendingEvent.rangeSelected(selection.first));
-                },
-                style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: Theme.of(context).colorScheme.primary,
-                  selectedForegroundColor: Theme.of(context).colorScheme.onPrimary,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                ),
+              builder: (context, state) => PrismSegmented<TrendingRange>(
+                values: TrendingRange.values,
+                selected: state.range,
+                labelOf: _label,
+                onChanged: (range) => context.read<TrendingBloc>().add(TrendingEvent.rangeSelected(range)),
               ),
             ),
           ),
@@ -92,6 +74,8 @@ class TrendingPage extends StatelessWidget implements AutoRouteWrapper {
                   );
                 }
                 return RefreshIndicator(
+                  color: cs.primary,
+                  backgroundColor: cs.surfaceContainerHigh,
                   onRefresh: () => _refresh(context),
                   child: _TrendingGrid(key: ValueKey<TrendingRange>(state.range), walls: section.walls),
                 );
@@ -114,12 +98,9 @@ class _TrendingGrid extends StatelessWidget {
     final int crossAxisCount = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
     return GridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
       itemCount: walls.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: PrismFeedLayout.gridTileAspectRatio,
-      ),
+      gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount),
       itemBuilder: (context, index) {
         final PrismWallpaper wall = walls[index];
         return KeyedSubtree(

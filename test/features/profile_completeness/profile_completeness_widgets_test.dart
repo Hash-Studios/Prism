@@ -9,25 +9,29 @@ Widget _wrap(Widget child) {
 }
 
 void main() {
-  testWidgets('card renders percent ring label and missing-step text', (tester) async {
+  testWidgets('card renders percent, reward line and the missing steps by name', (tester) async {
     const status = ProfileCompletenessStatus(
       missingSteps: <ProfileCompletenessStep>[ProfileCompletenessStep.bio, ProfileCompletenessStep.socialLink],
     );
 
     await tester.pumpWidget(_wrap(ProfileCompletenessCard(status: status, onCompleteNow: () async {})));
-    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Profile 50% done'), findsOneWidget);
+    expect(find.text('Complete your profile'), findsOneWidget);
     expect(find.text('50%'), findsOneWidget);
-    expect(find.text('2 steps · '), findsOneWidget);
+    expect(find.text('Earn 25 coins when you finish'), findsOneWidget);
+    expect(find.text('Write bio'), findsOneWidget);
+    expect(find.text('Add one social link'), findsOneWidget);
+    expect(find.text('Add profile photo'), findsNothing);
   });
 
-  testWidgets('card says 1 step when one is left', (tester) async {
+  testWidgets('card fills its progress bar to the completed share', (tester) async {
     const status = ProfileCompletenessStatus(missingSteps: <ProfileCompletenessStep>[ProfileCompletenessStep.bio]);
 
     await tester.pumpWidget(_wrap(ProfileCompletenessCard(status: status, onCompleteNow: () async {})));
+    await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('1 step · '), findsOneWidget);
+    expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, 0.75);
   });
 
   testWidgets('card CTA invokes edit action callback', (tester) async {
@@ -51,8 +55,8 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Finish'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Complete profile'));
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(tapped, isTrue);
   });
@@ -74,18 +78,47 @@ void main() {
       ),
     );
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
+    // Glint loops, so pump a bounded time instead of settling.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
+    expect(find.text('Finish your profile'), findsOneWidget);
     expect(find.textContaining('75% complete'), findsOneWidget);
+    expect(find.textContaining('25 Prism coins'), findsOneWidget);
     expect(find.text('Add one social link'), findsOneWidget);
     final route = ModalRoute.of(tester.element(find.text('Add one social link')))! as ModalBottomSheetRoute;
     expect(route.useSafeArea, isTrue);
     expect(route.isDismissible, isFalse);
     expect(route.enableDrag, isFalse);
 
-    await tester.tap(find.text('Complete now'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Complete profile'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(answer, ProfileCompletenessNudgeAction.completeNow);
+  });
+
+  testWidgets('sheet answers "not now" from the Later button', (tester) async {
+    const status = ProfileCompletenessStatus(missingSteps: <ProfileCompletenessStep>[ProfileCompletenessStep.bio]);
+    ProfileCompletenessNudgeAction? answer;
+
+    await tester.pumpWidget(
+      _wrap(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => answer = await showProfileCompletenessNudgeSheet(context, status: status),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('Later'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(answer, ProfileCompletenessNudgeAction.notNow);
   });
 }

@@ -1,5 +1,6 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -68,7 +69,12 @@ class GlintState extends StatelessWidget {
               ],
               if (hasAction) ...[
                 const SizedBox(height: 16),
-                FilledButton.tonal(onPressed: onAction, child: Text(actionLabel!)),
+                PrismButton(
+                  label: actionLabel!,
+                  onPressed: onAction,
+                  variant: PrismButtonVariant.tonal,
+                  size: PrismButtonSize.compact,
+                ),
               ],
             ],
           ),

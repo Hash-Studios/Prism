@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
@@ -106,7 +107,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byType(InkWell).first);
+    await tester.tap(find.byType(PrismWallTile).first);
     await tester.pump();
 
     final opened = analytics.events.where((event) => event.eventName == 'wotd_opened').single;

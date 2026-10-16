@@ -28,12 +28,12 @@ FeedItemEntity _wall(String id) => FeedItemEntity.prism(
 
 Widget _host(Widget child) => MaterialApp(home: Scaffold(body: child));
 
-typedef _TagScene = ({String theme, String over, Color backdrop, int fill, int label});
+typedef _TagScene = ({String theme, String over, Color backdrop});
 
 const List<_TagScene> _tagScenes = <_TagScene>[
-  (theme: 'Frost White', over: 'a faint tint', backdrop: Color(0x33FFFFFF), fill: 0xFFEEEEEE, label: 0xFF2F2F2F),
-  (theme: 'Cotton Blue', over: 'a dark wallpaper', backdrop: Color(0xFF101010), fill: 0xFF7D92B6, label: 0xFF202836),
-  (theme: 'Cotton Blue', over: 'a white wallpaper', backdrop: Color(0xFFFFFFFF), fill: 0xFF7D92B6, label: 0xFF202836),
+  (theme: 'Frost White', over: 'a faint tint', backdrop: Color(0x33FFFFFF)),
+  (theme: 'Cotton Blue', over: 'a dark wallpaper', backdrop: Color(0xFF101010)),
+  (theme: 'Cotton Blue', over: 'a white wallpaper', backdrop: Color(0xFFFFFFFF)),
 ];
 
 void main() {
@@ -86,7 +86,7 @@ void main() {
       final DecoratedBox pill = tester.widget<DecoratedBox>(
         find.descendant(of: find.byType(PrimaryActionPill), matching: find.byType(DecoratedBox)).first,
       );
-      final Color accent = Theme.of(tester.element(find.byType(PrimaryActionPill))).colorScheme.error;
+      final Color accent = Theme.of(tester.element(find.byType(PrimaryActionPill))).colorScheme.primary;
       expect((pill.decoration as ShapeDecoration).color, accent);
     });
 
@@ -108,6 +108,62 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('keeps icon actions at least 44 points wide with large text on a narrow screen', (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const Scaffold(
+            body: WallpaperActionBar(
+              primary: WallpaperBarAction(
+                label: 'Set as wallpaper',
+                child: PrimaryActionPill(
+                  icon: Icons.image,
+                  label: 'Set',
+                  semanticLabel: 'Set as wallpaper',
+                  isLoading: false,
+                ),
+              ),
+              actions: <WallpaperBarAction>[
+                WallpaperBarAction(
+                  label: 'Download',
+                  child: CircularMenuButton(label: 'Download', isLoading: false, child: Icon(Icons.download)),
+                ),
+                WallpaperBarAction(
+                  label: 'Favourite',
+                  child: CircularMenuButton(label: 'Favourite', isLoading: false, child: Icon(Icons.favorite)),
+                ),
+                WallpaperBarAction(
+                  label: 'Share',
+                  child: CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)),
+                ),
+                WallpaperBarAction(
+                  label: 'Edit',
+                  child: CircularMenuButton(label: 'Edit', isLoading: false, child: Icon(Icons.edit)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      for (final String label in <String>['Download', 'Favourite', 'Share', 'Edit']) {
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(label)).rect.width,
+          greaterThanOrEqualTo(44),
+          reason: '$label tap target',
+        );
+      }
+      semantics.dispose();
     });
   });
 
@@ -203,10 +259,16 @@ void main() {
               .style!;
           expect(decoration.shape, isA<StadiumBorder>(), reason: tag);
           expect(decoration.color!.a, 1, reason: tag);
-          expect(decoration.color!.toARGB32(), scene.fill, reason: tag);
+          expect(
+            decoration.color,
+            Color.alphaBlend(
+              ChipTheme.of(tester.element(chip)).backgroundColor!,
+              theme.colorScheme.surfaceContainerLow,
+            ),
+            reason: tag,
+          );
           expect(label.fontWeight, FontWeight.w500, reason: tag);
           expect(label.fontSize, 14, reason: tag);
-          expect(label.color!.toARGB32(), scene.label, reason: tag);
           expect(contrastRatio(label.color!, decoration.color!), greaterThanOrEqualTo(4.5), reason: tag);
           expect(
             tester.getSize(find.descendant(of: chip, matching: find.byType(Ink))).height,

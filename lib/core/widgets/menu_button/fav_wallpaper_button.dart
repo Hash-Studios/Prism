@@ -48,13 +48,16 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
   @override
   Widget build(BuildContext context) {
     final bool isFavorite = _favoritesLocal.isWallFavourite(app_state.prismUser.id, widget.wall?.id ?? '');
+    // The glass action bar keeps the heart of the current app: the theme ink, 30 points, in a 53 point target.
+    final bool flat = FlatMenuButtons.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return CircularMenuButton(
       label: 'Favourite',
       selected: isFavorite,
       isLoading: isLoading,
       padding: EdgeInsets.zero,
       child: FavoriteIcon(
-        tapTargetExtent: 53,
+        tapTargetExtent: flat ? 53 : CircularMenuButton.size,
         valueChanged: () {
           if (_tapLock?.isActive ?? false) return;
           _tapLock = Timer(const Duration(milliseconds: 300), () {});
@@ -65,8 +68,8 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
           }
           onFav(widget.wall, desired: !isFavorite);
         },
-        iconColor: Theme.of(context).colorScheme.secondary,
-        iconSize: 30,
+        iconColor: flat || !isFavorite ? cs.onSurface : cs.primary,
+        iconSize: flat ? 30 : 32,
         isFavorite: isFavorite,
       ),
     );

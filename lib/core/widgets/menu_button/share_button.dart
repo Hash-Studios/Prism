@@ -24,6 +24,9 @@ class ShareButton extends StatefulWidget {
     String? contextLine,
   })
   shareCard;
+
+  /// Shows a caption under the round button.
+  final bool labelled;
   const ShareButton({
     required this.id,
     required this.source,
@@ -32,6 +35,7 @@ class ShareButton extends StatefulWidget {
     this.contextLine,
     this.createLink = createDynamicLink,
     this.shareCard = shareWallpaperCard,
+    this.labelled = false,
     super.key,
   });
 
@@ -51,13 +55,14 @@ class _ShareButtonState extends State<ShareButton> {
   Widget build(BuildContext context) {
     return CircularMenuButton(
       label: 'Share',
+      caption: widget.labelled ? 'Share' : null,
       onTap: () {
         PrismHaptics.tap();
         logger.d('Share');
         onShare();
       },
       isLoading: isLoading,
-      child: Icon(JamIcons.share_alt, color: Theme.of(context).colorScheme.secondary, size: 20),
+      child: const Icon(JamIcons.share_alt),
     );
   }
 

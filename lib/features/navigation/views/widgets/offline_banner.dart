@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
+/// A slim pill that slides down under the top bar after a second while offline, says "Back online" for two seconds
+/// on recovery, then leaves.
 const Duration _backOnlineDuration = Duration(seconds: 2);
 
 class ConnectivityWidget extends StatefulWidget {
@@ -16,8 +19,8 @@ class ConnectivityWidget extends StatefulWidget {
 
 class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
-    duration: const Duration(milliseconds: 260),
-    reverseDuration: const Duration(milliseconds: 180),
+    duration: PrismDurations.base,
+    reverseDuration: PrismDurations.fast,
     vsync: this,
   );
   late final CurvedAnimation _curve = CurvedAnimation(
@@ -25,7 +28,10 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
     curve: PrismCurves.enter,
     reverseCurve: PrismCurves.exit,
   );
-  late final Animation<Offset> _position = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(_curve);
+  late final Animation<Offset> _position = Tween<Offset>(
+    begin: const Offset(0, -1.5),
+    end: Offset.zero,
+  ).animate(_curve);
   Timer? _showTimer;
   Timer? _backOnlineTimer;
   bool _shown = false;
@@ -88,41 +94,58 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.bottomCenter,
-      child: SlideTransition(
-        position: _position,
-        child: ExcludeSemantics(
-          excluding: !_shown,
-          child: _OfflineBanner(online: _backOnline),
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(top: PrismSpace.xs),
+        child: IgnorePointer(
+          child: FadeTransition(
+            opacity: _curve,
+            child: SlideTransition(
+              position: _position,
+              child: ExcludeSemantics(
+                excluding: !_shown,
+                child: _OfflinePill(online: _backOnline),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _OfflineBanner extends StatelessWidget {
-  const _OfflineBanner({required this.online});
+class _OfflinePill extends StatelessWidget {
+  const _OfflinePill({required this.online});
 
   final bool online;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final String message = online ? 'Back online' : 'No internet connection';
-    final Color background = online ? scheme.inverseSurface : scheme.errorContainer;
-    final Color foreground = online ? scheme.onInverseSurface : scheme.onErrorContainer;
+    final Color background = online ? cs.inverseSurface : cs.surfaceContainerHigh;
+    final Color foreground = online ? cs.onInverseSurface : cs.onSurface;
     return Semantics(
       liveRegion: true,
+      container: true,
       label: message,
       excludeSemantics: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-        width: double.infinity,
-        color: background,
-        child: Text(
-          message,
-          style: TextStyle(fontSize: 12, color: foreground, fontWeight: FontWeight.bold, fontFamily: 'Proxima Nova'),
-          textAlign: TextAlign.center,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(PrismRadius.pill),
+          border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.xs),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(online ? Icons.wifi_rounded : Icons.wifi_off_rounded, size: 16, color: foreground),
+              const SizedBox(width: PrismSpace.xs),
+              Text(message, style: PrismTextStyles.rowTitle(context).copyWith(color: foreground)),
+            ],
+          ),
         ),
       ),
     );

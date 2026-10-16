@@ -120,6 +120,7 @@ void main() {
   late _MockFirebaseRemoteConfig remoteConfig;
   late _MockAiGenerationRepository aiRepository;
   late FakeAppAnalytics analytics;
+  late Completer<Result<List<OnboardingStarterCreatorEntity>>> pendingStarterPackLoad;
 
   setUpAll(() {
     registerFallbackValue(const <String>[]);
@@ -797,6 +798,45 @@ void main() {
       },
     );
   });
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'a late initial load cannot replace a wallpaper generated after the user skips ahead',
+    setUp: () {
+      app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
+      pendingStarterPackLoad = Completer<Result<List<OnboardingStarterCreatorEntity>>>();
+      when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer((_) => pendingStarterPackLoad.future);
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) async => _aiRecord());
+    },
+    build: buildBloc,
+    act: (bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const OnboardingV2Event.authCompleted());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.interests);
+      bloc.add(const OnboardingV2Event.interestsSkipped());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackSkipped());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.aiGenerate);
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+      bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.firstWallpaper);
+      pendingStarterPackLoad.complete(Result.success(<OnboardingStarterCreatorEntity>[]));
+      await bloc.stream.firstWhere((state) => state.loadStatus == LoadStatus.success);
+    },
+    verify: (bloc) {
+      expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
+    },
+  );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'records starter-pack follows after the follow write succeeds',

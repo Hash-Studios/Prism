@@ -5,6 +5,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_terms_row.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -105,7 +106,8 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: OnboardingV2Shell()));
     await tester.pump(const Duration(milliseconds: 800));
-    await tester.tap(find.byType(Checkbox));
+    // The terms row is a custom check, not a Checkbox. Tap its check, left of the legal links.
+    await tester.tapAt(tester.getTopLeft(find.byType(OnboardingTermsRow)) + const Offset(12, 22));
     await tester.pump();
     haptics.clear();
 

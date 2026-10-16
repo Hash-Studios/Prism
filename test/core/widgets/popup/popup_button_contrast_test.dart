@@ -1,7 +1,6 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
-import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/contrast.dart';
@@ -18,9 +17,10 @@ void main() {
 
   tearDown(getIt.reset);
 
-  void expectFilledButtonReadable(WidgetTester tester, String label) {
+  /// The button's label colour against its fill, blended over the sheet surface.
+  void expectButtonReadable(WidgetTester tester, String label, ColorScheme scheme) {
     final FilledButton button = tester.widget<FilledButton>(find.widgetWithText(FilledButton, label));
-    final Color background = button.style!.backgroundColor!.resolve(<WidgetState>{})!;
+    final Color background = Color.alphaBlend(button.style!.backgroundColor!.resolve(<WidgetState>{})!, scheme.surface);
     final Color foreground = button.style!.foregroundColor!.resolve(<WidgetState>{})!;
     expect(contrastRatio(foreground, background), greaterThanOrEqualTo(4.5), reason: '$label button');
   }
@@ -35,33 +35,28 @@ void main() {
       ),
     );
     await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
+    // Glint animates forever, so settle for a fixed time.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
   }
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
     group(option.label, () {
       final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
 
-      testWidgets('sign in pop up: Google button text reads on the accent', (tester) async {
+      testWidgets('sign in sheet: Google and Not now read on the surface', (tester) async {
         await open(tester, theme, (context) => googleSignInPopUp(context, () {}));
 
-        expectFilledButtonReadable(tester, 'Google');
-        expect(find.text('Signing in unlocks'), findsOneWidget);
+        expectButtonReadable(tester, 'Continue with Google', theme.colorScheme);
+        expectButtonReadable(tester, 'Not now', theme.colorScheme);
+        expect(find.text('Sign in to Prism'), findsOneWidget);
         expect(find.byType(MaterialButton), findsNothing);
       });
 
-      testWidgets('more links pop up: Close button text reads on the accent', (tester) async {
-        await open(tester, theme, (context) => showNoLoadLinksPopUp(context, <String, String>{}));
-
-        expectFilledButtonReadable(tester, 'Close');
-        expect(find.byType(MaterialButton), findsNothing);
-      });
-
-      testWidgets('changelog pop up: Close button text reads on the accent', (tester) async {
+      testWidgets('changelog sheet: the full changelog button reads on the surface', (tester) async {
         await open(tester, theme, (context) => showChangelog(context));
 
-        expectFilledButtonReadable(tester, 'Close');
-        expect(find.text('View full'), findsOneWidget);
+        expectButtonReadable(tester, 'See the full changelog', theme.colorScheme);
         await tester.pump(const Duration(seconds: 5));
       });
     });

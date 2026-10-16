@@ -2,6 +2,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/generated/analytics_events.g.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,13 +45,50 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pumpScreen(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1000, 3000);
+  Future<void> pumpScreen(WidgetTester tester, {bool settle = true}) async {
+    tester.view.physicalSize = const Size(1000, 4000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(theme: ThemeData.dark(), home: const QuickTileSettingsScreen()));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
+    if (settle) await tester.pumpAndSettle();
   }
+
+  testWidgets('shows a skeleton while loading, then one card per tile', (tester) async {
+    fakeChannel(sdkInt: 32);
+    await pumpScreen(tester, settle: false);
+    expect(find.bySemanticsLabel('Loading'), findsOneWidget);
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quick tiles'), findsOneWidget);
+    expect(find.text('Shuffle wallpaper tile'), findsOneWidget);
+    expect(find.text('Wall of the Day tile'), findsOneWidget);
+    expect(find.text('Random favourite tile'), findsOneWidget);
+    expect(find.text('How to add a tile'), findsOneWidget);
+    expect(find.text('Apply to'), findsNWidgets(3));
+  });
+
+  testWidgets('there is no Save button, choosing a target saves it at once', (tester) async {
+    fakeChannel(sdkInt: 32);
+    await pumpScreen(tester);
+    expect(find.text('Save'), findsNothing);
+
+    await tester.tap(find.text('Lock').first);
+    await tester.pumpAndSettle();
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(PersistenceKeys.quickTileWotdTarget), isNotNull);
+    expect(prefs.getString(PersistenceKeys.quickTileCategoryTarget), isNotNull);
+  });
+
+  testWidgets('opening the screen seeds a working config for every tile', (tester) async {
+    fakeChannel(sdkInt: 32);
+    await pumpScreen(tester);
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(PersistenceKeys.quickTileCategoryTarget), isNotNull);
+    expect(prefs.getString(PersistenceKeys.quickTileWotdTarget), isNotNull);
+  });
 
   testWidgets('shows one add button per tile on Android 13 and up', (tester) async {
     fakeChannel(sdkInt: 33);

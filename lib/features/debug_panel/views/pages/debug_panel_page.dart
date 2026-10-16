@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_tools_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/log_viewer_page.dart';
@@ -12,51 +13,32 @@ class DebugPanelPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
+    return const DefaultTabController(
       length: 5,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).primaryColor,
-          title: Row(
-            children: [
-              const Icon(Icons.bug_report, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Debug Panel',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
-                ),
-                child: const Text(
-                  'ADMIN',
-                  style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          bottom: TabBar(
-            indicatorColor: Theme.of(context).colorScheme.secondary,
-            labelColor: Theme.of(context).colorScheme.secondary,
-            unselectedLabelColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-            labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-            tabs: const [
-              Tab(icon: Icon(Icons.list_alt, size: 18), text: 'Logs'),
-              Tab(icon: Icon(Icons.build, size: 18), text: 'Tools'),
-              Tab(icon: Icon(Icons.storage, size: 18), text: 'Storage'),
-              Tab(icon: Icon(Icons.info_outline, size: 18), text: 'App Info'),
-              Tab(icon: Icon(Icons.face_retouching_natural, size: 18), text: 'Mascot'),
+      child: PrismPage(
+        title: 'Debug',
+        headerBottom: Padding(
+          padding: EdgeInsets.symmetric(horizontal: PrismSpace.xs),
+          child: TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            tabs: <Tab>[
+              Tab(text: 'Logs'),
+              Tab(text: 'Tools'),
+              Tab(text: 'Storage'),
+              Tab(text: 'App info'),
+              Tab(text: 'Mascot'),
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [LogViewerPage(), DebugToolsPage(), StorageViewerPage(), AppInfoPage(), MascotGalleryPage()],
+        body: TabBarView(
+          children: <Widget>[
+            LogViewerPage(),
+            DebugToolsPage(),
+            StorageViewerPage(),
+            AppInfoPage(),
+            MascotGalleryPage(),
+          ],
         ),
       ),
     );

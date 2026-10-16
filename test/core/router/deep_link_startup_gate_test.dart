@@ -37,7 +37,7 @@ void main() {
 
   testWidgets('a link that arrives during onboarding waits until the stack leaves onboarding', (tester) async {
     await pumpRouter(tester);
-    unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+    unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
     await tester.pumpAndSettle();
     gate.markBootstrapCompleted();
 
@@ -74,7 +74,7 @@ void main() {
 
   testWidgets('a referral link runs during onboarding and does not wait behind a held link', (tester) async {
     await pumpRouter(tester);
-    unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+    unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
     await tester.pumpAndSettle();
     gate.markBootstrapCompleted();
 
@@ -91,7 +91,7 @@ void main() {
 
   testWidgets('a push tap waits for the end of startup however long onboarding takes', (tester) async {
     await pumpRouter(tester);
-    unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+    unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
     await tester.pumpAndSettle();
     gate.markBootstrapCompleted();
     var ready = false;
@@ -146,7 +146,7 @@ void main() {
 
   testWidgets('a disposed gate stops listening to the router', (tester) async {
     await pumpRouter(tester);
-    unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+    unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
     await tester.pumpAndSettle();
     gate.markBootstrapCompleted();
     gate.add(_user);

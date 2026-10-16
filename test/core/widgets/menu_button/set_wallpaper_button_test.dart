@@ -15,6 +15,7 @@ import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -98,6 +99,7 @@ void main() {
     List<String> notes = const <String>[],
     VoidCallback? onMatchAccent,
     Future<String> Function()? prepareSource,
+    bool primary = false,
   }) async {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
@@ -117,6 +119,7 @@ void main() {
               notes: notes,
               onMatchAccent: onMatchAccent,
               prepareSource: prepareSource,
+              primary: primary,
             ),
           ),
         ),
@@ -183,6 +186,71 @@ void main() {
     expect(find.byType(SetOptionsPanel), findsOneWidget);
     expect(client.requests, isEmpty);
   });
+
+  testWidgets('the primary button plays one tap haptic for pointer and semantics activation', (tester) async {
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
+
+    await pumpButton(tester, primary: true);
+    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.pumpAndSettle();
+    expect(played, <Object?>['tap'], reason: 'the PrismButton owns the pointer tap haptic');
+    expect(find.byType(SetOptionsPanel), findsOneWidget, reason: 'pointer activation still opens the set flow');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await pumpButton(tester, primary: true);
+    played.clear();
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final SemanticsNode button = tester.getSemantics(find.bySemanticsLabel('Set as wallpaper'));
+    tester.binding.performSemanticsAction(
+      SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: button.id),
+    );
+    await tester.pumpAndSettle();
+    expect(played, <Object?>['tap'], reason: 'the outer semantic action bypasses PrismButton.onPressed');
+    expect(find.byType(SetOptionsPanel), findsOneWidget, reason: 'semantics activation still opens the set flow');
+    semantics.dispose();
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('long-pressing the primary button plays one tap haptic', (tester) async {
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
+
+    await pumpButton(tester, primary: true);
+    await tester.longPress(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(played, <Object?>['tap']);
+    expect(find.byType(SetOptionsPanel), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the circular button plays one tap haptic', (tester) async {
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
+
+    await pumpButton(tester);
+    await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(played, <Object?>['tap']);
+    expect(find.byType(SetOptionsPanel), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('a saved default the device cannot set falls back to the sheet', (tester) async {
     await settings.set(PersistenceKeys.defaultApplyTarget, 'lock');

@@ -11,7 +11,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
@@ -111,8 +111,8 @@ void main() {
     expect(find.text('This week'), findsOneWidget);
     expect(find.text('All time'), findsOneWidget);
     expect(find.byType(LoadingCards), findsOneWidget);
-    final SegmentedButton<TrendingRange> segments = tester.widget(find.byType(SegmentedButton<TrendingRange>));
-    expect(segments.selected, <TrendingRange>{TrendingRange.week});
+    final PrismSegmented<TrendingRange> segments = tester.widget(find.byType(PrismSegmented<TrendingRange>));
+    expect(segments.selected, TrendingRange.week);
   });
 
   testWidgets('tapping All time asks the bloc for that range', (tester) async {
@@ -135,8 +135,8 @@ void main() {
     );
 
     expect(find.bySemanticsLabel(RegExp('Ana')), findsNWidgets(2));
-    final SegmentedButton<TrendingRange> segments = tester.widget(find.byType(SegmentedButton<TrendingRange>));
-    expect(segments.selected, <TrendingRange>{TrendingRange.allTime});
+    final PrismSegmented<TrendingRange> segments = tester.widget(find.byType(PrismSegmented<TrendingRange>));
+    expect(segments.selected, TrendingRange.allTime);
   });
 
   testWidgets('a tap on a tile opens that wallpaper', (tester) async {

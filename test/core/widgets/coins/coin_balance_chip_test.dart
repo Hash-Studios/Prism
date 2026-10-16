@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,6 @@ void main() {
     coins.deltaNotifier.value = 5;
     await tester.pumpWidget(host());
 
-    expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).duration, const Duration(milliseconds: 220));
+    expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).duration, PrismDurations.base);
   });
 }

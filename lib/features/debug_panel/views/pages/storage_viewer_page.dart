@@ -1,6 +1,7 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   final TextEditingController _searchCtrl = TextEditingController();
   List<String> _allKeys = [];
   bool _loading = true;
+  bool _failed = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -39,7 +41,10 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   }
 
   Future<void> _loadKeys() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
     try {
       final store = _store;
       if (store == null) {
@@ -57,7 +62,10 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
       });
     } catch (e, st) {
       logger.w('Failed to load storage keys', tag: 'DebugPanel', error: e, stackTrace: st);
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _failed = true;
+      });
     }
   }
 
@@ -68,55 +76,84 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
   }
 
   Future<void> _deleteKey(String key) async {
+    final bool ok = await showPrismConfirm(
+      context,
+      title: 'Delete key?',
+      message: 'Delete "$key" from local storage.',
+      confirmLabel: 'Delete key',
+      destructive: true,
+    );
+    if (!ok) return;
     await _store?.delete(key);
     await _loadKeys();
   }
 
   Future<void> _clearAll() async {
+    final bool ok = await showPrismConfirm(
+      context,
+      title: 'Clear all storage?',
+      message: 'This permanently deletes all locally stored data. The app may behave unexpectedly until restarted.',
+      confirmLabel: 'Clear all',
+      destructive: true,
+    );
+    if (!ok) return;
     await _store?.clearAll();
     await _loadKeys();
-    if (mounted) {
-      showDebugSnackBar(context, 'All storage cleared');
-    }
+    if (mounted) showDebugSnackBar(context, 'All storage cleared');
   }
 
-  void _showEditDialog(String key) {
+  Future<void> _showEditSheet(String key) async {
     final raw = _store?.get(key);
-    final valueStr = raw?.toString() ?? '';
-    final ctrl = TextEditingController(text: valueStr);
-
-    showDialog<void>(
+    await showPrismSheet<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(key, style: const TextStyle(fontSize: 14, fontFamily: 'monospace')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Type: ${raw?.runtimeType ?? "null"}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: ctrl,
-              maxLines: 6,
-              style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
-              decoration: const InputDecoration(labelText: 'Value', border: OutlineInputBorder(), isDense: true),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => copyToClipboard(context, '$key\n$valueStr'), child: const Text('Copy')),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () async {
-              await _store?.set(key, ctrl.text);
-              if (ctx.mounted) Navigator.pop(ctx);
-              await _loadKeys();
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      isScrollControlled: true,
+      builder: (_) => _EditValueSheet(
+        storageKey: key,
+        type: '${raw?.runtimeType ?? 'null'}',
+        initial: raw?.toString() ?? '',
+        onSave: (String value) async {
+          await _store?.set(key, value);
+          await _loadKeys();
+        },
       ),
-    ).whenComplete(ctrl.dispose);
+    );
+  }
+
+  Widget _content(LocalStore? store, List<String> filtered) {
+    if (_loading) return PrismSkeleton.rows(avatar: false);
+    if (_failed) {
+      return GlintState(
+        kind: GlintStateKind.error,
+        title: 'Could not read storage',
+        body: 'Check the logs, then try again.',
+        actionLabel: 'Try again',
+        onAction: _loadKeys,
+      );
+    }
+    if (store == null) {
+      return const GlintState(kind: GlintStateKind.empty, title: 'Storage not initialized');
+    }
+    if (filtered.isEmpty) {
+      return const GlintState(kind: GlintStateKind.empty, title: 'No keys found');
+    }
+    final Color hairline = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06);
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: PrismSpace.xl),
+      itemCount: filtered.length,
+      separatorBuilder: (_, _) =>
+          Divider(height: 1, indent: PrismSpace.page, endIndent: PrismSpace.page, color: hairline),
+      itemBuilder: (context, i) {
+        final String key = filtered[i];
+        final Object? raw = store.get(key);
+        return _KeyRow(
+          storageKey: key,
+          preview: _previewValue(raw),
+          onTap: () => _showEditSheet(key),
+          onCopy: () => copyToClipboard(context, raw?.toString() ?? ''),
+          onDelete: () => _deleteKey(key),
+        );
+      },
+    );
   }
 
   @override
@@ -124,139 +161,40 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
     super.build(context);
     final filtered = _filtered;
     final store = _store;
+    final ColorScheme cs = Theme.of(context).colorScheme;
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.xs, 0),
           child: Row(
             children: [
               Expanded(
-                child: DebugSearchField(controller: _searchCtrl, hintText: 'Filter keys...'),
+                child: DebugSearchField(controller: _searchCtrl, hintText: 'Filter keys'),
               ),
-              const SizedBox(width: 8),
-              IconButton(tooltip: 'Refresh', icon: const Icon(Icons.refresh, size: 18), onPressed: _loadKeys),
-              IconButton(
-                tooltip: 'Clear All',
-                icon: const Icon(Icons.delete_forever_outlined, size: 18, color: Colors.red),
-                onPressed: store == null
-                    ? null
-                    : () => showDialog(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Clear All Storage?'),
-                          content: const Text(
-                            'This will permanently delete all locally stored data. The app may behave unexpectedly until restarted.',
-                          ),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(ctx);
-                                _clearAll();
-                              },
-                              style: TextButton.styleFrom(foregroundColor: Colors.red),
-                              child: const Text('Clear All'),
-                            ),
-                          ],
-                        ),
-                      ),
+              const SizedBox(width: PrismSpace.xxs),
+              PrismIconButton(tooltip: 'Refresh', icon: Icons.refresh_rounded, onPressed: _loadKeys),
+              PrismIconButton(
+                tooltip: 'Clear all',
+                icon: Icons.delete_forever_outlined,
+                color: cs.error,
+                onPressed: store == null ? null : _clearAll,
               ),
             ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-          child: Row(
-            children: [
-              Text('${filtered.length} keys', style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(width: 8),
-              Text(
-                'Backend: ${PersistenceRuntime.isInitialized ? PersistenceRuntime.store.runtimeType : "unknown"}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade500),
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${filtered.length} keys · Backend: ${PersistenceRuntime.isInitialized ? PersistenceRuntime.store.runtimeType : 'unknown'}',
+              style: PrismTextStyles.caption(context),
+            ),
           ),
         ),
-        const Divider(height: 1),
-        if (_loading)
-          const Expanded(
-            child: Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))),
-          )
-        else if (store == null)
-          const Expanded(
-            child: Center(
-              child: Text('Storage not initialized', style: TextStyle(color: Colors.grey)),
-            ),
-          )
-        else if (filtered.isEmpty)
-          const Expanded(
-            child: Center(
-              child: Text('No keys found', style: TextStyle(color: Colors.grey)),
-            ),
-          )
-        else
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 16),
-              itemCount: filtered.length,
-              itemBuilder: (context, i) {
-                final key = filtered[i];
-                final raw = store.get(key);
-                final valuePreview = _previewValue(raw);
-
-                return ListTile(
-                  dense: true,
-                  title: Text(key, style: const TextStyle(fontSize: 12, fontFamily: 'monospace')),
-                  subtitle: Text(
-                    valuePreview,
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.copy, size: 16),
-                        tooltip: 'Copy value',
-                        onPressed: () => copyToClipboard(context, raw?.toString() ?? ''),
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
-                        tooltip: 'Delete',
-                        onPressed: () => showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('Delete key?'),
-                            content: Text('Delete "$key"?'),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                  _deleteKey(key);
-                                },
-                                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      ),
-                    ],
-                  ),
-                  onTap: () => _showEditDialog(key),
-                );
-              },
-            ),
-          ),
+        Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
+        Expanded(child: _content(store, filtered)),
       ],
     );
   }
@@ -266,5 +204,144 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
     final str = raw.toString();
     if (str.length > 80) return '${str.substring(0, 80)}…';
     return str;
+  }
+}
+
+class _KeyRow extends StatelessWidget {
+  const _KeyRow({
+    required this.storageKey,
+    required this.preview,
+    required this.onTap,
+    required this.onCopy,
+    required this.onDelete,
+  });
+
+  final String storageKey;
+  final String preview;
+  final VoidCallback onTap;
+  final VoidCallback onCopy;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.only(left: PrismSpace.page, right: PrismSpace.xs),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(storageKey, style: debugMono(context, size: 13)),
+                        const SizedBox(height: 2),
+                        Text(
+                          preview,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: PrismTextStyles.caption(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                PrismIconButton(tooltip: 'Copy value', icon: Icons.copy_rounded, iconSize: 20, onPressed: onCopy),
+                PrismIconButton(
+                  tooltip: 'Delete',
+                  icon: Icons.delete_outline_rounded,
+                  iconSize: 20,
+                  color: cs.error,
+                  onPressed: onDelete,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditValueSheet extends StatefulWidget {
+  const _EditValueSheet({required this.storageKey, required this.type, required this.initial, required this.onSave});
+
+  final String storageKey;
+  final String type;
+  final String initial;
+  final Future<void> Function(String value) onSave;
+
+  @override
+  State<_EditValueSheet> createState() => _EditValueSheetState();
+}
+
+class _EditValueSheetState extends State<_EditValueSheet> {
+  late final TextEditingController _ctrl = TextEditingController(text: widget.initial);
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await widget.onSave(_ctrl.text);
+      if (mounted) Navigator.of(context).pop();
+    } catch (e, st) {
+      logger.w('Failed to save storage value', tag: 'DebugPanel', error: e, stackTrace: st);
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showDebugSnackBar(context, 'Could not save the value', isError: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismSheetBody(
+      title: 'Edit value',
+      scrollable: true,
+      actions: [
+        PrismButton(label: 'Save', expand: true, loading: _saving, onPressed: _save),
+        PrismButton(
+          label: 'Copy',
+          expand: true,
+          variant: PrismButtonVariant.tonal,
+          onPressed: () => copyToClipboard(context, '${widget.storageKey}\n${widget.initial}'),
+        ),
+        PrismButton(
+          label: 'Cancel',
+          expand: true,
+          variant: PrismButtonVariant.ghost,
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+        ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SelectableText(widget.storageKey, style: debugMono(context, size: 13)),
+          const SizedBox(height: 2),
+          Text('Type: ${widget.type}', style: PrismTextStyles.caption(context)),
+          const SizedBox(height: PrismSpace.md),
+          PrismTextField(
+            controller: _ctrl,
+            label: 'Value',
+            helper: 'Saving writes the value as text.',
+            minLines: 3,
+            maxLines: 6,
+            autocorrect: false,
+          ),
+        ],
+      ),
+    );
   }
 }

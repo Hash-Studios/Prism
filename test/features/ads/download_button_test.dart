@@ -2,15 +2,23 @@ import 'dart:async';
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
 
@@ -21,7 +29,31 @@ class _ThrowingSettings extends SettingsLocalDataSource {
   bool get isOpen => throw StateError('settings unavailable');
 }
 
+class _MockAdsBloc extends MockBloc<AdsEvent, AdsState> implements AdsBloc {}
+
 void main() {
+  AdConsent consent({required bool canRequestAds}) => AdConsent(
+    requestInfoUpdate: () async {},
+    showFormIfRequired: () async {},
+    canRequestAds: () async => canRequestAds,
+  );
+
+  List<String> recordHaptics(WidgetTester tester) {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    final bool wasEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    final List<String> events = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'play') events.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      PrismHaptics.enabled = wasEnabled;
+    });
+    return events;
+  }
+
   for (final source in <String, bool>{
     '/tmp/filtered wall.png': true,
     'file:///tmp/filtered%20wall.png': true,
@@ -141,6 +173,60 @@ void main() {
     expect(callbackCount, 1);
   });
 
+  testWidgets('primary draws a compact accent button instead of a round one', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', primary: true)),
+      ),
+    );
+
+    expect(find.widgetWithText(FilledButton, 'Download'), findsOneWidget);
+    expect(find.byType(CircularMenuButton), findsNothing);
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).size, PrismButtonSize.compact);
+  });
+
+  testWidgets('labelled puts the name under the round button', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', labelled: true)),
+      ),
+    );
+
+    expect(find.text('Download'), findsOneWidget);
+    expect(find.byType(CircularMenuButton), findsOneWidget);
+  });
+
+  for (final bool semanticTap in <bool>[false, true]) {
+    testWidgets('primary download emits one tap haptic (${semanticTap ? 'semantics' : 'touch'})', (tester) async {
+      final handle = tester.ensureSemantics();
+      final List<String> haptics = recordHaptics(tester);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      final AdConsent original = AdConsent.instance;
+      AdConsent.instance = consent(canRequestAds: false);
+      addTearDown(() => AdConsent.instance = original);
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg', primary: true)),
+        ),
+      );
+
+      if (semanticTap) {
+        final node = tester.getSemantics(find.bySemanticsLabel('Download'));
+        tester.binding.performSemanticsAction(
+          SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: node.id),
+        );
+      } else {
+        await tester.tap(find.widgetWithText(FilledButton, 'Download'));
+      }
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('Download this wallpaper'), findsOneWidget);
+      expect(haptics, <String>['tap']);
+      handle.dispose();
+    });
+  }
+
   testWidgets('download that finishes after leaving the page still shows the saved toast', (tester) async {
     getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
     app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
@@ -179,6 +265,106 @@ void main() {
 
     expect(toastMessages, contains('Wall downloaded in Pictures/Prism!'));
     await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('a signed-out user sees the ad gate as a sheet with both options', (tester) async {
+    final AdConsent original = AdConsent.instance;
+    AdConsent.instance = consent(canRequestAds: true);
+    addTearDown(() => AdConsent.instance = original);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+      ),
+    );
+
+    await tester.tap(find.byType(CircularMenuButton));
+    // The button shows its own spinner while the gate is open, so settle by time.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.text('Download this wallpaper'), findsOneWidget);
+    expect(find.text('Watch a small video ad to download this wallpaper.'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Watch ad'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Buy premium'), findsOneWidget);
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('with ads refused the gate says so and offers only Buy premium', (tester) async {
+    final AdConsent original = AdConsent.instance;
+    AdConsent.instance = consent(canRequestAds: false);
+    addTearDown(() => AdConsent.instance = original);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+      ),
+    );
+
+    await tester.tap(find.byType(CircularMenuButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.textContaining('Ads are off. Change this in Settings > Privacy.'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Watch ad'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Buy premium'), findsOneWidget);
+  });
+
+  testWidgets('guest Watch ad emits one tap haptic and requests the ad', (tester) async {
+    final List<String> haptics = recordHaptics(tester);
+    final AdConsent original = AdConsent.instance;
+    AdConsent.instance = consent(canRequestAds: true);
+    addTearDown(() => AdConsent.instance = original);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final _MockAdsBloc bloc = _MockAdsBloc();
+    whenListen(bloc, const Stream<AdsState>.empty(), initialState: AdsState.initial());
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+    await tester.pumpWidget(
+      BlocProvider<AdsBloc>.value(
+        value: bloc,
+        child: const MaterialApp(
+          home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+        ),
+      ),
+    );
+    await tester.tap(find.byType(CircularMenuButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    haptics.clear();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Watch ad'));
+    await tester.pump();
+
+    expect(haptics.where((event) => event == 'tap'), <String>['tap']);
+    verify(() => bloc.add(const AdsEvent.started())).called(1);
+    expect(find.text('Download this wallpaper'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('guest Buy premium emits one tap haptic and opens sign in', (tester) async {
+    final List<String> haptics = recordHaptics(tester);
+    final AdConsent original = AdConsent.instance;
+    AdConsent.instance = consent(canRequestAds: false);
+    addTearDown(() => AdConsent.instance = original);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+      ),
+    );
+    await tester.tap(find.byType(CircularMenuButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    haptics.clear();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Buy premium'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(haptics, <String>['tap']);
+    expect(find.text('Sign in to Prism'), findsOneWidget);
   });
 
   group('on iOS', () {

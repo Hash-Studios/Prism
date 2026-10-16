@@ -57,6 +57,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:github/github.dart' show Contributor;
 
 part 'app_router.gr.dart';
 

@@ -12,6 +12,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
@@ -19,6 +20,7 @@ import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -57,6 +59,12 @@ class _FakeFirebaseRemoteConfigPlatform extends FirebaseRemoteConfigPlatform {
   String getString(String key) => '';
 }
 
+/// Glint loops, so a screen that shows it never settles: pump a bounded time instead.
+Future<void> _settle(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 600));
+}
+
 const List<String> _names = <String>['Nature', 'Abstract', 'Space', 'Minimal', 'Cars'];
 
 final List<PersonalizedInterest> _catalog = <PersonalizedInterest>[
@@ -78,6 +86,12 @@ void main() {
     FirebaseRemoteConfigPlatform.instance = _FakeFirebaseRemoteConfigPlatform();
   });
 
+  tearDown(() => toasts.overlayResolver = null);
+
+  void showToastsInTree(WidgetTester tester) {
+    toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+  }
+
   setUp(() {
     personalizedFeedSettingsRevision.value = 0;
     store = TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
@@ -87,7 +101,7 @@ void main() {
 
   Future<void> pumpSheet(
     WidgetTester tester, {
-    Size size = const Size(390, 844),
+    Size size = const Size(600, 844),
     Set<String> initial = const <String>{'Nature', 'Abstract'},
   }) async {
     tester.view.physicalSize = size;
@@ -110,6 +124,7 @@ void main() {
         ),
       ),
     );
+    showToastsInTree(tester);
     await tester.pumpAndSettle();
   }
 
@@ -143,7 +158,7 @@ void main() {
   });
 
   testWidgets('failed save keeps the sheet open and re-enables Save', (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = const Size(600, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -159,8 +174,10 @@ void main() {
         ),
       ),
     );
+    showToastsInTree(tester);
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -170,7 +187,7 @@ void main() {
   });
 
   testWidgets('thrown save error also releases the saving state', (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = const Size(600, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -186,7 +203,9 @@ void main() {
         ),
       ),
     );
+    showToastsInTree(tester);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -209,7 +228,7 @@ void main() {
       app_state.prismUser = app_constants.createGuestPrismUser();
       await getIt.reset();
     });
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = const Size(600, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
@@ -239,6 +258,7 @@ void main() {
     );
     await tester.tap(find.bySemanticsLabel('Interest: Aesthetic, not selected'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -249,9 +269,9 @@ void main() {
   });
 
   for (final Brightness brightness in Brightness.values) {
-    testWidgets('discovery selection uses the ${brightness.name} theme accent', (tester) async {
+    testWidgets('discovery uses the shared segmented control in ${brightness.name} mode', (tester) async {
       final ColorScheme scheme = ColorScheme.fromSeed(seedColor: const Color(0xff176b87), brightness: brightness);
-      tester.view.physicalSize = const Size(390, 844);
+      tester.view.physicalSize = const Size(600, 844);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
@@ -270,9 +290,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final SegmentedButton<FeedMix> button = tester.widget(find.byType(SegmentedButton<FeedMix>));
-      expect(button.style?.backgroundColor?.resolve(<WidgetState>{WidgetState.selected}), scheme.primary);
-      expect(button.style?.foregroundColor?.resolve(<WidgetState>{WidgetState.selected}), scheme.onPrimary);
+      expect(find.byType(PrismSegmented<FeedMix>), findsOneWidget);
+      expect(find.text('Your taste, with a few surprises.'), findsOneWidget);
+      await tester.ensureVisible(find.text('Familiar'));
+      await tester.tap(find.text('Familiar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Mostly what you already love.'), findsOneWidget);
     });
   }
 
@@ -294,7 +317,7 @@ void main() {
       await getIt.reset();
       personalizedFeedSettingsRevision.value = 0;
     });
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = const Size(600, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     // The failed feed shows a looping Glint state. Reduced motion lets pumpAndSettle finish.
@@ -333,13 +356,14 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await _settle(tester);
     await tester.tap(find.text('Open settings'));
-    await tester.pumpAndSettle();
+    await _settle(tester);
     await tester.tap(find.text('Clear'));
-    await tester.pumpAndSettle();
+    await _settle(tester);
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-    await tester.pumpAndSettle();
+    await _settle(tester);
 
     verify(() => bloc.add(const PersonalizedFeedEvent.settingsChanged())).called(2);
   });
@@ -355,7 +379,7 @@ void main() {
       app_state.prismUser = app_constants.createGuestPrismUser();
       await getIt.reset();
     });
-    tester.view.physicalSize = const Size(320, 568);
+    tester.view.physicalSize = const Size(600, 568);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -378,6 +402,7 @@ void main() {
     expect(tester.takeException(), isNull);
     final Finder save = find.widgetWithText(FilledButton, 'Save');
     expect(save, findsOneWidget);
+    await tester.ensureVisible(save);
     expect(tester.getRect(save).bottom, lessThanOrEqualTo(348));
     await tester.tap(save);
     await tester.pumpAndSettle();

@@ -124,7 +124,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Open panel'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Wallpapers'));
+    await tester.tap(find.text('Upload a wallpaper'));
     await tester.pumpAndSettle();
     return opened;
   }

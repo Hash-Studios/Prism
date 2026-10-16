@@ -6,16 +6,14 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/category_feed_refresh.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -70,16 +68,18 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
         .toList(growable: false);
 
     if (walls.isEmpty) {
-      return state.status == LoadStatus.initial || state.status == LoadStatus.loading
-          ? const LoadingCards(useFeedLayout: true)
-          : RefreshableGlintState(
-              kind: GlintStateKind.empty,
-              title: 'No wallpapers here yet',
-              body: 'Pull down to refresh.',
-              actionLabel: 'Refresh',
-              onAction: () => unawaited(_refresh()),
-              onRefresh: _refresh,
-            );
+      if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
+        return const LoadingCards(useFeedLayout: true);
+      }
+      final bool failed = state.status == LoadStatus.failure;
+      return RefreshableGlintState(
+        kind: failed ? GlintStateKind.error : GlintStateKind.empty,
+        title: failed ? "Couldn't load wallpapers" : 'No wallpapers here yet',
+        body: failed ? 'Check your connection and try again.' : 'New ones land often. Check back soon.',
+        actionLabel: failed ? 'Try again' : 'Refresh',
+        onAction: () => unawaited(_refresh()),
+        onRefresh: _refresh,
+      );
     }
 
     _contentLoadTracker.success(
@@ -99,8 +99,10 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
 
     final bool loadFailed = state.actionStatus == ActionStatus.failure;
     final bool refreshFailed = state.status == LoadStatus.failure;
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
+      color: cs.primary,
+      backgroundColor: cs.surfaceContainerHigh,
       onRefresh: () {
         PrismHaptics.impact();
         return _refresh();
@@ -130,12 +132,12 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
         child: GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
-          padding: EdgeInsets.zero,
-          itemCount: walls.length + (state.hasMore ? 1 : 0),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-            childAspectRatio: 0.5,
+          padding: PrismWallGrid.padding.copyWith(
+            top: PrismSpace.xxs,
+            bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
           ),
+          itemCount: walls.length + (state.hasMore ? 1 : 0),
+          gridDelegate: PrismWallGrid.delegate(context),
           itemBuilder: (context, index) {
             if (index == walls.length) {
               return SeeMoreButton(

@@ -7,6 +7,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -208,7 +209,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.byType(InkWell).at(1));
+    await tester.tap(find.byType(PrismWallTile).at(1));
     await tester.pump();
 
     final SearchResultOpenedEvent event = analytics.events.whereType<SearchResultOpenedEvent>().single;
@@ -346,9 +347,9 @@ void main() {
     expect(tiles, hasLength(2));
     expect(tiles.every((tile) => tile.fallbackUrl == 'https://example.test/full.jpg'), isTrue);
     expect(
-      find.descendant(of: find.byType(InkWell), matching: find.byType(PrismImageTile)),
+      find.descendant(of: find.byType(PrismWallTile), matching: find.byType(PrismImageTile)),
       findsNWidgets(2),
-      reason: 'the tile sits inside the InkWell, so its Retry image button receives taps',
+      reason: 'the image sits inside the tile, so its Retry image button receives taps',
     );
   });
 
@@ -366,7 +367,7 @@ void main() {
         ),
       ),
     );
-    await tester.longPress(find.byType(InkWell).first);
+    await tester.longPress(find.byType(PrismWallTile).first);
     await tester.pumpAndSettle();
 
     expect(find.text('Share link'), findsOneWidget);

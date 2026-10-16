@@ -1,4 +1,5 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -44,19 +45,19 @@ class _SimilarWallpapersStripState extends State<SimilarWallpapersStrip> {
       builder: (context, snapshot) {
         final List<FeedItemEntity> items = snapshot.data ?? const <FeedItemEntity>[];
         if (items.isEmpty) return const SizedBox.shrink();
-        final ThemeData theme = Theme.of(context);
+        final ColorScheme cs = Theme.of(context).colorScheme;
         final double dpr = MediaQuery.devicePixelRatioOf(context);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('More like this', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.secondary)),
-            const SizedBox(height: 8),
+            Text('More like this', style: PrismTextStyles.cardTitle(context)),
+            const SizedBox(height: PrismSpace.xs),
             SizedBox(
               height: _tileHeight,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: items.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: PrismSpace.xs),
                 itemBuilder: (context, index) {
                   final FeedItemEntity item = items[index];
                   return Semantics(
@@ -66,7 +67,7 @@ class _SimilarWallpapersStripState extends State<SimilarWallpapersStrip> {
                       key: ValueKey<String>(item.id),
                       width: _tileWidth,
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(PrismRadius.sm),
                         child: Stack(
                           fit: StackFit.expand,
                           children: <Widget>[
@@ -75,10 +76,8 @@ class _SimilarWallpapersStripState extends State<SimilarWallpapersStrip> {
                               cacheManager: PrismImageCache.instance,
                               fit: BoxFit.cover,
                               memCacheWidth: (_tileWidth * dpr).round(),
-                              placeholder: (_, _) =>
-                                  ColoredBox(color: theme.colorScheme.secondary.withValues(alpha: 0.1)),
-                              errorWidget: (_, _, _) =>
-                                  ColoredBox(color: theme.colorScheme.secondary.withValues(alpha: 0.1)),
+                              placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHigh),
+                              errorWidget: (_, _, _) => ColoredBox(color: cs.surfaceContainerHigh),
                             ),
                             Material(
                               color: Colors.transparent,

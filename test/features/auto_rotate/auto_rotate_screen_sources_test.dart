@@ -232,6 +232,20 @@ void main() {
         return null;
       },
     );
+    final List<MethodCall> toastCalls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('PonnamKarthik/fluttertoast'),
+      (call) async {
+        if (call.method == 'showToast') toastCalls.add(call);
+        return true;
+      },
+    );
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('PonnamKarthik/fluttertoast'),
+        null,
+      ),
+    );
     when(() => autoRotateBloc.state).thenReturn(_proState().copyWith(showBatteryTip: true));
 
     await pumpScreen(tester);
@@ -247,7 +261,8 @@ void main() {
     await tester.pump();
 
     expect(copied, contains('Apps, Prism, Battery'));
-    expect(find.text('Steps copied.'), findsOneWidget);
+    expect(toastCalls.map((call) => (call.arguments as Map<Object?, Object?>)['msg']), contains('Steps copied.'));
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('a Pro lapse shows one calm toast and is acknowledged', (tester) async {

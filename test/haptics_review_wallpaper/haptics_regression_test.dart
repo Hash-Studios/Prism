@@ -356,7 +356,9 @@ void main() {
       ),
     );
     tester.widget<TextButton>(find.widgetWithText(TextButton, 'Report')).onPressed!();
-    await tester.pumpAndSettle();
+    // The sign-in sheet mascot loops an animation, so pump a fixed time instead of settling.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     expect(haptics, <String>['error']);
     await tester.pump(const Duration(seconds: 1));
@@ -403,11 +405,13 @@ void main() {
     addTearDown(() => getIt.unregister<FirestoreClient>());
 
     await tester.pumpWidget(const MaterialApp(home: ReviewScreen()));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.byTooltip('Delete wallpaper'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('DELETE'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text('Delete wallpaper'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     expect(haptics, <String>['tap', 'error']);
     await tester.pump(const Duration(seconds: 1));
@@ -450,7 +454,9 @@ void main() {
     await tester.tap(find.text('AddictiveBlue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Download'));
-    await tester.pumpAndSettle();
+    // The sign-in sheet mascot loops an animation, so pump a fixed time instead of settling.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     expect(haptics, <String>['selection', 'tap']);
     await tester.pump(const Duration(seconds: 1));

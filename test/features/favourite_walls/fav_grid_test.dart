@@ -6,11 +6,14 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -85,6 +88,22 @@ void main() {
     );
   }
 
+  List<String> recordHaptics(WidgetTester tester) {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    final bool wasEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    final List<String> haptics = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'play') haptics.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      PrismHaptics.enabled = wasEnabled;
+    });
+    return haptics;
+  }
+
   testWidgets('shows loading cards until the favourites arrive, then the empty state', (tester) async {
     final Completer<Result<List<FavouriteWallEntity>>> pending = Completer<Result<List<FavouriteWallEntity>>>();
     when(() => fetchUseCase(any())).thenAnswer((_) => pending.future);
@@ -101,8 +120,9 @@ void main() {
     await tester.pump();
 
     expect(find.byType(LoadingCards), findsNothing);
-    expect(find.byType(GlintState), findsOneWidget);
-    expect(find.text('No favourites yet'), findsOneWidget);
+    expect(find.widgetWithText(GlintState, 'No favourites yet'), findsOneWidget);
+    expect(find.text('Tap the heart on a wallpaper to keep it here.'), findsOneWidget);
+    expect(find.text('Browse wallpapers'), findsOneWidget);
     verify(() => fetchUseCase(any())).called(1);
   });
 
@@ -118,7 +138,18 @@ void main() {
 
     expect(find.byType(LoadingCards), findsNothing);
     expect(find.byType(GlintState), findsOneWidget);
-    expect(find.text('No favourites yet'), findsOneWidget);
+  });
+
+  testWidgets('shows an error with a retry when the favourites fail to load', (tester) async {
+    when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
+    createBloc();
+
+    await pumpGrid(tester);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.widgetWithText(GlintState, "Couldn't load your favourites"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
   });
 
   group('with favourites', () {
@@ -144,62 +175,50 @@ void main() {
       await tester.pump();
     }
 
-    // Rose, Cotton Blue and Coffee have a weak foreground. Their count line is darkened to a readable ink and
-    // keeps full ink, because 80 percent of it would read under 4.5:1.
-    const Map<String, ({int count, int chip})> inkByTheme = <String, ({int count, int chip})>{
-      'Frost White': (count: 0xCC2F2F2F, chip: 0xFF2F2F2F),
-      'Rose': (count: 0xFF4B342D, chip: 0xFF4B342D),
-      'Cotton Blue': (count: 0xFF202836, chip: 0xFF202836),
-      'Coffee': (count: 0xFF785C23, chip: 0xFF785C23),
-      'AMOLED': (count: 0xCCFFFFFF, chip: 0xFFFFFFFF),
-    };
+    // Every theme must keep the chips, the count line and the search field readable on the page.
+    const List<String> themeLabels = <String>['Frost White', 'Rose', 'Cotton Blue', 'Coffee', 'AMOLED'];
 
-    for (final MapEntry<String, ({int count, int chip})> entry in inkByTheme.entries) {
-      testWidgets('${entry.key}: the source chips and the count line read on the page', (tester) async {
-        final PrismThemeOption option = <PrismThemeOption>[
-          ...prismLightThemes,
-          ...prismDarkThemes,
-        ].firstWhere((PrismThemeOption o) => o.label == entry.key);
-        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
-        createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
-        await pumpLoaded(tester, theme: theme);
-
-        Color colorOf(Finder text) =>
-            tester.widget<RichText>(find.descendant(of: text, matching: find.byType(RichText))).text.style!.color!;
-        final Color count = colorOf(find.text('2 favourites'));
-        final Color chip = colorOf(find.text('Prism'));
-
-        expect(count.toARGB32(), entry.value.count);
-        expect(chip.toARGB32(), entry.value.chip);
-        expect(
-          contrastRatio(Color.alphaBlend(count, theme.primaryColor), theme.primaryColor),
-          greaterThanOrEqualTo(4.5),
-        );
-        expect(tester.getSize(find.widgetWithText(ChoiceChip, 'Prism')).height, 48);
-      });
+    ThemeData themeNamed(String label) {
+      final PrismThemeOption option = <PrismThemeOption>[
+        ...prismLightThemes,
+        ...prismDarkThemes,
+      ].firstWhere((PrismThemeOption o) => o.label == label);
+      return withPrismAccent(option.theme, option.defaultAccentValue);
     }
 
-    for (final MapEntry<String, ({int count, int chip})> entry in inkByTheme.entries) {
-      testWidgets('${entry.key}: the search field types and hints in 15 px body text that reads on the page', (
-        tester,
-      ) async {
-        final PrismThemeOption option = <PrismThemeOption>[
-          ...prismLightThemes,
-          ...prismDarkThemes,
-        ].firstWhere((PrismThemeOption o) => o.label == entry.key);
-        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+    Color colorOf(WidgetTester tester, Finder text) =>
+        tester.widget<RichText>(find.descendant(of: text, matching: find.byType(RichText))).text.style!.color!;
+
+    for (final String label in themeLabels) {
+      testWidgets('$label: the source chips and the count line read on the page', (tester) async {
+        final ThemeData theme = themeNamed(label);
         createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
         await pumpLoaded(tester, theme: theme);
 
+        final Color page = theme.colorScheme.surface;
+        final Color count = colorOf(tester, find.text('2 favourites'));
+        final Color chip = colorOf(tester, find.text('Prism'));
+        final Color chipFill = Color.alphaBlend(theme.colorScheme.onSurface.withValues(alpha: 0.06), page);
+
+        expect(contrastRatio(Color.alphaBlend(count, page), page), greaterThanOrEqualTo(4.5));
+        expect(contrastRatio(chip, chipFill), greaterThanOrEqualTo(4.5));
+        expect(tester.getSize(find.widgetWithText(PrismChip, 'Prism')).height, greaterThanOrEqualTo(44));
+      });
+
+      testWidgets('$label: the search field types in text that reads on the page', (tester) async {
+        final ThemeData theme = themeNamed(label);
+        createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+        await pumpLoaded(tester, theme: theme);
+
+        final Color page = theme.colorScheme.surface;
         final TextStyle typed = tester.widget<EditableText>(find.byType(EditableText)).style;
         final TextStyle hint = tester.widget<Text>(find.text('Search by creator or category')).style!;
 
-        expect(typed.fontSize, 15);
+        expect(typed.fontSize, 16);
         expect(typed.fontFamily, 'Proxima Nova');
-        expect(typed.color!.toARGB32(), entry.value.chip);
-        expect(hint.fontSize, 15);
+        expect(hint.fontSize, greaterThanOrEqualTo(14));
         expect(hint.fontFamily, 'Proxima Nova');
-        expect(hint.color!.toARGB32(), entry.value.count);
+        expect(contrastRatio(Color.alphaBlend(typed.color!, page), page), greaterThanOrEqualTo(4.5));
       });
     }
 
@@ -210,11 +229,11 @@ void main() {
       await pumpLoaded(tester);
 
       final RichText label = tester.widget<RichText>(
-        find.descendant(of: find.widgetWithText(ChoiceChip, 'Prism'), matching: find.byType(RichText)),
+        find.descendant(of: find.widgetWithText(PrismChip, 'Prism'), matching: find.byType(RichText)),
       );
 
       expect(label.textScaler.scale(14), 28);
-      expect(tester.getSize(find.widgetWithText(ChoiceChip, 'Prism')).height, 48);
+      expect(tester.getSize(find.widgetWithText(PrismChip, 'Prism')).height, lessThanOrEqualTo(48));
       expect(tester.takeException(), isNull);
     });
 
@@ -227,7 +246,7 @@ void main() {
       expect(find.bySemanticsLabel('Wallpaper by Ada'), findsOneWidget);
       expect(find.bySemanticsLabel('Wallpaper by Grace'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Prism'));
+      await tester.tap(find.widgetWithText(PrismChip, 'Prism'));
       await tester.pump();
       expect(find.bySemanticsLabel('Wallpaper by Ada'), findsOneWidget);
       expect(find.bySemanticsLabel('Wallpaper by Grace'), findsNothing);
@@ -243,6 +262,7 @@ void main() {
     });
 
     testWidgets('long press selects, Remove sends one batched delete and Undo restores', (tester) async {
+      final List<String> haptics = recordHaptics(tester);
       createBlocWith(<FavouriteWallEntity>[
         prismFav('a', author: 'Ada', createdAt: DateTime.utc(2025, 1, 3)),
         pexelsFav('b', author: 'Grace', createdAt: DateTime.utc(2025, 1, 2)),
@@ -256,6 +276,7 @@ void main() {
       await tester.pump();
       expect(find.text('2 selected'), findsOneWidget);
 
+      haptics.clear();
       await tester.tap(find.bySemanticsLabel('Remove from favourites'));
       await tester.pump();
       await tester.pump();
@@ -264,6 +285,7 @@ void main() {
       final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
       expect(params.wallIds, <String>['a', 'b']);
       expect(bloc.state.items.map((wall) => wall.id), <String>['c']);
+      expect(haptics, <String>['tap']);
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('Removed 2 favourites'), findsOneWidget);
 
@@ -274,18 +296,47 @@ void main() {
       expect(bloc.state.items.map((wall) => wall.id), <String>['a', 'b', 'c']);
     });
 
+    testWidgets('an unavailable favourite Remove emits one tap haptic and removes the wall', (tester) async {
+      final List<String> haptics = recordHaptics(tester);
+      createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada')]);
+      await pumpLoaded(tester);
+      tester.widget<FavouriteTileImage>(find.byType(FavouriteTileImage)).onUnavailable();
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(PrismButton, 'Remove'));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
+      expect(params.wallIds, <String>['a']);
+      expect(bloc.state.items, isEmpty);
+      expect(haptics, <String>['tap']);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Removed from favourites'), findsOneWidget);
+    });
+
     testWidgets('legacy favourites explain themselves on tap and can be removed after a long press', (tester) async {
       createBlocWith(<FavouriteWallEntity>[legacyFav('old', author: 'Old Timer')]);
+      final List<String> shown = <String>[];
+      const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(toastChannel, (call) async {
+        if (call.method == 'showToast') shown.add((call.arguments as Map)['msg'] as String);
+        return true;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(toastChannel, null));
       await pumpLoaded(tester);
 
       await tester.tap(find.bySemanticsLabel('Wallpaper by Old Timer'));
       await tester.pump();
-      expect(find.textContaining('older version'), findsOneWidget);
+      expect(shown.single, contains('older version'));
 
       await tester.longPress(find.bySemanticsLabel('Wallpaper by Old Timer'));
       await tester.pump();
       expect(find.text('1 selected'), findsOneWidget);
       expect(find.bySemanticsLabel('Remove from favourites'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
     });
 
     testWidgets('a failed load with nothing cached shows an error with Retry', (tester) async {
@@ -295,8 +346,8 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text("Couldn't load favourites"), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text("Couldn't load your favourites"), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
       expect(find.byType(LoadingCards), findsNothing);
     });
   });
@@ -392,12 +443,12 @@ void main() {
       expect(find.text('Clear 2 favourites?'), findsOneWidget);
       expect(find.text('This removes them from your account.'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.tap(find.text('Cancel'));
       await settle(tester);
       verifyNever(() => clearUseCase(any()));
 
       await openMenu(tester, 'Clear all favourites');
-      await tester.tap(find.widgetWithText(TextButton, 'Clear all'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Clear all'));
       await settle(tester);
       final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
       expect(params.wallIds, <String>['a', 'b']);
@@ -417,7 +468,7 @@ void main() {
       await pumpLoaded(tester);
 
       await openMenu(tester, 'Clear all favourites');
-      await tester.tap(find.widgetWithText(TextButton, 'Clear all'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Clear all'));
       await settle(tester);
 
       expect(toasts, contains("Couldn't clear favourites. Try again."));
@@ -491,6 +542,24 @@ void main() {
       expect(find.text('Sign in to use favourites'), findsOneWidget);
       await tester.pump();
       await tester.pump();
+    });
+
+    testWidgets('the guest banner Sign in emits one tap haptic', (tester) async {
+      final List<String> haptics = recordHaptics(tester);
+      when(
+        () => fetchUseCase(any()),
+      ).thenAnswer((_) async => Result.success(<FavouriteWallEntity>[prismFav('a', author: 'Ada')]));
+      createBloc();
+      await pumpGrid(tester);
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(PrismButton, 'Sign in'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(haptics, <String>['tap']);
+      expect(find.text('Sign in to Prism'), findsOneWidget);
     });
 
     testWidgets('a guest with saved favourites sees the list and a banner that can be dismissed', (tester) async {

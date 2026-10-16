@@ -74,15 +74,18 @@ void main() {
   });
 
   testWidgets('failed quick tile save plays error, not success', (tester) async {
-    SharedPreferencesStorePlatform.instance = _FailingPreferences();
+    // Load with a working store: a failed first write makes the redesigned screen show its load error instead.
     await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
     await tester.pumpAndSettle();
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    SharedPreferencesStorePlatform.instance = _FailingPreferences();
     expect(haptics, isEmpty);
     await tester.tap(find.text('Lock').first);
     await tester.pumpAndSettle();
 
-    expect(messages, <String>['Failed to save settings']);
-    expect(haptics, <String>['HapticFeedbackType.errorNotification']);
+    expect(messages, <String>['Could not save quick tile settings']);
+    // The target selector plays its own selection tick, then the failed save plays the error.
+    expect(haptics, <String>['HapticFeedbackType.selectionClick', 'HapticFeedbackType.errorNotification']);
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -99,14 +102,17 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('rejected quick tile writes report failure without a success haptic', (tester) async {
-    SharedPreferencesStorePlatform.instance = _RejectedPreferences();
+    // Load with a working store: a failed first write makes the redesigned screen show its load error instead.
     await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
     await tester.pumpAndSettle();
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    SharedPreferencesStorePlatform.instance = _RejectedPreferences();
     await tester.tap(find.text('Lock').first);
     await tester.pumpAndSettle();
 
-    expect(messages, <String>['Failed to save settings']);
-    expect(haptics, <String>['HapticFeedbackType.errorNotification']);
+    expect(messages, <String>['Could not save quick tile settings']);
+    // The target selector plays its own selection tick, then the failed save plays the error.
+    expect(haptics, <String>['HapticFeedbackType.selectionClick', 'HapticFeedbackType.errorNotification']);
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

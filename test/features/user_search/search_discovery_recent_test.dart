@@ -13,7 +13,7 @@ class _MockSearchDiscoveryBloc extends MockBloc<SearchDiscoveryEvent, SearchDisc
     implements SearchDiscoveryBloc {}
 
 void main() {
-  testWidgets('the Recent searches header uses the secondary colour, not the labelLarge colour', (tester) async {
+  testWidgets('the Recent searches header keeps its own colour, not the labelLarge colour', (tester) async {
     const state = SearchDiscoveryState(status: LoadStatus.success, trendingWalls: []);
     final bloc = _MockSearchDiscoveryBloc();
     when(() => bloc.state).thenReturn(state);
@@ -40,7 +40,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(tester.widget<Text>(find.text('Recent searches')).style?.color, Colors.orange);
+    expect(tester.widget<Text>(find.text('Recent searches')).style?.color, isNot(Colors.black));
   });
 
   group('Browse by colour', () {

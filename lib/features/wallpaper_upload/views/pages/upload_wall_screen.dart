@@ -5,12 +5,10 @@ import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/animated/glint_toast.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/upload_failure.dart';
 import 'package:Prism/data/upload/upload_id.dart';
@@ -21,8 +19,9 @@ import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_quality.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/submission_metadata_form.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/upload_checks_card.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/upload_preview_row.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -349,7 +348,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<void> _retryUpload() async {
-    PrismHaptics.tap();
     if (_stage == _UploadStage.failedProcessing) {
       await _prepareImage();
     }
@@ -362,7 +360,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _leaving) {
       return;
     }
-    PrismHaptics.tap();
     setState(() {
       _stage = _UploadStage.uploading;
       _errorMessage = null;
@@ -374,7 +371,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   Future<void> _retrySubmit() async {
     if (_stage != _UploadStage.failedSubmission || _submitted || _leaving) return;
-    PrismHaptics.tap();
     await _saveRecord();
   }
 
@@ -425,7 +421,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           _stage = _UploadStage.quotaExceeded;
           _errorMessage = deleted
               ? 'You have reached this week’s free wallpaper upload limit.'
-              : 'You reached the upload limit, but uploaded files could not be removed. Try Back again to retry.';
+              : 'You reached the upload limit, but we could not remove the uploaded files. Tap Back to try removing them again.';
         });
         _trackFailure('quota_exceeded');
         return;
@@ -478,7 +474,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   Future<void> _skip() async {
     final batch = widget.batch;
     if (batch == null || _isBusy || _submitted || _leaving) return;
-    PrismHaptics.tap();
     final failed =
         _stage == _UploadStage.failedProcessing ||
         _stage == _UploadStage.failedUpload ||
@@ -498,33 +493,21 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<void> _confirmDiscard() async {
-    final discard = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Discard this upload?'),
-        content: const Text('Uploaded files will be removed. Your selected image will stay on your device.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Keep editing')),
-          FilledButton(
-            onPressed: () {
-              PrismHaptics.tap();
-              Navigator.pop(dialogContext, true);
-            },
-            child: const Text('Discard upload'),
-          ),
-        ],
-      ),
+    final bool discard = await showPrismConfirm(
+      context,
+      title: 'Discard this upload?',
+      message: 'Uploaded files will be removed. Your selected image will stay on your device.',
+      confirmLabel: 'Discard',
+      destructive: true,
     );
-    if (discard != true || !mounted) return;
+    if (!discard || !mounted) return;
     if (_discarding) return;
     setState(() => _discarding = true);
     final deleted = await _deleteFile();
     if (!mounted) return;
     if (!deleted) {
       setState(() => _discarding = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not remove uploaded files. Try again.')));
+      toasts.error('Could not remove uploaded files. Try again.');
       return;
     }
     if (!mounted) return;
@@ -559,28 +542,92 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     _UploadStage.quotaExceeded => 'Upload limit reached',
   };
 
-  String get _stageDescription =>
-      _errorMessage ??
-      switch (_stage) {
-        _UploadStage.processing => 'Preparing your image and a smaller preview.',
-        _UploadStage.uploading => 'Uploading the wallpaper and its preview.',
-        _UploadStage.ready => 'Your wallpaper appears in the community after approval. Track it in Review status.',
-        _UploadStage.saving => 'Saving your submission for review.',
-        _UploadStage.failedProcessing => '',
-        _UploadStage.failedUpload => '',
-        _UploadStage.failedSubmission => '',
-        _UploadStage.quotaExceeded => '',
-      };
+  bool get _failed =>
+      _stage == _UploadStage.failedProcessing ||
+      _stage == _UploadStage.failedUpload ||
+      _stage == _UploadStage.failedSubmission ||
+      _stage == _UploadStage.quotaExceeded;
+
+  List<UploadCheck> get _checks {
+    final (int current, bool working) = switch (_stage) {
+      _UploadStage.processing => (0, true),
+      _UploadStage.uploading => (1, true),
+      _UploadStage.saving => (2, true),
+      _ => (1, false),
+    };
+    UploadCheckState stateOf(int step) => step < current
+        ? UploadCheckState.done
+        : step == current && working
+        ? UploadCheckState.active
+        : UploadCheckState.pending;
+    String text(int step, {required String pending, required String active, required String done}) =>
+        switch (stateOf(step)) {
+          UploadCheckState.done => done,
+          UploadCheckState.active => active,
+          UploadCheckState.pending => pending,
+        };
+    return <UploadCheck>[
+      UploadCheck(
+        stateOf(0),
+        text(
+          0,
+          pending: 'Prepare your image and a smaller preview',
+          active: 'Preparing your image and a smaller preview',
+          done: 'Image and preview are ready',
+        ),
+      ),
+      UploadCheck(
+        stateOf(1),
+        text(
+          1,
+          pending: 'Upload the wallpaper and its preview',
+          active: 'Uploading the wallpaper and its preview',
+          done: 'Wallpaper and preview uploaded',
+        ),
+      ),
+      UploadCheck(
+        stateOf(2),
+        text(
+          2,
+          pending: 'Moderators review it before it appears in Prism',
+          active: 'Saving your submission for review',
+          done: 'Submitted for review',
+        ),
+      ),
+    ];
+  }
+
+  VoidCallback? get _failureAction => switch (_stage) {
+    _UploadStage.failedProcessing => _oversize ? () => Navigator.maybePop(context) : _retryUpload,
+    _UploadStage.failedUpload => () => unawaited(_submit()),
+    _UploadStage.failedSubmission => () => unawaited(_retrySubmit()),
+    _UploadStage.quotaExceeded => () => Navigator.maybePop(context),
+    _ => null,
+  };
+
+  String get _failureActionLabel => switch (_stage) {
+    _UploadStage.failedProcessing when _oversize => 'Choose another image',
+    _UploadStage.failedSubmission => 'Retry submit',
+    _UploadStage.quotaExceeded => 'Back',
+    _ => 'Try again',
+  };
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final failure =
-        _stage == _UploadStage.failedProcessing ||
-        _stage == _UploadStage.failedUpload ||
-        _stage == _UploadStage.failedSubmission ||
-        _stage == _UploadStage.quotaExceeded;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final bool busy =
+        _stage == _UploadStage.processing || _stage == _UploadStage.uploading || _stage == _UploadStage.saving;
+    final List<Widget> bottomActions = <Widget>[
+      if (!_failed)
+        PrismButton(
+          label: 'Upload',
+          expand: true,
+          loading: busy,
+          onPressed: !_discarding && _stage == _UploadStage.ready ? _submit : null,
+        ),
+      if (_canSkip)
+        PrismButton(label: 'Skip this wallpaper', variant: PrismButtonVariant.ghost, expand: true, onPressed: _skip),
+    ];
     return PopScope(
       canPop: !_isBusy && (!_hasStagedFiles || _submissionAttempted),
       onPopInvokedWithResult: (didPop, result) {
@@ -589,178 +636,73 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           unawaited(_confirmDiscard());
         }
       },
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Upload wallpaper')),
-        body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final previewHeight = (constraints.maxHeight * 0.56).clamp(220.0, 440.0);
-              return Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (widget.batch case final batch? when batch.isMulti) ...[
-                            UploadBatchStepper(batch: batch),
-                            const SizedBox(height: 12),
-                          ],
-                          Center(
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(maxHeight: previewHeight, maxWidth: 480),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: Image.file(
-                                  widget.image,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) => ColoredBox(
-                                    color: colors.surfaceContainerHighest,
-                                    child: SizedBox(
-                                      height: previewHeight,
-                                      child: Center(
-                                        child: Icon(Icons.broken_image_outlined, color: colors.onSurfaceVariant),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AnimatedSwitcher(
-                                duration: context.motion(PrismDurations.fast),
-                                child: _isBusy
-                                    ? SizedBox(
-                                        key: const ValueKey<String>('busy'),
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
-                                      )
-                                    : Icon(
-                                        failure ? Icons.error_outline : Icons.check_circle_outline,
-                                        key: ValueKey<bool>(failure),
-                                        color: failure ? colors.error : colors.primary,
-                                        size: 24,
-                                      ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _stageTitle,
-                                      style: theme.textTheme.titleMedium?.copyWith(color: colors.onSurface),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _stageDescription,
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        color: failure ? colors.error : colors.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (wallpaperResolution != null) ...[
-                            const SizedBox(height: 16),
-                            Text(
-                              '$wallpaperResolution  ·  ${wallpaperSize ?? ''}',
-                              style: theme.textTheme.labelMedium?.copyWith(color: colors.onSurfaceVariant),
-                            ),
-                          ],
-                          for (final warning in _qualityWarnings) ...[
-                            const SizedBox(height: 8),
-                            _QualityWarningRow(
-                              text: uploadQualityWarningText(warning, width: _imageWidth!, height: _imageHeight!),
-                            ),
-                          ],
-                          if (_showMetadataForm) ...[
-                            const SizedBox(height: 24),
-                            SubmissionMetadataForm(initial: _metadata, onChanged: (value) => _metadata = value),
-                          ],
-                        ],
-                      ),
+      child: PrismPage(
+        title: 'Upload wallpaper',
+        onBack: () => Navigator.maybePop(context),
+        bottomBar: bottomActions.isEmpty
+            ? null
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: bottomActions,
+              ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (widget.batch case final batch? when batch.isMulti) ...<Widget>[
+                UploadBatchStepper(batch: batch),
+                const SizedBox(height: PrismSpace.md),
+              ],
+              UploadPreviewRow(
+                image: widget.image,
+                resolution: wallpaperResolution,
+                size: wallpaperSize,
+                loading: _stage == _UploadStage.processing,
+              ),
+              for (final UploadQualityWarning warning in _qualityWarnings) ...<Widget>[
+                const SizedBox(height: PrismSpace.sm),
+                _QualityWarningRow(
+                  text: uploadQualityWarningText(warning, width: _imageWidth!, height: _imageHeight!),
+                ),
+              ],
+              const SizedBox(height: PrismSpace.xl),
+              if (_failed) ...<Widget>[
+                GlintState(
+                  kind: GlintStateKind.error,
+                  title: _stageTitle,
+                  body: _errorMessage,
+                  actionLabel: _failureActionLabel,
+                  onAction: _failureAction,
+                  padding: EdgeInsets.zero,
+                ),
+                if (_stage == _UploadStage.failedSubmission)
+                  Center(
+                    child: PrismButton(
+                      label: 'Check review status',
+                      variant: PrismButtonVariant.ghost,
+                      size: PrismButtonSize.compact,
+                      onPressed: () => unawaited(context.router.push(const ReviewRoute())),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: _stage == _UploadStage.failedProcessing
-                              ? _oversize
-                                    ? FilledButton(
-                                        onPressed: () => Navigator.maybePop(context),
-                                        child: const Text('Choose another image'),
-                                      )
-                                    : FilledButton.icon(
-                                        onPressed: _retryUpload,
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text('Try again'),
-                                      )
-                              : _stage == _UploadStage.quotaExceeded
-                              ? FilledButton(onPressed: () => Navigator.maybePop(context), child: const Text('Back'))
-                              : _stage == _UploadStage.failedSubmission
-                              ? Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    FilledButton.icon(
-                                      onPressed: _retrySubmit,
-                                      icon: const Icon(Icons.refresh),
-                                      label: const Text('Retry submit'),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    OutlinedButton.icon(
-                                      onPressed: () => unawaited(context.router.push(const ReviewRoute())),
-                                      icon: const Icon(Icons.open_in_new),
-                                      label: const Text('Check review status'),
-                                    ),
-                                  ],
-                                )
-                              : FilledButton.icon(
-                                  onPressed:
-                                      !_discarding &&
-                                          (_stage == _UploadStage.ready || _stage == _UploadStage.failedUpload)
-                                      ? _submit
-                                      : null,
-                                  icon: AnimatedSwitcher(
-                                    duration: context.motion(PrismDurations.fast),
-                                    child: _stage == _UploadStage.saving
-                                        ? const SizedBox.square(
-                                            key: ValueKey<bool>(true),
-                                            dimension: 18,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          )
-                                        : const Icon(JamIcons.check, key: ValueKey<bool>(false)),
-                                  ),
-                                  label: Text(
-                                    _stage == _UploadStage.uploading
-                                        ? 'Uploading…'
-                                        : _stage == _UploadStage.saving
-                                        ? 'Submitting…'
-                                        : 'Submit for review',
-                                  ),
-                                ),
-                        ),
-                        if (_canSkip) TextButton(onPressed: _skip, child: const Text('Skip this wallpaper')),
-                      ],
-                    ),
+              ] else ...<Widget>[
+                Text(_stageTitle, style: PrismTextStyles.cardTitle(context).copyWith(color: cs.onSurface)),
+                if (_stage == _UploadStage.ready) ...<Widget>[
+                  const SizedBox(height: PrismSpace.xxs),
+                  Text(
+                    'Your wallpaper appears in the community after approval. Track it in Your uploads.',
+                    style: PrismTextStyles.body(context),
                   ),
                 ],
-              );
-            },
+                const SizedBox(height: PrismSpace.md),
+                UploadChecksCard(checks: _checks),
+              ],
+              if (_showMetadataForm) ...<Widget>[
+                const SizedBox(height: PrismSpace.xl),
+                SubmissionMetadataForm(initial: _metadata, onChanged: (SubmissionMetadata value) => _metadata = value),
+              ],
+            ],
           ),
         ),
       ),
@@ -775,16 +717,13 @@ class _QualityWarningRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(Icons.info_outline, size: 18, color: colors.tertiary),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
-        ),
+      children: <Widget>[
+        Icon(Icons.info_outline_rounded, size: 18, color: cs.tertiary),
+        const SizedBox(width: PrismSpace.xs),
+        Expanded(child: Text(text, style: PrismTextStyles.caption(context))),
       ],
     );
   }

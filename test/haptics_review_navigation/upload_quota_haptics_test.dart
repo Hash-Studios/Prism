@@ -47,7 +47,7 @@ void main() {
     }
 
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: UploadBottomPanel())));
-    await tester.tap(find.text('Wallpapers'));
+    await tester.tap(find.text('Upload a wallpaper'));
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['error']);

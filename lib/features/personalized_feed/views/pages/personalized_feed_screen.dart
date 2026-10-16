@@ -1,32 +1,23 @@
 import 'dart:async';
 
-import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
-import 'package:Prism/core/widgets/home/premium_corner_banner.dart';
-import 'package:Prism/core/widgets/home/wallpapers/carousel_dots.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/popular_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
-import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/home_chip_rail.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/paged_chip_sliver.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
@@ -34,11 +25,8 @@ import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/trending/views/widgets/trending_strip.dart';
-import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -191,6 +179,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
     super.build(context);
     final int crossAxisCount = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
     final int tileMemCacheHeight = gridTileDecodeHeight(context, crossAxisCount: crossAxisCount);
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return BlocProvider.value(
       value: _bloc,
       child: MultiBlocListener(
@@ -224,8 +213,12 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
             final previewWalls = prismItems.take(_carouselPreviewCount).toList(growable: false);
             final previewSet = prismItems.take(_carouselPreviewCount).toSet();
             final visibleItems = state.items.where((item) => !previewSet.contains(item)).toList(growable: false);
+            final bool loadingFirstPage =
+                state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading);
 
             return RefreshIndicator(
+              color: cs.primary,
+              backgroundColor: cs.surfaceContainerHigh,
               onRefresh: _refresh,
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
@@ -239,46 +232,21 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                   scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
                   physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   slivers: [
-                    // Carousel: WallOfTheDay + banner + wallpaper previews
                     SliverToBoxAdapter(
-                      child: _FeedCarousel(
-                        previewWalls: previewWalls,
-                        onWallShown: (wall) => _bloc.add(
-                          PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(wall)]),
-                        ),
-                      ),
+                      child: loadingFirstPage && state.chip == HomeFeedChip.forYou
+                          ? const _CarouselSkeleton()
+                          : FeedCarousel(
+                              previewWalls: previewWalls,
+                              onWallShown: (wall) => _bloc.add(
+                                PersonalizedFeedEvent.tilesSeen(<String>[
+                                  PersonalizedRankingService.canonicalKey(wall),
+                                ]),
+                              ),
+                            ),
                     ),
                     SliverToBoxAdapter(child: TrendingStripSection(key: _trendingStripKey)),
                     SliverToBoxAdapter(
-                      child: Column(
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(start: 16, end: 4),
-                            child: Row(
-                              children: [
-                                Expanded(child: Text('For you', style: PrismTextStyles.editorialTitle(context))),
-                                IconButton(
-                                  onPressed: widget.onTuneTap == null
-                                      ? null
-                                      : () {
-                                          PrismHaptics.tap();
-                                          widget.onTuneTap!();
-                                        },
-                                  tooltip: 'Tune your feed',
-                                  visualDensity: VisualDensity.compact,
-                                  icon: const Icon(Icons.tune_rounded),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: 2,
-                            child: state.isRefreshing
-                                ? const LinearProgressIndicator(semanticsLabel: 'Updating')
-                                : null,
-                          ),
-                        ],
-                      ),
+                      child: _ForYouHeader(onTuneTap: widget.onTuneTap, isRefreshing: state.isRefreshing),
                     ),
                     SliverPersistentHeader(
                       pinned: true,
@@ -288,6 +256,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                       ),
                     ),
                     ..._contentSlivers(context, state, visibleItems, crossAxisCount, tileMemCacheHeight),
+                    const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
                   ],
                 ),
               ),
@@ -365,7 +334,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
             child: GlintState(
               kind: GlintStateKind.error,
               title: "Couldn't load your feed",
-              body: 'Check your connection and try again.',
+              body: 'Check your connection, then try again.',
               actionLabel: 'Try again',
               onAction: () => unawaited(_refresh()),
             ),
@@ -374,32 +343,31 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       }
     }
     return <Widget>[
-      SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          childAspectRatio: PrismFeedLayout.gridTileAspectRatio,
+      SliverPadding(
+        padding: PrismWallGrid.padding,
+        sliver: SliverGrid(
+          gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final FeedItemEntity item = visibleItems[index];
+            _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)]));
+            return KeyedSubtree(
+              key: ValueKey<String>(item.id),
+              child: FeedWallTile(
+                item: item,
+                index: index,
+                crossAxisCount: crossAxisCount,
+                memCacheHeight: tileMemCacheHeight,
+                onShowLessLikeThis: () => _lessLikeThis(item),
+              ),
+            );
+          }, childCount: visibleItems.length),
         ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final FeedItemEntity item = visibleItems[index];
-          _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)]));
-          return KeyedSubtree(
-            key: ValueKey<String>(item.id),
-            child: WallpaperTile(
-              item: item,
-              index: index,
-              crossAxisCount: crossAxisCount,
-              memCacheHeight: tileMemCacheHeight,
-              quickActions: true,
-              onShowLessLikeThis: () => _lessLikeThis(item),
-            ),
-          );
-        }, childCount: visibleItems.length),
       ),
-      SliverToBoxAdapter(child: _bottomState(context, state)),
+      SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),
     ];
   }
 
-  Widget _bottomState(BuildContext context, PersonalizedFeedState state) {
+  Widget _bottomState(BuildContext context, PersonalizedFeedState state, int columns) {
     if (state.items.isEmpty) {
       return GlintState(
         kind: GlintStateKind.empty,
@@ -412,164 +380,90 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
     if (state.actionStatus == ActionStatus.failure && !state.isFetchingMore) {
       return Padding(
-        padding: PrismFeedLayout.contentStatePadding,
+        padding: const EdgeInsets.all(PrismSpace.md),
         child: Center(
-          child: TextButton(
+          child: PrismButton(
+            label: "Couldn't load more. Try again",
+            variant: PrismButtonVariant.ghost,
+            size: PrismButtonSize.compact,
             onPressed: () {
-              PrismHaptics.tap();
               context.read<PersonalizedFeedBloc>().add(const PersonalizedFeedEvent.fetchMoreRequested());
             },
-            child: const Text("Couldn't load more. Try again"),
           ),
         ),
       );
     }
 
     if (state.isFetchingMore) {
-      return const FeedLoadingMore();
+      return FeedLoadingMore(columns: columns);
     }
 
     if (state.hasMore) {
       return const SizedBox(height: PrismFeedLayout.endOfPageSpacerHeight);
     }
 
-    return const Padding(
-      padding: PrismFeedLayout.contentStatePadding,
-      child: PersonalizedFeedEditorialNote(
-        title: "You're caught up",
-        detail: 'Pull down to refresh — new picks will land here.',
-      ),
+    return const GlintState(
+      kind: GlintStateKind.nothingNew,
+      glintSize: 64,
+      title: 'You are all caught up',
+      body: 'Pull down to refresh. New picks will land here.',
+      padding: EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.xl, PrismSpace.xl, 0),
     );
   }
 }
 
-class _FeedCarousel extends StatefulWidget {
-  const _FeedCarousel({required this.previewWalls, required this.onWallShown});
+class _ForYouHeader extends StatelessWidget {
+  const _ForYouHeader({required this.onTuneTap, required this.isRefreshing});
 
-  final List<PrismFeedItem> previewWalls;
-  final ValueChanged<PrismFeedItem> onWallShown;
-
-  @override
-  State<_FeedCarousel> createState() => _FeedCarouselState();
-}
-
-class _FeedCarouselState extends State<_FeedCarousel> {
-  int _current = 0;
+  final VoidCallback? onTuneTap;
+  final bool isRefreshing;
 
   @override
   Widget build(BuildContext context) {
-    final previewWalls = widget.previewWalls;
-    final bool hasWotd = context.watch<WotdBloc>().state.entity != null;
-    final int slideOffset = hasWotd ? 2 : 1;
-    final int slideCount = slideOffset + previewWalls.length;
-    final height = MediaQuery.of(context).size.width * PrismFeedLayout.carouselHeightRatio;
-    final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
-    // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see.
-    final bool visible = TickerMode.valuesOf(context).enabled && (ModalRoute.of(context)?.isCurrent ?? true);
-    return SizedBox(
-      height: height,
-      child: Stack(
-        alignment: AlignmentDirectional.bottomEnd,
-        children: [
-          CarouselSlider.builder(
-            itemCount: slideCount,
-            options: CarouselOptions(
-              height: height,
-              viewportFraction: 1.0,
-              autoPlay: !context.reduceMotion && visible,
-              autoPlayInterval: const Duration(seconds: 5),
-              onPageChanged: (index, reason) {
-                if (mounted) setState(() => _current = index);
-              },
-            ),
-            itemBuilder: (BuildContext context, int i, int rI) {
-              if (hasWotd && i == 0) {
-                return const SizedBox.expand(child: WallOfTheDayCard());
-              }
-              if (i == slideOffset - 1) {
-                return GestureDetector(
-                  onTap: () {
-                    PrismHaptics.tap();
-                    unawaited(
-                      analytics.track(
-                        const SurfaceActionTappedEvent(
-                          surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-                          action: AnalyticsActionValue.bannerTapped,
-                          sourceContext: 'personalized_feed_carousel_banner',
-                        ),
-                      ),
-                    );
-                    openPrismLink(context, app_state.bannerURL);
-                  },
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      PrismImageTile(url: app_state.topImageLink, memCacheHeight: memCacheHeight),
-                      Center(
-                        child: ColoredBox(
-                          color: app_state.bannerTextOn
-                              ? Theme.of(
-                                  context,
-                                ).colorScheme.scrim.withValues(alpha: PrismOverlay.carouselBannerScrimAlpha)
-                              : Colors.transparent,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              // High-contrast on arbitrary photography under [ColorScheme.scrim].
-                              style: PrismTextStyles.carouselBannerHeadline(context),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              final int feedIndex = i - slideOffset;
-              final PrismFeedItem wall = previewWalls[feedIndex];
-              widget.onWallShown(wall);
-              return Semantics(
-                button: true,
-                label: wall.semanticLabel,
-                child: GestureDetector(
-                  onTap: () {
-                    PrismHaptics.tap();
-                    unawaited(
-                      analytics.track(
-                        SurfaceActionTappedEvent(
-                          surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-                          action: AnalyticsActionValue.carouselItemOpened,
-                          sourceContext: 'personalized_feed_carousel',
-                          itemType: ItemTypeValue.wallpaper,
-                          itemId: wall.id,
-                          index: feedIndex,
-                        ),
-                      ),
-                    );
-                    context.router.push(WallpaperDetailRoute(entity: wall));
-                  },
-                  child: PremiumCornerBanner(
-                    isPremiumWall: isPremiumWall(
-                      app_state.premiumCollections,
-                      wall.wallpaper.collections ?? const <String>[],
-                    ),
-                    child: SizedBox.expand(
-                      child: PrismImageTile(
-                        url: wall.thumbnailUrl,
-                        fallbackUrl: wall.fullUrl,
-                        memCacheHeight: memCacheHeight,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            PrismWallGrid.margin + 4,
+            PrismSpace.lg,
+            PrismWallGrid.margin - 4,
+            0,
           ),
-          CarouselDots(current: _current.clamp(0, slideCount - 1), count: slideCount),
-        ],
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Semantics(header: true, child: Text('For you', style: PrismTextStyles.sectionTitle(context))),
+              ),
+              PrismIconButton(
+                icon: Icons.tune_rounded,
+                tooltip: 'Tune your feed',
+                onPressed: onTuneTap == null
+                    ? null
+                    : () {
+                        PrismHaptics.tap();
+                        onTuneTap!();
+                      },
+              ),
+            ],
+          ),
+        ),
+        // A thin bar shows that cached walls are on screen while the fresh page loads.
+        SizedBox(height: 2, child: isRefreshing ? const LinearProgressIndicator(semanticsLabel: 'Updating') : null),
+      ],
+    );
+  }
+}
+
+/// A card-shaped block where the carousel will be, so the page does not jump when the first walls arrive.
+class _CarouselSkeleton extends StatelessWidget {
+  const _CarouselSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismSkeleton(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: PrismWallGrid.margin),
+        child: PrismBone(height: feedCarouselCardHeight(context), radius: PrismRadius.lg),
       ),
     );
   }

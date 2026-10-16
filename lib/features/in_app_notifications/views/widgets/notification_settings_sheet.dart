@@ -1,21 +1,17 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
-import 'package:Prism/theme/app_tokens.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -24,17 +20,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Opens the one notification preferences sheet, shared by the inbox and Settings.
 Future<void> showNotificationSettingsSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
+  return showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Theme.of(context).primaryColor,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    sheetAnimationStyle: AnimationStyle(
-      duration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-      reverseDuration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
-      curve: PrismCurves.enter,
-      reverseCurve: PrismCurves.exit,
-    ),
     builder: (_) => const NotificationSettingsSheet(),
   );
 }
@@ -132,16 +120,6 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     return granted;
   }
 
-  /// Matches list tile title styling used in [SettingsScreen].
-  TextStyle get _listTileTitleStyle => TextStyle(
-    color: Theme.of(context).colorScheme.secondary,
-    fontWeight: FontWeight.w500,
-    fontFamily: PrismFonts.proximaNova,
-  );
-
-  TextStyle _listTileSubtitleStyle() =>
-      const TextStyle(fontSize: 12).copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.78));
-
   /// Applies a switch change. Turning a switch on first makes sure the system allows notifications. A guest can
   /// still turn a signed-in switch off on this device.
   Future<void> _change(bool value, Future<void> Function() change, {bool needsSignIn = false}) async {
@@ -156,34 +134,30 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
       return;
     }
     if (value && !await _ensurePermission()) return;
-    PrismHaptics.selection();
     await change();
   }
 
   Widget _permissionBanner() {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: cs.error.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-          child: Row(
-            children: <Widget>[
-              Icon(Icons.notifications_off_outlined, color: cs.secondary),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Notifications are off for Prism.',
-                  style: TextStyle(color: cs.secondary, fontFamily: PrismFonts.proximaNova),
-                ),
-              ),
-              TextButton(
-                onPressed: () => widget.permissions.openSystemSettings(),
-                child: Text('Open settings', style: TextStyle(color: cs.error)),
-              ),
-            ],
-          ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: cs.error.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(PrismRadius.md),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(PrismSpace.sm, PrismSpace.xs, PrismSpace.xs, PrismSpace.xs),
+        child: Row(
+          children: <Widget>[
+            Icon(Icons.notifications_off_outlined, color: cs.onSurface),
+            const SizedBox(width: PrismSpace.sm),
+            Expanded(child: Text('Notifications are off for Prism.', style: PrismTextStyles.body(context))),
+            PrismButton(
+              label: 'Open settings',
+              variant: PrismButtonVariant.ghost,
+              size: PrismButtonSize.compact,
+              onPressed: () => widget.permissions.openSystemSettings(),
+            ),
+          ],
         ),
       ),
     );
@@ -197,88 +171,70 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     required ValueChanged<bool>? onChanged,
     bool needsSignIn = false,
   }) {
-    final cs = Theme.of(context).colorScheme;
     final bool needsSignInToTurnOn = needsSignIn && !app_state.prismUser.loggedIn && !value;
-    return SwitchListTile(
-      activeThumbColor: cs.error,
-      secondary: Icon(icon, color: cs.secondary),
+    return PrismSwitchRow(
+      icon: icon,
+      title: title,
+      subtitle: needsSignInToTurnOn ? 'Sign in to turn on' : subtitle,
       value: value,
-      title: Text(title, style: _listTileTitleStyle),
-      subtitle: Text(needsSignInToTurnOn ? 'Sign in to turn on' : subtitle, style: _listTileSubtitleStyle()),
       onChanged: needsSignInToTurnOn ? null : onChanged,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final sheetHeight = math.max(MediaQuery.sizeOf(context).height / 2.3, 380.0);
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: SizedBox(
-        height: sheetHeight,
-        child: ListView(
-          physics: const ClampingScrollPhysics(),
-          children: [
-            Center(
-              child: Container(
-                height: 4,
-                width: 36,
-                margin: const EdgeInsets.only(top: 8, bottom: 12),
-                decoration: BoxDecoration(color: theme.hintColor, borderRadius: BorderRadius.circular(2)),
+    return PrismSheetBody(
+      title: 'Notification preferences',
+      scrollable: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (_permissionGranted == false) ...<Widget>[_permissionBanner(), const SizedBox(height: PrismSpace.sm)],
+          PrismGroup(
+            children: <Widget>[
+              _toggle(
+                icon: Icons.wb_sunny_rounded,
+                title: 'Wall of the Day',
+                subtitle: 'A daily wallpaper pick.',
+                value: _wotd,
+                onChanged: (bool value) => _change(value, () => _setWotd(value)),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(
-                'Notification preferences',
-                style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.secondary),
+              _toggle(
+                icon: Icons.person_add_rounded,
+                title: 'Followers',
+                subtitle: 'Alerts when someone new follows you.',
+                value: _followers,
+                needsSignIn: true,
+                onChanged: (bool value) => _change(value, () => _setFollowers(value), needsSignIn: true),
               ),
-            ),
-            if (_permissionGranted == false) _permissionBanner(),
-            _toggle(
-              icon: Icons.wb_sunny_outlined,
-              title: 'Wall of the Day',
-              subtitle: 'A daily wallpaper pick.',
-              value: _wotd,
-              onChanged: (bool value) => _change(value, () => _setWotd(value)),
-            ),
-            _toggle(
-              icon: JamIcons.user_plus,
-              title: 'Followers',
-              subtitle: 'Alerts when someone new follows you.',
-              value: _followers,
-              needsSignIn: true,
-              onChanged: (bool value) => _change(value, () => _setFollowers(value), needsSignIn: true),
-            ),
-            _toggle(
-              icon: JamIcons.pictures,
-              title: 'Posts',
-              subtitle: 'Alerts when creators you follow share new work.',
-              value: _posts,
-              needsSignIn: true,
-              onChanged: _followers ? (bool value) => _change(value, () => _setPosts(value), needsSignIn: true) : null,
-            ),
-            _toggle(
-              icon: JamIcons.lightbulb,
-              title: 'Recommendations',
-              subtitle: 'Tips, news and wallpaper picks from Prism.',
-              value: _recommendations,
-              onChanged: (bool value) => _change(value, () => _setRecommendations(value)),
-            ),
-            _toggle(
-              icon: Icons.local_fire_department_rounded,
-              title: 'Streak reminders',
-              subtitle: 'Evening heads-up around 8 PM if your login streak is about to break.',
-              value: _streakReminders,
-              needsSignIn: true,
-              onChanged: (bool value) => _change(value, () => _setStreakReminders(value), needsSignIn: true),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
+              _toggle(
+                icon: Icons.photo_library_rounded,
+                title: 'Posts',
+                subtitle: 'Alerts when creators you follow share new work.',
+                value: _posts,
+                needsSignIn: true,
+                onChanged: _followers
+                    ? (bool value) => _change(value, () => _setPosts(value), needsSignIn: true)
+                    : null,
+              ),
+              _toggle(
+                icon: Icons.lightbulb_rounded,
+                title: 'Recommendations',
+                subtitle: 'Tips, news and wallpaper picks from Prism.',
+                value: _recommendations,
+                onChanged: (bool value) => _change(value, () => _setRecommendations(value)),
+              ),
+              _toggle(
+                icon: Icons.local_fire_department_rounded,
+                title: 'Streak reminders',
+                subtitle: 'Evening heads-up around 8 PM if your login streak is about to break.',
+                value: _streakReminders,
+                needsSignIn: true,
+                onChanged: (bool value) => _change(value, () => _setStreakReminders(value), needsSignIn: true),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

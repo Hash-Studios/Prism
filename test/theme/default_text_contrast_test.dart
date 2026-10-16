@@ -20,17 +20,19 @@ import '../support/in_memory_local_store.dart';
 class _MockStartupBloc extends MockBloc<StartupEvent, StartupState> implements StartupBloc {}
 
 /// The text colour a [Text] ends up with, and the fill of the surface under it.
-void _expectReadable(WidgetTester tester, Finder label, {required String reason}) {
+void _expectReadable(WidgetTester tester, Finder label, {required String reason, required Color page}) {
   expect(label, findsOneWidget, reason: reason);
   final Color foreground = tester
       .widget<RichText>(find.descendant(of: label, matching: find.byType(RichText)))
       .text
       .style!
       .color!;
-  final Color background = tester
-      .widgetList<Material>(find.ancestor(of: label, matching: find.byType(Material)))
-      .map((material) => material.color)
-      .firstWhere((color) => color != null && color.a > 0)!;
+  final Color background =
+      tester
+          .widgetList<Material>(find.ancestor(of: label, matching: find.byType(Material)))
+          .map((material) => material.color)
+          .firstWhere((color) => color != null && color.a > 0, orElse: () => null) ??
+      page;
 
   expect(
     contrastRatio(Color.alphaBlend(foreground, background), background),
@@ -50,13 +52,19 @@ void main() {
 
   for (final PrismThemeOption option in lightThemes) {
     group(option.label, () {
+      final Color page = option.theme.colorScheme.surface;
       Widget app(Widget home) => MaterialApp(theme: option.theme, home: home);
 
       testWidgets('not found page text reads on the page', (tester) async {
         await tester.pumpWidget(app(const NotFoundPage()));
 
-        _expectReadable(tester, find.text('Page not found'), reason: 'title');
-        _expectReadable(tester, find.text('The link you opened is invalid or no longer available.'), reason: 'body');
+        _expectReadable(tester, find.text('This page does not exist'), reason: 'title', page: page);
+        _expectReadable(
+          tester,
+          find.text('The link you opened is invalid or no longer available.'),
+          reason: 'body',
+          page: page,
+        );
       });
 
       testWidgets('startup failure text reads on the page', (tester) async {
@@ -64,8 +72,8 @@ void main() {
         when(() => bloc.state).thenReturn(StartupState.initial().copyWith(status: LoadStatus.failure));
         await tester.pumpWidget(app(BlocProvider<StartupBloc>.value(value: bloc, child: const SplashWidget())));
 
-        _expectReadable(tester, find.text("Prism couldn't start"), reason: 'title');
-        _expectReadable(tester, find.text('Check your connection and try again.'), reason: 'body');
+        _expectReadable(tester, find.text('Prism could not start'), reason: 'title', page: page);
+        _expectReadable(tester, find.text('Check your connection and try again.'), reason: 'body', page: page);
       });
 
       testWidgets('obsolete version screen reads on the page and its button fits at 1.5x text', (tester) async {
@@ -76,18 +84,14 @@ void main() {
               data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.5)),
               child: child!,
             ),
-            home: OldVersion(),
+            home: const OldVersion(),
           ),
         );
 
-        _expectReadable(
-          tester,
-          find.descendant(of: find.byType(AppBar), matching: find.text('Update')),
-          reason: 'title',
-        );
-        expect(find.widgetWithText(FilledButton, 'Update'), findsOneWidget);
+        _expectReadable(tester, find.text('Time to update'), reason: 'title', page: page);
+        expect(find.widgetWithText(FilledButton, 'Update Prism'), findsOneWidget);
         expect(tester.takeException(), isNull);
-        _expectReadable(tester, find.textContaining('is obsolete and no longer supported'), reason: 'body');
+        _expectReadable(tester, find.textContaining('is no longer supported'), reason: 'body', page: page);
       });
 
       testWidgets('profile nudge sheet text reads on the sheet', (tester) async {
@@ -105,17 +109,13 @@ void main() {
           ),
         );
         await tester.tap(find.text('Open'));
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 1));
 
-        _expectReadable(
-          tester,
-          find.text('You are 50% complete. Add the remaining details to unlock your reward.'),
-          reason: 'body',
-        );
+        _expectReadable(tester, find.textContaining('Your profile is 50% complete'), reason: 'body', page: page);
         for (final ProfileCompletenessStep step in status.missingSteps) {
-          _expectReadable(tester, find.text(step.label), reason: 'step ${step.name}');
+          _expectReadable(tester, find.text(step.label), reason: 'step ${step.name}', page: page);
         }
-        _expectReadable(tester, find.textContaining('Complete your profile to earn'), reason: 'title');
+        _expectReadable(tester, find.text('Finish your profile'), reason: 'title', page: page);
       });
     });
   }

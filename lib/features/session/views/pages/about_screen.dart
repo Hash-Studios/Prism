@@ -8,16 +8,15 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart' show supportEmail;
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -46,7 +45,7 @@ Future<List<Contributor>> Function()? _sessionLoader;
 
 /// The GitHub API allows 60 unauthenticated requests per hour per IP, so the list loads once per session. A failed
 /// load is not kept.
-Future<List<Contributor>> _fetchContributors() {
+Future<List<Contributor>> _fetchSessionContributors() {
   final Future<List<Contributor>>? cached = _sessionContributors;
   if (cached != null && identical(_sessionLoader, contributorsLoader)) return cached;
   final Future<List<Contributor>> loading = contributorsLoader();
@@ -89,7 +88,10 @@ Future<bool> _openOrExplain(BuildContext context, String target, {required Strin
 
 @RoutePage()
 class AboutScreen extends StatefulWidget {
-  const AboutScreen({super.key});
+  const AboutScreen({super.key, this.loadContributors});
+
+  /// Replaces the GitHub lookup, for tests.
+  final Future<List<Contributor>> Function()? loadContributors;
 
   @override
   State<AboutScreen> createState() => _AboutScreenState();
@@ -102,6 +104,8 @@ class _AboutScreenState extends State<AboutScreen> {
   late Future<List<Contributor>> _contributors = _fetchContributors();
 
   String get _storeLink => defaultTargetPlatform == TargetPlatform.iOS ? appStoreUrl : playStoreUrl;
+
+  String get _version => '${app_state.currentAppVersion}+${app_state.currentAppVersionCode}';
 
   @override
   void initState() {
@@ -131,287 +135,291 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-          icon: const Icon(JamIcons.close),
-          onPressed: () {
-            _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'about_screen_close');
-            Navigator.pop(context);
-          },
-        ),
-        title: Text("About", style: Theme.of(context).textTheme.displaySmall),
-      ),
-      backgroundColor: Theme.of(context).primaryColor,
-      body: SizedBox(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: ListView(
-          children: [
-            const SizedBox(height: 20),
-            Padding(padding: const EdgeInsets.all(8.0), child: Image.asset("assets/images/prism.webp", height: 70)),
-            const SizedBox(height: 10),
-            Text(
-              "Prism Wallpapers",
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-            ),
-            GestureDetector(
-              onTap: _onVersionTap,
-              child: Text(
-                "Version ${app_state.currentAppVersion}+${app_state.currentAppVersionCode}",
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "A feature-rich wallpaper manager.",
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              alignment: WrapAlignment.center,
-              children: [
-                const ActionButton(
-                  icon: JamIcons.github,
-                  text: "GITHUB",
-                  link: "https://www.github.com/Hash-Studios/Prism",
-                ),
-                ActionButton(icon: JamIcons.star_full, text: "RATE", link: _storeLink),
-                ActionButton(
-                  icon: JamIcons.envelope,
-                  text: "FEEDBACK",
-                  link: buildFeedbackLink(
-                    version: app_state.currentAppVersion,
-                    build: app_state.currentAppVersionCode,
-                    platform: '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
-                  ),
-                  onLaunchFailed: (BuildContext context) =>
-                      unawaited(showReportProblemSheet(context, source: 'about_feedback')),
-                ),
-                ActionButton(
-                  icon: JamIcons.refresh,
-                  text: "WHAT'S NEW",
-                  link: '',
-                  onTap: (BuildContext context) => showChangelog(context),
-                ),
-                const ActionButton(icon: JamIcons.users, text: "PRIVACY", link: "https://prismwalls.com/privacy"),
-                const ActionButton(icon: JamIcons.file, text: "TERMS", link: "https://prismwalls.com/terms"),
-                const ActionButton(
-                  icon: JamIcons.twitter,
-                  text: "TWITTER",
-                  link: "https://twitter.com/PrismWallpapers",
-                ),
-                const ActionButton(
-                  icon: JamIcons.instagram,
-                  text: "INSTAGRAM",
-                  link: "https://www.instagram.com/prismwallpapers",
-                ),
-                const ActionButton(icon: JamIcons.paper_plane, text: "TELEGRAM", link: "http://t.me/PrismWallpapers"),
-              ],
-            ),
-            const SizedBox(height: 10),
-            const Divider(),
-            Container(
-              padding: const EdgeInsets.only(top: 4, bottom: 12),
-              width: MediaQuery.of(context).size.width * 0.9,
-              child: Text("The Team", textAlign: TextAlign.center, style: Theme.of(context).textTheme.displaySmall),
-            ),
-            FutureBuilder<List<Contributor>>(
-              future: _contributors,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting ||
-                    snapshot.connectionState == ConnectionState.none) {
-                  return const SizedBox(
-                    height: 250,
-                    child: GlintState(kind: GlintStateKind.loading, title: 'Loading the team'),
-                  );
-                } else if (snapshot.hasError) {
-                  _contentLoadTracker.failure(
-                    reason: AnalyticsReasonValue.error,
-                    onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
-                      await analytics.track(
-                        SurfaceContentLoadedEvent(
-                          surface: AnalyticsSurfaceValue.aboutScreen,
-                          result: EventResultValue.failure,
-                          loadTimeMs: loadTimeMs,
-                          sourceContext: 'about_screen_contributors',
-                          reason: reason,
-                        ),
-                      );
-                    },
-                  );
-                  return SizedBox(
-                    height: 250,
-                    child: GlintState(
-                      kind: GlintStateKind.error,
-                      title: "Couldn't load the team",
-                      actionLabel: 'Try again',
-                      onAction: () => setState(() {
-                        _contributors = _fetchContributors();
-                      }),
-                    ),
-                  );
-                } else {
-                  _contentLoadTracker.success(
-                    itemCount: snapshot.data?.length ?? 0,
-                    onSuccess: ({required int loadTimeMs, int? itemCount}) async {
-                      await analytics.track(
-                        SurfaceContentLoadedEvent(
-                          surface: AnalyticsSurfaceValue.aboutScreen,
-                          result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
-                          loadTimeMs: loadTimeMs,
-                          sourceContext: 'about_screen_contributors',
-                          itemCount: itemCount,
-                        ),
-                      );
-                    },
-                  );
-                  final contributors = snapshot.data!;
-                  final tiles = <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        for (final (rank, radius) in const [(1, 35.0), (0, 45.0), (2, 35.0)])
-                          if (rank < contributors.length)
-                            _ContributorWidget(contributor: contributors[rank], radius: radius),
-                      ],
-                    ),
-                    if (contributors.length > 3) ...[
-                      const SizedBox(height: 10),
-                      const Divider(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        child: Text("Other Contributors", style: Theme.of(context).textTheme.displaySmall),
-                      ),
-                    ],
-                    for (final Contributor c in contributors.skip(3))
-                      ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: (c.avatarUrl ?? '').isEmpty
-                              ? null
-                              : CachedNetworkImageProvider(c.avatarUrl!),
-                        ),
-                        title: Text(
-                          c.login ?? '',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                        ),
-                        subtitle: Text(
-                          c.contributions == 1 ? "${c.contributions} commit" : "${c.contributions} commits",
-                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        onTap: () {
-                          PrismHaptics.tap();
-                          _trackAction(
-                            AnalyticsActionValue.contributorProfileTapped,
-                            sourceContext: 'about_screen_other_contributor',
-                          );
-                          unawaited(() async {
-                            final String profileUrl = c.htmlUrl ?? '';
-                            final bool launched = await _openOrExplain(context, profileUrl, address: profileUrl);
-                            await analytics.track(
-                              ExternalLinkOpenResultEvent(
-                                surface: AnalyticsSurfaceValue.aboutScreen,
-                                destination: LinkDestinationValue.github,
-                                result: launched ? EventResultValue.success : EventResultValue.failure,
-                                reason: launched ? null : AnalyticsReasonValue.error,
-                                sourceContext: 'about_screen_other_contributor',
-                              ),
-                            );
-                          }());
-                        },
-                      ),
-                  ];
-                  return Column(children: tiles);
-                }
-              },
-            ),
-            const Divider(),
-            PrismList(),
-          ],
-        ),
-      ),
-      bottomNavigationBar: SizedBox(
-        width: MediaQuery.of(context).size.width,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            "Made with ❤ in India with Flutter!",
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-          ),
-        ),
-      ),
-    );
-  }
-}
+  Future<List<Contributor>> _fetchContributors() => widget.loadContributors?.call() ?? _fetchSessionContributors();
 
-class _ContributorWidget extends StatelessWidget {
-  const _ContributorWidget({required this.contributor, required this.radius});
-  final Contributor contributor;
-  final double radius;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        PrismHaptics.tap();
-        unawaited(
-          analytics.track(
-            SurfaceActionTappedEvent(
+  void _trackContributorsLoaded(AsyncSnapshot<List<Contributor>> snapshot) {
+    if (snapshot.hasError) {
+      _contentLoadTracker.failure(
+        reason: AnalyticsReasonValue.error,
+        onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
               surface: AnalyticsSurfaceValue.aboutScreen,
-              action: AnalyticsActionValue.contributorProfileTapped,
-              sourceContext: 'about_screen_contributor',
-              itemType: ItemTypeValue.user,
-              itemId: contributor.login,
+              result: EventResultValue.failure,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'about_screen_contributors',
+              reason: reason,
             ),
+          );
+        },
+      );
+      return;
+    }
+    _contentLoadTracker.success(
+      itemCount: snapshot.data?.length ?? 0,
+      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+        await analytics.track(
+          SurfaceContentLoadedEvent(
+            surface: AnalyticsSurfaceValue.aboutScreen,
+            result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
+            loadTimeMs: loadTimeMs,
+            sourceContext: 'about_screen_contributors',
+            itemCount: itemCount,
           ),
         );
-        showContributorDetails(context, contributor.login ?? '');
       },
-      child: Column(
-        children: [
-          CircleAvatar(backgroundImage: CachedNetworkImageProvider(contributor.avatarUrl ?? ""), radius: radius),
-          const SizedBox(height: 5),
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.3,
-            child: Text(
-              contributor.login ?? '',
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+    );
+  }
+
+  Widget _header(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Image.asset('assets/images/prism.webp', height: 70),
+        const SizedBox(height: PrismSpace.sm),
+        Text('Prism Wallpapers', textAlign: TextAlign.center, style: PrismTextStyles.rowTitle(context)),
+        Semantics(
+          button: true,
+          label: 'Version $_version',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _onVersionTap,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Center(
+                widthFactor: 1,
+                child: Text('Version $_version', textAlign: TextAlign.center, style: PrismTextStyles.caption(context)),
+              ),
             ),
           ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width * 0.3,
-            child: Text(
-              "${contributor.contributions} commits",
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
+        ),
+        Text('A feature-rich wallpaper manager.', textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+        const SizedBox(height: PrismSpace.md),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: PrismSpace.xs,
+          runSpacing: PrismSpace.xs,
+          children: <Widget>[
+            const ActionButton(
+              icon: JamIcons.github,
+              text: 'GITHUB',
+              link: 'https://www.github.com/Hash-Studios/Prism',
             ),
+            ActionButton(icon: Icons.star_rounded, text: 'RATE', link: _storeLink),
+            ActionButton(
+              icon: Icons.mail_outline_rounded,
+              text: 'FEEDBACK',
+              link: buildFeedbackLink(
+                version: app_state.currentAppVersion,
+                build: app_state.currentAppVersionCode,
+                platform: '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+              ),
+              onLaunchFailed: (BuildContext context) =>
+                  unawaited(showReportProblemSheet(context, source: 'about_feedback')),
+            ),
+            ActionButton(
+              icon: Icons.refresh_rounded,
+              text: "WHAT'S NEW",
+              link: '',
+              onTap: (BuildContext context) => showChangelog(context),
+            ),
+            const ActionButton(
+              icon: Icons.privacy_tip_rounded,
+              text: 'PRIVACY',
+              link: 'https://prismwalls.com/privacy',
+            ),
+            const ActionButton(icon: Icons.description_rounded, text: 'TERMS', link: 'https://prismwalls.com/terms'),
+            const ActionButton(icon: JamIcons.twitter, text: 'TWITTER', link: 'https://twitter.com/PrismWallpapers'),
+            const ActionButton(
+              icon: JamIcons.instagram,
+              text: 'INSTAGRAM',
+              link: 'https://www.instagram.com/prismwallpapers',
+            ),
+            const ActionButton(icon: JamIcons.paper_plane, text: 'TELEGRAM', link: 'http://t.me/PrismWallpapers'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _hairline(BuildContext context) =>
+      Divider(height: 1, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08));
+
+  /// The top three as a podium (second, first, third, with the first largest), then everyone else in a group.
+  Widget _team(BuildContext context, List<Contributor> contributors) {
+    final List<Contributor> rest = contributors.skip(3).toList(growable: false);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (contributors.isEmpty)
+          Text('No contributors to show yet.', style: PrismTextStyles.body(context))
+        else
+          Row(
+            children: <Widget>[
+              for (final (int rank, double size) in const <(int, double)>[(1, 70), (0, 90), (2, 70)])
+                if (rank < contributors.length)
+                  Expanded(
+                    child: _TeamMember(contributor: contributors[rank], size: size),
+                  ),
+            ],
           ),
+        if (rest.isNotEmpty) ...<Widget>[
+          const SizedBox(height: PrismSpace.md),
+          _hairline(context),
+          const PrismSectionHeader(title: 'Other Contributors'),
+          PrismGroup(
+            children: <Widget>[
+              for (final Contributor c in rest)
+                PrismRow(
+                  leading: PrismAvatar(url: c.avatarUrl, name: c.login, size: 40),
+                  title: c.login ?? 'Contributor',
+                  subtitle: _commits(c.contributions),
+                  showChevron: false,
+                  onTap: () => _openContributorLink(c),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _openContributorLink(Contributor c) {
+    PrismHaptics.tap();
+    _trackAction(AnalyticsActionValue.contributorProfileTapped, sourceContext: 'about_screen_other_contributor');
+    unawaited(() async {
+      final String profileUrl = c.htmlUrl ?? '';
+      final bool launched = await _openOrExplain(context, profileUrl, address: profileUrl);
+      await analytics.track(
+        ExternalLinkOpenResultEvent(
+          surface: AnalyticsSurfaceValue.aboutScreen,
+          destination: LinkDestinationValue.github,
+          result: launched ? EventResultValue.success : EventResultValue.failure,
+          reason: launched ? null : AnalyticsReasonValue.error,
+          sourceContext: 'about_screen_other_contributor',
+        ),
+      );
+    }());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismPage(
+      title: 'About',
+      onBack: () {
+        _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'about_screen_close');
+        context.router.maybePop();
+      },
+      bottomBar: Padding(
+        padding: const EdgeInsets.only(top: PrismSpace.xs),
+        child: Text(
+          'Made with ❤ in India with Flutter!',
+          textAlign: TextAlign.center,
+          style: PrismTextStyles.caption(context),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.xl),
+        children: <Widget>[
+          _header(context),
+          const SizedBox(height: PrismSpace.md),
+          _hairline(context),
+          const PrismSectionHeader(title: 'The Team'),
+          FutureBuilder<List<Contributor>>(
+            future: _contributors,
+            builder: (context, snapshot) {
+              final bool waiting =
+                  snapshot.connectionState == ConnectionState.waiting ||
+                  snapshot.connectionState == ConnectionState.none;
+              if (waiting) {
+                return const SizedBox(
+                  height: 250,
+                  child: GlintState(kind: GlintStateKind.loading, title: 'Loading the team'),
+                );
+              }
+              _trackContributorsLoaded(snapshot);
+              if (snapshot.hasError) {
+                return SizedBox(
+                  height: 250,
+                  child: GlintState(
+                    kind: GlintStateKind.error,
+                    title: "Couldn't load the team",
+                    actionLabel: 'Try again',
+                    onAction: () => setState(() {
+                      _contributors = _fetchContributors();
+                    }),
+                  ),
+                );
+              }
+              return _team(context, snapshot.data ?? const <Contributor>[]);
+            },
+          ),
+          const SizedBox(height: PrismSpace.md),
+          _hairline(context),
+          const SizedBox(height: PrismSpace.md),
+          const PrismList(),
         ],
       ),
     );
   }
 }
 
+String _commits(int? count) => count == 1 ? '1 commit' : '${count ?? 0} commits';
+
+class _TeamMember extends StatelessWidget {
+  const _TeamMember({required this.contributor, required this.size});
+
+  final Contributor contributor;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final String login = contributor.login ?? 'Contributor';
+    return PressScale(
+      child: Semantics(
+        button: true,
+        label: '$login, ${_commits(contributor.contributions)}',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            PrismHaptics.tap();
+            unawaited(
+              analytics.track(
+                SurfaceActionTappedEvent(
+                  surface: AnalyticsSurfaceValue.aboutScreen,
+                  action: AnalyticsActionValue.contributorProfileTapped,
+                  sourceContext: 'about_screen_contributor',
+                  itemType: ItemTypeValue.user,
+                  itemId: contributor.login,
+                ),
+              ),
+            );
+            showContributorDetails(context, login);
+          },
+          child: Column(
+            children: <Widget>[
+              PrismAvatar(url: contributor.avatarUrl, name: login, size: size),
+              const SizedBox(height: PrismSpace.xs),
+              Text(
+                login,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: PrismTextStyles.rowTitle(context),
+              ),
+              Text(
+                _commits(contributor.contributions),
+                textAlign: TextAlign.center,
+                style: PrismTextStyles.caption(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A link chip: an icon and a label that opens [link] and tracks the result.
 class ActionButton extends StatelessWidget {
   const ActionButton({
     super.key,
@@ -421,6 +429,7 @@ class ActionButton extends StatelessWidget {
     this.onTap,
     this.onLaunchFailed,
   });
+
   final IconData icon;
   final String text;
   final String link;
@@ -456,62 +465,53 @@ class ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(4.0),
-      child: ActionChip(
-        avatar: Icon(icon, color: Theme.of(context).colorScheme.error),
-        label: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
-        ),
-        onPressed: () async {
-          PrismHaptics.tap();
-          unawaited(
-            analytics.track(
-              SurfaceActionTappedEvent(
-                surface: AnalyticsSurfaceValue.aboutScreen,
-                action: AnalyticsActionValue.actionChipTapped,
-                sourceContext: 'about_screen_action_chip_${text.toLowerCase()}',
-              ),
+    final String sourceContext = 'about_screen_action_chip_${text.toLowerCase()}';
+    return PrismChip(
+      label: text,
+      icon: icon,
+      onTap: () async {
+        unawaited(
+          analytics.track(
+            SurfaceActionTappedEvent(
+              surface: AnalyticsSurfaceValue.aboutScreen,
+              action: AnalyticsActionValue.actionChipTapped,
+              sourceContext: sourceContext,
             ),
-          );
-          final void Function(BuildContext context)? customTap = onTap;
-          if (customTap != null) {
-            customTap(context);
-            return;
+          ),
+        );
+        final void Function(BuildContext context)? customTap = onTap;
+        if (customTap != null) {
+          customTap(context);
+          return;
+        }
+        final String target = link.contains('@gmail.com') && !link.startsWith('mailto:') ? 'mailto:$link' : link;
+        final Uri? targetUri = Uri.tryParse(target);
+        final String address = targetUri != null && targetUri.scheme == 'mailto' ? targetUri.path : target;
+        final bool launched;
+        if (onLaunchFailed == null) {
+          launched = await _openOrExplain(context, target, address: address);
+        } else {
+          bool opened = false;
+          try {
+            opened = await openPrismLink(context, target);
+          } catch (error) {
+            logger.w('Opening $target failed.', error: error);
           }
-          final String target = link.contains("@gmail.com") && !link.startsWith('mailto:') ? "mailto:$link" : link;
-          final Uri? targetUri = Uri.tryParse(target);
-          final String address = targetUri != null && targetUri.scheme == 'mailto' ? targetUri.path : target;
-          final bool launched;
-          if (onLaunchFailed == null) {
-            launched = await _openOrExplain(context, target, address: address);
-          } else {
-            bool opened = false;
-            try {
-              opened = await openPrismLink(context, target);
-            } catch (error) {
-              logger.w('Opening $target failed.', error: error);
-            }
-            launched = opened;
-            if (!opened && context.mounted) onLaunchFailed!(context);
-          }
-          unawaited(
-            analytics.track(
-              ExternalLinkOpenResultEvent(
-                surface: AnalyticsSurfaceValue.aboutScreen,
-                destination: _destination(),
-                result: launched ? EventResultValue.success : EventResultValue.failure,
-                reason: launched ? null : AnalyticsReasonValue.error,
-                sourceContext: 'about_screen_action_chip_${text.toLowerCase()}',
-              ),
+          launched = opened;
+          if (!opened && context.mounted) onLaunchFailed!(context);
+        }
+        unawaited(
+          analytics.track(
+            ExternalLinkOpenResultEvent(
+              surface: AnalyticsSurfaceValue.aboutScreen,
+              destination: _destination(),
+              result: launched ? EventResultValue.success : EventResultValue.failure,
+              reason: launched ? null : AnalyticsReasonValue.error,
+              sourceContext: sourceContext,
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

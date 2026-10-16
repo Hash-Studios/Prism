@@ -114,15 +114,15 @@ void main() {
     final theme = prismDarkThemes[2].theme;
 
     await pumpSplash(tester, ThemeMode.dark, prismLightThemes.first.theme, theme);
-    expect(find.text("Prism couldn't start"), findsOneWidget);
-    await tester.tap(find.text('Retry'));
+    expect(find.text("Prism could not start"), findsOneWidget);
+    await tester.tap(find.text('Try again'));
     verify(() => bloc.add(StartupEvent.started(currentVersion: app_state.currentAppVersion))).called(1);
 
     states.add(StartupState.initial().copyWith(status: LoadStatus.loading));
     await tester.pump();
     // The splash cross-fades between its states.
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text("Prism couldn't start"), findsNothing);
+    expect(find.text("Prism could not start"), findsNothing);
     expect(splashColor(tester), const Color(0xFF202113));
   });
 }

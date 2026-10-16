@@ -9,7 +9,6 @@ import 'package:Prism/core/account/reauth_cancelled.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
@@ -21,12 +20,10 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
-import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
@@ -37,14 +34,12 @@ import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart'
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
+import 'package:Prism/features/session/views/widgets/settings_account_card.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/app_tokens.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, visibleForTesting;
 import 'package:flutter/material.dart';
@@ -192,119 +187,206 @@ class _SettingsScreenState extends State<SettingsScreen> {
     unawaited(analytics.track(SettingsAuthActionResultEvent(action: action, result: result, reason: reason)));
   }
 
-  Color get _accentColor => Theme.of(context).colorScheme.error;
+  void _trackRow(String row) {
+    unawaited(analytics.track(SettingsRowTappedEvent(row: row)));
+  }
 
-  Color get _destructiveColor => PrismColors.destructive(Theme.of(context).brightness);
-
-  Widget _sectionCard({required String title, required List<Widget> children}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Card(
-        color: Theme.of(context).cardColor,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                  color: _accentColor,
-                  fontFamily: 'Proxima Nova',
-                ),
-              ),
-            ),
-            ...children,
-            const SizedBox(height: 6),
-          ],
+  Widget _group(String title, List<Widget> rows) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        PrismSectionHeader(
+          title: title,
+          small: true,
+          padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
         ),
+        PrismGroup(children: rows),
+      ],
+    );
+  }
+
+  void _signIn() {
+    _trackSettingsAction(AnalyticsActionValue.signInTapped);
+    // Routes through the shared popup so Apple is offered alongside Google.
+    googleSignInPopUp(context, () {
+      _trackSettingsAuthResult(action: AnalyticsActionValue.signInTapped, result: EventResultValue.success);
+      main.RestartWidget.restartApp(context);
+    });
+  }
+
+  bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
+
+  List<Widget> _accountRows() => <Widget>[
+    PrismRow(
+      icon: Icons.fact_check_rounded,
+      title: 'Review status',
+      subtitle: 'Track your submitted wallpapers',
+      onTap: () => context.router.push(const ReviewRoute()),
+    ),
+    PrismRow(
+      icon: Icons.person_off_rounded,
+      title: 'Blocked accounts',
+      subtitle: 'Manage people you have blocked',
+      onTap: () => context.router.push(const BlockedAccountsRoute()),
+    ),
+    PrismRow(
+      icon: Icons.ios_share_rounded,
+      title: 'Share your profile',
+      subtitle: 'Send a link to your Prism profile',
+      onTap: _shareProfile,
+    ),
+  ];
+
+  Future<void> _shareProfile() async {
+    try {
+      await createUserDynamicLink(
+        app_state.prismUser.name,
+        app_state.prismUser.username,
+        app_state.prismUser.email,
+        app_state.prismUser.bio,
+        app_state.prismUser.profilePhoto,
+        context: context,
+      );
+    } catch (error, stackTrace) {
+      logger.w('Sharing the profile link failed.', error: error, stackTrace: stackTrace);
+      toasts.error("Couldn't create the link. Try again.");
+    }
+  }
+
+  List<Widget> _appearanceRows() => <Widget>[
+    PrismRow(
+      icon: Icons.palette_rounded,
+      title: 'Themes',
+      subtitle: 'Light, dark and accent colour',
+      onTap: () => context.router.push(const ThemeViewRoute()),
+    ),
+    // Not a PrismSwitchRow: turning haptics off must stay silent, and turning them on plays one selection.
+    MergeSemantics(
+      child: PrismRow(
+        icon: Icons.vibration_rounded,
+        title: 'Haptic feedback',
+        subtitle: 'Vibrate on taps and actions',
+        onTap: () => _setHaptics(!_haptics),
+        trailing: Switch(value: _haptics, onChanged: _setHaptics),
       ),
-    );
+    ),
+  ];
+
+  void _setHaptics(bool value) {
+    setState(() => _haptics = value);
+    PrismHaptics.enabled = value;
+    PrismHaptics.selection();
+    _settingsLocal.set(PrismHaptics.settingsKey, value);
+    _trackSettingsToggle(SettingValue.haptics, value);
   }
 
-  TextStyle get _titleStyle => TextStyle(
-    color: Theme.of(context).colorScheme.secondary,
-    fontWeight: FontWeight.w500,
-    fontFamily: 'Proxima Nova',
-  );
+  List<Widget> _personaliseRows() => <Widget>[
+    if (_iosShortcuts)
+      PrismRow(
+        icon: Icons.autorenew_rounded,
+        title: 'Change automatically',
+        subtitle: 'Use a Shortcuts automation',
+        onTap: () => context.router.push(const IosShortcutsGuideRoute()),
+      ),
+    if (_isAndroid) ..._androidPersonaliseRows(),
+  ];
 
-  static const TextStyle _subtitleStyle = TextStyle(fontSize: 12);
+  List<Widget> _androidPersonaliseRows() => <Widget>[
+    PrismRow(
+      icon: Icons.autorenew_rounded,
+      title: 'Auto-rotate wallpapers',
+      subtitle: 'Change your wallpaper on a timer',
+      onTap: () {
+        if (app_state.prismUser.premium) {
+          context.router.push(const AutoRotateRoute());
+        } else {
+          PaywallOrchestrator.instance.presentOrRequireSignIn(
+            context,
+            placement: PaywallPlacement.autoRotate,
+            source: 'settings_auto_rotate',
+          );
+        }
+      },
+    ),
+    PrismRow(
+      icon: Icons.motion_photos_on_outlined,
+      title: 'Live wallpapers',
+      subtitle: 'Moving gradients, motion and video',
+      onTap: () => context.router.push(LiveWallpaperRoute()),
+    ),
+    PrismRow(
+      icon: Icons.grid_view_rounded,
+      title: 'Quick tiles',
+      subtitle: 'Set up your Quick Settings tiles',
+      onTap: () => context.router.push(const QuickTileSettingsRoute()),
+    ),
+    PrismRow(
+      icon: Icons.history_rounded,
+      title: 'Wallpaper history',
+      subtitle: 'Wallpapers you set before',
+      onTap: () => context.router.push(const WallpaperHistoryRoute()),
+    ),
+    PrismRow(
+      icon: Icons.wallpaper_rounded,
+      title: 'Default action for Set',
+      value: _applyTargetLabels[_defaultApplyTarget],
+      onTap: _showDefaultApplyTargetSheet,
+    ),
+  ];
 
-  Widget _appearanceSection() {
-    return _sectionCard(
-      title: 'APPEARANCE',
-      children: [
-        ListTile(
-          leading: const Icon(JamIcons.wrench),
-          title: Text('Themes', style: _titleStyle),
-          subtitle: const Text('Accent colours, light and dark themes', style: _subtitleStyle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.push(const ThemeViewRoute()),
-        ),
-        SwitchListTile(
-          activeThumbColor: _accentColor,
-          secondary: const Icon(Icons.vibration_rounded),
-          value: _haptics,
-          title: Text('Haptic feedback', style: _titleStyle),
-          subtitle: const Text('Vibrate on taps and actions', style: _subtitleStyle),
-          onChanged: (value) {
-            setState(() => _haptics = value);
-            PrismHaptics.enabled = value;
-            PrismHaptics.selection();
-            _settingsLocal.set(PrismHaptics.settingsKey, value);
-            _trackSettingsToggle(SettingValue.haptics, value);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _contentFiltersSection() {
-    return _sectionCard(
-      title: 'CONTENT FILTERS',
-      children: [
-        SwitchListTile(
-          activeThumbColor: _accentColor,
-          secondary: const Icon(JamIcons.picture),
-          value: _showAnime,
-          title: Text('Show anime wallpapers', style: _titleStyle),
-          subtitle: Text(
-            _showAnime ? 'Disable to hide anime wallpapers' : 'Enable to show anime wallpapers',
-            style: _subtitleStyle,
+  void _showDefaultApplyTargetSheet() {
+    showPrismSheet<void>(
+      context: context,
+      builder: (ctx) {
+        final ColorScheme cs = Theme.of(ctx).colorScheme;
+        return PrismSheetBody(
+          title: 'Default action for Set',
+          child: Column(
+            children: <Widget>[
+              for (final MapEntry<String, String> option in _applyTargetLabels.entries)
+                PrismRow(
+                  title: option.value,
+                  padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
+                  showChevron: false,
+                  trailing: option.key == _defaultApplyTarget ? Icon(Icons.check_rounded, color: cs.primary) : null,
+                  onTap: () {
+                    PrismHaptics.selection();
+                    setState(() => _defaultApplyTarget = option.key);
+                    _settingsLocal.set(PersistenceKeys.defaultApplyTarget, option.key);
+                    Navigator.pop(ctx);
+                  },
+                ),
+            ],
           ),
-          onChanged: (value) {
-            PrismHaptics.selection();
-            setState(() => _showAnime = value);
-            _applyContentFilter('WHcategories', categoriesForAnime(value));
-            _trackSettingsToggle(SettingValue.animeWallpapers, value);
-          },
-        ),
-        // App Store review: no sketchy content toggle on iOS, purity is forced SFW-only.
-        if (!Platform.isIOS)
-          SwitchListTile(
-            activeThumbColor: _accentColor,
-            secondary: const Icon(JamIcons.stop_sign),
-            value: _showSketchy,
-            title: Text('Show sketchy wallpapers', style: _titleStyle),
-            subtitle: Text(
-              _showSketchy ? 'Disable to hide sketchy wallpapers' : 'Enable to show sketchy wallpapers',
-              style: _subtitleStyle,
-            ),
-            onChanged: (value) {
-              PrismHaptics.selection();
-              setState(() => _showSketchy = value);
-              _applyContentFilter('WHpurity', value ? 110 : 100);
-              _trackSettingsToggle(SettingValue.sketchyWallpapers, value);
-            },
-          ),
-      ],
+        );
+      },
     );
   }
+
+  List<Widget> _contentRows() => <Widget>[
+    PrismSwitchRow(
+      icon: Icons.animation_rounded,
+      title: 'Show anime wallpapers',
+      value: _showAnime,
+      onChanged: (value) {
+        setState(() => _showAnime = value);
+        _applyContentFilter('WHcategories', categoriesForAnime(value));
+        _trackSettingsToggle(SettingValue.animeWallpapers, value);
+      },
+    ),
+    // App Store review: no sketchy content toggle on iOS, purity is forced SFW-only.
+    if (!Platform.isIOS)
+      PrismSwitchRow(
+        icon: Icons.visibility_rounded,
+        title: 'Show sketchy wallpapers',
+        value: _showSketchy,
+        onChanged: (value) {
+          setState(() => _showSketchy = value);
+          _applyContentFilter('WHpurity', value ? 110 : 100);
+          _trackSettingsToggle(SettingValue.sketchyWallpapers, value);
+        },
+      ),
+  ];
 
   Future<void> _applyContentFilter(String key, int value) async {
     await _settingsLocal.set(key, value);
@@ -316,195 +398,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
     context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested());
   }
 
-  Widget _notificationsSection() {
-    return _sectionCard(
-      title: 'NOTIFICATIONS',
-      children: [
-        ListTile(
-          leading: const Icon(Icons.notifications_none_rounded),
-          title: Text('Notification preferences', style: _titleStyle),
-          subtitle: const Text('Wall of the Day, followers, posts and more', style: _subtitleStyle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => showNotificationSettingsSheet(context),
-        ),
-      ],
-    );
-  }
+  List<Widget> _notificationRows() => <Widget>[
+    PrismRow(
+      icon: Icons.notifications_none_rounded,
+      title: 'Notification preferences',
+      subtitle: 'Wall of the Day, followers, posts and more',
+      onTap: () => showNotificationSettingsSheet(context),
+    ),
+  ];
 
-  Widget _personaliseSection() {
-    final bool isAndroid = defaultTargetPlatform == TargetPlatform.android;
-    return _sectionCard(
-      title: 'PERSONALISE',
-      children: [
-        if (_iosShortcuts)
-          ListTile(
-            leading: const Icon(Icons.autorenew_rounded),
-            title: Text('Change automatically', style: _titleStyle),
-            subtitle: const Text('Use a Shortcuts automation', style: _subtitleStyle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.router.push(const IosShortcutsGuideRoute()),
-          ),
-        if (isAndroid)
-          ListTile(
-            leading: const Icon(Icons.autorenew_rounded),
-            title: Text('Auto-rotate wallpapers', style: _titleStyle),
-            subtitle: const Text('Change your wallpaper on a timer', style: _subtitleStyle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              if (app_state.prismUser.premium) {
-                context.router.push(const AutoRotateRoute());
-              } else {
-                PaywallOrchestrator.instance.presentOrRequireSignIn(
-                  context,
-                  placement: PaywallPlacement.autoRotate,
-                  source: 'settings_auto_rotate',
-                );
-              }
-            },
-          ),
-        if (isAndroid)
-          ListTile(
-            leading: const Icon(Icons.motion_photos_on_outlined),
-            title: Text('Live wallpapers', style: _titleStyle),
-            subtitle: const Text('Moving gradients, motion and video', style: _subtitleStyle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.router.push(LiveWallpaperRoute()),
-          ),
-        if (isAndroid)
-          ListTile(
-            leading: const Icon(Icons.grid_view_rounded),
-            title: Text('Quick tiles', style: _titleStyle),
-            subtitle: const Text('Configure Android Quick Settings tiles', style: _subtitleStyle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.router.push(const QuickTileSettingsRoute()),
-          ),
-        if (isAndroid)
-          ListTile(
-            leading: const Icon(Icons.history_rounded),
-            title: Text('Wallpaper history', style: _titleStyle),
-            subtitle: const Text('Wallpapers you set before', style: _subtitleStyle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.router.push(const WallpaperHistoryRoute()),
-          ),
-        if (isAndroid)
-          ListTile(
-            leading: const Icon(Icons.wallpaper_rounded),
-            title: Text('Default action for Set', style: _titleStyle),
-            subtitle: Text(_applyTargetLabels[_defaultApplyTarget]!, style: _subtitleStyle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: _showDefaultApplyTargetSheet,
-          ),
-      ],
-    );
-  }
-
-  void _showDefaultApplyTargetSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Theme.of(context).primaryColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      sheetAnimationStyle: AnimationStyle(
-        duration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-        reverseDuration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
-        curve: PrismCurves.enter,
-        reverseCurve: PrismCurves.exit,
-      ),
-      builder: (ctx) {
-        return RadioGroup<String>(
-          groupValue: _defaultApplyTarget,
-          onChanged: (target) {
-            if (target == null) return;
-            PrismHaptics.selection();
-            setState(() => _defaultApplyTarget = target);
-            _settingsLocal.set(PersistenceKeys.defaultApplyTarget, target);
-            Navigator.pop(ctx);
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const AiSheetDragHandle(),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    'Default action for Set',
-                    style: Theme.of(ctx).textTheme.titleMedium?.copyWith(color: Theme.of(ctx).colorScheme.secondary),
-                  ),
-                ),
-                for (final MapEntry<String, String> option in _applyTargetLabels.entries)
-                  RadioListTile<String>(
-                    value: option.key,
-                    activeColor: _accentColor,
-                    title: Text(option.value, style: _titleStyle),
-                  ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        );
+  List<Widget> _storageRows() => <Widget>[
+    PrismSwitchRow(
+      icon: Icons.data_saver_on_rounded,
+      title: 'Data saver',
+      subtitle:
+          'Saves mobile data. Wallpapers open as thumbnails, feeds do not load ahead and carousels do not autoplay.',
+      value: _lowData,
+      onChanged: (value) {
+        setState(() => _lowData = value);
+        unawaited(LowDataMode.set(value));
+        unawaited(analytics.track(DataSaverToggledEvent(value: value)));
       },
-    );
-  }
-
-  Widget _storageSection() {
-    return _sectionCard(
-      title: 'STORAGE',
-      children: [
-        SwitchListTile(
-          activeThumbColor: _accentColor,
-          secondary: const Icon(Icons.data_saver_on_rounded),
-          value: _lowData,
-          title: Text('Data saver', style: _titleStyle),
-          subtitle: const Text(
-            'Saves mobile data. Wallpapers open as thumbnails, feeds do not load ahead and carousels do not autoplay.',
-            style: _subtitleStyle,
-          ),
-          onChanged: (value) {
-            PrismHaptics.selection();
-            setState(() => _lowData = value);
-            unawaited(LowDataMode.set(value));
-            unawaited(analytics.track(DataSaverToggledEvent(value: value)));
-          },
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.pie_chart_alt),
-          title: Text('Clear cache', style: _titleStyle),
-          subtitle: Text(
-            _imageCacheSize == null
-                ? 'Clear locally cached images'
-                : '${formatStorageBytes(_imageCacheSize!)} of cached images',
-            style: _subtitleStyle,
-          ),
-          onTap: _clearCache,
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.trash_alt),
-          title: Text('Clear all downloads', style: _titleStyle),
-          subtitle: Text(
-            _downloads == null
-                ? 'Remove all downloaded wallpapers'
-                : _downloads == 0
-                ? 'No downloaded wallpapers'
-                : '$_downloads downloaded ${_downloads == 1 ? 'wallpaper' : 'wallpapers'}',
-            style: _subtitleStyle,
-          ),
-          onTap: _showClearDownloadsDialog,
-        ),
-      ],
-    );
-  }
+    ),
+    PrismRow(
+      icon: Icons.cleaning_services_rounded,
+      title: 'Clear cache',
+      subtitle: _imageCacheSize == null
+          ? 'Clear locally cached images'
+          : '${formatStorageBytes(_imageCacheSize!)} of cached images',
+      showChevron: false,
+      onTap: _clearCache,
+    ),
+    PrismRow(
+      icon: Icons.download_done_rounded,
+      title: 'Clear all downloads',
+      subtitle: _downloads == null
+          ? 'Remove all downloaded wallpapers'
+          : _downloads == 0
+          ? 'No downloaded wallpapers'
+          : '$_downloads downloaded ${_downloads == 1 ? 'wallpaper' : 'wallpapers'}',
+      showChevron: false,
+      onTap: _confirmClearDownloads,
+    ),
+    if (app_state.prismUser.loggedIn)
+      PrismRow(
+        icon: Icons.favorite_border_rounded,
+        title: 'Clear favourite wallpapers',
+        subtitle: 'Remove all favourite wallpapers',
+        showChevron: false,
+        onTap: () {
+          _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsTapped);
+          unawaited(_confirmClearFavourites());
+        },
+      ),
+  ];
 
   Future<void> _clearCache() async {
     _trackSettingsAction(AnalyticsActionValue.clearCacheTapped);
     final int? size = _imageCacheSize;
-    final bool confirmed = await _confirmDestructive(
+    final bool confirmed = await showPrismConfirm(
+      context,
       title: 'Clear cache?',
       message: size == null
           ? 'Cached images are removed. They load again when you need them.'
           : '${formatStorageBytes(size)} of cached images are removed. They load again when you need them.',
       confirmLabel: 'Clear cache',
+      destructive: true,
     );
     if (!confirmed) return;
     final int? before = await _imageCacheBytes();
@@ -515,14 +474,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) setState(() => _imageCacheSize = after);
   }
 
-  Future<void> _showClearDownloadsDialog() async {
+  Future<void> _confirmClearDownloads() async {
     final int? count = _downloads;
-    final bool confirmed = await _confirmDestructive(
+    final bool confirmed = await showPrismConfirm(
+      context,
       title: 'Delete all downloads?',
       message: count != null && count > 0
           ? '${count == 1 ? '1 downloaded wallpaper is' : '$count downloaded wallpapers are'} deleted from this device. This cannot be undone.'
           : 'All downloaded wallpapers are deleted from this device. This cannot be undone.',
       confirmLabel: 'Delete all',
+      destructive: true,
     );
     if (!confirmed) return;
     OperationResult? result;
@@ -542,122 +503,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// A confirm dialog for an action that removes data. Resolves to true only on the confirm button.
-  Future<bool> _confirmDestructive({
-    required String title,
-    required String message,
-    required String confirmLabel,
-  }) async {
-    final bool? confirmed = await showModal<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(confirmLabel, style: TextStyle(color: _destructiveColor)),
-          ),
-        ],
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
-    );
-    return confirmed ?? false;
-  }
-
-  Widget _accountSection() {
-    if (!app_state.prismUser.loggedIn) {
-      return _sectionCard(
-        title: 'ACCOUNT',
-        children: [
-          ListTile(
-            leading: const Icon(JamIcons.log_in),
-            title: Text('Sign in', style: _titleStyle),
-            subtitle: const Text(signInBenefitsLine, style: _subtitleStyle),
-            onTap: () {
-              _trackSettingsAction(AnalyticsActionValue.signInTapped);
-              // Routes through the shared popup so Apple is offered alongside Google.
-              googleSignInPopUp(context, () {
-                _trackSettingsAuthResult(action: AnalyticsActionValue.signInTapped, result: EventResultValue.success);
-                main.RestartWidget.restartApp(context);
-              });
-            },
-          ),
-        ],
-      );
-    }
-
-    return _sectionCard(
-      title: 'ACCOUNT',
-      children: [
-        ListTile(
-          leading: CircleAvatar(
-            radius: 16,
-            backgroundImage: app_state.prismUser.profilePhoto.isNotEmpty
-                ? NetworkImage(app_state.prismUser.profilePhoto)
-                : null,
-            child: app_state.prismUser.profilePhoto.isEmpty ? const Icon(Icons.person, size: 16) : null,
-          ),
-          title: Text(app_state.prismUser.name, style: _titleStyle),
-          subtitle: Text(app_state.prismUser.email, style: _subtitleStyle),
-        ),
-        const Divider(height: 1, indent: 16, endIndent: 16),
-        ListTile(
-          leading: const Icon(JamIcons.check),
-          title: Text('Review status', style: _titleStyle),
-          subtitle: const Text('Track your submitted wallpaper reviews', style: _subtitleStyle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.push(const ReviewRoute()),
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.user_remove),
-          title: Text('Blocked accounts', style: _titleStyle),
-          subtitle: const Text('Manage users you have blocked', style: _subtitleStyle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.push(const BlockedAccountsRoute()),
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.share_alt),
-          title: Text('Share your profile', style: _titleStyle),
-          subtitle: const Text('Share a link to your Prism profile', style: _subtitleStyle),
-          onTap: _shareProfile,
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.heart),
-          title: Text('Clear favourite wallpapers', style: _titleStyle),
-          subtitle: const Text('Remove all favourite wallpapers', style: _subtitleStyle),
-          onTap: () {
-            _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsTapped);
-            unawaited(_showClearFavWallsDialog());
-          },
-        ),
-        ListTile(
-          leading: Icon(JamIcons.log_out, color: _accentColor),
-          title: Text('Log out', style: _titleStyle.copyWith(color: _accentColor)),
-          subtitle: Text(app_state.prismUser.email, style: _subtitleStyle),
-          onTap: _showLogoutDialog,
-        ),
-      ],
-    );
-  }
-
-  Future<void> _shareProfile() async {
+  Future<void> _confirmClearFavourites() async {
+    int? count;
     try {
-      await createUserDynamicLink(
-        app_state.prismUser.name,
-        app_state.prismUser.username,
-        app_state.prismUser.email,
-        app_state.prismUser.bio,
-        app_state.prismUser.profilePhoto,
-        context: context,
-      );
-    } catch (error, stackTrace) {
-      logger.w('Sharing the profile link failed.', error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't create the link. Try again.");
+      count = (await context.favouriteWallsAdapter(listen: false).getDataBase())?.length;
+    } catch (error) {
+      logger.w('Counting favourites failed.', error: error);
+    }
+    if (!mounted) return;
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: 'Clear all favourites?',
+      message: count != null && count > 0
+          ? '${count == 1 ? '1 favourite wallpaper is' : '$count favourite wallpapers are'} removed from your account. This cannot be undone.'
+          : 'All your favourite wallpapers are removed from your account. This cannot be undone.',
+      confirmLabel: 'Clear favourites',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsConfirmed);
+    final cleared = await context.favouriteWallsAdapter(listen: false).deleteData();
+    if (!mounted) return;
+    if (cleared) {
+      toasts.success('Cleared all favourite wallpapers.');
+    } else {
+      toasts.error("Couldn't clear favourite wallpapers. Try again.");
     }
   }
+
+  List<Widget> _purchaseRows() => <Widget>[
+    if (!app_state.prismUser.premium)
+      PrismRow(
+        icon: Icons.workspace_premium_rounded,
+        title: 'Buy premium',
+        subtitle: 'Unlimited uploads and filters',
+        onTap: () {
+          _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);
+          PaywallOrchestrator.instance.presentOrRequireSignIn(
+            context,
+            placement: PaywallPlacement.mainUpsell,
+            source: 'settings_buy_premium',
+          );
+        },
+      ),
+    PrismRow(
+      icon: Icons.restore_rounded,
+      title: 'Restore purchases',
+      subtitle: 'Bring back a previous subscription',
+      showChevron: false,
+      onTap: _restoring ? null : _restorePurchases,
+    ),
+    if (app_state.prismUser.premium)
+      PrismRow(
+        icon: Icons.card_membership_rounded,
+        title: 'Manage subscription',
+        subtitle: 'Change or cancel in the store',
+        trailing: Icon(
+          Icons.open_in_new_rounded,
+          size: 18,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+        ),
+        onTap: _openManageSubscription,
+      ),
+  ];
 
   Future<void> _restorePurchases() async {
     _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
@@ -684,26 +592,143 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!launched) toasts.error("Couldn't open the store. Try again.");
   }
 
-  void _showLogoutDialog() {
-    showModal(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-        title: const Text('Log out?'),
-        content: const Text(logoutConfirmMessage),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              unawaited(_logout());
-            },
-            child: const Text('Log out'),
-          ),
-        ],
-        backgroundColor: Theme.of(context).primaryColor,
+  Icon _external(BuildContext context) =>
+      Icon(Icons.open_in_new_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35));
+
+  List<Widget> _privacyRows() => <Widget>[
+    PrismRow(
+      icon: Icons.privacy_tip_outlined,
+      title: 'Privacy policy',
+      trailing: _external(context),
+      onTap: () => _openLink(_privacyUrl, 'privacy_policy'),
+    ),
+    PrismRow(
+      icon: Icons.description_outlined,
+      title: 'Terms of use',
+      trailing: _external(context),
+      onTap: () => _openLink(_termsUrl, 'terms'),
+    ),
+    if (_adPrivacyChoices)
+      PrismRow(
+        icon: Icons.tune_rounded,
+        title: 'Ad privacy choices',
+        subtitle: 'Review or change your ad consent',
+        onTap: () {
+          _trackRow('ad_privacy_choices');
+          unawaited(AdConsent.instance.showPrivacyOptions());
+        },
       ),
+    PrismRow(
+      icon: Icons.auto_awesome_outlined,
+      title: 'Clear learned taste',
+      subtitle: 'Forget what your feed learned from you',
+      showChevron: false,
+      onTap: _clearLearnedTaste,
+    ),
+    PrismRow(
+      icon: Icons.file_download_outlined,
+      title: 'Export favourites',
+      subtitle: 'Save a copy of your favourites as a file',
+      onTap: () {
+        _trackRow('export_favourites');
+        context.router.push(LibraryRoute());
+      },
+    ),
+  ];
+
+  Future<void> _openLink(String url, String row) async {
+    _trackRow(row);
+    bool opened = false;
+    try {
+      opened = await openPrismLink(context, url);
+    } catch (error) {
+      logger.w('Opening $url failed.', error: error);
+    }
+    if (!opened) toasts.error("Couldn't open the link. Try again.");
+  }
+
+  Future<void> _clearLearnedTaste() async {
+    _trackRow('clear_learned_taste');
+    final TasteSignalStore store = getIt<TasteSignalStore>();
+    final int learned = store.read().length;
+    if (learned == 0) {
+      toasts.info('Prism has not learned anything yet.');
+      return;
+    }
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: 'Clear learned taste?',
+      message:
+          'Prism forgets ${learned == 1 ? 'the 1 thing' : 'the $learned things'} it learned from what you viewed and saved. Your feed uses your chosen interests again. This cannot be undone.',
+      confirmLabel: 'Clear',
+      destructive: true,
     );
+    if (!confirmed) return;
+    try {
+      await store.clear();
+    } catch (error) {
+      logger.w('Clearing learned taste failed.', error: error);
+      toasts.error("Couldn't clear learned taste. Try again.");
+      return;
+    }
+    personalizedFeedSettingsRevision.value += 1;
+    toasts.success('Learned taste cleared.');
+  }
+
+  List<Widget> _adminRows() => <Widget>[
+    PrismRow(
+      icon: Icons.bug_report_rounded,
+      title: 'Debug panel',
+      subtitle: 'Logs, network, tools and storage',
+      onTap: () => context.router.pushPath('/debug-panel'),
+    ),
+    PrismRow(
+      icon: Icons.shield_rounded,
+      title: 'Admin moderation',
+      subtitle: 'Review submitted content',
+      onTap: () => context.router.push(AdminReviewRoute()),
+    ),
+    PrismRow(
+      icon: Icons.analytics_rounded,
+      title: 'Firestore telemetry',
+      subtitle: 'Database usage and stats',
+      onTap: () => context.router.push(const FirestoreTelemetryRoute()),
+    ),
+  ];
+
+  List<Widget> _helpRows() => <Widget>[
+    PrismRow(
+      icon: Icons.report_problem_outlined,
+      title: 'Report a problem',
+      subtitle: 'Share your app logs with the Prism team',
+      onTap: () {
+        _trackRow('report_a_problem');
+        unawaited(showReportProblemSheet(context, source: 'settings'));
+      },
+    ),
+    PrismRow(icon: Icons.info_rounded, title: 'About Prism', onTap: () => context.router.push(AboutRoute())),
+  ];
+
+  List<Widget> _sessionRows() => <Widget>[
+    PrismRow(icon: Icons.logout_rounded, title: 'Log out', showChevron: false, onTap: _confirmLogOut),
+    PrismRow(
+      icon: Icons.delete_forever_rounded,
+      title: 'Delete account',
+      destructive: true,
+      showChevron: false,
+      onTap: _confirmDeleteAccount,
+    ),
+  ];
+
+  Future<void> _confirmLogOut() async {
+    final bool ok = await showPrismConfirm(
+      context,
+      title: 'Log out?',
+      message: logoutConfirmMessage,
+      confirmLabel: 'Log out',
+    );
+    if (!ok || !mounted) return;
+    await _logout();
   }
 
   Future<void> _logout() async {
@@ -734,96 +759,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _showClearFavWallsDialog() async {
-    int? count;
-    try {
-      count = (await context.favouriteWallsAdapter(listen: false).getDataBase())?.length;
-    } catch (error) {
-      logger.w('Counting favourites failed.', error: error);
-    }
-    if (!mounted) return;
-    final bool confirmed = await _confirmDestructive(
-      title: 'Clear all favourites?',
-      message: count != null && count > 0
-          ? '${count == 1 ? '1 favourite wallpaper is' : '$count favourite wallpapers are'} removed from your account. This cannot be undone.'
-          : 'All your favourite wallpapers are removed from your account. This cannot be undone.',
-      confirmLabel: 'Clear favourites',
-    );
-    if (!confirmed || !mounted) return;
-    _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsConfirmed);
-    final cleared = await context.favouriteWallsAdapter(listen: false).deleteData();
-    if (!mounted) return;
-    if (cleared) {
-      toasts.success('Cleared all favourite wallpapers.');
-    } else {
-      toasts.error("Couldn't clear favourite wallpapers. Try again.");
-    }
-  }
-
-  void _showDeleteAccountDialog() {
-    showModal(
+  Future<void> _confirmDeleteAccount() async {
+    final bool premium = app_state.prismUser.premium;
+    final bool? ok = await showPrismSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-        title: Text('Delete account', style: _titleStyle.copyWith(color: _destructiveColor)),
-        content: SizedBox(
-          width: 250,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
-                ),
-                const SizedBox(height: 12),
-                const Text(deleteAccountReauthNote),
-                if (app_state.prismUser.premium) ...[
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Your store subscription is not cancelled when you delete your account. '
-                    'It keeps billing until you cancel it in the store.',
-                  ),
-                  TextButton(
-                    onPressed: _openManageSubscription,
-                    child: Text('Manage subscription', style: TextStyle(color: _accentColor)),
-                  ),
-                ],
-              ],
-            ),
+      isScrollControlled: true,
+      builder: (sheetContext) => PrismSheetBody(
+        title: 'Delete your account?',
+        message:
+            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
+        mood: GlintMood.sad,
+        centered: true,
+        actions: <Widget>[
+          PrismButton(
+            label: 'Delete account',
+            expand: true,
+            variant: PrismButtonVariant.danger,
+            onPressed: () => Navigator.of(sheetContext).pop(true),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              unawaited(_deleteAccount());
-            },
-            child: Text('Delete account', style: TextStyle(color: _destructiveColor)),
+          PrismButton(
+            label: 'Cancel',
+            expand: true,
+            variant: PrismButtonVariant.ghost,
+            onPressed: () => Navigator.of(sheetContext).pop(false),
           ),
         ],
-        backgroundColor: Theme.of(context).primaryColor,
+        child: Column(
+          children: <Widget>[
+            Text(
+              deleteAccountReauthNote,
+              textAlign: TextAlign.center,
+              style: PrismTextStyles.body(sheetContext).copyWith(height: 1.4),
+            ),
+            if (premium) ...<Widget>[
+              const SizedBox(height: PrismSpace.sm),
+              Text(
+                'Your store subscription is not cancelled when you delete your account. '
+                'It keeps billing until you cancel it in the store.',
+                textAlign: TextAlign.center,
+                style: PrismTextStyles.body(sheetContext).copyWith(height: 1.4),
+              ),
+              TextButton(onPressed: _openManageSubscription, child: const Text('Manage subscription')),
+            ],
+          ],
+        ),
       ),
     );
+    if (ok != true || !mounted) return;
+    await _deleteAccount();
   }
 
   Future<void> _deleteAccount() async {
     final NavigatorState rootNavigator = Navigator.of(context, rootNavigator: true);
-    final loaderDialog = Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
-        width: MediaQuery.of(context).size.width * .7,
-        height: MediaQuery.of(context).size.height * .3,
-        child: const GlintState(kind: GlintStateKind.loading, title: 'Deleting account...'),
-      ),
-    );
     unawaited(
-      showDialog<void>(
-        barrierDismissible: false,
+      showPrismSheet<void>(
         context: context,
-        builder: (_) => PopScope(canPop: false, child: loaderDialog),
+        isDismissible: false,
+        enableDrag: false,
+        useRootNavigator: true,
+        builder: (_) => const PopScope(
+          canPop: false,
+          child: PrismSheetBody(mood: GlintMood.curious, centered: true, title: 'Deleting your account'),
+        ),
       ),
     );
     try {
@@ -846,211 +843,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Widget _premiumSection() {
-    final bool premium = app_state.prismUser.premium;
-    return _sectionCard(
-      title: 'PREMIUM',
-      children: [
-        if (!premium)
-          ListTile(
-            leading: const Icon(JamIcons.instant_picture_f),
-            title: Text('Buy premium', style: _titleStyle),
-            subtitle: const Text('Get unlimited uploads and filters.', style: _subtitleStyle),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);
-              PaywallOrchestrator.instance.presentOrRequireSignIn(
-                context,
-                placement: PaywallPlacement.mainUpsell,
-                source: 'settings_buy_premium',
-              );
-            },
-          ),
-        ListTile(
-          leading: const Icon(Icons.restore_rounded),
-          title: Text('Restore purchases', style: _titleStyle),
-          subtitle: const Text('Restore a previously purchased subscription', style: _subtitleStyle),
-          onTap: _restoring ? null : _restorePurchases,
-        ),
-        if (premium)
-          ListTile(
-            leading: const Icon(Icons.card_membership_rounded),
-            title: Text('Manage subscription', style: _titleStyle),
-            subtitle: const Text('Change or cancel in the store', style: _subtitleStyle),
-            trailing: const Icon(Icons.open_in_new_rounded),
-            onTap: _openManageSubscription,
-          ),
-      ],
-    );
-  }
-
-  void _trackRow(String row) {
-    unawaited(analytics.track(SettingsRowTappedEvent(row: row)));
-  }
-
-  Future<void> _openLink(String url, String row) async {
-    _trackRow(row);
-    bool opened = false;
-    try {
-      opened = await openPrismLink(context, url);
-    } catch (error) {
-      logger.w('Opening $url failed.', error: error);
-    }
-    if (!opened) toasts.error("Couldn't open the link. Try again.");
-  }
-
-  Future<void> _clearLearnedTaste() async {
-    _trackRow('clear_learned_taste');
-    final TasteSignalStore store = getIt<TasteSignalStore>();
-    final int learned = store.read().length;
-    if (learned == 0) {
-      toasts.info('Prism has not learned anything yet.');
-      return;
-    }
-    final bool confirmed = await _confirmDestructive(
-      title: 'Clear learned taste?',
-      message:
-          'Prism forgets ${learned == 1 ? 'the 1 thing' : 'the $learned things'} it learned from what you viewed and saved. Your feed uses your chosen interests again. This cannot be undone.',
-      confirmLabel: 'Clear',
-    );
-    if (!confirmed) return;
-    try {
-      await store.clear();
-    } catch (error) {
-      logger.w('Clearing learned taste failed.', error: error);
-      toasts.error("Couldn't clear learned taste. Try again.");
-      return;
-    }
-    personalizedFeedSettingsRevision.value += 1;
-    toasts.success('Learned taste cleared.');
-  }
-
-  Widget _privacySection() {
-    return _sectionCard(
-      title: 'PRIVACY AND DATA',
-      children: [
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: Text('Privacy policy', style: _titleStyle),
-          trailing: const Icon(Icons.open_in_new_rounded),
-          onTap: () => _openLink(_privacyUrl, 'privacy_policy'),
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.file),
-          title: Text('Terms of use', style: _titleStyle),
-          trailing: const Icon(Icons.open_in_new_rounded),
-          onTap: () => _openLink(_termsUrl, 'terms'),
-        ),
-        if (_adPrivacyChoices)
-          ListTile(
-            leading: const Icon(Icons.tune_rounded),
-            title: Text('Ad privacy choices', style: _titleStyle),
-            subtitle: const Text('Review or change your ad consent', style: _subtitleStyle),
-            onTap: () {
-              _trackRow('ad_privacy_choices');
-              unawaited(AdConsent.instance.showPrivacyOptions());
-            },
-          ),
-        ListTile(
-          leading: const Icon(Icons.auto_awesome_outlined),
-          title: Text('Clear learned taste', style: _titleStyle),
-          subtitle: const Text('Forget what your feed learned from you', style: _subtitleStyle),
-          onTap: _clearLearnedTaste,
-        ),
-        ListTile(
-          leading: const Icon(Icons.file_download_outlined),
-          title: Text('Export favourites', style: _titleStyle),
-          subtitle: const Text('Save a copy of your favourites as a file', style: _subtitleStyle),
-          onTap: () {
-            _trackRow('export_favourites');
-            context.router.push(LibraryRoute());
-          },
-        ),
-        if (app_state.prismUser.loggedIn)
-          ListTile(
-            leading: Icon(Icons.delete_forever_rounded, color: _destructiveColor),
-            title: Text('Delete account', style: _titleStyle.copyWith(color: _destructiveColor)),
-            subtitle: const Text('Permanently delete your account and data', style: _subtitleStyle),
-            onTap: _showDeleteAccountDialog,
-          ),
-      ],
-    );
-  }
-
-  Widget _adminSection() {
-    if (!app_state.isAdminUser()) return const SizedBox.shrink();
-    return _sectionCard(
-      title: 'ADMIN',
-      children: [
-        ListTile(
-          leading: const Icon(Icons.bug_report_outlined),
-          title: Text('Debug panel', style: _titleStyle),
-          subtitle: const Text('Logs, network, tools, storage inspector', style: _subtitleStyle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.pushPath('/debug-panel'),
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.shield_check),
-          title: Text('Admin moderation', style: _titleStyle),
-          subtitle: const Text('Review and moderate submitted content', style: _subtitleStyle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.push(AdminReviewRoute()),
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.file),
-          title: Text('Firestore telemetry', style: _titleStyle),
-          subtitle: const Text('Database usage and telemetry stats', style: _subtitleStyle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.push(const FirestoreTelemetryRoute()),
-        ),
-      ],
-    );
-  }
-
-  Widget _helpSection() {
-    return _sectionCard(
-      title: 'HELP',
-      children: [
-        ListTile(
-          leading: const Icon(Icons.report_problem_outlined),
-          title: Text('Report a problem', style: _titleStyle),
-          subtitle: const Text('Share your app logs with the Prism team', style: _subtitleStyle),
-          onTap: () {
-            _trackRow('report_a_problem');
-            unawaited(showReportProblemSheet(context, source: 'settings'));
-          },
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.info),
-          title: Text('About Prism', style: _titleStyle),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.push(const AboutRoute()),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: const PreferredSize(
-        preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: 'Settings'),
-      ),
+    final bool loggedIn = app_state.prismUser.loggedIn;
+    return PrismPage(
+      title: 'Settings',
       body: ListView(
-        padding: const EdgeInsets.only(top: 8, bottom: 32),
-        children: [
-          _appearanceSection(),
-          if (defaultTargetPlatform == TargetPlatform.android || _iosShortcuts) _personaliseSection(),
-          _contentFiltersSection(),
-          _notificationsSection(),
-          _storageSection(),
-          _accountSection(),
-          _premiumSection(),
-          _privacySection(),
-          _adminSection(),
-          _helpSection(),
+        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
+        children: <Widget>[
+          SettingsAccountCard(
+            onSignIn: _signIn,
+            onOpenProfile: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email)),
+          ),
+          if (loggedIn) _group('Account', _accountRows()),
+          _group('Appearance', _appearanceRows()),
+          if (_isAndroid || _iosShortcuts) _group('Personalise', _personaliseRows()),
+          _group('Content', _contentRows()),
+          _group('Notifications', _notificationRows()),
+          _group('Storage', _storageRows()),
+          _group('Purchases', _purchaseRows()),
+          _group('Privacy and data', _privacyRows()),
+          if (app_state.isAdminUser()) _group('Admin', _adminRows()),
+          _group('Help', _helpRows()),
+          if (loggedIn) ...<Widget>[const SizedBox(height: PrismSpace.xl), PrismGroup(children: _sessionRows())],
         ],
       ),
     );

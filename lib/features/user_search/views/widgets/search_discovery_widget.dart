@@ -1,37 +1,19 @@
-import 'dart:math';
-
-import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
-import 'package:Prism/data/categories/categories.dart';
-import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
-import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Portrait card width: 3.5 cards across a phone, capped so a tablet does not get giant cards.
-double _cardWidth(BuildContext context) => min(MediaQuery.sizeOf(context).width / 3.5, 160);
-
-/// Decode height, in physical pixels, for a portrait card. The card is taller than most photos, so height sets the scale.
-int _cardDecodeHeight(BuildContext context) =>
-    (_cardWidth(context) * 2 * MediaQuery.devicePixelRatioOf(context)).round();
-
+/// What the search tab shows before a search: tags, creators, trending walls, categories and colours.
 class SearchDiscoveryWidget extends StatelessWidget {
   const SearchDiscoveryWidget({
     super.key,
     required this.tags,
     required this.selectedTag,
     required this.onTagPressed,
+    this.header,
     this.recentSearches = const <String>[],
     this.onRecentPressed,
     this.onClearRecents,
@@ -45,39 +27,35 @@ class SearchDiscoveryWidget extends StatelessWidget {
   final void Function(String query)? onRecentPressed;
   final VoidCallback? onClearRecents;
 
+  /// Scrolls with the content, above the tags. The search tab puts its title and field here.
+  final Widget? header;
+
   /// Called with the swatch the user taps in "Browse by colour". Without it the section is hidden.
   final void Function(PrismPaletteColor color)? onColorPressed;
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (recentSearches.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 12),
+        children: <Widget>[
+          ?header,
+          if (recentSearches.isNotEmpty)
             _RecentSearches(searches: recentSearches, onPressed: onRecentPressed, onClear: onClearRecents),
-          ],
-          const SizedBox(height: 12),
           _TagsRow(tags: tags, selectedTag: selectedTag, onTagPressed: onTagPressed),
-          const SizedBox(height: 8),
-          const _FindCreatorsRow(),
-          if (onColorPressed != null) ...<Widget>[
-            const SizedBox(height: 12),
-            _ColorSection(onPressed: onColorPressed!),
-          ],
-          const SizedBox(height: 12),
-          _TrendingSection(),
-          const SizedBox(height: 16),
-          const _CategorySection(),
-          const SizedBox(height: 40),
+          const SizedBox(height: PrismSpace.md),
+          const Padding(padding: PrismSpace.pageInsets, child: _FindCreatorsCard()),
+          if (onColorPressed != null) ColourSection(onPressed: onColorPressed!),
+          const TrendingSection(),
+          const CategorySection(),
+          const SizedBox(height: PrismSpace.bottomBarClearance),
         ],
       ),
     );
   }
 }
 
+/// The last few searches, newest first, with a Clear action.
 class _RecentSearches extends StatelessWidget {
   const _RecentSearches({required this.searches, required this.onPressed, required this.onClear});
 
@@ -90,36 +68,28 @@ class _RecentSearches extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: Row(
-            children: <Widget>[
-              const Expanded(
-                child: _SectionHeader(label: 'Recent searches', icon: JamIcons.history),
-              ),
-              TextButton(onPressed: onClear, child: const Text('Clear')),
-            ],
-          ),
+        PrismSectionHeader(
+          title: 'Recent searches',
+          actionLabel: 'Clear',
+          onAction: onClear,
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xxs),
+          small: true,
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: PrismSpace.pageInsets,
           child: Wrap(
-            spacing: 8,
+            spacing: PrismSpace.xs,
             children: <Widget>[
               for (final String query in searches)
-                ActionChip(
-                  avatar: const Icon(Icons.history_rounded),
-                  label: Text(query),
-                  onPressed: onPressed == null
-                      ? null
-                      : () {
-                          PrismHaptics.selection();
-                          onPressed!(query);
-                        },
+                PrismChip(
+                  label: query,
+                  icon: Icons.history_rounded,
+                  onTap: onPressed == null ? null : () => onPressed!(query),
                 ),
             ],
           ),
         ),
+        const SizedBox(height: PrismSpace.xs),
       ],
     );
   }
@@ -134,32 +104,18 @@ class _TagsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String selected = selectedTag.trim().toLowerCase();
     return SizedBox(
       height: 44,
-      child: ListView.builder(
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.zero,
+        padding: PrismSpace.pageInsets,
         itemCount: tags.length,
+        separatorBuilder: (_, _) => const SizedBox(width: PrismSpace.xs),
         itemBuilder: (context, index) {
-          final tag = tags[index];
-          final isSelected = selectedTag.toLowerCase() == tag.toLowerCase();
-          return ActionChip(
-            pressElevation: 5,
-            side: BorderSide.none,
-            padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
-            backgroundColor: Colors.transparent,
-            label: Text(
-              "#$tag",
-              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                fontFamily: 'Satoshi',
-                fontSize: 12,
-                color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-            onPressed: () {
-              PrismHaptics.selection();
-              onTagPressed(tag);
-            },
+          final String tag = tags[index];
+          return Center(
+            child: PrismChip(label: tag, selected: selected == tag.toLowerCase(), onTap: () => onTagPressed(tag)),
           );
         },
       ),
@@ -167,302 +123,23 @@ class _TagsRow extends StatelessWidget {
   }
 }
 
-class _FindCreatorsRow extends StatelessWidget {
-  const _FindCreatorsRow();
+class _FindCreatorsCard extends StatelessWidget {
+  const _FindCreatorsCard();
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      child: InkWell(
-        onTap: () {
-          PrismHaptics.tap();
-          context.router.push(const UserSearchRoute());
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Icon(JamIcons.user_circle, size: 18, color: Theme.of(context).colorScheme.secondary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Find Creators',
-                      style: TextStyle(
-                        fontFamily: 'Satoshi',
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ),
-                    Text(
-                      'Search Prism users by name',
-                      style: TextStyle(
-                        fontFamily: 'Satoshi',
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TrendingSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(label: 'Trending Right Now', icon: JamIcons.flame_f),
-        const SizedBox(height: 12),
-        BlocBuilder<SearchDiscoveryBloc, SearchDiscoveryState>(
-          builder: (context, state) {
-            if (state.status == LoadStatus.failure) {
-              return _TrendingError(
-                onRetry: () => context.read<SearchDiscoveryBloc>().add(const SearchDiscoveryEvent.refreshRequested()),
-              );
-            }
-            if (state.status == LoadStatus.success && state.trendingWalls.isNotEmpty) {
-              return _TrendingList(walls: state.trendingWalls);
-            }
-            // initial or loading
-            return const _TrendingSkeletonRow();
+    return PrismGroup(
+      children: <Widget>[
+        PrismRow(
+          icon: Icons.person_search_rounded,
+          title: 'Find creators',
+          subtitle: 'Search Prism users by name',
+          onTap: () {
+            PrismHaptics.tap();
+            context.router.push(const UserSearchRoute());
           },
         ),
       ],
-    );
-  }
-}
-
-class _TrendingList extends StatelessWidget {
-  const _TrendingList({required this.walls});
-  final List<WallhavenWallpaper> walls;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = walls.take(10).toList(growable: false);
-    return SizedBox(
-      height: 185,
-      child: ListView.builder(
-        padding: EdgeInsets.zero,
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final wall = items[index];
-          final thumbUrl = wall.thumbnailUrl;
-          return Semantics(
-            button: true,
-            label: wallpaperSemanticLabel(wall.core.authorName),
-            child: GestureDetector(
-              onTap: () {
-                PrismHaptics.tap();
-                context.router.push(
-                  WallpaperDetailRoute(
-                    entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
-                    analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                  ),
-                );
-              },
-              child: SizedBox(
-                width: _cardWidth(context),
-                height: _cardWidth(context) * 2,
-                child: PrismImageTile(
-                  url: thumbUrl,
-                  fallbackUrl: wall.core.fullUrl,
-                  memCacheHeight: _cardDecodeHeight(context),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _TrendingSkeletonRow extends StatelessWidget {
-  const _TrendingSkeletonRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final itemWidth = _cardWidth(context);
-    final itemHeight = itemWidth * 2;
-    return SizedBox(
-      height: itemHeight,
-      child: PulsePlaceholder(
-        builder: (context, _) => ListView.builder(
-          padding: EdgeInsets.zero,
-          scrollDirection: Axis.horizontal,
-          itemCount: 6,
-          itemBuilder: (_, _) => SizedBox(width: itemWidth, height: itemHeight, child: const PulseFill()),
-        ),
-      ),
-    );
-  }
-}
-
-class _TrendingError extends StatelessWidget {
-  const _TrendingError({required this.onRetry});
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlintState(
-      kind: GlintStateKind.error,
-      title: "Couldn't load trending",
-      actionLabel: 'Try again',
-      onAction: onRetry,
-      glintSize: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    );
-  }
-}
-
-class _CategorySection extends StatelessWidget {
-  const _CategorySection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(label: 'Browse by Category', icon: JamIcons.grid_f),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: _cardWidth(context) * 2,
-          child: ListView.builder(
-            padding: EdgeInsets.zero,
-            scrollDirection: Axis.horizontal,
-            itemCount: categoryDefinitions.length,
-            itemBuilder: (context, index) {
-              final cat = categoryDefinitions[index];
-              return Semantics(
-                button: true,
-                child: GestureDetector(
-                  onTap: () {
-                    PrismHaptics.tap();
-                    context.router.push(
-                      CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(cat.name)}'),
-                    );
-                  },
-                  child: SizedBox(
-                    width: _cardWidth(context),
-                    height: _cardWidth(context) * 2,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        PrismImageTile(
-                          url: cat.imageUrl,
-                          fallbackUrl: cat.secondaryImageUrl,
-                          memCacheHeight: _cardDecodeHeight(context),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          left: 8,
-                          right: 8,
-                          bottom: 10,
-                          child: Text(
-                            cat.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: 'Satoshi',
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ColorSection extends StatelessWidget {
-  const _ColorSection({required this.onPressed});
-
-  final void Function(PrismPaletteColor color) onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionHeader(label: 'Browse by colour', icon: JamIcons.brush_f),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 56,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            scrollDirection: Axis.horizontal,
-            itemCount: prismPalette.length,
-            itemBuilder: (context, index) {
-              final PrismPaletteColor entry = prismPalette[index];
-              return PaletteSwatch(color: entry, onTap: () => onPressed(entry));
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.label, required this.icon});
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: [
-          Icon(icon, size: 12, color: Theme.of(context).colorScheme.secondary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Satoshi',
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.secondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

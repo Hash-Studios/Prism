@@ -119,8 +119,8 @@ void main() {
     final ThemeData theme = themes['Frost White']!;
     await _pump(tester, theme, selected: false, chip: const ChoiceChip(label: Text('Latest'), selected: false));
 
-    expect(_surface(tester).color, const Color(0xFF2F2F2F).withValues(alpha: 0.08));
-    expect(_labelColor(tester), const Color(0xFF2F2F2F).withValues(alpha: 0.5));
+    expect(_surface(tester).color, theme.colorScheme.secondary.withValues(alpha: 0.08));
+    expect(_labelColor(tester), theme.colorScheme.secondary.withValues(alpha: 0.5));
   });
 
   testWidgets('an avatar gets a 24 px wide box, so the icon keeps clear of the rounded end', (tester) async {
@@ -140,23 +140,17 @@ void main() {
   });
 
   group('readable ink', () {
-    const Map<String, Color> inkByTheme = <String, Color>{
-      'Rose': Color(0xFF4B342D),
-      'Cotton Blue': Color(0xFF202836),
-      'Coffee': Color(0xFF785C23),
-      'Frost White': Color(0xFF2F2F2F),
-      'AMOLED': Color(0xFFFFFFFF),
-    };
-
-    for (final MapEntry<String, Color> entry in inkByTheme.entries) {
-      test('${entry.key}: the ink is ${entry.value.toARGB32().toRadixString(16)} and reads on the page', () {
+    // The redesign colour scheme already gives every theme a foreground that clears 4.5:1, so the ink is the
+    // foreground itself.
+    for (final String label in <String>['Rose', 'Cotton Blue', 'Coffee', 'Frost White', 'AMOLED']) {
+      test('$label: the ink is the theme foreground and reads on the page', () {
         final PrismThemeOption option = <PrismThemeOption>[
           ...prismLightThemes,
           ...prismDarkThemes,
-        ].firstWhere((PrismThemeOption o) => o.label == entry.key);
+        ].firstWhere((PrismThemeOption o) => o.label == label);
         final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
 
-        expect(prismReadableInk(theme).toARGB32(), entry.value.toARGB32());
+        expect(prismReadableInk(theme).toARGB32(), theme.colorScheme.secondary.toARGB32());
         expect(contrastRatio(prismReadableInk(theme), theme.primaryColor), greaterThanOrEqualTo(4.5));
       });
     }
@@ -164,16 +158,19 @@ void main() {
     test('a theme with a strong foreground softens the secondary ink to 80 percent', () {
       final ThemeData theme = themes['Frost White']!;
 
-      expect(prismSoftInk(theme), const Color(0xFF2F2F2F).withValues(alpha: 0.8));
+      expect(prismSoftInk(theme), theme.colorScheme.secondary.withValues(alpha: 0.8));
     });
 
     test('a theme with a weak foreground keeps full ink, because 80 percent would read under 4.5:1', () {
-      final PrismThemeOption rose = prismLightThemes.firstWhere((PrismThemeOption o) => o.label == 'Rose');
-      final ThemeData theme = withPrismAccent(rose.theme, rose.defaultAccentValue);
-      final Color soft = const Color(0xFF4B342D).withValues(alpha: 0.8);
+      final ThemeData theme = ThemeData(
+        primaryColor: Colors.white,
+        colorScheme: const ColorScheme.light(secondary: Color(0xFF6F6F6F)),
+      );
+      final Color ink = prismReadableInk(theme);
+      final Color soft = ink.withValues(alpha: 0.8);
 
       expect(contrastRatio(Color.alphaBlend(soft, theme.primaryColor), theme.primaryColor), lessThan(4.5));
-      expect(prismSoftInk(theme).toARGB32(), 0xFF4B342D);
+      expect(prismSoftInk(theme), ink);
     });
 
     for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {

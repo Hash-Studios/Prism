@@ -1,4 +1,3 @@
-import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -8,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_firestore_client.dart';
+import '../../../support/profile_user_fixture.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,40 +18,108 @@ void main() {
     await getIt.reset();
     firestore = FakeFirestoreClient();
     getIt.registerSingleton<FirestoreClient>(firestore);
-    app_state.prismUser = app_constants.createGuestPrismUser()
-      ..id = 'me'
-      ..loggedIn = true
-      ..username = 'old_name'
-      ..bio = '';
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       toastChannel,
       (_) async => true,
     );
+    app_state.prismUser = profileUser(
+      id: 'me',
+      username: 'creator_01',
+      bio: 'Hello',
+      profilePhoto: '',
+      links: const <String, String>{'custom link': 'https://example.com'},
+    )..name = 'Me Myself';
   });
 
   tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
-    app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
   });
 
   Future<void> pumpPanel(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(400, 2400);
+    // A tall surface keeps every field on screen.
+    tester.view.physicalSize = const Size(800, 1800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const MaterialApp(home: EditProfilePanel()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () =>
+                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const EditProfilePanel())),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
   }
 
-  Finder usernameField() => find.widgetWithText(TextField, 'Username');
+  bool saveEnabled(WidgetTester tester) =>
+      tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save changes')).onPressed != null;
 
-  bool updateEnabled(WidgetTester tester) {
-    final button = find.ancestor(of: find.text('Update'), matching: find.byType(InkWell));
-    return tester.widget<InkWell>(button.first).onTap != null;
-  }
+  testWidgets('shows the current profile in fields, with Save disabled until something changes', (tester) async {
+    await pumpPanel(tester);
+
+    expect(find.text('Edit profile'), findsOneWidget);
+    expect(find.byTooltip('Back'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Me Myself'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'creator_01'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Hello'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'https://example.com'), findsOneWidget);
+    expect(find.text('Use 3 or more letters, numbers or underscores (_).'), findsOneWidget);
+    expect(find.text('Edit cover'), findsOneWidget);
+    expect(find.byTooltip('Remove cover photo'), findsNothing);
+    expect(saveEnabled(tester), isFalse);
+  });
+
+  testWidgets('change cover photo has a hit target of at least 44 pixels', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpPanel(tester);
+
+      expect(tester.getRect(find.bySemanticsLabel('Change cover photo')).height, greaterThanOrEqualTo(44));
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('editing the name enables Save', (tester) async {
+    await pumpPanel(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'Me Again');
+    await tester.pump();
+
+    expect(saveEnabled(tester), isTrue);
+  });
+
+  testWidgets('dirty name still asks before leaving when username is invalid', (tester) async {
+    await pumpPanel(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'Me Again');
+    await tester.enterText(find.widgetWithText(TextField, 'creator_01'), 'ab');
+    await tester.pumpAndSettle();
+
+    expect(saveEnabled(tester), isFalse);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discard changes?'), findsOneWidget);
+    expect(find.text('Edit profile'), findsOneWidget);
+
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discard changes?'), findsNothing);
+    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('open'), findsOneWidget);
+  });
 
   group('username', () {
+    Finder usernameField() => find.widgetWithText(TextField, 'creator_01');
+
     testWidgets('two characters show an inline error and cannot be saved', (tester) async {
       await pumpPanel(tester);
 
@@ -59,7 +127,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Use at least 3 characters.'), findsOneWidget);
-      expect(updateEnabled(tester), isFalse);
+      expect(saveEnabled(tester), isFalse);
     });
 
     testWidgets('three characters are accepted and saved once they are free', (tester) async {
@@ -72,9 +140,9 @@ void main() {
 
       expect(find.text('Use at least 3 characters.'), findsNothing);
       expect(find.text('That username is taken.'), findsNothing);
-      expect(updateEnabled(tester), isTrue);
+      expect(saveEnabled(tester), isTrue);
 
-      await tester.tap(find.text('Update'));
+      await tester.tap(find.text('Save changes'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 2));
       expect(firestore.writes.single.data, <String, dynamic>{'username': 'abc'});
@@ -89,7 +157,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('That username is taken.'), findsOneWidget);
-      expect(updateEnabled(tester), isFalse);
+      expect(saveEnabled(tester), isFalse);
     });
 
     testWidgets('spaces and symbols show an inline error', (tester) async {
@@ -103,7 +171,7 @@ void main() {
   });
 
   group('links', () {
-    Finder linkField() => find.widgetWithText(TextField, 'Custom link');
+    Finder linkField() => find.widgetWithText(TextField, 'https://example.com');
 
     testWidgets('a link with an unsafe scheme shows an inline error and blocks saving', (tester) async {
       await pumpPanel(tester);
@@ -112,7 +180,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Enter a valid link.'), findsOneWidget);
-      expect(updateEnabled(tester), isFalse);
+      expect(saveEnabled(tester), isFalse);
     });
 
     testWidgets('an https link clears the error and is saved as typed', (tester) async {
@@ -120,15 +188,75 @@ void main() {
 
       await tester.enterText(linkField(), 'javascript:alert(1)');
       await tester.pump();
-      await tester.enterText(linkField(), 'https://example.com/me');
+      await tester.enterText(find.widgetWithText(TextField, 'javascript:alert(1)'), 'https://example.com/me');
       await tester.pump();
 
       expect(find.text('Enter a valid link.'), findsNothing);
-      expect(updateEnabled(tester), isTrue);
-      await tester.tap(find.text('Update'));
+      expect(saveEnabled(tester), isTrue);
+      await tester.tap(find.text('Save changes'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 2));
       expect((firestore.writes.single.data!['links'] as Map)['custom link'], 'https://example.com/me');
     });
+  });
+
+  testWidgets('bio and link can be removed, and each asks first', (tester) async {
+    await pumpPanel(tester);
+
+    expect(find.byTooltip('Remove bio'), findsOneWidget);
+    expect(find.byTooltip('Remove link'), findsOneWidget);
+    await tester.tap(find.byTooltip('Remove bio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Remove bio?'), findsOneWidget);
+    expect(find.text("This can't be undone."), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'Hello'), findsOneWidget);
+  });
+
+  testWidgets('the link type opens a sheet that marks the current type', (tester) async {
+    await pumpPanel(tester);
+
+    await tester.tap(find.bySemanticsLabel('Link type, Custom link'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Link type'), findsOneWidget);
+    expect(find.text('Github'), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+
+    await tester.tap(find.text('Github'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Link type, Github'), findsOneWidget);
+  });
+
+  testWidgets('leaving with unsaved changes asks before discarding', (tester) async {
+    await pumpPanel(tester);
+    await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'Me Again');
+    await tester.pump();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Discard changes?'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit profile'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit profile'), findsNothing);
+  });
+
+  testWidgets('leaving without changes does not ask', (tester) async {
+    await pumpPanel(tester);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discard changes?'), findsNothing);
+    expect(find.text('Edit profile'), findsNothing);
   });
 }

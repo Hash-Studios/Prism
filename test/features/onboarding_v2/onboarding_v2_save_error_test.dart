@@ -317,13 +317,13 @@ void main() {
         state,
       );
 
-      expect(find.text('try again'), findsOneWidget);
-      expect(find.textContaining("couldn't finish setup"), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.textContaining("Couldn't finish setup. Check"), findsOneWidget);
       expect(find.textContaining('I agree to the'), findsNothing);
       expect(find.text('Continue with Apple'), findsNothing);
       expect(find.text('Browse without an account'), findsNothing);
 
-      await tester.tap(find.text('try again'));
+      await tester.tap(find.text('Try again'));
       await tester.pump();
       await tester.pump(const Duration(seconds: 2));
 

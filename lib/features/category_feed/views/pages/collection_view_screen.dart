@@ -4,10 +4,8 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
@@ -73,19 +71,17 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
   }
 
   Future<void> _retryCollection() {
-    setState(() => _collectionFuture = getCollectionWithName(widget.collectionName));
+    setState(() {
+      _collectionFuture = getCollectionWithName(widget.collectionName);
+    });
     return _collectionFuture.catchError((Object _) {});
   }
 
   @override
   Widget build(BuildContext context) {
     final title = (_isCategoryView ? _decodedCategoryName : widget.collectionName).inCaps;
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: PreferredSize(
-        preferredSize: const Size(double.infinity, 55),
-        child: HeadingChipBar(current: title),
-      ),
+    return PrismPage(
+      title: title,
       body: _isCategoryView
           ? _CategoryFeedContent(categoryName: _decodedCategoryName, onRetry: _selectCategory)
           : _buildCollectionContent(),

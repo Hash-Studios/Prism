@@ -6,7 +6,8 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
@@ -67,7 +68,7 @@ void main() {
     });
   }
 
-  testWidgets('a finished empty collection shows an empty state, no tile and no See more button', (tester) async {
+  testWidgets('a finished empty collection shows the empty state, no tile and no See more button', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     anyCollectionWalls = <Map<String, dynamic>>[];
@@ -79,8 +80,10 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
 
+    await tester.pump(const Duration(milliseconds: 300));
+
     expect(find.byType(GridView), findsNothing);
-    expect(find.text('No wallpapers in this collection yet'), findsOneWidget);
+    expect(find.widgetWithText(GlintState, 'Nothing in this collection yet'), findsOneWidget);
     expect(find.text('See more'), findsNothing);
   });
 
@@ -103,7 +106,7 @@ void main() {
     expect(find.text('See more'), findsOneWidget);
   });
 
-  testWidgets('malformed collection placeholders have square corners', (tester) async {
+  testWidgets('malformed collection placeholders use the shared tile radius', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     anyCollectionWalls = <Map<String, dynamic>>[
@@ -120,11 +123,11 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
     await tester.pump(const Duration(milliseconds: 16));
 
-    final tile = tester.widget<Container>(
-      find.ancestor(of: find.byIcon(Icons.broken_image_outlined), matching: find.byType(Container)).first,
+    final tile = tester.widget<DecoratedBox>(
+      find.ancestor(of: find.byIcon(Icons.broken_image_outlined), matching: find.byType(DecoratedBox)).first,
     );
     expect(tile.decoration, isA<BoxDecoration>());
-    expect((tile.decoration! as BoxDecoration).borderRadius, isNull);
+    expect((tile.decoration as BoxDecoration).borderRadius, PrismWallGrid.tileRadius);
   });
 
   testWidgets('does not replace the 24th collection item with See more', (tester) async {
@@ -149,7 +152,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('clips tile ink, and a long press opens the quick actions sheet', (tester) async {
+  testWidgets('a long press on a rounded tile opens the quick actions sheet', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     final originalHttpOverrides = HttpOverrides.current;
@@ -183,18 +186,11 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
     await tester.pump(const Duration(milliseconds: 16));
 
-    final inkWellFinder = find.byType(InkWell);
-    final tileClipFinder = find.ancestor(of: inkWellFinder, matching: find.byType(ClipRect)).first;
-    final tileSemanticsFinder = find.ancestor(of: inkWellFinder, matching: find.byType(Semantics)).first;
-    expect(tester.widget<ClipRect>(tileClipFinder).clipBehavior, Clip.hardEdge);
-    expect(tester.getSize(tileClipFinder), tester.getSize(inkWellFinder));
-    final PrismImageTile image = tester.widget<PrismImageTile>(
-      find.descendant(of: tileSemanticsFinder, matching: find.byType(PrismImageTile)),
-    );
-    expect(image.borderRadius, isNull);
-    expect(image.fallbackUrl, 'https://example.test/wall.jpg');
+    final tileFinder = find.byType(PrismWallTile);
+    expect(tester.widget<PrismWallTile>(tileFinder).borderRadius, PrismWallGrid.tileRadius);
+    expect(tester.widget<PrismWallTile>(tileFinder).fallbackUrl, 'https://example.test/wall.jpg');
 
-    await tester.longPress(inkWellFinder);
+    await tester.longPress(tileFinder);
     await tester.pumpAndSettle();
 
     expect(find.text('Share link'), findsOneWidget);
@@ -235,7 +231,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.byType(InkWell));
+    await tester.tap(find.byType(PrismWallTile));
     await tester.pump();
 
     final WallpaperDetailRoute route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;

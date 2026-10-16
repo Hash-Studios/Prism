@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -28,7 +29,7 @@ Future<bool> unblockUserWithFeedback(BuildContext context, String targetUserId) 
     toasts.error(result.failure?.message ?? 'Could not unblock');
     return false;
   }
-  toasts.success('User unblocked');
+  toasts.success('Unblocked');
   return true;
 }
 
@@ -40,29 +41,19 @@ Future<void> confirmAndBlockUser({
   String? displayName,
 }) async {
   final String name = displayName == null || displayName.trim().isEmpty ? 'this user' : displayName.trim();
-  final bool? ok = await showDialog<bool>(
-    context: context,
-    builder: (BuildContext ctx) => AlertDialog(
-      title: const Text('Block user?'),
-      content: Text(
+  final bool ok = await showPrismConfirm(
+    context,
+    title: 'Block $name?',
+    message:
         'You will unfollow $name, stop seeing their wallpapers in feeds, '
         'and no longer get notifications about their new posts.',
-      ),
-      actions: <Widget>[
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-        TextButton(
-          onPressed: () {
-            PrismHaptics.tap();
-            Navigator.pop(ctx, true);
-          },
-          child: const Text('Block'),
-        ),
-      ],
-    ),
+    confirmLabel: 'Block',
+    destructive: true,
   );
-  if (ok != true || !context.mounted) {
+  if (!ok || !context.mounted) {
     return;
   }
+  PrismHaptics.tap();
 
   final UserBlockRepository blocks = getIt<UserBlockRepository>();
   final Result<void> result = await blocks.blockUser(targetUserId: targetUserId);
@@ -91,5 +82,5 @@ Future<void> confirmAndBlockUser({
     await session.updateFollowing(next);
   }
 
-  toasts.success('User blocked');
+  toasts.success('Blocked $name');
 }

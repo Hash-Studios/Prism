@@ -8,9 +8,8 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/app_tokens.dart';
-import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -65,101 +64,45 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
     final bool canCrop = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-    return Material(
-      color: theme.primaryColor,
-      borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-          child: FutureBuilder<aw.WallpaperCapabilities>(
-            future: _capabilities,
-            builder: (context, snapshot) {
-              final aw.WallpaperCapabilities? capabilities = snapshot.data;
-              bool supported(WallpaperTarget target) =>
-                  capabilities == null || isWallpaperTargetSupported(capabilities, target);
-              final bool canPair =
-                  widget.canAdjust &&
-                  capabilities != null &&
-                  supported(WallpaperTarget.home) &&
-                  supported(WallpaperTarget.lock);
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+    return FutureBuilder<aw.WallpaperCapabilities>(
+      future: _capabilities,
+      builder: (context, snapshot) {
+        final aw.WallpaperCapabilities? capabilities = snapshot.data;
+        bool supported(WallpaperTarget target) =>
+            capabilities == null || isWallpaperTargetSupported(capabilities, target);
+        final bool canPair =
+            widget.canAdjust &&
+            capabilities != null &&
+            supported(WallpaperTarget.home) &&
+            supported(WallpaperTarget.lock);
+        return PrismSheetBody(
+          title: 'Set wallpaper',
+          message: supported(WallpaperTarget.both) ? 'Both sets it on your home screen and lock screen.' : null,
+          scrollable: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _Header(thumbnailUrl: widget.thumbnailUrl, notes: widget.notes),
+              PrismGroup(
                 children: <Widget>[
-                  Center(
-                    child: Container(
-                      height: 5,
-                      width: 30,
-                      decoration: BoxDecoration(color: theme.hintColor, borderRadius: BorderRadius.circular(500)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _Header(thumbnailUrl: widget.thumbnailUrl, notes: widget.notes),
-                  const SizedBox(height: 16),
-                  _TargetButton(label: 'Home Screen', onTap: () => _select(WallpaperTarget.home)),
+                  PrismRow(icon: Icons.home_rounded, title: 'Home Screen', onTap: () => _select(WallpaperTarget.home)),
                   if (supported(WallpaperTarget.lock))
-                    _TargetButton(label: 'Lock Screen', onTap: () => _select(WallpaperTarget.lock)),
+                    PrismRow(
+                      icon: Icons.lock_rounded,
+                      title: 'Lock Screen',
+                      onTap: () => _select(WallpaperTarget.lock),
+                    ),
                   if (supported(WallpaperTarget.both))
-                    _TargetButton(label: 'Both', onTap: () => _select(WallpaperTarget.both)),
-                  const SizedBox(height: 8),
-                  SegmentedButton<WallpaperFit>(
-                    segments: const <ButtonSegment<WallpaperFit>>[
-                      ButtonSegment<WallpaperFit>(value: WallpaperFit.fill, label: Text('Fill screen')),
-                      ButtonSegment<WallpaperFit>(value: WallpaperFit.whole, label: Text('Fit whole image')),
-                    ],
-                    selected: <WallpaperFit>{_fit},
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith(
-                        (states) => states.contains(WidgetState.selected) ? scheme.error : null,
-                      ),
-                      foregroundColor: WidgetStateProperty.resolveWith(
-                        (states) => states.contains(WidgetState.selected) ? onColor(scheme.error) : scheme.secondary,
-                      ),
-                      textStyle: WidgetStateProperty.resolveWith(
-                        (states) => TextStyle(
-                          fontFamily: PrismFonts.proximaNova,
-                          fontWeight: states.contains(WidgetState.selected) ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                    onSelectionChanged: _cropFirst
-                        ? null
-                        : (selection) {
-                            PrismHaptics.selection();
-                            setState(() => _fit = selection.first);
-                          },
-                  ),
-                  if (canCrop)
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        'Crop and position...',
-                        style: TextStyle(
-                          color: scheme.secondary,
-                          fontFamily: PrismFonts.proximaNova,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Choose the exact area in the system editor.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.secondary.withValues(alpha: 0.7),
-                          fontSize: 14,
-                        ),
-                      ),
-                      value: _cropFirst,
-                      onChanged: (value) {
-                        PrismHaptics.selection();
-                        setState(() => _cropFirst = value);
-                      },
-                    ),
-                  if (widget.canAdjust) ...<Widget>[
-                    const SizedBox(height: 4),
-                    _SheetRow(
+                    PrismRow(icon: Icons.layers_rounded, title: 'Both', onTap: () => _select(WallpaperTarget.both)),
+                ],
+              ),
+              if (widget.canAdjust) ...<Widget>[
+                const SizedBox(height: PrismSpace.sm),
+                PrismGroup(
+                  children: <Widget>[
+                    PrismRow(
                       icon: JamIcons.set_square,
                       title: 'Adjust position and preview',
                       subtitle: 'Pan, zoom and dim before you set it.',
@@ -169,7 +112,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                       },
                     ),
                     if (canPair)
-                      _SheetRow(
+                      PrismRow(
                         icon: JamIcons.picture,
                         title: 'Different wallpaper for lock screen',
                         subtitle: 'This one goes on the home screen.',
@@ -179,34 +122,48 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                         },
                       ),
                   ],
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    value: _alwaysUse,
-                    onChanged: (value) {
-                      PrismHaptics.selection();
-                      setState(() => _alwaysUse = value ?? false);
-                    },
-                    title: Text('Always use this', style: TextStyle(color: scheme.secondary, fontSize: 16)),
-                    subtitle: Text(
-                      'Next time, Set uses the screen you pick and skips this sheet.',
-                      style: theme.textTheme.bodySmall?.copyWith(color: scheme.secondary.withValues(alpha: 0.7)),
+                ),
+              ],
+              const SizedBox(height: PrismSpace.sm),
+              Wrap(
+                spacing: PrismSpace.xs,
+                runSpacing: PrismSpace.xs,
+                children: <Widget>[
+                  for (final (WallpaperFit fit, String label) in <(WallpaperFit, String)>[
+                    (WallpaperFit.fill, 'Fill screen'),
+                    (WallpaperFit.whole, 'Fit whole image'),
+                  ])
+                    PrismChip(
+                      label: label,
+                      selected: _fit == fit,
+                      onTap: _cropFirst ? null : () => setState(() => _fit = fit),
                     ),
-                  ),
-                  if (supported(WallpaperTarget.both)) ...<Widget>[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Both sets it on your home screen and lock screen.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodySmall?.copyWith(color: scheme.secondary),
-                    ),
-                  ],
                 ],
-              );
-            },
+              ),
+              const SizedBox(height: PrismSpace.sm),
+              PrismGroup(
+                children: <Widget>[
+                  if (canCrop)
+                    PrismSwitchRow(
+                      icon: Icons.crop_rounded,
+                      title: 'Crop and position...',
+                      subtitle: 'Choose the exact area in the system editor.',
+                      value: _cropFirst,
+                      onChanged: (value) => setState(() => _cropFirst = value),
+                    ),
+                  PrismSwitchRow(
+                    icon: Icons.bookmark_border_rounded,
+                    title: 'Always use this',
+                    subtitle: 'Next time, Set uses the screen you pick and skips this sheet.',
+                    value: _alwaysUse,
+                    onChanged: (value) => setState(() => _alwaysUse = value),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -219,40 +176,24 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final String? thumb = thumbnailUrl;
-    final Widget title = Text(
-      'Set Wallpaper as',
-      textAlign: thumb == null ? TextAlign.center : TextAlign.start,
-      style: theme.textTheme.displayMedium,
-    );
-    if (thumb == null || thumb.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final bool hasThumb = thumb != null && thumb.isNotEmpty;
+    if (!hasThumb && notes.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: PrismSpace.md),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          title,
-          if (notes.isNotEmpty) ...<Widget>[const SizedBox(height: 8), _NoteChips(notes: notes)],
+          if (hasThumb) ...<Widget>[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(PrismRadius.sm),
+              child: SizedBox(width: 56, height: 96, child: _SheetThumbnail(thumb)),
+            ),
+            const SizedBox(width: PrismSpace.md),
+          ],
+          if (notes.isNotEmpty) Expanded(child: _NoteChips(notes: notes)),
         ],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: SizedBox(width: 56, height: 96, child: _SheetThumbnail(thumb)),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              title,
-              if (notes.isNotEmpty) ...<Widget>[const SizedBox(height: 8), _NoteChips(notes: notes)],
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -264,17 +205,16 @@ class _NoteChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Wrap(
-      spacing: 8,
-      runSpacing: 4,
+      spacing: PrismSpace.xs,
+      runSpacing: PrismSpace.xxs,
       children: <Widget>[
         for (final String note in notes)
           DecoratedBox(
             decoration: BoxDecoration(
-              color: scheme.error.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(999),
+              color: scheme.error.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(PrismRadius.pill),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -284,7 +224,7 @@ class _NoteChips extends StatelessWidget {
                   Icon(JamIcons.alert, size: 14, color: scheme.error),
                   const SizedBox(width: 6),
                   Flexible(
-                    child: Text(note, style: theme.textTheme.bodySmall?.copyWith(color: scheme.secondary)),
+                    child: Text(note, style: PrismTextStyles.caption(context).copyWith(color: scheme.onSurface)),
                   ),
                 ],
               ),
@@ -314,67 +254,5 @@ class _SheetThumbnail extends StatelessWidget {
       );
     }
     return Image.file(File(url), fit: BoxFit.cover, cacheWidth: 160, errorBuilder: (_, _, _) => placeholder);
-  }
-}
-
-class _SheetRow extends StatelessWidget {
-  const _SheetRow({required this.icon, required this.title, required this.subtitle, required this.onTap});
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: scheme.secondary),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: scheme.secondary,
-          fontFamily: PrismFonts.proximaNova,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: theme.textTheme.bodySmall?.copyWith(color: scheme.secondary.withValues(alpha: 0.7), fontSize: 14),
-      ),
-      trailing: Icon(JamIcons.chevron_right, color: scheme.secondary.withValues(alpha: 0.7)),
-      onTap: onTap,
-    );
-  }
-}
-
-class _TargetButton extends StatelessWidget {
-  const _TargetButton({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: SizedBox(
-        height: 56,
-        child: OutlinedButton(
-          onPressed: onTap,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: scheme.secondary,
-            backgroundColor: scheme.error.withValues(alpha: 0.2),
-            side: BorderSide(color: scheme.error, width: 3),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          ),
-          child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        ),
-      ),
-    );
   }
 }

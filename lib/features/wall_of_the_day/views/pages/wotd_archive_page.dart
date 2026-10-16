@@ -7,11 +7,8 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
@@ -41,12 +38,8 @@ class WotdArchivePage extends StatelessWidget implements AutoRouteWrapper {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: const PreferredSize(
-        preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: 'Past picks'),
-      ),
+    return PrismPage(
+      title: 'Past picks',
       body: BlocBuilder<WotdArchiveBloc, WotdArchiveState>(
         builder: (context, state) {
           if (state.picks.isEmpty && state.status != LoadStatus.success && state.status != LoadStatus.failure) {
@@ -63,7 +56,10 @@ class WotdArchivePage extends StatelessWidget implements AutoRouteWrapper {
               onRefresh: () => _refresh(context),
             );
           }
+          final ColorScheme cs = Theme.of(context).colorScheme;
           return RefreshIndicator(
+            color: cs.primary,
+            backgroundColor: cs.surfaceContainerHigh,
             onRefresh: () => _refresh(context),
             child: _PicksGrid(picks: state.picks),
           );
@@ -80,16 +76,13 @@ class _PicksGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // About 220 points per tile: two columns on a phone, more on a tablet.
+    final int columns = (MediaQuery.sizeOf(context).width / 220).ceil().clamp(2, 6);
     return GridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
+      padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
       itemCount: picks.length,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220,
-        childAspectRatio: 0.45,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-      ),
+      gridDelegate: PrismWallGrid.delegate(context, columns: columns, aspectRatio: 0.45),
       itemBuilder: (context, index) => _PickTile(pick: picks[index], index: index),
     );
   }
@@ -114,50 +107,34 @@ class _PickTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final String dateLabel = DateFormat('EEE d MMM').format(pick.date.toLocal());
     final String heroTag = prismHeroTag(pick, index, pick.wallpaper.id);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: 2);
-    return Semantics(
-      button: true,
-      label: '${wallpaperSemanticLabel(pick.wallpaper.core.authorName)}, picked $dateLabel',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Expanded(
-            child: Stack(
-              children: <Widget>[
-                PrismImageTile(
-                  url: pick.wallpaper.thumbnailUrl,
-                  fallbackUrl: pick.wallpaper.fullUrl,
-                  memCacheHeight: decodeHeight,
-                  heroTag: heroTag,
-                ),
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    splashColor: theme.colorScheme.secondary.withValues(alpha: 0.3),
-                    highlightColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
-                    enableFeedback: false,
-                    onTap: () => _open(context, heroTag),
-                  ),
-                ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Expanded(
+          child: PrismWallTile(
+            url: pick.wallpaper.thumbnailUrl,
+            fallbackUrl: pick.wallpaper.fullUrl,
+            memCacheHeight: decodeHeight,
+            heroTag: heroTag,
+            semanticLabel: '${wallpaperSemanticLabel(pick.wallpaper.core.authorName)}, picked $dateLabel',
+            onTap: () => _open(context, heroTag),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: PrismSpace.xs),
+          child: ExcludeSemantics(
+            child: Text(
+              dateLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: PrismTextStyles.rowTitle(context),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: ExcludeSemantics(
-              child: Text(
-                dateLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurface),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

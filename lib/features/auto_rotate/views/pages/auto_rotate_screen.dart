@@ -1,27 +1,24 @@
 import 'dart:async';
 
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
-import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-
-const String _fontFamily = 'Proxima Nova';
 
 const Map<int, String> _intervalLabels = <int, String>{
   15: 'Every 15 min (battery heavy)',
@@ -153,15 +150,11 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: const PreferredSize(
-        preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: 'Auto-rotate'),
-      ),
+    return PrismPage(
+      title: 'Auto-rotate',
       body: !_isAndroid
           ? _Message(
-              icon: Icons.android_rounded,
+              kind: GlintStateKind.empty,
               text: 'Auto-rotate is only available on Android.',
               buttonLabel: 'Back',
               onPressed: () {
@@ -172,7 +165,7 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
               builder: (context, state) {
                 if (state.status.isRunning && !state.config.enabled) {
                   return _Message(
-                    icon: Icons.error_outline_rounded,
+                    kind: GlintStateKind.error,
                     text: 'Could not stop wallpaper rotation.',
                     buttonLabel: 'Try again',
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(false)),
@@ -180,7 +173,7 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                 }
                 if (state.status.isRunning && state.config.enabled && state.status.lastError != null) {
                   return _Message(
-                    icon: Icons.error_outline_rounded,
+                    kind: GlintStateKind.error,
                     text: 'Could not change wallpaper.',
                     buttonLabel: 'Change now',
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.rotateNowPressed()),
@@ -188,7 +181,7 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                 }
                 if (state.status.lastError != null) {
                   return _Message(
-                    icon: Icons.error_outline_rounded,
+                    kind: GlintStateKind.error,
                     text: 'Could not update auto-rotate.',
                     buttonLabel: 'Turn off',
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(false)),
@@ -196,17 +189,17 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                 }
                 if (_initializationFailed) {
                   return _Message(
-                    icon: Icons.error_outline_rounded,
+                    kind: GlintStateKind.error,
                     text: 'Could not load auto-rotate settings.',
                     buttonLabel: 'Try again',
                     onPressed: _start,
                   );
                 }
-                if (!state.loaded) return const Center(child: CircularProgressIndicator());
+                if (!state.loaded) return PrismSkeleton.rows(avatar: false);
                 if (!state.isPro) return const _ProPrompt();
                 if (state.startFailed) {
                   return _Message(
-                    icon: Icons.error_outline_rounded,
+                    kind: GlintStateKind.error,
                     text: 'Could not start wallpaper rotation.',
                     buttonLabel: 'Try again',
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(true)),
@@ -220,35 +213,16 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
 }
 
 class _Message extends StatelessWidget {
-  const _Message({required this.icon, required this.text, required this.buttonLabel, required this.onPressed});
+  const _Message({required this.kind, required this.text, required this.buttonLabel, required this.onPressed});
 
-  final IconData icon;
+  final GlintStateKind kind;
   final String text;
   final String buttonLabel;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 40, color: scheme.secondary.withValues(alpha: 0.6)),
-            const SizedBox(height: 16),
-            Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: scheme.secondary, fontFamily: _fontFamily, fontSize: 15),
-            ),
-            const SizedBox(height: 20),
-            FilledButton(onPressed: onPressed, child: Text(buttonLabel)),
-          ],
-        ),
-      ),
-    );
+    return GlintState(kind: kind, title: text, actionLabel: buttonLabel, onAction: onPressed);
   }
 }
 
@@ -258,7 +232,7 @@ class _ProPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Message(
-      icon: Icons.autorenew_rounded,
+      kind: GlintStateKind.empty,
       text: 'Auto-rotate is a Prism Pro feature.',
       buttonLabel: 'See Prism Pro',
       onPressed: () {
@@ -289,62 +263,27 @@ class _Controls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AutoRotateBloc bloc = context.read<AutoRotateBloc>();
-    final ThemeData theme = Theme.of(context);
-    final Color accent = theme.colorScheme.error;
-    final TextStyle titleStyle = TextStyle(
-      color: theme.colorScheme.secondary,
-      fontWeight: FontWeight.w500,
-      fontFamily: _fontFamily,
-    );
-    const TextStyle subtitleStyle = TextStyle(fontSize: 12);
     final AutoRotateConfig config = state.config;
 
-    Widget card(String title, List<Widget> children) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Card(
-        color: theme.cardColor,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (title.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.8,
-                    color: accent,
-                    fontFamily: _fontFamily,
-                  ),
-                ),
-              ),
-            ...children,
-            const SizedBox(height: 6),
-          ],
+    Widget section(String title, Widget child) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        PrismSectionHeader(
+          title: title,
+          small: true,
+          padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
         ),
-      ),
+        child,
+      ],
     );
 
-    Widget chips<T>(Map<T, String> labels, T selected, ValueChanged<T> onSelected) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Wrap(
-        spacing: 8,
-        children: [
-          for (final MapEntry<T, String> entry in labels.entries)
-            ChoiceChip(
-              label: Text(entry.value),
-              selected: entry.key == selected,
-              onSelected: (_) {
-                PrismHaptics.selection();
-                onSelected(entry.key);
-              },
-            ),
-        ],
-      ),
+    Widget chips<T>(Map<T, String> labels, T selected, ValueChanged<T> onSelected) => Wrap(
+      spacing: PrismSpace.xs,
+      runSpacing: PrismSpace.xs,
+      children: <Widget>[
+        for (final MapEntry<T, String> entry in labels.entries)
+          PrismChip(label: entry.value, selected: entry.key == selected, onTap: () => onSelected(entry.key)),
+      ],
     );
 
     final bool tooFew = state.sourceCount < AutoRotateBloc.minWallpapers;
@@ -354,89 +293,96 @@ class _Controls extends StatelessWidget {
     final int cached = status.cachedCount.clamp(0, status.totalCount);
 
     return ListView(
-      padding: const EdgeInsets.only(top: 8, bottom: 32),
-      children: [
-        card('', [
-          SwitchListTile(
-            activeThumbColor: accent,
-            secondary: const Icon(Icons.autorenew_rounded),
-            value: config.enabled || state.starting,
-            title: Text('Auto-rotate wallpapers', style: titleStyle),
-            subtitle: Text(
-              state.loadingSource
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
+      children: <Widget>[
+        PrismGroup(
+          children: <Widget>[
+            PrismSwitchRow(
+              icon: Icons.autorenew_rounded,
+              title: 'Auto-rotate wallpapers',
+              subtitle: state.loadingSource
                   ? 'Loading wallpapers'
                   : '${state.sourceCount} ${_sourceNoun(config)} in the mix'
                         '${state.sourcesCapped ? '. Using your first 100.' : ''}',
-              style: subtitleStyle,
+              value: config.enabled || state.starting,
+              onChanged: canToggle ? (value) => bloc.add(AutoRotateEvent.toggled(value)) : null,
             ),
-            onChanged: canToggle
-                ? (value) {
-                    PrismHaptics.selection();
-                    bloc.add(AutoRotateEvent.toggled(value));
-                  }
-                : null,
+          ],
+        ),
+        if (state.starting)
+          _ProgressRow(label: 'Preparing ${state.sourceCount} wallpapers')
+        else if (caching && cached < status.totalCount)
+          _ProgressRow(
+            label: 'Downloaded $cached of ${status.totalCount} wallpapers',
+            value: cached / status.totalCount,
           ),
-          if (state.starting)
-            _ProgressRow(label: 'Preparing ${state.sourceCount} wallpapers', color: accent)
-          else if (caching && cached < status.totalCount)
-            _ProgressRow(
-              label: 'Downloaded $cached of ${status.totalCount} wallpapers',
-              value: cached / status.totalCount,
-              color: accent,
-            ),
-          if (state.sourceLoadFailed)
-            ListTile(
-              title: const Text('Could not load wallpapers. Check your connection.', style: subtitleStyle),
-              trailing: TextButton(
-                onPressed: () => bloc.add(const AutoRotateEvent.toggled(true)),
-                child: const Text('Try again'),
-              ),
-            )
-          else if (tooFew && !config.enabled && !state.loadingSource)
-            ListTile(
-              title: Text(_tooFewText(config.source), style: subtitleStyle),
-              trailing: switch (config.source) {
-                AutoRotateSource.favourites => TextButton(
-                  onPressed: () => context.router.push(const FavouriteWallpaperRoute()),
-                  child: const Text('Open favourites'),
+        if (state.sourceLoadFailed)
+          Padding(
+            padding: const EdgeInsets.only(top: PrismSpace.sm),
+            child: _Notice(
+              text: 'Could not load wallpapers. Check your connection.',
+              actions: <Widget>[
+                PrismButton(
+                  label: 'Try again',
+                  variant: PrismButtonVariant.tonal,
+                  size: PrismButtonSize.compact,
+                  onPressed: () => bloc.add(const AutoRotateEvent.toggled(true)),
                 ),
-                AutoRotateSource.downloads => TextButton(
-                  onPressed: () => context.router.push(const DownloadRoute()),
-                  child: const Text('Open downloads'),
-                ),
-                _ => null,
-              },
+              ],
             ),
-        ]),
+          )
+        else if (tooFew && !config.enabled && !state.loadingSource)
+          Padding(
+            padding: const EdgeInsets.only(top: PrismSpace.sm),
+            child: _Notice(
+              text: _tooFewText(config.source),
+              actions: <Widget>[
+                switch (config.source) {
+                  AutoRotateSource.favourites => PrismButton(
+                    label: 'Open favourites',
+                    variant: PrismButtonVariant.tonal,
+                    size: PrismButtonSize.compact,
+                    onPressed: () => context.router.push(const FavouriteWallpaperRoute()),
+                  ),
+                  AutoRotateSource.downloads => PrismButton(
+                    label: 'Open downloads',
+                    variant: PrismButtonVariant.tonal,
+                    size: PrismButtonSize.compact,
+                    onPressed: () => context.router.push(const DownloadRoute()),
+                  ),
+                  _ => const SizedBox.shrink(),
+                },
+              ],
+            ),
+          ),
         if (state.showBatteryTip)
-          card('KEEP IT RUNNING', [
-            ListTile(
-              title: const Text(
-                'If wallpapers stop changing, set battery use for Prism to Unrestricted. '
-                'Open settings, then Apps, Prism, Battery.',
-                style: subtitleStyle,
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      unawaited(Clipboard.setData(const ClipboardData(text: _batteryTipSteps)));
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('Steps copied.'), duration: Duration(seconds: 2)));
-                    },
-                    child: const Text('Copy steps'),
-                  ),
-                  TextButton(
-                    onPressed: () => bloc.add(const AutoRotateEvent.batteryTipDismissed()),
-                    child: const Text('Got it'),
-                  ),
-                ],
-              ),
+          section(
+            'Keep it running',
+            _Notice(
+              text:
+                  'If wallpapers stop changing, set battery use for Prism to Unrestricted. '
+                  'Open settings, then Apps, Prism, Battery.',
+              actions: <Widget>[
+                PrismButton(
+                  label: 'Copy steps',
+                  variant: PrismButtonVariant.tonal,
+                  size: PrismButtonSize.compact,
+                  onPressed: () {
+                    unawaited(Clipboard.setData(const ClipboardData(text: _batteryTipSteps)));
+                    toasts.info('Steps copied.');
+                  },
+                ),
+                PrismButton(
+                  label: 'Got it',
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: () => bloc.add(const AutoRotateEvent.batteryTipDismissed()),
+                ),
+              ],
             ),
-          ]),
-        card('SOURCE', [
+          ),
+        section(
+          'Source',
           chips(
             <AutoRotateSource, String>{
               ..._sourceLabels,
@@ -449,11 +395,13 @@ class _Controls extends StatelessWidget {
                 ? _pickCategory(context, config.categoryName)
                 : bloc.add(AutoRotateEvent.sourceChanged(v)),
           ),
-        ]),
-        card('CHANGE', [
+        ),
+        section(
+          'Change',
           chips(_intervalLabels, config.intervalMinutes, (v) => bloc.add(AutoRotateEvent.intervalChanged(v))),
-        ]),
-        card('APPLY TO', [
+        ),
+        section(
+          'Apply to',
           chips(
             <WallpaperTarget, String>{
               for (final MapEntry<WallpaperTarget, String> entry in _targetLabels.entries)
@@ -462,51 +410,47 @@ class _Controls extends StatelessWidget {
             config.target,
             (v) => bloc.add(AutoRotateEvent.targetChanged(v)),
           ),
-        ]),
-        card('', [
-          SwitchListTile(
-            activeThumbColor: accent,
-            secondary: const Icon(Icons.shuffle_rounded),
-            value: config.shuffle,
-            title: Text('Shuffle', style: titleStyle),
-            subtitle: const Text('Random order instead of one after another', style: subtitleStyle),
-            onChanged: (value) {
-              PrismHaptics.selection();
-              bloc.add(AutoRotateEvent.shuffleChanged(value));
-            },
-          ),
-        ]),
-        card('', [
-          SwitchListTile(
-            activeThumbColor: accent,
-            secondary: const Icon(Icons.power_rounded),
-            value: config.chargingOnly,
-            title: Text('Only while charging', style: titleStyle),
-            subtitle: const Text('Change when plugged in, at most once per interval', style: subtitleStyle),
-            onChanged: (value) {
-              PrismHaptics.selection();
-              bloc.add(AutoRotateEvent.chargingOnlyChanged(value));
-            },
-          ),
-        ]),
-        card('STATUS', [
-          ListTile(title: Text(_statusText(), style: titleStyle)),
-          if (caching && cached >= status.totalCount)
-            ListTile(title: Text('$cached of ${status.totalCount} wallpapers ready', style: subtitleStyle)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: OutlinedButton.icon(
-              onPressed: config.enabled
-                  ? () {
-                      PrismHaptics.tap();
-                      bloc.add(const AutoRotateEvent.rotateNowPressed());
-                    }
-                  : null,
-              icon: const Icon(Icons.skip_next_rounded),
-              label: const Text('Change now'),
+        ),
+        const SizedBox(height: PrismSpace.xl),
+        PrismGroup(
+          children: <Widget>[
+            PrismSwitchRow(
+              icon: Icons.shuffle_rounded,
+              title: 'Shuffle',
+              subtitle: 'Random order instead of one after another',
+              value: config.shuffle,
+              onChanged: (value) => bloc.add(AutoRotateEvent.shuffleChanged(value)),
             ),
+            PrismSwitchRow(
+              icon: Icons.power_rounded,
+              title: 'Only while charging',
+              subtitle: 'Change when plugged in, at most once per interval',
+              value: config.chargingOnly,
+              onChanged: (value) => bloc.add(AutoRotateEvent.chargingOnlyChanged(value)),
+            ),
+          ],
+        ),
+        section(
+          'Status',
+          PrismGroup(
+            children: <Widget>[
+              PrismRow(icon: Icons.schedule_rounded, title: _statusText()),
+              if (caching && cached >= status.totalCount)
+                PrismRow(
+                  icon: Icons.check_circle_outline_rounded,
+                  title: '$cached of ${status.totalCount} wallpapers ready',
+                ),
+            ],
           ),
-        ]),
+        ),
+        const SizedBox(height: PrismSpace.sm),
+        PrismButton(
+          label: 'Change now',
+          icon: Icons.skip_next_rounded,
+          variant: PrismButtonVariant.tonal,
+          expand: true,
+          onPressed: config.enabled ? () => bloc.add(const AutoRotateEvent.rotateNowPressed()) : null,
+        ),
       ],
     );
   }
@@ -517,75 +461,71 @@ Future<void> _pickCategory(BuildContext context, String current) async {
   final String? picked = await showPrismSheet<String>(
     context: context,
     isScrollControlled: true,
-    builder: (sheetContext) => _CategorySheet(current: current),
+    builder: (sheetContext) => PrismSheetBody(
+      title: 'Pick a category',
+      scrollable: true,
+      child: PrismGroup(
+        children: <Widget>[
+          for (final String name in autoRotateCategories)
+            PrismRow(
+              title: name,
+              showChevron: false,
+              trailing: name == current ? const Icon(Icons.check_rounded, size: 20) : null,
+              onTap: () => Navigator.of(sheetContext).pop(name),
+            ),
+        ],
+      ),
+    ),
   );
   if (picked != null) bloc.add(AutoRotateEvent.categoryChanged(picked));
 }
 
-class _CategorySheet extends StatelessWidget {
-  const _CategorySheet({required this.current});
+/// A short message in a card, with optional actions under it.
+class _Notice extends StatelessWidget {
+  const _Notice({required this.text, this.actions = const <Widget>[]});
 
-  final String current;
+  final String text;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text(
-                'Pick a category',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.secondary,
-                  fontFamily: _fontFamily,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final String name in autoRotateCategories)
-                    ListTile(
-                      title: Text(name),
-                      selected: name == current,
-                      trailing: name == current ? const Icon(Icons.check_rounded) : null,
-                      onTap: () => Navigator.of(context).pop(name),
-                    ),
-                ],
-              ),
-            ),
+    return PrismCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(text, style: PrismTextStyles.body(context)),
+          if (actions.isNotEmpty) ...<Widget>[
+            const SizedBox(height: PrismSpace.sm),
+            Wrap(spacing: PrismSpace.xs, runSpacing: PrismSpace.xs, children: actions),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
 class _ProgressRow extends StatelessWidget {
-  const _ProgressRow({required this.label, required this.color, this.value});
+  const _ProgressRow({required this.label, this.value});
 
   final String label;
-  final Color color;
   final double? value;
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.sm, PrismSpace.xs, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12)),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(value: value, color: color, borderRadius: BorderRadius.circular(4)),
+        children: <Widget>[
+          Text(label, style: PrismTextStyles.caption(context)),
+          const SizedBox(height: PrismSpace.xs),
+          LinearProgressIndicator(
+            value: value,
+            color: cs.primary,
+            backgroundColor: cs.onSurface.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(PrismRadius.pill),
+          ),
         ],
       ),
     );

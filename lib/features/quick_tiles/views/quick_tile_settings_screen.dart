@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -6,16 +8,13 @@ import 'package:Prism/core/platform/quick_settings_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-
-const String _fontFamily = 'Proxima Nova';
 
 @RoutePage()
 class QuickTileSettingsScreen extends StatefulWidget {
@@ -33,6 +32,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
   WallpaperTarget _favsTarget = WallpaperTarget.both;
 
   bool _loading = true;
+  bool _loadFailed = false;
   bool _canAddTile = false;
 
   @override
@@ -89,7 +89,12 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
       });
     } catch (e, stackTrace) {
       logger.e('Failed to load quick tile settings', error: e, stackTrace: stackTrace);
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+        });
+      }
     }
   }
 
@@ -108,250 +113,205 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
     } catch (e, stackTrace) {
       logger.e('Failed to save quick tile settings', error: e, stackTrace: stackTrace);
       if (!mounted) return;
-      toasts.error('Failed to save settings');
+      toasts.error('Could not save quick tile settings');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accentColor = theme.colorScheme.error;
+    return PrismPage(title: 'Quick tiles', body: _body(context));
+  }
 
-    return Scaffold(
-      backgroundColor: theme.primaryColor,
-      appBar: AppBar(
-        backgroundColor: theme.primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => context.router.maybePop(),
+  Widget _body(BuildContext context) {
+    if (_loading) return PrismSkeleton.cards(count: 4, height: 150);
+    if (_loadFailed) {
+      return GlintState(
+        kind: GlintStateKind.error,
+        title: "Couldn't load your quick tiles",
+        body: 'Check your connection and try again.',
+        actionLabel: 'Try again',
+        onAction: () {
+          setState(() {
+            _loading = true;
+            _loadFailed = false;
+          });
+          _loadConfig();
+        },
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
+      children: <Widget>[
+        _TileCard(
+          title: 'Shuffle wallpaper tile',
+          description: 'Tap the tile to apply a random wallpaper from the category you pick.',
+          category: Wrap(
+            spacing: PrismSpace.xs,
+            runSpacing: PrismSpace.xs,
+            children: <Widget>[
+              for (final cat in categoryDefinitions)
+                PrismChip(
+                  label: cat.name,
+                  selected: cat.name == _selectedCategoryName,
+                  onTap: () {
+                    setState(() {
+                      _selectedCategoryName = cat.name;
+                      _selectedCategorySource = cat.source;
+                    });
+                    unawaited(_saveAll());
+                  },
+                ),
+            ],
+          ),
+          value: _categoryTarget,
+          onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.shuffle) : null,
+          onChanged: (v) {
+            setState(() => _categoryTarget = v);
+            unawaited(_saveAll());
+          },
         ),
-        title: Text(
-          'Quick Tile Settings',
-          style: TextStyle(color: theme.colorScheme.secondary, fontWeight: FontWeight.bold, fontFamily: _fontFamily),
+        const SizedBox(height: PrismSpace.md),
+        _TileCard(
+          title: 'Wall of the Day tile',
+          description: "Applies today's Wall of the Day. Open Prism once a day to cache the latest one.",
+          value: _wotdTarget,
+          onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.wotd) : null,
+          onChanged: (v) {
+            setState(() => _wotdTarget = v);
+            unawaited(_saveAll());
+          },
         ),
-      ),
-      body: _loading
-          ? const GlintState(kind: GlintStateKind.loading, title: 'Loading quick tiles')
-          : ListView(
-              padding: const EdgeInsets.only(bottom: 32),
-              children: [
-                _TargetSection(
-                  title: 'Shuffle Wallpaper Tile',
-                  description: 'Tap the tile to apply a random wallpaper from the selected category.',
-                  accentColor: accentColor,
-                  value: _categoryTarget,
-                  onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.shuffle) : null,
-                  onChanged: (v) {
-                    setState(() => _categoryTarget = v);
-                    _saveAll();
-                  },
-                  beforeTarget: [
-                    const _FieldLabel('Category'),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 48,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        scrollDirection: Axis.horizontal,
-                        itemCount: categoryDefinitions.length,
-                        separatorBuilder: (sepCtx, sepIdx) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final cat = categoryDefinitions[index];
-                          final selected = cat.name == _selectedCategoryName;
-                          return ChoiceChip(
-                            label: Text(cat.name),
-                            selected: selected,
-                            onSelected: (_) {
-                              setState(() {
-                                _selectedCategoryName = cat.name;
-                                _selectedCategorySource = cat.source;
-                              });
-                              _saveAll();
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 32),
-                _TargetSection(
-                  title: 'Wall of the Day Tile',
-                  description:
-                      "Applies today's curated Wall of the Day. Open Prism once a day to cache the latest URL.",
-                  accentColor: accentColor,
-                  value: _wotdTarget,
-                  onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.wotd) : null,
-                  onChanged: (v) {
-                    setState(() => _wotdTarget = v);
-                    _saveAll();
-                  },
-                ),
-                const Divider(height: 32),
-                _TargetSection(
-                  title: 'Random Favourite Tile',
-                  description:
-                      'Picks a random wallpaper from your saved favourites. Sign in and favourite some wallpapers first.',
-                  accentColor: accentColor,
-                  value: _favsTarget,
-                  onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.favs) : null,
-                  onChanged: (v) {
-                    setState(() => _favsTarget = v);
-                    _saveAll();
-                  },
-                ),
-                const SizedBox(height: 24),
-                const _FieldLabel('How to add quick tiles'),
-                const _Hint(
-                  '1. Pull down the notification shade twice\n'
-                  '2. Tap the pencil/edit icon\n'
-                  '3. Scroll to find the Prism tiles and drag them to your active tiles',
-                  vertical: 6,
-                  height: 1.6,
-                ),
-              ],
-            ),
+        const SizedBox(height: PrismSpace.md),
+        _TileCard(
+          title: 'Random favourite tile',
+          description: 'Applies a random wallpaper from your favourites. Sign in and favourite some wallpapers first.',
+          value: _favsTarget,
+          onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.favs) : null,
+          onChanged: (v) {
+            setState(() => _favsTarget = v);
+            unawaited(_saveAll());
+          },
+        ),
+        const SizedBox(height: PrismSpace.md),
+        const _HowToCard(),
+      ],
     );
   }
 }
 
-class _TargetSection extends StatelessWidget {
-  const _TargetSection({
+class _TileCard extends StatelessWidget {
+  const _TileCard({
     required this.title,
     required this.description,
-    required this.accentColor,
     required this.value,
     required this.onChanged,
     this.onAddToQuickSettings,
-    this.beforeTarget = const [],
+    this.category,
   });
 
   final String title;
   final String description;
-  final Color accentColor;
   final WallpaperTarget value;
   final ValueChanged<WallpaperTarget> onChanged;
   final VoidCallback? onAddToQuickSettings;
-  final List<Widget> beforeTarget;
+
+  /// The category picker, for the tile that has one.
+  final Widget? category;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: Text(
-            title,
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: accentColor, fontFamily: _fontFamily),
+    return PrismCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(title, style: PrismTextStyles.cardTitle(context)),
+          const SizedBox(height: PrismSpace.xxs),
+          Text(description, style: PrismTextStyles.body(context)),
+          if (category != null) ...<Widget>[
+            const SizedBox(height: PrismSpace.md),
+            Text('Category', style: PrismTextStyles.rowTitle(context)),
+            const SizedBox(height: PrismSpace.xs),
+            category!,
+          ],
+          const SizedBox(height: PrismSpace.md),
+          Text('Apply to', style: PrismTextStyles.rowTitle(context)),
+          const SizedBox(height: PrismSpace.xs),
+          PrismSegmented<WallpaperTarget>(
+            values: const <WallpaperTarget>[WallpaperTarget.home, WallpaperTarget.lock, WallpaperTarget.both],
+            selected: value,
+            labelOf: (t) => switch (t) {
+              WallpaperTarget.home => 'Home',
+              WallpaperTarget.lock => 'Lock',
+              WallpaperTarget.both => 'Both',
+            },
+            iconOf: (t) => switch (t) {
+              WallpaperTarget.home => Icons.home_rounded,
+              WallpaperTarget.lock => Icons.lock_rounded,
+              WallpaperTarget.both => Icons.layers_rounded,
+            },
+            onChanged: onChanged,
           ),
-        ),
-        _Hint(description),
-        if (onAddToQuickSettings != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: OutlinedButton.icon(
-                onPressed: onAddToQuickSettings,
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Add to Quick Settings'),
+          if (onAddToQuickSettings != null) ...<Widget>[
+            const SizedBox(height: PrismSpace.md),
+            PrismButton(
+              label: 'Add to Quick Settings',
+              icon: Icons.add_rounded,
+              variant: PrismButtonVariant.tonal,
+              size: PrismButtonSize.compact,
+              onPressed: onAddToQuickSettings,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HowToCard extends StatelessWidget {
+  const _HowToCard();
+
+  static const List<String> _steps = <String>[
+    'Pull down the notification shade twice.',
+    'Tap the pencil or edit icon.',
+    'Find the Prism tiles and drag them to your active tiles.',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return PrismCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text('How to add a tile', style: PrismTextStyles.cardTitle(context)),
+          const SizedBox(height: PrismSpace.sm),
+          for (int i = 0; i < _steps.length; i++)
+            Padding(
+              padding: EdgeInsets.only(top: i == 0 ? 0 : PrismSpace.sm),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    width: 24,
+                    height: 24,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(color: cs.onSurface.withValues(alpha: 0.08), shape: BoxShape.circle),
+                    child: Text(
+                      '${i + 1}',
+                      style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(width: PrismSpace.sm),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(_steps[i], style: PrismTextStyles.body(context)),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        if (beforeTarget.isEmpty)
-          const SizedBox(height: 12)
-        else ...[
-          const SizedBox(height: 8),
-          ...beforeTarget,
-          const SizedBox(height: 16),
         ],
-        const _FieldLabel('Apply to'),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: _TargetSelector(value: value, accentColor: accentColor, onChanged: onChanged),
-        ),
-      ],
-    );
-  }
-}
-
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.secondary,
-          fontFamily: _fontFamily,
-        ),
-      ),
-    );
-  }
-}
-
-class _Hint extends StatelessWidget {
-  const _Hint(this.text, {this.vertical = 4, this.height});
-
-  final String text;
-  final double vertical;
-  final double? height;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: vertical),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-          height: height,
-        ),
-      ),
-    );
-  }
-}
-
-class _TargetSelector extends StatelessWidget {
-  const _TargetSelector({required this.value, required this.accentColor, required this.onChanged});
-
-  final WallpaperTarget value;
-  final Color accentColor;
-  final ValueChanged<WallpaperTarget> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<WallpaperTarget>(
-      segments: const [
-        ButtonSegment(value: WallpaperTarget.home, label: Text('Home'), icon: Icon(Icons.home_outlined, size: 16)),
-        ButtonSegment(value: WallpaperTarget.lock, label: Text('Lock'), icon: Icon(Icons.lock_outline, size: 16)),
-        ButtonSegment(value: WallpaperTarget.both, label: Text('Both'), icon: Icon(Icons.layers_outlined, size: 16)),
-      ],
-      selected: {value},
-      onSelectionChanged: (Set<WallpaperTarget> selected) {
-        if (selected.isNotEmpty) onChanged(selected.first);
-      },
-      style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return accentColor;
-          return null;
-        }),
-        foregroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return PrismColors.onPrimary;
-          return Theme.of(context).colorScheme.secondary;
-        }),
       ),
     );
   }

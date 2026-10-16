@@ -9,6 +9,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -160,28 +161,28 @@ void main() {
         );
         await tester.tap(find.text('Open editor'));
         await tester.pumpAndSettle();
-        final photoPicker = find.bySemanticsLabel('Change $photo photo');
+        final photoPicker = find.bySemanticsLabel(photo == 'profile' ? 'Change photo' : 'Change cover photo');
         await tester.tapAt(tester.getTopLeft(photoPicker) + Offset(tester.getSize(photoPicker).width / 2, 10));
         await tester.pumpAndSettle();
         haptics.clear();
-        await tester.ensureVisible(find.text('Update'));
+        await tester.ensureVisible(find.text('Save changes'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Update'));
+        await tester.tap(find.text('Save changes'));
         await tester.pumpAndSettle();
 
         if (stage == 'success') {
-          expect(messages, <String>['Profile updated!']);
+          expect(messages, <String>['Profile updated']);
           expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.successNotification']);
-          expect(find.text('Edit Profile'), findsNothing);
+          expect(find.text('Edit profile'), findsNothing);
           expect(firestore.writes.single.data, <String, String>{
             photo == 'profile' ? 'profilePhoto' : 'coverPhoto': 'https://example.test/profile.png',
           });
         } else {
-          expect(messages, <String>["Couldn't update your profile. Please try again."]);
+          expect(messages, <String>['Could not save your profile. Please try again.']);
           expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.errorNotification']);
-          expect(find.text('Edit Profile'), findsOneWidget);
-          final save = find.ancestor(of: find.text('Update'), matching: find.byType(InkWell));
-          expect(tester.widget<InkWell>(save).onTap, isNotNull);
+          expect(find.text('Edit profile'), findsOneWidget);
+          final save = find.widgetWithText(PrismButton, 'Save changes');
+          expect(tester.widget<PrismButton>(save).onPressed, isNotNull);
         }
         await tester.pump(const Duration(seconds: 1));
       }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));

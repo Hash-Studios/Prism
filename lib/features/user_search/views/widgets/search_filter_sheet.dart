@@ -1,4 +1,5 @@
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
@@ -153,10 +154,17 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               ],
             ),
             const SizedBox(height: 4),
-            ActionChip(
-              avatar: CircleAvatar(backgroundColor: scheme.primary),
-              label: const Text('My accent'),
-              onPressed: () => setState(() => _color = accentMatch),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: PrismChip(
+                label: 'My accent',
+                selected: _color == accentMatch,
+                leading: DecoratedBox(
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: scheme.primary),
+                  child: const SizedBox(width: 14, height: 14),
+                ),
+                onTap: () => setState(() => _color = accentMatch),
+              ),
             ),
             const SizedBox(height: 20),
             Row(

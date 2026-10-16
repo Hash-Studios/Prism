@@ -15,6 +15,9 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_card.dart';
+import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -138,7 +141,21 @@ void main() {
     await getIt.reset();
   });
 
+  Switch switchOf(WidgetTester tester, String label) => tester.widget<Switch>(
+    find.descendant(
+      of: find.ancestor(of: find.text(label), matching: find.byType(PrismRow)).first,
+      matching: find.byType(Switch),
+    ),
+  );
+
+  void useTallSurface(WidgetTester tester) {
+    tester.view.physicalSize = const Size(800, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+  }
+
   testWidgets('haptics switch persists off and enabling it plays one selection', (tester) async {
+    useTallSurface(tester);
     await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
     expect(haptics, isEmpty);
     await tester.tap(find.text('Haptic feedback'));
@@ -151,8 +168,7 @@ void main() {
 
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
-    final tile = tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Haptic feedback'));
-    expect(tile.value, isFalse);
+    expect(switchOf(tester, 'Haptic feedback').value, isFalse);
     await tester.tap(find.text('Haptic feedback'));
     await tester.pump();
     expect(settings.get<bool>('hapticsEnabled', defaultValue: false), isTrue);
@@ -163,6 +179,7 @@ void main() {
   testWidgets('restore progress is silent and a failed restore plays only error', (tester) async {
     final pendingRestore = Completer<Object?>();
     messenger.setMockMethodCallHandler(purchasesChannel, (call) => pendingRestore.future);
+    useTallSurface(tester);
     await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
     await tester.scrollUntilVisible(find.text('Restore purchases'), 300, scrollable: find.byType(Scrollable).first);
     await tester.ensureVisible(find.text('Restore purchases'));
@@ -198,6 +215,7 @@ void main() {
         when(() => bloc.state).thenReturn(outcome);
         states.add(outcome);
       });
+      useTallSurface(tester);
       await tester.pumpWidget(
         MaterialApp(
           home: BlocProvider<FavouriteWallsBloc>.value(value: bloc, child: const SettingsScreen()),
@@ -214,30 +232,25 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Clear all favourites?'), findsOneWidget);
       expect(find.textContaining('This cannot be undone.'), findsOneWidget);
-      await tester.tap(find.widgetWithText(TextButton, 'Clear favourites'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Clear favourites'));
       await tester.pumpAndSettle();
 
       expect(messages, <String>[
         if (succeeds) 'Cleared all favourite wallpapers.' else "Couldn't clear favourite wallpapers. Try again.",
       ]);
-      expect(haptics, <String>[
+      // The confirm button plays its own tap haptic. This test is about the outcome haptic.
+      expect(haptics.where((h) => h != 'HapticFeedbackType.lightImpact'), <String>[
         if (succeeds) 'HapticFeedbackType.successNotification' else 'HapticFeedbackType.errorNotification',
       ]);
       await tester.pump(const Duration(seconds: 1));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   }
 
-  void useTallSurface(WidgetTester tester) {
-    tester.view.physicalSize = const Size(800, 4000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-  }
-
   testWidgets('personalise section lists the Android rows and no dead download quality row', (tester) async {
     useTallSurface(tester);
     await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
 
-    expect(find.text('PERSONALISE'), findsOneWidget);
+    expect(find.text('Personalise'), findsOneWidget);
     expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
     expect(find.text('Change automatically'), findsNothing);
     expect(find.text('Live wallpapers'), findsOneWidget);
@@ -258,7 +271,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
     await tester.pump();
 
-    expect(find.text('PERSONALISE'), findsOneWidget);
+    expect(find.text('Personalise'), findsOneWidget);
     expect(find.text('Change automatically'), findsOneWidget);
     expect(find.text('Auto-rotate wallpapers'), findsNothing);
     expect(find.text('Wallpaper history'), findsNothing);
@@ -275,7 +288,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
     await tester.pump();
 
-    expect(find.text('PERSONALISE'), findsNothing);
+    expect(find.text('Personalise'), findsNothing);
     expect(find.text('Change automatically'), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -311,20 +324,6 @@ void main() {
     expect(find.text('Lock screen'), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('the default action sheet title uses the secondary colour', (tester) async {
-    useTallSurface(tester);
-    final ThemeData theme = ThemeData.dark().copyWith(
-      colorScheme: const ColorScheme.dark(secondary: Colors.orange),
-      textTheme: ThemeData.dark().textTheme.copyWith(titleMedium: const TextStyle(color: Color(0xFF2F2F2F))),
-    );
-    await tester.pumpWidget(MaterialApp(theme: theme, home: const SettingsScreen()));
-    await tester.tap(find.text('Default action for Set'));
-    await tester.pumpAndSettle();
-
-    final Finder title = find.descendant(of: find.byType(BottomSheet), matching: find.text('Default action for Set'));
-    expect(tester.widget<Text>(title).style?.color, Colors.orange);
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
   test('anime wallpapers map to 110 and any value from 110 reads as on', () {
     expect(categoriesForAnime(true), 110);
     expect(categoriesForAnime(false), 100);
@@ -348,8 +347,7 @@ void main() {
 
     expect(getIt<SettingsLocalDataSource>().get<int>('WHcategories', defaultValue: 100), 110);
     verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
-    final tile = tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Show anime wallpapers'));
-    expect(tile.value, isTrue);
+    expect(switchOf(tester, 'Show anime wallpapers').value, isTrue);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   test('storage sizes read in B, KB, MB and GB', () {
@@ -370,9 +368,12 @@ void main() {
   }
 
   Future<void> openDeleteDialog(WidgetTester tester) async {
-    await tester.ensureVisible(find.widgetWithText(ListTile, 'Delete account'));
-    await tester.tap(find.widgetWithText(ListTile, 'Delete account'));
-    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(PrismRow, 'Delete account'));
+    await tester.tap(find.widgetWithText(PrismRow, 'Delete account'));
+    // Glint loops, so pump a bounded time instead of settling.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
   }
 
   group('account deletion', () {
@@ -396,16 +397,17 @@ void main() {
       await pumpSettings(tester);
       await openDeleteDialog(tester);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Delete account'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Delete account'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(calls, isEmpty);
       expect(messages, isEmpty);
-      expect(haptics, isEmpty);
-      expect(find.text('Deleting account...'), findsNothing);
-      expect(find.widgetWithText(ListTile, 'Delete account'), findsOneWidget);
+      // The confirm button plays its own selection tap. A cancelled prompt adds no outcome haptic.
+      expect(haptics.where((h) => h != 'HapticFeedbackType.selectionClick'), isEmpty);
+      expect(find.text('Deleting your account'), findsNothing);
+      expect(find.widgetWithText(PrismRow, 'Delete account'), findsOneWidget);
     });
 
     testWidgets('a real failure shows one error toast and closes the loader', (tester) async {
@@ -416,13 +418,13 @@ void main() {
       await pumpSettings(tester);
       await openDeleteDialog(tester);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Delete account'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Delete account'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(messages, <String>['Something went wrong. Try again.']);
-      expect(find.text('Deleting account...'), findsNothing);
+      expect(find.text('Deleting your account'), findsNothing);
       await tester.pump(const Duration(seconds: 1));
     });
 
@@ -439,17 +441,17 @@ void main() {
       await pumpSettings(tester);
       await openDeleteDialog(tester);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Delete account'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Delete account'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text('Deleting account...'), findsOneWidget);
+      expect(find.text('Deleting your account'), findsOneWidget);
 
       server.complete();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.text('Deleting account...'), findsNothing);
+      expect(find.text('Deleting your account'), findsNothing);
       expect(signedOut, isTrue);
       expect(cleared, <String>['user-1']);
       expect(messages, isEmpty);
@@ -479,7 +481,7 @@ void main() {
 
       await tester.tap(find.text('Log out'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Log out'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Log out'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -493,7 +495,7 @@ void main() {
 
       await tester.tap(find.text('Log out'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Log out'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Log out'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -511,7 +513,7 @@ void main() {
 
       await tester.tap(find.text('Log out'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Log out'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Log out'));
       await tester.pumpAndSettle();
 
       expect(signOuts, 1);
@@ -552,7 +554,7 @@ void main() {
     testWidgets('Restore purchases does not sit in the account card', (tester) async {
       await pumpSettings(tester);
 
-      final account = find.ancestor(of: find.text('Log out'), matching: find.byType(Card));
+      final account = find.ancestor(of: find.text('Log out'), matching: find.byType(PrismGroup));
       expect(find.descendant(of: account, matching: find.text('Restore purchases')), findsNothing);
       expect(find.text('Restore purchases'), findsOneWidget);
     });
@@ -571,11 +573,11 @@ void main() {
     testWidgets('lists the policy, terms, learned taste and delete account', (tester) async {
       await pumpSettings(tester);
 
-      expect(find.text('PRIVACY AND DATA'), findsOneWidget);
+      expect(find.text('Privacy and data'), findsOneWidget);
       expect(find.text('Privacy policy'), findsOneWidget);
       expect(find.text('Terms of use'), findsOneWidget);
       expect(find.text('Clear learned taste'), findsOneWidget);
-      expect(find.widgetWithText(ListTile, 'Delete account'), findsOneWidget);
+      expect(find.widgetWithText(PrismRow, 'Delete account'), findsOneWidget);
     });
 
     testWidgets('a guest has no Delete account row', (tester) async {
@@ -645,7 +647,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(BottomSheet), findsNothing);
       expect(messages, <String>['Prism has not learned anything yet.']);
       await tester.pump(const Duration(seconds: 1));
     });
@@ -684,7 +686,7 @@ void main() {
 
       await tester.tap(find.text('Clear learned taste'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Clear'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Clear'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -699,7 +701,7 @@ void main() {
     testWidgets('Report a problem replaces Restart App', (tester) async {
       await pumpSettings(tester);
 
-      expect(find.text('HELP'), findsOneWidget);
+      expect(find.text('Help'), findsOneWidget);
       expect(find.text('Report a problem'), findsOneWidget);
       expect(find.text('Restart App'), findsNothing);
       expect(find.text('Restart app'), findsNothing);
@@ -732,16 +734,15 @@ void main() {
     testWidgets('Data saver is off by default and saves the choice', (tester) async {
       await pumpSettings(tester);
 
-      final tile = find.widgetWithText(SwitchListTile, 'Data saver');
-      expect(tester.widget<SwitchListTile>(tile).value, isFalse);
+      expect(switchOf(tester, 'Data saver').value, isFalse);
       expect(find.textContaining('carousels do not autoplay'), findsOneWidget);
 
-      await tester.tap(tile);
+      await tester.tap(find.text('Data saver'));
       await tester.pump();
 
       expect(LowDataMode.enabled.value, isTrue);
       expect(getIt<SettingsLocalDataSource>().get<bool>(LowDataMode.settingsKey, defaultValue: false), isTrue);
-      expect(tester.widget<SwitchListTile>(tile).value, isTrue);
+      expect(switchOf(tester, 'Data saver').value, isTrue);
     });
 
     testWidgets('the cache size counts tinted wallpapers', (tester) async {
@@ -796,7 +797,7 @@ void main() {
 
       await tester.tap(find.text('Clear cache'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Clear cache'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Clear cache'));
       for (var i = 0; i < 3; i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
         await tester.pump(const Duration(milliseconds: 100));
@@ -845,16 +846,6 @@ void main() {
       }
       expect(find.textContaining('walls'), findsNothing);
     });
-
-    testWidgets('section titles use the theme accent, even when it is black', (tester) async {
-      await pumpSettings(
-        tester,
-        theme: ThemeData(colorScheme: const ColorScheme.light(error: Colors.black)),
-      );
-
-      final title = tester.widget<Text>(find.text('APPEARANCE'));
-      expect(title.style?.color, Colors.black);
-    });
   });
 
   testWidgets('a content filter switch refreshes the home feed settings', (tester) async {
@@ -873,4 +864,71 @@ void main() {
 
     expect(personalizedFeedSettingsRevision.value, revision + 1);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  group('grouped layout', () {
+    testWidgets('a signed-in user sees the account card and the grouped settings', (tester) async {
+      await pumpSettings(tester);
+
+      expect(find.text('Tester'), findsOneWidget);
+      expect(find.text('tester@example.com'), findsOneWidget);
+      for (final String header in <String>[
+        'Account',
+        'Appearance',
+        'Content',
+        'Notifications',
+        'Storage',
+        'Purchases',
+        'Privacy and data',
+        'Help',
+      ]) {
+        expect(find.text(header), findsOneWidget, reason: header);
+      }
+      expect(find.text('APPEARANCE'), findsNothing);
+      expect(find.text('Review status'), findsOneWidget);
+      expect(find.text('Clear favourite wallpapers'), findsOneWidget);
+      expect(find.text('Restore purchases'), findsOneWidget);
+      expect(find.text('Log out'), findsOneWidget);
+      expect(find.text('Delete account'), findsOneWidget);
+    });
+
+    testWidgets('a guest sees a sign-in card and no account actions', (tester) async {
+      signInAs(loggedIn: false);
+      await pumpSettings(tester);
+
+      expect(find.text('Sign in to Prism'), findsOneWidget);
+      expect(find.text('Log out'), findsNothing);
+      expect(find.text('Delete account'), findsNothing);
+      expect(find.text('Buy premium'), findsOneWidget);
+      expect(find.text('Themes'), findsOneWidget);
+    });
+
+    testWidgets('a Pro user sees the Pro tag and no Buy premium row', (tester) async {
+      signInAs(premium: true);
+      await pumpSettings(tester);
+
+      expect(find.text('Pro'), findsOneWidget);
+      expect(find.text('Buy premium'), findsNothing);
+    });
+
+    testWidgets('log out asks first', (tester) async {
+      await pumpSettings(tester);
+
+      await tester.tap(find.text('Log out'));
+      await tester.pumpAndSettle();
+      expect(find.text('Log out?'), findsOneWidget);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Log out?'), findsNothing);
+    });
+
+    testWidgets('account deletion copy describes wallpapers only', (tester) async {
+      await pumpSettings(tester);
+      await openDeleteDialog(tester);
+
+      expect(find.text('Delete your account?'), findsOneWidget);
+      expect(find.textContaining('Your uploaded wallpapers will remain visible'), findsOneWidget);
+      expect(find.textContaining('setups'), findsNothing);
+    });
+  });
 }

@@ -297,15 +297,15 @@ void main() {
       expect(pill[2]!.height, 32);
     });
 
-    testWidgets('the glass is stronger on a light theme, where dark icons sit on a pale tint', (tester) async {
-      await pumpChip(tester);
-      final double dark = tester.widget<PrismGlass>(find.byType(PrismGlass)).glassColor!.a;
-      await pumpChip(tester, brightness: Brightness.light);
-      final PrismGlass light = tester.widget<PrismGlass>(find.byType(PrismGlass));
+    testWidgets('sits on a dark scrim with white text, on a light theme as on a dark one', (tester) async {
+      for (final Brightness brightness in <Brightness>[Brightness.dark, Brightness.light]) {
+        await pumpChip(tester, brightness: brightness);
+        final PrismGlass glass = tester.widget<PrismGlass>(find.byType(PrismGlass));
 
-      expect(dark, closeTo(0.6, 0.001));
-      expect(light.glassColor!.a, closeTo(0.65, 0.001));
-      expect(light.thickness, 16);
+        expect(glass.glassColor, Colors.black.withValues(alpha: 0.5));
+        expect(glass.thickness, 16);
+        expect(tester.widget<Text>(find.text('Live')).style?.color, Colors.white);
+      }
     });
 
     testWidgets('stays hidden when the device does not support live wallpapers', (tester) async {

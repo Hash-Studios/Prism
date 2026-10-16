@@ -23,7 +23,7 @@ void main() {
       MaterialApp(
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
-          child: Scaffold(body: CollectionsGrid()),
+          child: const Scaffold(body: CollectionsGrid()),
         ),
       ),
     );

@@ -5,6 +5,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
@@ -259,6 +260,32 @@ void main() {
     verifyNever(() => autoRotateBloc.add(const AutoRotateEvent.started(favouriteUrls: <String>[], isPro: false)));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('shows the controls page with its sections', (tester) async {
+    tester.view.physicalSize = const Size(900, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    when(() => autoRotateBloc.state).thenReturn(
+      AutoRotateState.initial().copyWith(
+        loaded: true,
+        isPro: true,
+        favouriteCount: 3,
+        config: const AutoRotateConfig(enabled: true),
+      ),
+    );
+
+    await pumpScreen(tester);
+    await tester.pump();
+
+    expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
+    expect(find.text('3 favourites in the mix'), findsOneWidget);
+    expect(find.text('Every hour'), findsOneWidget);
+    expect(find.text('Home screen'), findsOneWidget);
+    expect(find.text('Shuffle'), findsOneWidget);
+    expect(find.text('Only while charging'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Change now'), 200);
+    expect(find.text('Change now'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   group('controls', () {
     AutoRotateState proState({
       AutoRotateConfig config = const AutoRotateConfig(enabled: true),
@@ -297,11 +324,11 @@ void main() {
 
       expect(find.text('Preparing 3 wallpapers'), findsOneWidget);
       expect(
-        tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Auto-rotate wallpapers')).value,
+        tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate wallpapers')).value,
         isTrue,
       );
       expect(
-        tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Auto-rotate wallpapers')).onChanged,
+        tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate wallpapers')).onChanged,
         isNull,
       );
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
@@ -347,7 +374,7 @@ void main() {
       expect(find.text('Favourite at least 2 wallpapers to rotate them.'), findsOneWidget);
       expect(find.text('Downloads'), findsOneWidget);
       expect(
-        tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Auto-rotate wallpapers')).onChanged,
+        tester.widget<PrismSwitchRow>(find.widgetWithText(PrismSwitchRow, 'Auto-rotate wallpapers')).onChanged,
         isNull,
       );
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));

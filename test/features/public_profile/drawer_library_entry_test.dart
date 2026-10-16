@@ -78,6 +78,14 @@ void main() {
     expect(find.text('Downloaded Walls'), findsNothing);
   });
 
+  testWidgets('the drawer has no paywall entry, as on the current app', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await openDrawer(tester);
+
+    expect(find.text('Prism Pro'), findsOneWidget);
+    expect(find.text('Get Pro'), findsNothing);
+  });
+
   testWidgets('tapping Library closes the drawer and opens the Library page', (tester) async {
     await openDrawer(tester);
 
@@ -93,7 +101,7 @@ void main() {
   testWidgets('a share link that cannot be made shows an error toast', (tester) async {
     await openDrawer(tester);
 
-    await tester.tap(find.text('Share your Profile'));
+    await tester.tap(find.text('Share profile'));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
     await tester.pump();
 

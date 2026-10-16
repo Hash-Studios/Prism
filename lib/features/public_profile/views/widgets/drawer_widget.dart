@@ -10,15 +10,15 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/theme/app_tokens.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
+/// The end drawer of the signed-in user's own profile: Pro status, their content, account links and log out.
 class ProfileDrawer extends StatelessWidget {
   const ProfileDrawer({super.key});
 
@@ -36,19 +36,11 @@ class ProfileDrawer extends StatelessWidget {
     );
   }
 
-  Future<bool> _confirmLogout(BuildContext context) async {
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: const Text('Log out?'),
-        content: const Text(logoutConfirmMessage),
-        actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Log out')),
-        ],
-      ),
-    );
-    return ok == true;
+  /// Closes the drawer, then opens [route].
+  void _go(BuildContext context, PageRouteInfo route) {
+    final StackRouter router = context.router;
+    Navigator.pop(context);
+    unawaited(router.push(route));
   }
 
   Future<void> _shareProfile(BuildContext context) async {
@@ -66,177 +58,124 @@ class ProfileDrawer extends StatelessWidget {
     }
   }
 
-  // ── Builder helpers ──────────────────────────────────────────────────────
-
-  Widget _header(BuildContext context) {
-    return SizedBox(
-      // DrawerHeader pads for the status bar itself; Dynamic Island insets left too little room at 130.
-      height: math.max(130, MediaQuery.paddingOf(context).top + 80),
-      child: DrawerHeader(
-        margin: EdgeInsets.zero,
-        padding: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                app_state.prismUser.premium ? 'Prism Pro' : 'Prism',
-                style: Theme.of(
-                  context,
-                ).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                app_state.prismUser.premium ? 'Exclusive premium walls!' : 'Exclusive wallpapers!',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)),
-              ),
-            ],
-          ),
-        ),
-      ),
+  Future<void> _logOut(BuildContext context) async {
+    _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: 'Log out of Prism?',
+      message: logoutConfirmMessage,
+      confirmLabel: 'Log out',
     );
+    if (!confirmed || !context.mounted) return;
+    // Finish signing out before the restart, or the restarted app still sees the old
+    // session and stays on the splash screen. The restart closes this drawer.
+    if (!await globalGoogleAuth.signOutGoogle()) {
+      toasts.error(logoutFailedMessage);
+      return;
+    }
+    await resetOnboardingLocalState(getIt<SettingsLocalDataSource>());
+    if (context.mounted) {
+      main.RestartWidget.restartApp(context);
+    }
   }
-
-  Widget _sectionHeader(String text, BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 0, 0),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.displaySmall!.copyWith(
-          fontSize: 11,
-          letterSpacing: 0.8,
-          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
-        ),
-      ),
-    );
-  }
-
-  Widget _item({
-    required IconData icon,
-    required String text,
-    required BuildContext context,
-    GestureTapCallback? onTap,
-  }) {
-    return ListTile(
-      dense: true,
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-      leading: Icon(icon, color: Theme.of(context).colorScheme.secondary),
-      trailing: Icon(JamIcons.chevron_right, color: Theme.of(context).colorScheme.secondary),
-      title: Text(
-        text,
-        style: Theme.of(context).textTheme.bodySmall!.copyWith(
-          fontFamily: PrismFonts.proximaNova,
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-      ),
-      onTap: onTap,
-    );
-  }
-
-  Widget _footer(BuildContext context) {
-    final color = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 40),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          TextButton.icon(
-            icon: Icon(JamIcons.cog, color: color, size: 18),
-            label: Text('Settings', style: TextStyle(color: color, fontSize: 12)),
-            onPressed: () {
-              _trackDrawerAction(
-                AnalyticsActionValue.notificationSettingsOpened,
-                sourceContext: 'profile_drawer_settings',
-              );
-              Navigator.pop(context);
-              context.router.push(const SettingsRoute());
-            },
-          ),
-          TextButton.icon(
-            icon: Icon(JamIcons.info, color: color, size: 18),
-            label: Text('About', style: TextStyle(color: color, fontSize: 12)),
-            onPressed: () {
-              _trackDrawerAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_drawer_about');
-              Navigator.pop(context);
-              context.router.push(const AboutRoute());
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final bool premium = app_state.prismUser.premium;
     return Drawer(
-      child: ColoredBox(
-        color: Theme.of(context).primaryColor,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            _header(context),
-
-            // ── YOUR CONTENT ───────────────────────────────────────────────
-            _sectionHeader('YOUR CONTENT', context),
-            _item(
-              icon: JamIcons.picture,
-              text: 'Library',
-              context: context,
-              onTap: () {
-                _trackDrawerAction(AnalyticsActionValue.drawerLibraryTapped, sourceContext: 'profile_drawer_library');
-                Navigator.pop(context);
-                context.router.push(LibraryRoute());
-              },
-            ),
-
-            const Divider(),
-
-            // ── ACCOUNT ────────────────────────────────────────────────────
-            _sectionHeader('ACCOUNT', context),
-            _item(
-              icon: JamIcons.share_alt,
-              text: 'Share your Profile',
-              context: context,
-              onTap: () {
-                PrismHaptics.tap();
-                _trackDrawerAction(
-                  AnalyticsActionValue.drawerSharePrismTapped,
-                  sourceContext: 'profile_drawer_share_profile',
-                );
-                unawaited(_shareProfile(context));
-              },
-            ),
-            _item(
-              icon: JamIcons.log_out,
-              text: 'Log out',
-              context: context,
-              onTap: () async {
-                _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
-                if (!await _confirmLogout(context)) return;
-                // Finish signing out before the restart, or the restarted app still sees the old
-                // session and stays on the splash screen. The restart closes this drawer.
-                if (!await globalGoogleAuth.signOutGoogle()) {
-                  toasts.error(logoutFailedMessage);
-                  return;
-                }
-                await resetOnboardingLocalState(getIt<SettingsLocalDataSource>());
-                if (context.mounted) {
-                  main.RestartWidget.restartApp(context);
-                }
-              },
-            ),
-
-            const Divider(),
-
-            _footer(context),
-          ],
+      backgroundColor: cs.surface,
+      width: math.min(340, MediaQuery.sizeOf(context).width * 0.84),
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(
+          PrismSpace.page,
+          MediaQuery.paddingOf(context).top + PrismSpace.md,
+          PrismSpace.page,
+          MediaQuery.paddingOf(context).bottom + PrismSpace.xl,
         ),
+        children: <Widget>[
+          PrismCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(Icons.workspace_premium_rounded, size: 22, color: cs.primary),
+                    const SizedBox(width: PrismSpace.xs),
+                    Text('Prism Pro', style: PrismTextStyles.cardTitle(context)),
+                  ],
+                ),
+                const SizedBox(height: PrismSpace.xxs),
+                Text(
+                  premium
+                      ? 'You have every premium wallpaper, free downloads and free filters.'
+                      : 'Unlock premium wallpapers, free downloads and free filters.',
+                  style: PrismTextStyles.body(context),
+                ),
+              ],
+            ),
+          ),
+          const PrismSectionHeader(title: 'Your content', small: true),
+          PrismGroup(
+            children: <Widget>[
+              PrismRow(
+                icon: Icons.photo_library_outlined,
+                title: 'Library',
+                onTap: () {
+                  _trackDrawerAction(AnalyticsActionValue.drawerLibraryTapped, sourceContext: 'profile_drawer_library');
+                  _go(context, LibraryRoute());
+                },
+              ),
+            ],
+          ),
+          const PrismSectionHeader(title: 'Account', small: true),
+          PrismGroup(
+            children: <Widget>[
+              PrismRow(
+                icon: Icons.ios_share_rounded,
+                title: 'Share profile',
+                onTap: () {
+                  PrismHaptics.tap();
+                  _trackDrawerAction(
+                    AnalyticsActionValue.drawerSharePrismTapped,
+                    sourceContext: 'profile_drawer_share_profile',
+                  );
+                  unawaited(_shareProfile(context));
+                },
+              ),
+              PrismRow(
+                icon: Icons.settings_outlined,
+                title: 'Settings',
+                onTap: () {
+                  _trackDrawerAction(
+                    AnalyticsActionValue.notificationSettingsOpened,
+                    sourceContext: 'profile_drawer_settings',
+                  );
+                  _go(context, const SettingsRoute());
+                },
+              ),
+              PrismRow(
+                icon: Icons.info_outline_rounded,
+                title: 'About',
+                onTap: () {
+                  _trackDrawerAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_drawer_about');
+                  _go(context, AboutRoute());
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: PrismSpace.md),
+          PrismGroup(
+            children: <Widget>[
+              PrismRow(
+                icon: Icons.logout_rounded,
+                title: 'Log out',
+                showChevron: false,
+                onTap: () => unawaited(_logOut(context)),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

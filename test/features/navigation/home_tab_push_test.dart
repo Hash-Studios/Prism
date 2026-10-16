@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -29,12 +30,15 @@ import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
+
+class _CacheManager extends Mock implements BaseCacheManager {}
 
 class _AdsBloc extends MockBloc<AdsEvent, AdsState> implements AdsBloc {}
 
@@ -101,6 +105,17 @@ void main() {
 
   setUp(() async {
     await getIt.reset();
+    // The banner image would open the real disk cache, which needs a database that tests do not have.
+    final cache = _CacheManager();
+    when(
+      () => cache.getFileStream(
+        any(),
+        key: any(named: 'key'),
+        headers: any(named: 'headers'),
+        withProgress: any(named: 'withProgress'),
+      ),
+    ).thenAnswer((_) => Stream<FileResponse>.error(const SocketException('offline')));
+    PrismImageCache.testOverride = cache;
     app_state.prismUser = profileUser(profilePhoto: '');
     token = 'initial-token';
     subscribed.clear();
@@ -146,6 +161,7 @@ void main() {
   });
 
   tearDown(() async {
+    PrismImageCache.testOverride = null;
     await FcmTokenService.instance.cancelAndWait();
     app_state.prismUser = createGuestPrismUser();
     messenger.setMockMethodCallHandler(_quickActions, null);
@@ -257,7 +273,7 @@ void main() {
   }, variant: _ios);
 
   testWidgets('a guest does not start the favourites sync', (tester) async {
-    app_state.prismUser = createGuestPrismUser();
+    app_state.prismUser = profileUser(loggedIn: false, profilePhoto: '');
 
     await mount(tester);
 

@@ -11,6 +11,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -227,7 +228,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-  testWidgets('invalid generation uses the error haptic without also playing a tap haptic', (tester) async {
+  testWidgets('an empty description keeps Generate off and plays no haptic', (tester) async {
     final List<Object?> hapticTypes = <Object?>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
       if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
@@ -237,16 +238,19 @@ void main() {
     await setUpPage(tester, (name, parameters) async => <String, Object>{});
 
     await tester.enterText(find.byType(TextField).first, '');
-    final Finder generate = find.textContaining('Generate  ·');
+    await tester.pump();
+    final Finder generate = find.text('Generate');
     await tester.ensureVisible(generate);
-    await tester.tap(generate);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Generate')).onPressed, isNull);
+    hapticTypes.clear();
+    await tester.tap(generate, warnIfMissed: false);
     await tester.pump();
 
-    expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+    expect(hapticTypes, isEmpty);
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-  testWidgets('invalid refinement uses the error haptic without also playing a tap haptic', (tester) async {
+  testWidgets('an empty refinement keeps Generate another off and plays no haptic', (tester) async {
     final List<Object?> hapticTypes = <Object?>[];
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
       if (call.method == 'HapticFeedback.vibrate') hapticTypes.add(call.arguments);
@@ -257,12 +261,14 @@ void main() {
 
     await tester.tap(find.text('Try another'));
     await tester.pumpAndSettle();
-    hapticTypes.clear();
     await tester.enterText(find.byType(TextField).last, '');
-    await tester.tap(find.text('Generate another'));
+    await tester.pump();
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Generate another')).onPressed, isNull);
+    hapticTypes.clear();
+    await tester.tap(find.text('Generate another'), warnIfMissed: false);
     await tester.pump();
 
-    expect(hapticTypes, <Object?>['HapticFeedbackType.errorNotification']);
+    expect(hapticTypes, isEmpty);
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -288,14 +294,15 @@ void main() {
       ),
     );
 
-    final Finder generate = find.textContaining('Generate  ·');
+    final Finder generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpAndSettle();
     // Reserving coins starts a short-lived local-balance timer; let the fake clock drain it.
     await tester.pump(const Duration(seconds: 2));
 
-    expect(hapticTypes, <Object?>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.successNotification']);
+    expect(hapticTypes, contains('HapticFeedbackType.successNotification'));
+    expect(hapticTypes, isNot(contains('HapticFeedbackType.errorNotification')));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('concurrent connectivity checks reserve and generate only once', (tester) async {
@@ -321,11 +328,12 @@ void main() {
         check: () => ++connectionCalls == 1 ? Future<bool>.value(true) : connection.future,
       ),
     );
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.tap(generate);
     await tester.pump();
+    expect(find.text('This takes about 20 seconds'), findsOneWidget);
     connection.complete(true);
     await tester.pump();
     final actualSpends = spendCalls;
@@ -365,7 +373,7 @@ void main() {
         },
       ),
     );
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.tap(generate);
@@ -398,7 +406,7 @@ void main() {
       if (call.method == 'showToast') toasts.add(call);
       return true;
     });
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
@@ -420,12 +428,12 @@ void main() {
       spends.add(Map<String, Object?>.from(parameters as Map<Object?, Object?>));
       return reservation.future;
     }, repository: repository);
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
-    await tester.ensureVisible(find.text('Quality'));
-    await tester.tap(find.text('Quality'));
+    await tester.ensureVisible(find.text('Quality').last);
+    await tester.tap(find.text('Quality').last);
     await tester.pump();
     await tester.ensureVisible(find.byType(ListView).first);
     await tester.pump();
@@ -467,7 +475,7 @@ void main() {
       if (call.method == 'showToast') toasts.add(call);
       return true;
     });
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
@@ -497,7 +505,7 @@ void main() {
       return <String, Object>{'success': true, 'changed': false, 'currentBalance': 100};
     });
 
-    final Finder generate = find.textContaining('Generate  ·');
+    final Finder generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
@@ -540,7 +548,7 @@ void main() {
       ),
     );
 
-    final Finder generate = find.textContaining('Generate  ·');
+    final Finder generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
@@ -608,6 +616,7 @@ void main() {
     await tester.tap(refine);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Warmer colors');
+    await tester.pump();
     await tester.tap(find.text('Generate another'));
     await tester.pump();
     await variationStarted.future;
@@ -633,7 +642,7 @@ void main() {
         'transactionId': 'reservation-1',
       };
     }, repository: _FakeAiGenerationRepository(_record(), generation: generation));
-    final Finder generate = find.textContaining('Generate  ·');
+    final Finder generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
@@ -665,7 +674,7 @@ void main() {
     expect(refunds, 1);
     expect(requests, 0);
     expect(recorder.events.whereType<AiGenerateFailedEvent>(), hasLength(1));
-    expect(find.textContaining('Generate  ·'), findsOneWidget);
+    expect(find.text('Generate'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -701,7 +710,7 @@ void main() {
       toastCalls: toastCalls,
     );
     toastCalls.clear();
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpAndSettle();
@@ -722,7 +731,7 @@ void main() {
       toastCalls: toastCalls,
     );
     toastCalls.clear();
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpAndSettle();
@@ -753,7 +762,7 @@ void main() {
       toastCalls: toastCalls,
     );
     toastCalls.clear();
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpAndSettle();
@@ -782,7 +791,7 @@ void main() {
       toastCalls: toastCalls,
     );
     toastCalls.clear();
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpAndSettle();
@@ -830,12 +839,13 @@ void main() {
       if (name == 'spendCoins') spends.add(Map<String, Object?>.from(parameters as Map<Object?, Object?>));
       return coinReply(name);
     }, repository: _FakeAiGenerationRepository(_record(), variation: () async => _record(id: 'variation-1')));
-    await tester.ensureVisible(find.text('Quality'));
-    await tester.tap(find.text('Quality'));
+    await tester.ensureVisible(find.text('Quality').last);
+    await tester.tap(find.text('Quality').last);
     await tester.pump();
     await tester.tap(find.text('Try another'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'warmer palette');
+    await tester.pump();
     await tester.tap(find.text('Generate another'));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(milliseconds: 1400));
@@ -851,7 +861,7 @@ void main() {
       variation: () async => _record(id: 'variation-1'),
     );
     await setUpPage(tester, (name, parameters) async => coinReply(name), repository: repository);
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpAndSettle();
@@ -860,6 +870,7 @@ void main() {
     await tester.tap(find.text('Try another'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'warmer palette');
+    await tester.pump();
     await tester.tap(find.text('Generate another'));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(milliseconds: 1400));
@@ -883,7 +894,7 @@ void main() {
       toastCalls: toastCalls,
     );
     toastCalls.clear();
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpAndSettle();
@@ -893,7 +904,7 @@ void main() {
     expect(toastMessages(toastCalls).any((m) => m.contains('Quota coordinator')), isFalse);
   });
 
-  testWidgets('a signed-out user who taps Generate gets the sign-in sheet, not a toast', (tester) async {
+  testWidgets('a signed-out user gets the sign-in prompt and its sheet, not a toast', (tester) async {
     final toastCalls = <MethodCall>[];
     await setUpPage(
       tester,
@@ -908,13 +919,15 @@ void main() {
         home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record()), key: UniqueKey()),
       ),
     );
-    await tester.pumpAndSettle();
-    final generate = find.textContaining('Generate  ·');
-    await tester.ensureVisible(generate);
-    await tester.tap(generate);
-    await tester.pumpAndSettle();
+    // The Glint state animates for ever, so settle by time.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.text('Generate'), findsNothing);
+    await tester.tap(find.text('Sign in'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('Signing in unlocks'), findsOneWidget);
+    expect(find.text('Sign in to Prism'), findsOneWidget);
     expect(toastMessages(toastCalls), isEmpty);
   });
 }

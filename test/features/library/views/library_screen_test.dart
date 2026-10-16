@@ -142,13 +142,13 @@ void main() {
     expect(tabEvents().first.toWireParameters(), <String, Object?>{'tab': 'downloads'});
   });
 
-  // The expected colours are the theme foreground made readable on the page: the weak foregrounds of Rose,
-  // Cotton Blue and Coffee are darkened, and they keep full ink for the tab you are not on.
+  // The expected colours are the theme foreground made readable on the page, and the softer ink for the tab you
+  // are not on (every theme's ink is dark enough for the soft one to keep 4.5:1).
   const Map<String, ({int selected, int unselected})> tabInk = <String, ({int selected, int unselected})>{
-    'Frost White': (selected: 0xFF2F2F2F, unselected: 0xCC2F2F2F),
-    'Rose': (selected: 0xFF4B342D, unselected: 0xFF4B342D),
-    'Cotton Blue': (selected: 0xFF202836, unselected: 0xFF202836),
-    'Coffee': (selected: 0xFF785C23, unselected: 0xFF785C23),
+    'Frost White': (selected: 0xFF090909, unselected: 0xCC090909),
+    'Rose': (selected: 0xFF19110F, unselected: 0xCC19110F),
+    'Cotton Blue': (selected: 0xFF0B0D12, unselected: 0xCC0B0D12),
+    'Coffee': (selected: 0xFF1E1709, unselected: 0xCC1E1709),
     'AMOLED': (selected: 0xFFFFFFFF, unselected: 0xCCFFFFFF),
   };
 

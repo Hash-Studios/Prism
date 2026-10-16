@@ -8,10 +8,9 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
@@ -86,14 +85,21 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     _contentLoadTracker.start();
   }
 
+  /// Curated collections show two wallpapers across on a phone, more on a wide screen.
+  int _columns(BuildContext context) {
+    final MediaQueryData media = MediaQuery.of(context);
+    final double target = media.orientation == Orientation.portrait ? 300 : 250;
+    return (media.size.width / target).ceil().clamp(2, 6);
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> walls = anyCollectionWalls;
     if (walls.isEmpty && !collectionHasMore) {
       return const GlintState(
         kind: GlintStateKind.empty,
-        title: 'No wallpapers in this collection yet',
-        body: 'Check back soon.',
+        title: 'Nothing in this collection yet',
+        body: 'New wallpapers are added often. Check back soon.',
       );
     }
     final bool showFooter = collectionHasMore;
@@ -113,10 +119,11 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
         },
       );
     }
-    final int columns = (MediaQuery.sizeOf(context).width / 300).ceil().clamp(1, 8);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final int columns = _columns(context);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns, aspectRatio: 0.6625);
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: cs.surfaceContainerHigh,
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification notification) {
@@ -143,14 +150,12 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
         child: GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
-          padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-          itemCount: walls.length + (showFooter ? 1 : 0),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-            childAspectRatio: 0.6625,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+          padding: PrismWallGrid.padding.copyWith(
+            top: PrismSpace.xxs,
+            bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
           ),
+          itemCount: walls.length + (showFooter ? 1 : 0),
+          gridDelegate: PrismWallGrid.delegate(context, columns: columns, aspectRatio: 0.6625),
           itemBuilder: (context, index) {
             if (index == walls.length && showFooter) {
               return SeeMoreButton(
@@ -182,58 +187,48 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                 tag: 'CollectionsGrid',
                 fields: <String, Object?>{'wall_id': wallId, 'thumb': wallpaperThumb, 'url': wallpaperUrl},
               );
-              return Container(
-                decoration: BoxDecoration(color: Theme.of(context).hintColor.withValues(alpha: 0.08)),
-                child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
+              return DecoratedBox(
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withValues(alpha: 0.06),
+                  borderRadius: PrismWallGrid.tileRadius,
+                ),
+                child: Center(child: Icon(Icons.broken_image_outlined, color: cs.onSurface.withValues(alpha: 0.4))),
               );
             }
             return KeyedSubtree(
               key: ValueKey<String>(wallId),
-              child: Semantics(
-                button: true,
-                label: wallpaperSemanticLabel(_wallString(wall, 'by')),
-                child: ClipRect(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                      highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                      enableFeedback: false,
-                      onTap: () {
-                        PrismHaptics.tap();
-                        unawaited(
-                          analytics.track(
-                            SurfaceActionTappedEvent(
-                              surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
-                              action: AnalyticsActionValue.tileOpened,
-                              sourceContext: 'home_collections_grid_tile',
-                              itemType: ItemTypeValue.wallpaper,
-                              itemId: wallId,
-                              index: index,
-                            ),
-                          ),
-                        );
-                        context.router.push(
-                          WallpaperDetailRoute(
-                            entity: _entityFor(wall, wallId),
-                            analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
-                            heroTag: prismHeroTag(this, index, wallId),
-                          ),
-                        );
-                      },
-                      onLongPress: () {
-                        PrismHaptics.impact();
-                        unawaited(showWallpaperQuickActions(context, _entityFor(wall, wallId)));
-                      },
-                      child: PrismImageTile(
-                        url: wallpaperThumb,
-                        fallbackUrl: wallpaperUrl,
-                        memCacheHeight: decodeHeight,
-                        heroTag: prismHeroTag(this, index, wallId),
+              child: PrismWallTile(
+                url: wallpaperThumb,
+                fallbackUrl: wallpaperUrl,
+                memCacheHeight: decodeHeight,
+                heroTag: prismHeroTag(this, index, wallId),
+                semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by')),
+                onTap: () {
+                  PrismHaptics.tap();
+                  unawaited(
+                    analytics.track(
+                      SurfaceActionTappedEvent(
+                        surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
+                        action: AnalyticsActionValue.tileOpened,
+                        sourceContext: 'home_collections_grid_tile',
+                        itemType: ItemTypeValue.wallpaper,
+                        itemId: wallId,
+                        index: index,
                       ),
                     ),
-                  ),
-                ),
+                  );
+                  context.router.push(
+                    WallpaperDetailRoute(
+                      entity: _entityFor(wall, wallId),
+                      analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+                      heroTag: prismHeroTag(this, index, wallId),
+                    ),
+                  );
+                },
+                onLongPress: () {
+                  PrismHaptics.impact();
+                  unawaited(showWallpaperQuickActions(context, _entityFor(wall, wallId)));
+                },
               ),
             );
           },

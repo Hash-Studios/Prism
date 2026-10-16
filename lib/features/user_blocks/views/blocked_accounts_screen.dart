@@ -5,8 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:auto_route/auto_route.dart';
@@ -23,6 +22,7 @@ class BlockedAccountsScreen extends StatefulWidget {
 class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
   final UserBlockRepository _repo = getIt<UserBlockRepository>();
   late Future<Result<List<BlockedUserListRow>>> _loadFuture;
+  final Set<String> _unblocking = <String>{};
 
   @override
   void initState() {
@@ -44,51 +44,41 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
     return username == null || username.isEmpty ? 'Blocked user' : username;
   }
 
-  Future<void> _confirmUnblock(BlockedUserListRow row, String name) async {
-    PrismHaptics.tap();
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text('Unblock $name?'),
-        content: const Text('Their wallpapers will show in your feeds again.'),
-        actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Unblock')),
-        ],
-      ),
+  Future<void> _unblock(BlockedUserListRow row, String name) async {
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: 'Unblock $name?',
+      message: 'Their posts will appear in your feed again.',
+      confirmLabel: 'Unblock',
     );
-    if (confirmed != true || !mounted) return;
-    if (await unblockUserWithFeedback(context, row.blockedUid)) {
-      await _refresh();
-    }
+    if (!confirmed || !mounted) return;
+    setState(() => _unblocking.add(row.blockedUid));
+    final bool done = await unblockUserWithFeedback(context, row.blockedUid);
+    if (!mounted) return;
+    if (done) await _refresh();
+    if (mounted) setState(() => _unblocking.remove(row.blockedUid));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: const PreferredSize(
-        preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: 'Blocked accounts'),
-      ),
+    return PrismPage(
+      title: 'Blocked accounts',
       body: FutureBuilder<Result<List<BlockedUserListRow>>>(
         future: _loadFuture,
         builder: (BuildContext context, AsyncSnapshot<Result<List<BlockedUserListRow>>> snapshot) {
           final Result<List<BlockedUserListRow>>? result = snapshot.data;
           if (result == null) {
-            return const GlintState(kind: GlintStateKind.loading, title: 'Loading blocked accounts');
+            return PrismSkeleton.rows();
           }
           if (result.isFailure) {
             return _Message(
               onRefresh: _refresh,
               child: GlintState(
                 kind: GlintStateKind.error,
-                title: 'Could not load blocked accounts.',
+                title: 'Could not load blocked accounts',
+                body: 'Check your connection and try again.',
                 actionLabel: 'Retry',
-                onAction: () {
-                  PrismHaptics.tap();
-                  _refresh();
-                },
+                onAction: _refresh,
               ),
             );
           }
@@ -96,7 +86,12 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
           if (rows.isEmpty) {
             return _Message(
               onRefresh: _refresh,
-              child: const GlintState(kind: GlintStateKind.empty, title: 'No blocked accounts.'),
+              child: const GlintState(
+                kind: GlintStateKind.empty,
+                title: 'No blocked accounts',
+                body:
+                    'Blocking hides their posts from your feed. They may still be able to view your public profile and wallpapers.',
+              ),
             );
           }
           return RefreshIndicator(
@@ -105,16 +100,42 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
               return _refresh();
             },
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: EdgeInsets.fromLTRB(
+                PrismSpace.page,
+                PrismSpace.xs,
+                PrismSpace.page,
+                PrismSpace.xxl + MediaQuery.paddingOf(context).bottom,
+              ),
               itemCount: rows.length,
-              separatorBuilder: (BuildContext context, int index) =>
-                  const Divider(height: 1, indent: 16, endIndent: 16),
+              separatorBuilder: (BuildContext context, int index) => const SizedBox(height: PrismSpace.xxs),
               itemBuilder: (BuildContext context, int i) {
                 final BlockedUserListRow row = rows[i];
                 final String name = _displayName(row);
-                return ListTile(
-                  title: Text(name, style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
-                  trailing: TextButton(onPressed: () => _confirmUnblock(row, name), child: const Text('Unblock')),
+                final bool hasUsername = row.blockedUsername?.trim().isNotEmpty ?? false;
+                return ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 56),
+                  child: Row(
+                    children: <Widget>[
+                      PrismAvatar(name: name),
+                      const SizedBox(width: PrismSpace.sm),
+                      Expanded(
+                        child: Text(
+                          hasUsername ? '@$name' : name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: PrismTextStyles.rowTitle(context),
+                        ),
+                      ),
+                      const SizedBox(width: PrismSpace.sm),
+                      PrismButton(
+                        label: 'Unblock',
+                        variant: PrismButtonVariant.tonal,
+                        size: PrismButtonSize.compact,
+                        loading: _unblocking.contains(row.blockedUid),
+                        onPressed: () => unawaited(_unblock(row, name)),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -125,6 +146,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
   }
 }
 
+/// Puts a centred state in a list that still supports pull to refresh.
 class _Message extends StatelessWidget {
   const _Message({required this.onRefresh, required this.child});
 
@@ -138,12 +160,11 @@ class _Message extends StatelessWidget {
         PrismHaptics.impact();
         return onRefresh();
       },
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: <Widget>[
-          SizedBox(height: MediaQuery.of(context).size.height * 0.15),
-          child,
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(height: constraints.maxHeight, child: child),
+        ),
       ),
     );
   }

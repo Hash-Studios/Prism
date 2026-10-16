@@ -10,21 +10,18 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/utils/string_extensions.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/env/env.dart';
-import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/features/public_profile/views/widgets/edit_profile_header.dart';
+import 'package:Prism/features/public_profile/views/widgets/edit_profile_link_field.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/app_tokens.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
@@ -42,6 +39,8 @@ class EditProfilePanel extends StatefulWidget {
 }
 
 class _EditProfilePanelState extends State<EditProfilePanel> {
+  static const String _usernameRule = 'Use $minUsernameLength or more letters, numbers or underscores (_).';
+
   final TextEditingController linkController = TextEditingController();
   late TextEditingController bioController;
   late TextEditingController usernameController;
@@ -73,6 +72,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     bioController = TextEditingController(text: app_state.prismUser.bio);
     usernameController = TextEditingController(text: app_state.prismUser.username);
     nameController = TextEditingController(text: app_state.prismUser.name);
+    linkController.text = _linkValues[_link.name] ?? '';
     super.initState();
   }
 
@@ -112,65 +112,16 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     return value.downloadUrl!;
   }
 
-  Future<void> showRemoveAlertDialog(BuildContext context, Future<void> Function() remove, String removeWhat) async {
-    if (!mounted) return;
-
-    await showModal(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        final cs = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PrismProfile.dialogBorderRadius)),
-          title: Text(
-            'Remove $removeWhat?',
-            style: TextStyle(
-              fontFamily: PrismFonts.proximaNova,
-              fontWeight: FontWeight.w700,
-              fontSize: PrismProfile.dialogTitleFontSize,
-              color: cs.secondary,
-            ),
-          ),
-          content: Text(
-            "This can't be undone.",
-            style: TextStyle(
-              fontFamily: PrismFonts.proximaNova,
-              fontWeight: FontWeight.normal,
-              fontSize: PrismProfile.dialogBodyFontSize,
-              color: cs.secondary.withValues(alpha: PrismProfile.dialogBodyOpacity),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(fontFamily: PrismFonts.proximaNova, color: cs.secondary),
-              ),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: PrismColors.brandPink,
-                foregroundColor: PrismColors.onPrimary,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PrismProfile.dialogButtonRadius)),
-              ),
-              onPressed: () async {
-                PrismHaptics.tap();
-                Navigator.of(dialogContext, rootNavigator: true).pop();
-                if (!mounted) return;
-                await remove();
-              },
-              child: const Text(
-                'Remove',
-                style: TextStyle(fontFamily: PrismFonts.proximaNova, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-          backgroundColor: Theme.of(dialogContext).primaryColor,
-          actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        );
-      },
+  /// Asks before removing [removeWhat], then runs [remove].
+  Future<void> _confirmRemove(Future<void> Function() remove, String removeWhat) async {
+    final bool ok = await showPrismConfirm(
+      context,
+      title: 'Remove $removeWhat?',
+      message: "This can't be undone.",
+      confirmLabel: 'Remove',
+      destructive: true,
     );
+    if (ok && mounted) await remove();
   }
 
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {
@@ -198,43 +149,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     );
   }
 
-  void _onUsernameChanged(String value) {
-    _usernameDebounce?.cancel();
-    final bool longEnough = value.length >= minUsernameLength;
-    final bool validChars = !value.contains(RegExp(r"(?: |[^\w\s])+"));
-    final bool valid = longEnough && validChars;
-    final int checkId = ++_usernameCheckId;
-    setState(() {
-      enabled = valid;
-      available = null;
-      _usernameError = value.isEmpty || value == app_state.prismUser.username
-          ? null
-          : !longEnough
-          ? 'Use at least $minUsernameLength characters.'
-          : !validChars
-          ? 'Use letters, numbers and underscores only.'
-          : null;
-      isCheckingUsername = valid && value != app_state.prismUser.username;
-      usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
-    });
-    if (!isCheckingUsername) return;
-    _usernameDebounce = Timer(const Duration(milliseconds: 400), () async {
-      bool? isAvailable;
-      try {
-        isAvailable = await _isUsernameAvailable(value);
-      } catch (e) {
-        logger.d(e.toString());
-      }
-      if (!mounted || checkId != _usernameCheckId) return;
-      setState(() {
-        available = isAvailable;
-        isCheckingUsername = false;
-        if (isAvailable == false) _usernameError = 'That username is taken.';
-      });
-      if (isAvailable == null) toasts.error("Couldn't check the username. Try again.");
-    });
-  }
-
   bool get _hasChanges {
     final bool usernameOk = !usernameEdit || (enabled && available == true && !isCheckingUsername);
     return (usernameEdit || pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit) &&
@@ -242,8 +156,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         _invalidLinks.isEmpty;
   }
 
+  bool get _hasUnsavedChanges => pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit || usernameEdit;
+
   Future<void> _saveProfile() async {
-    PrismHaptics.tap();
     if (usernameEdit && available != true) {
       toasts.error('Pick an available username.');
       return;
@@ -291,487 +206,55 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       await CoinsService.instance.maybeAwardProfileCompletion();
       if (mounted) {
         Navigator.pop(context);
-        toasts.success("Profile updated!");
+        toasts.success("Profile updated");
       }
     } catch (e) {
       logger.d(e.toString());
-      toasts.error("Couldn't update your profile. Please try again.");
+      toasts.error('Could not save your profile. Please try again.');
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
-  InputDecoration _fieldDecoration({
-    required String label,
-    Widget? prefixIcon,
-    Widget? suffixIcon,
-    String? hintText,
-    String? errorText,
-  }) {
-    final secondary = Theme.of(context).colorScheme.secondary;
-    final borderColor = secondary.withValues(alpha: PrismFormField.restingBorderOpacity);
-    final borderSide = BorderSide(color: borderColor, width: PrismFormField.borderWidth);
-    final radius = BorderRadius.circular(PrismFormField.borderRadius);
-    return InputDecoration(
-      contentPadding: PrismFormField.contentPadding,
-      border: OutlineInputBorder(borderRadius: radius, borderSide: borderSide),
-      disabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: borderSide),
-      enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: borderSide),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: radius,
-        borderSide: const BorderSide(color: PrismColors.brandPink, width: PrismFormField.borderWidth),
-      ),
-      labelText: label,
-      labelStyle: TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        fontSize: PrismFormField.labelFontSize,
-        color: secondary.withValues(alpha: PrismFormField.labelOpacity),
-      ),
-      hintText: hintText,
-      hintStyle: TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        fontSize: PrismFormField.hintFontSize,
-        color: secondary.withValues(alpha: PrismFormField.hintOpacity),
-      ),
-      prefixIcon: prefixIcon,
-      suffixIcon: suffixIcon,
-      errorText: errorText,
-    );
+  void _onUsernameChanged(String value) {
+    _usernameDebounce?.cancel();
+    final bool longEnough = value.length >= minUsernameLength;
+    final bool validChars = !value.contains(RegExp(r"(?: |[^\w\s])+"));
+    final bool valid = longEnough && validChars;
+    final int checkId = ++_usernameCheckId;
+    setState(() {
+      enabled = valid;
+      available = null;
+      _usernameError = value.isEmpty || value == app_state.prismUser.username
+          ? null
+          : !longEnough
+          ? 'Use at least $minUsernameLength characters.'
+          : !validChars
+          ? 'Use letters, numbers and underscores only.'
+          : null;
+      isCheckingUsername = valid && value != app_state.prismUser.username;
+      usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
+    });
+    if (!isCheckingUsername) return;
+    _usernameDebounce = Timer(const Duration(milliseconds: 400), () async {
+      bool? isAvailable;
+      try {
+        isAvailable = await _isUsernameAvailable(value);
+      } catch (e) {
+        logger.d(e.toString());
+      }
+      // A newer keystroke owns the result now.
+      if (!mounted || checkId != _usernameCheckId) return;
+      setState(() {
+        available = isAvailable;
+        isCheckingUsername = false;
+        if (isAvailable == false) _usernameError = 'That username is taken.';
+      });
+      if (isAvailable == null) toasts.error("Couldn't check the username. Try again.");
+    });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final secondary = theme.colorScheme.secondary;
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Percentage-based padding keeps avatar positioning consistent across screen widths.
-    final hPad = screenWidth * 0.06;
-
-    return Scaffold(
-      backgroundColor: theme.primaryColor,
-      appBar: AppBar(
-        backgroundColor: theme.primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          tooltip: 'Close',
-          icon: Icon(JamIcons.close, color: secondary),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Edit Profile', style: PrismTextStyles.panelTitle(context)),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                _buildCoverArea(theme, screenWidth),
-                Positioned(
-                  left: hPad,
-                  bottom: -PrismProfile.avatarOverlap,
-                  child: _buildAvatar(theme, PrismProfile.avatarSize),
-                ),
-              ],
-            ),
-            const SizedBox(height: PrismProfile.avatarOverlap + 16),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: hPad),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildNameField(secondary),
-                  const SizedBox(height: PrismProfile.fieldGap),
-                  _buildUsernameField(secondary),
-                  const SizedBox(height: PrismProfile.fieldGap),
-                  _buildBioField(secondary),
-                  const SizedBox(height: PrismProfile.fieldGap),
-                  _buildLinkRow(theme, secondary),
-                  const SizedBox(height: PrismProfile.preSaveGap),
-                  _buildSaveButton(secondary),
-                  const SizedBox(height: PrismProfile.postSaveGap),
-                  Center(child: _buildUsernameHint(screenWidth)),
-                  const SizedBox(height: PrismProfile.bottomPadding),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCoverArea(ThemeData theme, double screenWidth) {
-    final coverHeight = screenWidth * 508 / 1234;
-    return SizedBox(
-      height: coverHeight,
-      width: screenWidth,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Semantics(
-            button: true,
-            label: 'Change cover photo',
-            child: GestureDetector(
-              onTap: () => _pickImage((file) {
-                _cover = file;
-                coverEdit = true;
-              }),
-              child: (_cover == null)
-                  ? (app_state.prismUser.coverPhoto != null &&
-                            Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
-                        ? CachedNetworkImage(
-                            imageUrl: app_state.prismUser.coverPhoto!,
-                            fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => const SizedBox.shrink(),
-                          )
-                        : SvgPicture.string(
-                            defaultHeader
-                                .replaceAll("#181818", "#${theme.primaryColor.rgbHex}")
-                                .replaceAll("#E77597", "#${theme.colorScheme.error.rgbHex}"),
-                            fit: BoxFit.cover,
-                          )
-                  : Image.file(_cover!, fit: BoxFit.cover),
-            ),
-          ),
-          // "Edit cover" scrim hint — always legible over any cover image.
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: IgnorePointer(
-              child: Container(
-                height: PrismProfile.coverScrimHeight,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.5)],
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      JamIcons.camera,
-                      color: PrismColors.onPrimary.withValues(alpha: 0.85),
-                      size: PrismProfile.coverEditIconSize,
-                    ),
-                    const SizedBox(width: PrismProfile.coverEditIconGap),
-                    Text(
-                      'Edit cover',
-                      style: PrismTextStyles.photoOverlayLabel.copyWith(
-                        color: PrismColors.onPrimary.withValues(alpha: 0.85),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Remove cover photo button.
-          Positioned(
-            top: PrismProfile.removeChipPositionOffset,
-            right: PrismProfile.removeChipPositionOffset,
-            child: _iconChip(
-              icon: JamIcons.close,
-              label: 'Remove cover photo',
-              onTap: () => showRemoveAlertDialog(context, () async {
-                setState(() => _cover = null);
-                app_state.prismUser.coverPhoto = null;
-                app_state.persistPrismUser();
-                await _updateCurrentUser(<String, dynamic>{"coverPhoto": null}, 'profile.edit.removeCoverPhoto');
-              }, "cover photo"),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(ThemeData theme, double size) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Semantics(
-          button: true,
-          label: 'Change profile photo',
-          child: GestureDetector(
-            onTap: () => _pickImage((file) {
-              _pfp = file;
-              pfpEdit = true;
-            }),
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: theme.primaryColor, width: PrismProfile.avatarBorderWidth),
-              ),
-              child: ClipOval(
-                child: (_pfp == null)
-                    ? (Uri.tryParse(app_state.prismUser.profilePhoto)?.hasAuthority == true)
-                          ? CachedNetworkImage(
-                              imageUrl: app_state.prismUser.profilePhoto,
-                              fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => ColoredBox(
-                                color: PrismColors.brandPink.withValues(alpha: 0.12),
-                                child: Icon(
-                                  Icons.person,
-                                  size: size * 0.5,
-                                  color: PrismColors.brandPink.withValues(alpha: 0.5),
-                                ),
-                              ),
-                            )
-                          : ColoredBox(
-                              color: PrismColors.brandPink.withValues(alpha: 0.12),
-                              child: Icon(
-                                Icons.person,
-                                size: size * 0.5,
-                                color: PrismColors.brandPink.withValues(alpha: 0.5),
-                              ),
-                            )
-                    : Image.file(_pfp!, fit: BoxFit.cover),
-              ),
-            ),
-          ),
-        ),
-        // Pink camera badge — brand-locked so it never goes cyan/blue.
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: ExcludeSemantics(
-            child: GestureDetector(
-              onTap: () => _pickImage((file) {
-                _pfp = file;
-                pfpEdit = true;
-              }),
-              child: Container(
-                width: PrismProfile.cameraChipSize,
-                height: PrismProfile.cameraChipSize,
-                decoration: BoxDecoration(
-                  color: PrismColors.brandPink,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: theme.primaryColor, width: PrismProfile.cameraChipBorderWidth),
-                ),
-                child: const Icon(JamIcons.camera, size: PrismProfile.cameraChipIconSize, color: PrismColors.onPrimary),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNameField(Color secondary) {
-    return TextField(
-      cursorColor: PrismColors.brandPink,
-      style: PrismTextStyles.fieldInput(context),
-      controller: nameController,
-      decoration: _fieldDecoration(label: 'Name'),
-      onChanged: (value) {
-        setState(() {
-          nameEdit = value.isNotEmpty && value != app_state.prismUser.name;
-        });
-      },
-    );
-  }
-
-  Widget _buildUsernameField(Color secondary) {
-    return TextField(
-      cursorColor: PrismColors.brandPink,
-      style: PrismTextStyles.fieldInput(context),
-      controller: usernameController,
-      decoration: _fieldDecoration(
-        label: 'Username',
-        errorText: _usernameError,
-        prefixIcon: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-          child: Text(
-            '@',
-            style: TextStyle(
-              fontFamily: PrismFonts.proximaNova,
-              fontSize: PrismFormField.inputFontSize,
-              fontWeight: FontWeight.w600,
-              color: secondary.withValues(alpha: 0.45),
-            ),
-          ),
-        ),
-        suffixIcon: SizedBox(
-          width: PrismFormField.availabilityIndicatorSize,
-          height: PrismFormField.availabilityIndicatorSize,
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
-              child: isCheckingUsername
-                  ? const SizedBox(
-                      key: ValueKey('loading'),
-                      width: PrismFormField.availabilitySpinnerSize,
-                      height: PrismFormField.availabilitySpinnerSize,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: PrismColors.brandPink),
-                    )
-                  : available == null
-                  ? const SizedBox.shrink(key: ValueKey('none'))
-                  : Icon(
-                      available! ? JamIcons.check : JamIcons.close,
-                      key: ValueKey(available),
-                      // Soft semantic green for available; theme error for taken.
-                      color: available! ? Colors.green.shade400 : Colors.red.shade400,
-                      size: PrismFormField.availabilityIconSize,
-                    ),
-            ),
-          ),
-        ),
-      ),
-      onChanged: _onUsernameChanged,
-    );
-  }
-
-  Widget _buildBioField(Color secondary) {
-    return Stack(
-      children: [
-        TextField(
-          cursorColor: PrismColors.brandPink,
-          style: PrismTextStyles.fieldInput(context),
-          controller: bioController,
-          maxLength: 150,
-          maxLines: 2,
-          decoration: _fieldDecoration(label: 'Bio', hintText: 'Tell people about yourself…').copyWith(
-            counterStyle: PrismTextStyles.fieldCaption(context).copyWith(fontSize: 10),
-            contentPadding: PrismFormField.contentPadding.add(const EdgeInsets.only(right: 36)),
-          ),
-          onChanged: (value) {
-            setState(() {
-              bioEdit = value.isNotEmpty && value != app_state.prismUser.bio;
-            });
-          },
-        ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: IconButton(
-            tooltip: 'Remove bio',
-            onPressed: () => showRemoveAlertDialog(context, () async {
-              bioController.text = '';
-              app_state.prismUser.bio = '';
-              app_state.persistPrismUser();
-              await _updateCurrentUser(<String, dynamic>{"bio": ""}, 'profile.edit.clearBio');
-            }, "bio"),
-            icon: Icon(JamIcons.close, color: secondary.withValues(alpha: PrismFormField.iconOpacity), size: 20),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLinkRow(ThemeData theme, Color secondary) {
-    final borderColor = secondary.withValues(alpha: PrismFormField.restingBorderOpacity);
-    return Row(
-      children: [
-        Container(
-          height: PrismProfile.linkSelectorHeight,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
-            border: Border.all(color: borderColor, width: PrismFormField.borderWidth),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: PrismProfile.linkSelectorHorizontalPadding),
-          child: Semantics(
-            label: 'Link type',
-            child: DropdownButton<ProfileLinkKind>(
-              menuWidth: 200,
-              items: profileLinkKinds.map((link) {
-                return DropdownMenuItem(
-                  value: link,
-                  child: Row(
-                    children: [
-                      Icon(link.icon, size: PrismProfile.linkDropdownIconSize, color: secondary),
-                      const SizedBox(width: PrismProfile.linkDropdownTextGap),
-                      Text(
-                        link.name.inCaps,
-                        style: TextStyle(
-                          fontFamily: PrismFonts.proximaNova,
-                          fontSize: PrismProfile.linkDropdownFontSize,
-                          color: secondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              underline: const SizedBox.shrink(),
-              onChanged: (value) {
-                setState(() {
-                  _invalidLinks.remove(_link.name);
-                  _link = value!;
-                });
-                linkController.text = _linkValues[_link.name] ?? '';
-              },
-              icon: const SizedBox.shrink(),
-              value: _link,
-              dropdownColor: theme.primaryColor,
-              selectedItemBuilder: (BuildContext context) {
-                return profileLinkKinds.map<Widget>((link) {
-                  return Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(link.icon, size: PrismProfile.linkSelectorIconSize, color: secondary),
-                        const SizedBox(width: 4),
-                        Icon(
-                          JamIcons.chevron_down,
-                          size: PrismProfile.linkSelectorCaretSize,
-                          color: secondary.withValues(alpha: 0.5),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList();
-              },
-            ),
-          ),
-        ),
-        const SizedBox(width: PrismProfile.linkSelectorGap),
-        Expanded(
-          child: TextField(
-            cursorColor: PrismColors.brandPink,
-            style: PrismTextStyles.fieldInputSmall(context),
-            controller: linkController,
-            decoration: _fieldDecoration(
-              label: _link.name.inCaps,
-              hintText: _link.placeholder,
-              errorText: _invalidLinks.contains(_link.name) ? _linkErrorText(_link) : null,
-              suffixIcon: IconButton(
-                tooltip: 'Remove link',
-                onPressed: () => showRemoveAlertDialog(context, () async {
-                  linkController.text = '';
-                  final links = app_state.prismUser.links;
-                  links.remove(_link.name);
-                  app_state.prismUser.links = links;
-                  app_state.persistPrismUser();
-                  await _updateCurrentUser(<String, dynamic>{
-                    "links": app_state.prismUser.links,
-                  }, 'profile.edit.removeLink');
-                }, '${_link.name.inCaps} link'),
-                icon: Icon(JamIcons.close, color: secondary.withValues(alpha: PrismFormField.iconOpacity), size: 20),
-              ),
-            ),
-            onChanged: (value) {
-              final String? clean = value.trim().isEmpty ? '' : sanitizeProfileLink(_link, value);
-              if (clean == null) {
-                _invalidLinks.add(_link.name);
-              } else {
-                _invalidLinks.remove(_link.name);
-                _linkValues[_link.name] = clean;
-              }
-              final changed = _linkValues.values.any((v) => v.isNotEmpty);
-              setState(() => linkEdit = changed);
-            },
-          ),
-        ),
-      ],
-    );
-  }
+  String? get _linkError => _invalidLinks.contains(_link.name) ? _linkErrorText(_link) : null;
 
   String _linkErrorText(ProfileLinkKind kind) => switch (kind.name) {
     'email' => 'Enter a valid email address.',
@@ -779,85 +262,196 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     _ => 'Enter a valid ${kind.name} link.',
   };
 
-  Widget _buildSaveButton(Color secondary) {
-    final isActive = _hasChanges;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutQuart,
-      height: PrismProfile.saveButtonHeight,
-      decoration: BoxDecoration(
-        // Brand pink tint when active — consistent with all other primary actions.
-        color: isActive ? PrismColors.brandPink.withValues(alpha: 0.12) : Colors.transparent,
-        border: Border.all(
-          color: isActive ? PrismColors.brandPink : secondary.withValues(alpha: 0.18),
-          width: PrismFormField.borderWidth,
-        ),
-        borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
-      ),
-      child: Semantics(
-        button: true,
-        enabled: isActive && !isLoading,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
-            onTap: isActive && !isLoading ? _saveProfile : null,
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: isLoading
-                    ? const SizedBox(
-                        key: ValueKey('loading'),
-                        width: PrismProfile.savingIndicatorSize,
-                        height: PrismProfile.savingIndicatorSize,
-                        child: CircularProgressIndicator(
-                          strokeWidth: PrismProfile.savingIndicatorStrokeWidth,
-                          color: PrismColors.brandPink,
-                        ),
-                      )
-                    : Text(
-                        'Update',
-                        key: const ValueKey('text'),
-                        style: TextStyle(
-                          fontFamily: PrismFonts.proximaNova,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: isActive ? secondary : secondary.withValues(alpha: 0.28),
-                        ),
-                      ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+  Future<void> _pickLinkKind() async {
+    final ProfileLinkKind? picked = await showLinkKindSheet(context, selected: _link, values: _linkValues);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _invalidLinks.remove(_link.name);
+      _link = picked;
+    });
+    linkController.text = _linkValues[_link.name] ?? '';
   }
 
-  Widget _buildUsernameHint(double screenWidth) {
+  void _onLinkChanged(String value) {
+    final String? clean = value.trim().isEmpty ? '' : sanitizeProfileLink(_link, value);
+    if (clean == null) {
+      _invalidLinks.add(_link.name);
+    } else {
+      _invalidLinks.remove(_link.name);
+      _linkValues[_link.name] = clean;
+    }
+    final changed = _linkValues.values.any((v) => v.isNotEmpty);
+    setState(() => linkEdit = changed);
+  }
+
+  Future<void> _confirmDiscard() async {
+    final bool discard = await showPrismConfirm(
+      context,
+      title: 'Discard changes?',
+      message: 'Your edits have not been saved.',
+      confirmLabel: 'Discard',
+      destructive: true,
+    );
+    if (discard && mounted) Navigator.pop(context);
+  }
+
+  Widget _availabilityIndicator(ColorScheme cs) {
     return SizedBox(
-      width: screenWidth * 0.75,
-      child: Text(
-        "Usernames must be 8+ characters with no symbols except underscore (_).",
-        textAlign: TextAlign.center,
-        style: PrismTextStyles.fieldCaption(context),
+      width: 48,
+      height: 48,
+      child: Center(
+        child: AnimatedSwitcher(
+          duration: context.motion(PrismDurations.fast),
+          child: isCheckingUsername
+              ? SizedBox.square(
+                  key: const ValueKey('checking'),
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: cs.onSurfaceVariant),
+                )
+              : available == null
+              ? const SizedBox.shrink(key: ValueKey('none'))
+              : Icon(
+                  available! ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                  key: ValueKey(available),
+                  color: available! ? cs.primary : cs.error,
+                  size: 22,
+                  semanticLabel: available! ? 'Username available' : 'Username taken',
+                ),
+        ),
       ),
     );
   }
 
-  Widget _iconChip({required IconData icon, required String label, required VoidCallback onTap}) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: PrismProfile.removeChipSize,
-          height: PrismProfile.removeChipSize,
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: PrismProfile.removeChipScrimAlpha),
-            shape: BoxShape.circle,
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    const double fieldGap = PrismSpace.md;
+    return PopScope(
+      canPop: !_hasUnsavedChanges || isLoading,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (!didPop) _confirmDiscard();
+      },
+      child: PrismPage(
+        title: 'Edit profile',
+        bottomBar: PrismButton(
+          label: 'Save changes',
+          expand: true,
+          loading: isLoading,
+          onPressed: _hasChanges ? _saveProfile : null,
+        ),
+        body: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.only(top: PrismSpace.xs, bottom: PrismSpace.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              EditProfileHeader(
+                coverUrl: app_state.prismUser.coverPhoto,
+                coverFile: _cover,
+                avatarUrl: app_state.prismUser.profilePhoto,
+                avatarFile: _pfp,
+                name: nameController.text,
+                onChangeCover: () => _pickImage((file) {
+                  _cover = file;
+                  coverEdit = true;
+                }),
+                onRemoveCover: () => _confirmRemove(() async {
+                  setState(() {
+                    _cover = null;
+                    coverEdit = false;
+                  });
+                  app_state.prismUser.coverPhoto = null;
+                  app_state.persistPrismUser();
+                  await _updateCurrentUser(<String, dynamic>{"coverPhoto": null}, 'profile.edit.removeCoverPhoto');
+                }, 'cover photo'),
+                onChangePhoto: () => _pickImage((file) {
+                  _pfp = file;
+                  pfpEdit = true;
+                }),
+              ),
+              const SizedBox(height: fieldGap),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    PrismTextField(
+                      label: 'Name',
+                      controller: nameController,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      onChanged: (value) => setState(() {
+                        nameEdit = value.isNotEmpty && value != app_state.prismUser.name;
+                      }),
+                    ),
+                    const SizedBox(height: fieldGap),
+                    PrismTextField(
+                      label: 'Username',
+                      controller: usernameController,
+                      prefixIcon: Icons.alternate_email_rounded,
+                      helper: available == true ? 'Username is available.' : _usernameRule,
+                      error: _usernameError,
+                      suffix: _availabilityIndicator(cs),
+                      autocorrect: false,
+                      textInputAction: TextInputAction.next,
+                      onChanged: _onUsernameChanged,
+                    ),
+                    const SizedBox(height: fieldGap),
+                    PrismTextField(
+                      label: 'Bio',
+                      hint: 'Tell people about yourself…',
+                      controller: bioController,
+                      maxLength: 150,
+                      minLines: 3,
+                      maxLines: 3,
+                      textCapitalization: TextCapitalization.sentences,
+                      suffix: bioController.text.isEmpty
+                          ? null
+                          : PrismIconButton(
+                              icon: Icons.close_rounded,
+                              tooltip: 'Remove bio',
+                              iconSize: 20,
+                              onPressed: () => _confirmRemove(() async {
+                                setState(() {
+                                  bioController.text = '';
+                                  bioEdit = false;
+                                });
+                                app_state.prismUser.bio = '';
+                                app_state.persistPrismUser();
+                                await _updateCurrentUser(<String, dynamic>{"bio": ""}, 'profile.edit.clearBio');
+                              }, 'bio'),
+                            ),
+                      onChanged: (value) => setState(() {
+                        bioEdit = value.isNotEmpty && value != app_state.prismUser.bio;
+                      }),
+                    ),
+                    const SizedBox(height: fieldGap),
+                    EditProfileLinkField(
+                      kind: _link,
+                      controller: linkController,
+                      error: _linkError,
+                      onPickKind: _pickLinkKind,
+                      onChanged: _onLinkChanged,
+                      onRemove: () => _confirmRemove(() async {
+                        setState(() {
+                          linkController.text = '';
+                          _linkValues[_link.name] = '';
+                          _invalidLinks.remove(_link.name);
+                        });
+                        final links = app_state.prismUser.links;
+                        links.remove(_link.name);
+                        app_state.prismUser.links = links;
+                        app_state.persistPrismUser();
+                        await _updateCurrentUser(<String, dynamic>{
+                          "links": app_state.prismUser.links,
+                        }, 'profile.edit.removeLink');
+                      }, '${_link.name.inCaps} link'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          child: Icon(icon, color: PrismColors.onPrimary, size: PrismProfile.removeChipIconSize),
         ),
       ),
     );

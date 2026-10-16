@@ -4,133 +4,131 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/widgets/home/premium_corner_banner.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
-import 'package:Prism/global/svg_assets.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
+/// The wallpapers of a profile, as a sliver: empty and error states, then the shared grid with a See more cell.
+/// [ownProfile] changes the empty state into an invitation to upload.
 class UserProfileGrid extends StatelessWidget {
-  const UserProfileGrid({super.key});
+  const UserProfileGrid({super.key, this.ownProfile = false});
 
-  Future<void> _refresh(PublicProfileBloc bloc) async {
-    bloc.add(const PublicProfileEvent.refreshRequested());
-    await bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
-  }
+  final bool ownProfile;
 
   @override
   Widget build(BuildContext context) {
     final PublicProfileBloc bloc = context.read<PublicProfileBloc>();
-    return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
-      onRefresh: () {
-        PrismHaptics.impact();
-        return _refresh(bloc);
-      },
-      child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
-        builder: (context, state) {
-          if (state.status == LoadStatus.initial) {
-            return const LoadingCards();
-          }
-          final List<PublicProfileWallEntity> walls = state.walls;
-          if (walls.isEmpty) {
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: <Widget>[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  child: SvgPicture.string(themedIllustration(context, dark: postsDark, light: postsLight)),
-                ),
-                const SizedBox(height: 12),
-              ],
-            );
-          }
-          final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
-          final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
-          return PulsePlaceholder(
-            builder: (context, _) => GridView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: walls.length + (state.hasMoreWalls ? 1 : 0),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, childAspectRatio: 0.5),
-              itemBuilder: (context, index) {
-                if (index == walls.length && state.hasMoreWalls) {
-                  return SeeMoreButton(
-                    seeMoreLoader: state.isFetchingMoreWalls,
-                    func: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
-                  );
-                }
-                final tile = _PhotographerWallTile(
-                  wall: walls[index],
-                  heroTag: prismHeroTag(bloc, index, walls[index].id),
-                  decodeHeight: decodeHeight,
-                );
-                return KeyedSubtree(
-                  key: ValueKey<String>(walls[index].id),
-                  child: app_state.prismUser.premium
-                      ? tile
-                      : PremiumCornerBanner(
-                          isPremiumWall: isPremiumWall(
-                            app_state.premiumCollections,
-                            walls[index].collections ?? const <String>[],
-                          ),
-                          child: tile,
-                        ),
-                );
-              },
+    return BlocBuilder<PublicProfileBloc, PublicProfileState>(
+      builder: (context, state) {
+        if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.walls.isEmpty)) {
+          return const SliverToBoxAdapter(child: LoadingCards());
+        }
+        final List<PublicProfileWallEntity> walls = state.walls;
+        final bool failed = state.status == LoadStatus.failure;
+        final Widget retryState = GlintState(
+          kind: GlintStateKind.error,
+          title: 'Could not load wallpapers',
+          body: 'Check your connection and try again.',
+          actionLabel: 'Try again',
+          onAction: () => bloc.add(const PublicProfileEvent.refreshRequested()),
+        );
+        if (walls.isEmpty) {
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
+              child: failed
+                  ? retryState
+                  : GlintState(
+                      kind: GlintStateKind.empty,
+                      title: 'No wallpapers yet',
+                      body: ownProfile ? 'Upload your first wallpaper to start your gallery.' : null,
+                    ),
             ),
           );
-        },
-      ),
+        }
+        final bool viewerPremium = app_state.prismUser.premium;
+        final int decodeHeight = gridTileDecodeHeight(
+          context,
+          crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
+        );
+        return SliverMainAxisGroup(
+          slivers: <Widget>[
+            if (failed)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: PrismSpace.md),
+                  child: retryState,
+                ),
+              ),
+            SliverPadding(
+              padding: PrismWallGrid.padding,
+              sliver: SliverGrid.builder(
+                gridDelegate: PrismWallGrid.delegate(context),
+                itemCount: walls.length + (state.hasMoreWalls ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == walls.length) {
+                    return SeeMoreButton(
+                      seeMoreLoader: state.isFetchingMoreWalls,
+                      func: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+                    );
+                  }
+                  final PublicProfileWallEntity wall = walls[index];
+                  final String heroTag = prismHeroTag(bloc, index, wall.id);
+                  final String thumb = normalizeWallpaperThumbnailUrl(wall.wallpaperThumb?.trim() ?? '');
+                  final bool premiumWall = isPremiumWall(
+                    app_state.premiumCollections,
+                    wall.collections ?? const <String>[],
+                  );
+                  return PrismWallTile(
+                    key: ValueKey<String>(wall.id),
+                    memCacheHeight: decodeHeight,
+                    url: thumb.startsWith('http://') || thumb.startsWith('https://') ? thumb : '',
+                    heroTag: heroTag,
+                    semanticLabel: wallpaperSemanticLabel(wall.by),
+                    overlay: !viewerPremium && premiumWall ? const _PremiumMark() : null,
+                    onTap: () {
+                      PrismHaptics.tap();
+                      context.router.push(
+                        WallpaperDetailRoute(
+                          entity: wall.toFeedItem(),
+                          analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
+                          heroTag: heroTag,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _PhotographerWallTile extends StatelessWidget {
-  const _PhotographerWallTile({required this.wall, required this.heroTag, required this.decodeHeight});
-
-  final PublicProfileWallEntity wall;
-  final String heroTag;
-  final int decodeHeight;
+/// A small star on a scrim, top end of a tile, for wallpapers that need Pro.
+class _PremiumMark extends StatelessWidget {
+  const _PremiumMark();
 
   @override
   Widget build(BuildContext context) {
-    final String imageUrl = normalizeWallpaperThumbnailUrl(wall.wallpaperThumb?.trim() ?? '');
-    final bool hasValidImageUrl = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
-    return Semantics(
-      button: true,
-      label: wallpaperSemanticLabel(wall.by),
-      child: Stack(
-        children: [
-          PrismImageTile(url: hasValidImageUrl ? imageUrl : '', memCacheHeight: decodeHeight, heroTag: heroTag),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-              onTap: () {
-                PrismHaptics.tap();
-                context.router.push(
-                  WallpaperDetailRoute(
-                    entity: wall.toFeedItem(),
-                    analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
-                    heroTag: heroTag,
-                  ),
-                );
-              },
-            ),
+    return Align(
+      alignment: Alignment.topRight,
+      child: Padding(
+        padding: const EdgeInsets.all(PrismSpace.xs),
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.38), shape: BoxShape.circle),
+          child: const Padding(
+            padding: EdgeInsets.all(5),
+            child: Icon(Icons.star_rounded, size: 16, color: Colors.white, semanticLabel: 'Pro wallpaper'),
           ),
-        ],
+        ),
       ),
     );
   }

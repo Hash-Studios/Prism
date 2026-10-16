@@ -19,7 +19,9 @@ class EditButton extends StatefulWidget {
   /// and [url] is not fetched. If it throws, the user is told and the editor does not open.
   final Future<String> Function()? prepareSource;
 
-  const EditButton({required this.url, this.prepareSource, super.key});
+  /// Shows a caption under the round button.
+  final bool labelled;
+  const EditButton({required this.url, this.prepareSource, this.labelled = false, super.key});
 
   @override
   _EditButtonState createState() => _EditButtonState();
@@ -38,13 +40,14 @@ class _EditButtonState extends State<EditButton> {
   Widget build(BuildContext context) {
     return CircularMenuButton(
       label: 'Edit',
+      caption: widget.labelled ? 'Edit' : null,
       onTap: () {
         if (!isLoading) {
           onEdit(widget.url);
         }
       },
       isLoading: isLoading,
-      child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary, size: 20),
+      child: const Icon(JamIcons.pencil),
     );
   }
 

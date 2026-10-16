@@ -23,7 +23,7 @@ void main() {
         home: Scaffold(
           body: BlocProvider<PublicProfileBloc>.value(
             value: bloc,
-            child: const UserProfileLoader(email: 'a@x.com'),
+            child: const CustomScrollView(slivers: <Widget>[UserProfileLoader(email: 'a@x.com')]),
           ),
         ),
       ),

@@ -52,6 +52,10 @@ void main() {
       messenger.setMockMethodCallHandler(toastChannel, null);
     });
 
+    // The redesigned sign-in sheet is taller than the default 800x600 test surface.
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -62,9 +66,11 @@ void main() {
       ),
     );
     await tester.tap(find.text('Open sign-in'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Google'));
-    await tester.pumpAndSettle();
+    // The sign-in sheet mascot loops an animation, so pump a fixed time instead of settling.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text('Continue with Google'));
+    await tester.pump(const Duration(seconds: 1));
 
     expect(toastCalls, isEmpty);
     expect(hapticTypes, <Object?>['HapticFeedbackType.lightImpact']);

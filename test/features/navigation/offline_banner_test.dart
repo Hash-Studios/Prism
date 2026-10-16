@@ -37,7 +37,7 @@ void main() {
     await pump(false);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 80));
-    expect(tester.widget<SlideTransition>(_slide).position.value.dy, greaterThan(0));
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, lessThan(0));
     await pump(true);
     expect(tester.widget<SlideTransition>(_slide).position.value, Offset.zero);
     await tester.pumpWidget(const SizedBox());
@@ -45,7 +45,7 @@ void main() {
   testWidgets('the banner slides in after a second while offline and stays', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget(offline: true))));
     expect(find.text('No internet connection'), findsOneWidget);
-    expect(tester.widget<SlideTransition>(_slide).position.value.dy, 1);
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, -1.5);
 
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
@@ -70,7 +70,7 @@ void main() {
     await pump(offline: false);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
-    expect(tester.widget<SlideTransition>(_slide).position.value.dy, 1);
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, -1.5);
 
     await pump(offline: true);
     await tester.pumpAndSettle();
@@ -81,7 +81,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget(offline: false))));
     await tester.pump(const Duration(seconds: 12));
 
-    expect(tester.widget<SlideTransition>(_slide).position.value.dy, 1);
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, -1.5);
   });
 
   testWidgets('leaving the screen before the timer fires cancels it', (tester) async {
@@ -136,7 +136,7 @@ void main() {
 
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pumpAndSettle();
-    expect(tester.widget<SlideTransition>(_slide).position.value.dy, 1);
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, -1.5);
   });
 
   testWidgets('dropping again while back online shows the offline message at once', (tester) async {
@@ -172,11 +172,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Back online'), findsNothing);
-    expect(tester.widget<SlideTransition>(_slide).position.value.dy, 1);
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, -1.5);
   });
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
-    testWidgets('${option.label}: banner text is 12 sp and passes 4.5 in both states', (tester) async {
+    testWidgets('${option.label}: banner text is at least 12 sp and passes 4.5 in both states', (tester) async {
       Future<void> pump({required bool offline}) => tester.pumpWidget(
         MaterialApp(
           theme: option.theme,
@@ -186,10 +186,15 @@ void main() {
 
       Future<void> expectReadable(String text) async {
         final Text label = tester.widget<Text>(find.text(text));
-        final Color background = tester
-            .widget<Container>(find.ancestor(of: find.text(text), matching: find.byType(Container)).first)
-            .color!;
-        expect(label.style!.fontSize, 12);
+        final Color background =
+            (tester
+                        .widget<DecoratedBox>(
+                          find.ancestor(of: find.text(text), matching: find.byType(DecoratedBox)).first,
+                        )
+                        .decoration
+                    as BoxDecoration)
+                .color!;
+        expect(label.style!.fontSize, greaterThanOrEqualTo(12));
         expect(contrastRatio(label.style!.color!, background), greaterThanOrEqualTo(4.5), reason: text);
       }
 

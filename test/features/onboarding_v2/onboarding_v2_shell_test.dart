@@ -119,6 +119,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
   }
 
+  /// Ticks the terms box. The check icon sits at the start of the row, away from the two links.
+  Future<void> tickTerms(WidgetTester tester) async {
+    await tester.tapAt(tester.getTopLeft(find.byIcon(Icons.check_rounded)));
+    await tester.pump();
+  }
+
   /// Lets the toast timer run out so no timer outlives the test.
   Future<void> settleToasts(WidgetTester tester) => tester.pump(const Duration(seconds: 2));
 
@@ -130,7 +136,11 @@ void main() {
         find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText().startsWith('By continuing')),
       );
       expect(row.text.toPlainText(), 'By continuing you agree to the Terms and Privacy policy');
-      final spans = (row.text as TextSpan).children!.whereType<TextSpan>().toList();
+      final spans = <TextSpan>[];
+      row.text.visitChildren((span) {
+        if (span is TextSpan) spans.add(span);
+        return true;
+      });
       (spans.singleWhere((s) => s.text == 'Terms').recognizer! as TapGestureRecognizer).onTap!();
       (spans.singleWhere((s) => s.text == 'Privacy policy').recognizer! as TapGestureRecognizer).onTap!();
       await tester.pump();
@@ -141,14 +151,12 @@ void main() {
     testWidgets('ticking the checkbox records terms_accepted once', (tester) async {
       await pumpShell(tester, OnboardingV2State.initial());
 
-      await tester.tap(find.byType(Checkbox));
-      await tester.pump();
+      await tickTerms(tester);
 
       expect(analytics.events.map((e) => e.eventName), <String>['terms_accepted']);
       expect(settings.get<bool>(OnboardingV2Config.termsAcceptedKey, defaultValue: false), isTrue);
 
-      await tester.tap(find.byType(Checkbox));
-      await tester.pump();
+      await tickTerms(tester);
 
       expect(analytics.events.map((e) => e.eventName), <String>['terms_accepted']);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
@@ -165,8 +173,7 @@ void main() {
 
     testWidgets('browsing without an account records the tap and starts the guest path', (tester) async {
       await pumpShell(tester, OnboardingV2State.initial());
-      await tester.tap(find.byType(Checkbox));
-      await tester.pump();
+      await tickTerms(tester);
 
       await tester.tap(find.text('Browse without an account'));
       await tester.pump();

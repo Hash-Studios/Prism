@@ -1,12 +1,9 @@
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -65,26 +62,26 @@ class PagedChipSliver extends StatelessWidget {
         }
         return SliverMainAxisGroup(
           slivers: <Widget>[
-            SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                childAspectRatio: PrismFeedLayout.gridTileAspectRatio,
+            SliverPadding(
+              padding: PrismWallGrid.padding,
+              sliver: SliverGrid(
+                gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final FeedItemEntity item = state.items[index];
+                  return KeyedSubtree(
+                    key: ValueKey<String>(item.id),
+                    child: FeedWallTile(
+                      item: item,
+                      index: index,
+                      crossAxisCount: crossAxisCount,
+                      memCacheHeight: tileMemCacheHeight,
+                    ),
+                  );
+                }, childCount: state.items.length),
               ),
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final FeedItemEntity item = state.items[index];
-                return KeyedSubtree(
-                  key: ValueKey<String>(item.id),
-                  child: WallpaperTile(
-                    item: item,
-                    index: index,
-                    crossAxisCount: crossAxisCount,
-                    memCacheHeight: tileMemCacheHeight,
-                    quickActions: true,
-                  ),
-                );
-              }, childCount: state.items.length),
             ),
             SliverToBoxAdapter(child: _footer(state)),
+            const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
           ],
         );
       },
@@ -94,20 +91,21 @@ class PagedChipSliver extends StatelessWidget {
   Widget _footer(PagedFeedState state) {
     if (state.actionStatus == ActionStatus.failure && !state.isFetchingMore) {
       return Padding(
-        padding: PrismFeedLayout.contentStatePadding,
+        padding: const EdgeInsets.all(PrismSpace.md),
         child: Center(
-          child: TextButton(
+          child: PrismButton(
+            label: "Couldn't load more. Try again",
+            variant: PrismButtonVariant.ghost,
+            size: PrismButtonSize.compact,
             onPressed: () {
-              PrismHaptics.tap();
               bloc.add(const PagedFeedEvent.fetchMoreRequested());
             },
-            child: const Text("Couldn't load more. Try again"),
           ),
         ),
       );
     }
     if (state.isFetchingMore) {
-      return const FeedLoadingMore();
+      return FeedLoadingMore(columns: crossAxisCount);
     }
     return const SizedBox(height: PrismFeedLayout.endOfPageSpacerHeight);
   }

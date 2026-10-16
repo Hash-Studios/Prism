@@ -1312,25 +1312,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               tooltip: 'Clock preview',
               onPressed: () {
                 _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
-                Navigator.push(
+                pushClockPreview(
                   context,
-                  PageRouteBuilder(
-                    transitionDuration: context.motion(const Duration(milliseconds: 200)),
-                    reverseTransitionDuration: context.motion(const Duration(milliseconds: 200)),
-                    pageBuilder: (context, animation, secondaryAnimation) {
-                      return FadeTransition(
-                        opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
-                        child: ClockOverlay(
-                          link: widget.localFile?.path ?? entity.fullUrl,
-                          file: widget.localFile != null,
-                          thumbnailUrl: entity.thumbnailUrl,
-                          tint: state.tint,
-                        ),
-                      );
-                    },
-                    fullscreenDialog: true,
-                    opaque: false,
-                  ),
+                  link: widget.localFile?.path ?? entity.fullUrl,
+                  file: widget.localFile != null,
+                  thumbnailUrl: entity.thumbnailUrl,
+                  tint: state.tint,
                 );
               },
               color: _chromeColor(context, paletteLoading, state),

@@ -260,7 +260,7 @@ void main() {
       expect(completed, isFalse);
       expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
 
-      unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+      unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(milliseconds: 300));
       expect(completed, isFalse);

@@ -16,7 +16,6 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
-import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,36 +100,6 @@ AiGenerationRecord _record({
 const AiSubmissionMetadata _emptyMetadata = (title: '', description: '', category: '', tags: <String>[]);
 
 void main() {
-  testWidgets('the starting-point chips use the app chip size and label', (tester) async {
-    tester.view.physicalSize = const Size(400, 2200);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
-    addTearDown(getIt.reset);
-    app_state.prismUser = app_constants.createGuestPrismUser()
-      ..id = 'user-1'
-      ..loggedIn = true;
-    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
-
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: withPrismChipTheme(ThemeData()),
-        home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>())),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byType(ActionChip), findsNWidgets(3));
-    final Finder chip = find.byType(ActionChip).first;
-    expect(tester.getSize(find.descendant(of: chip, matching: find.byType(Ink))).height, 36);
-    final RichText label = tester.widget<RichText>(find.descendant(of: chip, matching: find.byType(RichText)));
-    expect(label.text.style?.fontSize, 14);
-    final List<double> tops = <double>[for (int i = 0; i < 3; i++) tester.getTopLeft(find.byType(ActionChip).at(i)).dy];
-    expect(tops[1] - tops[0], 48);
-    expect(tops[2] - tops[1], 48);
-  });
-
   testWidgets('AI share is single-flight, reports the chosen image and records tap and success', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
@@ -170,7 +139,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    final Finder shareButton = find.text('Share');
+    final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
     await tester.tap(shareButton, warnIfMissed: false);
@@ -179,7 +148,7 @@ void main() {
 
     expect(shareCalls, 1);
     expect(sharedImageUrl, 'https://cdn/watermarked.png');
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
     expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
@@ -190,7 +159,7 @@ void main() {
     expect(result.result, EventResultValue.success);
     expect(result.format, ShareFormatValue.card);
     expect(result.sourceContext, 'ai_wallpaper');
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
     await tester.tap(shareButton);
     await tester.pumpAndSettle();
     final List<InviteShareResultEvent> results = analytics.events.whereType<InviteShareResultEvent>().toList();
@@ -238,7 +207,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final Finder shareButton = find.text('Share');
+    final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
     await tester.pumpAndSettle();
@@ -248,7 +217,7 @@ void main() {
     expect(result.reason, AnalyticsReasonValue.error);
     expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
     expect((toastCalls.single.arguments as Map<Object?, Object?>)['msg'], 'Could not share. Please try again.');
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
     await tester.tap(shareButton);
     await tester.pumpAndSettle();
     expect(shareCalls, 2);
@@ -291,7 +260,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final Finder shareButton = find.text('Share');
+    final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
     await tester.pumpAndSettle();
@@ -331,14 +300,14 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final Finder shareButton = find.text('Share');
+    final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
     await tester.pumpAndSettle();
 
     expect(shareCalls, 1);
     expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
 
     final asyncAnalytics = _AsyncThrowingShareTapAnalytics();
     AnalyticsRuntime.instance = asyncAnalytics;
@@ -347,7 +316,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(shareCalls, 2);
     expect(asyncAnalytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
   });
 
   testWidgets('AI share handles asynchronous tap analytics failure', (tester) async {
@@ -378,7 +347,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final Finder shareButton = find.text('Share');
+    final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
     await tester.pumpAndSettle();
@@ -386,7 +355,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(shareCalls, 1);
     expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
-    expect(find.text('Share'), findsOneWidget);
+    expect(find.byTooltip('Share'), findsOneWidget);
   });
 
   testWidgets('AI share completion after disposal does not report a false success', (tester) async {
@@ -414,7 +383,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final Finder shareButton = find.text('Share');
+    final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
     await tester.pump();

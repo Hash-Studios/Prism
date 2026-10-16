@@ -4,11 +4,16 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_chip.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
@@ -36,22 +41,36 @@ FeedItemEntity _wallpaper(String id) => PexelsFeedItem(
   ),
 );
 
+WallpaperSearchPage _page(
+  List<FeedItemEntity> results, {
+  SearchProviderValue provider = SearchProviderValue.wallhaven,
+  List<FeedItemEntity> prismResults = const <FeedItemEntity>[],
+}) => (provider: provider, results: results, prismResults: prismResults);
+
 void main() {
   late _MockWallpaperSearchService service;
   late InMemoryLocalStore store;
+  late FakeAppAnalytics analytics;
+  late _MockSearchDiscoveryBloc discoveryBloc;
 
   setUpAll(() => registerFallbackValue(const SearchFilters()));
+
+  void stubDiscovery(SearchDiscoveryState state) {
+    discoveryBloc = _MockSearchDiscoveryBloc();
+    when(() => discoveryBloc.state).thenReturn(state);
+    whenListen(discoveryBloc, const Stream<SearchDiscoveryState>.empty(), initialState: state);
+    getIt.registerFactory<SearchDiscoveryBloc>(() => discoveryBloc);
+  }
 
   setUp(() {
     service = _MockWallpaperSearchService();
     store = InMemoryLocalStore();
-    final discovery = _MockSearchDiscoveryBloc();
-    when(() => discovery.state).thenReturn(SearchDiscoveryState.initial());
     getIt
       ..registerSingleton<WallpaperSearchService>(service)
-      ..registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(store))
-      ..registerFactory<SearchDiscoveryBloc>(() => discovery);
-    AnalyticsRuntime.instance = FakeAppAnalytics();
+      ..registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(store));
+    stubDiscovery(SearchDiscoveryState.initial());
+    analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
   });
 
   tearDown(() async {
@@ -59,12 +78,140 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> submit(WidgetTester tester, String query) async {
+  Future<void> pumpScreen(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+    await tester.pump();
+  }
+
+  Future<void> enterQuery(WidgetTester tester, String query) async {
     await tester.enterText(find.byType(TextField), query);
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pump();
   }
+
+  Future<void> submit(WidgetTester tester, String query) async {
+    await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
+    await enterQuery(tester, query);
+  }
+
+  testWidgets('idle: title, pill field, tag chips and the discovery sections', (tester) async {
+    await pumpScreen(tester);
+
+    expect(find.text('Search'), findsOneWidget);
+    expect(find.text('Search wallpapers'), findsOneWidget);
+    expect(find.widgetWithText(PrismChip, 'Nature'), findsOneWidget);
+    expect(find.text('#Nature'), findsNothing);
+    expect(find.text('Find creators'), findsOneWidget);
+    expect(find.text('Trending now'), findsOneWidget);
+    expect(find.text('Browse by category'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Browse by colour'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('Browse by colour'), findsOneWidget);
+    expect(find.byTooltip('Clear search'), findsNothing);
+  });
+
+  testWidgets('shows the trending skeleton while loading and an error with retry when it fails', (tester) async {
+    await getIt.unregister<SearchDiscoveryBloc>();
+    stubDiscovery(
+      SearchDiscoveryState.initial().copyWith(status: LoadStatus.failure, failure: const NetworkFailure('x')),
+    );
+
+    await pumpScreen(tester);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.widgetWithText(GlintState, "Couldn't load trending"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('submitting shows the query, the results grid and tracks the search', (tester) async {
+    when(() => service.search('anime', filters: any(named: 'filters'))).thenAnswer(
+      (_) async =>
+          _page(List<FeedItemEntity>.generate(4, (i) => _wallpaper('wall-$i')), provider: SearchProviderValue.pexels),
+    );
+    await pumpScreen(tester);
+
+    await enterQuery(tester, 'anime');
+    expect(find.byType(LoadingCards), findsOneWidget);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Results for "anime"'), findsOneWidget);
+    expect(find.byType(PrismWallTile), findsNWidgets(4));
+    expect(find.text('Find creators'), findsNothing);
+    expect(analytics.events.whereType<SearchSubmittedEvent>(), hasLength(1));
+  });
+
+  testWidgets('no results shows a calm empty state with a hint', (tester) async {
+    when(() => service.search('zzz', filters: any(named: 'filters'))).thenAnswer((_) async => _page(const []));
+    await pumpScreen(tester);
+
+    await enterQuery(tester, 'zzz');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('No wallpapers found for "zzz"'), findsOneWidget);
+    expect(find.text('Try a shorter or a different word.'), findsOneWidget);
+  });
+
+  testWidgets('a failed search shows an error and retries the same query', (tester) async {
+    var calls = 0;
+    when(() => service.search('anime', filters: any(named: 'filters'))).thenAnswer((_) {
+      calls++;
+      return calls == 1
+          ? Future<WallpaperSearchPage>.delayed(const Duration(milliseconds: 50), () => throw Exception('offline'))
+          : Future<WallpaperSearchPage>.value(
+              _page(<FeedItemEntity>[_wallpaper('wall-1')], provider: SearchProviderValue.pexels),
+            );
+    });
+    await pumpScreen(tester);
+
+    await enterQuery(tester, 'anime');
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.widgetWithText(GlintState, "Couldn't search right now"), findsOneWidget);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(PrismWallTile), findsOneWidget);
+    expect(calls, 2);
+  });
+
+  testWidgets('the clear button empties the field and returns to discovery', (tester) async {
+    when(
+      () => service.search('anime', filters: any(named: 'filters')),
+    ).thenAnswer((_) async => _page(<FeedItemEntity>[_wallpaper('wall-1')], provider: SearchProviderValue.pexels));
+    await pumpScreen(tester);
+    await enterQuery(tester, 'anime');
+    await tester.pump();
+    await tester.pump();
+    expect(find.byTooltip('Clear search'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Clear search'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    expect(find.text('Find creators'), findsOneWidget);
+    expect(find.byType(PrismWallTile), findsNothing);
+  });
+
+  testWidgets('tapping a tag runs that search', (tester) async {
+    when(
+      () => service.search('Nature', filters: any(named: 'filters')),
+    ).thenAnswer((_) async => _page(<FeedItemEntity>[_wallpaper('wall-1')]));
+    await pumpScreen(tester);
+
+    await tester.tap(find.widgetWithText(PrismChip, 'Nature'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Results for "Nature"'), findsOneWidget);
+    verify(() => service.search('Nature', filters: any(named: 'filters'))).called(1);
+  });
 
   testWidgets('a search failure shows an error with Try again, not "No wallpapers found"', (tester) async {
     when(
@@ -268,17 +415,16 @@ void main() {
   testWidgets('the tag row lists the classifier names in the same order every time the screen opens', (tester) async {
     Future<List<String>> openTags() async {
       await tester.pumpWidget(MaterialApp(key: UniqueKey(), home: const SearchScreen()));
-      final List<Text> chips = tester
-          .widgetList<Text>(find.textContaining('#'))
-          .where((text) => text.data?.startsWith('#') ?? false)
-          .toList();
-      return chips.take(3).map((text) => text.data!).toList();
+      final Iterable<Text> labels = tester.widgetList<Text>(
+        find.descendant(of: find.byType(PrismChip), matching: find.byType(Text)),
+      );
+      return labels.take(3).map((text) => text.data!).toList();
     }
 
     final List<String> first = await openTags();
     final List<String> second = await openTags();
 
-    expect(first, <String>['#Nature', '#Architecture', '#Cars']);
+    expect(first, <String>['Nature', 'Architecture', 'Cars']);
     expect(second, first);
   });
 
@@ -336,7 +482,7 @@ void main() {
 
       verify(() => service.search('', filters: red)).called(1);
       expect(find.byType(SearchGrid), findsOneWidget);
-      expect(find.widgetWithText(InputChip, 'Red'), findsOneWidget);
+      expect(find.widgetWithText(PrismChip, 'Red'), findsOneWidget);
       expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
     });
 
@@ -393,7 +539,7 @@ void main() {
       await tester.pump();
 
       verify(() => service.search('forest')).called(2);
-      expect(find.byType(InputChip), findsNothing);
+      expect(find.byTooltip('Clear colour'), findsNothing);
     });
 
     testWidgets('picking a colour in the filter sheet with an empty field runs a colour-only search', (tester) async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -7,7 +9,9 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/source_feed_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
@@ -26,6 +30,7 @@ class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWal
     implements FavouriteWallsBloc {}
 
 void main() {
+  setUpAll(() => registerFallbackValue(const CategoryFeedEvent.started()));
   setUp(() => getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore())));
   tearDown(getIt.reset);
 
@@ -33,6 +38,35 @@ void main() {
     id: 'last-wallpaper',
     wallpaper: PrismWallpaper(
       core: WallpaperCore(id: 'last-wallpaper', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+    ),
+  );
+
+  const space = CategoryEntity(
+    name: 'Space',
+    source: WallpaperSource.prism,
+    searchType: CategorySearchType.nonSearch,
+    image: '',
+    image2: '',
+  );
+
+  /// A bloc that settles as soon as it is asked to reload, like a reload that finishes.
+  _MockCategoryFeedBloc streamedBloc(CategoryFeedState state) {
+    final bloc = _MockCategoryFeedBloc();
+    final controller = StreamController<CategoryFeedState>.broadcast(sync: true);
+    addTearDown(controller.close);
+    whenListen(bloc, controller.stream, initialState: state);
+    when(() => bloc.add(any())).thenAnswer((_) => controller.add(state.copyWith(status: LoadStatus.success)));
+    return bloc;
+  }
+
+  Widget host(_MockCategoryFeedBloc bloc) => MaterialApp(
+    home: BlocProvider<CategoryFeedBloc>.value(
+      value: bloc,
+      child: const SourceFeedGrid<FeedItemEntity>(
+        surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+        listName: ScrollListNameValue.wallpaperGrid,
+        sourceContextPrefix: 'test',
+      ),
     ),
   );
 
@@ -54,7 +88,7 @@ void main() {
     );
   }
 
-  testWidgets('shows square loading placeholders while the first page loads', (tester) async {
+  testWidgets('shows the skeleton grid while the first page loads', (tester) async {
     await pumpGrid(tester, CategoryFeedState.initial());
 
     expect(find.byType(LoadingCards), findsOneWidget);
@@ -99,6 +133,34 @@ void main() {
     await tester.tap(find.text("Couldn't load more. Tap to retry"));
 
     verify(() => bloc.add(const CategoryFeedEvent.fetchMoreRequested())).called(1);
+  });
+
+  testWidgets('shows an empty state with a refresh when a loaded feed has no wallpapers', (tester) async {
+    final bloc = streamedBloc(
+      CategoryFeedState.initial().copyWith(status: LoadStatus.success, selectedCategory: space),
+    );
+
+    await tester.pumpWidget(host(bloc));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.widgetWithText(GlintState, 'No wallpapers here yet'), findsOneWidget);
+    await tester.tap(find.text('Refresh'));
+    await tester.pump();
+    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
+  });
+
+  testWidgets('shows an error with Try again when the feed failed and has no wallpapers', (tester) async {
+    final bloc = streamedBloc(
+      CategoryFeedState.initial().copyWith(status: LoadStatus.failure, selectedCategory: space),
+    );
+
+    await tester.pumpWidget(host(bloc));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.widgetWithText(GlintState, "Couldn't load wallpapers"), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
   });
 
   testWidgets('keeps the final wallpaper when the feed has no more pages', (tester) async {

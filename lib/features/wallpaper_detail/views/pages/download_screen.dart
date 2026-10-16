@@ -10,15 +10,12 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -48,20 +45,10 @@ String _formatDownloadSize(int bytes) {
 @RoutePage()
 class DownloadScreen extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Scaffold(
-      appBar: const PreferredSize(
-        preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: "Downloads"),
-      ),
-      backgroundColor: theme.primaryColor,
-      body: const SafeArea(child: DownloadsBody()),
-    );
-  }
+  Widget build(BuildContext context) => const PrismPage(title: 'Downloads', body: DownloadsBody());
 }
 
-/// The downloads list without a scaffold, so the Library tabs can host it.
+/// The downloads list without a page frame, so the Library tabs can host it.
 class DownloadsBody extends StatefulWidget {
   const DownloadsBody({super.key});
 
@@ -141,6 +128,11 @@ class _DownloadsBodyState extends State<DownloadsBody> {
   }
 
   Future<void> refreshList() => readData();
+
+  Future<void> _retry() {
+    setState(() => _status = _DownloadsStatus.loading);
+    return readData();
+  }
 
   void _toggleSelected(File file) {
     PrismHaptics.tap();
@@ -269,141 +261,82 @@ class _DownloadsBodyState extends State<DownloadsBody> {
     return bytes > 0 ? '$label · ${_formatDownloadSize(bytes)}' : label;
   }
 
-  Widget _toolbar(ThemeData theme) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 4, 0),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
-            _summary,
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.6)),
-          ),
-        ),
-        PopupMenuButton<_DownloadSort>(
-          tooltip: 'Sort downloads',
-          icon: Icon(JamIcons.filter, color: theme.colorScheme.secondary),
-          initialValue: _sort,
-          onSelected: (sort) => setState(() => _sort = sort),
-          itemBuilder: (context) => [
-            for (final _DownloadSort sort in _DownloadSort.values)
-              PopupMenuItem<_DownloadSort>(value: sort, child: Text(_sortLabel(sort))),
-          ],
-        ),
-      ],
-    ),
-  );
-
-  Widget _scrollable(Widget child) => LayoutBuilder(
-    builder: (context, constraints) => ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [SizedBox(height: constraints.maxHeight, child: child)],
-    ),
-  );
-
-  Widget _tile(BuildContext context, File file) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool isSelected = _selected.contains(file.path);
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: 'Downloaded wallpaper',
-      child: Stack(
-        key: ValueKey<String>(file.path),
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: scheme.secondary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-                image: DecorationImage(image: ResizeImage(FileImage(file), width: 400), fit: BoxFit.cover),
-              ),
-            ),
-          ),
-          if (isSelected)
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: scheme.primary, width: 3),
-                ),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: scheme.primary,
-                      child: Icon(JamIcons.check, size: 16, color: scheme.onPrimary),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  splashColor: scheme.secondary.withValues(alpha: 0.3),
-                  highlightColor: scheme.secondary.withValues(alpha: 0.1),
-                  onTap: () => _selecting ? _toggleSelected(file) : _openFile(file),
-                  onLongPress: () => _toggleSelected(file),
-                ),
-              ),
-            ),
+  Widget _toolbar(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.xxs, 0),
+      child: Row(
+        children: <Widget>[
+          Expanded(child: Text(_summary, style: PrismTextStyles.caption(context))),
+          PopupMenuButton<_DownloadSort>(
+            tooltip: 'Sort downloads',
+            icon: Icon(Icons.sort_rounded, color: cs.onSurface),
+            initialValue: _sort,
+            onSelected: (sort) => setState(() => _sort = sort),
+            itemBuilder: (context) => <PopupMenuEntry<_DownloadSort>>[
+              for (final _DownloadSort sort in _DownloadSort.values)
+                PopupMenuItem<_DownloadSort>(value: sort, child: Text(_sortLabel(sort))),
+            ],
           ),
         ],
       ),
     );
   }
 
+  /// Keeps a message scrollable so pull to refresh works on it.
+  Widget _message(Widget child) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(height: constraints.maxHeight, child: child),
+    ),
+  );
+
   Widget _content(BuildContext context) {
     switch (_status) {
       case _DownloadsStatus.loading:
         return const LoadingCards();
       case _DownloadsStatus.error:
-        return _scrollable(
+        return _message(
           GlintState(
             kind: GlintStateKind.error,
-            title: "Couldn't load downloads",
+            title: "Couldn't load your downloads",
             body: 'Check your storage access and try again.',
-            actionLabel: 'Retry',
-            onAction: () => unawaited(readData()),
+            actionLabel: 'Try again',
+            onAction: () => unawaited(_retry()),
           ),
         );
       case _DownloadsStatus.ready:
         if (files.isEmpty) {
-          return _scrollable(
+          return _message(
             GlintState(
               kind: GlintStateKind.empty,
               title: 'No downloads yet',
-              body: 'Wallpapers you download show up here.',
+              body: 'Wallpapers you download are kept here.',
               actionLabel: 'Browse wallpapers',
-              onAction: () => context.router.popUntilRoot(),
+              onAction: () => context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
             ),
           );
         }
         final List<File> sorted = _sortedFiles;
         return GridView.builder(
+          padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xs, bottom: PrismSpace.xl),
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
           itemCount: sorted.length,
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-            childAspectRatio: 0.6625,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+          gridDelegate: PrismWallGrid.delegate(context),
+          itemBuilder: (context, index) => _DownloadTile(
+            key: ValueKey<String>(sorted[index].path),
+            file: sorted[index],
+            selected: _selected.contains(sorted[index].path),
+            onTap: () => _selecting ? _toggleSelected(sorted[index]) : _openFile(sorted[index]),
+            onLongPress: () => _toggleSelected(sorted[index]),
           ),
-          itemBuilder: (context, index) => _tile(context, sorted[index]),
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final bool showToolbar = _status == _DownloadsStatus.ready && files.isNotEmpty && !_selecting;
     return PopScope(
       canPop: !_selecting,
@@ -411,14 +344,13 @@ class _DownloadsBodyState extends State<DownloadsBody> {
         if (!didPop) _exitSelection();
       },
       child: Column(
-        children: [
+        children: <Widget>[
           if (_selecting)
             SelectionHeader(count: _selected.length, onCancel: _exitSelection)
           else if (showToolbar)
-            _toolbar(theme),
+            _toolbar(context),
           Expanded(
             child: RefreshIndicator(
-              backgroundColor: theme.primaryColor,
               onRefresh: () {
                 PrismHaptics.impact();
                 return refreshList();
@@ -428,12 +360,12 @@ class _DownloadsBodyState extends State<DownloadsBody> {
           ),
           if (_selecting)
             SelectionActionBar(
-              actions: [
+              actions: <Widget>[
                 CircularMenuButton(
                   label: 'Delete',
                   isLoading: false,
                   onTap: () => unawaited(_deleteSelected()),
-                  child: Icon(JamIcons.trash, color: theme.colorScheme.secondary, size: 20),
+                  child: Icon(Icons.delete_outline_rounded, color: cs.onSurface, size: 20),
                 ),
                 if (_selected.length == 1 && !hideSetWallpaperUi)
                   SetWallpaperButton(url: _selected.first, onSet: _exitSelection),
@@ -441,11 +373,91 @@ class _DownloadsBodyState extends State<DownloadsBody> {
                   label: 'Share',
                   isLoading: false,
                   onTap: () => unawaited(_shareSelected()),
-                  child: Icon(JamIcons.share_alt, color: theme.colorScheme.secondary, size: 20),
+                  child: Icon(Icons.ios_share_rounded, color: cs.onSurface, size: 20),
                 ),
               ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// One downloaded wallpaper: a local file drawn like a [PrismWallTile]. A long press selects it.
+class _DownloadTile extends StatelessWidget {
+  const _DownloadTile({
+    super.key,
+    required this.file,
+    required this.selected,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  final File file;
+  final bool selected;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return PressScale(
+      scale: 0.97,
+      child: Semantics(
+        button: true,
+        image: true,
+        selected: selected,
+        label: 'Downloaded wallpaper',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: ClipRRect(
+            borderRadius: PrismWallGrid.tileRadius,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                ColoredBox(color: cs.surfaceContainerHigh),
+                Image(
+                  image: ResizeImage(FileImage(file), width: 400),
+                  fit: BoxFit.cover,
+                  frameBuilder: (context, child, frame, sync) => AnimatedOpacity(
+                    duration: context.motion(PrismDurations.fast),
+                    opacity: frame == null ? 0 : 1,
+                    child: child,
+                  ),
+                  errorBuilder: (_, _, _) =>
+                      Center(child: Icon(Icons.broken_image_rounded, color: cs.onSurface.withValues(alpha: 0.4))),
+                ),
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: selected ? cs.primary.withValues(alpha: 0.25) : null,
+                      borderRadius: PrismWallGrid.tileRadius,
+                      border: Border.all(
+                        color: selected ? cs.primary : cs.onSurface.withValues(alpha: 0.08),
+                        width: selected ? 3 : 1,
+                      ),
+                    ),
+                    child: selected
+                        ? Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(PrismSpace.xs),
+                              child: CircleAvatar(
+                                radius: 12,
+                                backgroundColor: cs.primary,
+                                child: Icon(Icons.check_rounded, size: 16, color: cs.onPrimary),
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

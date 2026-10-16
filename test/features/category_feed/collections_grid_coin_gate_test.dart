@@ -9,6 +9,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as collections_data;
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/features/category_feed/views/widgets/collection_card.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -72,11 +73,11 @@ void main() {
       MaterialApp(
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
-          child: Scaffold(body: CollectionsGrid()),
+          child: const Scaffold(body: CollectionsGrid()),
         ),
       ),
     );
-    final Finder tile = find.byType(InkWell).first;
+    final Finder tile = find.byType(CollectionCard).first;
     await tester.tap(tile);
     await tester.tap(tile);
     await tester.pump();
@@ -86,12 +87,12 @@ void main() {
     firestore.response.complete(null);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.textContaining('Need ${CoinPolicy.premiumPreview24h} more coins.'), findsOneWidget);
+    expect(find.textContaining('You need ${CoinPolicy.premiumPreview24h} more.'), findsOneWidget);
 
-    tester.widget<InkWell>(tile).onTap!();
+    tester.widget<CollectionCard>(tile).onTap();
     await tester.pump();
     expect(firestore.reads, 1);
-    expect(find.textContaining('Need ${CoinPolicy.premiumPreview24h} more coins.'), findsOneWidget);
+    expect(find.textContaining('You need ${CoinPolicy.premiumPreview24h} more.'), findsOneWidget);
 
     Navigator.of(tester.element(tile)).pop();
     await tester.pump();
@@ -116,18 +117,18 @@ void main() {
       MaterialApp(
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
-          child: Scaffold(body: CollectionsGrid()),
+          child: const Scaffold(body: CollectionsGrid()),
         ),
       ),
     );
 
-    final Finder tile = find.byType(InkWell).first;
+    final Finder tile = find.byType(CollectionCard).first;
     await tester.tap(tile);
     await tester.pump();
     firestore.response.completeError(StateError('preview lookup failed'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.textContaining('Need ${CoinPolicy.premiumPreview24h} more coins.'), findsOneWidget);
+    expect(find.textContaining('You need ${CoinPolicy.premiumPreview24h} more.'), findsOneWidget);
 
     Navigator.of(tester.element(tile)).pop();
     await tester.pump();
@@ -152,12 +153,12 @@ void main() {
       MaterialApp(
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
-          child: Scaffold(body: CollectionsGrid()),
+          child: const Scaffold(body: CollectionsGrid()),
         ),
       ),
     );
 
-    await tester.tap(find.byType(InkWell).first);
+    await tester.tap(find.byType(CollectionCard).first);
     await tester.pump();
     await tester.pumpWidget(const MaterialApp(home: SizedBox()));
     firestore.response.complete(null);
