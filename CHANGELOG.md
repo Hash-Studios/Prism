@@ -1,5 +1,14 @@
 ## Changelog
 
+### v3.4.1
+- The floating glass panel is back on the wallpaper screen
+- Set, Save and Edit now use the tinted wallpaper, and each colour saves as its own download
+- Chips share one pill style, and labels stay readable on every theme
+- The clock preview and Past picks are easier to read and no longer overlap
+- Downloads keep the wallpaper you tapped, and a failed paid download refunds after a restart
+- Live wallpapers free their memory when you leave
+- Security and stability fixes
+
 ### v3.4.0
 - Live wallpapers on Android: make any wallpaper move, pick a living gradient, or use your own video
 - Choose Fill or Fit when you set a wallpaper, crop it yourself on Android, and pick a default Home, Lock or Both
