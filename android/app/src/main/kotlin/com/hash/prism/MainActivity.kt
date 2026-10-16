@@ -4,14 +4,20 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import com.hash.prism.pigeon.PrismMediaHostApi
 import io.flutter.embedding.android.FlutterFragment
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterShellArgs
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.util.UUID
 
 internal fun copyWallpaperCropFile(source: File, folder: File): File {
     folder.mkdirs()
@@ -31,11 +37,31 @@ class MainActivity : FlutterFragmentActivity() {
     private var systemColorsChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
     private val storagePermissions = LegacyStoragePermissionGate()
-    private var engine: FlutterEngine? = null
+    private lateinit var engineOwner: ConfigurationEngineHandoff<FlutterEngine>.Owner
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Claim before super: FragmentManager may attach a restored fragment during onCreate.
+        engineOwner = engineHandoff.owner(
+            savedInstanceState?.getString(ENGINE_RECREATION_KEY) ?: UUID.randomUUID().toString(),
+        )
+        supportFragmentManager.registerFragmentLifecycleCallbacks(
+            object : FragmentManager.FragmentLifecycleCallbacks() {
+                override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
+                    if (f !is FlutterFragment) return
+                    // FlutterFragment.onCreate resets Back handling after its engine has attached.
+                    engineOwner.restoreFrameworkHandlesBack(f::setFrameworkHandlesBack)
+                    fm.unregisterFragmentLifecycleCallbacks(this)
+                }
+            },
+            false,
+        )
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(ENGINE_RECREATION_KEY, engineOwner.recreationKey)
+        super.onSaveInstanceState(outState)
     }
 
     // The default fragment destroys even a provided engine when it detaches. onDestroy owns the engine instead.
@@ -43,17 +69,15 @@ class MainActivity : FlutterFragmentActivity() {
         super.createFlutterFragment().apply { requireArguments().putBoolean("destroy_engine_with_fragment", false) }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine =
-        (retainedEngine ?: FlutterEngine(context.applicationContext)).also {
-            retainedEngine = null
-            engine = it
+        engineOwner.acquire(FlutterShellArgs.fromIntent(intent).toArray()) { shellArgs ->
+            FlutterEngine(context.applicationContext, shellArgs)
         }
 
     override fun onDestroy() {
+        val frameworkHandlesBack = supportFragmentManager.fragments.filterIsInstance<FlutterFragment>()
+            .firstOrNull()?.backCallbackState
         super.onDestroy()
-        // A new wallpaper changes the system colours and Android relaunches this Activity. Give the
-        // engine to the new Activity so Dart keeps running. Any other destroy (Back) ends it.
-        if (isChangingConfigurations) retainedEngine = engine else engine?.destroy()
-        engine = null
+        engineOwner.release(isChangingConfigurations, isFinishing, frameworkHandlesBack)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -144,8 +168,11 @@ class MainActivity : FlutterFragmentActivity() {
 
     private companion object {
         const val STORAGE_PERMISSION_REQUEST = 4201
+        const val ENGINE_RECREATION_KEY = "prism.engine_recreation_key"
 
-        /** The engine of an Activity destroyed by a config change, until its replacement takes it. */
-        var retainedEngine: FlutterEngine? = null
+        private val engineHandoff = ConfigurationEngineHandoff<FlutterEngine>(
+            destroy = { it.destroy() },
+            postExpiry = { expiry -> Handler(Looper.getMainLooper()).post { expiry() } },
+        )
     }
 }
