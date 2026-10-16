@@ -2,12 +2,12 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -89,7 +89,7 @@ void main() {
 
   testWidgets('unfollow request emits one tap haptic, not a success outcome', (tester) async {
     await pumpProfile(tester, following: true);
-    await tester.tap(find.widgetWithText(PrismButton, 'Following'));
+    await tester.tap(find.byIcon(JamIcons.user_remove));
     await tester.pump();
 
     expect(haptics, <String>['tap']);
@@ -98,7 +98,7 @@ void main() {
 
   testWidgets('follow request emits one tap haptic, not a success outcome', (tester) async {
     await pumpProfile(tester, following: false);
-    await tester.tap(find.widgetWithText(PrismButton, 'Follow'));
+    await tester.tap(find.byIcon(JamIcons.user_plus));
     await tester.pump();
 
     expect(haptics, <String>['tap']);

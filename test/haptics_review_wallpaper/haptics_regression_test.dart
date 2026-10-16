@@ -17,7 +17,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
@@ -279,8 +278,8 @@ void main() {
         ),
       ),
     );
-    final Finder authorLink = find.ancestor(of: find.text('artist'), matching: find.byType(GestureDetector)).first;
-    tester.widget<GestureDetector>(authorLink).onTap!();
+    final Finder authorLink = find.ancestor(of: find.text('artist'), matching: find.byType(InkWell)).first;
+    tester.widget<InkWell>(authorLink).onTap!();
     await tester.pump();
     await tester.pump();
 
@@ -356,8 +355,7 @@ void main() {
         ),
       ),
     );
-    final Finder report = find.ancestor(of: find.text('Report'), matching: find.byType(CircularMenuButton));
-    tester.widget<CircularMenuButton>(report).onTap!();
+    tester.widget<TextButton>(find.widgetWithText(TextButton, 'Report')).onPressed!();
     // The sign-in sheet mascot loops an animation, so pump a fixed time instead of settling.
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
