@@ -1,20 +1,17 @@
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/interest_category_tile.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_fade_mask.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_load_failure.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_skip_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-const SliverGridDelegateWithFixedCrossAxisCount _gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
-  crossAxisCount: 3,
-  crossAxisSpacing: PrismSpace.xs,
-  mainAxisSpacing: PrismSpace.xs,
-  childAspectRatio: 0.85,
-);
-
-/// Step 1: pick the categories that shape the feed.
+/// F1 unique content: interest category tiles grid.
+/// Background, headline, progress, button, and helper text are owned by the shell overlay.
 class F1InterestsPage extends StatelessWidget {
   const F1InterestsPage({super.key});
 
@@ -32,97 +29,70 @@ class F1InterestsPage extends StatelessWidget {
           }
         }
       },
-      buildWhen: (prev, curr) =>
-          prev.interestsData != curr.interestsData ||
-          prev.loadStatus != curr.loadStatus ||
-          prev.actionStatus != curr.actionStatus,
+      buildWhen: (prev, curr) => prev.interestsData != curr.interestsData || prev.loadStatus != curr.loadStatus,
       builder: (context, state) {
-        final OnboardingInterestsData data = state.interestsData;
-        final bool loading =
-            data.available.isEmpty &&
-            (state.loadStatus == LoadStatus.loading || state.loadStatus == LoadStatus.initial);
-        final bool empty = data.available.isEmpty && !loading;
-        final OnboardingV2Bloc bloc = context.read<OnboardingV2Bloc>();
+        final interestsData = state.interestsData;
+        final available = interestsData.available;
+
         return OnboardingFrame(
-          title: 'Pick your vibe',
-          body: empty
-              ? 'We could not load categories. You can skip this step.'
-              : 'Choose at least ${data.requiredCount} to shape your feed.',
-          primaryLabel: 'Continue',
-          primaryLoading: state.actionStatus == ActionStatus.inProgress,
-          onPrimary: data.canContinue ? () => bloc.add(const OnboardingV2Event.interestsConfirmed()) : null,
-          onSkip: () => bloc.add(const OnboardingV2Event.interestsSkipped()),
-          child: loading
-              ? const _GridSkeleton()
-              : empty
-              ? Center(
-                  child: GlintState(
-                    kind: GlintStateKind.error,
-                    title: 'Could not load categories',
-                    body: 'Check your connection and try again.',
-                    actionLabel: 'Try again',
-                    onAction: () => bloc.add(const OnboardingV2Event.loadRetried()),
-                  ),
-                )
-              : _Grid(data: data, bloc: bloc),
+          builder: (context, sx, sy) {
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Positioned(
+                  top: OnboardingLayout.tilesY * sy,
+                  left: OnboardingLayout.tilesX * sx,
+                  right: OnboardingLayout.tilesX * sx,
+                  height: OnboardingLayout.tilesHeight * sy,
+                  child: available.isEmpty
+                      ? (state.loadStatus == LoadStatus.loading || state.loadStatus == LoadStatus.initial)
+                            ? const Center(
+                                child: SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
+                              )
+                            : OnboardingLoadFailure(
+                                message: 'We could not load categories.',
+                                onRetry: () =>
+                                    context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.loadRetried()),
+                              )
+                      : OnboardingFadeMask(
+                          stops: const [0.01, 0.10, 0.82, 1.0],
+                          child: GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(0, 25, 0, 60),
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: available.length,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: OnboardingLayout.tileGap * sx,
+                              mainAxisSpacing: OnboardingLayout.tileGap * sy,
+                              childAspectRatio: (OnboardingLayout.tileSize * sx) / (OnboardingLayout.tileSize * sy),
+                            ),
+                            itemBuilder: (context, index) {
+                              final category = available[index];
+                              return InterestCategoryTile(
+                                name: category,
+                                imageUrl: interestsData.categoryImages[category],
+                                isSelected: interestsData.selected.contains(category),
+                                onTap: () =>
+                                    context.read<OnboardingV2Bloc>().add(OnboardingV2Event.interestToggled(category)),
+                              );
+                            },
+                          ),
+                        ),
+                ),
+                OnboardingSkipButton(
+                  sx: sx,
+                  sy: sy,
+                  color: OnboardingColors.textPrimary,
+                  onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.interestsSkipped()),
+                ),
+              ],
+            );
+          },
         );
       },
-    );
-  }
-}
-
-class _Grid extends StatelessWidget {
-  const _Grid({required this.data, required this.bloc});
-
-  final OnboardingInterestsData data;
-  final OnboardingV2Bloc bloc;
-
-  @override
-  Widget build(BuildContext context) {
-    final int picked = data.selected.length;
-    final String counter = picked < data.requiredCount ? '$picked of ${data.requiredCount} picked' : '$picked picked';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Padding(
-          padding: PrismSpace.pageInsets,
-          child: Semantics(liveRegion: true, child: Text(counter, style: PrismTextStyles.caption(context))),
-        ),
-        const SizedBox(height: PrismSpace.xs),
-        Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.sm),
-            itemCount: data.available.length,
-            gridDelegate: _gridDelegate,
-            itemBuilder: (context, index) {
-              final String category = data.available[index];
-              return InterestCategoryTile(
-                name: category,
-                imageUrl: data.categoryImages[category],
-                isSelected: data.selected.contains(category),
-                onTap: () => bloc.add(OnboardingV2Event.interestToggled(category)),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GridSkeleton extends StatelessWidget {
-  const _GridSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return PrismSkeleton(
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.lg, PrismSpace.page, PrismSpace.sm),
-        itemCount: 12,
-        gridDelegate: _gridDelegate,
-        itemBuilder: (_, _) => const PrismBone(height: double.infinity, radius: PrismRadius.sm),
-      ),
     );
   }
 }

@@ -4,10 +4,10 @@ import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
-import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_recovery.dart';
-import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_staggered_fade.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_terms_row.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_buttons.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_staggered_fade.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -126,19 +126,19 @@ class _F0AuthPageState extends State<F0AuthPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            const OnboardingStaggeredFade(delay: Duration.zero, child: _Wordmark()),
+                            const WelcomeStaggeredFade(delay: Duration.zero, child: _Wordmark()),
                             const Spacer(),
-                            OnboardingStaggeredFade(
+                            WelcomeStaggeredFade(
                               delay: PrismDurations.stagger,
                               child: Semantics(header: true, child: Text('Your screen, reimagined.', style: headline)),
                             ),
                             const SizedBox(height: PrismSpace.sm),
-                            OnboardingStaggeredFade(
+                            WelcomeStaggeredFade(
                               delay: PrismDurations.stagger * 2,
                               child: Text('Millions of premium wallpapers from top artists.', style: body),
                             ),
                             const SizedBox(height: PrismSpace.xl),
-                            OnboardingStaggeredFade(
+                            WelcomeStaggeredFade(
                               delay: PrismDurations.stagger * 3,
                               child: BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
                                 buildWhen: (prev, curr) =>
@@ -156,7 +156,7 @@ class _F0AuthPageState extends State<F0AuthPage> {
                                           child: Text(recovery.helper, style: body.copyWith(fontSize: 14)),
                                         ),
                                         const SizedBox(height: PrismSpace.sm),
-                                        OnboardingPrimaryButton(
+                                        WelcomePrimaryButton(
                                           label: recovery.label,
                                           loading: recovery.loading,
                                           onPressed: recovery.onPressed,
@@ -168,7 +168,7 @@ class _F0AuthPageState extends State<F0AuthPage> {
                                     crossAxisAlignment: CrossAxisAlignment.stretch,
                                     children: <Widget>[
                                       if (ios) ...<Widget>[
-                                        OnboardingPrimaryButton(
+                                        WelcomePrimaryButton(
                                           label: 'Continue with Apple',
                                           icon: Icons.apple,
                                           loading: busy && _provider == _Provider.apple,
@@ -178,17 +178,17 @@ class _F0AuthPageState extends State<F0AuthPage> {
                                         ),
                                         const SizedBox(height: PrismSpace.sm),
                                       ],
-                                      OnboardingPrimaryButton(
+                                      WelcomePrimaryButton(
                                         label: 'Continue with Google',
                                         icon: JamIcons.google,
-                                        style: ios ? OnboardingButtonStyle.glass : OnboardingButtonStyle.solid,
+                                        style: ios ? WelcomeButtonStyle.glass : WelcomeButtonStyle.solid,
                                         loading: busy && _provider != _Provider.apple,
                                         onPressed: busy
                                             ? null
                                             : () => _gated(widget.onGoogle, provider: _Provider.google),
                                       ),
                                       if (ios)
-                                        OnboardingTextButton(
+                                        WelcomeTextButton(
                                           label: 'Browse without an account',
                                           onPressed: () => _gated(widget.onBrowse),
                                         ),
@@ -199,7 +199,7 @@ class _F0AuthPageState extends State<F0AuthPage> {
                             ),
                             const SizedBox(height: PrismSpace.xs),
                             if (recovery == null)
-                              OnboardingStaggeredFade(
+                              WelcomeStaggeredFade(
                                 delay: PrismDurations.stagger * 4,
                                 child: ShakeOnce(
                                   controller: _shake,

@@ -1,6 +1,5 @@
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
-import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_terms_row.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -153,107 +152,5 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     await tester.tap(find.byType(CircularProgressIndicator));
     expect(google, 0);
-  });
-
-  group('step frame', () {
-    Future<void> pumpFrame(WidgetTester tester, {VoidCallback? onSkip, VoidCallback? onPrimary}) {
-      return tester.pumpWidget(
-        MaterialApp(
-          theme: prismDarkThemes.first.theme,
-          home: Scaffold(
-            body: OnboardingFrame(
-              title: 'A title',
-              body: 'One line of body text.',
-              primaryLabel: 'Continue',
-              onPrimary: onPrimary,
-              onSkip: onSkip,
-              secondary: const Text('Later'),
-              child: const Center(child: Text('step content')),
-            ),
-          ),
-        ),
-      );
-    }
-
-    testWidgets('shows the title, body, content, primary action and the secondary one', (tester) async {
-      var continued = 0;
-      await pumpFrame(tester, onPrimary: () => continued++);
-
-      expect(find.text('A title'), findsOneWidget);
-      expect(find.text('One line of body text.'), findsOneWidget);
-      expect(find.text('step content'), findsOneWidget);
-      expect(find.text('Later'), findsOneWidget);
-      expect(find.text('Skip'), findsNothing);
-      await tester.tap(find.text('Continue'));
-      expect(continued, 1);
-    });
-
-    testWidgets('Skip appears only when there is a skip action', (tester) async {
-      var skipped = 0;
-      await pumpFrame(tester, onSkip: () => skipped++);
-
-      await tester.tap(find.text('Skip'));
-      expect(skipped, 1);
-    });
-
-    testWidgets('a null primary action disables the button', (tester) async {
-      await pumpFrame(tester);
-
-      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Continue')).onPressed, isNull);
-    });
-  });
-
-  group('progress bar', () {
-    Future<void> pumpBar(WidgetTester tester, int step) => tester.pumpWidget(
-      MaterialApp(
-        theme: prismDarkThemes.first.theme,
-        home: Scaffold(body: OnboardingProgressBar(step: step)),
-      ),
-    );
-
-    double fill(WidgetTester tester) =>
-        tester.widget<FractionallySizedBox>(find.byType(FractionallySizedBox)).widthFactor!;
-
-    testWidgets('the fill slides to the new step', (tester) async {
-      await pumpBar(tester, 1);
-      expect(fill(tester), 0.25);
-
-      await pumpBar(tester, 3);
-      await tester.pump(const Duration(milliseconds: 120));
-      expect(fill(tester), inExclusiveRange(0.25, 0.75));
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(fill(tester), 0.75);
-    });
-
-    testWidgets('it tells screen readers the step', (tester) async {
-      final SemanticsHandle semantics = tester.ensureSemantics();
-      await pumpBar(tester, 2);
-
-      expect(find.bySemanticsLabel('Onboarding progress'), findsOneWidget);
-      expect(tester.getSemantics(find.bySemanticsLabel('Onboarding progress')).value, 'Step 2 of 4');
-      semantics.dispose();
-    });
-
-    testWidgets('reduce motion jumps straight to the step', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: prismDarkThemes.first.theme,
-          builder: (context, child) =>
-              MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
-          home: const Scaffold(body: OnboardingProgressBar(step: 1)),
-        ),
-      );
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: prismDarkThemes.first.theme,
-          builder: (context, child) =>
-              MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
-          home: const Scaffold(body: OnboardingProgressBar(step: 4)),
-        ),
-      );
-      await tester.pump();
-
-      expect(fill(tester), 1);
-    });
   });
 }

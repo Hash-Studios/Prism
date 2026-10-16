@@ -8,7 +8,13 @@ import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_starter_creator_entity.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
-import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/pages/f1_interests_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/pages/f2_starter_pack_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/pages/f3_ai_generate_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/pages/f4_first_wallpaper_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_progress_indicator.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
@@ -60,53 +66,78 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   }
 
-  double barOpacity(WidgetTester tester) => tester
-      .widget<AnimatedOpacity>(
-        find.ancestor(of: find.byType(OnboardingProgressBar), matching: find.byType(AnimatedOpacity)),
-      )
-      .opacity;
-
   OnboardingV2State onStep(OnboardingV2Step step, {ActionStatus action = ActionStatus.idle}) =>
       OnboardingV2State.initial().copyWith(step: step, loadStatus: LoadStatus.loading, actionStatus: action);
 
-  testWidgets('starts on the welcome step with the progress bar hidden', (tester) async {
+  Future<void> goTo(WidgetTester tester, OnboardingV2State state) async {
+    states.add(state);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+
+  int? progressStep(WidgetTester tester) =>
+      tester.widgetList<OnboardingProgressIndicator>(find.byType(OnboardingProgressIndicator)).firstOrNull?.step;
+
+  testWidgets('starts on the redesign welcome page with none of the shared step overlay', (tester) async {
     await pumpShell(tester);
 
     verify(() => bloc.add(const OnboardingV2Event.started())).called(1);
     expect(find.text('Your screen, reimagined.'), findsOneWidget);
-    expect(barOpacity(tester), 0);
+    expect(find.byType(F0AuthPage), findsOneWidget);
+    expect(find.byType(OnboardingProgressIndicator), findsNothing);
+    expect(find.byType(OnboardingPrimaryButton), findsNothing);
   });
 
-  testWidgets('moving to a step cross-fades the page and moves the progress bar on', (tester) async {
+  testWidgets('steps 1 to 4 use the current layout: headline, progress dots, button and helper text', (tester) async {
     await pumpShell(tester);
 
-    states.add(onStep(OnboardingV2Step.interests));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await goTo(tester, onStep(OnboardingV2Step.interests));
 
+    expect(find.byType(F0AuthPage), findsNothing);
     expect(find.text('Pick your vibe'), findsOneWidget);
-    expect(find.text('Your screen, reimagined.'), findsNothing);
-    expect(barOpacity(tester), 1);
-    expect(tester.widget<OnboardingProgressBar>(find.byType(OnboardingProgressBar)).step, 1);
+    expect(find.byType(F1InterestsPage), findsOneWidget);
+    expect(progressStep(tester), 1);
+    expect(find.byType(OnboardingPrimaryButton), findsOneWidget);
+    expect(find.text('continue'), findsOneWidget);
 
-    states.add(onStep(OnboardingV2Step.starterPack));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
+    await goTo(tester, onStep(OnboardingV2Step.starterPack));
     expect(find.text('Find your people'), findsOneWidget);
-    expect(tester.widget<OnboardingProgressBar>(find.byType(OnboardingProgressBar)).step, 2);
+    expect(find.byType(F2StarterPackPage), findsOneWidget);
+    expect(progressStep(tester), 2);
+
+    await goTo(tester, onStep(OnboardingV2Step.aiGenerate));
+    expect(find.text('Create your\nfirst wallpaper'), findsOneWidget);
+    expect(find.byType(F3AiGeneratePage), findsOneWidget);
+    expect(progressStep(tester), 3);
+    expect(find.text('generate my wallpaper'), findsOneWidget);
+
+    await goTo(tester, onStep(OnboardingV2Step.firstWallpaper));
+    expect(find.text('Make it yours'), findsOneWidget);
+    expect(find.byType(F4FirstWallpaperPage), findsOneWidget);
+    expect(progressStep(tester), 4);
+    expect(find.text('set as wallpaper'), findsOneWidget);
+  });
+
+  testWidgets('going back to the welcome step brings the redesign page back', (tester) async {
+    await pumpShell(tester);
+    await goTo(tester, onStep(OnboardingV2Step.interests));
+
+    await goTo(tester, OnboardingV2State.initial());
+
+    expect(find.byType(F0AuthPage), findsOneWidget);
+    expect(find.byType(OnboardingProgressIndicator), findsNothing);
   });
 
   testWidgets('a failed save tells the user instead of failing silently', (tester) async {
     await pumpShell(tester);
-    states.add(onStep(OnboardingV2Step.interests));
-    await tester.pump(const Duration(milliseconds: 400));
+    await goTo(tester, onStep(OnboardingV2Step.interests));
 
     states.add(onStep(OnboardingV2Step.interests, action: ActionStatus.failure));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text("Couldn't save your picks. Try again."), findsOneWidget);
+    expect(find.text('try again'), findsOneWidget);
     await tester.pump(const Duration(seconds: 8));
   });
 
@@ -117,23 +148,20 @@ void main() {
     expect(MediaQuery.textScalerOf(inside).scale(10), closeTo(10 * OnboardingLayout.maxTextScale, 0.001));
   });
 
-  testWidgets('on a wide screen the progress bar sits in the same capped column as the step', (tester) async {
+  testWidgets('on a wide screen the step overlay sits in the same capped column', (tester) async {
     await pumpShell(tester, width: 1280, height: 800);
-    states.add(onStep(OnboardingV2Step.interests));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await goTo(tester, onStep(OnboardingV2Step.interests));
 
     expect(
-      tester.getSize(find.byType(OnboardingProgressBar)).width,
+      tester.getSize(find.byType(OnboardingPrimaryButton)).width,
       lessThanOrEqualTo(OnboardingLayout.maxContentWidth),
     );
-    expect(tester.getCenter(find.byType(OnboardingProgressBar)).dx, closeTo(640, 0.5));
+    expect(tester.getCenter(find.byType(OnboardingPrimaryButton)).dx, closeTo(640, 0.5));
   });
 
   group('compact and landscape layouts', () {
     final viewports = <String, (double, double, double)>{
-      '320x568 at 2x text': (320, 568, 2),
-      '320x568 at 3x text': (320, 568, 3),
+      '320x568 at 1x text': (320, 568, 1),
       '844x390 at 2x text': (844, 390, 2),
       '844x390 at 3x text': (844, 390, 3),
     };
@@ -156,7 +184,7 @@ void main() {
                 categoryImages: <String, String>{},
               ),
             ),
-            'Continue',
+            'continue',
           ),
           (
             OnboardingV2Step.starterPack,
@@ -179,7 +207,7 @@ void main() {
                 selectedEmails: <String>{'creator0@example.com', 'creator1@example.com', 'creator2@example.com'},
               ),
             ),
-            'Continue',
+            'continue',
           ),
           (
             OnboardingV2Step.aiGenerate,
@@ -191,12 +219,12 @@ void main() {
                 status: AiGenerateStatus.idle,
               ),
             ),
-            'Generate',
+            'generate my wallpaper',
           ),
           (
             OnboardingV2Step.firstWallpaper,
             OnboardingV2State.initial().copyWith(step: OnboardingV2Step.firstWallpaper),
-            'Continue',
+            'set as wallpaper',
           ),
         ];
 

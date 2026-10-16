@@ -189,8 +189,8 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 
-  group('AI step', () {
-    testWidgets('a finished wallpaper opens the next step on its own and asks for no tap', (tester) async {
+  group('AI step copy', () {
+    testWidgets('no longer tells the user to tap a button that does not exist', (tester) async {
       final initial = OnboardingV2State.initial().copyWith(step: OnboardingV2Step.aiGenerate);
       await pumpShell(tester, initial);
 
@@ -201,7 +201,7 @@ void main() {
         ),
       );
 
-      verify(() => bloc.add(const OnboardingV2Event.aiGenerationStepContinued())).called(1);
+      expect(find.text('looking good! opening your wallpaper'), findsOneWidget);
       expect(find.textContaining('use this wallpaper'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });

@@ -17,7 +17,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.byWidgetPredicate((widget) => widget is ColoredBox && widget.color == OnboardingAssets.fallbackFill),
+      find.byWidgetPredicate((widget) => widget is ColoredBox && widget.color == OnboardingColors.fallbackFill),
       findsOneWidget,
     );
   });

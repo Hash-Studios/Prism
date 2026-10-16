@@ -1,9 +1,10 @@
 import 'dart:async';
 
 import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:flutter/widgets.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
+import 'package:flutter/material.dart';
 
-/// Fades [child] in with an 8 point rise, [delay] after the first frame. Under reduce motion it shows at once.
+/// Fades [child] in [delay] after the first frame. With reduced motion it shows at once.
 class OnboardingStaggeredFade extends StatefulWidget {
   const OnboardingStaggeredFade({super.key, required this.delay, required this.child});
 
@@ -14,40 +15,40 @@ class OnboardingStaggeredFade extends StatefulWidget {
   State<OnboardingStaggeredFade> createState() => _OnboardingStaggeredFadeState();
 }
 
-class _OnboardingStaggeredFadeState extends State<OnboardingStaggeredFade> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: PrismDurations.base);
-  late final Animation<double> _curve = CurvedAnimation(parent: _controller, curve: PrismCurves.enter);
+class _OnboardingStaggeredFadeState extends State<OnboardingStaggeredFade> {
   Timer? _timer;
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _visible) return;
+      _timer = Timer(widget.delay, () => setState(() => _visible = true));
+    });
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (context.reduceMotion) {
       _timer?.cancel();
-      _controller.value = 1;
-    } else if (_timer == null && _controller.value == 0) {
-      _timer = Timer(widget.delay, () {
-        if (mounted) _controller.forward();
-      });
+      _visible = true;
     }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _curve,
-      child: AnimatedBuilder(
-        animation: _curve,
-        child: widget.child,
-        builder: (context, child) => Transform.translate(offset: Offset(0, 8 * (1 - _curve.value)), child: child),
-      ),
+    return AnimatedOpacity(
+      opacity: _visible ? 1.0 : 0.0,
+      duration: context.motion(OnboardingMotion.fade),
+      child: widget.child,
     );
   }
 }
