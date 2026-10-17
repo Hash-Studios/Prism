@@ -1,8 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -25,6 +28,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
+
+class _PassRecordGateStore extends InMemoryLocalStore {
+  final Completer<void> passRecordWriteStarted = Completer<void>();
+  final Completer<void> allowPassRecordWrite = Completer<void>();
+  final Completer<void> passRecordDeleteStarted = Completer<void>();
+  final Completer<void> allowPassRecordDelete = Completer<void>();
+  final Completer<void> ownerTwoConfigWriteCompleted = Completer<void>();
+  bool delayPassRecordWrite = false;
+  bool delayPassRecordDelete = false;
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == PersistenceKeys.settings('autoRotate.passRecord') && delayPassRecordWrite) {
+      passRecordWriteStarted.complete();
+      await allowPassRecordWrite.future;
+    }
+    await super.set(key, value);
+    if (key == PersistenceKeys.settings(PersistenceKeys.autoRotateChargingOnly) && value == true) {
+      ownerTwoConfigWriteCompleted.complete();
+    }
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    if (key == PersistenceKeys.settings('autoRotate.passRecord') && delayPassRecordDelete) {
+      passRecordDeleteStarted.complete();
+      await allowPassRecordDelete.future;
+    }
+    await super.delete(key);
+  }
+}
 
 class _MockWalls extends Mock implements PrismWallpaperRepository {}
 
@@ -109,13 +143,67 @@ void main() {
     expect(await repository.loadConfig(), config);
   });
 
-  test('saves the pass end with the config and clears it again', () async {
+  test('binds a saved pass to its owner and clears it again', () async {
     final DateTime until = DateTime.utc(2026, 10, 24, 12);
-    await repository.saveConfig(AutoRotateConfig(enabled: true, passUntil: until));
-    expect((await repository.loadConfig()).passUntil, until);
-
-    await repository.saveConfig(const AutoRotateConfig(enabled: true));
+    await repository.saveConfig(AutoRotateConfig(enabled: true, passUntil: until), ownerId: 'owner-1');
+    expect((await repository.loadConfig(ownerId: 'owner-1')).passUntil, until);
+    expect((await repository.loadConfig(ownerId: 'owner-2')).passUntil, isNull);
     expect((await repository.loadConfig()).passUntil, isNull);
+
+    await repository.saveConfig(const AutoRotateConfig(enabled: true), ownerId: 'owner-2');
+    expect((await repository.loadConfig(ownerId: 'owner-1')).passUntil, until);
+
+    await repository.saveConfig(const AutoRotateConfig(enabled: true), ownerId: 'owner-1');
+    expect((await repository.loadConfig(ownerId: 'owner-1')).passUntil, isNull);
+  });
+
+  test('account cleanup wins over a pass save already in flight', () async {
+    final _PassRecordGateStore gatedStore = _PassRecordGateStore();
+    gatedStore.delayPassRecordWrite = true;
+    settings = SettingsLocalDataSource(gatedStore);
+    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    final Future<void> save = repository.saveConfig(
+      AutoRotateConfig(passUntil: DateTime.utc(2026, 10, 24)),
+      ownerId: 'owner-1',
+    );
+    await gatedStore.passRecordWriteStarted.future;
+    final Future<void> clear = AutoRotateRepositoryImpl.clearPassRecordForUser(settings: settings, ownerId: 'owner-1');
+
+    gatedStore.allowPassRecordWrite.complete();
+    await Future.wait(<Future<void>>[save, clear]);
+
+    expect(settings.get<String?>('autoRotate.passRecord'), isNull);
+  });
+
+  test('clearing owner one cannot delete owner two’s concurrent pass save', () async {
+    final _PassRecordGateStore gatedStore = _PassRecordGateStore();
+    settings = SettingsLocalDataSource(gatedStore);
+    repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    await settings.set(
+      'autoRotate.passRecord',
+      jsonEncode(<String, Object?>{'ownerId': 'owner-1', 'untilMs': DateTime.utc(2026, 10, 24).millisecondsSinceEpoch}),
+    );
+    gatedStore.delayPassRecordDelete = true;
+    final Future<void> clear = AutoRotateRepositoryImpl.clearPassRecordForUser(settings: settings, ownerId: 'owner-1');
+    await gatedStore.passRecordDeleteStarted.future;
+
+    final DateTime ownerTwoPassUntil = DateTime.utc(2026, 11, 1);
+    final Future<void> save = repository.saveConfig(
+      AutoRotateConfig(chargingOnly: true, passUntil: ownerTwoPassUntil),
+      ownerId: 'owner-2',
+    );
+    await gatedStore.ownerTwoConfigWriteCompleted.future;
+    await Future<void>.delayed(Duration.zero);
+    gatedStore.allowPassRecordDelete.complete();
+    await Future.wait(<Future<void>>[clear, save]);
+
+    expect((await repository.loadConfig(ownerId: 'owner-2')).passUntil, ownerTwoPassUntil);
+  });
+
+  test('does not treat a legacy ownerless pass expiry as an entitlement', () async {
+    await settings.set('autoRotate.passUntilMs', DateTime.utc(2026, 10, 24).millisecondsSinceEpoch);
+
+    expect((await repository.loadConfig(ownerId: 'owner-1')).passUntil, isNull);
   });
 
   test('maps the options to plugin triggers', () {

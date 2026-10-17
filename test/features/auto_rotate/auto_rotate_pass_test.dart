@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -11,6 +13,7 @@ import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -32,12 +35,23 @@ void main() {
   late _MockFavouriteWallsBloc favouriteWallsBloc;
   late _MockSessionBloc sessionBloc;
   late List<(String, Map<String, dynamic>)> calls;
+  late Completer<String> toastShown;
 
   setUpAll(() {
     registerFallbackValue(const AutoRotateEvent.started(favouriteUrls: <String>[], isPro: false));
   });
 
   setUp(() async {
+    toastShown = Completer<String>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('PonnamKarthik/fluttertoast'),
+      (MethodCall call) async {
+        if (call.method == 'showToast' && !toastShown.isCompleted) {
+          toastShown.complete((call.arguments as Map<Object?, Object?>)['msg'] as String);
+        }
+        return true;
+      },
+    );
     await backend.install();
     AnalyticsRuntime.instance = FakeAppAnalytics();
     calls = <(String, Map<String, dynamic>)>[];
@@ -71,6 +85,10 @@ void main() {
   });
 
   tearDown(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('PonnamKarthik/fluttertoast'),
+      null,
+    );
     CoinsService.instance.passesNotifier.value = Passes.empty;
     app_state.prismUser = app_constants.createGuestPrismUser();
     AnalyticsRuntime.reset();
@@ -102,10 +120,11 @@ void main() {
 
   testWidgets('buying the pass spends autoRotatePass7d and unlocks the bloc', (tester) async {
     await pumpScreen(tester);
-
-    await tester.tap(find.text('7-day pass · 50 coins'));
+    await tester.runAsync(() async {
+      await tester.tap(find.text('7-day pass · 50 coins'));
+      expect(await toastShown.future.timeout(const Duration(seconds: 2)), 'Auto-rotate is on for 7 days.');
+    });
     await tester.pump();
-    await tester.pump(const Duration(seconds: 2));
 
     expect(calls.single.$1, 'spendCoins');
     expect(calls.single.$2['action'], 'autoRotatePass7d');

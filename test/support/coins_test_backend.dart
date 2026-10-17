@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -13,6 +15,7 @@ import 'in_memory_local_store.dart';
 
 class CoinsTestBackend {
   Future<dynamic> Function(String name, Map<String, dynamic> parameters) onCall = (_, _) async => claimPayload;
+  Completer<void>? callStarted;
 
   static const Map<String, Object> claimPayload = <String, Object>{
     'claimed': true,
@@ -68,6 +71,8 @@ class CoinsTestBackend {
       (message) async {
         final arguments = Map<String, dynamic>.from((message! as List<Object?>).first! as Map<Object?, Object?>);
         try {
+          final Completer<void>? started = callStarted;
+          if (started != null && !started.isCompleted) started.complete();
           return <Object?>[
             await onCall(
               arguments['functionName'] as String,
@@ -116,11 +121,15 @@ class CoinsTestFirestore extends Fake implements FirestoreClient {
   /// Docs other than the user doc, keyed `collection/id`. A key missing here reads [userData].
   Map<String, Map<String, dynamic>> docs = <String, Map<String, dynamic>>{};
   Future<Map<String, dynamic>>? userResponse;
+  Future<Map<String, dynamic>?>? privateEconomyResponse;
+  final Completer<void> privateEconomyReadStarted = Completer<void>();
+  Object? privateEconomyError;
   List<Map<String, dynamic>> transactions = <Map<String, dynamic>>[];
   int getByIdCalls = 0;
 
   /// Reads of the root user doc only, not the private economy doc.
   int userDocReads = 0;
+  int privateEconomyServerReads = 0;
   int queries = 0;
   int? dedupeWindowMs;
 
@@ -144,5 +153,25 @@ class CoinsTestFirestore extends Fake implements FirestoreClient {
     queries++;
     dedupeWindowMs = spec.dedupeWindowMs;
     return transactions.map((row) => map(row, row['id'] as String)).toList();
+  }
+
+  @override
+  Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic>, String) map,
+  ) async* {
+    final Object? error = privateEconomyError;
+    if (error != null) throw error;
+    final String collection = spec.collection;
+    if (collection.contains('/private')) {
+      privateEconomyServerReads++;
+      if (!privateEconomyReadStarted.isCompleted) privateEconomyReadStarted.complete();
+      final Map<String, dynamic>? data = privateEconomyResponse != null
+          ? await privateEconomyResponse
+          : docs['$collection/economy'];
+      yield (items: <T>[if (data != null) map(data, 'economy')], isFromCache: false);
+      return;
+    }
+    yield (items: <T>[], isFromCache: false);
   }
 }

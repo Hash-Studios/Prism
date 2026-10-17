@@ -219,6 +219,42 @@ The native review found an ownerless persisted auto-rotate pass. The catalog rev
 
 Native Android gate 66 passed JVM tests, lint, and instrumentation compilation on the merged native files. Supported Swift core build, strict fallback typecheck, and project-file lint also passed. Logs are `/tmp/prism-offline-android-native-66.log` and `/tmp/prism-offline-swift-66.log`. Device discovery reported no available simulator or emulator, so no device runtime result is claimed.
 
+## Economy integration review 68 through 73
+
+The parent rejected the initial private-economy snapshot patch. Its revision field did not reach the restore parser, its inventory representations disagreed, and a failed cache write could hide an acknowledged mutation. Cleanup could also race an in-flight write. Worker 70 repaired parts of this delta but explicitly did not verify offline bootstrap, permission and timeout behavior, or disk failures.
+
+Claude Sonnet 5.5 independently identified stale equal-revision overlays, cached absence mistaken for confirmed server absence, and refund retry initialization skipped after a root-read timeout. The parent also traced local restoration behind Firebase readiness and rotation entitlement updates that do not observe a late pass restoration. These findings are open until the focused repairs and their tests pass.
+
+Luna 71 owns local-only restoration, private economy revision and mutation recovery, and service tests. Luna 72 owns rotation pass updates and owner-specific deletion cleanup. Luna 73 owns a shared bounded metadata-confirmed read and the new Draw, Drops, and Leaderboard consumers. A cached empty snapshot must not erase durable saved content. Private writes and cleanup must serialize for the same owner without blocking another owner.
+
+No full Flutter gate has passed on this merged tree. No PR or hosted result is claimed at this checkpoint.
+
+## Integration proof 74 through 84
+
+Generation 75 passed. The rotation and cleanup focused run passed all 39 tests. Parent focused run 78 completed with eight failures, including three generic-stream compile failures. This is not a green gate.
+
+Claude Opus 5.5 confirmed two money-recovery regressions. Early account-switch returns skipped captured-owner ledger and refund bookkeeping. A catch around critical refund persistence could remove the only durable recovery record. The repair must preserve the existing pending-download assertions, not weaken them. The reviewer also found that strict newer-only private revision checks can hide fields omitted by a partial quest reply. A late missing read can erase a newly acknowledged pass. These fixes require fresh service-level proof.
+
+Claude Sonnet 5.5 requested runtime proof for document-ID filters and ticket query authorization. The tracked adapter now maps document-ID filters to `FieldPath.documentId`, with a regression. Parent rules run 82 disproved the inferred requirement that an exact owner ticket query without a uid filter must fail. It returned 200. The explicit uid filter remains, and wrong-owner queries remain forbidden. The corrected run 83 passed the complete rules smoke suite. It also proved that an exact owner query on `usersv2/{uid}/private/economy` succeeds and another owner's query fails. No rule changed.
+
+Malformed saved Drop records now parse independently, so one bad row cannot prevent later successful refreshes from persisting. Parent catalog run 84 passed all 51 tests, including that regression, the document-ID adapter, confirmed-server reads, and saved Draw, Drops, and Leaderboard repositories.
+
+Master advanced to `65f463dc5` with Studio Telegram posting. Normal merge `222f5f844` integrated its five files without conflicts or overlap with the offline repairs. The feature diff does not remove those upstream files. The next full gate uses this merged tree.
+
+## Economy repair 80 through 92
+
+The money-recovery repairs retain captured-owner ledger and refund bookkeeping after an account switch. Critical refund persistence errors propagate instead of deleting the only recovery record. Private snapshots accept an equal-revision full server read when no acknowledged local mutation occurred during that read. A separate root display snapshot retains XP and equipped cosmetics without granting coin authority.
+
+Run 85 reached 216 passes and one failure before the parent interrupted the stalled pass widget. The pending-purchase failure showed that cleanup must invalidate operations even before the economy mirror initializes. Worker 87 added this guard and deterministic pass, live-style, and grace-download race coverage. Spend acknowledgement advances the mutation marker before asynchronous bookkeeping.
+
+The pass widget fixture now mocks its toast channel and awaits the actual purchase and toast endpoint outside the fake clock. Production UI did not change for that repair. Run 90 passed all three widget tests.
+
+Independent Claude Sonnet 5.5 review 86 identified permission denial mistaken for proof of private document absence. Worker 91 corrected this path. Only a confirmed server absence clears private economy state. Permission errors retain last-known inventory and passes, with a restart regression. The guide records this policy separately from public catalog metadata invalidation. Combined economy run 92 passed all 223 tests with exit zero.
+
+Full local gate 94 passed formatting and early guards, then stopped at one analysis error. The upstream QA-render profile repository fake did not implement the offline cleanup interface method. Worker 95 owns that fixture repair. The full gate is not yet green.
+
+Worker 95 added the missing no-op cleanup method to the render fake, without changing assertions or production behavior. Gate 97 passes analysis and guards and has reached the test suite. Independent Claude Sonnet 5.5 closure review 93 found no concrete blockers in the repaired economy paths and no added narration comments. Its live-read notes predate gate 94's failure and the later documentation updates. The final gate result below, once recorded, supersedes those interim notes.
+
 ## Evidence limits
 
 The inherited trail contains estimated timestamps, with append-only correction rows. Several early rows name local `/tmp` logs that are not portable PR artifacts. Later committed tests and hosted checks must carry the final proof. The foundation commit proves its six files only. The later implementation commit and master merge preserve the wider integration tree but do not replace its full verification.

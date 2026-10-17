@@ -13,6 +13,9 @@ An image preview is not proof that the original is saved. A wallpaper action mus
 | Retained originals | Up to 500 images and 512 MiB. A full store rejects another retained save instead of evicting saved images. |
 | Upload drafts | Up to 15 MiB per file, 10 drafts and 60 MiB per owner, and 20 drafts and 150 MiB per device. |
 | Notification inbox | The newest 500 entries within a 900 KiB encoded-record budget per owner. A single oversized item is skipped. |
+| Draw and leaderboard metadata | The last current and settled draw, up to 100 global leaderboard entries, and owner-scoped tickets and friend ranks. Tickets require the same week. Friend ranks require the same week and following list. |
+| Drops metadata | Up to eight recent weeks. Full-size locked originals still require a server-authorized unlock and transfer. |
+| Private economy | Owner-scoped quests, acquired inventory, drop unlocks, passes, and grace-download display state. A separate display snapshot retains XP, weekly XP, and equipped cosmetics. Coin balances are not restored from these snapshots as authority. |
 | Temporary images and editor files | Disposable. Clearing temporary cache does not clear the stores above or pending account changes. |
 
 The app checks retained files before use. A missing, empty, unsupported, or mismatched file is not available offline. Atomic record replacement covers process interruption, not power loss.
@@ -38,6 +41,10 @@ An acquisition made while premium remains eligible for a free repeat save after 
 Local features keep the signed-in account's last known paid capability while the device cannot refresh it. The app refreshes store state on reconnect. Offline access cannot detect a refund or revocation that the device has not received. This policy preserves the existing local capability behavior instead of introducing an arbitrary offline expiry window.
 
 Retained image bytes do not grant premium. They also do not prove that another account acquired the wallpaper. New spends, rewards, purchases, restores, and other authoritative operations still require their existing server or store acknowledgement. Existing native wallpaper playlists can continue from prepared local files.
+
+Saved temporary passes restore independently of Firebase readiness. Their server-issued expiry uses the device clock. Offline access cannot detect clock rollback, a refund, or a revocation that the device has not received. Ownerless legacy auto-rotate pass records do not grant access to a signed-in account.
+
+The new Draw, Drops, and Leaderboard refreshes wait up to five seconds for a server-confirmed snapshot before using their saved fallback. Cached empty SDK snapshots do not erase saved content. Confirmed server absence and permission denial can invalidate their saved metadata. Private economy reads clear saved state only after confirmed server absence. A permission error retains last-known passes and inventory because it does not prove revocation. Saved economy state does not permit a new purchase or reward while offline.
 
 ## Run the automated checks
 
@@ -74,6 +81,8 @@ For each journey, prepare the content online, enable airplane mode, force-stop t
 | Switch account A to B during a slow request | A's private records, notifications, and native favourite choices do not appear for B. |
 | Upload draft | The upload entry offers the current owner's retained draft after restart without another gallery selection. The file and edited metadata survive. Publication still requires internet. |
 | AI prompt and history | Saved prompt and history data remain usable. Generation and variation require internet. |
+| Draw, Drops, and Leaderboard | Saved metadata remains visible after a bounded failed refresh. Tickets and friend ranks stay within their owner's week and following-list scope. Entry purchases and new unlocks still require internet. |
+| Acquired passes, inventory, and rank | A cold offline restart restores the same owner's saved capability, items, XP, and equipped cosmetics. Expired passes do not grant access. Switching accounts or deleting an account does not expose or revive that owner's state. |
 | Auto-rotate, Android tiles, and iOS Shortcuts | Prepared local content works without another transfer. Missing content has an honest fallback. |
 | Coins, rewards, purchases, restore, deletion, and uploads | Cached display state never becomes a new server authorization. Failures do not imply a completed action. |
 

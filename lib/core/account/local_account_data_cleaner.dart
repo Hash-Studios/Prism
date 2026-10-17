@@ -1,15 +1,20 @@
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
+import 'package:Prism/features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart';
+import 'package:Prism/features/draw/data/repositories/draw_repository_impl.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
+import 'package:Prism/features/leaderboard/data/repositories/leaderboard_repository_impl.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
@@ -36,6 +41,14 @@ class LocalAccountDataCleaner {
   }
 
   static List<LocalClearStep> _defaultSteps() => <LocalClearStep>[
+    (name: 'private economy', run: CoinsService.instance.clearForUser),
+    (name: 'draw ticket snapshots', run: DrawRepositoryImpl.clearForUser),
+    (name: 'friend leaderboard snapshots', run: LeaderboardRepositoryImpl.clearForUser),
+    (
+      name: 'auto-rotate pass record',
+      run: (String userId) =>
+          AutoRotateRepositoryImpl.clearPassRecordForUser(settings: getIt<SettingsLocalDataSource>(), ownerId: userId),
+    ),
     (name: 'favourites', run: (String userId) => getIt<FavoritesLocalDataSource>().clearUser(userId)),
     (name: 'iOS favourites mirror', run: ShortcutsFavouritesStore.clearForUser),
     (name: 'native favourites paths', run: NativeAssetPathsStore.clearForUser),

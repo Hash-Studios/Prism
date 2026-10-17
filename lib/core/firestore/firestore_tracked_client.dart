@@ -106,29 +106,30 @@ class FirestoreTrackedClient implements FirestoreClient {
   Query<Map<String, dynamic>> _applySpec(FirestoreQuerySpec spec) {
     Query<Map<String, dynamic>> query = _firestore.collection(spec.collection);
     for (final FirestoreFilter filter in spec.filters) {
+      final Object field = filter.field == firestoreDocumentIdField ? FieldPath.documentId : filter.field;
       switch (filter.op) {
         case FirestoreFilterOp.isEqualTo:
-          query = query.where(filter.field, isEqualTo: filter.value);
+          query = query.where(field, isEqualTo: filter.value);
         case FirestoreFilterOp.isNotEqualTo:
-          query = query.where(filter.field, isNotEqualTo: filter.value);
+          query = query.where(field, isNotEqualTo: filter.value);
         case FirestoreFilterOp.isLessThan:
-          query = query.where(filter.field, isLessThan: filter.value);
+          query = query.where(field, isLessThan: filter.value);
         case FirestoreFilterOp.isLessThanOrEqualTo:
-          query = query.where(filter.field, isLessThanOrEqualTo: filter.value);
+          query = query.where(field, isLessThanOrEqualTo: filter.value);
         case FirestoreFilterOp.isGreaterThan:
-          query = query.where(filter.field, isGreaterThan: filter.value);
+          query = query.where(field, isGreaterThan: filter.value);
         case FirestoreFilterOp.isGreaterThanOrEqualTo:
-          query = query.where(filter.field, isGreaterThanOrEqualTo: filter.value);
+          query = query.where(field, isGreaterThanOrEqualTo: filter.value);
         case FirestoreFilterOp.arrayContains:
-          query = query.where(filter.field, arrayContains: filter.value);
+          query = query.where(field, arrayContains: filter.value);
         case FirestoreFilterOp.arrayContainsAny:
-          query = query.where(filter.field, arrayContainsAny: filter.value as List<Object?>?);
+          query = query.where(field, arrayContainsAny: filter.value as List<Object?>?);
         case FirestoreFilterOp.whereIn:
-          query = query.where(filter.field, whereIn: filter.value as List<Object?>?);
+          query = query.where(field, whereIn: filter.value as List<Object?>?);
         case FirestoreFilterOp.whereNotIn:
-          query = query.where(filter.field, whereNotIn: filter.value as List<Object?>?);
+          query = query.where(field, whereNotIn: filter.value as List<Object?>?);
         case FirestoreFilterOp.isNull:
-          query = query.where(filter.field, isNull: filter.value as bool? ?? true);
+          query = query.where(field, isNull: filter.value as bool? ?? true);
       }
     }
     for (final FirestoreOrderBy order in spec.orderBy) {

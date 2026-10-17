@@ -18,6 +18,8 @@ class _MockCollection extends Mock implements CollectionReference<Map<String, dy
 
 class _MockDoc extends Mock implements DocumentReference<Map<String, dynamic>> {}
 
+class _MockQuery extends Mock implements Query<Map<String, dynamic>> {}
+
 class _MockSnapshot extends Mock implements DocumentSnapshot<Map<String, dynamic>> {}
 
 class _MockQuerySnapshot extends Mock implements QuerySnapshot<Map<String, dynamic>> {}
@@ -234,6 +236,31 @@ void main() {
     expect(result, isNull);
     expect(sink.events.single.operation, FirestoreOperation.docGet);
     expect(sink.events.single.resultCount, 0);
+  });
+
+  test('query adapts document-ID filters to FieldPath.documentId', () async {
+    final _MockQuery query = _MockQuery();
+    final _MockQuerySnapshot snapshot = _MockQuerySnapshot();
+    when(() => firestore.collection('drawTickets')).thenReturn(collection);
+    when(() => collection.where(FieldPath.documentId, isEqualTo: '2026-W42_u1')).thenReturn(query);
+    when(() => query.where('uid', isEqualTo: 'u1')).thenReturn(query);
+    when(() => query.get()).thenAnswer((_) async => snapshot);
+    when(() => snapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+
+    await client.query<String>(
+      const FirestoreQuerySpec(
+        collection: 'drawTickets',
+        sourceTag: 'test.document_id_filter',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.isEqualTo, value: '2026-W42_u1'),
+          FirestoreFilter(field: 'uid', op: FirestoreFilterOp.isEqualTo, value: 'u1'),
+        ],
+      ),
+      (data, id) => id,
+    );
+
+    verify(() => collection.where(FieldPath.documentId, isEqualTo: '2026-W42_u1')).called(1);
+    verify(() => query.where('uid', isEqualTo: 'u1')).called(1);
   });
 
   test('runBatch failure is mapped and recorded under an empty collection', () async {

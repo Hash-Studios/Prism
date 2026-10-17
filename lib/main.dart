@@ -926,6 +926,11 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(
+      CoinsService.instance.restoreLocalEconomyForCurrentUser().catchError((Object error, StackTrace stackTrace) {
+        CoinsService.instance.logCoinError(sourceTag: 'coins.main.local_restore', error: error, stackTrace: stackTrace);
+      }),
+    );
+    unawaited(
       _restoreLoginStatus().catchError((Object error, StackTrace stackTrace) {
         logger.w('Restoring the login status failed.', tag: 'Startup', error: error, stackTrace: stackTrace);
         return false;

@@ -1,3 +1,5 @@
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/views/auto_rotate_entitlement.dart';
@@ -22,6 +24,7 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    CoinsService.instance.passesNotifier.addListener(_onPassesChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _syncSession(context, context.read<SessionBloc>().state);
     });
@@ -30,7 +33,21 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    CoinsService.instance.passesNotifier.removeListener(_onPassesChanged);
     super.dispose();
+  }
+
+  void _onPassesChanged() {
+    if (!mounted) return;
+    final SessionState session = context.read<SessionBloc>().state;
+    if (session.status != LoadStatus.success ||
+        !session.session.loggedIn ||
+        session.session.userId.trim().isEmpty ||
+        !app_state.prismUser.loggedIn ||
+        app_state.prismUser.id.trim() != session.session.userId.trim()) {
+      return;
+    }
+    _syncSession(context, session);
   }
 
   @override
@@ -91,11 +108,17 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android || state.status != LoadStatus.success) {
       return;
     }
+    final bool ownsPasses =
+        state.session.loggedIn &&
+        app_state.prismUser.loggedIn &&
+        app_state.prismUser.id.trim() == state.session.userId.trim();
+    final bool isPro =
+        state.session.loggedIn && (state.session.premium || ownsPasses && autoRotateEntitled(state.session));
     context.read<AutoRotateBloc>().add(
       AutoRotateEvent.entitlementChanged(
-        isPro: autoRotateEntitled(state.session),
+        isPro: isPro,
         userId: state.session.userId,
-        passUntil: autoRotatePassEnd(state.session),
+        passUntil: ownsPasses ? autoRotatePassEnd(state.session) : null,
       ),
     );
     final FavouriteWallsState favourites = context.read<FavouriteWallsBloc>().state;

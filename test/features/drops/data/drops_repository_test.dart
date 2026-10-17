@@ -1,9 +1,49 @@
+import 'dart:io';
+
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/features/drops/data/repositories/drops_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_firestore_client.dart';
+
+class _NeverQueryClient extends FakeFirestoreClient {
+  @override
+  Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map,
+  ) => Stream<({List<T> items, bool isFromCache})>.empty();
+}
+
+class _MetadataFirestoreClient extends FakeFirestoreClient {
+  @override
+  Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map,
+  ) async* {
+    yield (items: <T>[], isFromCache: true);
+    yield (items: await query<T>(spec, map), isFromCache: false);
+  }
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    querySpecs.add(spec);
+    if (queryError case final Object error) throw error;
+    final FirestoreFilter? idFilter = spec.filters
+        .where((FirestoreFilter filter) => filter.field == firestoreDocumentIdField)
+        .firstOrNull;
+    if (idFilter != null) {
+      final String id = idFilter.value! as String;
+      final Map<String, dynamic>? data = docs[spec.collection]?[id];
+      return data == null ? <T>[] : <T>[map(data, id)];
+    }
+    return (onQuery?.call(spec) ?? const <FakeDocRow>[])
+        .map((FakeDocRow row) => map(row.data, row.id))
+        .toList(growable: false);
+  }
+}
 
 Map<String, dynamic> _doc({required int startsAt, required int endsAt}) => <String, dynamic>{
   'title': 'Autumn',
@@ -24,11 +64,15 @@ void main() {
   final int ms = now.millisecondsSinceEpoch;
   late FakeFirestoreClient client;
   late DropsRepositoryImpl repository;
+  late Directory directory;
 
   setUp(() {
-    client = FakeFirestoreClient();
-    repository = DropsRepositoryImpl(client);
+    client = _MetadataFirestoreClient();
+    directory = Directory.systemTemp.createTempSync('prism-drops-test');
+    repository = DropsRepositoryImpl(client, store: DurableJsonStore('drops', directory: directory));
   });
+
+  tearDown(() => directory.deleteSync(recursive: true));
 
   group('fetchLive', () {
     test('asks for the next Drop that has not ended, oldest end first', () async {
@@ -87,5 +131,56 @@ void main() {
       expect((await repository.fetchByWeekKey('2026-W41')).data!.weekKey, '2026-W41');
       expect((await repository.fetchByWeekKey('2026-W01')).data, isNull);
     });
+  });
+
+  test('persists recent weeks across repository restart for transient failures only', () async {
+    client.onQuery = (_) => [(id: '2026-W42', data: _doc(startsAt: ms - 1000, endsAt: ms + 5000))];
+    expect((await repository.fetchLive(now)).data!.title, 'Autumn');
+
+    final FakeFirestoreClient offline = _MetadataFirestoreClient()
+      ..queryError = FirestoreError(code: 'unavailable', message: 'offline');
+    final DropsRepositoryImpl restarted = DropsRepositoryImpl(
+      offline,
+      store: DurableJsonStore('drops', directory: directory),
+      readTimeout: const Duration(milliseconds: 10),
+    );
+    expect((await restarted.fetchLive(now)).data!.weekKey, '2026-W42');
+
+    final FakeFirestoreClient empty = _MetadataFirestoreClient();
+    final DropsRepositoryImpl authoritative = DropsRepositoryImpl(
+      empty,
+      store: DurableJsonStore('drops', directory: directory),
+    );
+    expect((await authoritative.fetchLive(now)).data, isNull);
+    empty.queryError = FirestoreError(code: 'unavailable', message: 'offline');
+    expect((await authoritative.fetchLive(now)).isFailure, isTrue);
+  });
+
+  test('skips malformed saved Drops and persists a successful server result', () async {
+    final DurableJsonStore store = DurableJsonStore('drops', directory: directory);
+    await store.write('recent', <String, Object?>{
+      'drops': <Object?>[
+        <String, Object?>{'weekKey': 'broken'},
+      ],
+    });
+    client.onQuery = (_) => [(id: '2026-W42', data: _doc(startsAt: ms - 1000, endsAt: ms + 5000))];
+
+    expect((await repository.fetchLive(now)).data!.weekKey, '2026-W42');
+
+    final FakeFirestoreClient offline = _MetadataFirestoreClient()
+      ..queryError = FirestoreError(code: 'unavailable', message: 'offline');
+    final DropsRepositoryImpl restarted = DropsRepositoryImpl(offline, store: store);
+    expect((await restarted.fetchLive(now)).data!.weekKey, '2026-W42');
+  });
+
+  test('bounded repository timeout falls back to the recent saved Drop', () async {
+    client.onQuery = (_) => [(id: '2026-W42', data: _doc(startsAt: ms - 1000, endsAt: ms + 5000))];
+    await repository.fetchLive(now);
+    final DropsRepositoryImpl timedOut = DropsRepositoryImpl(
+      _NeverQueryClient(),
+      store: DurableJsonStore('drops', directory: directory),
+      readTimeout: const Duration(milliseconds: 1),
+    );
+    expect((await timedOut.fetchLive(now)).data!.weekKey, '2026-W42');
   });
 }

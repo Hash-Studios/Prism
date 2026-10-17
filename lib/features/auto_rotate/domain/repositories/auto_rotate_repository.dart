@@ -2,9 +2,9 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 
 abstract class AutoRotateRepository {
-  Future<AutoRotateConfig> loadConfig();
+  Future<AutoRotateConfig> loadConfig({String? ownerId});
 
-  Future<void> saveConfig(AutoRotateConfig config);
+  Future<void> saveConfig(AutoRotateConfig config, {String? ownerId});
 
   /// Returns false when the platform refused to start the rotation.
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls);

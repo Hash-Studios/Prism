@@ -697,6 +697,17 @@ void main() {
       expect(find.text('Download again'), findsOneWidget);
     });
 
+    testWidgets('a standard wallpaper repeat shows free while grace downloads remain', (tester) async {
+      await useGraceDownloads(2);
+      downloadsOnDisk = <String>[await fileOnDisk()];
+      CoinsService.instance.isLinkDownloaded = (link) => link == _link;
+      await pump(tester);
+      await tapSave(tester);
+
+      expect(find.text('Download again'), findsOneWidget);
+      expect(find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)'), findsNothing);
+    });
+
     testWidgets('an index entry whose file is gone does not block the save', (tester) async {
       CoinsService.instance.isLinkDownloaded = (link) => link == _link;
       await pump(tester);

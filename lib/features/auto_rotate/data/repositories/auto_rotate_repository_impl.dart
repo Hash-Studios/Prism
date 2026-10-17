@@ -24,7 +24,9 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   static const String _categoryKey = 'autoRotate.category';
   static const int _categoryLimit = 40;
   static const String _appliedSourcesKey = 'autoRotate.appliedSources';
-  static const String _passUntilKey = 'autoRotate.passUntilMs';
+  static const String _passRecordKey = 'autoRotate.passRecord';
+  static Future<void>? _passRecordOperation;
+  static final Map<String, int> _passRecordGenerations = <String, int>{};
 
   final SettingsLocalDataSource _settings;
   final PrismWallpaperRepository _wallpapers;
@@ -40,7 +42,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   }
 
   @override
-  Future<AutoRotateConfig> loadConfig() async {
+  Future<AutoRotateConfig> loadConfig({String? ownerId}) async {
     const AutoRotateConfig defaults = AutoRotateConfig();
     final int interval = _settings.get<int>(
       PersistenceKeys.autoRotateIntervalMinutes,
@@ -51,7 +53,12 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
       defaultValue: defaults.target.name,
     );
     final String sourceName = _settings.get<String>(_sourceKey, defaultValue: defaults.source.name);
-    final int passUntilMs = _settings.get<int>(_passUntilKey, defaultValue: 0);
+    final Map<String, Object?>? passRecord = _readPassRecord();
+    final Object? storedUntilMs = passRecord?['untilMs'];
+    final int passUntilMs =
+        ownerId != null && ownerId.isNotEmpty && passRecord?['ownerId'] == ownerId && storedUntilMs is int
+        ? storedUntilMs
+        : 0;
     return AutoRotateConfig(
       enabled: _settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: defaults.enabled),
       intervalMinutes: AutoRotateConfig.intervalOptions.contains(interval) ? interval : defaults.intervalMinutes,
@@ -65,7 +72,8 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   }
 
   @override
-  Future<void> saveConfig(AutoRotateConfig config) async {
+  Future<void> saveConfig(AutoRotateConfig config, {String? ownerId}) async {
+    final int passRecordGeneration = ownerId == null ? 0 : _passRecordGenerations[ownerId] ?? 0;
     await _settings.set(PersistenceKeys.autoRotateEnabled, config.enabled);
     await _settings.set(PersistenceKeys.autoRotateIntervalMinutes, config.intervalMinutes);
     await _settings.set(PersistenceKeys.autoRotateTarget, config.target.name);
@@ -74,10 +82,56 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     await _settings.set(_categoryKey, config.categoryName);
     await _settings.set(PersistenceKeys.autoRotateChargingOnly, config.chargingOnly);
     final DateTime? passUntil = config.passUntil;
-    if (passUntil == null) {
-      await _settings.delete(_passUntilKey);
-    } else {
-      await _settings.set(_passUntilKey, passUntil.millisecondsSinceEpoch);
+    if (ownerId == null || ownerId.isEmpty) return;
+    await _serializePassRecord(() async {
+      if ((_passRecordGenerations[ownerId] ?? 0) != passRecordGeneration) return;
+      if (passUntil == null) {
+        final Map<String, Object?>? currentPass = _readPassRecord();
+        if (currentPass?['ownerId'] == ownerId) await _settings.delete(_passRecordKey);
+      } else {
+        await _settings.set(
+          _passRecordKey,
+          jsonEncode(<String, Object?>{'ownerId': ownerId, 'untilMs': passUntil.millisecondsSinceEpoch}),
+        );
+      }
+    });
+  }
+
+  static Future<void> clearPassRecordForUser({
+    required SettingsLocalDataSource settings,
+    required String ownerId,
+  }) async {
+    final String owner = ownerId.trim();
+    if (owner.isEmpty) return;
+    _passRecordGenerations[owner] = (_passRecordGenerations[owner] ?? 0) + 1;
+    await _serializePassRecord(() async {
+      final String? raw = settings.get<String?>(_passRecordKey);
+      if (raw == null) return;
+      try {
+        final Map<String, Object?> record = (jsonDecode(raw) as Map<Object?, Object?>).cast<String, Object?>();
+        if (record['ownerId'] == owner) await settings.delete(_passRecordKey);
+      } catch (_) {}
+    });
+  }
+
+  static Future<void> _serializePassRecord(Future<void> Function() operation) {
+    final Future<void>? pending = _passRecordOperation;
+    final Future<void> next = pending == null
+        ? operation()
+        : pending.then((_) => operation(), onError: (Object _, StackTrace __) => operation());
+    _passRecordOperation = next;
+    return next.whenComplete(() {
+      if (identical(_passRecordOperation, next)) _passRecordOperation = null;
+    });
+  }
+
+  Map<String, Object?>? _readPassRecord() {
+    final String? raw = _settings.get<String?>(_passRecordKey);
+    if (raw == null) return null;
+    try {
+      return (jsonDecode(raw) as Map<Object?, Object?>).cast<String, Object?>();
+    } catch (_) {
+      return null;
     }
   }
 

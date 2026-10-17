@@ -82,6 +82,14 @@ void main() {
     final profileRecords = DurableJsonStore('public_profiles');
     await profileRecords.write('user-1::profile', <String, Object?>{'owner': 'user-1'});
     await profileRecords.write('user-2::profile', <String, Object?>{'owner': 'user-2'});
+    final privateEconomy = DurableJsonStore('private_economy');
+    final drawTickets = DurableJsonStore('draw_read_snapshots');
+    final friendRanks = DurableJsonStore('leaderboard_read_snapshots');
+    for (final String owner in <String>['user-1', 'user-2']) {
+      await privateEconomy.write(owner, <String, Object?>{'ownerId': owner, 'rev': 1, 'data': <String, Object?>{}});
+      await drawTickets.write('tickets:$owner', <String, Object?>{'count': 1});
+      await friendRanks.write('friends:$owner', <String, Object?>{'entries': <Object?>[]});
+    }
     final downloadedIndex = DownloadedWallIndex(settings);
     await downloadedIndex.remember(
       link: 'https://example.test/user-1.jpg',
@@ -138,6 +146,12 @@ void main() {
     expect(await blockRecords.read('user-2::blocked-user'), isNotNull);
     expect(await profileRecords.read('user-1::profile'), isNull);
     expect(await profileRecords.read('user-2::profile'), isNotNull);
+    expect(await privateEconomy.read('user-1'), isNull);
+    expect(await privateEconomy.read('user-2'), isNotNull);
+    expect(await drawTickets.read('tickets:user-1'), isNull);
+    expect(await drawTickets.read('tickets:user-2'), isNotNull);
+    expect(await friendRanks.read('friends:user-1'), isNull);
+    expect(await friendRanks.read('friends:user-2'), isNotNull);
     final acquisitions = jsonDecode(settings.get<String>('downloaded_walls_v1', defaultValue: '{}')) as Map;
     expect(acquisitions.values.map((value) => value['owner']), <String>['user-2']);
     expect(history.items(), isEmpty);
@@ -149,5 +163,18 @@ void main() {
     expect(preferences.getString('${NativeAssetPathsStore.preferenceKey}.shortcuts'), contains('b.jpg'));
     verify(guest.clear).called(1);
     verify(feed.clearAllFeedCaches).called(1);
+  });
+
+  test('account deletion clears only its auto-rotate pass record', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+
+    await settings.set('autoRotate.passRecord', jsonEncode(<String, Object?>{'ownerId': 'user-2', 'untilMs': 1}));
+    await LocalAccountDataCleaner().clearForUser('user-1');
+    expect(settings.get<String?>('autoRotate.passRecord'), contains('user-2'));
+
+    await settings.set('autoRotate.passRecord', jsonEncode(<String, Object?>{'ownerId': 'user-1', 'untilMs': 1}));
+    await LocalAccountDataCleaner().clearForUser('user-1');
+    expect(settings.get<String?>('autoRotate.passRecord'), isNull);
   });
 }

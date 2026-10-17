@@ -20,10 +20,10 @@ class _FakeRepository implements AutoRotateRepository {
   int stops = 0;
 
   @override
-  Future<AutoRotateConfig> loadConfig() async => config;
+  Future<AutoRotateConfig> loadConfig({String? ownerId}) async => config;
 
   @override
-  Future<void> saveConfig(AutoRotateConfig config) async => this.config = config;
+  Future<void> saveConfig(AutoRotateConfig config, {String? ownerId}) async => this.config = config;
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
