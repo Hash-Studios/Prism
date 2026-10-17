@@ -329,8 +329,8 @@ test("a signed-out user gets no streak reminder and the stored token is not read
       update: async (data: Record<string, unknown>) => updates.push(data),
     },
   };
-  t.mock.method(db, "doc", () => {
-    tokenReads += 1;
+  t.mock.method(db, "doc", (path: string) => {
+    if (String(path).endsWith("/private/session")) tokenReads += 1;
     return {get: async () => ({data: () => ({fcmToken: "stale-token"})})};
   });
   const query = {
@@ -381,8 +381,8 @@ test("a signed-out reminder retries after 15 minutes and sends after sign-in", a
       },
     },
   };
-  t.mock.method(db, "doc", () => {
-    tokenReads += 1;
+  t.mock.method(db, "doc", (path: string) => {
+    if (String(path).endsWith("/private/session")) tokenReads += 1;
     return {get: async () => ({data: () => ({fcmToken: "session-token"})})};
   });
   const query = {

@@ -177,6 +177,7 @@ class AdminModerationRepository {
         'url': '',
         'imageUrl': imageUrl,
         'route': 'announcement',
+        'push_kind': 'rejection',
       },
       'createdAt': DateTime.now().toUtc(),
     };

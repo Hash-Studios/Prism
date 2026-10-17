@@ -15,8 +15,17 @@ import 'package:auto_route/auto_route.dart';
 class NotificationRouteMapper {
   const NotificationRouteMapper();
 
+  /// Set from app startup. Push taps record a scoreboard signal through this hook.
+  static Future<void> Function(String kindWire)? onMeasuredTap;
+
   /// The kind of a push payload, or null for pushes that the app does not measure.
   static PushKindValue? pushKindFor(Map<String, dynamic> data) {
+    final String explicit = data['push_kind']?.toString().trim() ?? '';
+    if (explicit.isNotEmpty) {
+      for (final PushKindValue kind in PushKindValue.values) {
+        if (kind.wireValue == explicit) return kind;
+      }
+    }
     final String route = data['route']?.toString().trim() ?? '';
     final bool isReport = (data['report_id']?.toString().trim() ?? '').isNotEmpty;
     return switch (route) {
@@ -32,7 +41,10 @@ class NotificationRouteMapper {
   /// Records that the user opened a push. Call it once per tap.
   void trackPushOpened(Map<String, dynamic> data) {
     final PushKindValue? kind = pushKindFor(data);
-    if (kind != null) unawaited(analytics.track(PushOpenedEvent(kind: kind)));
+    if (kind == null) return;
+    unawaited(analytics.track(PushOpenedEvent(kind: kind)));
+    final Future<void> Function(String kindWire)? onTap = onMeasuredTap;
+    if (onTap != null) unawaited(onTap(kind.wireValue));
   }
 
   /// Maps a push payload to a route and records the tap. Inbox rows use [fromRoute], which does not record it.
@@ -125,6 +137,10 @@ class NotificationRouteMapper {
           }
         }
         return const HomeTabRoute();
+      case 'home':
+        return const HomeTabRoute();
+      case 'ai':
+        return AiTabRoute();
       case 'streak_reminder':
       case 'rewards':
         return const RewardsTabRoute();

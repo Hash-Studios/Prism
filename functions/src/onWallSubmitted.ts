@@ -84,6 +84,7 @@ export const onWallSubmitted = onDocumentCreated(
         imageUrl: wallThumb || undefined,
         modifier: adminEmail,
         channelId: "posts",
+        scoreKind: "moderation",
       }, adminEmail);
     }
 

@@ -7,6 +7,7 @@ import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -70,6 +71,7 @@ class NotificationPermissionPromptService {
       await analytics.track(
         TomorrowHookPermissionResultEvent(result: EventResultValue.success, subscribedToWotd: subscribedToWotd),
       );
+      await NotificationSignals.instance.onPermission(true);
       return;
     }
 
@@ -82,6 +84,7 @@ class NotificationPermissionPromptService {
           subscribedToWotd: false,
         ),
       );
+      await NotificationSignals.instance.onPermission(false);
       return;
     }
 
@@ -111,6 +114,7 @@ class NotificationPermissionPromptService {
         subscribedToWotd: subscribedToWotd,
       ),
     );
+    await NotificationSignals.instance.onPermission(granted);
   }
 
   /// Explains the benefit before the system dialog. Resolves true when the user agrees to be asked.

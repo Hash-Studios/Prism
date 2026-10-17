@@ -55,6 +55,7 @@ service cloud.firestore {
       return isOwner(userId)
           && request.resource.data.id is string
           && request.resource.data.id == userId
+          && ownerAppOpenValuesOk(request.resource.data)
           && request.resource.data.get('coins', 0) == 0
           && request.resource.data.get('premium', false) == false
           && request.resource.data.get('subscriptionTier', 'free') == 'free'
@@ -70,6 +71,36 @@ service cloud.firestore {
           || request.resource.data.coinState.diff(resource.data.get('coinState', {})).affectedKeys().hasOnly([
             'premiumPreviewUnlocks', 'streakReminderEnabled', 'streakTimezoneOffsetMinutes', 'streakReminderNextAtUtc'
           ]);
+    }
+
+    // lastAppOpenAt is a server timestamp, so it matches request.time. A raw write can be at most
+    // 5 minutes old, or 1 minute ahead, and the offset stays on the 15 minute grid.
+    function ownerAppOpenTimestampOk(data) {
+      return data.lastAppOpenAt is timestamp
+          && data.lastAppOpenAt <= request.time + duration.value(1, 'm')
+          && data.lastAppOpenAt >= request.time - duration.value(5, 'm');
+    }
+
+    function ownerAppOpenOffsetOk(data) {
+      let offset = data.appOpenTimezoneOffsetMinutes;
+      return offset is int && offset >= -720 && offset <= 840 && offset % 15 == 0;
+    }
+
+    function ownerAppOpenValuesOk(data) {
+      let openAtOk = !('lastAppOpenAt' in data)
+          || ownerAppOpenTimestampOk(data);
+      let offsetOk = !('appOpenTimezoneOffsetMinutes' in data)
+          || ownerAppOpenOffsetOk(data);
+      return openAtOk && offsetOk;
+    }
+
+    function ownerAppOpenOk() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let timestampOk = !changed.hasAny(['lastAppOpenAt'])
+          || ownerAppOpenTimestampOk(request.resource.data);
+      let offsetOk = !changed.hasAny(['appOpenTimezoneOffsetMinutes'])
+          || ownerAppOpenOffsetOk(request.resource.data);
+      return timestampOk && offsetOk;
     }
 
     // Drop and boost fields on walls are server and admin owned.
@@ -183,8 +214,9 @@ service cloud.firestore {
       allow update: if (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'name', 'username', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'following', 'interestCategories', 'onboardingV2', 'uploadsWeekStart',
-            'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState'
-          ]) && ownerCoinStateOk())
+            'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState',
+            'lastAppOpenAt', 'appOpenTimezoneOffsetMinutes'
+          ]) && ownerCoinStateOk() && ownerAppOpenOk())
           || canToggleFollowersOnly()
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
@@ -313,6 +345,21 @@ service cloud.firestore {
     match /usernames/{name} {
       allow read: if isSignedIn();
       allow write: if false;
+    }
+
+    // Daily push counts. Cloud Functions write them. Admins read the day rows.
+    match /metrics/{docId} {
+      allow read: if isConfiguredAdmin();
+      allow write: if false;
+
+      match /days/{dayId} {
+        allow read: if isConfiguredAdmin();
+        allow write: if false;
+      }
+
+      match /signals/{signalId} {
+        allow read, write: if false;
+      }
     }
 
     // Coin economy v2. Config, drops, boosts, draws and leaderboards are read-only to signed-in users.

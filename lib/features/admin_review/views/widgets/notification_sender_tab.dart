@@ -2,6 +2,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/admin_review/views/widgets/notification_scoreboard_card.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -129,6 +130,8 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          const NotificationScoreboardCard(),
+          const SizedBox(height: PrismSpace.md),
           PrismCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
