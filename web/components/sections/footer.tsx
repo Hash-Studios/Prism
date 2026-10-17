@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { APP_STORE_URL, GITHUB_URL, PLAY_STORE_URL } from "@/lib/site-config";
+import { APP_STORE_URL, GITHUB_URL, PLAY_STORE_URL, TELEGRAM_URL, X_URL } from "@/lib/site-config";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -28,6 +28,22 @@ export function Footer() {
               className="text-neutral-400 hover:text-black transition-all"
             >
               GitHub
+            </a>
+            <a
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-400 hover:text-black transition-all"
+            >
+              Telegram
+            </a>
+            <a
+              href={X_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-400 hover:text-black transition-all"
+            >
+              X (Twitter)
             </a>
           </div>
 
