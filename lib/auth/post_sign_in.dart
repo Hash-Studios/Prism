@@ -122,7 +122,6 @@ Future<void> completeSignIn({
     await CoinsService.instance.bootstrapForCurrentUser();
     await CoinsService.instance.refreshBalance();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
-    await CoinsService.instance.maybeAwardProDailyBonus();
     await CoinsService.instance.processPendingReferralIfEligible();
     await favourites;
   }

@@ -592,7 +592,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       await CoinsService.instance.bootstrapForCurrentUser();
       // Skip redundant refreshBalance: bootstrap already reads usersv2 and applies balance locally.
       await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
-      await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
       await getIt<BadgeRepository>().check();
     } catch (error, stackTrace) {

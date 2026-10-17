@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -13,7 +14,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
 /// Price of a streak rescue. The server owns the real value and checks the balance.
-const int kStreakRescueCost = 100;
+int get kStreakRescueCost => CoinPolicy.streakRescueCost;
 
 /// A streak must be at least this long before a break can be rescued.
 const int kStreakRescueMinCount = 7;

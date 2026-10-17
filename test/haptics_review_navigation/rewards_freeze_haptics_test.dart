@@ -47,7 +47,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  const String freezeLabel = 'Streak freeze, ${CoinPolicy.streakFreezeCost} coins';
+  final String freezeLabel = 'Streak freeze, ${CoinPolicy.streakFreezeCost} coins';
 
   testWidgets('capped freeze action emits only the error outcome haptic', (tester) async {
     CoinsService.instance.streakNotifier.value = StreakStatus.empty.copyWith(freezes: CoinPolicy.maxStreakFreezes);

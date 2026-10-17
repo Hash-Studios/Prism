@@ -431,7 +431,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       options: <CoinGateOption<CoinGateChoice>>[
         if (prompt.canWatchAd)
           CoinGateOption(
-            label: 'Watch ad (+${CoinPolicy.rewardedAd})${adsLeft == null ? '' : ' · $adsLeft left today'}',
+            label: '${watchAdOptionLabel()}${adsLeft == null ? '' : ' · $adsLeft left today'}',
             value: CoinGateChoice.watchAd,
           ),
         const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),

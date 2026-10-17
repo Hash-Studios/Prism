@@ -2,7 +2,7 @@ import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-CoinTransactionEntry _tx(String action, {String? reason}) => CoinTransactionEntry(
+CoinTransactionEntry _tx(String action, {String? reason, String description = ''}) => CoinTransactionEntry(
   id: 'ctx_$action',
   userId: 'u',
   createdAt: DateTime.utc(2026),
@@ -10,7 +10,7 @@ CoinTransactionEntry _tx(String action, {String? reason}) => CoinTransactionEntr
   balanceBefore: 0,
   balanceAfter: 1,
   action: action,
-  description: '',
+  description: description,
   sourceTag: '',
   status: 'completed',
   type: 'credit',
@@ -34,8 +34,24 @@ void main() {
       'premiumPreview24h': 'Collection preview, 24 h',
       'streakFreeze': 'Streak freeze',
       'badgeReward': 'Badge reward',
+      'proSpin': 'Pro spin',
+      'quest': 'Quest',
+      'questChest': 'Daily chest',
+      'streakChest': 'Day 7 chest',
+      'liveWallpaperStyle': 'Live wallpaper style',
+      'autoRotatePass7d': 'Auto-rotate pass, 7 days',
+      'dropWall': 'Drop wall',
+      'dropPack': 'Drop pack',
+      'boostWall': 'Boost',
+      'giftPremiumPass': 'Gift: 24 h pass',
+      'drawTicket': 'Draw ticket',
+      'shopItem': 'Shop',
     };
     expected.forEach((action, label) => expect(coinTransactionLabel(_tx(action)), label));
+  });
+
+  test('shop purchases show the item name', () {
+    expect(coinTransactionLabel(_tx('shopItem', description: 'Aurora frame')), 'Aurora frame');
   });
 
   test('daily login shows the streak day from the reason', () {

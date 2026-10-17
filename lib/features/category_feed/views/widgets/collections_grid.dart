@@ -93,10 +93,10 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       message: (missing) => missing > 0
           ? 'A 24 hour preview costs ${CoinPolicy.premiumPreview24h} coins. You need $missing more.'
           : 'Preview this premium collection for 24 hours for ${CoinPolicy.premiumPreview24h} coins.',
-      options: const [
+      options: [
         CoinGateOption(label: 'Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})', value: CoinGateChoice.spend),
-        CoinGateOption(label: 'Watch an ad (+${CoinPolicy.rewardedAd}) and unlock', value: CoinGateChoice.watchAd),
-        CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+        CoinGateOption(label: '${watchAdOptionLabel()} and unlock', value: CoinGateChoice.watchAd),
+        const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
       ],
     );
     return choice ?? CoinGateChoice.cancel;

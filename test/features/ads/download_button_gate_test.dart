@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -17,6 +18,7 @@ import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
+import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:cloud_functions/cloud_functions.dart' show FirebaseFunctionsException;
@@ -258,15 +260,15 @@ void main() {
     testWidgets('a signed-in user sees the coin price', (tester) async {
       await pump(tester);
 
-      expect(find.text('Save · 5'), findsOneWidget);
-      expect(semanticsLabel(tester), 'Save. Costs 5 coins');
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(semanticsLabel(tester), 'Save. Costs ${CoinPolicy.wallpaperDownload} coins');
     });
 
     testWidgets('a Pro wallpaper shows its higher price', (tester) async {
       await pump(tester, premiumContent: true);
 
-      expect(find.text('Save · 15'), findsOneWidget);
-      expect(semanticsLabel(tester), 'Save. Costs 15 coins');
+      expect(find.text('Save · ${CoinPolicy.premiumWallpaperDownload}'), findsOneWidget);
+      expect(semanticsLabel(tester), 'Save. Costs ${CoinPolicy.premiumWallpaperDownload} coins');
     });
 
     testWidgets('a Pro user sees that saving is free', (tester) async {
@@ -413,7 +415,7 @@ void main() {
       expect(result.result, 'failed');
       expect(result.reason, 'enqueue_failed');
       expect(result.stage, 'download');
-      expect(find.text('Save · 5'), findsOneWidget);
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
       expect(ledger(), isEmpty);
     });
   });
@@ -427,8 +429,11 @@ void main() {
       await tapSave(tester);
 
       expect(find.text('Not enough coins'), findsOneWidget);
-      expect(find.textContaining('You need 3 more coins to save this wallpaper.'), findsOneWidget);
-      expect(find.text('Watch ad (+10)'), findsOneWidget);
+      expect(
+        find.textContaining('You need ${CoinPolicy.wallpaperDownload - 2} more coins to save this wallpaper.'),
+        findsOneWidget,
+      );
+      expect(find.text(watchAdOptionLabel()), findsOneWidget);
       expect(find.text('Upgrade to Pro'), findsOneWidget);
       expect(enqueued, isEmpty);
     });
@@ -444,7 +449,7 @@ void main() {
       await pump(tester);
       await tapSave(tester);
 
-      expect(find.textContaining('Watch ad'), findsNothing);
+      expect(find.textContaining('Watch a video'), findsNothing);
       expect(find.textContaining('Ads are off. Change this in Settings > Privacy.'), findsOneWidget);
       expect(find.text('Upgrade to Pro'), findsOneWidget);
     });
@@ -455,8 +460,8 @@ void main() {
       await pump(tester, premiumContent: true);
       await tapSave(tester);
 
-      expect(find.textContaining('You need 15 more coins'), findsOneWidget);
-      expect(find.textContaining('Each ad adds 10.'), findsOneWidget);
+      expect(find.textContaining('You need ${CoinPolicy.premiumWallpaperDownload} more coins'), findsOneWidget);
+      expect(find.textContaining('Each ad adds ${CoinPolicy.rewardedAd}.'), findsOneWidget);
     });
 
     testWidgets('leaving the sheet reports a cancelled save', (tester) async {
@@ -487,7 +492,7 @@ void main() {
       await tapSave(tester);
 
       expect(find.text('Already in Downloads'), findsOneWidget);
-      expect(find.text('Download again (-5 coins)'), findsOneWidget);
+      expect(find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)'), findsOneWidget);
       expect(spendCalls, isEmpty);
 
       await tester.tap(find.text('Open'));
@@ -504,7 +509,7 @@ void main() {
       await pump(tester);
       await tapSave(tester);
 
-      await tester.tap(find.text('Download again (-5 coins)'));
+      await tester.tap(find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)'));
       await settle(tester);
 
       expect(spendCalls, hasLength(1));
@@ -593,7 +598,7 @@ void main() {
       CoinsService.instance.isLinkDownloaded = (identity) => identity == _link;
       await pump(tester, variant: variant());
 
-      expect(find.text('Save · 5'), findsOneWidget);
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
       await tester.runAsync(() async {});
       await tapSave(tester);
 
@@ -627,7 +632,7 @@ void main() {
       expect(prepared, 0);
       expect(spendCalls, isEmpty);
 
-      await tester.tap(find.text('Download again (-5 coins)'));
+      await tester.tap(find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)'));
       await settle(tester);
 
       expect(prepared, 1);
@@ -692,7 +697,7 @@ void main() {
 
       await pump(tester, variant: variant(key: 'tint-00ff00'));
 
-      expect(find.text('Save · 5'), findsOneWidget);
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a colour picked while the first one renders changes neither what is saved nor what is remembered', (
@@ -718,7 +723,7 @@ void main() {
 
       expect((enqueued.single! as DownloadRequest).filenameWithoutExtension, 'sunset_tint-ff8800');
       expect(remembered, <String>['a']);
-      expect(find.text('Save · 5'), findsOneWidget);
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a variant save counts the download for the wallpaper, not for the variation link', (tester) async {
@@ -1112,7 +1117,7 @@ void main() {
       expect(find.text('Pro wallpaper'), findsOneWidget);
       expect(find.text('Sign in'), findsOneWidget);
       expect(find.text('Get Pro'), findsOneWidget);
-      expect(find.textContaining('Watch ad'), findsNothing);
+      expect(find.textContaining('Watch a video'), findsNothing);
       expect(enqueued, isEmpty);
       expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>().single.premium, isTrue);
     });

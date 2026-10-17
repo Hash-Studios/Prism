@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -316,7 +317,7 @@ void main() {
       await _pump(tester, theme, const RewardsHero());
       expect(find.text('0'), findsOneWidget);
       expect(find.text('Open Prism every day to build a streak.'), findsOneWidget);
-      expect(find.text('Finish day 7 for a +40 week bonus'), findsOneWidget);
+      expect(find.text('Finish day 7 for a +${CoinPolicy.streak7Bonus} week bonus'), findsOneWidget);
       expect(find.text('Day 7'), findsOneWidget);
       expect(find.textContaining('Best'), findsNothing);
     });

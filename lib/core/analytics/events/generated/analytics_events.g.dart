@@ -2107,3 +2107,204 @@ class AutoRotateRunResultEvent extends AnalyticsEvent {
     return <String, Object?>{'result': result.wireValue};
   }
 }
+
+class ProSpinClaimedEvent extends AnalyticsEvent {
+  const ProSpinClaimedEvent({required this.coins, required this.segment});
+
+  final int coins;
+  final int segment;
+
+  @override
+  String get eventName => 'pro_spin_claimed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'coins': coins, 'segment': segment};
+  }
+}
+
+class QuestProgressedEvent extends AnalyticsEvent {
+  const QuestProgressedEvent({
+    required this.questId,
+    required this.event,
+    required this.progress,
+    required this.target,
+  });
+
+  final String questId;
+  final String event;
+  final int progress;
+  final int target;
+
+  @override
+  String get eventName => 'quest_progressed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'quest_id': questId, 'event': event, 'progress': progress, 'target': target};
+  }
+}
+
+class QuestCompletedEvent extends AnalyticsEvent {
+  const QuestCompletedEvent({required this.questId, required this.coins, required this.xp});
+
+  final String questId;
+  final int coins;
+  final int xp;
+
+  @override
+  String get eventName => 'quest_completed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'quest_id': questId, 'coins': coins, 'xp': xp};
+  }
+}
+
+class QuestChestOpenedEvent extends AnalyticsEvent {
+  const QuestChestOpenedEvent({required this.coins, this.itemId});
+
+  final int coins;
+  final String? itemId;
+
+  @override
+  String get eventName => 'quest_chest_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'coins': coins, if (itemId != null) 'item_id': itemId!};
+  }
+}
+
+class ShopItemPurchasedEvent extends AnalyticsEvent {
+  const ShopItemPurchasedEvent({required this.itemId, required this.price});
+
+  final String itemId;
+  final int price;
+
+  @override
+  String get eventName => 'shop_item_purchased';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'item_id': itemId, 'price': price};
+  }
+}
+
+class CosmeticEquippedEvent extends AnalyticsEvent {
+  const CosmeticEquippedEvent({required this.slot, this.itemId});
+
+  final String slot;
+  final String? itemId;
+
+  @override
+  String get eventName => 'cosmetic_equipped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'slot': slot, if (itemId != null) 'item_id': itemId!};
+  }
+}
+
+class DropViewedEvent extends AnalyticsEvent {
+  const DropViewedEvent({required this.weekKey});
+
+  final String weekKey;
+
+  @override
+  String get eventName => 'drop_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'week_key': weekKey};
+  }
+}
+
+class DropUnlockedEvent extends AnalyticsEvent {
+  const DropUnlockedEvent({required this.weekKey, required this.pack, required this.count, required this.price});
+
+  final String weekKey;
+  final bool pack;
+  final int count;
+  final int price;
+
+  @override
+  String get eventName => 'drop_unlocked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'week_key': weekKey, 'pack': pack ? 1 : 0, 'count': count, 'price': price};
+  }
+}
+
+class BoostPurchasedEvent extends AnalyticsEvent {
+  const BoostPurchasedEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'boost_purchased';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class GiftSentEvent extends AnalyticsEvent {
+  const GiftSentEvent({required this.recipientUid});
+
+  final String recipientUid;
+
+  @override
+  String get eventName => 'gift_sent';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'recipient_uid': recipientUid};
+  }
+}
+
+class DrawTicketBoughtEvent extends AnalyticsEvent {
+  const DrawTicketBoughtEvent({required this.weekKey, required this.tickets});
+
+  final String weekKey;
+  final int tickets;
+
+  @override
+  String get eventName => 'draw_ticket_bought';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'week_key': weekKey, 'tickets': tickets};
+  }
+}
+
+class LeaderboardViewedEvent extends AnalyticsEvent {
+  const LeaderboardViewedEvent({required this.tab});
+
+  final String tab;
+
+  @override
+  String get eventName => 'leaderboard_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'tab': tab};
+  }
+}
+
+class RankUpEvent extends AnalyticsEvent {
+  const RankUpEvent({required this.rank, required this.xp});
+
+  final String rank;
+  final int xp;
+
+  @override
+  String get eventName => 'rank_up';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'rank': rank, 'xp': xp};
+  }
+}

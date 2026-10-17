@@ -1,48 +1,62 @@
+import 'dart:math';
+
+import 'package:Prism/core/coins/economy_config.dart';
+
+/// Coin amounts the app shows and sends. Every value reads the loaded [EconomyConfig], so call sites stay live.
 class CoinPolicy {
   const CoinPolicy._();
 
+  static EconomyAward get _award => EconomyConfig.current.award;
+  static EconomySpend get _spend => EconomyConfig.current.spend;
+
   // Earn
-  static const int rewardedAd = 10;
-  static const int streakDay1To2Daily = 5;
-  static const int streakDay3To4Daily = 8;
-  static const int streakDay5To6Daily = 12;
-  static const int streakDay7Daily = 15;
-  static const int dailyLogin = streakDay1To2Daily;
-  static const int streak7Bonus = 40;
-  static const int firstWallpaperUpload = 50;
-  static const int referral = 100;
-  static const int profileCompletion = 25;
-  static const int proDailyBonus = 50;
+  static int get rewardedAd => _award.rewardedAd;
+  static int get rewardedAdFirstOfDay => _award.rewardedAdFirstOfDay;
+  static int get streakDay1To2Daily => streakDailyRewardForDay(1);
+  static int get streakDay3To4Daily => streakDailyRewardForDay(3);
+  static int get streakDay5To6Daily => streakDailyRewardForDay(5);
+  static int get streakDay7Daily => streakDailyRewardForDay(7);
+  static int get dailyLogin => streakDay1To2Daily;
+
+  /// The smallest day 7 chest. The server rolls the real chest between [streakChestMin] and [streakChestMax].
+  static int get streak7Bonus => streakChestMin;
+  static int get streakChestMin => _award.streakChestMin;
+  static int get streakChestMax => _award.streakChestMax;
+  static int get firstWallpaperUpload => _award.firstWallpaperUpload;
+  static int get referral => _award.referral;
+  static int get profileCompletion => _award.profileCompletion;
+
+  /// What the legacy flat Pro bonus pays now: the lowest spin segment.
+  static int get proDailyBonus => proSpin.map((SpinSegment s) => s.coins).reduce(min);
+  static List<SpinSegment> get proSpin => _award.proSpin;
+  static int get graceDownloads => _award.graceDownloads;
+  static int get questCoins => _award.questCoins;
+  static int get questChestMin => _award.questChestMin;
+  static int get questChestMax => _award.questChestMax;
 
   // Spend
-  static const int wallpaperDownload = 5;
-  static const int premiumWallpaperDownload = 15;
-  static const int aiGenerationFast = 10;
-  static const int aiGenerationBalanced = 75;
-  static const int aiGenerationQuality = 100;
-  static const int premiumFilter = 5;
-  static const int premiumPreview24h = 10;
-  static const int streakFreezeCost = 50;
+  static int get wallpaperDownload => _spend.wallpaperDownload;
+  static int get premiumWallpaperDownload => _spend.premiumWallpaperDownload;
+  static int get liveWallpaperStyle => _spend.liveWallpaperStyle;
+  static int get aiGenerationFast => _spend.aiFast;
+  static int get aiGenerationBalanced => _spend.aiBalanced;
+  static int get aiGenerationQuality => _spend.aiQuality;
+  static int get premiumFilter => _spend.premiumFilter;
+  static int get premiumPreview24h => _spend.premiumPreview24h;
+  static int get autoRotatePass7d => _spend.autoRotatePass7d;
+  static int get streakFreezeCost => _spend.streakFreeze;
+  static int get streakRescueCost => _spend.streakRescue;
+  static int get dropWall => _spend.dropWall;
+  static int get dropPack => _spend.dropPack;
+  static int get boostWall => _spend.boostWall;
+  static int get giftPremiumPass => _spend.giftPremiumPass;
+  static int get drawTicket => _spend.drawTicket;
   static const int maxStreakFreezes = 2;
 
   // UX
   static const int lowBalanceNudgeThreshold = 10;
 
-  static int streakDailyRewardForDay(int day) {
-    if (day >= 1 && day <= 2) {
-      return streakDay1To2Daily;
-    }
-    if (day >= 3 && day <= 4) {
-      return streakDay3To4Daily;
-    }
-    if (day >= 5 && day <= 6) {
-      return streakDay5To6Daily;
-    }
-    if (day >= 7) {
-      return streakDay7Daily;
-    }
-    return streakDay1To2Daily;
-  }
+  static int streakDailyRewardForDay(int day) => _award.streakDaily[day.clamp(1, 7) - 1];
 
   static int streakBonusRewardForDay(int day) {
     return day >= 7 ? streak7Bonus : 0;
@@ -52,14 +66,16 @@ class CoinPolicy {
     return streakDailyRewardForDay(day) + streakBonusRewardForDay(day);
   }
 
-  // Pro streak bonus: added on top of base daily reward
-  static const int proStreakDailyBonus = 5;
-  static const int proStreak7Bonus = 20;
+  /// The Pro extra on a day 1 claim.
+  static int get proStreakDailyBonus => streakClaimRewardForDay(1, isPro: true) - streakTotalRewardForDay(1);
 
-  /// Coins a streak claim on [day] pays, the same sum claimDailyStreak awards.
+  /// The Pro extra on a day 7 claim with the smallest chest.
+  static int get proStreak7Bonus => streakClaimRewardForDay(7, isPro: true) - streakTotalRewardForDay(7);
+
+  /// Coins a streak claim on [day] pays, the same sum claimDailyStreak awards (day 7 with the smallest chest).
   static int streakClaimRewardForDay(int day, {required bool isPro}) {
-    final int proBonus = !isPro ? 0 : (day >= 7 ? proStreak7Bonus : proStreakDailyBonus);
-    return streakTotalRewardForDay(day) + proBonus;
+    final int total = streakTotalRewardForDay(day);
+    return isPro ? (total * _award.proStreakMultiplier).ceil() : total;
   }
 }
 

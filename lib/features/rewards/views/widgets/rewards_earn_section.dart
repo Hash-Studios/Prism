@@ -62,13 +62,13 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
 
   Widget _buildRows(BuildContext context, CoinEarnFlags flags) {
     final List<Widget> rows = <Widget>[
-      const _EarnRow(
+      _EarnRow(
         icon: Icons.local_fire_department_rounded,
         title: 'Daily streak',
         subtitle: 'Open Prism every day. +${CoinPolicy.streak7Bonus} each week.',
         reward: '+${CoinPolicy.streakDay1To2Daily} to +${CoinPolicy.streakDay7Daily}',
       ),
-      if (app_state.prismUser.premium) ...const <Widget>[
+      if (app_state.prismUser.premium) ...<Widget>[
         _EarnRow(
           icon: Icons.workspace_premium_outlined,
           title: 'Pro daily bonus',

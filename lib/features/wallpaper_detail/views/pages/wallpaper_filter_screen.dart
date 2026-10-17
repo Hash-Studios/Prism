@@ -277,9 +277,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       cost: CoinPolicy.premiumFilter,
       message: (missing) =>
           'Applying this filter costs ${CoinPolicy.premiumFilter} coins. You need $missing more coins.',
-      options: const [
-        CoinGateOption(label: 'Watch ad (+${CoinPolicy.rewardedAd})', value: CoinGateChoice.watchAd),
-        CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+      options: [
+        CoinGateOption(label: watchAdOptionLabel(), value: CoinGateChoice.watchAd),
+        const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
       ],
     );
     return choice ?? CoinGateChoice.cancel;

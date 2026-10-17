@@ -16,6 +16,17 @@ const Map<String, String> _actionLabels = <String, String>{
   'premiumPreview24h': 'Collection preview, 24 h',
   'streakFreeze': 'Streak freeze',
   'badgeReward': 'Badge reward',
+  'proSpin': 'Pro spin',
+  'quest': 'Quest',
+  'questChest': 'Daily chest',
+  'streakChest': 'Day 7 chest',
+  'liveWallpaperStyle': 'Live wallpaper style',
+  'autoRotatePass7d': 'Auto-rotate pass, 7 days',
+  'dropWall': 'Drop wall',
+  'dropPack': 'Drop pack',
+  'boostWall': 'Boost',
+  'giftPremiumPass': 'Gift: 24 h pass',
+  'drawTicket': 'Draw ticket',
 };
 
 /// Short, user-facing name for a coin transaction. Never returns a raw id or slug.
@@ -33,6 +44,10 @@ String coinTransactionLabel(CoinTransactionEntry e) {
       return 'Daily streak, day 7';
     }
     return 'Daily streak';
+  }
+  if (e.action == 'shopItem') {
+    final String name = e.description.trim();
+    return name.isEmpty ? 'Shop' : name;
   }
   return _actionLabels[e.action] ?? _humanise(e.action);
 }
