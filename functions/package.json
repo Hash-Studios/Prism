@@ -13,8 +13,7 @@
     "migrate:username-lower": "npm run build && node lib/scripts/backfillUsernameLower.js",
     "migrate:view-stats": "npm run build && node lib/scripts/migrateGithubViewStats.js",
     "studio:account": "npm run build && node lib/scripts/setupStudioAccount.js",
-    "studio:run": "npm run build && node lib/scripts/runStudioBatch.js",
-    "studio:posts": "npm run build && node lib/scripts/sendStudioPosts.js"
+    "studio:run": "npm run build && node lib/scripts/runStudioBatch.js"
   },
   "engines": {
     "node": "24"
