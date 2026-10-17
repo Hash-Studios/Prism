@@ -18,7 +18,7 @@ import 'package:mocktail/mocktail.dart';
 import '../support/coins_test_backend.dart';
 import 'qa_images.dart';
 
-const bool qaRender = bool.fromEnvironment('QA_RENDER') || String.fromEnvironment('QA_RENDER') == '1';
+const bool qaRender = bool.fromEnvironment('QA_RENDER') || int.fromEnvironment('QA_RENDER') == 1;
 
 /// A rich signed-in user: 340 coins, 1240 XP, a 12-day streak, two quests done, frame_ring worn, two drop unlocks.
 void seedUser({required bool pro}) {
