@@ -265,6 +265,20 @@ Parent check 100 passed the Swift core target build and a Swift 6 typecheck of t
 
 CodeRabbit skipped its automated review because this PR exceeds its file limit. The independent Claude Sonnet 5.5 and Claude Opus 5.5 reviews recorded above are not replaced by that skipped check.
 
+## Notification master merge 101 through 106
+
+Gate 97 reached 2224 passing tests and 38 skips before the parent interrupted it when master changed shared app code. Its shutdown errors do not establish independent test failures. The run has no completed suite result and is not a green gate.
+
+Normal merge `8a8c65d95` includes master `c9f9733c1`. The two Firestore conflicts retain the upstream document-ID helper and range regression alongside deferred Firebase access and metadata-stream tests. Parent run 104 passed all 24 Firestore tests. Merged rules run 105 passed with the workflow's pinned Firebase CLI after the unqualified Make target could not find a global CLI. The rules and functions remain unchanged from master. The feature's additional owner-query smoke assertions remain.
+
+Claude Sonnet 5.5 review 102 found one integration blocker. The new notification signal queue awaits remote acknowledgements, and the permission flow awaits that queue. This can hold up an offline wallpaper flow. Worker 103 bounded remote signal operations and made permission telemetry nonblocking. Parent run 108 passed all 103 notification, routing, and permission tests.
+
+Closure review 107 found no hard blocker but challenged a timeout on local Firebase initialization. Worker 110 removed that timeout so a slow initialization does not discard a tap. The parent strengthened its replacement regression with a fake clock that advances past the network timeout before readiness resolves. The callable and stamp deadlines remain. Account-switch coverage now checks the cleared old-owner state before the new owner's tap.
+
+The reviewer also asked whether the existing analytics call awaits a server. The parent traced `analytics.track` through both configured providers. Mixpanel's event adapter returns after its void client call. Firebase Analytics 12.6.0 completes its native event call after the local SDK `logEvent` invocation on both platforms, without awaiting upload. This is source evidence, not device proof. No analytics behavior changed. The fix adds no comments or lint suppressions.
+
+Generation 109 passed with no generated diff. Independent Claude Sonnet 5.5 closure review 112 found no unresolved concrete issue in the fix. Combined run 111 then passed 378 tests but failed the parent's fake-clock regression. The queue and completer were created outside the fake-clock context, so the test did not observe completion. Moving that setup inside the context made focused regression 113 pass without changing production code or assertions. Combined run 114 then passed all 379 tests with exit zero. It covers Firestore, economy, the pass widget, Draw, Drops, Leaderboard, notifications, routing, and permission prompts. The full app gate and latest-head hosted checks remain pending.
+
 ## Evidence limits
 
 The inherited trail contains estimated timestamps, with append-only correction rows. Several early rows name local `/tmp` logs that are not portable PR artifacts. Later committed tests and hosted checks must carry the final proof. The foundation commit proves its six files only. The later implementation commit and master merge preserve the wider integration tree but do not replace its full verification.
