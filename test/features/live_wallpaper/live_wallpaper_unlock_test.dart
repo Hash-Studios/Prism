@@ -5,10 +5,12 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_wallpaper_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+import '../../support/wait_for_real_io.dart';
 import 'fake_live_wallpaper_repository.dart';
 
 void main() {
@@ -20,6 +22,10 @@ void main() {
 
   setUp(() async {
     await backend.install();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('PonnamKarthik/fluttertoast'),
+      (MethodCall call) async => null,
+    );
     repository = FakeLiveWallpaperRepository();
     calls = <(String, Map<String, dynamic>)>[];
     backend.onCall = (String name, Map<String, dynamic> params) async {
@@ -34,6 +40,7 @@ void main() {
         'passUntil': DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch,
       };
     };
+    CoinsService.instance.setPassesForTest(Passes.empty);
     CoinsService.instance.balanceNotifier.value = 100;
   });
 
@@ -70,8 +77,12 @@ void main() {
     expect(find.text('See Prism Pro'), findsOneWidget);
 
     await tester.tap(find.text('Unlock Starfield for 7 days · 20 coins'));
-    await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 2));
+    await waitForRealIo(
+      tester,
+      () => bloc.state.unlockedStyles.containsKey('starfield'),
+      reason: 'live wallpaper unlock state applied after spend',
+    );
+    await tester.pump(const Duration(milliseconds: 1500));
 
     expect(calls.single.$1, 'spendCoins');
     expect(calls.single.$2['action'], 'liveWallpaperStyle');
@@ -122,8 +133,13 @@ void main() {
     await tester.tap(find.text('Unlock · 20 coins'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Unlock Starfield for 7 days · 20 coins'));
-    await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 2));
+    await waitForRealIo(
+      tester,
+      () => calls.isNotEmpty && CoinsService.instance.balanceNotifier.value == 80,
+      reason: 'live wallpaper unlock without passUntil completion',
+      pumpDuration: const Duration(milliseconds: 1500),
+    );
+    await tester.pump(const Duration(milliseconds: 1500));
 
     expect(bloc.state.unlockedStyles, isEmpty);
   });

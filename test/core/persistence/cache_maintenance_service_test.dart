@@ -1,19 +1,14 @@
 import 'dart:io';
 
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/app_icons_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
-import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
-import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockImageCache extends Mock implements BaseCacheManager {}
-
-class _MockNotificationsLocal extends Mock implements NotificationsLocalDataSource {}
-
-class _MockFeedCacheLocal extends Mock implements FeedCacheLocalDataSource {}
 
 class _MockAppIconsLocal extends Mock implements AppIconsLocalDataSource {}
 
@@ -27,11 +22,10 @@ void main() {
   const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
   late Directory root;
   late CacheMaintenanceService service;
+  late OfflineAssetStore offlineAssets;
   late _MockImageCache imageCache;
   late _MockImageCache thumbnailCache;
   late _MockImageCache fullImageCache;
-  late _MockNotificationsLocal notifications;
-  late _MockFeedCacheLocal feeds;
   late _MockAppIconsLocal icons;
   late bool failDocumentsProvider;
   late _MockDirectory documents;
@@ -57,23 +51,18 @@ void main() {
     imageCache = _MockImageCache();
     thumbnailCache = _MockImageCache();
     fullImageCache = _MockImageCache();
-    notifications = _MockNotificationsLocal();
-    feeds = _MockFeedCacheLocal();
     icons = _MockAppIconsLocal();
+    offlineAssets = OfflineAssetStore(directory: Directory('${root.path}/offline'));
     when(() => imageCache.emptyCache()).thenAnswer((_) async {});
     when(() => thumbnailCache.emptyCache()).thenAnswer((_) async {});
     when(() => fullImageCache.emptyCache()).thenAnswer((_) async {});
-    when(() => notifications.clearAll()).thenAnswer((_) async {});
-    when(() => notifications.clearLastFetchAtUtc()).thenAnswer((_) async {});
-    when(() => feeds.clearAllFeedCaches()).thenAnswer((_) async {});
     when(() => icons.clear()).thenAnswer((_) async {});
     service = CacheMaintenanceService(
-      notifications,
-      feeds,
       icons,
       imageCache: imageCache,
       thumbnailCache: thumbnailCache,
       fullImageCache: fullImageCache,
+      offlineAssetStore: offlineAssets,
     );
   });
 
@@ -96,6 +85,9 @@ void main() {
     ];
     final retainedFiles = [
       '$documents/session.json',
+      '$documents/feed_snapshots.json',
+      '$documents/notifications.json',
+      '$documents/upload_draft.json',
       '$documents/firestore_telemetry.ndjson',
       '$documents/downloads/saved.jpg',
       '$documents/filtered_notes.txt',
@@ -151,6 +143,17 @@ void main() {
     verify(() => fullImageCache.emptyCache()).called(1);
   });
 
+  test('clearing transient cache preserves feed, notification, and draft files', () async {
+    for (final name in ['feed_snapshots.json', 'notifications.json', 'upload_draft.json']) {
+      await File('${root.path}/documents/$name').create(recursive: true);
+    }
+    await service.clearTransientCache();
+
+    for (final name in ['feed_snapshots.json', 'notifications.json', 'upload_draft.json']) {
+      expect(await File('${root.path}/documents/$name').exists(), isTrue);
+    }
+  });
+
   test('clearing cache does not create a missing documents directory', () async {
     await service.clearTransientCache();
 
@@ -183,7 +186,6 @@ void main() {
     expect(await nextFile.exists(), isFalse);
     verify(() => failedImages.delete(recursive: true)).called(1);
     verify(() => failedFile.delete()).called(1);
-    verify(() => notifications.clearAll()).called(1);
   });
 
   test('does not throw when the documents path provider fails', () async {
@@ -195,7 +197,6 @@ void main() {
     await service.clearTransientCache();
 
     expect(await scratchFile.exists(), isFalse);
-    verify(() => notifications.clearAll()).called(2);
   });
 
   test('does not throw when checking documents existence fails', () async {
@@ -216,7 +217,6 @@ void main() {
     await IOOverrides.runZoned(service.clearTransientCache, createDirectory: directoryOverride);
 
     expect(await scratchFile.exists(), isFalse);
-    verify(() => notifications.clearAll()).called(2);
   });
 
   test('does not throw when listing documents fails', () async {
@@ -237,25 +237,14 @@ void main() {
     await IOOverrides.runZoned(service.clearTransientCache, createDirectory: directoryOverride);
 
     expect(await scratchFile.exists(), isFalse);
-    verify(() => notifications.clearAll()).called(2);
   });
 
-  for (final stage in [
-    'image cache',
-    'thumbnail cache',
-    'notifications',
-    'notification timestamp',
-    'feed cache',
-    'app icons',
-  ]) {
+  for (final stage in ['image cache', 'thumbnail cache', 'app icons']) {
     test('continues clearing caches and legacy scratch after $stage fails, then retries', () async {
       var failOnce = true;
       final clear = switch (stage) {
         'image cache' => imageCache.emptyCache,
         'thumbnail cache' => thumbnailCache.emptyCache,
-        'notifications' => notifications.clearAll,
-        'notification timestamp' => notifications.clearLastFetchAtUtc,
-        'feed cache' => feeds.clearAllFeedCaches,
         _ => icons.clear,
       };
       when(() => clear()).thenAnswer((_) async {
@@ -271,9 +260,6 @@ void main() {
       expect(await scratchFile.exists(), isFalse);
       verify(() => imageCache.emptyCache()).called(1);
       verify(() => thumbnailCache.emptyCache()).called(1);
-      verify(() => notifications.clearAll()).called(1);
-      verify(() => notifications.clearLastFetchAtUtc()).called(1);
-      verify(() => feeds.clearAllFeedCaches()).called(1);
       verify(() => icons.clear()).called(1);
 
       final retryScratchFile = await createScratchFile();
@@ -281,6 +267,20 @@ void main() {
       expect(await retryScratchFile.exists(), isFalse);
     });
   }
+
+  test('exposes retained storage controls without clearing retained files with transient caches', () async {
+    final source = File('${root.path}/saved.jpg')..writeAsBytesSync(<int>[0xff, 0xd8, 0xff]);
+    final retained = await offlineAssets.retain('wallpaper', file: source);
+
+    expect(await service.retainedAssetBytes(), 3);
+    expect(await service.retainedAssetPaths(), <String, String>{'wallpaper': retained.path});
+    await service.clearTransientCache();
+    expect(await retained.exists(), isTrue);
+
+    await service.clearRetainedAssets();
+    expect(await retained.exists(), isFalse);
+    expect(await service.retainedAssetBytes(), 0);
+  });
 
   test('preserves top-level scratch-name symlinks and wrong-type entries', () async {
     final documentsPath = '${root.path}/documents';

@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_position/data/placement_renderer.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
@@ -17,8 +17,7 @@ const Duration _loadTimeout = Duration(seconds: 30);
 class WallpaperPositionRepositoryImpl implements WallpaperPositionRepository {
   @override
   Future<PlacementSource> load(String url) async {
-    final bool remote = url.startsWith('http://') || url.startsWith('https://');
-    final File file = remote ? await PrismFullImageCache.instance.getSingleFile(url).timeout(_loadTimeout) : File(url);
+    final File file = await WallpaperService.resolveToLocalFile(url).timeout(_loadTimeout);
     final ui.Image image = await decodeCapped(await file.readAsBytes());
     try {
       return PlacementSource(image: image, dominantColor: await dominantColorOf(image));

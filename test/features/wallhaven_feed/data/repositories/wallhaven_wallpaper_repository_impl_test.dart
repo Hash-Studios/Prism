@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io' show SocketException;
 
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart';
@@ -102,7 +103,7 @@ void main() {
     expect(cache.scopes, hasLength(1), reason: 'only the refresh writes the snapshot');
   });
 
-  test('later pages move the cursor without overwriting the first-page snapshot', () async {
+  test('later pages are retained and advance the durable cursor', () async {
     final cache = FakeFeedCacheLocalDataSource();
     final http.Client client = MockClient(
       (http.Request request) async => _page(int.parse(request.url.queryParameters['page']!)),
@@ -115,9 +116,10 @@ void main() {
       await repository.fetchFeed(categoryName: 'nature', refresh: false);
     }, () => client);
 
-    expect(cache.scopes, hasLength(1));
+    expect(cache.scopes, hasLength(3));
     final Map<String, Object?> stored = cache.snapshots.values.single.payload! as Map<String, Object?>;
-    expect(stored['nextPage'], 2);
+    expect(stored['nextPage'], 4);
+    expect(stored['pages'], hasLength(3));
   });
 
   test('requests are portrait by default and filters map to query params', () async {
@@ -185,6 +187,7 @@ void main() {
       final result = await fetchWith(MockClient((_) async => throw const SocketException('Failed host lookup')));
 
       expect(result.failure!.message, wallpaperLoadFailureMessage);
+      expect(result.failure, isA<NetworkFailure>());
     });
 
     test('a wall Wallhaven does not know is a success with no wall, so the screen can say it was not found', () async {

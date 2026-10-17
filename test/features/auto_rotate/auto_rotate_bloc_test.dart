@@ -36,10 +36,10 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
   List<String>? applied;
 
   @override
-  Future<AutoRotateConfig> loadConfig() async => config;
+  Future<AutoRotateConfig> loadConfig({String? ownerId}) async => config;
 
   @override
-  Future<void> saveConfig(AutoRotateConfig config) async => this.config = config;
+  Future<void> saveConfig(AutoRotateConfig config, {String? ownerId}) async => this.config = config;
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
@@ -669,6 +669,19 @@ void main() {
 
       expect(bloc.state.isPro, isTrue);
       expect(repo.stops, 0);
+      await bloc.close();
+    });
+
+    test('a stored pass is not trusted before a signed-in owner is known', () async {
+      repo
+        ..config = AutoRotateConfig(enabled: true, passUntil: DateTime.now().add(const Duration(days: 2)))
+        ..running = true
+        ..applied = urls;
+      final AutoRotateBloc bloc = build()..add(const AutoRotateEvent.started(favouriteUrls: urls, isPro: false));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(bloc.state.isPro, isFalse);
+      expect(repo.stops, 1);
       await bloc.close();
     });
 

@@ -9,6 +9,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/share/share_text.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -104,6 +105,15 @@ class _ShortLinkService {
 const _CanonicalLinkBuilder _canonicalLinkBuilder = _CanonicalLinkBuilder();
 const _ShortLinkService _shortLinkService = _ShortLinkService();
 
+String canonicalWallpaperLink({
+  required String id,
+  required WallpaperSource source,
+  String? url,
+  required String thumbUrl,
+}) => BundledWallpapers.isStarterIdentity(id, source)
+    ? Uri.https(_shareDomain, '/').toString()
+    : _canonicalLinkBuilder.wallpaper(id: id, source: source, url: url, thumbUrl: thumbUrl).toString();
+
 void _trackDynamicLinkCreateResult({
   required ShareTypeValue shareType,
   required EventResultValue result,
@@ -154,7 +164,11 @@ Future<String?> createDynamicLink(
   WallpaperCore? core,
 }) async {
   try {
-    final Uri canonical = _canonicalLinkBuilder.wallpaper(id: id, source: source, url: url, thumbUrl: thumbUrl);
+    final Uri canonical = Uri.parse(canonicalWallpaperLink(id: id, source: source, url: url, thumbUrl: thumbUrl));
+    if (BundledWallpapers.isStarterIdentity(id, source)) {
+      _trackDynamicLinkCreateResult(shareType: ShareTypeValue.wallpaper, result: EventResultValue.success);
+      return canonical.toString();
+    }
     final String link = await _buildShareableLink(
       type: 'share',
       canonicalUri: canonical,

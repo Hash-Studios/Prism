@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
@@ -8,27 +10,31 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../support/wait_for_real_io.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
-class _RealHttpOverrides extends HttpOverrides {}
+class _MockCacheManager extends Mock implements BaseCacheManager {}
 
-class _ObservedHttpClient extends Mock implements HttpClient {
-  _ObservedHttpClient(this.client);
+class _MockFile extends Mock implements File {}
 
-  final HttpClient client;
-  final Completer<void> closed = Completer<void>();
+class _PendingOfflineAssetStore extends OfflineAssetStore {
+  _PendingOfflineAssetStore(this.resolution) : super();
+
+  final Completer<File> resolution;
+  final Completer<void> resolveStarted = Completer<void>();
 
   @override
-  Future<HttpClientRequest> openUrl(String method, Uri url) => client.openUrl(method, url);
-
-  @override
-  void close({bool force = false}) {
-    client.close(force: force);
-    closed.complete();
+  Future<File> resolve(String source, {bool allowNetwork = true}) {
+    if (!resolveStarted.isCompleted) resolveStarted.complete();
+    return resolution.future;
   }
 }
+
+const String _tinyGif = 'R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
 Widget _host(StackRouter router, String? url, {Future<String> Function()? prepareSource}) => MaterialApp(
   home: StackRouterScope(
@@ -45,17 +51,31 @@ void main() {
   setUpAll(() => registerFallbackValue(WallpaperFilterRoute(filePath: 'unused')));
 
   late Directory directory;
+  late _MockCacheManager cacheManager;
+  int temporaryDirectoryCalls = 0;
   const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
   setUp(() {
     directory = Directory.systemTemp.createTempSync('edit_button_test_');
-    messenger.setMockMethodCallHandler(pathChannel, (_) async => directory.path);
+    cacheManager = _MockCacheManager();
+    temporaryDirectoryCalls = 0;
+    OfflineAssetStore.testOverride = OfflineAssetStore(
+      directory: Directory('${directory.path}/retained'),
+      cacheManager: cacheManager,
+    );
+    when(() => cacheManager.getFileFromCache(any())).thenAnswer((_) async => null);
+    when(() => cacheManager.getSingleFile(any())).thenThrow(StateError('Unexpected network request in edit test.'));
+    messenger.setMockMethodCallHandler(pathChannel, (_) async {
+      temporaryDirectoryCalls++;
+      return directory.path;
+    });
     messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
   });
 
   tearDown(() {
+    OfflineAssetStore.testOverride = null;
     messenger.setMockMethodCallHandler(pathChannel, null);
     messenger.setMockMethodCallHandler(toastChannel, null);
     directory.deleteSync(recursive: true);
@@ -77,44 +97,30 @@ void main() {
       pushed.complete(invocation.positionalArguments.single as WallpaperFilterRoute);
       return routeResult.future;
     });
-    final HttpServer server = (await tester.runAsync(() => HttpServer.bind(InternetAddress.loopbackIPv4, 0)))!;
-    addTearDown(() => tester.runAsync(() => server.close(force: true)));
-    await tester.runAsync(() async {
-      server.listen((request) {
-        request.response.add(<int>[1, 2, 3]);
-        unawaited(request.response.close());
-      });
-    });
+    final downloaded = (await tester.runAsync(() async {
+      final file = await IOFileSystem(directory.path).createFile('downloaded.gif');
+      await file.writeAsBytes(base64Decode(_tinyGif));
+      return file;
+    }))!;
+    when(() => cacheManager.getSingleFile(any())).thenAnswer((_) async => downloaded);
 
-    await tester.pumpWidget(_host(router, 'http://127.0.0.1:${server.port}/wallpaper'));
-    await tester.runAsync(
-      () => HttpOverrides.runZoned(() async {
-        await tester.tap(find.byType(EditButton));
-      }, createHttpClient: _RealHttpOverrides().createHttpClient),
-    );
-    for (int attempt = 0; attempt < 100 && !pushed.isCompleted; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
-      await tester.pump();
-    }
-    expect(pushed.isCompleted, isTrue);
+    await tester.pumpWidget(_host(router, 'https://img.test/wallpaper.gif'));
+    await tester.tap(find.byType(EditButton));
+    await waitForRealIo(tester, () => pushed.isCompleted, reason: 'edit route push after source preparation');
     final WallpaperFilterRoute route = await pushed.future;
     final File source = File(route.args!.filePath);
     expect(activeSource.readAsBytesSync(), <int>[9, 8, 7]);
     expect(hapticTypes.where((type) => type == 'HapticFeedbackType.lightImpact'), hasLength(1));
-    expect(source.readAsBytesSync(), <int>[1, 2, 3]);
+    expect(source.readAsBytesSync(), downloaded.readAsBytesSync());
     expect(source.parent.path, isNot(editDirectory.path));
 
-    await tester.runAsync(() async {
-      routeResult.complete();
-      for (int attempt = 0; attempt < 100 && source.parent.existsSync(); attempt++) {
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-      }
-    });
-    await tester.pump();
+    routeResult.complete();
+    await waitForRealIo(tester, () => !source.parent.existsSync(), reason: 'edit session cleanup after route close');
     expect(source.parent.existsSync(), isFalse);
     expect(activeSource.readAsBytesSync(), <int>[9, 8, 7]);
     expect(tester.takeException(), isNull);
     expect(hapticTypes, <Object?>['HapticFeedbackType.lightImpact']);
+    await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   group('prepareSource', () {
@@ -211,37 +217,30 @@ void main() {
   testWidgets('does not create a source or route after disposal while the download is pending', (tester) async {
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.push(any())).thenAnswer((_) async => null);
-    final Completer<HttpRequest> received = Completer<HttpRequest>();
-    final HttpServer server = (await tester.runAsync(() => HttpServer.bind(InternetAddress.loopbackIPv4, 0)))!;
-    addTearDown(() => tester.runAsync(() => server.close(force: true)));
-    await tester.runAsync(() async => server.listen(received.complete));
-    late _ObservedHttpClient client;
+    final Completer<File> resolution = Completer<File>();
+    final _PendingOfflineAssetStore assetStore = _PendingOfflineAssetStore(resolution);
+    OfflineAssetStore.testOverride = assetStore;
+    final Completer<void> readStarted = Completer<void>();
+    final _MockFile resolvedFile = _MockFile();
+    when(() => resolvedFile.readAsBytes()).thenAnswer((_) async {
+      if (!readStarted.isCompleted) readStarted.complete();
+      return Uint8List.fromList(<int>[1, 2, 3]);
+    });
 
-    await tester.pumpWidget(_host(router, 'http://127.0.0.1:${server.port}/wallpaper'));
-    await tester.runAsync(
-      () => HttpOverrides.runZoned(() async {
-        await tester.tap(find.byType(EditButton));
-      }, createHttpClient: (context) => client = _ObservedHttpClient(_RealHttpOverrides().createHttpClient(context))),
-    );
-    for (int attempt = 0; attempt < 100 && !received.isCompleted; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
-      await tester.pump();
-    }
-    expect(received.isCompleted, isTrue);
-    final HttpRequest request = await received.future;
+    await tester.pumpWidget(_host(router, 'https://img.test/pending.gif'));
+    await tester.tap(find.byType(EditButton));
+    await waitForRealIo(tester, () => assetStore.resolveStarted.isCompleted, reason: 'asset resolution starts');
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(() async {
-      request.response.add(<int>[1, 2, 3]);
-      await request.response.close();
-      await client.closed.future.timeout(const Duration(seconds: 5));
+      resolution.complete(resolvedFile);
     });
-    for (int attempt = 0; attempt < 10; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
-      await tester.pump();
-    }
+    await waitForRealIo(tester, () => readStarted.isCompleted, reason: 'resolved file read starts after disposal');
+    await tester.pump();
 
-    expect(directory.listSync(), isEmpty);
+    expect(temporaryDirectoryCalls, 0);
+    expect(Directory('${directory.path}/prism_edit').existsSync(), isFalse);
     verifyNever(() => router.push(any()));
     expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 1));
   });
 }

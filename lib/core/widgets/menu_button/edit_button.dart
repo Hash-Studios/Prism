@@ -2,18 +2,21 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 class EditButton extends StatefulWidget {
   final String? url;
+  final String? wallpaperId;
+  final WallpaperSource? wallpaperSource;
 
   /// Makes the image to edit, such as a colour variation, and returns its local path. The editor opens on that path
   /// and [url] is not fetched. If it throws, the user is told and the editor does not open.
@@ -21,7 +24,14 @@ class EditButton extends StatefulWidget {
 
   /// Shows a caption under the round button.
   final bool labelled;
-  const EditButton({required this.url, this.prepareSource, this.labelled = false, super.key});
+  const EditButton({
+    required this.url,
+    this.wallpaperId,
+    this.wallpaperSource,
+    this.prepareSource,
+    this.labelled = false,
+    super.key,
+  });
 
   @override
   _EditButtonState createState() => _EditButtonState();
@@ -73,8 +83,13 @@ class _EditButtonState extends State<EditButton> {
     }
     Directory? sessionDirectory;
     try {
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
-      if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+      final File source = await WallpaperService.resolveToLocalFile(
+        url,
+        wallpaperId: widget.wallpaperId,
+        wallpaperSource: widget.wallpaperSource,
+      ).timeout(const Duration(seconds: 30));
+      final List<int> bytes = await source.readAsBytes();
+      if (bytes.isEmpty) {
         toasts.error('Could not load wallpaper for editing');
         if (mounted) {
           setState(() {
@@ -88,7 +103,7 @@ class _EditButtonState extends State<EditButton> {
       await editDir.create(recursive: true);
       sessionDirectory = await editDir.createTemp('source_');
       final file = File('${sessionDirectory.path}/source.img');
-      await file.writeAsBytes(response.bodyBytes);
+      await file.writeAsBytes(bytes, flush: true);
       if (!mounted) return;
       setState(() {
         isLoading = false;

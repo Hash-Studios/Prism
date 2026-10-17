@@ -20,8 +20,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/offline_asset_fixture.dart';
 
 class _MockDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState> implements WallpaperDetailBloc {}
+
+Future<void> _pumpOfflinePreview(WidgetTester tester) async {
+  final Stopwatch timeout = Stopwatch()..start();
+  while (find.byType(CachedNetworkImage).evaluate().isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)).timeout(const Duration(seconds: 2)),
+    );
+    await tester.pump();
+  }
+}
 
 FeedItemEntity _item(String id) => FeedItemEntity.prism(
   id: id,
@@ -36,7 +47,11 @@ FeedItemEntity _item(String id) => FeedItemEntity.prism(
 );
 
 void main() {
-  setUp(() {
+  late OfflineAssetFixture offlineAssets;
+
+  setUp(() async {
+    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineAssets.install();
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
     getIt.registerFactory<WallpaperDetailBloc>(() {
@@ -46,7 +61,10 @@ void main() {
     });
   });
 
-  tearDown(getIt.reset);
+  tearDown(() async {
+    await offlineAssets.dispose();
+    await getIt.reset();
+  });
 
   testWidgets('a new detail route shows its own wallpaper on the first frame, not the last one opened', (tester) async {
     final staleBloc = _MockDetailBloc();
@@ -66,6 +84,7 @@ void main() {
         ),
       ),
     );
+    await _pumpOfflinePreview(tester);
 
     final urls = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).map((i) => i.imageUrl);
     expect(urls, contains('https://example.com/tapped-thumb.jpg'));
@@ -103,6 +122,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await _pumpOfflinePreview(tester);
 
     secondStates.add(
       WallpaperDetailLoaded(
@@ -155,6 +175,7 @@ void main() {
         ),
       ),
     );
+    await _pumpOfflinePreview(tester);
 
     final style = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
       find.byType(AnnotatedRegion<SystemUiOverlayStyle>),

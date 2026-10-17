@@ -85,11 +85,29 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   final Future<AiGenerationRecord> Function()? variation;
   final List<({AiStylePreset style, AiQualityTier quality, int coinsSpent})> requests = [];
   final List<String?> chargeTxIds = <String?>[];
+  final Map<String, String> prompts = <String, String>{};
+
+  @override
+  Future<String?> loadPrompt({required String userId}) async => prompts[userId];
+
+  @override
+  Future<void> savePrompt({required String userId, required String prompt}) async {
+    prompts[userId] = prompt;
+  }
+
+  @override
+  Future<void> clearForUser(String userId) async {
+    prompts.remove(userId);
+  }
 
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async => <AiGenerationRecord>[
     record,
   ];
+
+  @override
+  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
+      const <AiGenerationRecord>[];
 
   @override
   Future<AiGenerationRecord> generate({
@@ -209,14 +227,7 @@ void main() {
     );
 
     expect(hapticTypes, isEmpty);
-    expect(
-      toastCalls.any(
-        (call) =>
-            (call.arguments as Map<Object?, Object?>)['msg'] ==
-            "You're offline. History will refresh when you're connected.",
-      ),
-      isTrue,
-    );
+    expect(toastCalls, isEmpty);
 
     hapticTypes.clear();
     toastCalls.clear();
@@ -225,6 +236,10 @@ void main() {
 
     expect(hapticTypes, <Object?>['HapticFeedbackType.mediumImpact', 'HapticFeedbackType.errorNotification']);
     expect(toastCalls, hasLength(1));
+    expect(
+      (toastCalls.single.arguments as Map<Object?, Object?>)['msg'],
+      "You're offline. Saved history is still available.",
+    );
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 

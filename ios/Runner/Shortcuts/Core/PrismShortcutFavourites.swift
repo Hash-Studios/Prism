@@ -7,6 +7,7 @@ struct PrismShortcutFavourite: Equatable, Sendable {
 
 enum PrismShortcutFavourites {
   static let defaultsKey = "flutter.shortcuts.favourites"
+  static let nativeAssetPathsKey = "flutter.offline.native_asset_paths"
   static let lastPickedDefaultsKey = "prism.shortcuts.lastPickedFavouriteId"
   static let maximumCount = 200
 

@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,11 +23,17 @@ GuestFavouritesStore tempGuestStore() {
   final Directory dir = Directory.systemTemp.createTempSync('guest_favourites_test');
   PathProviderPlatform.instance = _FakePathProvider(dir.path);
   addTearDown(() => dir.deleteSync(recursive: true));
-  return GuestFavouritesStore.withCache(LazyFileCache('guest_favourites'));
+  return GuestFavouritesStore(
+    durableStore: DurableJsonStore('guest_favourites'),
+    legacyCache: LazyFileCache('guest_favourites'),
+  );
 }
 
 /// A store that never touches the disk, for tests that do not use guests.
-GuestFavouritesStore unusedGuestStore() => GuestFavouritesStore.withCache(LazyFileCache('unused'));
+GuestFavouritesStore unusedGuestStore() => GuestFavouritesStore(
+  durableStore: DurableJsonStore('unused_guest_favourites'),
+  legacyCache: LazyFileCache('unused'),
+);
 
 class _MemoryCache extends LazyFileCache {
   _MemoryCache() : super('memory');
@@ -45,4 +52,20 @@ class _MemoryCache extends LazyFileCache {
 
 /// A guest favourites store that lives in memory. Widget tests use it, because real file IO never finishes
 /// inside the fake-async zone of `testWidgets`.
-GuestFavouritesStore memoryGuestStore() => GuestFavouritesStore.withCache(_MemoryCache());
+class _MemoryDurableStore extends DurableJsonStore {
+  _MemoryDurableStore() : super('memory_guest_favourites');
+
+  final Map<String, Map<String, Object?>> _data = <String, Map<String, Object?>>{};
+
+  @override
+  Future<Map<String, Object?>?> read(String key) async => _data[key];
+
+  @override
+  Future<void> write(String key, Map<String, Object?> value) async => _data[key] = value;
+
+  @override
+  Future<void> delete(String key) async => _data.remove(key);
+}
+
+GuestFavouritesStore memoryGuestStore() =>
+    GuestFavouritesStore(durableStore: _MemoryDurableStore(), legacyCache: _MemoryCache());

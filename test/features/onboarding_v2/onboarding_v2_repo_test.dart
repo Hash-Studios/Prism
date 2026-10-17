@@ -19,7 +19,7 @@ void main() {
   setUp(() {
     firestore = FakeFirestoreClient();
     settings = SettingsLocalDataSource(InMemoryLocalStore());
-    repository = OnboardingV2RepositoryImpl(_MockRemoteConfig(), firestore, settings);
+    repository = OnboardingV2RepositoryImpl(firestore, settings, remoteConfig: _MockRemoteConfig());
   });
 
   test('a user doc with onboardingV2.completed true is reported as completed', () async {
@@ -34,6 +34,15 @@ void main() {
     expect(status.completed, isTrue);
     expect(status.hasInterests, isFalse);
     expect(status.hasFollows, isFalse);
+  });
+
+  test('constructs and loads starter pack defaults without Firebase Remote Config', () async {
+    final localOnly = OnboardingV2RepositoryImpl(firestore, settings);
+
+    final result = await localOnly.fetchStarterPack();
+
+    expect(result.isSuccess, isTrue);
+    expect(result.data, isEmpty);
   });
 
   test('a user doc without the onboarding map is not completed', () async {
@@ -105,7 +114,11 @@ void main() {
 
     test('a failed read is reported as an error instead of throwing', () async {
       await settings.set(OnboardingV2Keys.selectedInterests, 'Nature,Anime,Minimal');
-      final failing = OnboardingV2RepositoryImpl(_MockRemoteConfig(), _ThrowingFirestoreClient(), settings);
+      final failing = OnboardingV2RepositoryImpl(
+        _ThrowingFirestoreClient(),
+        settings,
+        remoteConfig: _MockRemoteConfig(),
+      );
 
       final result = await failing.syncLocalInterests(userId: 'u1');
 

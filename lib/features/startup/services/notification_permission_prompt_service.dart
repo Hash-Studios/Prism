@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -71,7 +73,7 @@ class NotificationPermissionPromptService {
       await analytics.track(
         TomorrowHookPermissionResultEvent(result: EventResultValue.success, subscribedToWotd: subscribedToWotd),
       );
-      await NotificationSignals.instance.onPermission(true);
+      unawaited(NotificationSignals.instance.onPermission(true));
       return;
     }
 
@@ -84,7 +86,7 @@ class NotificationPermissionPromptService {
           subscribedToWotd: false,
         ),
       );
-      await NotificationSignals.instance.onPermission(false);
+      unawaited(NotificationSignals.instance.onPermission(false));
       return;
     }
 
@@ -114,7 +116,7 @@ class NotificationPermissionPromptService {
         subscribedToWotd: subscribedToWotd,
       ),
     );
-    await NotificationSignals.instance.onPermission(granted);
+    unawaited(NotificationSignals.instance.onPermission(granted));
   }
 
   /// Explains the benefit before the system dialog. Resolves true when the user agrees to be asked.

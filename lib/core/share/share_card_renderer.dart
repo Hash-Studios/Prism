@@ -5,10 +5,10 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/platform/share_service.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_text.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
@@ -73,14 +73,14 @@ Future<File> renderShareCardFile({
   ui.Image? logo;
   try {
     // Fit within card bounds at decode time while preserving the source aspect ratio.
-    wallpaper = await resolveImage(
-      ResizeImage(
-        wallpaperProvider ?? CachedNetworkImageProvider(imageUrl),
-        width: 1080,
-        height: 1920,
-        policy: ResizeImagePolicy.fit,
-      ),
-    );
+    final ImageProvider provider;
+    if (wallpaperProvider != null) {
+      provider = wallpaperProvider;
+    } else {
+      final File source = await WallpaperService.resolveToLocalFile(imageUrl);
+      provider = FileImage(source);
+    }
+    wallpaper = await resolveImage(ResizeImage(provider, width: 1080, height: 1920, policy: ResizeImagePolicy.fit));
     logo = await resolveImage(logoProvider ?? const AssetImage(ShareCardStyle.logoAsset));
     final ByteData? bytes = await paintShareCard(
       ShareCard(wallpaper: wallpaper, logo: logo, link: link, contextLine: contextLine),

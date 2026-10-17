@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -9,6 +11,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,9 +28,27 @@ class _FakeRepository extends Fake implements AiGenerationRepositoryImpl {
   _FakeRepository(this.history);
 
   final List<AiGenerationRecord> history;
+  final Map<String, String> prompts = <String, String>{};
 
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async => history;
+
+  @override
+  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
+      const <AiGenerationRecord>[];
+
+  @override
+  Future<String?> loadPrompt({required String userId}) async => prompts[userId];
+
+  @override
+  Future<void> savePrompt({required String userId, required String prompt}) async {
+    prompts[userId] = prompt;
+  }
+
+  @override
+  Future<void> clearForUser(String userId) async {
+    prompts.remove(userId);
+  }
 }
 
 AiGenerationRecord _record() => AiGenerationRecord(
@@ -50,6 +71,10 @@ AiGenerationRecord _record() => AiGenerationRecord(
 );
 
 void main() {
+  test('TLS handshake failures are classified as network errors', () {
+    expect(isAiOfflineOrNetworkError(const HandshakeException('TLS handshake failed')), isTrue);
+  });
+
   Future<void> pumpPage(
     WidgetTester tester, {
     List<AiGenerationRecord> history = const <AiGenerationRecord>[],

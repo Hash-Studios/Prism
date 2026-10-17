@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -22,6 +23,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/profile_user_fixture.dart';
 
 class _MockAutoRotateBloc extends MockBloc<AutoRotateEvent, AutoRotateState> implements AutoRotateBloc {}
 
@@ -39,10 +41,10 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
   int stops = 0;
 
   @override
-  Future<AutoRotateConfig> loadConfig() async => config;
+  Future<AutoRotateConfig> loadConfig({String? ownerId}) async => config;
 
   @override
-  Future<void> saveConfig(AutoRotateConfig config) async => this.config = config;
+  Future<void> saveConfig(AutoRotateConfig config, {String? ownerId}) async => this.config = config;
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
@@ -85,8 +87,13 @@ void main() {
   setUp(() {
     AnalyticsRuntime.instance = FakeAppAnalytics();
     app_state.prismUser = app_constants.createGuestPrismUser();
+    CoinsService.instance.resetSession();
   });
-  tearDown(AnalyticsRuntime.reset);
+  tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    CoinsService.instance.resetSession();
+    AnalyticsRuntime.reset();
+  });
 
   testWidgets('first confirmed non-Pro session revokes rotation even with stale guest premium', (tester) async {
     final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
@@ -139,6 +146,110 @@ void main() {
     verify(
       () => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-a')),
     ).called(1);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('late pass restore updates the signed-in owner entitlement', (tester) async {
+    final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
+    final _MockSessionBloc sessionBloc = _MockSessionBloc();
+    final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
+    final DateTime passUntil = DateTime.now().add(const Duration(days: 7));
+    const SessionState session = SessionState(
+      status: LoadStatus.success,
+      session: SessionEntity(userId: 'account-a', loggedIn: true, premium: false, subscriptionTier: 'free'),
+    );
+    app_state.prismUser = profileUser(id: 'account-a');
+    CoinsService.instance.setPassesForTest(Passes.empty);
+    when(() => autoRotateBloc.state).thenReturn(AutoRotateState.initial());
+    whenListen(autoRotateBloc, const Stream<AutoRotateState>.empty(), initialState: AutoRotateState.initial());
+    whenListen(sessionBloc, const Stream<SessionState>.empty(), initialState: session);
+    whenListen(
+      favouriteWallsBloc,
+      const Stream<FavouriteWallsState>.empty(),
+      initialState: FavouriteWallsState.initial(),
+    );
+
+    await tester.pumpWidget(_listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc));
+    await tester.pump();
+    CoinsService.instance.setPassesForTest(Passes(autoRotatePassUntil: passUntil));
+    await tester.pump();
+
+    verify(
+      () => autoRotateBloc.add(
+        AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-a', passUntil: passUntil),
+      ),
+    ).called(1);
+    await tester.pumpWidget(const SizedBox());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('does not grant another account’s pass to the current session', (tester) async {
+    final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
+    final _MockSessionBloc sessionBloc = _MockSessionBloc();
+    final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
+    final DateTime passUntil = DateTime.now().add(const Duration(days: 7));
+    const SessionState session = SessionState(
+      status: LoadStatus.success,
+      session: SessionEntity(userId: 'account-a', loggedIn: true, premium: false, subscriptionTier: 'free'),
+    );
+    app_state.prismUser = profileUser(id: 'account-b');
+    CoinsService.instance.setPassesForTest(Passes(autoRotatePassUntil: passUntil));
+    when(() => autoRotateBloc.state).thenReturn(AutoRotateState.initial());
+    whenListen(autoRotateBloc, const Stream<AutoRotateState>.empty(), initialState: AutoRotateState.initial());
+    whenListen(sessionBloc, const Stream<SessionState>.empty(), initialState: session);
+    whenListen(
+      favouriteWallsBloc,
+      const Stream<FavouriteWallsState>.empty(),
+      initialState: FavouriteWallsState.initial(),
+    );
+
+    await tester.pumpWidget(_listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc));
+    await tester.pump();
+    verify(
+      () => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'account-a')),
+    ).called(1);
+    CoinsService.instance.setPassesForTest(Passes.empty);
+    await tester.pump();
+
+    verifyNever(
+      () => autoRotateBloc.add(
+        AutoRotateEvent.entitlementChanged(isPro: true, userId: 'account-a', passUntil: passUntil),
+      ),
+    );
+    await tester.pumpWidget(const SizedBox());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('does not grant a guest pass and removes its pass listener on disposal', (tester) async {
+    final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
+    final _MockSessionBloc sessionBloc = _MockSessionBloc();
+    final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
+    final DateTime passUntil = DateTime.now().add(const Duration(days: 7));
+    const SessionState guestSession = SessionState(status: LoadStatus.success, session: SessionEntity.guest);
+    CoinsService.instance.setPassesForTest(Passes.empty);
+    when(() => autoRotateBloc.state).thenReturn(AutoRotateState.initial());
+    whenListen(autoRotateBloc, const Stream<AutoRotateState>.empty(), initialState: AutoRotateState.initial());
+    whenListen(sessionBloc, const Stream<SessionState>.empty(), initialState: guestSession);
+    whenListen(
+      favouriteWallsBloc,
+      const Stream<FavouriteWallsState>.empty(),
+      initialState: FavouriteWallsState.initial(),
+    );
+
+    await tester.pumpWidget(_listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc));
+    await tester.pump();
+    CoinsService.instance.passesNotifier.value = Passes(autoRotatePassUntil: passUntil);
+    await tester.pump();
+    verify(() => autoRotateBloc.add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: ''))).called(1);
+    verifyNever(
+      () => autoRotateBloc.add(AutoRotateEvent.entitlementChanged(isPro: true, userId: '', passUntil: passUntil)),
+    );
+
+    await tester.pumpWidget(const SizedBox());
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    CoinsService.instance.resetSession();
+    CoinsService.instance.passesNotifier.value = Passes(autoRotatePassUntil: passUntil);
+    await tester.pump();
+    verifyNever(
+      () => autoRotateBloc.add(AutoRotateEvent.entitlementChanged(isPro: true, userId: '', passUntil: passUntil)),
+    );
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('does not send auto-rotate events off Android', (tester) async {

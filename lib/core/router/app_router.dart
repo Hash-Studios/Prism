@@ -58,6 +58,7 @@ import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position
 import 'package:Prism/features/wallpaper_upload/views/pages/edit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
+import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -101,12 +102,10 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/', page: SplashWidgetRoute.page),
     AutoRoute(path: '/onboarding/v2', page: OnboardingV2ShellRoute.page),
 
-    // Dashboard shell with bottom nav tabs. iOS guests may browse (Guideline 5.1.1(v)); Android still requires
-    // sign-in. Upload, edit, review and profile-edit routes keep the strict guard.
     AutoRoute(
       path: '/dashboard',
       page: DashboardRoute.page,
-      guards: const [SignedInGuard(allowIosGuests: true)],
+      guards: const [SignedInGuard(allowGuests: true)],
       children: [
         // Home tab
         AutoRoute(path: 'home', page: HomeTabRoute.page),

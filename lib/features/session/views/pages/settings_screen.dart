@@ -57,6 +57,7 @@ const Map<String, String> _applyTargetLabels = <String, String>{
 
 const String _privacyUrl = 'https://prismwalls.com/privacy';
 const String _termsUrl = 'https://prismwalls.com/terms';
+const int _savedOfflineLimitBytes = 512 * 1024 * 1024;
 
 /// Signs the user out. Tests replace it.
 @visibleForTesting
@@ -128,6 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _iosShortcuts = false;
   int? _imageCacheSize;
   int? _downloads;
+  int? _savedOfflineSize;
 
   @override
   void initState() {
@@ -153,7 +155,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _adPrivacyChoices = true);
   }
 
-  Future<void> _loadStorageStats() async {
+  void _loadStorageStats() {
+    unawaited(_loadImageAndDownloadStats());
+    unawaited(_loadSavedOfflineSize());
+  }
+
+  Future<void> _loadImageAndDownloadStats() async {
     final int? images = await _imageCacheBytes();
     final int? downloads = await _downloadsCount();
     if (!mounted) return;
@@ -161,6 +168,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _imageCacheSize = images;
       _downloads = downloads;
     });
+  }
+
+  Future<void> _loadSavedOfflineSize() async {
+    try {
+      final int savedOffline = await _cacheMaintenance.retainedAssetBytes();
+      if (!mounted) return;
+      setState(() => _savedOfflineSize = savedOffline);
+    } catch (error, stackTrace) {
+      logger.w('Could not read saved offline storage size.', error: error, stackTrace: stackTrace);
+    }
   }
 
   void _trackSettingsAction(AnalyticsActionValue action) {
@@ -433,12 +450,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.download_done_rounded,
       title: 'Clear all downloads',
       subtitle: _downloads == null
-          ? 'Remove all downloaded wallpapers'
+          ? 'Remove files from Downloads; saved offline copies stay'
           : _downloads == 0
-          ? 'No downloaded wallpapers'
-          : '$_downloads downloaded ${_downloads == 1 ? 'wallpaper' : 'wallpapers'}',
+          ? 'No downloaded wallpapers; saved offline copies stay'
+          : '$_downloads downloaded ${_downloads == 1 ? 'wallpaper' : 'wallpapers'} · saved offline copies stay',
       showChevron: false,
       onTap: _confirmClearDownloads,
+    ),
+    PrismRow(
+      icon: Icons.offline_pin_rounded,
+      title: 'Saved offline',
+      subtitle: _savedOfflineSize == null
+          ? 'Storage unavailable · ${_savedOfflineLimitBytes ~/ (1024 * 1024)} MiB limit'
+          : '${formatStorageBytes(_savedOfflineSize!)} used · ${_savedOfflineLimitBytes ~/ (1024 * 1024)} MiB limit',
+      showChevron: false,
+      onTap: _confirmClearSavedOffline,
     ),
     if (app_state.prismUser.loggedIn)
       PrismRow(
@@ -480,8 +506,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       title: 'Delete all downloads?',
       message: count != null && count > 0
-          ? '${count == 1 ? '1 downloaded wallpaper is' : '$count downloaded wallpapers are'} deleted from this device. This cannot be undone.'
-          : 'All downloaded wallpapers are deleted from this device. This cannot be undone.',
+          ? '${count == 1 ? '1 downloaded wallpaper is' : '$count downloaded wallpapers are'} deleted from Downloads. Saved offline copies are not affected. This cannot be undone.'
+          : 'Downloaded wallpapers are deleted from Downloads. Saved offline copies are not affected. This cannot be undone.',
       confirmLabel: 'Delete all',
       destructive: true,
     );
@@ -501,6 +527,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } else {
       toasts.error(result?.message ?? "Couldn't delete downloads. Try again.");
     }
+  }
+
+  Future<void> _confirmClearSavedOffline() async {
+    final int? size = _savedOfflineSize;
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: 'Remove saved offline wallpapers?',
+      message: size == null
+          ? 'Remove retained offline originals from this device. Downloads, drafts and catalog data stay untouched.'
+          : '${formatStorageBytes(size)} of retained offline originals are removed. Downloads, drafts and catalog data stay untouched.',
+      confirmLabel: 'Remove saved offline',
+      destructive: true,
+    );
+    if (!confirmed) return;
+    try {
+      await _cacheMaintenance.clearRetainedAssets();
+    } catch (error, stackTrace) {
+      logger.w('Clearing saved offline wallpapers failed.', error: error, stackTrace: stackTrace);
+      toasts.error("Couldn't remove saved offline wallpapers. Try again.");
+      return;
+    }
+    int? after;
+    try {
+      after = await _cacheMaintenance.retainedAssetBytes();
+    } catch (error, stackTrace) {
+      logger.w('Could not refresh saved offline storage size.', error: error, stackTrace: stackTrace);
+    }
+    if (!mounted) return;
+    setState(() => _savedOfflineSize = after);
+    toasts.success('Saved offline wallpapers removed.');
   }
 
   Future<void> _confirmClearFavourites() async {

@@ -135,7 +135,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
         state.copyWith(
           status: LoadStatus.success,
           actionStatus: ActionStatus.success,
-          items: isNowFavourite ? _upsertWall(wall) : _removeWall(wall.id),
+          items: isNowFavourite ? _upsertWall(wall.withSyncStatus(FavouriteSyncStatus.pending)) : _removeWall(wall.id),
           completedOperationId: event.operationId,
           failure: null,
         ),
@@ -213,7 +213,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
       final result = await _toggleFavouriteWallUseCase(
         ToggleFavouriteWallParams(userId: state.userId, wall: wall, currentlyFavourited: false),
       );
-      if (result.isSuccess) restored.add(wall);
+      if (result.isSuccess) restored.add(wall.withSyncStatus(FavouriteSyncStatus.pending));
     }
     final List<FavouriteWallEntity> next = <FavouriteWallEntity>[...state.items, ...restored]
       ..sort(compareByCreatedAtDesc);

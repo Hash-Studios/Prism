@@ -33,6 +33,8 @@
 		A22B00092F00000200B2B2B2 /* GetPrismWallpaperIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B000A2F00000200B2B2B2 /* GetPrismWallpaperIntent.swift */; };
 		A22B000B2F00000200B2B2B2 /* PrismShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B000C2F00000200B2B2B2 /* PrismShortcuts.swift */; };
 		A22B000D2F00000200B2B2B2 /* PrismShortcutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */; };
+		A22B00112F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00122F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift */; };
+		A22B00132F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +102,8 @@
 		A22B000A2F00000200B2B2B2 /* GetPrismWallpaperIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetPrismWallpaperIntent.swift; sourceTree = "<group>"; };
 		A22B000C2F00000200B2B2B2 /* PrismShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcuts.swift; sourceTree = "<group>"; };
 		A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutsTests.swift; sourceTree = "<group>"; };
+		A22B00122F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutLocalFileResolver.swift; sourceTree = "<group>"; };
+		A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutWallpaperFallback.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -223,6 +227,8 @@
 			children = (
 				A22B00022F00000200B2B2B2 /* PrismShortcutFavourites.swift */,
 				A22B00042F00000200B2B2B2 /* PrismShortcutImageKind.swift */,
+				A22B00122F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift */,
+				A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */,
 				A22B00062F00000200B2B2B2 /* PrismFirestoreREST.swift */,
 			);
 			path = Core;
@@ -484,6 +490,8 @@
 				A11A00112F00000100A1A1A1 /* PrismMediaFiles.swift in Sources */,
 				A22B00012F00000200B2B2B2 /* PrismShortcutFavourites.swift in Sources */,
 				A22B00032F00000200B2B2B2 /* PrismShortcutImageKind.swift in Sources */,
+				A22B00112F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift in Sources */,
+				A22B00132F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift in Sources */,
 				A22B00052F00000200B2B2B2 /* PrismFirestoreREST.swift in Sources */,
 				A22B00072F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift in Sources */,
 				A22B00092F00000200B2B2B2 /* GetPrismWallpaperIntent.swift in Sources */,

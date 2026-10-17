@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -40,4 +44,53 @@ void main() {
     await store.clear();
     expect(await store.readAll(), isEmpty);
   });
+
+  test('a new store instance restores guest favourites from the durable record', () async {
+    final GuestFavouritesStore beforeRestart = tempGuestStore();
+    await beforeRestart.put('saved-wall', <String, dynamic>{'id': 'saved-wall', 'provider': 'prism'});
+
+    final GuestFavouritesStore afterRestart = GuestFavouritesStore(
+      durableStore: DurableJsonStore('guest_favourites'),
+      legacyCache: LazyFileCache('guest_favourites'),
+    );
+
+    expect((await afterRestart.readAll()).keys, <String>['saved-wall']);
+  });
+
+  test('imports the legacy cache into the durable snapshot', () async {
+    final LazyFileCache legacy = LazyFileCache('guest_favourites');
+    await legacy.set(
+      'guest.favourites',
+      jsonEncode(<String, Object?>{
+        'legacy-wall': <String, Object?>{'id': 'legacy-wall', 'provider': 'prism'},
+      }),
+    );
+    await legacy.flush();
+    final GuestFavouritesStore store = GuestFavouritesStore(
+      durableStore: DurableJsonStore('guest_favourites'),
+      legacyCache: legacy,
+    );
+
+    expect((await store.readAll()).keys, <String>['legacy-wall']);
+    expect(await DurableJsonStore('guest_favourites').read('__guest::snapshot'), isNotNull);
+  });
+
+  test('a failed durable write is reported and does not claim the guest favourite was saved', () async {
+    final store = GuestFavouritesStore(
+      durableStore: _FailingDurableStore(),
+      legacyCache: LazyFileCache('unused_legacy'),
+    );
+
+    await expectLater(store.put('not-saved', <String, dynamic>{'id': 'not-saved'}), throwsStateError);
+  });
+}
+
+class _FailingDurableStore extends DurableJsonStore {
+  _FailingDurableStore() : super('failing_guest_favourites');
+
+  @override
+  Future<Map<String, Object?>?> read(String key) async => null;
+
+  @override
+  Future<void> write(String key, Map<String, Object?> value) async => throw StateError('disk full');
 }

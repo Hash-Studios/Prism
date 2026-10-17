@@ -7,6 +7,10 @@ import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../../support/offline_asset_fixture.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -51,7 +55,28 @@ void main() {
 
   testWidgets('a missing local file fails to load', (tester) async {
     await tester.runAsync(() async {
-      await expectLater(repository.load('${temp.path}/missing.png'), throwsA(isA<FileSystemException>()));
+      final fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+      fixture.install();
+      final missingFile = await IOFileSystem('missing-source').createFile('missing.png');
+      final String missingPath = missingFile.path;
+      expect(await missingFile.exists(), isFalse);
+      when(() => fixture.cacheManager.getSingleFile(missingPath)).thenAnswer((_) async => missingFile);
+      try {
+        await expectLater(
+          repository.load(missingPath),
+          throwsA(
+            isA<FormatException>().having(
+              (error) => error.message,
+              'message',
+              'The downloaded asset is empty, unreadable, or not a supported image.',
+            ),
+          ),
+        );
+        verify(() => fixture.cacheManager.getFileFromCache(missingPath)).called(1);
+        verify(() => fixture.cacheManager.getSingleFile(missingPath)).called(1);
+      } finally {
+        await fixture.dispose();
+      }
     });
   });
 

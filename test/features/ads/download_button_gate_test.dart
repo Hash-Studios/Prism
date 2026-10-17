@@ -9,17 +9,20 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:cloud_functions/cloud_functions.dart' show FirebaseFunctionsException;
 import 'package:flutter/material.dart';
@@ -28,6 +31,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/offline_asset_fixture.dart';
 
 class _OrderedAnalytics extends FakeAppAnalytics {
   _OrderedAnalytics(this.onTrack);
@@ -65,6 +69,29 @@ const Map<String, Object> _spent = <String, Object>{
   'transactionId': 'spend_tx',
 };
 
+class _FailingRetainAssetStore extends OfflineAssetStore {
+  _FailingRetainAssetStore({required this.cachedFile, required super.directory});
+
+  final File cachedFile;
+  bool retainAttempted = false;
+
+  @override
+  Future<File?> lookup(String source) async => cachedFile;
+
+  @override
+  Future<File> retain(String source, {File? file}) async {
+    retainAttempted = true;
+    throw FileSystemException('Could not persist the offline original.');
+  }
+}
+
+class _CacheMissOfflineAssetStore extends OfflineAssetStore {
+  _CacheMissOfflineAssetStore({required super.directory});
+
+  @override
+  Future<File?> lookup(String source) async => null;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final backend = CoinsTestBackend();
@@ -77,6 +104,8 @@ void main() {
   late void Function() onEnqueue;
   late List<String> downloadsOnDisk;
   late Directory tempDir;
+  late OfflineAssetFixture offlineFixture;
+  late String tinted;
 
   const enqueueChannel = BasicMessageChannel<Object?>(
     'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
@@ -109,6 +138,9 @@ void main() {
 
   setUp(() async {
     await backend.install();
+    offlineFixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineFixture.install(immediateResolver: true);
+    tinted = offlineFixture.createImageSync('tinted.png').path;
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     fakeAnalytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = fakeAnalytics;
@@ -168,6 +200,7 @@ void main() {
     await getIt<SettingsLocalDataSource>().delete('notificationPermissionPromptedV2');
     CoinsService.instance.abandonedDownloadAfter = const Duration(minutes: 2);
     CoinsService.instance.pendingRetryInterval = const Duration(seconds: 30);
+    await offlineFixture.dispose();
   });
 
   Future<void> pump(
@@ -190,6 +223,7 @@ void main() {
             label: 'Save',
             isPremiumContent: premiumContent,
             contentId: contentId,
+            wallpaperSource: WallpaperSource.prism,
             sourceContext: sourceContext,
             wallpaperTitle: title,
             creatorName: creator,
@@ -203,9 +237,22 @@ void main() {
   }
 
   Future<void> settle(WidgetTester tester) async {
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pump();
     for (int i = 0; i < 40; i++) {
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
       await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  Future<void> pumpUntil(WidgetTester tester, bool Function() condition) async {
+    final Stopwatch elapsed = Stopwatch()..start();
+    while (!condition()) {
+      if (elapsed.elapsed >= const Duration(seconds: 5)) {
+        throw TimeoutException('Download action did not complete.');
+      }
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump(const Duration(milliseconds: 16));
     }
   }
 
@@ -213,6 +260,9 @@ void main() {
     await tester.tap(find.byType(PrimaryActionPill));
     await settle(tester);
   }
+
+  Future<File> fixtureImage(WidgetTester tester, String name) async =>
+      (await tester.runAsync(() => offlineFixture.createImage(name)))!;
 
   String semanticsLabel(WidgetTester tester) => tester.getSemantics(find.byType(PrimaryActionPill)).label;
 
@@ -223,21 +273,23 @@ void main() {
     return raw.isEmpty ? <Map<String, dynamic>>[] : (jsonDecode(raw) as List<Object?>).cast<Map<String, dynamic>>();
   }
 
-  Future<List<Map<String, dynamic>>> restart() async {
-    final List<Map<String, dynamic>> refunds = <Map<String, dynamic>>[];
-    backend.onCall = (name, parameters) async {
-      refunds.add(parameters);
-      return const <String, Object>{
-        'success': true,
-        'changed': true,
-        'previousBalance': 95,
-        'currentBalance': 100,
-        'delta': 5,
+  Future<List<Map<String, dynamic>>> restart(WidgetTester tester) async {
+    return (await tester.runAsync(() async {
+      final List<Map<String, dynamic>> refunds = <Map<String, dynamic>>[];
+      backend.onCall = (name, parameters) async {
+        refunds.add(parameters);
+        return const <String, Object>{
+          'success': true,
+          'changed': true,
+          'previousBalance': 95,
+          'currentBalance': 100,
+          'delta': 5,
+        };
       };
-    };
-    CoinsService.instance.abandonedDownloadAfter = Duration.zero;
-    await CoinsService.instance.refundAbandonedDownload();
-    return refunds;
+      CoinsService.instance.abandonedDownloadAfter = Duration.zero;
+      await CoinsService.instance.refundAbandonedDownload();
+      return refunds;
+    }))!;
   }
 
   Future<dynamic> Function(String name, Map<String, dynamic> parameters) offlineRefunds() => (name, parameters) async {
@@ -266,6 +318,7 @@ void main() {
       enqueueChannel,
       (message) async {
         enqueued.add((message! as List<Object?>).single);
+        onEnqueue();
         return <Object?>[OperationResult(success: await result.future)];
       },
     );
@@ -288,7 +341,7 @@ void main() {
     });
 
     testWidgets('free downloads left show on a standard wallpaper', (tester) async {
-      await useGraceDownloads(2);
+      await tester.runAsync(() => useGraceDownloads(2));
       await pump(tester);
 
       expect(find.text('Save · Free · 2 left'), findsOneWidget);
@@ -296,7 +349,7 @@ void main() {
     });
 
     testWidgets('free downloads do not apply to a Pro wallpaper', (tester) async {
-      await useGraceDownloads(2);
+      await tester.runAsync(() => useGraceDownloads(2));
       await pump(tester, premiumContent: true);
 
       expect(find.text('Save · ${CoinPolicy.premiumWallpaperDownload}'), findsOneWidget);
@@ -314,7 +367,7 @@ void main() {
     testWidgets('a free download with an empty balance goes to the server, not to the low balance sheet', (
       tester,
     ) async {
-      await useGraceDownloads(1);
+      await tester.runAsync(() => useGraceDownloads(1));
       app_state.prismUser.coins = 0;
       CoinsService.instance.balanceNotifier.value = 0;
       await pump(tester);
@@ -348,6 +401,34 @@ void main() {
       expect(semanticsLabel(tester), 'Saved. Already in Downloads');
     });
 
+    testWidgets('a legacy basename/link hit without exact acquisition metadata does not claim Saved', (tester) async {
+      CoinsService.instance.isLinkDownloaded = (_) => true;
+      await pump(tester, contentId: '', link: 'https://other.example/walls/sunset.jpg');
+
+      expect(find.text('Saved'), findsNothing);
+      expect(semanticsLabel(tester), 'Save. Costs 10 coins');
+    });
+
+    testWidgets('a legacy row opens the Saved prompt only when its identified native file exists', (tester) async {
+      signInAgain();
+      await tester.runAsync(
+        () => getIt<SettingsLocalDataSource>().set(
+          'downloaded_walls_v1',
+          jsonEncode(<String, Object>{
+            'sunset': <String, String>{'id': 'wall-1', 'source': 'prism'},
+          }),
+        ),
+      );
+      final File legacyFile = await fixtureImage(tester, 'sunset.jpg');
+      downloadsOnDisk.add(legacyFile.path);
+
+      await pump(tester);
+      await tapSave(tester);
+
+      expect(find.text('Already in Downloads'), findsOneWidget);
+      expect(spendCalls, isEmpty);
+    });
+
     testWidgets('the pill reads Saved after a download finishes', (tester) async {
       await pump(tester);
       await tapSave(tester);
@@ -357,6 +438,46 @@ void main() {
   });
 
   group('saving with enough coins', () {
+    testWidgets('a bundled starter saves its local original without coins or server download stats', (tester) async {
+      final _RecordingStats stats = _RecordingStats();
+      getIt.registerSingleton<RecordWallpaperActionUseCase>(RecordWallpaperActionUseCase(stats));
+      addTearDown(() => getIt.unregister<RecordWallpaperActionUseCase>());
+      await pump(tester, contentId: 'starter-sunset', link: '/starter-sunset.jpg');
+
+      await tapSave(tester);
+
+      expect(spendCalls, isEmpty);
+      expect(enqueued, hasLength(1));
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(request.isLocalFile, isTrue);
+      expect(request.filenameWithoutExtension, 'starter-sunset');
+      expect(stats.actions, isEmpty);
+      expect(ledger(), isEmpty);
+    });
+
+    testWidgets('a bundled starter variant saves the prepared file under its variant identity without coins', (
+      tester,
+    ) async {
+      const String original = '/starter-sunset.jpg';
+      await pump(
+        tester,
+        contentId: 'starter-sunset',
+        link: original,
+        variant: DownloadVariant(key: 'tint-ff8800', prepare: () async => tinted),
+      );
+
+      await tapSave(tester);
+
+      expect(spendCalls, isEmpty);
+      expect(enqueued, hasLength(1));
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(request.link, tinted);
+      expect(request.link, isNot(original));
+      expect(request.isLocalFile, isTrue);
+      expect(request.filenameWithoutExtension, 'starter-sunset_tint-ff8800');
+      expect(ledger(), isEmpty);
+    });
+
     testWidgets('spends without a sheet, names the ledger row and leaves no download entry behind', (tester) async {
       await pump(tester, title: 'Sunset over the bay');
       await tapSave(tester);
@@ -580,6 +701,17 @@ void main() {
       expect(find.text('Download again'), findsOneWidget);
     });
 
+    testWidgets('a standard wallpaper repeat shows free while grace downloads remain', (tester) async {
+      await tester.runAsync(() => useGraceDownloads(2));
+      downloadsOnDisk = <String>[await fileOnDisk()];
+      CoinsService.instance.isLinkDownloaded = (link) => link == _link;
+      await pump(tester);
+      await tapSave(tester);
+
+      expect(find.text('Download again'), findsOneWidget);
+      expect(find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)'), findsNothing);
+    });
+
     testWidgets('an index entry whose file is gone does not block the save', (tester) async {
       CoinsService.instance.isLinkDownloaded = (link) => link == _link;
       await pump(tester);
@@ -591,8 +723,6 @@ void main() {
   });
 
   group('with a variant', () {
-    const String tinted = '/data/user/0/com.hash.prism/cache/prism_tint/1_0.png';
-
     DownloadVariant variant({String key = 'tint-ff8800', Future<String> Function()? prepare}) =>
         DownloadVariant(key: key, prepare: prepare ?? () async => tinted);
 
@@ -629,6 +759,191 @@ void main() {
       expect(request.link, _link);
       expect(request.isLocalFile, isFalse);
       expect(request.filenameWithoutExtension, 'sunset');
+    });
+
+    testWidgets('a stale local original is promoted after the normal coin gate and retained only on save success', (
+      tester,
+    ) async {
+      signInAgain();
+      final Directory offlineDirectory = Directory('${tempDir.path}/offline');
+      final OfflineAssetStore assets = (await tester.runAsync(
+        () async => OfflineAssetStore(directory: offlineDirectory),
+      ))!;
+      OfflineAssetStore.testOverride = assets;
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      final File cached = await fixtureImage(tester, 'cached-stale.png');
+      final File retained = (await tester.runAsync(() => assets.retain(_link, file: cached)))!;
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
+
+      final Completer<void> completed = Completer<void>();
+      await pump(tester, onDownloaded: completed.complete);
+      await tapSave(tester);
+      await pumpUntil(tester, () => completed.isCompleted);
+      await completed.future;
+      await tester.pump(const Duration(seconds: 1));
+
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(spendCalls, hasLength(1));
+      expect(request.isLocalFile, isTrue);
+      expect(request.link, retained.path);
+      expect(await tester.runAsync(() => assets.lookup(_link)), isNotNull);
+      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.prism), isTrue);
+    });
+
+    testWidgets('a successful native save is not reported as saved offline when durable retention fails', (
+      tester,
+    ) async {
+      final File cached = await fixtureImage(tester, 'cached-retain-failure.png');
+      final _FailingRetainAssetStore assets = _FailingRetainAssetStore(
+        cachedFile: cached,
+        directory: Directory('${tempDir.path}/offline'),
+      );
+      OfflineAssetStore.testOverride = assets;
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
+
+      await pump(tester);
+      await tapSave(tester);
+
+      expect(enqueued, hasLength(1));
+      expect(assets.retainAttempted, isTrue);
+      expect(find.text('Saved'), findsOneWidget);
+      expect(semanticsLabel(tester), 'Saved. Already in Downloads');
+      expect(toastMessages.join(' ').toLowerCase(), isNot(contains('offline')));
+      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.prism), isTrue);
+      expect(spendCalls, hasLength(1));
+    });
+
+    testWidgets('an exact same-owner acquisition restores its retained original without another coin spend', (
+      tester,
+    ) async {
+      signInAgain();
+      final OfflineAssetStore assets = (await tester.runAsync(
+        () async => OfflineAssetStore(directory: Directory('${tempDir.path}/offline')),
+      ))!;
+      OfflineAssetStore.testOverride = assets;
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      final File cached = await fixtureImage(tester, 'cached-acquired.png');
+      final File retained = (await tester.runAsync(() => assets.retain(_link, file: cached)))!;
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() async {
+        await index.clearOwner(app_state.prismUser.id);
+        await getIt.unregister<DownloadedWallIndex>();
+      });
+      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.prism, ownerId: app_state.prismUser.id);
+
+      final Completer<void> completed = Completer<void>();
+      await pump(tester, onDownloaded: completed.complete);
+      await tapSave(tester);
+      await pumpUntil(tester, () => completed.isCompleted);
+      await completed.future;
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(spendCalls, isEmpty);
+      expect(enqueued, hasLength(1));
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(request.isLocalFile, isTrue);
+      expect(request.link, retained.path);
+    });
+
+    testWidgets('a same-basename URL is charged despite another URL acquired by this owner', (tester) async {
+      signInAgain();
+      const String otherUrl = 'https://other.example/walls/sunset.jpg';
+      final OfflineAssetStore assets = (await tester.runAsync(
+        () async => OfflineAssetStore(directory: Directory('${tempDir.path}/offline')),
+      ))!;
+      OfflineAssetStore.testOverride = assets;
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      final File cached = await fixtureImage(tester, 'cached-other.png');
+      final File retained = (await tester.runAsync(() => assets.retain(otherUrl, file: cached)))!;
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() async {
+        await index.clearOwner(app_state.prismUser.id);
+        await getIt.unregister<DownloadedWallIndex>();
+      });
+      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.prism, ownerId: app_state.prismUser.id);
+
+      final Completer<void> completed = Completer<void>();
+      await pump(tester, link: otherUrl, onDownloaded: completed.complete);
+      await tapSave(tester);
+      await pumpUntil(tester, () => completed.isCompleted);
+      await completed.future;
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(spendCalls, hasLength(1));
+      expect((enqueued.single! as DownloadRequest).link, retained.path);
+    });
+
+    testWidgets('a download finishing after an account switch records acquisition only for the initiating user', (
+      tester,
+    ) async {
+      signInAgain();
+      final String ownerA = app_state.prismUser.id;
+      final OfflineAssetStore assets = (await tester.runAsync(
+        () async => _CacheMissOfflineAssetStore(directory: Directory('${tempDir.path}/offline')),
+      ))!;
+      OfflineAssetStore.testOverride = assets;
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() => getIt.unregister<DownloadedWallIndex>());
+      final Completer<void> requestStarted = Completer<void>();
+      final Completer<void> completed = Completer<void>();
+      final Completer<bool> nativeSave = holdSaves();
+      onEnqueue = requestStarted.complete;
+
+      await pump(tester, onDownloaded: completed.complete);
+      await tester.tap(find.byType(PrimaryActionPill));
+      await tester.pump();
+      await pumpUntil(tester, () => requestStarted.isCompleted);
+      await requestStarted.future;
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'account-b'
+        ..loggedIn = true;
+      nativeSave.complete(true);
+      await pumpUntil(tester, () => completed.isCompleted);
+      await completed.future;
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.prism), isFalse);
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = ownerA
+        ..loggedIn = true;
+      expect(index.hasAcquired(link: _link, id: 'wall-1', source: WallpaperSource.prism), isTrue);
+    });
+
+    testWidgets('an account switch before the coin gate cancels instead of charging the new account', (tester) async {
+      signInAgain();
+      final String ownerA = app_state.prismUser.id;
+      final DownloadedWallIndex index = DownloadedWallIndex(getIt<SettingsLocalDataSource>());
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      addTearDown(() async {
+        await index.clearOwner(ownerA);
+        await getIt.unregister<DownloadedWallIndex>();
+      });
+      await index.remember(link: _link, id: 'wall-1', source: WallpaperSource.prism, ownerId: ownerA);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        listChannel,
+        (_) async {
+          app_state.prismUser = app_constants.createGuestPrismUser()
+            ..id = 'account-b'
+            ..loggedIn = true
+            ..coins = 100;
+          return <Object?>[DownloadItemsResult(success: true, items: const <String>[])];
+        },
+      );
+
+      await pump(tester);
+      await tapSave(tester);
+
+      expect(spendCalls, isEmpty);
+      expect(enqueued, isEmpty);
     });
 
     testWidgets('the ledger entry names the variation, not the original link', (tester) async {
@@ -789,8 +1104,8 @@ void main() {
   });
 
   group('recovery of a paid variation', () {
-    final DownloadVariant tintA = DownloadVariant(key: 'tint-ff8800', prepare: () async => '/cache/prism_tint/a.png');
-    final DownloadVariant tintB = DownloadVariant(key: 'tint-0088ff', prepare: () async => '/cache/prism_tint/b.png');
+    final DownloadVariant tintA = DownloadVariant(key: 'tint-ff8800', prepare: () async => tinted);
+    final DownloadVariant tintB = DownloadVariant(key: 'tint-0088ff', prepare: () async => tinted);
 
     for (final String link in <String>[_link, _encodedLink]) {
       testWidgets('a failed save of tint B is refunded after a restart although tint A was saved ($link)', (
@@ -814,7 +1129,7 @@ void main() {
         expect(entry['link'], tintB.identityOf(link));
         expect(entry['saved'], isFalse);
 
-        final List<Map<String, dynamic>> refunds = await restart();
+        final List<Map<String, dynamic>> refunds = await restart(tester);
         await settle(tester);
 
         expect(refunds.single['action'], 'refund');
@@ -824,13 +1139,15 @@ void main() {
     }
 
     testWidgets('a paid save of tint A that finished but left its entry is not refunded', (tester) async {
-      final CoinMutationResult paid = await CoinsService.instance.spend(
-        CoinSpendAction.wallpaperDownload,
-        pendingDownloadLink: tintA.identityOf(_link),
-      );
-      await CoinsService.instance.markPendingDownloadSaved(paid.pendingDownloadTxId);
+      final CoinMutationResult paid = (await tester.runAsync(
+        () => CoinsService.instance.spend(
+          CoinSpendAction.wallpaperDownload,
+          pendingDownloadLink: tintA.identityOf(_link),
+        ),
+      ))!;
+      await tester.runAsync(() => CoinsService.instance.markPendingDownloadSaved(paid.pendingDownloadTxId));
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds, isEmpty);
@@ -876,7 +1193,7 @@ void main() {
       await settle(tester);
       expect(results().last.result, 'cancelled');
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds.map((Map<String, dynamic> refund) => refund['transactionId']), <Object?>[txId]);
@@ -910,7 +1227,7 @@ void main() {
       await tapSave(tester);
       expect(enqueued, hasLength(2));
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds.map((Map<String, dynamic> refund) => refund['transactionId']), <Object?>[failedTxId]);
@@ -935,7 +1252,7 @@ void main() {
       expect(enqueued, hasLength(2));
       expect(spendCalls, hasLength(2));
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds.map((Map<String, dynamic> refund) => refund['transactionId']), <Object?>[failedTxId]);
@@ -961,12 +1278,12 @@ void main() {
       enqueueSucceeds = true;
       await tapSave(tester);
       expect(find.text('Open Photos'), findsOneWidget);
-      await CoinsService.instance.refundAbandonedDownload();
+      await tester.runAsync(CoinsService.instance.refundAbandonedDownload);
       await tester.tapAt(const Offset(10, 10));
       await settle(tester);
       expect(find.text('Open Photos'), findsNothing);
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refundedIds(refunds), <Object?>[failedTxId]);
@@ -1010,7 +1327,7 @@ void main() {
       saves[1].complete(false);
       await settle(tester);
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refundedIds(refunds), <Object?>[txIdOf(1)]);
@@ -1039,7 +1356,7 @@ void main() {
       expect(enqueued, isEmpty);
       expect(ledger().map((Map<String, dynamic> e) => e['txId']), <Object?>[txIdOf(0)]);
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refundedIds(refunds), <Object?>[txIdOf(0)]);
@@ -1060,7 +1377,7 @@ void main() {
 
       expect(ledger(), isEmpty);
       signInAgain();
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       expect(refunds, isEmpty);
     });
 
@@ -1078,7 +1395,7 @@ void main() {
 
       expect(ledger().map((Map<String, dynamic> e) => e['txId']), <Object?>[txIdOf(0)]);
       signInAgain();
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refundedIds(refunds), <Object?>[txIdOf(0)]);
@@ -1102,13 +1419,13 @@ void main() {
       expect(enqueued, hasLength(1));
       expect(ledger(), hasLength(1));
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       expect(refunds, isEmpty);
       expect(ledger(), hasLength(1));
 
       dialog.complete();
       await settle(tester);
-      await CoinsService.instance.refundAbandonedDownload();
+      await tester.runAsync(CoinsService.instance.refundAbandonedDownload);
 
       expect(refunds, isEmpty);
       expect(ledger(), isEmpty);
@@ -1144,7 +1461,9 @@ void main() {
     });
 
     testWidgets('a tap that paid nothing leaves a running download of the same link alone', (tester) async {
-      await CoinsService.instance.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: _link);
+      await tester.runAsync(
+        () => CoinsService.instance.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: _link),
+      );
       app_state.prismUser.coins = 2;
       CoinsService.instance.balanceNotifier.value = 2;
       await pump(tester);
@@ -1154,7 +1473,7 @@ void main() {
       await settle(tester);
       expect(results().last.result, 'cancelled');
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds, isEmpty);

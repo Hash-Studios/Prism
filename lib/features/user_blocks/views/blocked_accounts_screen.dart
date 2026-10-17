@@ -119,11 +119,22 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                       PrismAvatar(name: name),
                       const SizedBox(width: PrismSpace.sm),
                       Expanded(
-                        child: Text(
-                          hasUsername ? '@$name' : name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: PrismTextStyles.rowTitle(context),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Text(
+                              hasUsername ? '@$name' : name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: PrismTextStyles.rowTitle(context),
+                            ),
+                            if (row.syncStatus == 'pending' || row.syncStatus == 'rejected')
+                              Text(
+                                row.syncStatus == 'pending' ? 'Waiting to sync' : 'Not synced',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: PrismSpace.sm),

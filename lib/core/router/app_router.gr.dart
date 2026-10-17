@@ -1281,6 +1281,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
     createRecordWithMetadataForTesting,
     Future<void> Function()? presentPaywallForTesting,
     DateTime Function()? nowForTesting,
+    UploadDraftStore? draftStoreForTesting,
     List<PageRouteInfo>? children,
   }) : super(
          UploadWallRoute.name,
@@ -1297,6 +1298,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
                createRecordWithMetadataForTesting,
            presentPaywallForTesting: presentPaywallForTesting,
            nowForTesting: nowForTesting,
+           draftStoreForTesting: draftStoreForTesting,
          ),
          initialChildren: children,
        );
@@ -1320,6 +1322,7 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
             args.createRecordWithMetadataForTesting,
         presentPaywallForTesting: args.presentPaywallForTesting,
         nowForTesting: args.nowForTesting,
+        draftStoreForTesting: args.draftStoreForTesting,
       );
     },
   );
@@ -1338,6 +1341,7 @@ class UploadWallRouteArgs {
     this.createRecordWithMetadataForTesting,
     this.presentPaywallForTesting,
     this.nowForTesting,
+    this.draftStoreForTesting,
   });
 
   final Key? key;
@@ -1368,9 +1372,11 @@ class UploadWallRouteArgs {
 
   final DateTime Function()? nowForTesting;
 
+  final UploadDraftStore? draftStoreForTesting;
+
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting}';
   }
 
   @override
@@ -1380,7 +1386,8 @@ class UploadWallRouteArgs {
     return key == other.key &&
         image == other.image &&
         batch == other.batch &&
-        imageSizeForTesting == other.imageSizeForTesting;
+        imageSizeForTesting == other.imageSizeForTesting &&
+        draftStoreForTesting == other.draftStoreForTesting;
   }
 
   @override
@@ -1388,7 +1395,8 @@ class UploadWallRouteArgs {
       key.hashCode ^
       image.hashCode ^
       batch.hashCode ^
-      imageSizeForTesting.hashCode;
+      imageSizeForTesting.hashCode ^
+      draftStoreForTesting.hashCode;
 }
 
 /// generated route for

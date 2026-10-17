@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/wait_for_real_io.dart';
 
 void main() {
   testWidgets('share calls the card share with the full image and context line, and tracks the format', (tester) async {
@@ -251,18 +252,11 @@ void main() {
     expect(sharedImageUrl, 'https://img.test/thumb.jpg');
   });
 
-  testWidgets('a link that cannot be created shows an error and does not open the share sheet', (tester) async {
-    final List<String?> toasts = <String?>[];
-    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
-      if (call.method == 'showToast') toasts.add((call.arguments as Map)['msg'] as String?);
-      return true;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+  testWidgets('a failed short link shares the canonical wallpaper URL', (tester) async {
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     addTearDown(AnalyticsRuntime.reset);
-    var shareCalls = 0;
+    String? sharedLink;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -274,7 +268,38 @@ void main() {
             thumbUrl: 'https://img.test/thumb.jpg',
             createLink: (id, source, url, thumbUrl) async => null,
             shareCard: (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
-              shareCalls++;
+              sharedLink = link;
+              return Future<ShareCardResult>.value((format: ShareFormatValue.card, dismissed: false));
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.bySemanticsLabel('Share'));
+    await tester.pumpAndSettle();
+
+    expect(sharedLink, startsWith('https://prismwalls.com/share?'));
+    expect(sharedLink, contains('id=wall-1'));
+    expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
+  });
+
+  testWidgets('a stalled short-link request falls back without waiting for its network timeout', (tester) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    final Completer<String?> link = Completer<String?>();
+    String? sharedLink;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShareButton(
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            url: 'https://img.test/full.jpg',
+            thumbUrl: 'https://img.test/thumb.jpg',
+            createLink: (id, source, url, thumbUrl) => link.future,
+            shareCard: (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
+              sharedLink = link;
               return Future<ShareCardResult>.value((format: ShareFormatValue.card, dismissed: false));
             },
           ),
@@ -283,11 +308,48 @@ void main() {
     );
     await tester.tap(find.bySemanticsLabel('Share'));
     await tester.pump();
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 1));
 
-    expect(shareCalls, 0);
-    expect(toasts, contains("Couldn't create the share link. Try again."));
-    expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.failure);
+    expect(sharedLink, startsWith('https://prismwalls.com/share?'));
+    link.completeError(StateError('request may fail later'));
+  });
+
+  testWidgets('a bundled starter shares its local image without inventing a public wallpaper link', (tester) async {
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    var createLinkCalls = 0;
+    String? sharedImageUrl;
+    String? sharedLink;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShareButton(
+            id: 'starter-sunset',
+            source: WallpaperSource.prism,
+            url: '/tmp/untrusted-starter-path.jpg',
+            thumbUrl: '/tmp/untrusted-starter-path.jpg',
+            createLink: (id, source, url, thumbUrl) {
+              createLinkCalls++;
+              return Future<String?>.value('https://prismwalls.com/share?id=$id');
+            },
+            shareCard: (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
+              sharedImageUrl = imageUrl;
+              sharedLink = link;
+              return Future<ShareCardResult>.value((format: ShareFormatValue.card, dismissed: false));
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Share'));
+    await waitForRealIo(tester, () => sharedLink != null, reason: 'bundled wallpaper share');
+
+    expect(createLinkCalls, 0);
+    expect(sharedImageUrl, isNot('/tmp/untrusted-starter-path.jpg'));
+    expect(sharedLink, contains('available in the Prism app'));
+    expect(sharedLink, isNot(contains('prismwalls.com/share')));
   });
 }

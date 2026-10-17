@@ -1,10 +1,19 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -27,13 +36,76 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/coins_test_backend.dart';
+import '../../../../support/offline_asset_fixture.dart';
+
+class _DetailTestAssetStore extends OfflineAssetStore {
+  _DetailTestAssetStore({required super.directory, required this.sourceFile});
+
+  final File sourceFile;
+  final Map<String, File> _retainedFiles = <String, File>{};
+
+  @override
+  Future<File?> lookup(String source) async => _retainedFiles[source];
+
+  @override
+  Future<File> retain(String source, {File? file}) async {
+    final File retained = await super.retain(source, file: file);
+    _retainedFiles[source] = retained;
+    return retained;
+  }
+
+  @override
+  Future<File> resolve(String source, {bool allowNetwork = true}) async {
+    if (source == 'https://img.test/full.jpg') return sourceFile;
+    throw OfflineAssetUnavailableException(source);
+  }
+}
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
+
+class _MockImageCacheManager extends Mock implements BaseCacheManager {}
+
+Future<void> _installEmptyOfflineAssetStore() async {
+  final Directory directory = Directory.systemTemp.createTempSync('detail_empty_offline_assets');
+  final _MockImageCacheManager cacheManager = _MockImageCacheManager();
+  when(() => cacheManager.getFileFromCache(any())).thenAnswer((_) async => null);
+  when(
+    () => cacheManager.getFileStream(any(), withProgress: true),
+  ).thenAnswer((_) => const Stream<FileResponse>.empty());
+  final OfflineAssetStore store = OfflineAssetStore(
+    directory: Directory('${directory.path}/retained'),
+    cacheManager: cacheManager,
+  );
+  OfflineAssetStore.testOverride = store;
+  PrismImageCache.testOverride = cacheManager;
+  PrismFullImageCache.testOverride = cacheManager;
+  addTearDown(() async {
+    OfflineAssetStore.testOverride = null;
+    PrismImageCache.testOverride = null;
+    PrismFullImageCache.testOverride = null;
+    if (directory.existsSync()) await directory.delete(recursive: true);
+  });
+}
+
+Future<Finder> _waitForThumbnailFallback(WidgetTester tester) async {
+  final Finder thumbnail = find.descendant(
+    of: find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'),
+    matching: find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl.endsWith('thumb.jpg')),
+  );
+  for (int attempt = 0; attempt < 40 && thumbnail.evaluate().isEmpty; attempt++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+    await tester.pump();
+  }
+  expect(thumbnail, findsOneWidget, reason: 'the empty offline lookup completes and mounts the network thumbnail');
+  return thumbnail;
+}
 
 FeedItemEntity _prism({List<String> collections = const <String>[], int? width, int? height}) => FeedItemEntity.prism(
   id: 'prism-1',
@@ -77,16 +149,24 @@ void main() {
   setUpAll(() => registerFallbackValue(const SelectAccentColor(color: Colors.black)));
 
   late DownloadedWallIndex downloaded;
+  late SettingsLocalDataSource settings;
+  late OfflineAssetFixture offlineAssets;
 
-  setUp(() {
-    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+  setUp(() async {
+    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineAssets.install();
+    settings = SettingsLocalDataSource(InMemoryLocalStore());
     downloaded = DownloadedWallIndex(settings);
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(settings));
     getIt.registerSingleton<DownloadedWallIndex>(downloaded);
   });
 
-  tearDown(() => getIt.reset());
+  tearDown(() async {
+    await offlineAssets.dispose();
+    await getIt.reset();
+  });
 
   Future<_MockWallpaperDetailBloc> pumpDetail(WidgetTester tester, WallpaperDetailLoaded state) async {
     final bloc = _MockWallpaperDetailBloc();
@@ -261,6 +341,7 @@ void main() {
   });
 
   testWidgets('a colour picked on the colour bar tints the wallpaper with its hue', (tester) async {
+    await _installEmptyOfflineAssetStore();
     await pumpDetail(
       tester,
       WallpaperDetailLoaded(
@@ -271,17 +352,14 @@ void main() {
         colorChanged: true,
       ),
     );
-    await tester.pump(const Duration(milliseconds: 300));
-
-    final Finder tinted = find.ancestor(
-      of: find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl.endsWith('thumb.jpg')),
-      matching: find.byType(ColorFiltered),
-    );
+    final Finder thumbnail = await _waitForThumbnailFallback(tester);
+    final Finder tinted = find.ancestor(of: thumbnail, matching: find.byType(ColorFiltered));
     expect(tinted, findsOneWidget);
     expect(tester.widget<ColorFiltered>(tinted).colorFilter, const ColorFilter.mode(Colors.teal, BlendMode.hue));
   });
 
   testWidgets('the original wallpaper has no colour filter, even with an accent on the chrome', (tester) async {
+    await _installEmptyOfflineAssetStore();
     await pumpDetail(
       tester,
       WallpaperDetailLoaded(
@@ -291,8 +369,7 @@ void main() {
         accent: Colors.teal,
       ),
     );
-    await tester.pump(const Duration(milliseconds: 300));
-
+    await _waitForThumbnailFallback(tester);
     expect(find.byType(ColorFiltered), findsNothing);
   });
 
@@ -355,43 +432,6 @@ void main() {
       }
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-    testWidgets('a tinted download is its own variation, named and remembered by its colour', (tester) async {
-      await pumpDetail(
-        tester,
-        WallpaperDetailLoaded(
-          entity: _prism(),
-          paletteLoading: false,
-          colors: const <Color>[Color(0xFF00FF00)],
-          accent: const Color(0xFF00FF00),
-          colorChanged: true,
-        ),
-      );
-      const String url = 'https://img.test/full.jpg';
-      final DownloadButton button = tester.widget<DownloadButton>(find.byType(DownloadButton));
-
-      expect(button.variant!.key, 'tint-00ff00');
-      expect(button.variant!.identityOf(url), 'full_tint-00ff00.png');
-
-      button.onDownloaded!();
-      await tester.pump();
-
-      expect(downloaded.has('full_tint-00ff00.png'), isTrue);
-      expect(downloaded.has(url), isFalse);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-    testWidgets('with the original showing, a download is remembered under the wallpaper link', (tester) async {
-      await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
-      const String url = 'https://img.test/full.jpg';
-      final DownloadButton button = tester.widget<DownloadButton>(find.byType(DownloadButton));
-
-      expect(button.variant, isNull);
-      button.onDownloaded!();
-      await tester.pump();
-
-      expect(downloaded.has(url), isTrue);
-      expect(downloaded.has('full_tint-00ff00.png'), isFalse);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
     testWidgets('with the original showing, each action uses the wallpaper as it is', (tester) async {
       await pumpDetail(
         tester,
@@ -404,6 +444,221 @@ void main() {
       );
 
       expect(preparers(tester), everyElement(isNull));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  });
+
+  group('a detail download is acquired only after native save succeeds', () {
+    const BasicMessageChannel<Object?> enqueueChannel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    const BasicMessageChannel<Object?> listChannel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    final CoinsTestBackend backend = CoinsTestBackend();
+    late Directory directory;
+    late File sourceFile;
+    late List<DownloadRequest> requests;
+    late List<Map<String, dynamic>> spendCalls;
+    late Completer<void> nativeRequestStarted;
+    late Completer<void> releaseNativeResponse;
+    late Completer<void> saveFeedback;
+    late Completer<void> failureToast;
+    late bool nativeSaveSucceeds;
+
+    setUp(() async {
+      await backend.install();
+      directory = Directory.systemTemp.createTempSync('detail_action_download');
+      sourceFile = File('${directory.path}/source.png')..writeAsBytesSync(await _redAndBluePng());
+      requests = <DownloadRequest>[];
+      spendCalls = <Map<String, dynamic>>[];
+      nativeRequestStarted = Completer<void>();
+      releaseNativeResponse = Completer<void>();
+      saveFeedback = Completer<void>();
+      failureToast = Completer<void>();
+      nativeSaveSucceeds = true;
+      CoinsService.instance.balanceNotifier.value = 100;
+      backend.onCall = (String name, Map<String, dynamic> parameters) async {
+        if (name == 'spendCoins') spendCalls.add(parameters);
+        return <String, Object>{
+          'success': true,
+          'changed': true,
+          'previousBalance': 100,
+          'currentBalance': 95,
+          'delta': -5,
+          'transactionId': 'detail_download_tx',
+        };
+      };
+      OfflineAssetStore.testOverride = _DetailTestAssetStore(
+        directory: Directory('${directory.path}/retained'),
+        sourceFile: sourceFile,
+      );
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(pathChannel, (_) async => directory.path);
+      messenger.setMockMethodCallHandler(toastChannel, (call) async {
+        final Map<Object?, Object?> arguments = Map<Object?, Object?>.from(
+          call.arguments as Map<Object?, Object?>? ?? {},
+        );
+        final String expectedMessage = nativeSaveSucceeds ? wallpaperSavedMessage : 'No space';
+        if (call.method == 'showToast' && arguments['msg'] == expectedMessage) {
+          if (!saveFeedback.isCompleted) saveFeedback.complete();
+          if (!nativeSaveSucceeds && !failureToast.isCompleted) failureToast.complete();
+        }
+        return true;
+      });
+      messenger.setMockDecodedMessageHandler<Object?>(enqueueChannel, (message) async {
+        final DownloadRequest request = (message! as List<Object?>).single! as DownloadRequest;
+        requests.add(request);
+        if (!nativeRequestStarted.isCompleted) nativeRequestStarted.complete();
+        await releaseNativeResponse.future;
+        if (!nativeSaveSucceeds) {
+          return <Object?>[OperationResult(success: false, message: 'No space')];
+        }
+        final File savedFile = File('${directory.path}/${request.filenameWithoutExtension}.png');
+        return <Object?>[OperationResult(success: true, message: savedFile.path)];
+      });
+      messenger.setMockDecodedMessageHandler<Object?>(
+        listChannel,
+        (_) async => <Object?>[DownloadItemsResult(success: true, items: <String>[])],
+      );
+      await settings.set('notificationPermissionPromptedV2', true);
+    });
+
+    tearDown(() async {
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockDecodedMessageHandler<Object?>(enqueueChannel, null);
+      messenger.setMockDecodedMessageHandler<Object?>(listChannel, null);
+      messenger.setMockMethodCallHandler(pathChannel, null);
+      messenger.setMockMethodCallHandler(toastChannel, null);
+      OfflineAssetStore.testOverride = null;
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await settings.delete('notificationPermissionPromptedV2');
+      if (directory.existsSync()) directory.deleteSync(recursive: true);
+    });
+
+    Future<void> tapAndWait(WidgetTester tester, String identity, {required bool expectAcquired}) async {
+      await tester.tap(find.byType(DownloadButton));
+      await tester.pump();
+      for (int i = 0; i < 40 && !nativeRequestStarted.isCompleted; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump();
+      }
+      expect(nativeRequestStarted.isCompleted, isTrue, reason: 'the native download request starts');
+      expect(requests, hasLength(1));
+      final DownloadRequest request = requests.single;
+      if (nativeSaveSucceeds) {
+        final List<int> bytes = (await tester.runAsync(
+          () => request.isLocalFile ? File(request.link).readAsBytes() : sourceFile.readAsBytes(),
+        ))!;
+        await tester.runAsync(
+          () => File('${directory.path}/${request.filenameWithoutExtension}.png').writeAsBytes(bytes),
+        );
+      }
+      releaseNativeResponse.complete();
+      for (int i = 0; i < 100 && !saveFeedback.isCompleted; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(saveFeedback.isCompleted, isTrue, reason: 'the download flow reaches its success or failure feedback');
+      if (!expectAcquired) expect(failureToast.isCompleted, isTrue);
+      expect(downloaded.hasAcquired(link: identity, id: 'prism-1', source: WallpaperSource.prism), expectAcquired);
+      await tester.pump(const Duration(seconds: 2));
+    }
+
+    testWidgets('a tinted download saves valid prepared bytes and remembers only its variation identity', (
+      tester,
+    ) async {
+      await pumpDetail(
+        tester,
+        WallpaperDetailLoaded(
+          entity: _prism(),
+          paletteLoading: false,
+          colors: const <Color>[Color(0xFF00FF00)],
+          accent: const Color(0xFF00FF00),
+          colorChanged: true,
+        ),
+      );
+      await tapAndWait(tester, 'full_tint-00ff00.png', expectAcquired: true);
+
+      expect(requests, hasLength(1));
+      expect(requests.single.filenameWithoutExtension, 'full_tint-00ff00');
+      expect(requests.single.link, isNot('https://img.test/full.jpg'));
+      expect(requests.single.isLocalFile, isTrue);
+      final List<int> savedBytes = (await tester.runAsync(() => File(requests.single.link).readAsBytes()))!;
+      final List<double> hues = (await tester.runAsync(() => _hues(Uint8List.fromList(savedBytes))))!;
+      expect(hues, hasLength(2));
+      expect(hues, everyElement(closeTo(120, 10)));
+      expect(spendCalls, hasLength(1));
+      expect(spendCalls.single['action'], 'wallpaperDownload');
+      expect(
+        downloaded.hasAcquired(link: 'full_tint-00ff00.png', id: 'prism-1', source: WallpaperSource.prism),
+        isTrue,
+      );
+      expect(
+        downloaded.hasAcquired(link: 'https://img.test/full.jpg', id: 'prism-1', source: WallpaperSource.prism),
+        isFalse,
+      );
+      final String ownerId = app_state.prismUser.id;
+      expect(ownerId, backend.userId);
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'different-owner'
+        ..loggedIn = true;
+      expect(
+        downloaded.hasAcquired(link: 'full_tint-00ff00.png', id: 'prism-1', source: WallpaperSource.prism),
+        isFalse,
+      );
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = ownerId
+        ..loggedIn = true;
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('an original download saves the source URL and remembers that URL after native success', (
+      tester,
+    ) async {
+      await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+      await tapAndWait(tester, 'https://img.test/full.jpg', expectAcquired: true);
+
+      expect(requests, hasLength(1));
+      expect(requests.single.link, 'https://img.test/full.jpg');
+      expect(requests.single.isLocalFile, isFalse);
+      expect(spendCalls, hasLength(1));
+      expect(spendCalls.single['action'], 'wallpaperDownload');
+      expect(
+        downloaded.hasAcquired(link: 'https://img.test/full.jpg', id: 'prism-1', source: WallpaperSource.prism),
+        isTrue,
+      );
+      expect(
+        downloaded.hasAcquired(link: 'full_tint-00ff00.png', id: 'prism-1', source: WallpaperSource.prism),
+        isFalse,
+      );
+      final File? retained = await tester.runAsync<File?>(
+        () async => OfflineAssetStore.instance.lookup('https://img.test/full.jpg'),
+      );
+      expect(retained, isNotNull);
+      final List<List<int>> retainedAndSourceBytes = (await tester.runAsync(() async {
+        return <List<int>>[await retained!.readAsBytes(), await sourceFile.readAsBytes()];
+      }))!;
+      expect(retainedAndSourceBytes.first, retainedAndSourceBytes.last);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a failed native save never records an acquisition', (tester) async {
+      nativeSaveSucceeds = false;
+      await pumpDetail(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+      await tapAndWait(tester, 'https://img.test/full.jpg', expectAcquired: false);
+
+      expect(requests, hasLength(1));
+      expect(spendCalls, hasLength(1));
+      expect(
+        downloaded.hasAcquired(link: 'https://img.test/full.jpg', id: 'prism-1', source: WallpaperSource.prism),
+        isFalse,
+      );
+      expect(
+        await tester.runAsync<File?>(() async => OfflineAssetStore.instance.lookup('https://img.test/full.jpg')),
+        isNull,
+      );
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 

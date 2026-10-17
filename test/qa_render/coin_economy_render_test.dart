@@ -121,6 +121,9 @@ class _ProfileRepository implements PublicProfileRepository {
   Stream<PublicProfileEntity?> watchProfile(String identifier) => profiles.stream;
 
   @override
+  Future<void> clearForUser(String userId) async {}
+
+  @override
   Future<Result<({List<PublicProfileWallEntity> items, bool hasMore})>> fetchWalls({
     required String email,
     required bool refresh,

@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/wallpaper_error_messages.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -83,6 +85,8 @@ class WallpaperService {
   static const String foregroundMessage = 'Keep Prism open and try again.';
   static const String failedMessage = "Couldn't set the wallpaper.";
   static const String timeoutMessage = 'Timed out. Check your connection and try again.';
+  static const String offlineUnavailableMessage =
+      'This wallpaper is not saved on this device. Connect to the internet and try again.';
 
   /// Turns a local file into a content URI. The Android system cropper cannot read a file path.
   static const MethodChannel _cropChannel = MethodChannel('prism/wallpaper_crop');
@@ -101,13 +105,33 @@ class WallpaperService {
     bool recordHistory = true,
     String? historySource,
     String? historyThumbnail,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
   }) async {
     final normalizedSource = _normalizeSource(source);
     final String filePath;
     try {
-      filePath = await _resolveToLocalFile(normalizedSource);
+      filePath = (await resolveToLocalFile(
+        normalizedSource,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+      )).path;
     } on TimeoutException {
       return const WallpaperSetResult(WallpaperSetStatus.failed, timeoutMessage, errorCode: 'timeout');
+    } on OfflineAssetUnavailableException catch (error, stackTrace) {
+      logger.w('WallpaperService: original is not available offline', error: error, stackTrace: stackTrace);
+      return const WallpaperSetResult(
+        WallpaperSetStatus.failed,
+        offlineUnavailableMessage,
+        errorCode: 'offline_unavailable',
+      );
+    } on SocketException catch (error, stackTrace) {
+      logger.w('WallpaperService: network unavailable while loading the image', error: error, stackTrace: stackTrace);
+      return const WallpaperSetResult(
+        WallpaperSetStatus.failed,
+        offlineUnavailableMessage,
+        errorCode: 'offline_unavailable',
+      );
     } catch (error, stackTrace) {
       logger.w('WallpaperService: could not load the image', error: error, stackTrace: stackTrace);
       return const WallpaperSetResult(WallpaperSetStatus.failed, failedMessage, errorCode: 'load_failed');
@@ -309,22 +333,39 @@ class WallpaperService {
     return 'prism';
   }
 
-  static String _normalizeSource(String source) {
-    final Uri? uri = Uri.tryParse(source);
-    if (uri?.scheme == 'file') {
-      return uri!.toFilePath();
+  static Future<File> resolveToLocalFile(
+    String source, {
+    bool allowNetwork = true,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
+  }) async {
+    final String normalizedSource = _normalizeSource(source);
+    final OfflineAssetStore assetStore = OfflineAssetStore.instance;
+    if (wallpaperId != null && wallpaperSource != null && getIt.isRegistered<DownloadedWallIndex>()) {
+      final File? downloaded = await getIt<DownloadedWallIndex>().localFileFor(
+        link: normalizedSource,
+        id: wallpaperId,
+        source: wallpaperSource,
+      );
+      if (downloaded != null) {
+        final File? verified = await assetStore.lookup(downloaded.path);
+        if (verified != null) return verified;
+      }
+    } else if (getIt.isRegistered<DownloadedWallIndex>()) {
+      final File? downloaded = await getIt<DownloadedWallIndex>().localFileForLink(normalizedSource);
+      if (downloaded != null) {
+        final File? verified = await assetStore.lookup(downloaded.path);
+        if (verified != null) return verified;
+      }
     }
-    if (source.startsWith('/')) {
-      return source.replaceAll('/0//', '/0/');
-    }
-    return source;
+    final Future<File> resolved = assetStore.resolve(normalizedSource, allowNetwork: allowNetwork);
+    return allowNetwork ? resolved.timeout(const Duration(seconds: 30)) : resolved;
   }
 
-  static Future<String> _resolveToLocalFile(String source) async {
-    if (source.startsWith('http://') || source.startsWith('https://')) {
-      final file = await PrismFullImageCache.instance.getSingleFile(source).timeout(const Duration(seconds: 30));
-      return file.path;
-    }
+  static String _normalizeSource(String source) {
+    final Uri? uri = Uri.tryParse(source);
+    if (uri?.scheme == 'file') return uri!.toFilePath();
+    if (source.startsWith('/')) return source.replaceAll('/0//', '/0/');
     return source;
   }
 }

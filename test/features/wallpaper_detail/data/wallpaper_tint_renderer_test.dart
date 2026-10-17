@@ -2,14 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
-// ignore: depend_on_referenced_packages
-import 'package:file/local.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_cache_manager/file.dart' as cache_file;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -135,17 +134,37 @@ void main() {
     final TestDefaultBinaryMessenger messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     late Directory directory;
     late File source;
+    late Future<cache_file.File> cacheFile;
+    late _MockCacheManager cache;
 
     setUp(() async {
       directory = Directory.systemTemp.createTempSync('tint_renderer_test_');
       source = File('${directory.path}/wall.png');
+      cache = _MockCacheManager();
       messenger.setMockMethodCallHandler(pathChannel, (_) async => directory.path);
+      cacheFile = IOFileSystem('tint-renderer-test').createFile('cached-source.png');
+      final cachedSource = await cacheFile;
+      OfflineAssetStore.testOverride = OfflineAssetStore(
+        directory: Directory('${directory.path}/retained'),
+        cacheManager: cache,
+      );
+      when(() => cache.getFileFromCache(any())).thenAnswer((invocation) async {
+        final String key = invocation.positionalArguments.single as String;
+        if (key.startsWith('https://img.test/')) {
+          await cachedSource.writeAsBytes(await source.readAsBytes());
+          return FileInfo(cachedSource, FileSource.Cache, DateTime(2000), key);
+        }
+        return null;
+      });
+      when(() => cache.getSingleFile(any())).thenAnswer((invocation) async {
+        throw OfflineAssetUnavailableException(invocation.positionalArguments.single as String);
+      });
       await clearTintedWallpapers();
     });
 
-    tearDown(() {
+    tearDown(() async {
       messenger.setMockMethodCallHandler(pathChannel, null);
-      PrismFullImageCache.testOverride = null;
+      OfflineAssetStore.testOverride = null;
       directory.deleteSync(recursive: true);
     });
 
@@ -206,7 +225,7 @@ void main() {
       await tester.runAsync(() async {
         await expectLater(
           renderTintedWallpaper(source: source.path, tint: _green),
-          throwsA(isA<FileSystemException>()),
+          throwsA(isA<OfflineAssetUnavailableException>()),
         );
 
         source.writeAsBytesSync(await _redAndBluePng());
@@ -349,40 +368,37 @@ void main() {
     ) async {
       await tester.runAsync(() async {
         source.writeAsBytesSync(await _redAndBluePng());
-        final _MockCacheManager cache = _MockCacheManager();
         final Completer<void> firstFetched = Completer<void>();
-        when(() => cache.getSingleFile(any())).thenAnswer((Invocation call) async {
-          if (call.positionalArguments.single == 'https://img.test/a.png') await firstFetched.future;
-          return const LocalFileSystem().file(source.path);
+        when(() => cache.getFileFromCache(any())).thenAnswer((Invocation call) async {
+          final String url = call.positionalArguments.single as String;
+          if (url == 'https://img.test/a.png') await firstFetched.future;
+          final cachedSource = await cacheFile;
+          await cachedSource.writeAsBytes(await source.readAsBytes());
+          return FileInfo(cachedSource, FileSource.Cache, DateTime(2000), url);
         });
-        PrismFullImageCache.testOverride = cache;
 
         final Future<String> first = renderTintedWallpaper(source: 'https://img.test/a.png', tint: _green);
         final Future<String> second = renderTintedWallpaper(source: 'https://img.test/b.png', tint: _magenta);
         await Future<void>.delayed(const Duration(milliseconds: 100));
 
-        verify(() => cache.getSingleFile('https://img.test/a.png')).called(1);
-        verifyNever(() => cache.getSingleFile('https://img.test/b.png'));
+        verify(() => cache.getFileFromCache('https://img.test/a.png')).called(1);
+        verifyNever(() => cache.getFileFromCache('https://img.test/b.png'));
 
         firstFetched.complete();
         await Future.wait(<Future<String>>[first, second]);
 
-        verify(() => cache.getSingleFile('https://img.test/b.png')).called(1);
+        verify(() => cache.getFileFromCache('https://img.test/b.png')).called(1);
       });
     });
 
     testWidgets('a URL loads through the full image cache and is fetched once per tint', (tester) async {
       await tester.runAsync(() async {
         source.writeAsBytesSync(await _redAndBluePng());
-        final _MockCacheManager cache = _MockCacheManager();
-        when(() => cache.getSingleFile(any())).thenAnswer((_) async => const LocalFileSystem().file(source.path));
-        PrismFullImageCache.testOverride = cache;
-
         final String first = await renderTintedWallpaper(source: 'https://img.test/wall.png', tint: _green);
         final String again = await renderTintedWallpaper(source: 'https://img.test/wall.png', tint: _green);
 
         expect(again, first);
-        verify(() => cache.getSingleFile('https://img.test/wall.png')).called(1);
+        verify(() => cache.getFileFromCache('https://img.test/wall.png')).called(1);
         final List<Color> pixels = await _pixels(await File(first).readAsBytes());
         expect(pixels.map(_hue), everyElement(closeTo(120, 10)));
       });

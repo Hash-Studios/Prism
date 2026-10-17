@@ -5,6 +5,9 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
@@ -65,6 +68,15 @@ class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 class _MockFile extends Mock implements pkg_file.File {}
 
+class _RetainedPreview {
+  const _RetainedPreview({required this.root, required this.assets, required this.cache, required this.retained});
+
+  final Directory root;
+  final OfflineAssetStore assets;
+  final _MockCacheManager cache;
+  final File retained;
+}
+
 Future<File> _solidPng(Directory directory, Color color) async {
   final ui.PictureRecorder recorder = ui.PictureRecorder();
   Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 40, 80), Paint()..color = color);
@@ -82,6 +94,49 @@ Future<void> _settleImages(WidgetTester tester) async {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
   }
+}
+
+Future<void> _waitForFinder(WidgetTester tester, Finder finder) async {
+  for (var i = 0; i < 50 && finder.evaluate().isEmpty; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pump();
+  }
+  expect(finder, findsOneWidget);
+}
+
+Future<void> _waitForCompleter(WidgetTester tester, Completer<void> completer) async {
+  for (var i = 0; i < 50 && !completer.isCompleted; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pump();
+  }
+  expect(completer.isCompleted, isTrue);
+}
+
+ImageProvider _unwrapResizeImage(ImageProvider provider) => provider is ResizeImage ? provider.imageProvider : provider;
+
+Future<void> _waitForImageDecode(WidgetTester tester, ImageProvider provider) async {
+  final Completer<void> decoded = Completer<void>();
+  await tester.runAsync(() async {
+    final ImageStream stream = provider.resolve(ImageConfiguration.empty);
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (_, _) {
+        if (!decoded.isCompleted) decoded.complete();
+        stream.removeListener(listener);
+      },
+      onError: (Object error, StackTrace? stackTrace) {
+        if (!decoded.isCompleted) decoded.completeError(error, stackTrace);
+        stream.removeListener(listener);
+      },
+    );
+    stream.addListener(listener);
+  });
+  for (var i = 0; i < 50 && !decoded.isCompleted; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pump();
+  }
+  expect(decoded.isCompleted, isTrue, reason: 'The retained local file image must finish decoding.');
+  await decoded.future;
 }
 
 Future<Color> _pixelAt(WidgetTester tester, RenderRepaintBoundary boundary, Offset point) async {
@@ -141,6 +196,86 @@ void main() {
     expect(find.byType(ColorFiltered), findsNothing);
   });
 
+  testWidgets('lock preview uses a retained original after temporary cache cleanup', (tester) async {
+    const String url = 'https://images.example/clock-preview.jpg';
+    final _MockCacheManager thumbnailCache = _MockCacheManager();
+    when(() => thumbnailCache.getFileFromCache(any())).thenAnswer((_) async => null);
+    final _RetainedPreview setup = (await tester.runAsync(() async {
+      final Directory root = await Directory.systemTemp.createTemp('clock-retained-preview-');
+      final File original = await _solidPng(root, Colors.indigo);
+      final _MockCacheManager cache = _MockCacheManager();
+      when(() => cache.getFileFromCache(url)).thenAnswer((_) async => null);
+      final OfflineAssetStore assets = OfflineAssetStore(
+        directory: Directory('${root.path}/retained'),
+        cacheManager: cache,
+      );
+      final File retained = await assets.retain(url, file: original);
+      return _RetainedPreview(root: root, assets: assets, cache: cache, retained: retained);
+    }))!;
+    addTearDown(() async {
+      OfflineAssetStore.testOverride = null;
+      await tester.runAsync(() => setup.root.delete(recursive: true));
+    });
+    OfflineAssetStore.testOverride = setup.assets;
+    PrismFullImageCache.testOverride = setup.cache;
+    PrismImageCache.testOverride = thumbnailCache;
+    addTearDown(() {
+      PrismFullImageCache.testOverride = null;
+      PrismImageCache.testOverride = null;
+    });
+    final File resolvedByWallpaperService =
+        await tester.runAsync(
+              () => WallpaperService.resolveToLocalFile(
+                url,
+                allowNetwork: false,
+                wallpaperId: 'clock-wall',
+                wallpaperSource: WallpaperSource.prism,
+              ),
+            )
+            as File;
+    expect(resolvedByWallpaperService.path, setup.retained.path);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ClockOverlay(link: url, file: false, wallpaperId: 'clock-wall', wallpaperSource: WallpaperSource.prism),
+      ),
+    );
+    expect(find.byType(CachedNetworkImage), findsNothing);
+    final File? resolved = await tester.runAsync<File?>(() => setup.assets.lookup(url));
+    expect(resolved?.path, setup.retained.path);
+    final Finder retainedImageFinder = find.byWidgetPredicate((Widget widget) {
+      if (widget is! Image) return false;
+      final ImageProvider provider = _unwrapResizeImage(widget.image);
+      return provider is FileImage && provider.file.path == setup.retained.path;
+    });
+    await _waitForFinder(tester, retainedImageFinder);
+    final ImageProvider retainedProvider = tester
+        .widgetList<Image>(find.byType(Image))
+        .map((Image image) => image.image)
+        .firstWhere((ImageProvider image) {
+          final ImageProvider unwrapped = _unwrapResizeImage(image);
+          return unwrapped is FileImage && unwrapped.file.path == setup.retained.path;
+        });
+    await _waitForImageDecode(tester, retainedProvider);
+    await tester.pump();
+
+    expect(
+      tester
+          .widgetList<Image>(find.byType(Image))
+          .map((Image image) => _unwrapResizeImage(image.image))
+          .whereType<FileImage>()
+          .any((FileImage image) => image.file.path == setup.retained.path),
+      isTrue,
+    );
+    verifyNever(() => setup.cache.getSingleFile(any()));
+    verifyNever(() => setup.cache.getFileFromCache(any()));
+    verifyNever(() => setup.cache.getFileStream(any(), withProgress: any(named: 'withProgress')));
+    verifyNever(() => thumbnailCache.getSingleFile(any()));
+    verifyNever(() => thumbnailCache.getFileFromCache(any()));
+    verifyNever(() => thumbnailCache.getFileStream(any(), withProgress: any(named: 'withProgress')));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a tint puts a hue filter of that colour over the image', (tester) async {
     const Color tint = Color(0xFF3366CC);
     await tester.pumpWidget(
@@ -192,16 +327,47 @@ void main() {
 
   group('image loading', () {
     late _MockCacheManager cache;
+    late _MockCacheManager thumbnailCache;
+    late Directory offlineDirectory;
+    late Completer<void> cacheRequestStarted;
+    late Completer<void> cacheRequestFailed;
 
     setUp(() {
       cache = _MockCacheManager();
-      PrismFullImageCache.testOverride = cache;
+      thumbnailCache = _MockCacheManager();
+      offlineDirectory = Directory.systemTemp.createTempSync('clock-overlay-offline-resolver-');
+      cacheRequestStarted = Completer<void>();
+      cacheRequestFailed = Completer<void>();
+      when(() => cache.getFileFromCache(any())).thenAnswer((_) async => null);
+      when(() => thumbnailCache.getFileFromCache(any())).thenAnswer((_) async => null);
       when(
-        () => cache.getFileStream(any(), withProgress: any(named: 'withProgress')),
-      ).thenAnswer((_) => Stream<FileResponse>.error(const SocketException('offline')));
+        () => thumbnailCache.getFileStream(any(), withProgress: any(named: 'withProgress')),
+      ).thenAnswer((_) => StreamController<FileResponse>().stream);
+      OfflineAssetStore.testOverride = OfflineAssetStore(
+        directory: Directory('${offlineDirectory.path}/retained'),
+        cacheManager: cache,
+      );
+      PrismFullImageCache.testOverride = cache;
+      PrismImageCache.testOverride = thumbnailCache;
+      when(() => cache.getFileStream(any(), withProgress: any(named: 'withProgress'))).thenAnswer((_) {
+        if (!cacheRequestStarted.isCompleted) cacheRequestStarted.complete();
+        return Stream<FileResponse>.error(const SocketException('offline')).transform(
+          StreamTransformer<FileResponse, FileResponse>.fromHandlers(
+            handleError: (Object error, StackTrace stackTrace, EventSink<FileResponse> sink) {
+              if (!cacheRequestFailed.isCompleted) cacheRequestFailed.complete();
+              sink.addError(error, stackTrace);
+            },
+          ),
+        );
+      });
     });
 
-    tearDown(() => PrismFullImageCache.testOverride = null);
+    tearDown(() {
+      PrismFullImageCache.testOverride = null;
+      PrismImageCache.testOverride = null;
+      OfflineAssetStore.testOverride = null;
+      offlineDirectory.deleteSync(recursive: true);
+    });
 
     testWidgets('the full image uses the full-size cache and a screen-width decode', (tester) async {
       await tester.pumpWidget(
@@ -209,6 +375,9 @@ void main() {
           home: ClockOverlay(link: 'https://img.test/full.jpg', file: false, thumbnailUrl: 'https://img.test/t.jpg'),
         ),
       );
+      await _waitForCompleter(tester, cacheRequestStarted);
+      await _waitForCompleter(tester, cacheRequestFailed);
+      await _settleImages(tester);
 
       final CachedNetworkImage image = tester.widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage)).first;
       expect(image.cacheManager, same(cache));
@@ -219,6 +388,9 @@ void main() {
 
     testWidgets('a failed load shows a message icon instead of an empty screen', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: ClockOverlay(link: 'https://img.test/full.jpg', file: false)));
+      await _waitForCompleter(tester, cacheRequestStarted);
+      await _waitForCompleter(tester, cacheRequestFailed);
+      await tester.pump();
       await tester.pumpAndSettle();
 
       expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
@@ -279,16 +451,22 @@ void main() {
     late Directory directory;
     late _MockCacheManager fullCache;
     late _MockCacheManager thumbnailCache;
+    late OfflineAssetStore offlineAssets;
 
     setUp(() {
       directory = Directory.systemTemp.createTempSync('clock_overlay_tint_');
       fullCache = _MockCacheManager();
       thumbnailCache = _MockCacheManager();
+      when(() => fullCache.getFileFromCache(any())).thenAnswer((_) async => null);
+      when(() => thumbnailCache.getFileFromCache(any())).thenAnswer((_) async => null);
+      offlineAssets = OfflineAssetStore(directory: Directory('${directory.path}/retained'), cacheManager: fullCache);
+      OfflineAssetStore.testOverride = offlineAssets;
       PrismFullImageCache.testOverride = fullCache;
       PrismImageCache.testOverride = thumbnailCache;
     });
 
     tearDown(() {
+      OfflineAssetStore.testOverride = null;
       PrismFullImageCache.testOverride = null;
       PrismImageCache.testOverride = null;
       directory.deleteSync(recursive: true);
@@ -321,7 +499,7 @@ void main() {
           ),
         ),
       );
-      await _settleImages(tester);
+      await _waitForFinder(tester, find.descendant(of: find.byType(ColorFiltered), matching: find.byType(Image)));
     }
 
     testWidgets('covers the full image', (tester) async {

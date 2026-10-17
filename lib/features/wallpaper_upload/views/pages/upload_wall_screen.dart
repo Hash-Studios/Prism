@@ -17,6 +17,7 @@ import 'package:Prism/env/env.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_quality.dart';
+import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/submission_metadata_form.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_checks_card.dart';
@@ -46,6 +47,7 @@ class UploadWallScreen extends StatefulWidget {
     @visibleForTesting this.createRecordWithMetadataForTesting,
     @visibleForTesting this.presentPaywallForTesting,
     @visibleForTesting this.nowForTesting,
+    @visibleForTesting this.draftStoreForTesting,
   });
 
   final File image;
@@ -78,6 +80,9 @@ class UploadWallScreen extends StatefulWidget {
   @visibleForTesting
   final DateTime Function()? nowForTesting;
 
+  @visibleForTesting
+  final UploadDraftStore? draftStoreForTesting;
+
   @override
   State<UploadWallScreen> createState() => _UploadWallScreenState();
 }
@@ -93,8 +98,15 @@ enum _UploadStage {
   quotaExceeded,
 }
 
+enum _UploadExitChoice { keepDraft, discard, cancel }
+
 class _UploadWallScreenState extends State<UploadWallScreen> {
   late final String id = randomUploadId(uploadIdLength);
+  late final UploadDraftStore _draftStore = widget.draftStoreForTesting ?? UploadDraftStore();
+  late final String _draftOwner;
+  File? _draftImage;
+  String? _draftId;
+  int _draftSaveGeneration = 0;
   _UploadStage _stage = _UploadStage.processing;
   String? _errorMessage;
   String? wallpaperResolution;
@@ -127,6 +139,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       _stage == _UploadStage.saving ||
       _discarding;
   bool get _hasStagedFiles => wallpaperSha != null || thumbSha != null;
+  File get _selectedImage => _draftImage ?? widget.image;
+  String get _activeDraftOwner => app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty
+      ? app_state.prismUser.id
+      : UploadDraftStore.guestOwner;
 
   @override
   void dispose() {
@@ -139,6 +155,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   @override
   void initState() {
     super.initState();
+    _draftOwner = _activeDraftOwner;
     unawaited(_prepareImage());
   }
 
@@ -160,6 +177,15 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       if (widget.prepareImageForTesting case final prepareImageForTesting?) {
         await prepareImageForTesting();
         if (!mounted) return;
+        if (widget.draftStoreForTesting != null && await widget.image.exists()) {
+          final Uint8List bytes = await widget.image.readAsBytes();
+          _draftId ??= UploadDraftStore.idForBytes(bytes);
+          final UploadDraft? restoredDraft = await _draftStore.read(owner: _draftOwner, draftId: _draftId!);
+          if (restoredDraft != null) {
+            _draftImage = restoredDraft.file;
+            _metadata = restoredDraft.metadata;
+          }
+        }
         imageBytes = <int>[];
         imageBytesThumb = <int>[];
         final Size testSize = widget.imageSizeForTesting ?? const Size(1, 1);
@@ -171,9 +197,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           _stage = _UploadStage.ready;
         });
         _trackStage('ready');
+        if (widget.draftStoreForTesting != null && _draftId != null) {
+          unawaited(_persistDraft().then<void>((_) {}));
+        }
         return;
       }
-      final imgList = await widget.image.readAsBytes();
+      final Uint8List imgList = await widget.image.readAsBytes();
       if (imgList.length > maxUploadBytes) {
         if (!mounted) return;
         setState(() {
@@ -184,14 +213,21 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _trackFailure('oversize');
         return;
       }
+      _draftId ??= UploadDraftStore.idForBytes(imgList);
+      final UploadDraft? restoredDraft = await _draftStore.read(owner: _draftOwner, draftId: _draftId!);
+      if (restoredDraft != null) {
+        _draftImage = restoredDraft.file;
+        _metadata = restoredDraft.metadata;
+      }
+      final File selectedImage = _selectedImage;
       final decodedImage = await decodeImageFromList(imgList);
       final resolution = '${decodedImage.width}x${decodedImage.height}';
       _imageWidth = decodedImage.width;
       _imageHeight = decodedImage.height;
       decodedImage.dispose();
       imageBytes = imgList;
-      imageBytesThumb = await _compressFile(widget.image);
-      final size = await widget.image.length();
+      imageBytesThumb = await _compressFile(selectedImage);
+      final size = await selectedImage.length();
       if (!mounted) {
         return;
       }
@@ -201,6 +237,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       });
       if (mounted) setState(() => _stage = _UploadStage.ready);
       _trackStage('ready');
+      unawaited(_persistDraft().then<void>((_) {}));
     } catch (error) {
       logger.w('Wallpaper preparation failed: $error');
       if (!mounted) return;
@@ -271,7 +308,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       final baseName = _fileName ??= uploadFileName(
         uid: app_state.prismUser.id,
         epochMs: (widget.nowForTesting ?? DateTime.now)().millisecondsSinceEpoch,
-        basename: path.basename(widget.image.path),
+        basename: path.basename(_selectedImage.path),
       );
       final thumbName = uploadThumbName(baseName);
       if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
@@ -438,6 +475,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       return;
     }
     _submitted = true;
+    if (_draftId case final draftId?) {
+      try {
+        await _draftStore.discard(owner: _draftOwner, draftId: draftId);
+      } catch (error, stackTrace) {
+        logger.w('Submitted upload draft could not be cleared', error: error, stackTrace: stackTrace);
+      }
+    }
     analytics.track(UploadWallpaperEvent(assetId: id, link: wallpaperUrl!));
     analytics.track(
       UploadMetadataSubmittedEvent(
@@ -492,15 +536,60 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     if (!_submitted && !_submissionAttempted && !_isBusy) unawaited(_deleteFile());
   }
 
-  Future<void> _confirmDiscard() async {
-    final bool discard = await showPrismConfirm(
-      context,
-      title: 'Discard this upload?',
-      message: 'Uploaded files will be removed. Your selected image will stay on your device.',
-      confirmLabel: 'Discard',
-      destructive: true,
-    );
-    if (!discard || !mounted) return;
+  Future<void> _confirmExit() async {
+    final String? draftId = _draftId;
+    if (draftId != null) {
+      final _UploadExitChoice? choice = await showPrismSheet<_UploadExitChoice>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => PrismSheetBody(
+          title: 'Leave this upload?',
+          message: 'Keep your draft to resume later, or discard it and remove uploaded files.',
+          actions: <Widget>[
+            PrismButton(
+              label: 'Keep draft',
+              expand: true,
+              onPressed: () => Navigator.of(sheetContext).pop(_UploadExitChoice.keepDraft),
+            ),
+            PrismButton(
+              label: 'Discard',
+              expand: true,
+              variant: PrismButtonVariant.danger,
+              onPressed: () => Navigator.of(sheetContext).pop(_UploadExitChoice.discard),
+            ),
+            PrismButton(
+              label: 'Cancel',
+              expand: true,
+              variant: PrismButtonVariant.ghost,
+              onPressed: () => Navigator.of(sheetContext).pop(_UploadExitChoice.cancel),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || choice == null || choice == _UploadExitChoice.cancel) return;
+      if (choice == _UploadExitChoice.keepDraft) {
+        if (_discarding) return;
+        setState(() => _discarding = true);
+        final bool saved = await _persistDraft();
+        if (!mounted) return;
+        setState(() => _discarding = false);
+        if (!saved) {
+          toasts.error('Could not save this draft. Try again.');
+          return;
+        }
+        Navigator.pop(context);
+        return;
+      }
+    } else {
+      final bool discard = await showPrismConfirm(
+        context,
+        title: 'Discard this upload?',
+        message: 'Uploaded files will be removed. Your selected image will stay on your device.',
+        confirmLabel: 'Discard',
+        destructive: true,
+      );
+      if (!discard || !mounted) return;
+    }
     if (_discarding) return;
     setState(() => _discarding = true);
     final deleted = await _deleteFile();
@@ -510,8 +599,43 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       toasts.error('Could not remove uploaded files. Try again.');
       return;
     }
+    if (_draftId case final draftId?) {
+      try {
+        await _draftStore.discard(owner: _draftOwner, draftId: draftId);
+      } catch (error, stackTrace) {
+        logger.w('Upload draft could not be discarded', error: error, stackTrace: stackTrace);
+        setState(() => _discarding = false);
+        toasts.error('Could not discard this upload. Try again.');
+        return;
+      }
+    }
     if (!mounted) return;
     Navigator.pop(context);
+  }
+
+  Future<bool> _persistDraft() async {
+    final String? draftId = _draftId;
+    if (draftId == null || _submitted || _activeDraftOwner != _draftOwner) return false;
+    final int generation = ++_draftSaveGeneration;
+    final String owner = _draftOwner;
+    try {
+      final UploadDraft draft = await _draftStore.save(
+        owner: owner,
+        draftId: draftId,
+        selectedFile: _selectedImage,
+        metadata: _metadata,
+      );
+      if (mounted && generation == _draftSaveGeneration && owner == _draftOwner && owner == _activeDraftOwner) {
+        setState(() {
+          _draftImage = draft.file;
+        });
+        return true;
+      }
+      return false;
+    } catch (error, stackTrace) {
+      logger.w('Upload draft could not be saved', error: error, stackTrace: stackTrace);
+      return false;
+    }
   }
 
   List<UploadQualityWarning> get _qualityWarnings {
@@ -629,11 +753,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         PrismButton(label: 'Skip this wallpaper', variant: PrismButtonVariant.ghost, expand: true, onPressed: _skip),
     ];
     return PopScope(
-      canPop: !_isBusy && (!_hasStagedFiles || _submissionAttempted),
+      canPop: !_isBusy && (!_hasStagedFiles || _submissionAttempted) && (_draftId == null || _submissionAttempted),
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) _onPop();
-        if (!didPop && _hasStagedFiles && !_submissionAttempted && !_isBusy) {
-          unawaited(_confirmDiscard());
+        if (!didPop && (_hasStagedFiles || _draftId != null) && !_submissionAttempted && !_isBusy) {
+          unawaited(_confirmExit());
         }
       },
       child: PrismPage(
@@ -656,7 +780,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 const SizedBox(height: PrismSpace.md),
               ],
               UploadPreviewRow(
-                image: widget.image,
+                image: _selectedImage,
                 resolution: wallpaperResolution,
                 size: wallpaperSize,
                 loading: _stage == _UploadStage.processing,
@@ -700,7 +824,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               ],
               if (_showMetadataForm) ...<Widget>[
                 const SizedBox(height: PrismSpace.xl),
-                SubmissionMetadataForm(initial: _metadata, onChanged: (SubmissionMetadata value) => _metadata = value),
+                SubmissionMetadataForm(
+                  initial: _metadata,
+                  onChanged: (SubmissionMetadata value) {
+                    _metadata = value;
+                    unawaited(_persistDraft().then<void>((_) {}));
+                  },
+                ),
               ],
             ],
           ),

@@ -21,23 +21,28 @@ const Duration _syncCooldown = Duration(seconds: 45);
 
 final Map<String, Future<void>> _syncInFlightByKey = <String, Future<void>>{};
 final Map<String, DateTime> _lastSyncEndedAtByKey = <String, DateTime>{};
+int _notificationSessionGeneration = 0;
 
 /// Clears in-flight sync futures and cooldown timestamps for every account key.
-///
-/// Call when the session becomes signed out so another account does not inherit
-/// cooldown or await another user's sync future.
 void clearInAppNotificationSyncGateAll() {
+  _notificationSessionGeneration++;
   _syncInFlightByKey.clear();
   _lastSyncEndedAtByKey.clear();
 }
 
 String _notificationAudienceTag() => app_state.prismUser.premium ? 'premium' : 'free';
 
+String _notificationOwnerId() {
+  final user = app_state.prismUser;
+  final String userId = user.id.trim();
+  return user.loggedIn && userId.isNotEmpty ? userId : 'guest';
+}
+
 /// Stable key for sync gating: same identity + premium tier as [_notificationModifiers] audience.
 String _notificationSyncGateKey() {
   final u = app_state.prismUser;
-  final String stableId = u.id.trim().isNotEmpty ? u.id.trim() : u.email.trim().toLowerCase();
-  if (stableId.isEmpty) {
+  final String stableId = u.id.trim();
+  if (!u.loggedIn || stableId.isEmpty) {
     return '';
   }
   return '$stableId|${_notificationAudienceTag()}';
@@ -57,7 +62,6 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
   required DateTime sinceUtc,
   required String sourceTag,
   int limit = _defaultNotifLimit,
-  FirestoreCachePolicy cachePolicy = FirestoreCachePolicy.networkOnly,
 }) async {
   final List<String> modifiers = _notificationModifiers();
   if (modifiers.isEmpty) {
@@ -73,8 +77,6 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
       ],
       orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
       limit: limit,
-      dedupeWindowMs: 1500,
-      cachePolicy: cachePolicy,
     ),
     (data, _) => data,
   );
@@ -108,22 +110,27 @@ Future<void> pruneBlockedNotificationsCache({
   bool waitForInitialLoad = false,
   NotificationsLocalDataSource? notificationsLocal,
 }) async {
+  final NotificationsLocalDataSource local = notificationsLocal ?? getIt<NotificationsLocalDataSource>();
+  final String owner = local.ownerId;
+  final int generation = local.ownerGeneration;
   final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
+  if (local.ownerId != owner || local.ownerGeneration != generation) return;
   if (blocked.isEmpty) {
     return;
   }
-  final NotificationsLocalDataSource local = notificationsLocal ?? getIt<NotificationsLocalDataSource>();
   await local.removeWhere((InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked));
 }
 
 Future<void> _replaceAllPreservingReadState(
   NotificationsLocalDataSource notificationsLocal,
   List<InAppNotificationEntity> incoming,
+  bool Function() isCurrentSession,
 ) async {
   final Set<String> readIds = (await notificationsLocal.readAll())
       .where((item) => item.read)
       .map((item) => item.id)
       .toSet();
+  if (!isCurrentSession()) return;
   final List<InAppNotificationEntity> merged =
       incoming.map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item).toList(growable: false)
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -170,11 +177,15 @@ Future<void> syncInAppNotificationsFromRemote({bool force = false}) async {
     logger.d('Skipping in-app notification sync — user not signed in');
     return;
   }
+  final String ownerId = _notificationOwnerId();
+  getIt<NotificationsLocalDataSource>().setOwner(ownerId);
+  getIt<NotificationTombstones>().setOwner(ownerId);
   final String gateKey = _notificationSyncGateKey();
   if (gateKey.isEmpty) {
-    logger.d('Skipping in-app notification sync — missing user id/email');
+    logger.d('Skipping in-app notification sync — missing user id');
     return;
   }
+  final int sessionGeneration = _notificationSessionGeneration;
   final Future<void>? existing = _syncInFlightByKey[gateKey];
   if (existing != null) {
     await existing;
@@ -187,8 +198,12 @@ Future<void> syncInAppNotificationsFromRemote({bool force = false}) async {
   }
 
   Future<void> runOne() async {
-    final bool ok = await _syncInAppNotificationsFromRemoteBody(force: force);
-    if (ok) {
+    final bool ok = await _syncInAppNotificationsFromRemoteBody(
+      force: force,
+      gateKey: gateKey,
+      sessionGeneration: sessionGeneration,
+    );
+    if (ok && sessionGeneration == _notificationSessionGeneration && gateKey == _notificationSyncGateKey()) {
       _lastSyncEndedAtByKey[gateKey] = DateTime.now();
     }
   }
@@ -205,14 +220,32 @@ Future<void> syncInAppNotificationsFromRemote({bool force = false}) async {
 }
 
 /// Returns `true` if local state was updated from remote without error.
-Future<bool> _syncInAppNotificationsFromRemoteBody({required bool force}) async {
+Future<bool> _syncInAppNotificationsFromRemoteBody({
+  required bool force,
+  required String gateKey,
+  required int sessionGeneration,
+}) async {
   logger.d('Fetching in-app notifications');
   try {
     final NotificationsLocalDataSource notificationsLocal = getIt<NotificationsLocalDataSource>();
+    final String ownerId = _notificationOwnerId();
+    notificationsLocal.setOwner(ownerId);
+    final int ownerGeneration = notificationsLocal.ownerGeneration;
     final NotificationTombstones tombstones = getIt<NotificationTombstones>();
+    tombstones.setOwner(ownerId);
+    final int tombstoneGeneration = tombstones.ownerGeneration;
+    bool isCurrentSession() =>
+        sessionGeneration == _notificationSessionGeneration &&
+        gateKey == _notificationSyncGateKey() &&
+        ownerGeneration == notificationsLocal.ownerGeneration &&
+        ownerId == notificationsLocal.ownerId &&
+        tombstoneGeneration == tombstones.ownerGeneration &&
+        ownerId == tombstones.ownerId;
+
     final DateTime nowUtc = DateTime.now().toUtc();
-    final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
+    final DateTime? lastFetchTime = await notificationsLocal.lastFetchAtUtc();
     final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+    if (!isCurrentSession()) return false;
 
     if (blocked.isNotEmpty) {
       await notificationsLocal.removeWhere(
@@ -221,30 +254,39 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({required bool force}) async 
     }
 
     if (force || lastFetchTime == null) {
+      final DateTime fetchFloor = await tombstones.fetchFloor(nowUtc.subtract(const Duration(days: 30)));
+      if (!isCurrentSession()) return false;
       final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
-        sinceUtc: tombstones.fetchFloor(nowUtc.subtract(const Duration(days: 30))),
+        sinceUtc: fetchFloor,
         sourceTag: force ? 'notifications.force_backfill' : 'notifications.last_month',
       );
-      final entities = tombstones.withoutRemoved(
+      if (!isCurrentSession()) return false;
+      final entities = await tombstones.withoutRemoved(
         _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked),
       );
-      await _replaceAllPreservingReadState(notificationsLocal, entities);
+      if (!isCurrentSession()) return false;
+      await _replaceAllPreservingReadState(notificationsLocal, entities, isCurrentSession);
+      if (!isCurrentSession()) return false;
       await notificationsLocal.setLastFetchAtUtc(nowUtc);
+      if (!isCurrentSession()) return false;
       return true;
     }
 
     final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
       sinceUtc: lastFetchTime,
       sourceTag: 'notifications.latest',
-      cachePolicy: FirestoreCachePolicy.memoryFirst,
     );
-    final entities = tombstones.withoutRemoved(
+    if (!isCurrentSession()) return false;
+    final entities = await tombstones.withoutRemoved(
       _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked),
     );
+    if (!isCurrentSession()) return false;
     if (entities.isNotEmpty) {
       await notificationsLocal.upsertAll(entities);
     }
+    if (!isCurrentSession()) return false;
     await notificationsLocal.setLastFetchAtUtc(nowUtc);
+    if (!isCurrentSession()) return false;
     return true;
   } on FirestoreError catch (e) {
     logger.w('syncInAppNotificationsFromRemote failed (code=${e.code}): ${e.message}');

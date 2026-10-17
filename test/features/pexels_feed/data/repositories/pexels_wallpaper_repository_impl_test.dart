@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show SocketException;
 
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl.dart';
@@ -10,7 +12,36 @@ import 'package:http/testing.dart';
 
 import '../../../../support/fake_feed_cache_local_data_source.dart';
 
+class _ThrowingFeedCache extends FakeFeedCacheLocalDataSource {
+  @override
+  Future<void> write({
+    required String source,
+    required String scope,
+    required Object? payload,
+    required int ttlHours,
+  }) => Future<void>.error(StateError('cache unavailable'));
+}
+
 void main() {
+  group('fetchById failures', () {
+    Future<Result<PexelsWallpaper?>> fetchWith(http.Client client) {
+      final repository = PexelsWallpaperRepositoryImpl(FakeFeedCacheLocalDataSource());
+      return http.runWithClient(() => repository.fetchById('123'), () => client);
+    }
+
+    test('a thrown transport error is a network failure for detail fallback', () async {
+      final result = await fetchWith(MockClient((_) async => throw const SocketException('offline')));
+
+      expect(result.failure, isA<NetworkFailure>());
+    });
+
+    test('a missing photo remains a server failure and does not permit detail fallback', () async {
+      final result = await fetchWith(MockClient((_) async => http.Response('not found', 404)));
+
+      expect(result.failure, isA<ServerFailure>());
+    });
+  });
+
   test('the home feed asks Pexels for 30 photos a page and the category grids ask for 80', () async {
     final List<String> perPage = <String>[];
     final http.Client client = MockClient((http.Request request) async {
@@ -91,6 +122,19 @@ void main() {
     expect(results.$3.data!.single.id, '2');
     expect(results.$4.data!.single.id, '4');
     expect(pages, <int>[1, 3, 1, 2, 4]);
+  });
+
+  test('a successful remote page is returned when cache persistence fails', () async {
+    final PexelsWallpaperRepositoryImpl repository = PexelsWallpaperRepositoryImpl(_ThrowingFeedCache());
+    final http.Client client = MockClient((_) async => _page(1));
+
+    final result = await http.runWithClient(
+      () => repository.fetchFeed(categoryName: 'Nature', refresh: true),
+      () => client,
+    );
+
+    expect(result.data, hasLength(1));
+    expect(repository.hasMoreForCategory('Nature'), isTrue);
   });
 
   test('a failed fetch-more returns an error instead of the cached first page', () async {

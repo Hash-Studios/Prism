@@ -66,6 +66,7 @@ void main() {
       expect(bloc.state.status, LoadStatus.success);
       expect(bloc.state.items.length, 2);
       expect(bloc.state.items.first.id, 'w2', reason: 'a new favourite sorts first');
+      expect(bloc.state.items.first.syncStatus, FavouriteSyncStatus.pending);
     },
   );
 

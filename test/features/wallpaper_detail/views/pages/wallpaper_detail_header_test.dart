@@ -1,11 +1,17 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -19,12 +25,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/offline_asset_fixture.dart';
 import '../../../../support/profile_user_fixture.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
 
+class _PendingOfflineAssetStore extends OfflineAssetStore {
+  _PendingOfflineAssetStore({required super.directory, required this.lookupResult});
+
+  final Future<File?> lookupResult;
+
+  @override
+  Future<File?> lookup(String source) => lookupResult;
+
+  @override
+  Future<File> resolve(String source, {bool allowNetwork = true}) async {
+    final File? file = await lookup(source);
+    if (file != null) return file;
+    throw OfflineAssetUnavailableException(source);
+  }
+}
+
 FeedItemEntity _prism({
+  String id = 'prism-1',
   String? title,
   String? authorName = 'Akshay',
   String? authorEmail = 'creator@example.com',
@@ -32,10 +56,10 @@ FeedItemEntity _prism({
   int? width,
   int? height,
 }) => FeedItemEntity.prism(
-  id: 'prism-1',
+  id: id,
   wallpaper: PrismWallpaper(
     core: WallpaperCore(
-      id: 'prism-1',
+      id: id,
       source: WallpaperSource.prism,
       fullUrl: 'https://img.test/full.jpg',
       thumbnailUrl: 'https://img.test/thumb.jpg',
@@ -49,18 +73,34 @@ FeedItemEntity _prism({
   ),
 );
 
+Future<void> _waitForCachedImage(WidgetTester tester) async {
+  final Stopwatch timeout = Stopwatch()..start();
+  while (find.byType(CachedNetworkImage).evaluate().isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)).timeout(const Duration(seconds: 2)),
+    );
+    await tester.pump();
+  }
+}
+
 void main() {
   late _MockWallpaperDetailBloc bloc;
+  late OfflineAssetFixture offlineAssets;
 
   setUpAll(() => registerFallbackValue(const FetchViews()));
 
-  setUp(() {
+  setUp(() async {
+    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineAssets.install();
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     app_state.prismUser = profileUser(loggedIn: false);
     bloc = _MockWallpaperDetailBloc();
   });
 
-  tearDown(() => getIt.reset());
+  tearDown(() async {
+    await offlineAssets.dispose();
+    await getIt.reset();
+  });
 
   Future<void> pump(WidgetTester tester, WallpaperDetailState state, {FeedItemEntity? entity}) async {
     whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
@@ -77,6 +117,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await _waitForCachedImage(tester);
   }
 
   group('headline', () {
@@ -121,6 +162,22 @@ void main() {
     });
   });
 
+  testWidgets('keeps the network image visible while the retained-copy lookup is pending', (tester) async {
+    final Completer<File?> lookup = Completer<File?>();
+    OfflineAssetStore.testOverride = _PendingOfflineAssetStore(
+      directory: Directory('${offlineAssets.directory.path}/pending'),
+      lookupResult: lookup.future,
+    );
+    final FeedItemEntity entity = _prism();
+    await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+
+    final Finder pendingPreview = find.byType(FutureBuilder<File?>);
+    expect(find.descendant(of: pendingPreview, matching: find.byType(CachedNetworkImage)), findsNWidgets(2));
+
+    lookup.complete(null);
+    await tester.pump();
+  });
+
   group('block creator', () {
     testWidgets("is offered to a signed-in viewer on someone else's wall", (tester) async {
       app_state.prismUser = profileUser();
@@ -154,6 +211,27 @@ void main() {
 
       expect(find.text('Block creator'), findsNothing);
     });
+
+    testWidgets('bundled starters do not offer report or creator-block actions', (tester) async {
+      app_state.prismUser = profileUser();
+      final FeedItemEntity entity = _prism(id: 'starter-sunset', docId: 'bundled-starter-doc');
+      expect(BundledWallpapers.isStarter(entity), isTrue);
+
+      await pump(tester, WallpaperDetailLoaded(entity: entity, paletteLoading: false), entity: entity);
+
+      expect(find.text('Report'), findsNothing);
+      expect(find.text('Block creator'), findsNothing);
+      expect(canBlockWallCreator(entity), isFalse);
+      await blockWallCreator(tester.element(find.byType(WallpaperDetailScreen)), entity);
+    });
+  });
+
+  test('starter wallpapers do not record cloud set statistics', () {
+    final FeedItemEntity starter = _prism(id: 'starter-sunset', docId: 'bundled-starter-doc');
+    final FeedItemEntity cloudWallpaper = _prism();
+
+    expect(shouldRecordWallpaperSetStats(starter), isFalse);
+    expect(shouldRecordWallpaperSetStats(cloudWallpaper), isTrue);
   });
 
   group('load error', () {

@@ -3,6 +3,7 @@ import 'dart:io' as io;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -32,6 +33,13 @@ class _MockFile extends Mock implements File {}
 
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
 
+class _NoRetainedAssets extends OfflineAssetStore {
+  _NoRetainedAssets() : super(directory: io.Directory.systemTemp);
+
+  @override
+  Future<io.File?> lookup(String source) async => null;
+}
+
 void main() {
   late _MockCacheManager cache;
   late BaseCacheManager originalCache;
@@ -47,6 +55,7 @@ void main() {
     originalCache = CachedNetworkImageProvider.defaultCacheManager;
     CachedNetworkImageProvider.defaultCacheManager = cache;
     PrismImageCache.testOverride = cache;
+    OfflineAssetStore.testOverride = _NoRetainedAssets();
     when(() => cache.removeFile(any())).thenAnswer((_) async {});
     final file = _MockFile();
     final bytes = await io.File('assets/images/ic_launcher.webp').readAsBytes();
@@ -58,6 +67,7 @@ void main() {
     AnalyticsRuntime.reset();
     CachedNetworkImageProvider.defaultCacheManager = originalCache;
     PrismImageCache.testOverride = null;
+    OfflineAssetStore.testOverride = null;
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
   });
@@ -141,6 +151,24 @@ void main() {
     await pumpTile(tester, thumbnailUrl: '');
 
     expect(find.byWidgetPredicate((widget) => widget is RawImage && widget.image != null), findsOneWidget);
+    verifyNever(() => cache.getFileStream('', withProgress: true));
+  });
+
+  testWidgets('an empty primary URL with a full fallback loads the fallback, not an empty local file', (tester) async {
+    respond(full, success: true);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(
+          width: 120,
+          height: 240,
+          child: PrismImageTile(url: '', fallbackUrl: full),
+        ),
+      ),
+    );
+    await settleImages(tester);
+
+    expect(find.byWidgetPredicate((widget) => widget is RawImage && widget.image != null), findsOneWidget);
+    verify(() => cache.getFileStream(full, withProgress: true)).called(1);
     verifyNever(() => cache.getFileStream('', withProgress: true));
   });
 

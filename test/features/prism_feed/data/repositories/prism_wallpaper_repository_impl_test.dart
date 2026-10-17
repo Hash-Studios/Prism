@@ -1,4 +1,5 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -44,7 +45,7 @@ void main() {
       expect(repo.hasMore, isFalse);
     });
 
-    test('only a refresh writes the cache, and a failed fetch-more is an error, not the cached page', () async {
+    test('every page extends the durable snapshot, and a failed fetch-more stays an error', () async {
       final firestore = _walls(_buildWallDocs(count: 60));
       final cache = FakeFeedCacheLocalDataSource();
       final repo = PrismWallpaperRepositoryImpl(
@@ -58,11 +59,16 @@ void main() {
       expect(firstSnapshot, isNotNull);
 
       expect((await repo.fetchFeed(refresh: false)).isSuccess, isTrue);
-      expect(cache.snapshots['prism/main'], same(firstSnapshot), reason: 'page 2 must not overwrite page 1');
+      expect(cache.snapshots['prism/main'], isNot(same(firstSnapshot)));
+      expect(((cache.snapshots['prism/main']!.payload! as Map)['rows'] as List), hasLength(48));
 
       firestore.queryError = StateError('offline');
       expect((await repo.fetchFeed(refresh: false)).isFailure, isTrue);
-      expect((await repo.fetchFeed(refresh: true)).data, hasLength(24), reason: 'a failed refresh still has the cache');
+      expect(
+        (await repo.fetchFeed(refresh: true)).data,
+        hasLength(48),
+        reason: 'a failed refresh still has all saved pages',
+      );
     });
 
     test('streak shop queries the same field the wall docs are read from', () async {
@@ -110,11 +116,12 @@ void main() {
       );
 
       test('fetchById tells the user to check the connection and never shows the raw error', () async {
-        final firestore = _walls(_buildWallDocs(count: 1))..queryError = StateError(offline);
+        final firestore = _walls(_buildWallDocs(count: 1))
+          ..queryError = FirestoreError(message: offline, code: 'unavailable');
 
         final result = await repoWith(firestore).fetchById('wall-1');
 
-        expect(result.failure, isA<ServerFailure>());
+        expect(result.failure, isA<NetworkFailure>());
         expect(result.failure!.message, wallpaperLoadFailureMessage);
         expect(result.failure!.message, isNot(contains('cloud_firestore')));
       });
@@ -124,6 +131,7 @@ void main() {
 
         final result = await repoWith(firestore).fetchByDocumentId('doc-1');
 
+        expect(result.failure, isA<NetworkFailure>());
         expect(result.failure!.message, wallpaperLoadFailureMessage);
       });
 
@@ -253,5 +261,7 @@ class _FailingGetFirestore extends FakeFirestoreClient {
     T Function(Map<String, dynamic> data, String docId) map, {
     required String sourceTag,
     bool preferCacheFirst = false,
-  }) => Future<T?>.error(StateError('[cloud_firestore/unavailable] The service is currently unavailable.'));
+  }) => Future<T?>.error(
+    FirestoreError(message: '[cloud_firestore/unavailable] The service is currently unavailable.', code: 'unavailable'),
+  );
 }

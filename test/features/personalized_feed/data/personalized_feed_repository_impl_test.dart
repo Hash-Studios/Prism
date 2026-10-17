@@ -17,6 +17,8 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -147,6 +149,17 @@ class _PendingFreshFirestore extends Fake implements FirestoreClient {
     required String sourceTag,
     bool preferCacheFirst = false,
   }) async => null;
+}
+
+class _SlowOfflineCatalog extends OfflineWallpaperCatalog {
+  final Completer<void> started = Completer<void>();
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<void> remember(Iterable<FeedItemEntity> items) {
+    if (!started.isCompleted) started.complete();
+    return release.future;
+  }
 }
 
 class _OfflineFirestore extends Fake implements FirestoreClient {
@@ -592,6 +605,25 @@ void main() {
     expect(impressions.recentShows(DateTime.now().toUtc()), isEmpty);
   });
 
+  test('catalog persistence does not delay a successful personalized feed', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final _SlowOfflineCatalog catalog = _SlowOfflineCatalog();
+    final PersonalizedFeedRepository repository = _repository(
+      favourites: _CountingFavourites(),
+      firestore: _OneWallFirestore(),
+      settings: settings,
+      offlineCatalog: catalog,
+    );
+
+    final result = await repository.fetch(_firstPage).timeout(const Duration(seconds: 2));
+    await catalog.started.future;
+
+    expect(result.isSuccess, isTrue);
+    expect(result.data!.items, isNotEmpty);
+    expect(catalog.release.isCompleted, isFalse);
+  });
+
   test('existing items stay excluded after the seen-key window is trimmed', () async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     app_state.prismUser = _signedInUser();
@@ -618,7 +650,7 @@ void main() {
     expect(next.data!.hasMore, isFalse);
   });
 
-  test('all source failures return a failure instead of a successful empty feed', () async {
+  test('all source failures return bundled starters instead of an empty feed', () async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     await settings.set('onboarding_v2_interests', 'Photography');
     app_state.prismUser = _signedInUser();
@@ -633,7 +665,9 @@ void main() {
 
     final result = await repository.fetch(_firstPage);
 
-    expect(result.isFailure, isTrue);
+    expect(result.isSuccess, isTrue);
+    expect(result.data!.items, isNotEmpty);
+    expect(result.data!.items.every(BundledWallpapers.isStarter), isTrue);
   });
 
   test('all-successful empty sources return a successful empty page', () async {
@@ -818,6 +852,48 @@ void main() {
     expect(retry.isFailure, isFalse, reason: 'page one still falls back to the cache while the network is down');
   });
 
+  test('a later page serves unseen cached metadata before reporting offline exhaustion', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final _OneWallFirestore firestore = _OneWallFirestore()..fail = true;
+    final _ToggleWallhaven wallhaven = _ToggleWallhaven()..fail = true;
+    final _TogglePexels pexels = _TogglePexels()..fail = true;
+    final _MemoryFeedCache cache = _MemoryFeedCache()
+      ..snapshot = FeedSnapshot(
+        payload: <String, Object?>{
+          'filters': '100.100',
+          'items': <Map<String, Object?>>[
+            encodeFeedItem(_prismItem('cached-1')),
+            encodeFeedItem(_prismItem('cached-2')),
+          ],
+        },
+        cachedAtUtc: DateTime.now().toUtc(),
+        ttlHours: 2,
+      );
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = PersonalizedFeedRepositoryImpl(
+      firestore,
+      cache,
+      settings,
+      wallhaven,
+      pexels,
+      _EmptyBlocks(),
+      _CountingFavourites(),
+      TasteSignalStore(settings),
+      FeedImpressionStore(settings),
+    );
+
+    final result = await repository.fetch(
+      FetchPersonalizedFeedRequest(
+        page: 2,
+        refresh: false,
+        seenKeys: <String>['prism:cached-1'],
+        existingItems: <FeedItemEntity>[_prismItem('cached-1')],
+      ),
+    );
+
+    expect(_itemIds(result.data?.items ?? const <FeedItemEntity>[]), <String>['cached-2']);
+  });
+
   test('user profile lookup failure does not block public feed sources', () async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     final _OneWallFirestore firestore = _OneWallFirestore()..failUserDoc = true;
@@ -946,14 +1022,67 @@ void main() {
       payload: <String, Object?>{'filters': ?filters, 'items': items.map(encodeFeedItem).toList()},
     );
 
-    test('is null when nothing is cached', () async {
+    test('returns bundled starters when nothing is cached', () async {
       final PersonalizedFeedRepository repository = _repository(
         firestore: _EmptyFirestore(),
         settings: SettingsLocalDataSource(InMemoryLocalStore()),
         favourites: _CountingFavourites(),
       );
 
-      expect(await repository.readCached(), isNull);
+      final PersonalizedFeedPage? page = await repository.readCached();
+
+      expect(page, isNotNull);
+      expect(page!.items, isNotEmpty);
+      expect(page.items.every(BundledWallpapers.isStarter), isTrue);
+      expect(page.hasMore, isFalse);
+    });
+
+    test('serves bundled starters when every remote feed source is offline', () async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      final PersonalizedFeedRepository repository = PersonalizedFeedRepositoryImpl(
+        _OfflineFirestore(),
+        _EmptyFeedCache(),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        _ToggleWallhaven()..fail = true,
+        _TogglePexels()..fail = true,
+        _EmptyBlocks(),
+        _CountingFavourites(),
+        TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())),
+        FeedImpressionStore(SettingsLocalDataSource(InMemoryLocalStore())),
+      );
+
+      final result = await repository.fetch(_firstPage);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data!.items, isNotEmpty);
+      expect(result.data!.items.every(BundledWallpapers.isStarter), isTrue);
+    });
+
+    test('remote feed results replace bundled starters in the returned feed and cache', () async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      final _MemoryFeedCache cache = _MemoryFeedCache();
+      final PersonalizedFeedRepository repository = _repository(
+        firestore: _OneWallFirestore(),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        cache: cache,
+      );
+
+      final result = await repository.fetch(_firstPage);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data!.items, isNotEmpty);
+      expect(result.data!.items.any(BundledWallpapers.isStarter), isFalse);
+      final Object? payload = cache.snapshot?.payload;
+      final Object? cachedItems = payload is Map ? payload['items'] : null;
+      expect(cachedItems, isA<List>());
+      expect(
+        (cachedItems! as List)
+            .map((encoded) => decodeFeedItem(encoded as Map<String, dynamic>))
+            .whereType<FeedItemEntity>()
+            .any(BundledWallpapers.isStarter),
+        isFalse,
+      );
     });
 
     test('returns at most 24 items with their keys, without waiting for the block list', () async {
@@ -1255,6 +1384,7 @@ PersonalizedFeedRepository _repository({
   TasteSignalStore? tasteSignals,
   FeedImpressionStore? impressions,
   UserBlockRepository? blocks,
+  OfflineWallpaperCatalog? offlineCatalog,
 }) {
   return PersonalizedFeedRepositoryImpl(
     firestore,
@@ -1266,6 +1396,7 @@ PersonalizedFeedRepository _repository({
     favourites,
     tasteSignals ?? TasteSignalStore(settings),
     impressions ?? FeedImpressionStore(settings),
+    offlineCatalog: offlineCatalog,
   );
 }
 

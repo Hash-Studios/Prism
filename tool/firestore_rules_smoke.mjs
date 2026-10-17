@@ -9,6 +9,30 @@ async function req(method, path, fields, auth, mask) {
   const r = await fetch(`${B}/${path}${q}`, { method, headers: { ...(auth ? { Authorization: `Bearer ${auth}` } : {}), 'Content-Type': 'application/json' }, body: fields ? JSON.stringify({ fields }) : undefined });
   return r.status;
 }
+const runQuery = async (auth, filters, collectionId = 'drawTickets', parent = '') => {
+  const r = await fetch(`${B}${parent ? `/${parent}` : ''}:runQuery`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId }],
+        where: { compositeFilter: { op: 'AND', filters } },
+      },
+    }),
+  });
+  return r.status;
+};
+const documentIdFilter = (path) => ({
+  fieldFilter: {
+    field: { fieldPath: '__name__' },
+    op: 'EQUAL',
+    value: { referenceValue: `projects/${P}/databases/(default)/documents/${path}` },
+  },
+});
+const ticketIdFilter = (id) => documentIdFilter(`drawTickets/${id}`);
+const ticketUidFilter = (uid) => ({
+  fieldFilter: { field: { fieldPath: 'uid' }, op: 'EQUAL', value: { stringValue: uid } },
+});
 const seed = () => Promise.all([
   req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']), name: { stringValue: 't' } }, 'owner'),
   req('PATCH', 'admin_users/admin@x.com', { ok: { booleanValue: true } }, 'owner'),
@@ -142,6 +166,10 @@ const cases = [
   ['user writes a draw', () => req('PATCH', 'draws/2026-W42', { status: { stringValue: 'settled' } }, Bu), 403],
   ['owner reads own draw ticket', () => req('GET', 'drawTickets/2026-W42_b', null, Bu), 200],
   ['user reads another uid draw ticket', () => req('GET', 'drawTickets/2026-W42_b', null, A), 403],
+  ['owner queries own draw ticket by document id and uid', () => runQuery(Bu, [ticketIdFilter('2026-W42_b'), ticketUidFilter('b')]), 200],
+  ['owner queries own exact ticket by document id', () => runQuery(Bu, [ticketIdFilter('2026-W42_b')]), 200],
+  ['owner cannot query another uid tickets', () => runQuery(Bu, [ticketUidFilter('a')]), 403],
+  ['other user query for draw ticket is rejected', () => runQuery(A, [ticketIdFilter('2026-W42_b'), ticketUidFilter('b')]), 403],
   // 404 means the read was allowed and the doc is missing.
   ['owner gets own missing draw ticket', () => req('GET', 'drawTickets/2026-W43_b', null, Bu), 404],
   ['user gets another uid missing draw ticket', () => req('GET', 'drawTickets/2026-W43_b', null, A), 403],
@@ -153,6 +181,8 @@ const cases = [
   ['user reads a gift rate doc', () => req('GET', 'giftRateDaily/b_2026-01-01', null, Bu), 403],
   ['owner reads own private economy doc', () => req('GET', 'usersv2/b/private/economy', null, Bu), 200],
   ['other user reads a private economy doc', () => req('GET', 'usersv2/b/private/economy', null, A), 403],
+  ['owner queries own exact private economy doc', () => runQuery(Bu, [documentIdFilter('usersv2/b/private/economy')], 'private', 'usersv2/b'), 200],
+  ['other user cannot query private economy doc', () => runQuery(A, [documentIdFilter('usersv2/b/private/economy')], 'private', 'usersv2/b'), 403],
   ['owner writes own private economy doc', () => req('PATCH', 'usersv2/b/private/economy', { rev: { integerValue: '99' } }, Bu), 403],
   ['owner sets own xp', () => req('PATCH', 'usersv2/b', { xp: { integerValue: '9999' } }, Bu, ['xp']), 403],
   ['owner sets own xpWeek', () => req('PATCH', 'usersv2/b', { xpWeek: { mapValue: { fields: { xp: { integerValue: '9' } } } } }, Bu, ['xpWeek']), 403],

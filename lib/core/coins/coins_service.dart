@@ -10,6 +10,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/downloaded_link_lookup.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/coins/economy_snapshot_store.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/coins/pending_download.dart';
 import 'package:Prism/core/constants/app_functions.dart';
@@ -18,6 +19,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/firestore/firestore_server_read.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -129,6 +131,13 @@ class _AiGenerationReservationResult {
   bool get refundPending => mutation.unknownOutcomeTransactionId.isNotEmpty;
 
   int get coinsSpent => mode == AiChargeMode.coinSpend && mutation.changed ? -mutation.delta : 0;
+}
+
+class _PrivateEconomyRead {
+  const _PrivateEconomyRead(this.data, {this.authoritativeMissing = false});
+
+  final Map<String, dynamic>? data;
+  final bool authoritativeMissing;
 }
 
 /// One-time earn rewards the user already got, read from `coinState`.
@@ -305,6 +314,8 @@ class CoinsService with WidgetsBindingObserver {
   CoinsService._();
 
   static final CoinsService instance = CoinsService._();
+  EconomySnapshotStore _economySnapshots = EconomySnapshotStore();
+  int _economySessionGeneration = 0;
 
   static const String _coinStateField = 'coinState';
   static const String _txCollection = FirebaseCollections.coinTransactions;
@@ -362,9 +373,10 @@ class CoinsService with WidgetsBindingObserver {
   @visibleForTesting
   Duration abandonedDownloadAfter = const Duration(minutes: 2);
 
-  /// Answers whether a link is already in the Downloads index. The Save pill reads it, and recovery asks it for an entry
-  /// moved in from an old marker. Tests replace it.
   DownloadedLinkCheck isLinkDownloaded = isLinkInDownloadedIndex;
+
+  @visibleForTesting
+  VerifiedLegacyNativeDownloadCheck verifiedLegacyNativeDownloadCheck = hasVerifiedLegacyNativeDownload;
   int? _adsRemaining;
   String _adsRemainingDay = '';
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
@@ -396,6 +408,7 @@ class CoinsService with WidgetsBindingObserver {
   /// The user whose root XP was read, so a later rise can be announced as a rank up.
   String _xpUserId = '';
   int _economyRev = -1;
+  int _economyMutationGeneration = 0;
   int _graceDownloadsUsed = 0;
   String? _adsTodayDay;
   int _adsTodayCount = 0;
@@ -441,6 +454,7 @@ class CoinsService with WidgetsBindingObserver {
 
   /// Clears every per-user value at once. Sign-out calls it; the next sign-in loads the new user's state.
   void resetSession() {
+    _economySessionGeneration++;
     consumeLastClaim();
     balanceNotifier.value = app_state.prismUser.coins;
     streakNotifier.value = StreakStatus.empty;
@@ -543,27 +557,147 @@ class CoinsService with WidgetsBindingObserver {
     }
     final String userId = app_state.prismUser.id;
     _ensureEconomyUser(userId);
-    final Future<Map<String, dynamic>?> privateEconomy = _readPrivateEconomy(userId);
+    final int generation = _economySessionGeneration;
+    final int mutationGeneration = _economyMutationGeneration;
+    final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
+    if (!_isCurrentOwner(userId, generation)) return;
+    if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
+      _syncRootProjection(userId, rootSnapshot);
+    }
+    final EconomySnapshot? saved = await _readEconomySnapshot(userId);
+    if (!_isCurrentOwner(userId, generation)) return;
+    if (saved != null && _economyMutationGeneration == mutationGeneration && saved.revision >= _economyRev) {
+      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision});
+    }
+    startPendingRetryWatch();
+    final Future<_PrivateEconomyRead> privateEconomy = _readPrivateEconomy(
+      userId,
+    ).timeout(const Duration(seconds: 8), onTimeout: () => const _PrivateEconomyRead(null));
     // The server owns coinState defaults now; the rules block writing it from the client,
     // so this only reads and defaults locally/in-memory instead of persisting anything.
-    final Map<String, dynamic>? data = await firestoreClient.getById<Map<String, dynamic>>(
-      FirebaseCollections.usersV2,
-      userId,
-      (value, _) => value,
-      sourceTag: 'coins.bootstrap',
-    );
-    final Map<String, dynamic>? privateData = await privateEconomy;
-    if (!_canMutateCoins() || userId != app_state.prismUser.id) return;
-    _syncPrivateEconomy(userId, privateData);
+    final Map<String, dynamic>? data = await firestoreClient
+        .getById<Map<String, dynamic>>(
+          FirebaseCollections.usersV2,
+          userId,
+          (value, _) => value,
+          sourceTag: 'coins.bootstrap',
+        )
+        .timeout(const Duration(seconds: 8), onTimeout: () => null);
+    final _PrivateEconomyRead privateRead = await privateEconomy;
+    final Map<String, dynamic>? privateData = privateRead.data;
+    if (!_isCurrentOwner(userId, generation)) return;
+    if (privateData != null &&
+        _economyMutationGeneration == mutationGeneration &&
+        parseIntOr(privateData['rev']) >= max(saved?.revision ?? -1, _economyRev)) {
+      _syncPrivateEconomy(userId, privateData);
+      if (!_isCurrentOwner(userId, generation)) return;
+      await _persistEconomy(userId, privateData, authoritative: true);
+      if (!_isCurrentOwner(userId, generation)) return;
+    } else if (privateRead.authoritativeMissing && _economyMutationGeneration == mutationGeneration) {
+      _resetEconomy(userId);
+      if (rootSnapshot != null) _syncRootProjection(userId, rootSnapshot);
+      await _invalidateEconomySnapshot(userId);
+      if (!_isCurrentOwner(userId, generation)) return;
+    }
     if (_pendingClaimUserId != userId) consumeLastClaim();
     if (data == null) {
-      await refreshStreakStatus();
       return;
     }
     _applyLocalBalance(parseIntOr(data['coins']), delta: 0);
-    _syncStreakFromUserData(data);
-    startPendingRetryWatch();
+    if (_economyMutationGeneration == mutationGeneration) {
+      _syncStreakFromUserData(data);
+      await _persistRootEconomySnapshot(userId, data);
+    }
     await retryPendingRefunds();
+  }
+
+  Future<void> restoreLocalEconomyForCurrentUser() async {
+    final String userId = app_state.prismUser.id;
+    if (!_canMutateCoins() || userId.trim().isEmpty) return;
+    final int generation = _economySessionGeneration;
+    final int mutationGeneration = _economyMutationGeneration;
+    _ensureEconomyUser(userId);
+    final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
+    if (!_isCurrentOwner(userId, generation)) return;
+    if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
+      _syncRootProjection(userId, rootSnapshot);
+    }
+    final EconomySnapshot? saved = await _readEconomySnapshot(userId);
+    if (!_isCurrentOwner(userId, generation)) return;
+    if (saved != null && _economyMutationGeneration == mutationGeneration && saved.revision >= _economyRev) {
+      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision});
+    }
+    if (_economyMutationGeneration != mutationGeneration) return;
+  }
+
+  bool _isCurrentOwner(String userId, int generation) =>
+      generation == _economySessionGeneration && _canMutateCoins() && userId == app_state.prismUser.id;
+
+  Future<void> clearForUser(String userId) async {
+    if (app_state.prismUser.id == userId || _economyUserId == userId) {
+      _economySessionGeneration++;
+    }
+    if (_economyUserId == userId) {
+      _resetEconomy('');
+    }
+    await _economySnapshots.clearForUser(userId);
+  }
+
+  @visibleForTesting
+  void setEconomySnapshotStoreForTest(EconomySnapshotStore store) {
+    _economySnapshots = store;
+  }
+
+  Future<void> _persistEconomy(String userId, Map<String, dynamic> data, {bool authoritative = false}) async {
+    if (!_canMutateCoins() || app_state.prismUser.id != userId) return;
+    final int revision = max(0, data.containsKey('rev') ? parseIntOr(data['rev']) : _economyRev);
+    try {
+      if (authoritative) {
+        await _economySnapshots.replace(userId, revision, data);
+      } else {
+        await _economySnapshots.write(userId, revision, data);
+      }
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.private_economy.persist', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<Map<String, dynamic>?> _readRootEconomySnapshot(String userId) async {
+    try {
+      return await _economySnapshots.readRoot(userId);
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.root_economy.restore', error: error, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  Future<void> _persistRootEconomySnapshot(String userId, Map<String, dynamic> userData) async {
+    try {
+      await _economySnapshots.writeRoot(userId, <String, dynamic>{
+        if (userData.containsKey('xp')) 'xp': userData['xp'],
+        if (userData.containsKey('xpWeek')) 'xpWeek': userData['xpWeek'],
+        if (userData.containsKey('cosmetics')) 'cosmetics': userData['cosmetics'],
+      });
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.root_economy.persist', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<EconomySnapshot?> _readEconomySnapshot(String userId) async {
+    try {
+      return await _economySnapshots.read(userId);
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.private_economy.restore', error: error, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  Future<void> _invalidateEconomySnapshot(String userId) async {
+    try {
+      await _economySnapshots.invalidateForUser(userId);
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.private_economy.invalidate', error: error, stackTrace: stackTrace);
+    }
   }
 
   Future<int> refreshBalance() async {
@@ -571,22 +705,55 @@ class CoinsService with WidgetsBindingObserver {
       return app_state.prismUser.coins;
     }
     final String userId = app_state.prismUser.id;
-    final Future<Map<String, dynamic>?> privateEconomy = _readPrivateEconomy(userId);
-    final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
-      FirebaseCollections.usersV2,
+    final int generation = _economySessionGeneration;
+    final int mutationGeneration = _economyMutationGeneration;
+    final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
+    if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
+    if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
+      _syncRootProjection(userId, rootSnapshot);
+    }
+    final EconomySnapshot? saved = await _readEconomySnapshot(userId);
+    if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
+    if (saved != null && _economyMutationGeneration == mutationGeneration && saved.revision >= _economyRev) {
+      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision});
+    }
+    final Future<_PrivateEconomyRead> privateEconomy = _readPrivateEconomy(
       userId,
-      (data, _) => data,
-      sourceTag: 'coins.refresh_balance',
-    );
-    final Map<String, dynamic>? privateData = await privateEconomy;
-    if (!_canMutateCoins() || userId != app_state.prismUser.id) return app_state.prismUser.coins;
-    _syncPrivateEconomy(userId, privateData);
+    ).timeout(const Duration(seconds: 8), onTimeout: () => const _PrivateEconomyRead(null));
+    final Map<String, dynamic>? userData = await firestoreClient
+        .getById<Map<String, dynamic>>(
+          FirebaseCollections.usersV2,
+          userId,
+          (data, _) => data,
+          sourceTag: 'coins.refresh_balance',
+        )
+        .timeout(const Duration(seconds: 8), onTimeout: () => null);
+    if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
+    final _PrivateEconomyRead privateRead = await privateEconomy;
+    if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
+    final Map<String, dynamic>? privateData = privateRead.data;
+    if (privateData != null &&
+        _economyMutationGeneration == mutationGeneration &&
+        parseIntOr(privateData['rev']) >= max(saved?.revision ?? -1, _economyRev)) {
+      _syncPrivateEconomy(userId, privateData);
+      if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
+      await _persistEconomy(userId, privateData, authoritative: true);
+      if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
+    } else if (privateRead.authoritativeMissing && _economyMutationGeneration == mutationGeneration) {
+      _resetEconomy(userId);
+      if (rootSnapshot != null) _syncRootProjection(userId, rootSnapshot);
+      await _invalidateEconomySnapshot(userId);
+      if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
+    }
     if (userData == null) {
       return app_state.prismUser.coins;
     }
     final int coins = parseIntOr(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
-    _syncStreakFromUserData(userData);
+    if (_economyMutationGeneration == mutationGeneration) {
+      _syncStreakFromUserData(userData);
+      await _persistRootEconomySnapshot(userId, userData);
+    }
     return coins;
   }
 
@@ -762,6 +929,7 @@ class CoinsService with WidgetsBindingObserver {
     required String? styleId,
   }) async {
     final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final SettingsLocalDataSource settings = _settings;
     String? requestId;
     if (requestKey != null) {
@@ -773,6 +941,7 @@ class CoinsService with WidgetsBindingObserver {
         // Without the stored id a lost reply cannot be replayed after a restart. The spend still runs.
         logCoinError(sourceTag: 'coins.spend.request_store', error: error, stackTrace: stackTrace);
       }
+      if (!_isCurrentOwner(userId, generation)) return _notLoggedIn;
     } else if (pendingDownloadLink != null) {
       requestId = _newRequestId();
     }
@@ -793,6 +962,16 @@ class CoinsService with WidgetsBindingObserver {
         _liveDownloadTxIds.add(pendingTxId);
         return true;
       });
+      if (!_isCurrentOwner(userId, generation)) {
+        if (persisted) {
+          await _updatePendingDownloads('coins.download.ledger_owner_changed', (Map<String, PendingDownload> ledger) {
+            final PendingDownload? entry = ledger[pendingTxId];
+            return entry != null && entry.userId == userId && ledger.remove(pendingTxId) != null;
+          }, onPersisted: () => _liveDownloadTxIds.remove(pendingTxId));
+        }
+        _liveDownloadTxIds.remove(pendingTxId);
+        return _notLoggedIn;
+      }
       if (!persisted) {
         _liveDownloadTxIds.remove(pendingTxId);
         return CoinMutationResult.noChange(
@@ -816,6 +995,11 @@ class CoinsService with WidgetsBindingObserver {
         extra: <String, Object?>{if (styleId != null) 'styleId': styleId},
       );
 
+      if (result.success &&
+          _isCurrentOwner(userId, generation) &&
+          (result.changed || result.graceDownloadsLeft != null || result.passUntil != null)) {
+        _economyMutationGeneration++;
+      }
       if (requestKey != null && result.unknownOutcomeTransactionId.isEmpty) {
         if (_pendingEconomyRequests[requestKey] == requestId) _pendingEconomyRequests.remove(requestKey);
         if (settings.isOpen && settings.get<String>(requestKey, defaultValue: '') == requestId) {
@@ -826,8 +1010,7 @@ class CoinsService with WidgetsBindingObserver {
           await _forgetPendingRefund('$_spendTransactionPrefix${userId}_$requestId');
         }
       }
-      _applyLocalBalance(result.currentBalance, delta: result.delta);
-      if (userId == app_state.prismUser.id) _applySpendState(action, result, styleId: styleId);
+      if (_isCurrentOwner(userId, generation)) _applyLocalBalance(result.currentBalance, delta: result.delta);
       if (result.unknownOutcomeTransactionId.isNotEmpty) {
         await _rememberPendingRefund(
           result.unknownOutcomeTransactionId,
@@ -836,6 +1019,7 @@ class CoinsService with WidgetsBindingObserver {
           reason: _failedRefundReason(action),
         );
       }
+      if (_isCurrentOwner(userId, generation)) await _applySpendState(userId, action, result, styleId: styleId);
       final bool charged = result.success && result.changed;
       if (pendingTxId != null && !charged) {
         await _updatePendingDownloads(
@@ -843,6 +1027,10 @@ class CoinsService with WidgetsBindingObserver {
           (Map<String, PendingDownload> ledger) => ledger.remove(pendingTxId) != null,
           onPersisted: () => _liveDownloadTxIds.remove(pendingTxId),
         );
+      }
+      if (!_isCurrentOwner(userId, generation)) {
+        if (pendingTxId != null) await releasePendingDownload(pendingTxId);
+        return _notLoggedIn;
       }
       if (result.changed) _logSpend(action: action, amount: -result.delta, sourceTag: sourceTag, reason: reason);
       return pendingTxId != null && charged ? result.withPendingDownloadTxId(pendingTxId) : result;
@@ -1284,9 +1472,13 @@ class CoinsService with WidgetsBindingObserver {
         continue;
       }
       if (entry.remaining(nowMs, abandonedDownloadAfter) > Duration.zero) continue;
-      if (entry.legacy && isLinkDownloaded(entry.link)) {
-        resolved.add(entry.txId);
-        continue;
+      if (entry.legacy) {
+        final bool hasSavedNativeFile = await verifiedLegacyNativeDownloadCheck(entry.link);
+        if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
+        if (hasSavedNativeFile) {
+          resolved.add(entry.txId);
+          continue;
+        }
       }
       if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
       final CoinMutationResult refund = await refundSpend(
@@ -1722,17 +1914,21 @@ class CoinsService with WidgetsBindingObserver {
 
   // Coin economy v2: private economy state, quests, spin, shop, drops, boosts, gifts, draw.
 
-  Future<Map<String, dynamic>?> _readPrivateEconomy(String userId) async {
+  Future<_PrivateEconomyRead> _readPrivateEconomy(String userId) async {
     try {
-      return await firestoreClient.getById<Map<String, dynamic>>(
+      final Map<String, dynamic>? data = await firestoreClient.getFromServer<Map<String, dynamic>>(
         FirebaseCollections.userPrivate(userId),
         'economy',
         (data, _) => data,
         sourceTag: 'coins.private_economy',
       );
+      return _PrivateEconomyRead(data, authoritativeMissing: data == null);
+    } on FirestoreError catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.private_economy', error: error, stackTrace: stackTrace);
+      return const _PrivateEconomyRead(null);
     } catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.private_economy', error: error, stackTrace: stackTrace);
-      return null;
+      return const _PrivateEconomyRead(null);
     }
   }
 
@@ -1758,14 +1954,7 @@ class CoinsService with WidgetsBindingObserver {
   /// Social fields on the root doc: XP, equipped cosmetics, today's ad count.
   void _syncRootEconomy(Map<String, dynamic> userData, Map<String, dynamic> coinState) {
     final String userId = app_state.prismUser.id;
-    _ensureEconomyUser(userId);
-    _setXp(XpStatus.fromUserData(userData), announce: _xpUserId == userId);
-    _xpUserId = userId;
-    final Map<String, dynamic> cosmetics = toJsonMap(userData['cosmetics']);
-    inventoryNotifier.value = inventoryNotifier.value.withEquipped(
-      frame: _optionalString(cosmetics['frame']),
-      nameGlow: _optionalString(cosmetics['nameGlow']),
-    );
+    _syncRootProjection(userId, userData);
     final Map<String, dynamic> adsToday = toJsonMap(coinState['adsToday']);
     final String? day = _optionalString(adsToday['day']);
     if (day != null) {
@@ -1774,17 +1963,30 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
+  void _syncRootProjection(String userId, Map<String, dynamic> userData) {
+    _ensureEconomyUser(userId);
+    _setXp(XpStatus.fromUserData(userData), announce: _xpUserId == userId);
+    _xpUserId = userId;
+    final Map<String, dynamic> cosmetics = toJsonMap(userData['cosmetics']);
+    inventoryNotifier.value = inventoryNotifier.value.withEquipped(
+      frame: _optionalString(cosmetics['frame']),
+      nameGlow: _optionalString(cosmetics['nameGlow']),
+    );
+  }
+
   /// Owner-only state from `usersv2/{uid}/private/economy`. A doc older than the state already held is ignored.
   void _syncPrivateEconomy(String userId, Map<String, dynamic>? data) {
     _ensureEconomyUser(userId);
     if (data == null) return;
-    final int rev = parseIntOr(data['rev']);
+    final int rev = parseIntOr(data['rev'], fallback: 0);
     if (rev < _economyRev) return;
     _economyRev = rev;
     questsNotifier.value = QuestState.fromMap(data['quests']);
-    inventoryNotifier.value = inventoryNotifier.value.withOwned(
-      Set<String>.unmodifiable(toJsonMap(toJsonMap(data['inventory'])['owned']).keys),
-    );
+    final Object? rawOwned = toJsonMap(data['inventory'])['owned'];
+    final Set<String> owned = rawOwned is List
+        ? rawOwned.whereType<String>().toSet()
+        : toJsonMap(rawOwned).keys.toSet();
+    inventoryNotifier.value = inventoryNotifier.value.withOwned(Set<String>.unmodifiable(owned));
     final Map<String, DropUnlock> unlocked = <String, DropUnlock>{};
     toJsonMap(toJsonMap(data['drops'])['unlocked']).forEach((String wallId, Object? raw) {
       final Map<String, dynamic> entry = toJsonMap(raw);
@@ -1835,13 +2037,21 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Local mirror of what a spend wrote on the server: grace downloads and passes.
-  void _applySpendState(CoinSpendAction action, CoinMutationResult result, {String? styleId}) {
+  Future<void> _applySpendState(
+    String userId,
+    CoinSpendAction action,
+    CoinMutationResult result, {
+    String? styleId,
+  }) async {
     if (!result.success) return;
-    _ensureEconomyUser(app_state.prismUser.id);
+    _ensureEconomyUser(userId);
     final int? graceLeft = result.graceDownloadsLeft;
     if (graceLeft != null) _graceDownloadsUsed = max(0, CoinPolicy.graceDownloads - graceLeft);
     final DateTime? until = result.passUntil;
-    if (until == null) return;
+    if (until == null) {
+      await _persistEconomy(userId, <String, dynamic>{'graceDownloadsUsed': _graceDownloadsUsed});
+      return;
+    }
     final Passes passes = passesNotifier.value;
     if (action == CoinSpendAction.autoRotatePass7d) {
       passesNotifier.value = passes.copyWith(autoRotatePassUntil: until);
@@ -1850,6 +2060,17 @@ class CoinsService with WidgetsBindingObserver {
         liveStyles: Map<String, DateTime>.unmodifiable(<String, DateTime>{...passes.liveStyles, styleId: until}),
       );
     }
+    await _persistEconomy(userId, <String, dynamic>{
+      'passes': <String, Object?>{
+        'premiumPassUntil': passesNotifier.value.premiumPassUntil?.millisecondsSinceEpoch,
+        'autoRotatePassUntil': passesNotifier.value.autoRotatePassUntil?.millisecondsSinceEpoch,
+        'liveStyles': <String, int>{
+          for (final MapEntry<String, DateTime> entry in passesNotifier.value.liveStyles.entries)
+            entry.key: entry.value.millisecondsSinceEpoch,
+        },
+      },
+      'graceDownloadsUsed': _graceDownloadsUsed,
+    });
   }
 
   static DateTime? _msToUtc(Object? raw) {
@@ -1867,6 +2088,7 @@ class CoinsService with WidgetsBindingObserver {
     required String sourceTag,
     Duration? timeout,
   }) async {
+    final int generation = _economySessionGeneration;
     try {
       final HttpsCallable callable = appFunctions.httpsCallable(
         name,
@@ -1876,7 +2098,7 @@ class CoinsService with WidgetsBindingObserver {
         ...params,
         'sourceTag': sourceTag,
       });
-      if (!_canMutateCoins() || userId != app_state.prismUser.id) return null;
+      if (!_isCurrentOwner(userId, generation)) return null;
       final Map<String, dynamic> data = toJsonMap(response.data);
       if (data['currentBalance'] is num) {
         _applyLocalBalance(parseIntOr(data['currentBalance']), delta: parseIntOr(data['delta']));
@@ -1884,11 +2106,11 @@ class CoinsService with WidgetsBindingObserver {
       return _EconomyReply(data);
     } on FirebaseFunctionsException catch (error, stackTrace) {
       logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
-      if (!_canMutateCoins() || userId != app_state.prismUser.id) return null;
+      if (!_isCurrentOwner(userId, generation)) return null;
       return _EconomyReply(<String, dynamic>{'success': false, 'reason': error.code}, errorCode: error.code);
     } catch (error, stackTrace) {
       logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
-      if (!_canMutateCoins() || userId != app_state.prismUser.id) return null;
+      if (!_isCurrentOwner(userId, generation)) return null;
       return const _EconomyReply(<String, dynamic>{'success': false, 'reason': 'unknown'}, errorCode: 'unknown');
     }
   }
@@ -1902,21 +2124,29 @@ class CoinsService with WidgetsBindingObserver {
     required String sourceTag,
   }) async {
     final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final String key = 'pendingEconomyRequest.$name.$scope.$userId';
     final SettingsLocalDataSource settings = _settings;
     final String stored = settings.isOpen ? settings.get<String>(key, defaultValue: '') : '';
     final String requestId = _pendingEconomyRequests[key] ??= stored.isNotEmpty ? stored : _newRequestId();
     if (settings.isOpen) await settings.set(key, requestId);
-    if (!_canMutateCoins() || userId != app_state.prismUser.id) return null;
+    if (!_isCurrentOwner(userId, generation)) return null;
     final _EconomyReply? reply = await _callEconomy(
       name,
       <String, Object?>{...params, 'requestId': requestId},
       userId: userId,
       sourceTag: sourceTag,
     );
+    if (!_isCurrentOwner(userId, generation)) return null;
+    final int? revision = parseInt(reply?.data['rev']);
+    if (revision != null && revision > _economyRev) _economyRev = revision;
+    if (reply?.success == true && reply?.changed == true) _economyMutationGeneration++;
     if (reply != null && reply.definite) {
       if (_pendingEconomyRequests[key] == requestId) _pendingEconomyRequests.remove(key);
-      if (settings.isOpen && settings.get<String>(key, defaultValue: '') == requestId) await settings.delete(key);
+      if (settings.isOpen && settings.get<String>(key, defaultValue: '') == requestId) {
+        await settings.delete(key);
+        if (!_isCurrentOwner(userId, generation)) return null;
+      }
     }
     return reply;
   }
@@ -1934,6 +2164,7 @@ class CoinsService with WidgetsBindingObserver {
     if (!_canMutateCoins()) return null;
     if (event != null && !event.clientReported) return questsNotifier.value;
     final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     _ensureEconomyUser(userId);
     final _EconomyReply? reply = await _callEconomy(
       'progressQuest',
@@ -1942,10 +2173,16 @@ class CoinsService with WidgetsBindingObserver {
       sourceTag: 'coins.quests.progress',
       timeout: const Duration(seconds: 10),
     );
+    if (!_isCurrentOwner(userId, generation)) return null;
     if (reply == null || reply.errorCode != null) return questsNotifier.value;
+    if (reply.success && reply.data.containsKey('quests')) _economyMutationGeneration++;
     final int? rev = parseInt(reply.data['rev']);
     if (rev != null && rev < _economyRev) return questsNotifier.value;
     _applyQuestReply(reply.data);
+    if (reply.data.containsKey('quests')) {
+      await _persistEconomy(userId, <String, dynamic>{'rev': _economyRev, 'quests': reply.data['quests']});
+      if (!_isCurrentOwner(userId, generation)) return null;
+    }
     final Object? rawAwards = reply.data['awarded'];
     final List<QuestAward> awards = <QuestAward>[
       if (rawAwards is List)
@@ -2009,6 +2246,8 @@ class CoinsService with WidgetsBindingObserver {
   /// Opens today's quest chest once the three daily items are claimed.
   Future<ChestResult> openQuestChest() async {
     if (!_canMutateCoins()) return const ChestResult(ChestOutcome.failed, reason: 'not_logged_in');
+    final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final String dayKey = questsNotifier.value?.dayKey ?? economyDayKey(DateTime.now());
     final _EconomyReply? reply = await _economyPurchase(
       'openQuestChest',
@@ -2016,7 +2255,9 @@ class CoinsService with WidgetsBindingObserver {
       const <String, Object?>{},
       sourceTag: 'coins.quests.chest',
     );
-    if (reply == null) return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
+    if (!_isCurrentOwner(userId, generation) || reply == null) {
+      return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
+    }
     final String reason = reply.reason;
     if (!reply.success) {
       return ChestResult(switch (reason) {
@@ -2033,6 +2274,14 @@ class CoinsService with WidgetsBindingObserver {
         Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
       );
     }
+    await _persistEconomy(userId, <String, dynamic>{
+      'rev': _economyRev,
+      if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
+      'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
+    });
+    if (!_isCurrentOwner(userId, generation)) {
+      return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
+    }
     if (reply.changed) {
       analytics.track(QuestChestOpenedEvent(coins: coins, itemId: itemId));
       _logEarn(action: CoinEarnAction.questChest, amount: coins, sourceTag: 'coins.quests.chest');
@@ -2048,10 +2297,14 @@ class CoinsService with WidgetsBindingObserver {
 
   Future<ShopPurchaseResult> purchaseShopItem(String itemId) async {
     if (!_canMutateCoins()) return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'not_logged_in');
+    final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final _EconomyReply? reply = await _economyPurchase('purchaseShopItem', itemId, <String, Object?>{
       'itemId': itemId,
     }, sourceTag: 'coins.shop.purchase');
-    if (reply == null) return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'session_changed');
+    if (!_isCurrentOwner(userId, generation) || reply == null) {
+      return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'session_changed');
+    }
     final Object? rawOwned = reply.data['owned'];
     if (rawOwned is List) {
       inventoryNotifier.value = inventoryNotifier.value.withOwned(
@@ -2063,6 +2316,15 @@ class CoinsService with WidgetsBindingObserver {
       );
     }
     final Set<String> owned = inventoryNotifier.value.owned;
+    if (reply.success) {
+      await _persistEconomy(userId, <String, dynamic>{
+        'rev': _economyRev,
+        'inventory': <String, Object?>{'owned': owned.toList()},
+      });
+      if (!_isCurrentOwner(userId, generation)) {
+        return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'session_changed');
+      }
+    }
     final String reason = reply.reason;
     if (reply.success) {
       if (reply.changed) {
@@ -2094,13 +2356,15 @@ class CoinsService with WidgetsBindingObserver {
   Future<bool> equipCosmetic(CosmeticSlot slot, String? itemId) async {
     if (!_canMutateCoins()) return false;
     final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final _EconomyReply? reply = await _callEconomy(
       'equipCosmetic',
       <String, Object?>{'slot': slot.name, 'itemId': itemId},
       userId: userId,
       sourceTag: 'coins.shop.equip',
     );
-    if (reply == null || !reply.success) return false;
+    if (!_isCurrentOwner(userId, generation) || reply == null || !reply.success) return false;
+    _economyMutationGeneration++;
     final Map<String, dynamic> cosmetics = reply.data.containsKey('cosmetics')
         ? toJsonMap(reply.data['cosmetics'])
         : <String, dynamic>{
@@ -2117,13 +2381,17 @@ class CoinsService with WidgetsBindingObserver {
   /// Unlocks one wall of the week's Drop, or every wall left when [wallId] is null.
   Future<DropUnlockResult> unlockDrop({required String weekKey, String? wallId}) async {
     if (!_canMutateCoins()) return const DropUnlockResult(DropUnlockOutcome.failed, reason: 'not_logged_in');
+    final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final _EconomyReply? reply = await _economyPurchase(
       'unlockDrop',
       '${weekKey}_${wallId ?? 'pack'}',
       <String, Object?>{'weekKey': weekKey, 'wallId': wallId},
       sourceTag: 'coins.drops.unlock',
     );
-    if (reply == null) return const DropUnlockResult(DropUnlockOutcome.failed, reason: 'session_changed');
+    if (!_isCurrentOwner(userId, generation) || reply == null) {
+      return const DropUnlockResult(DropUnlockOutcome.failed, reason: 'session_changed');
+    }
     final String reason = reply.reason;
     final Object? rawUnlocked = reply.data['unlocked'];
     final List<DropUnlock> unlocked = <DropUnlock>[
@@ -2141,6 +2409,20 @@ class CoinsService with WidgetsBindingObserver {
         ...dropsUnlockedNotifier.value,
         for (final DropUnlock u in unlocked) u.wallId: u,
       });
+    }
+    if (reply.success) {
+      await _persistEconomy(userId, <String, dynamic>{
+        'rev': _economyRev,
+        'drops': <String, Object?>{
+          'unlocked': <String, Object?>{
+            for (final MapEntry<String, DropUnlock> entry in dropsUnlockedNotifier.value.entries)
+              entry.key: <String, Object?>{'weekKey': entry.value.weekKey, 'url': entry.value.url},
+          },
+        },
+      });
+      if (!_isCurrentOwner(userId, generation)) {
+        return const DropUnlockResult(DropUnlockOutcome.failed, reason: 'session_changed');
+      }
     }
     if (reply.success) {
       if (!reply.changed && (reason == 'drop_wall_already_unlocked' || reason == 'drop_pack_nothing_left')) {

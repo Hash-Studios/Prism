@@ -22,8 +22,8 @@ abstract class AppModule {
   ]);
 
   @lazySingleton
-  FirestoreClient firestoreClient(FirebaseFirestore firestore, FirestoreTelemetrySink telemetrySink) =>
-      FirestoreTrackedClient(firestore, telemetrySink);
+  FirestoreClient firestoreClient(FirestoreTelemetrySink telemetrySink) =>
+      FirestoreTrackedClient.deferred(() => FirebaseFirestore.instance, telemetrySink);
 
   @lazySingleton
   FirebaseRemoteConfig get remoteConfig => FirebaseRemoteConfig.instance;

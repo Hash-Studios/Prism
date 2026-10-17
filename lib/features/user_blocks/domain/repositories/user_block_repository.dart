@@ -15,18 +15,27 @@ abstract class UserBlockRepository {
   /// distinguish "not loaded yet" from "loaded empty set".
   Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false});
 
+  /// Clears this owner's cached block records after all queued writes finish.
+  Future<void> clearForUser(String userId);
+
   Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList();
 
-  Future<Result<void>> blockUser({required String targetUserId});
+  Future<Result<void>> blockUser({required String targetUserId, String? targetEmail});
 
   Future<Result<void>> unblockUser({required String targetUserId});
 }
 
 /// Row for settings screen (includes display hint).
 class BlockedUserListRow {
-  const BlockedUserListRow({required this.blockedUid, required this.blockedEmail, this.blockedUsername});
+  const BlockedUserListRow({
+    required this.blockedUid,
+    required this.blockedEmail,
+    this.blockedUsername,
+    this.syncStatus = 'synced',
+  });
 
   final String blockedUid;
   final String blockedEmail;
   final String? blockedUsername;
+  final String syncStatus;
 }

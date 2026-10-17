@@ -169,7 +169,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   }
 
   /// Stores the pass end with the config and turns the rotation off the moment the pass ends.
-  Future<AutoRotateConfig> _applyPass(AutoRotateConfig config, DateTime? passUntil) async {
+  Future<AutoRotateConfig> _applyPass(AutoRotateConfig config, DateTime? passUntil, {String? ownerId}) async {
     _passTimer?.cancel();
     _passTimer = null;
     if (passUntil != null) {
@@ -180,7 +180,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     }
     if (config.passUntil == passUntil) return config;
     final AutoRotateConfig next = config.copyWith(passUntil: () => passUntil);
-    await _repository.saveConfig(next);
+    await _repository.saveConfig(next, ownerId: ownerId);
     return next;
   }
 
@@ -244,10 +244,11 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   }
 
   Future<void> _onStarted(_Started event, Emitter<AutoRotateState> emit) async {
-    final AutoRotateConfig stored = await _repository.loadConfig();
+    final String? ownerId = _userId;
+    final AutoRotateConfig stored = await _repository.loadConfig(ownerId: ownerId);
     final (bool entitled, DateTime? passUntil) = _entitlementKnown
         ? _entitlement(state.isPro, stored.passUntil, stored, trustStored: false)
-        : _entitlement(event.isPro, event.passUntil, stored, trustStored: true);
+        : _entitlement(event.isPro, event.passUntil, stored, trustStored: ownerId != null && ownerId.isNotEmpty);
     final bool isPro = entitled;
     if (_entitlementKnown && !isPro) {
       _favouriteUrls = const <String>[];
@@ -256,7 +257,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       _setFavourites(event.favouriteUrls);
     }
     _favouritesKnown = true;
-    final AutoRotateConfig config = await _applyPass(stored, passUntil);
+    final AutoRotateConfig config = await _applyPass(stored, passUntil, ownerId: ownerId);
     await _loadSupportedTargets();
     if (isPro || config.source == AutoRotateSource.downloads) await _refreshSource(config);
     await _loadApplied();
@@ -291,14 +292,14 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       _favouritesCapped = false;
       _favouritesKnown = false;
     }
-    final AutoRotateConfig stored = await _repository.loadConfig();
+    final AutoRotateConfig stored = await _repository.loadConfig(ownerId: event.userId);
     final (bool isPro, DateTime? passUntil) = _entitlement(
       event.isPro,
       event.passUntil,
       stored,
       trustStored: !accountChanged && event.userId.isNotEmpty,
     );
-    final AutoRotateConfig config = await _applyPass(stored, passUntil);
+    final AutoRotateConfig config = await _applyPass(stored, passUntil, ownerId: event.userId);
     if (config.source == AutoRotateSource.downloads) await _refreshDownloads();
     await _loadApplied();
     final AutoRotateStatus status = await _status();
@@ -404,7 +405,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   Future<void> _onConfigChanged(AutoRotateConfig next, Emitter<AutoRotateState> emit) async {
     if (next == state.config) return;
     final AutoRotateConfig previous = state.config;
-    await _repository.saveConfig(next);
+    await _repository.saveConfig(next, ownerId: _userId);
     emit(_snapshot(next));
     if (!next.enabled) return;
     if (!_canRotate) {
@@ -466,7 +467,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
         await _disable(emit, startFailed: true);
         return;
       }
-      await _repository.saveConfig(config);
+      await _repository.saveConfig(config, ownerId: _userId);
       _appliedUrls = urls;
       final bool showTip = userInitiated && !wasRunning && await _repository.consumeBatteryTip();
       emit(
@@ -507,7 +508,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
     }
     if (stopped) _appliedUrls = const <String>[];
     final AutoRotateConfig next = state.config.copyWith(enabled: false);
-    await _repository.saveConfig(next);
+    await _repository.saveConfig(next, ownerId: _userId);
     final AutoRotateStatus latestStatus = await _status();
     final AutoRotateStatus status = stopped
         ? const AutoRotateStatus()

@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -45,6 +48,51 @@ class PrismImageTile extends StatefulWidget {
 class _PrismImageTileState extends State<PrismImageTile> {
   int _attempt = 0;
   bool _retrying = false;
+  late Future<File?> _localFileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _localFileFuture = _lookupLocalFile();
+  }
+
+  @override
+  void didUpdateWidget(PrismImageTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url || oldWidget.fallbackUrl != widget.fallbackUrl) {
+      _attempt = 0;
+      _retrying = false;
+      _localFileFuture = _lookupLocalFile();
+    }
+  }
+
+  Future<File?> _lookupLocalFile() async {
+    final String url = _effectiveUrl;
+    if (url.isEmpty) return null;
+    if (_isLocalSource(url)) return File(_filePath(url));
+    final String primary = widget.fallbackUrl?.trim().isNotEmpty == true ? widget.fallbackUrl!.trim() : url;
+    final String source = _filePath(primary);
+    try {
+      final File localFile = File(source);
+      if (await localFile.exists()) return localFile;
+      return await OfflineAssetStore.instance.lookup(source);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _filePath(String source) {
+    final Uri? uri = Uri.tryParse(source);
+    return uri?.scheme == 'file' ? uri!.toFilePath() : source;
+  }
+
+  bool _isLocalSource(String source) {
+    if (source.isEmpty) return false;
+    final String scheme = Uri.tryParse(source)?.scheme.toLowerCase() ?? '';
+    return scheme != 'http' && scheme != 'https';
+  }
+
+  String get _effectiveUrl => widget.url.trim().isNotEmpty ? widget.url.trim() : widget.fallbackUrl?.trim() ?? '';
 
   Future<void> _retry() async {
     PrismHaptics.tap();
@@ -60,6 +108,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
         setState(() {
           _retrying = false;
           _attempt++;
+          _localFileFuture = _lookupLocalFile();
         });
       }
     }
@@ -87,28 +136,76 @@ class _PrismImageTileState extends State<PrismImageTile> {
     memCacheHeight: decodeHeight,
     memCacheWidth: widget.memCacheWidth,
     placeholder: (_, _) => PulseFill(borderRadius: widget.borderRadius),
-    errorWidget: (context, _, _) => fallback != null && fallback.isNotEmpty && fallback != url
-        ? _network(context, fallback, decodeHeight)
-        : ColoredBox(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Align(
-              alignment: AlignmentDirectional.bottomEnd,
-              child: IconButton(
-                tooltip: 'Retry image',
-                onPressed: _retrying ? null : _retry,
-                icon: const Icon(Icons.refresh_rounded),
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
+    errorWidget: (context, _, _) =>
+        _offlineOrNetworkFallback(context, url: url, decodeHeight: decodeHeight, fallback: fallback),
+  );
+
+  Widget _offlineOrNetworkFallback(
+    BuildContext context, {
+    required String url,
+    required int? decodeHeight,
+    String? fallback,
+  }) => FutureBuilder<File?>(
+    future: _localFileFuture,
+    builder: (context, snapshot) {
+      final File? localFile = snapshot.data;
+      if (localFile != null) return _fileImage(localFile, decodeHeight);
+      if (snapshot.connectionState != ConnectionState.done) return PulseFill(borderRadius: widget.borderRadius);
+      if (fallback != null && fallback.isNotEmpty && fallback != url) {
+        return _network(context, fallback, decodeHeight);
+      }
+      return ColoredBox(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Align(
+          alignment: AlignmentDirectional.bottomEnd,
+          child: IconButton(
+            tooltip: 'Retry image',
+            onPressed: _retrying ? null : _retry,
+            icon: const Icon(Icons.refresh_rounded),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
+        ),
+      );
+    },
+  );
+
+  Widget _fileImage(File file, int? decodeHeight) => Image.file(
+    file,
+    fit: BoxFit.cover,
+    cacheHeight: decodeHeight,
+    cacheWidth: widget.memCacheWidth,
+    errorBuilder: (context, _, _) =>
+        ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest, child: const SizedBox.expand()),
+  );
+
+  Widget _localImage(BuildContext context, String source) => LayoutBuilder(
+    builder: (context, constraints) => _fileImage(File(_filePath(source)), _decodeHeight(context, constraints)),
+  );
+
+  Widget _retainedOrNetworkImage(BuildContext context, String url) => FutureBuilder<File?>(
+    future: _localFileFuture,
+    builder: (context, snapshot) {
+      final File? localFile = snapshot.data;
+      if (localFile != null) {
+        return LayoutBuilder(
+          builder: (context, constraints) => _fileImage(localFile, _decodeHeight(context, constraints)),
+        );
+      }
+      return _image(context, url, fallback: widget.fallbackUrl);
+    },
   );
 
   @override
   Widget build(BuildContext context) {
-    final url = widget.url.trim().isNotEmpty ? widget.url : widget.fallbackUrl ?? '';
-    Widget tile = url.trim().isEmpty
-        ? PulseFill(borderRadius: widget.borderRadius)
-        : _image(context, url, fallback: widget.fallbackUrl);
+    final String url = _effectiveUrl;
+    Widget tile;
+    if (url.isEmpty) {
+      tile = PulseFill(borderRadius: widget.borderRadius);
+    } else if (_isLocalSource(url)) {
+      tile = _localImage(context, url);
+    } else {
+      tile = _retainedOrNetworkImage(context, url);
+    }
     tile = SizedBox.expand(child: tile);
     if (widget.borderRadius != null) tile = ClipRRect(borderRadius: widget.borderRadius!, child: tile);
     return widget.heroTag == null || context.reduceMotion ? tile : Hero(tag: widget.heroTag!, child: tile);

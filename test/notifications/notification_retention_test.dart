@@ -9,6 +9,7 @@ import 'package:Prism/features/admin_review/views/widgets/notification_scoreboar
 import 'package:Prism/notifications/notification_retention.dart';
 import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/scoreboard_row.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -114,6 +115,114 @@ void main() {
     expect(calls.single, <String, dynamic>{'type': 'returned_next_day', 'kind': 'win_back'});
     expect(stamps, 1);
     expect(decodePending(store.get<String>(PersistenceKeys.pushReturnPending, defaultValue: ''))?.reported, isEmpty);
+  });
+
+  test('a timed out return call preserves pending data and releases the queue for a retry', () async {
+    final SettingsLocalDataSource store = await _signalSettings(<String, String>{
+      PersistenceKeys.notificationSignalUserId: 'user-a',
+      PersistenceKeys.pushReturnPending: encodePending(rememberTap(null, 'win_back', DateTime(2026, 10, 16, 18))),
+    });
+    final List<Map<String, dynamic>> calls = <Map<String, dynamic>>[];
+    var returnAttempts = 0;
+    final NotificationSignals signals = NotificationSignals(
+      isReady: () async => true,
+      settings: store,
+      currentUserId: () => 'user-a',
+      clock: () => DateTime(2026, 10, 17, 9),
+      networkTimeout: const Duration(milliseconds: 10),
+      call: (Map<String, dynamic> data) {
+        calls.add(data);
+        if (data['type'] == 'returned_next_day' && returnAttempts++ == 0) return Completer<void>().future;
+        return Future<void>.value();
+      },
+      writeAppOpenStamp: (String _, DateTime _, int _) => Future<void>.value(),
+    );
+
+    await signals.onTap('post');
+
+    expect(calls, <Map<String, dynamic>>[
+      <String, dynamic>{'type': 'returned_next_day', 'kind': 'win_back'},
+      <String, dynamic>{'type': 'tap', 'kind': 'post'},
+    ]);
+    expect(
+      decodePending(store.get<String>(PersistenceKeys.pushReturnPending, defaultValue: ''))?.localDay,
+      '2026-10-16',
+    );
+
+    await signals.onTap('post');
+
+    expect(returnAttempts, 2);
+    expect(decodePending(store.get<String>(PersistenceKeys.pushReturnPending, defaultValue: ''))?.kinds, <String>{
+      'post',
+    });
+  });
+
+  test('a timed out app-open stamp leaves its local retry marker unset', () async {
+    final SettingsLocalDataSource store = await _signalSettings(<String, String>{
+      PersistenceKeys.notificationSignalUserId: 'user-a',
+    });
+    var stampAttempts = 0;
+    final NotificationSignals signals = NotificationSignals(
+      isReady: () async => true,
+      settings: store,
+      currentUserId: () => 'user-a',
+      clock: () => DateTime(2026, 10, 17, 9),
+      networkTimeout: const Duration(milliseconds: 10),
+      call: (Map<String, dynamic> _) async {},
+      writeAppOpenStamp: (String _, DateTime _, int _) {
+        if (stampAttempts++ == 0) return Completer<void>().future;
+        return Future<void>.value();
+      },
+    );
+
+    await signals.onResumed();
+
+    expect(store.get<String>(PersistenceKeys.appOpenStampedAtUtc, defaultValue: ''), isEmpty);
+    expect(stampAttempts, 1);
+
+    await signals.onResumed();
+
+    expect(stampAttempts, 2);
+    expect(store.get<String>(PersistenceKeys.appOpenStampedAtUtc), DateTime(2026, 10, 17, 9).toUtc().toIso8601String());
+  });
+
+  test('a tap waits for Firebase readiness and is retained when readiness resolves', () async {
+    final SettingsLocalDataSource store = await _signalSettings(<String, String>{});
+    fakeAsync((async) {
+      final List<Map<String, dynamic>> calls = <Map<String, dynamic>>[];
+      final Completer<bool> finishReadiness = Completer<bool>();
+      final NotificationSignals signals = NotificationSignals(
+        isReady: () => finishReadiness.future,
+        settings: store,
+        currentUserId: () => 'user-a',
+        networkTimeout: const Duration(milliseconds: 10),
+        call: (Map<String, dynamic> data) {
+          calls.add(data);
+          return Future<void>.value();
+        },
+        writeAppOpenStamp: (String _, DateTime _, int _) => Future<void>.value(),
+      );
+
+      var completed = false;
+      unawaited(signals.onTap('first').then((_) => completed = true));
+      async.flushMicrotasks();
+      async.elapse(const Duration(seconds: 1));
+
+      expect(completed, isFalse);
+      expect(store.get<String>(PersistenceKeys.pushReturnPending, defaultValue: ''), isEmpty);
+      expect(calls, isEmpty);
+
+      finishReadiness.complete(true);
+      async.flushMicrotasks();
+
+      expect(completed, isTrue);
+      expect(decodePending(store.get<String>(PersistenceKeys.pushReturnPending, defaultValue: ''))?.kinds, <String>{
+        'first',
+      });
+      expect(calls, <Map<String, dynamic>>[
+        <String, dynamic>{'type': 'tap', 'kind': 'first'},
+      ]);
+    });
   });
 
   test('onTap keeps yesterday pending and still reports the current tap after return failure', () async {
@@ -231,10 +340,19 @@ void main() {
 
     await signals.onResumed();
 
+    expect(store.get<String>(PersistenceKeys.notificationSignalUserId), 'user-b');
+    expect(store.get<String>(PersistenceKeys.pushReturnPending, defaultValue: ''), isEmpty);
+
+    await signals.onTap('post');
+
     expect(calls, <Map<String, dynamic>>[
       <String, dynamic>{'type': 'returned_next_day', 'kind': 'win_back'},
+      <String, dynamic>{'type': 'tap', 'kind': 'post'},
     ]);
-    expect(decodePending(store.get<String>(PersistenceKeys.pushReturnPending, defaultValue: ''))?.reported, isEmpty);
+    expect(store.get<String>(PersistenceKeys.notificationSignalUserId), 'user-b');
+    expect(decodePending(store.get<String>(PersistenceKeys.pushReturnPending, defaultValue: ''))?.kinds, <String>{
+      'post',
+    });
   });
 
   test('guest taps do not call the authenticated tap signal and permission uses install id', () async {

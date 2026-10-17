@@ -25,7 +25,10 @@ class FakeUserBlockRepository implements UserBlockRepository {
   Set<String> get cachedBlockedCreatorEmails => _cached;
 
   @override
-  Future<Result<void>> blockUser({required String targetUserId}) async => Result.success(null);
+  Future<void> clearForUser(String userId) async {}
+
+  @override
+  Future<Result<void>> blockUser({required String targetUserId, String? targetEmail}) async => Result.success(null);
 
   @override
   Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList() async =>

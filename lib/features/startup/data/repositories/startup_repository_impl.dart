@@ -98,17 +98,32 @@ class StartupRepositoryImpl implements StartupRepository {
   @override
   Future<Result<StartupConfigEntity>> bootstrap() async {
     // Wait for Firebase (started in background from main()) before touching RemoteConfig.
-    final bool firebaseReady = await FirebaseInit.readyFuture;
+    final bool firebaseReady = await FirebaseInit.waitUntilReady();
 
-    // Only access FirebaseRemoteConfig.instance after Firebase is confirmed ready.
-    final FirebaseRemoteConfig? remoteConfig = firebaseReady ? FirebaseRemoteConfig.instance : null;
+    final FirebaseRemoteConfig? remoteConfig = firebaseReady ? FirebaseInit.remoteConfigIfInitialized : null;
 
     // Runs beside Remote Config. Its own 3 s budget keeps a slow read from holding the splash any longer.
-    final Future<void> economyConfig = firebaseReady ? EconomyConfig.load() : Future<void>.value();
+    final Future<void> economyConfig;
+    if (firebaseReady) {
+      economyConfig = EconomyConfig.load();
+    } else {
+      economyConfig = Future<void>.value();
+      unawaited(
+        FirebaseInit.readyFuture.then<void>((bool becameReady) {
+          if (becameReady) return EconomyConfig.load();
+        }),
+      );
+    }
 
     try {
       if (remoteConfig != null) {
-        await prepareRemoteConfig(remoteConfig, release: kReleaseMode);
+        try {
+          await prepareRemoteConfig(remoteConfig, release: kReleaseMode).timeout(remoteConfigFetchBudget);
+        } on TimeoutException {
+          logger.w('Remote Config preparation timed out; using locally activated values.', tag: 'StartupRepository');
+        } catch (error) {
+          logger.w('Remote Config preparation failed; using local defaults.', tag: 'StartupRepository', error: error);
+        }
       } else {
         logger.w('Firebase not ready; using hardcoded default config values.', tag: 'StartupRepository');
       }

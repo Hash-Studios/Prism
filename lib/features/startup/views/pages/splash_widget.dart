@@ -10,7 +10,6 @@ import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -79,8 +78,7 @@ class _SplashWidgetState extends State<SplashWidget> {
         isLoggedIn: app_state.prismUser.loggedIn,
         isOnboarded: isOnboarded,
         v2Enabled: v2Enabled,
-        // Guest browsing (no account) only exists on iOS; Android always forces sign-in.
-        guestBrowsingAllowed: defaultTargetPlatform == TargetPlatform.iOS,
+        guestBrowsingAllowed: true,
       );
       if (showOnboarding) {
         _debugOnboardingShownThisSession = true;

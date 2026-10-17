@@ -1,9 +1,15 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
@@ -14,6 +20,7 @@ import 'package:Prism/features/category_feed/domain/repositories/category_feed_r
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
@@ -34,6 +41,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
   final PexelsWallpaperRepository _pexelsRepository;
 
   static const int _feedTtlHours = 6;
+  static const Duration _prismFirstTimeout = Duration(seconds: 10);
 
   @override
   Future<Result<List<CategoryEntity>>> getCategories() async {
@@ -58,7 +66,9 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     final mode = refresh ? 'r' : 'm';
 
     try {
-      final Future<List<FeedItemEntity>> prismFirst = refresh ? _fetchPrismFirst(category) : Future.value(const []);
+      final Future<List<FeedItemEntity>> prismFirst = refresh
+          ? _fetchPrismFirst(category).timeout(_prismFirstTimeout, onTimeout: () => const <FeedItemEntity>[])
+          : Future.value(const <FeedItemEntity>[]);
       final fetched = await _fetchFromSource(category, refresh: refresh);
       final CategoryFeedPage? providerPage = fetched.data;
       final page = providerPage == null
@@ -72,9 +82,12 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         return await _cachedOrFailure(category: category, mode: mode, failure: failure);
       }
 
-      if (refresh) {
-        await _writeCache(category, page);
+      try {
+        await _writeCache(category, page, append: !refresh);
+      } catch (error) {
+        logger.w('[CategoryFeedRepository] feed cache write failed: $error');
       }
+      _remember(page.items);
 
       logger.i(
         '[CategoryFeedRepository] fetchCategoryFeed success',
@@ -195,16 +208,53 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     return Result.success(CategoryFeedPage(items: walls.map(toItem).toList(growable: false), hasMore: hasMore));
   }
 
-  Future<void> _writeCache(CategoryEntity category, CategoryFeedPage page) {
+  Future<void> _writeCache(CategoryEntity category, CategoryFeedPage page, {required bool append}) async {
+    List<FeedItemEntity> items = page.items;
+    if (append) {
+      final CategoryFeedPage? previous = await _readCached(category);
+      if (previous != null) {
+        final Map<String, FeedItemEntity> merged = <String, FeedItemEntity>{
+          for (final FeedItemEntity item in previous.items) _canonicalKey(item): item,
+          for (final FeedItemEntity item in page.items) _canonicalKey(item): item,
+        };
+        items = merged.values.toList(growable: false);
+      }
+    }
+    while (items.length > 240 ||
+        utf8
+                .encode(
+                  jsonEncode(<String, Object?>{
+                    'cachedAtUtc': DateTime.now().toUtc().toIso8601String(),
+                    'ttlHours': _feedTtlHours,
+                    'payload': <String, Object?>{
+                      'items': items.map(encodeFeedItem).toList(growable: false),
+                      'hasMore': page.hasMore,
+                    },
+                  }),
+                )
+                .length >
+            FeedCacheLocalDataSource.maxSnapshotBytes) {
+      if (items.isEmpty) break;
+      items = items.skip(1).toList(growable: false);
+    }
     return _feedCacheLocal.write(
       source: 'category',
       scope: _scopeFor(category),
       ttlHours: _feedTtlHours,
-      payload: <String, Object?>{
-        'items': page.items.map(encodeFeedItem).toList(growable: false),
-        'hasMore': page.hasMore,
-      },
+      payload: <String, Object?>{'items': items.map(encodeFeedItem).toList(growable: false), 'hasMore': page.hasMore},
     );
+  }
+
+  void _remember(Iterable<FeedItemEntity> items) {
+    unawaited(_persistRemembered(items));
+  }
+
+  Future<void> _persistRemembered(Iterable<FeedItemEntity> items) async {
+    try {
+      await OfflineWallpaperCatalog.instance.remember(items);
+    } catch (error) {
+      logger.w('[CategoryFeedRepository] local catalog write failed: $error');
+    }
   }
 
   Future<Result<CategoryFeedPage>> _cachedOrFailure({
@@ -239,7 +289,12 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       return null;
     }
 
-    return CategoryFeedPage(items: items, hasMore: payload['hasMore'] == true);
+    if (!getIt.isRegistered<UserBlockRepository>()) {
+      return CategoryFeedPage(items: items, hasMore: payload['hasMore'] == true);
+    }
+    final blocked = await getIt<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: true);
+    final visibleItems = items.where((item) => !BlockedCreatorsFilter.hidesFeedItem(item, blocked)).toList();
+    return visibleItems.isEmpty ? null : CategoryFeedPage(items: visibleItems, hasMore: payload['hasMore'] == true);
   }
 
   String _scopeFor(CategoryEntity category) {

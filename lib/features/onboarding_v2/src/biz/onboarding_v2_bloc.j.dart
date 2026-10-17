@@ -8,6 +8,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -37,6 +38,8 @@ part 'onboarding_v2_bloc.j.freezed.dart';
 part 'onboarding_v2_event.dart';
 part 'onboarding_v2_state.dart';
 
+const Duration _onboardingEnrichmentBudget = Duration(seconds: 3);
+
 @injectable
 class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   OnboardingV2Bloc(
@@ -47,10 +50,11 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     this._firstWallpaperService,
     this._categoryFeedRepository,
     this._onboardingRepository,
-    this._settingsLocal,
-    this._remoteConfig, {
+    this._settingsLocal, {
+    @ignoreParam FirebaseRemoteConfig? remoteConfig,
     @ignoreParam AiGenerationRepositoryImpl? aiRepository,
   }) : _aiRepositoryOverride = aiRepository,
+       _remoteConfigOverride = remoteConfig,
        super(OnboardingV2State.initial()) {
     on<_Started>(_onStarted);
     on<_LoadRetried>(_onLoadRetried);
@@ -83,7 +87,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   final CategoryFeedRepository _categoryFeedRepository;
   final OnboardingV2Repository _onboardingRepository;
   final SettingsLocalDataSource _settingsLocal;
-  final FirebaseRemoteConfig _remoteConfig;
+  final FirebaseRemoteConfig? _remoteConfigOverride;
+  FirebaseRemoteConfig? get _remoteConfig => _remoteConfigOverride ?? FirebaseInit.remoteConfigIfInitialized;
   final AiGenerationRepositoryImpl? _aiRepositoryOverride;
 
   // Built on first use: the default impl touches FirebaseAuth.instance on construction.
@@ -116,23 +121,34 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final wallpaperAtStart = state.wallpaperData;
     _onboardingStopwatch ??= Stopwatch()..start();
     emit(state.copyWith(loadStatus: LoadStatus.loading, navRequest: null));
-    final catalog = await PersonalizedInterestsCatalog.load(remoteConfig: _remoteConfig, settingsLocal: _settingsLocal);
+    final catalog = await PersonalizedInterestsCatalog.load(
+      remoteConfig: _remoteConfig,
+      settingsLocal: _settingsLocal,
+    ).timeout(_onboardingEnrichmentBudget, onTimeout: () => const []);
     List<String> availableCategories = catalog.map((e) => e.name).toList(growable: false);
     Map<String, String> categoryImages = <String, String>{for (final entry in catalog) entry.name: entry.imageUrl};
     if (availableCategories.isEmpty) {
-      final categoriesResult = await _categoryFeedRepository.getCategories();
-      categoriesResult.fold(
-        onSuccess: (cats) {
-          final filtered = cats.where((c) => c.name != OnboardingV2Config.excludedCategory).toList(growable: false);
-          availableCategories = filtered.map((c) => c.name).toList(growable: false);
-          categoryImages = <String, String>{for (final entry in filtered) entry.name: entry.image};
-        },
-        onFailure: (_) {},
-      );
+      try {
+        final categoriesResult = await _categoryFeedRepository.getCategories().timeout(_onboardingEnrichmentBudget);
+        categoriesResult.fold(
+          onSuccess: (cats) {
+            final filtered = cats.where((c) => c.name != OnboardingV2Config.excludedCategory).toList(growable: false);
+            availableCategories = filtered.map((c) => c.name).toList(growable: false);
+            categoryImages = <String, String>{for (final entry in filtered) entry.name: entry.image};
+          },
+          onFailure: (_) {},
+        );
+      } on TimeoutException {
+      } catch (error, stackTrace) {
+        logger.w('Could not load onboarding categories; using local defaults.', error: error, stackTrace: stackTrace);
+      }
     }
 
-    final starterPackData = await _fetchStarterPack();
-    final wallpaperVm = await _firstWallpaperService.recommendForOnboarding(<String>[]);
+    final starterPackData = await _fetchStarterPack().timeout(
+      _onboardingEnrichmentBudget,
+      onTimeout: OnboardingStarterPackData.initial,
+    );
+    final wallpaperVm = await _recommendFirstWallpaper();
 
     final latest = state;
     final loadedWallpaper = latest.wallpaperData == wallpaperAtStart
@@ -142,7 +158,12 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     emit(
       latest.copyWith(
         loadStatus: LoadStatus.success,
-        interestsData: latest.interestsData.copyWith(available: availableCategories, categoryImages: categoryImages),
+        interestsData: latest.interestsData.copyWith(
+          available: availableCategories.isEmpty
+              ? const <String>['Nature', 'Abstract', 'Architecture', 'Minimal']
+              : availableCategories,
+          categoryImages: categoryImages,
+        ),
         starterPackData: starterPackData,
         wallpaperData: loadedWallpaper,
       ),
@@ -150,6 +171,14 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     // A signed-in user who left onboarding part way resumes after sign-in.
     if (app_state.prismUser.loggedIn && state.step == OnboardingV2Step.auth) {
       add(const OnboardingV2Event.authCompleted());
+    }
+  }
+
+  Future<OnboardingWallpaperVm?> _recommendFirstWallpaper() async {
+    try {
+      return await _firstWallpaperService.recommendForOnboarding(<String>[]).timeout(_onboardingEnrichmentBudget);
+    } on TimeoutException {
+      return null;
     }
   }
 
@@ -440,7 +469,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   Future<OnboardingStarterPackData?> _reloadStarterPack(int attemptId) async {
     try {
-      await _remoteConfig.fetchAndActivate();
+      await _remoteConfig?.fetchAndActivate();
     } catch (error) {
       logger.w('Starter pack Remote Config fetch failed; using cached values.', tag: 'OnboardingV2Bloc', error: error);
     }

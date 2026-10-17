@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -22,6 +23,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/in_memory_local_store.dart';
+import '../../../support/offline_asset_fixture.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
@@ -72,14 +74,25 @@ class _Client implements WallpaperClient {
 void main() {
   late FakeAppAnalytics analytics;
   late SettingsLocalDataSource settings;
+  late OfflineAssetFixture assets;
+  late String wallFilePath;
+  late String lockFilePath;
+  late String thumbnailFilePath;
   final studioOpener = SetWallpaperFlow.studioOpener;
   final pairPicker = SetWallpaperFlow.pairPicker;
 
-  setUp(() {
+  setUp(() async {
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
+    assets = await OfflineAssetFixture.create();
+    assets.install(immediateResolver: true);
+    wallFilePath = assets.createImageSync('wall.png').path;
+    lockFilePath = assets.createImageSync('lock.png').path;
+    thumbnailFilePath = assets.createImageSync('thumbnail.png').path;
+    assets.mapSource('/tmp/wall.png', File(wallFilePath));
+    assets.mapSource('/tmp/lock.png', File(lockFilePath));
   });
 
   tearDown(() async {
@@ -88,6 +101,7 @@ void main() {
     await getIt.reset();
     AnalyticsRuntime.reset();
     aw.AsyncWallpaper.debugResetClient();
+    await assets.dispose();
   });
 
   Future<void> pumpButton(
@@ -106,6 +120,10 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 30));
+    });
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -351,7 +369,7 @@ void main() {
     aw.AsyncWallpaper.debugSetClient(_Client());
     await pumpButton(
       tester,
-      thumbnailUrl: '/nonexistent/thumb.png',
+      thumbnailUrl: thumbnailFilePath,
       notes: const <String>['Low resolution for your screen', 'Landscape wallpaper: the sides will be cropped'],
     );
 
@@ -458,6 +476,10 @@ void main() {
       );
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null);
     });
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 30));
+    });
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -554,6 +576,29 @@ void main() {
   });
 
   group('position studio entry', () {
+    testWidgets('keeps the original source identity while the position studio opens', (tester) async {
+      final Completer<WallpaperSetResult?> studio = Completer<WallpaperSetResult?>();
+      final List<String> opened = <String>[];
+      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
+        opened.add(url);
+        return studio.future;
+      };
+      await pumpButton(tester, thumbnailUrl: thumbnailFilePath);
+
+      await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Adjust position and preview'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(opened, <String>['/tmp/wall.png']);
+      studio.complete(null);
+      await tester.pumpAndSettle();
+
+      expect(opened, <String>['/tmp/wall.png']);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
     testWidgets('Adjust position and preview opens the studio with the wall and its entry point', (tester) async {
       final _Client client = _Client();
       aw.AsyncWallpaper.debugSetClient(client);
@@ -562,14 +607,14 @@ void main() {
         opened.add((url, thumbnailUrl, entryPoint));
         return null;
       };
-      await pumpButton(tester, thumbnailUrl: '/tmp/thumb.png', entryPoint: 'wallpaper_detail');
+      await pumpButton(tester, thumbnailUrl: thumbnailFilePath, entryPoint: 'wallpaper_detail');
 
       await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Adjust position and preview'));
       await tester.pumpAndSettle();
 
-      expect(opened, [('/tmp/wall.png', '/tmp/thumb.png', 'wallpaper_detail')]);
+      expect(opened, [('/tmp/wall.png', thumbnailFilePath, 'wallpaper_detail')]);
       expect(client.requests, isEmpty);
     });
 
@@ -591,10 +636,10 @@ void main() {
           home: StackRouterScope(
             controller: router,
             stateHash: 0,
-            child: const Scaffold(
+            child: Scaffold(
               body: SetWallpaperButton(
                 url: '/tmp/wall.png',
-                thumbnailUrl: '/tmp/thumb.png',
+                thumbnailUrl: thumbnailFilePath,
                 entryPoint: 'download_screen',
               ),
             ),
@@ -611,15 +656,15 @@ void main() {
       final WallpaperPositionRouteArgs args = pushed!.args! as WallpaperPositionRouteArgs;
       expect(
         (args.imageUrl, args.thumbnailUrl, args.entryPoint),
-        ('/tmp/wall.png', '/tmp/thumb.png', 'download_screen'),
+        ('/tmp/wall.png', thumbnailFilePath, 'download_screen'),
       );
     });
   });
 
   group('different wallpaper for lock screen', () {
-    const PairPick pick = PairPick(
+    PairPick pick() => PairPick(
       source: PairSource.favourites,
-      candidate: PairCandidate(fullUrl: '/tmp/lock.png', thumbnailUrl: '/tmp/lock-thumb.png'),
+      candidate: PairCandidate(fullUrl: '/tmp/lock.png', thumbnailUrl: lockFilePath),
     );
 
     Future<void> openPair(WidgetTester tester) async {
@@ -636,7 +681,7 @@ void main() {
       String? excluded;
       SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async {
         excluded = excludeUrl;
-        return pick;
+        return pick();
       };
       await pumpButton(tester, entryPoint: 'wallpaper_detail');
 
@@ -644,8 +689,8 @@ void main() {
 
       expect(excluded, '/tmp/wall.png');
       expect(client.requests.map((r) => (r.target, r.source.filePath)), [
-        (aw.WallpaperTarget.home, '/tmp/wall.png'),
-        (aw.WallpaperTarget.lock, '/tmp/lock.png'),
+        (aw.WallpaperTarget.home, wallFilePath),
+        (aw.WallpaperTarget.lock, lockFilePath),
       ]);
       final SetWallPairEvent event = analytics.events.whereType<SetWallPairEvent>().single;
       expect(event.toWireParameters(), {
@@ -686,7 +731,7 @@ void main() {
         ..statusFor[aw.WallpaperTarget.lock] = aw.WallpaperOperationStatus.failed
         ..errorCode = 'timeout';
       aw.AsyncWallpaper.debugSetClient(client);
-      SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async => pick;
+      SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async => pick();
       await pumpButton(tester);
 
       await openPair(tester);
@@ -699,7 +744,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(client.requests.skip(before).map((r) => (r.target, r.source.filePath)), [
-        (aw.WallpaperTarget.lock, '/tmp/lock.png'),
+        (aw.WallpaperTarget.lock, lockFilePath),
       ]);
       expect(analytics.events.whereType<SetWallPairEvent>().last.result, 'success');
     });
@@ -709,7 +754,7 @@ void main() {
         ..statusFor[aw.WallpaperTarget.home] = aw.WallpaperOperationStatus.failed
         ..errorCode = 'timeout';
       aw.AsyncWallpaper.debugSetClient(client);
-      SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async => pick;
+      SetWallpaperFlow.pairPicker = (context, {excludeUrl}) async => pick();
       await pumpButton(tester);
 
       await openPair(tester);
@@ -802,22 +847,24 @@ void main() {
       await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
       final _Client client = _Client();
       aw.AsyncWallpaper.debugSetClient(client);
+      final String preparedPath = assets.createImageSync('tinted.png').path;
       int prepared = 0;
       await pumpPrepared(tester, () async {
         prepared++;
-        return '/tmp/tinted.png';
+        return preparedPath;
       });
 
       await tester.tap(find.bySemanticsLabel('Set as wallpaper on home screen'));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(prepared, 1);
-      expect(client.requests.single.source.filePath, '/tmp/tinted.png');
+      expect(client.requests.single.source.filePath, preparedPath);
     });
 
     testWidgets('prepares before the sheet opens and opens the position studio on the prepared file', (tester) async {
       aw.AsyncWallpaper.debugSetClient(_Client());
       String? studioUrl;
+      final String preparedPath = assets.createImageSync('tinted.png').path;
       SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
         studioUrl = url;
         return null;
@@ -825,7 +872,7 @@ void main() {
       int prepared = 0;
       await pumpPrepared(tester, () async {
         prepared++;
-        return '/tmp/tinted.png';
+        return preparedPath;
       });
 
       await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
@@ -835,13 +882,14 @@ void main() {
       await tester.tap(find.text('Adjust position and preview'));
       await tester.pumpAndSettle();
 
-      expect(studioUrl, '/tmp/tinted.png');
+      expect(studioUrl, preparedPath);
     });
 
     testWidgets('shows the busy state while preparing and ignores a second tap', (tester) async {
       await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
       final _Client client = _Client();
       aw.AsyncWallpaper.debugSetClient(client);
+      final String preparedPath = assets.createImageSync('tinted.png').path;
       final Completer<String> ready = Completer<String>();
       int prepared = 0;
       await pumpPrepared(tester, () {
@@ -856,9 +904,9 @@ void main() {
       await tester.pump();
       expect(prepared, 1);
 
-      ready.complete('/tmp/tinted.png');
+      ready.complete(preparedPath);
       await tester.pumpAndSettle(const Duration(seconds: 2));
-      expect(client.requests.single.source.filePath, '/tmp/tinted.png');
+      expect(client.requests.single.source.filePath, preparedPath);
       expect(tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).isLoading, isFalse);
     });
 

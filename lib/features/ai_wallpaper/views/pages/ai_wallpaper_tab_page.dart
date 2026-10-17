@@ -8,6 +8,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -94,6 +95,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   AiGenerationRecord? _latest;
   final Map<String, AiGenerationRecord> _confirmedSubmissionRecords = <String, AiGenerationRecord>{};
   String _historyUserId = '';
+  String _promptOwner = '';
+  String _promptLoadingOwner = '';
+  bool _promptHydrated = false;
+  Timer? _promptSaveTimer;
 
   /// The last prompt the app wrote itself. While the field still holds it, a new style may replace it.
   String _seededPrompt = '';
@@ -119,6 +124,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   @override
   void dispose() {
+    _promptSaveTimer?.cancel();
+    _promptController.removeListener(_onPromptChanged);
     _promptController.dispose();
     _variationController.dispose();
     _promptFocus.dispose();
@@ -127,6 +134,63 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   bool get _isLoggedIn => app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty;
+
+  String get _localOwnerId => _isLoggedIn ? app_state.prismUser.id : 'guest';
+
+  void _switchPromptOwner(String owner) {
+    if (_promptOwner == owner && (_promptHydrated || _promptLoadingOwner == owner)) return;
+    _promptSaveTimer?.cancel();
+    _promptController.removeListener(_onPromptChanged);
+    _promptOwner = owner;
+    _promptLoadingOwner = owner;
+    _promptHydrated = false;
+    _setGeneratedPrompt(AiPromptPools.randomPrompt(_selectedStyle, _random));
+    unawaited(_hydratePrompt(owner));
+  }
+
+  Future<void> _hydratePrompt(String owner) async {
+    try {
+      final String? prompt = await _repository.loadPrompt(userId: owner);
+      if (!mounted || owner != _localOwnerId || owner != _promptOwner) return;
+      final bool stillGenerated = _promptController.text.trim() == _seededPrompt.trim();
+      if (prompt != null && stillGenerated) {
+        _promptController.value = TextEditingValue(
+          text: prompt,
+          selection: TextSelection.collapsed(offset: prompt.length),
+        );
+      }
+      _promptLoadingOwner = '';
+      _promptHydrated = true;
+      _promptController.addListener(_onPromptChanged);
+      _savePromptNow(owner);
+    } catch (error, stackTrace) {
+      logger.w('Could not restore AI prompt', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      if (mounted && owner == _localOwnerId && owner == _promptOwner) {
+        _promptLoadingOwner = '';
+        _promptHydrated = true;
+        _promptController.addListener(_onPromptChanged);
+      }
+    }
+  }
+
+  void _onPromptChanged() {
+    if (!_promptHydrated || _promptOwner != _localOwnerId) return;
+    _promptSaveTimer?.cancel();
+    final String owner = _promptOwner;
+    _promptSaveTimer = Timer(const Duration(milliseconds: 300), () => _savePromptNow(owner));
+  }
+
+  void _savePromptNow(String owner) {
+    if (owner != _localOwnerId || owner != _promptOwner) return;
+    unawaited(
+      _repository.savePrompt(userId: owner, prompt: _promptController.text).catchError((
+        Object error,
+        StackTrace stackTrace,
+      ) {
+        logger.w('Could not save AI prompt', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      }),
+    );
+  }
 
   bool get _isRolloutEligible {
     if (!app_state.aiEnabled) {
@@ -186,6 +250,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   Future<void> _loadHistory({bool userInitiated = false}) async {
     final String userId = app_state.prismUser.id;
+    _switchPromptOwner(_localOwnerId);
     if (_historyUserId != userId) {
       _historyUserId = userId;
       _history = <AiGenerationRecord>[];
@@ -207,11 +272,24 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       _historyFailed = false;
     });
     try {
+      final List<AiGenerationRecord> local = await _repository.fetchLocalHistory(userId: userId);
+      if (!mounted || app_state.prismUser.id != userId) return;
+      if (local.isNotEmpty) {
+        final List<AiGenerationRecord> localWithConfirmed = mergeAiSubmissionHistory(
+          local,
+          _confirmedSubmissionRecords,
+          fetchedUserId: userId,
+        );
+        setState(() {
+          _history = localWithConfirmed;
+          _latest = localWithConfirmed.first;
+        });
+      }
       final bool online = await _hasNetworkOrUnknown();
       if (!online) {
         if (mounted) {
-          setState(() => _historyFailed = true);
-          toasts.error("You're offline. History will refresh when you're connected.", haptic: userInitiated);
+          setState(() => _historyFailed = local.isEmpty);
+          if (userInitiated) toasts.error("You're offline. Saved history is still available.");
         }
         return;
       }
@@ -465,9 +543,21 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _saving = true;
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
-      final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link), isLocalFile: false);
+      final File localFile = await OfflineAssetStore.instance.resolve(link).timeout(aiAssetTransferTimeout);
+      final request = DownloadRequest(
+        link: localFile.path,
+        filenameWithoutExtension: downloadBaseName(link),
+        isLocalFile: true,
+      );
       final result = await PrismMediaHostApi().enqueueDownload(request);
       if (result.success) {
+        unawaited(() async {
+          try {
+            await OfflineAssetStore.instance.retain(link, file: localFile).timeout(aiAssetTransferTimeout);
+          } catch (error, stackTrace) {
+            logger.w('AI gallery original retention failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+          }
+        }());
         toasts.success(wallpaperSavedMessage);
         if (mounted) await showIosSetWallpaperGuide(context);
       } else if (isPhotosPermissionDenied(result.errorCode)) {
@@ -478,6 +568,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     } catch (error, stackTrace) {
       logger.w('AI gallery save failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       toasts.error(aiDownloadFailureMessage(error));
+    } finally {
+      _saving = false;
     }
   }
 

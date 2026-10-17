@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -23,7 +24,9 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   static const String _categoryKey = 'autoRotate.category';
   static const int _categoryLimit = 40;
   static const String _appliedSourcesKey = 'autoRotate.appliedSources';
-  static const String _passUntilKey = 'autoRotate.passUntilMs';
+  static const String _passRecordKey = 'autoRotate.passRecord';
+  static Future<void>? _passRecordOperation;
+  static final Map<String, int> _passRecordGenerations = <String, int>{};
 
   final SettingsLocalDataSource _settings;
   final PrismWallpaperRepository _wallpapers;
@@ -39,7 +42,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   }
 
   @override
-  Future<AutoRotateConfig> loadConfig() async {
+  Future<AutoRotateConfig> loadConfig({String? ownerId}) async {
     const AutoRotateConfig defaults = AutoRotateConfig();
     final int interval = _settings.get<int>(
       PersistenceKeys.autoRotateIntervalMinutes,
@@ -50,7 +53,12 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
       defaultValue: defaults.target.name,
     );
     final String sourceName = _settings.get<String>(_sourceKey, defaultValue: defaults.source.name);
-    final int passUntilMs = _settings.get<int>(_passUntilKey, defaultValue: 0);
+    final Map<String, Object?>? passRecord = _readPassRecord();
+    final Object? storedUntilMs = passRecord?['untilMs'];
+    final int passUntilMs =
+        ownerId != null && ownerId.isNotEmpty && passRecord?['ownerId'] == ownerId && storedUntilMs is int
+        ? storedUntilMs
+        : 0;
     return AutoRotateConfig(
       enabled: _settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: defaults.enabled),
       intervalMinutes: AutoRotateConfig.intervalOptions.contains(interval) ? interval : defaults.intervalMinutes,
@@ -64,7 +72,8 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   }
 
   @override
-  Future<void> saveConfig(AutoRotateConfig config) async {
+  Future<void> saveConfig(AutoRotateConfig config, {String? ownerId}) async {
+    final int passRecordGeneration = ownerId == null ? 0 : _passRecordGenerations[ownerId] ?? 0;
     await _settings.set(PersistenceKeys.autoRotateEnabled, config.enabled);
     await _settings.set(PersistenceKeys.autoRotateIntervalMinutes, config.intervalMinutes);
     await _settings.set(PersistenceKeys.autoRotateTarget, config.target.name);
@@ -73,23 +82,80 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     await _settings.set(_categoryKey, config.categoryName);
     await _settings.set(PersistenceKeys.autoRotateChargingOnly, config.chargingOnly);
     final DateTime? passUntil = config.passUntil;
-    if (passUntil == null) {
-      await _settings.delete(_passUntilKey);
-    } else {
-      await _settings.set(_passUntilKey, passUntil.millisecondsSinceEpoch);
+    if (ownerId == null || ownerId.isEmpty) return;
+    await _serializePassRecord(() async {
+      if ((_passRecordGenerations[ownerId] ?? 0) != passRecordGeneration) return;
+      if (passUntil == null) {
+        final Map<String, Object?>? currentPass = _readPassRecord();
+        if (currentPass?['ownerId'] == ownerId) await _settings.delete(_passRecordKey);
+      } else {
+        await _settings.set(
+          _passRecordKey,
+          jsonEncode(<String, Object?>{'ownerId': ownerId, 'untilMs': passUntil.millisecondsSinceEpoch}),
+        );
+      }
+    });
+  }
+
+  static Future<void> clearPassRecordForUser({
+    required SettingsLocalDataSource settings,
+    required String ownerId,
+  }) async {
+    final String owner = ownerId.trim();
+    if (owner.isEmpty) return;
+    _passRecordGenerations[owner] = (_passRecordGenerations[owner] ?? 0) + 1;
+    await _serializePassRecord(() async {
+      final String? raw = settings.get<String?>(_passRecordKey);
+      if (raw == null) return;
+      try {
+        final Map<String, Object?> record = (jsonDecode(raw) as Map<Object?, Object?>).cast<String, Object?>();
+        if (record['ownerId'] == owner) await settings.delete(_passRecordKey);
+      } catch (_) {}
+    });
+  }
+
+  static Future<void> _serializePassRecord(Future<void> Function() operation) {
+    final Future<void>? pending = _passRecordOperation;
+    final Future<void> next = pending == null
+        ? operation()
+        : pending.then((_) => operation(), onError: (Object _, StackTrace __) => operation());
+    _passRecordOperation = next;
+    return next.whenComplete(() {
+      if (identical(_passRecordOperation, next)) _passRecordOperation = null;
+    });
+  }
+
+  Map<String, Object?>? _readPassRecord() {
+    final String? raw = _settings.get<String?>(_passRecordKey);
+    if (raw == null) return null;
+    try {
+      return (jsonDecode(raw) as Map<Object?, Object?>).cast<String, Object?>();
+    } catch (_) {
+      return null;
     }
   }
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
-    final aw.WallpaperSourceType sourceType = config.source == AutoRotateSource.downloads
-        ? aw.WallpaperSourceType.file
-        : aw.WallpaperSourceType.url;
+    Map<String, String> retainedPaths = const <String, String>{};
+    try {
+      retainedPaths = await OfflineAssetStore.instance.localPaths();
+    } catch (_) {}
+    final List<aw.WallpaperRotationSource> sources = imageUrls
+        .map((source) {
+          if (_isLocalSource(source)) {
+            return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: _rotationSource(source));
+          }
+          final String? retainedPath = retainedPaths[source];
+          if (retainedPath != null) {
+            return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: retainedPath);
+          }
+          return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.url, source: source);
+        })
+        .toList(growable: false);
     final aw.WallpaperResult result = await aw.AsyncWallpaper.startWallpaperRotation(
       aw.WallpaperRotationRequest(
-        sources: imageUrls
-            .map((url) => aw.WallpaperRotationSource(sourceType: sourceType, source: url))
-            .toList(growable: false),
+        sources: sources,
         target: aw.WallpaperTarget.values.byName(config.target.name),
         intervalMinutes: config.intervalMinutes,
         order: config.shuffle ? aw.WallpaperRotationOrder.shuffle : aw.WallpaperRotationOrder.sequential,
@@ -165,7 +231,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
       case AutoRotateSource.history:
         // The history order changes with every wallpaper Prism sets. Sorting keeps the list the same for the same
         // wallpapers, so a new entry for a wallpaper already in the list does not restart the rotation.
-        return _uniqueHttps(_history.items().map((item) => item.fullUrl)).toList()..sort();
+        return _uniqueHistorySources(_history.items().map((item) => item.fullUrl)).toList()..sort();
       case AutoRotateSource.favourites:
       case AutoRotateSource.downloads:
         return const <String>[];
@@ -188,6 +254,24 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         .where((url) => Uri.tryParse(url)?.scheme.toLowerCase() == 'https')
         .where(seen.add)
         .toList(growable: false);
+  }
+
+  List<String> _uniqueHistorySources(Iterable<String> sources) {
+    final Set<String> seen = <String>{};
+    return sources
+        .where((source) => _isLocalSource(source) || Uri.tryParse(source)?.scheme.toLowerCase() == 'https')
+        .where(seen.add)
+        .toList(growable: false);
+  }
+
+  bool _isLocalSource(String source) {
+    final Uri? uri = Uri.tryParse(source);
+    return uri?.scheme == 'file' || (uri?.scheme.isEmpty ?? false) && source.startsWith('/');
+  }
+
+  String _rotationSource(String source) {
+    final Uri? uri = Uri.tryParse(source);
+    return uri?.scheme == 'file' ? uri!.toFilePath() : source;
   }
 
   @override

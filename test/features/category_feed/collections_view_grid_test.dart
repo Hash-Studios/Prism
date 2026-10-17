@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -5,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
@@ -19,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/fake_feed_cache_local_data_source.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _FailingHttpOverrides extends HttpOverrides {
@@ -247,11 +250,13 @@ void main() {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     anyCollectionWalls = <Map<String, dynamic>>[
-      <String, dynamic>{'id': '', 'wallpaper_thumb': '', 'wallpaper_url': ''},
+      <String, dynamic>{'id': 'old-wall', 'wallpaper_thumb': '', 'wallpaper_url': ''},
     ];
     collectionHasMore = false;
     AnalyticsRuntime.instance = FakeAppAnalytics();
-    getIt.registerSingleton<FirestoreClient>(_FailingFirestore());
+    final _FailingFirestore firestore = _FailingFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
     addTearDown(() async {
       anyCollectionWalls = originalWalls;
       collectionHasMore = originalHasMore;
@@ -268,16 +273,20 @@ void main() {
 
     await getCollectionWithName('space').catchError((Object _) {});
     anyCollectionWalls = <Map<String, dynamic>>[
-      <String, dynamic>{'id': '', 'wallpaper_thumb': '', 'wallpaper_url': ''},
+      <String, dynamic>{'id': 'old-wall', 'wallpaper_thumb': '', 'wallpaper_url': ''},
     ];
-    await tester.fling(find.byType(GridView), const Offset(0, 400), 1000);
+    final Offset dragStart = tester.getTopLeft(find.byType(GridView)) + const Offset(30, 10);
+    await tester.dragFrom(dragStart, const Offset(0, 400));
     await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    for (int i = 0; i < 10 && !firestore.refreshStarted.isCompleted; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(firestore.refreshStarted.isCompleted, isTrue, reason: 'the refresh query starts after the pull gesture');
+    await tester.pump();
     await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 5));
 
     expect(find.byType(GridView), findsOneWidget, reason: 'a failed refresh keeps the walls on screen');
-    expect(anyCollectionWalls, hasLength(1));
+    expect(anyCollectionWalls.map((wall) => wall['id']), <String>['old-wall']);
   });
 }
 
@@ -285,7 +294,13 @@ class _MockStackRouter extends Mock implements StackRouter {}
 
 /// Fails every query, like a device that lost its connection.
 class _FailingFirestore extends Fake implements FirestoreClient {
+  final Completer<void> refreshStarted = Completer<void>();
+
   @override
-  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) =>
-      Future<List<T>>.error(StateError('offline'));
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
+    if (spec.sourceTag == 'collections.refreshCollectionWithName' && !refreshStarted.isCompleted) {
+      refreshStarted.complete();
+    }
+    return Future<List<T>>.error(StateError('offline'));
+  }
 }

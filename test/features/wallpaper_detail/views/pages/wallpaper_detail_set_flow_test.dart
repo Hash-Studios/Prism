@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -44,6 +47,7 @@ class _Client implements WallpaperClient {
 
   final bool live;
   final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
+  final Completer<void> requestObserved = Completer<void>();
 
   @override
   Future<aw.WallpaperCapabilities> getCapabilities() async =>
@@ -52,6 +56,7 @@ class _Client implements WallpaperClient {
   @override
   Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
     requests.add(request);
+    if (!requestObserved.isCompleted) requestObserved.complete();
     return aw.WallpaperOperationResult(status: aw.WallpaperOperationStatus.applied, requestedTarget: request.target);
   }
 
@@ -74,22 +79,22 @@ FeedItemEntity _prism({int? width, int? height}) => FeedItemEntity.prism(
     core: WallpaperCore(
       id: 'prism-1',
       source: WallpaperSource.prism,
-      fullUrl: '/nonexistent/full.png',
-      thumbnailUrl: '/nonexistent/thumb.png',
+      fullUrl: File('assets/images/prism.webp').absolute.path,
+      thumbnailUrl: File('assets/images/prism.webp').absolute.path,
       width: width,
       height: height,
     ),
   ),
 );
 
-FeedItemEntity _wallhaven() => const FeedItemEntity.wallhaven(
+FeedItemEntity _wallhaven() => FeedItemEntity.wallhaven(
   id: 'wh-1',
   wallpaper: WallhavenWallpaper(
     core: WallpaperCore(
       id: 'wh-1',
       source: WallpaperSource.wallhaven,
-      fullUrl: '/nonexistent/full.png',
-      thumbnailUrl: '/nonexistent/thumb.png',
+      fullUrl: File('assets/images/prism.webp').absolute.path,
+      thumbnailUrl: File('assets/images/prism.webp').absolute.path,
       authorName: 'someone',
     ),
   ),
@@ -102,6 +107,7 @@ void main() {
   late FakeAppAnalytics analytics;
   late SettingsLocalDataSource settings;
   late _Client client;
+  late List<String> toastMessages;
 
   setUpAll(() {
     registerFallbackValue(WallpaperAction.set);
@@ -111,6 +117,7 @@ void main() {
   setUp(() async {
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+    await settings.set('notificationPermissionPromptedV2', true);
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(settings));
@@ -125,7 +132,15 @@ void main() {
     themeBloc = _MockThemeBloc();
     whenListen(themeBloc, const Stream<ThemeState>.empty(), initialState: ThemeState.initial());
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (call) async => true);
+    toastMessages = <String>[];
+    messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (call) async {
+      final Object? arguments = call.arguments;
+      if (call.method == 'showToast' && arguments is Map) {
+        final Object? message = arguments['msg'];
+        if (message is String) toastMessages.add(message);
+      }
+      return true;
+    });
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
   });
 
@@ -138,7 +153,13 @@ void main() {
     aw.AsyncWallpaper.debugResetClient();
   });
 
-  Future<void> pump(WidgetTester tester, WallpaperDetailLoaded state) async {
+  Future<void> pump(WidgetTester tester, WallpaperDetailLoaded state, {Size? surfaceSize}) async {
+    if (surfaceSize != null) {
+      tester.view.physicalSize = surfaceSize;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
     whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
@@ -154,10 +175,42 @@ void main() {
     await tester.pump();
   }
 
-  Future<void> tapSet(WidgetTester tester) async {
+  Future<void> tapSet(WidgetTester tester, {bool expectMatchAccent = false}) async {
     await tester.tap(find.text('Set'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
+    for (int i = 0; i < 40 && !client.requestObserved.isCompleted; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+    expect(client.requestObserved.isCompleted, isTrue, reason: 'setting waits for the offline image to resolve');
+    expect(client.requests, hasLength(1));
+    for (
+      int i = 0;
+      i < 40 &&
+          (expectMatchAccent
+              ? find.text('Match accent').evaluate().isEmpty
+              : !toastMessages.contains('Wallpaper set successfully!'));
+      i++
+    ) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+    if (expectMatchAccent) {
+      expect(find.text('Wallpaper set'), findsOneWidget, reason: 'the native apply reports success');
+      expect(find.text('Match accent'), findsOneWidget);
+    } else {
+      expect(toastMessages, contains('Wallpaper set successfully!'), reason: 'the native apply reports success');
+    }
+    await tester.pump();
+  }
+
+  Future<void> waitForMatchAccent(WidgetTester tester) async {
+    for (int i = 0; i < 40 && find.text('Match accent').evaluate().isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+    expect(find.text('Match accent'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   testWidgets('the Set button names its screen for analytics and carries the resolution notes', (tester) async {
@@ -197,9 +250,11 @@ void main() {
         colors: const <Color>[Color(0xFF008080), Color(0xFFFF0000)],
         accent: const Color(0xFF008080),
       ),
+      surfaceSize: const Size(800, 1000),
     );
 
-    await tapSet(tester);
+    await tapSet(tester, expectMatchAccent: true);
+    await waitForMatchAccent(tester);
     await tester.tap(find.text('Match accent'));
     await tester.pump();
 
@@ -211,6 +266,10 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('Match accent sets the dark accent in a dark theme', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     whenListen(
       bloc,
       const Stream<WallpaperDetailState>.empty(),
@@ -234,7 +293,8 @@ void main() {
     );
     await tester.pump();
 
-    await tapSet(tester);
+    await tapSet(tester, expectMatchAccent: true);
+    await waitForMatchAccent(tester);
     await tester.tap(find.text('Match accent'));
     await tester.pump();
 

@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -15,6 +16,7 @@ typedef WallpaperSearchPage = ({
   SearchProviderValue provider,
   List<FeedItemEntity> results,
   List<FeedItemEntity> prismResults,
+  bool isLocal,
 });
 
 /// Thrown by [WallpaperSearchService.search] when Wallhaven and Pexels both fail.
@@ -30,24 +32,51 @@ class WallpaperSearchException implements Exception {
 /// Free-text wallpaper search over Wallhaven, with Pexels as the fallback, plus matching Prism walls.
 @lazySingleton
 class WallpaperSearchService {
-  WallpaperSearchService(this._wallhavenRepository, this._pexelsRepository, this._settingsLocal, this._prismSearch);
+  WallpaperSearchService(
+    this._wallhavenRepository,
+    this._pexelsRepository,
+    this._settingsLocal,
+    this._prismSearch, [
+    @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
+  ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance;
 
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
   final SettingsLocalDataSource _settingsLocal;
   final PrismWallSearch _prismSearch;
+  final OfflineWallpaperCatalog _offlineCatalog;
+  static const Duration _cachedSearchDecisionBudget = Duration(seconds: 3);
 
   /// First page of [query]. An empty [query] is allowed with a colour filter. Pexels needs a query, so a colour-only
   /// search skips it. When Wallhaven fails the search moves to Pexels so the user still gets results.
   /// When both providers fail but Prism has matches, the page has provider [SearchProviderValue.prism], no
   /// [WallpaperSearchPage.results] and no external pagination. Throws [WallpaperSearchException] when Prism is empty too.
   Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) async {
-    final Future<List<FeedItemEntity>> prism = _prismResults(query, filters);
+    List<FeedItemEntity> cachedResults = const <FeedItemEntity>[];
+    try {
+      cachedResults = await _localResults(query, filters);
+    } catch (error) {
+      logger.w('Local wallpaper catalog search failed: $error');
+    }
+    final Future<List<FeedItemEntity>> prismSearch = _prismResults(query, filters);
+    final Future<List<FeedItemEntity>> prism = cachedResults.isEmpty
+        ? prismSearch
+        : prismSearch.timeout(_cachedSearchDecisionBudget, onTimeout: () => const <FeedItemEntity>[]);
+    bool usedLocalFallback = false;
     try {
       return (
         provider: SearchProviderValue.wallhaven,
-        results: await fetchPage(SearchProviderValue.wallhaven, query, refresh: true, filters: filters),
+        results: cachedResults.isEmpty
+            ? await fetchPage(SearchProviderValue.wallhaven, query, refresh: true, filters: filters)
+            : await fetchPage(SearchProviderValue.wallhaven, query, refresh: true, filters: filters).timeout(
+                _cachedSearchDecisionBudget,
+                onTimeout: () {
+                  usedLocalFallback = true;
+                  return cachedResults;
+                },
+              ),
         prismResults: await prism,
+        isLocal: usedLocalFallback,
       );
     } catch (error, stackTrace) {
       logger.w('Wallhaven search failed; falling back to Pexels.', error: error, stackTrace: stackTrace);
@@ -57,8 +86,17 @@ class WallpaperSearchService {
       try {
         return (
           provider: SearchProviderValue.pexels,
-          results: await fetchPage(SearchProviderValue.pexels, query, refresh: true, filters: filters),
+          results: cachedResults.isEmpty
+              ? await fetchPage(SearchProviderValue.pexels, query, refresh: true, filters: filters)
+              : await fetchPage(SearchProviderValue.pexels, query, refresh: true, filters: filters).timeout(
+                  _cachedSearchDecisionBudget,
+                  onTimeout: () {
+                    usedLocalFallback = true;
+                    return cachedResults;
+                  },
+                ),
           prismResults: await prism,
+          isLocal: usedLocalFallback,
         );
       } catch (error, stackTrace) {
         logger.e('Pexels search failed.', error: error, stackTrace: stackTrace);
@@ -67,9 +105,50 @@ class WallpaperSearchService {
     }
     final List<FeedItemEntity> prismResults = await prism;
     if (prismResults.isNotEmpty) {
-      return (provider: SearchProviderValue.prism, results: const <FeedItemEntity>[], prismResults: prismResults);
+      return (
+        provider: SearchProviderValue.prism,
+        results: const <FeedItemEntity>[],
+        prismResults: prismResults,
+        isLocal: false,
+      );
+    }
+    try {
+      if (cachedResults.isNotEmpty) {
+        return (
+          provider: SearchProviderValue.wallhaven,
+          results: cachedResults,
+          prismResults: const <FeedItemEntity>[],
+          isLocal: true,
+        );
+      }
+    } catch (error) {
+      logger.w('Local wallpaper catalog search failed: $error');
     }
     throw WallpaperSearchException('Wallhaven and Pexels both failed: $failure');
+  }
+
+  Future<List<FeedItemEntity>> _localResults(String query, SearchFilters filters) async {
+    final List<FeedItemEntity> local = (await _offlineCatalog.search(
+      query,
+      limit: 100,
+    )).where((item) => _matchesLocalFilters(item, filters)).toList(growable: false);
+    if (local.isNotEmpty || filters.color == null) return local;
+    return (await _offlineCatalog.search(
+      filters.color!.id,
+      limit: 100,
+    )).where((item) => _matchesLocalFilters(item, filters)).toList(growable: false);
+  }
+
+  bool _matchesLocalFilters(FeedItemEntity item, SearchFilters filters) {
+    if (!filters.acceptsResolution(item.wallpaperCore.resolution)) return false;
+    final color = filters.color;
+    if (color == null) return true;
+    final List<String> colors = item.when(
+      prism: (_, wall) => wall.colors ?? const <String>[],
+      wallhaven: (_, wall) => wall.colors ?? const <String>[],
+      pexels: (_, _) => const <String>[],
+    );
+    return colors.any((value) => value.toLowerCase() == color.id || value.toLowerCase() == color.hex.toLowerCase());
   }
 
   /// One page from [provider]. The repository keeps the page cursor per [query]; [refresh] restarts it.

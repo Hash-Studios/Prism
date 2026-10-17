@@ -1,27 +1,45 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/categories/category_definition.dart';
+import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/data/repositories/category_feed_repository_impl.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
+import 'package:Prism/features/category_feed/domain/entities/category_feed_page.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_feed_cache_local_data_source.dart';
 import '../../support/in_memory_local_store.dart';
+import '../../support/fake_user_block_repository.dart';
 
 class _MockPrism extends Mock implements PrismWallpaperRepository {}
 
 class _MockWallhaven extends Mock implements WallhavenWallpaperRepository {}
 
 class _MockPexels extends Mock implements PexelsWallpaperRepository {}
+
+class _ThrowingFeedCache extends FakeFeedCacheLocalDataSource {
+  @override
+  Future<void> write({
+    required String source,
+    required String scope,
+    required Object? payload,
+    required int ttlHours,
+  }) => Future<void>.error(StateError('cache unavailable'));
+}
 
 const CategoryEntity _cyberpunk = CategoryEntity(
   name: 'Cyberpunk',
@@ -31,9 +49,29 @@ const CategoryEntity _cyberpunk = CategoryEntity(
   image2: '',
 );
 
-WallhavenWallpaper _wall(String id) => WallhavenWallpaper(
-  core: WallpaperCore(id: id, source: WallpaperSource.wallhaven, fullUrl: 'https://w/$id.jpg', thumbnailUrl: 't'),
+WallhavenWallpaper _wall(String id, {String? email}) => WallhavenWallpaper(
+  core: WallpaperCore(
+    id: id,
+    source: WallpaperSource.wallhaven,
+    fullUrl: 'https://w/$id.jpg',
+    thumbnailUrl: 't',
+    authorEmail: email,
+  ),
 );
+
+class _DelayedUserBlockRepository extends FakeUserBlockRepository {
+  _DelayedUserBlockRepository() : super.pending();
+
+  final Completer<Set<String>> snapshot = Completer<Set<String>>();
+  final Completer<void> initialLoadRequested = Completer<void>();
+
+  @override
+  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) {
+    if (!waitForInitialLoad) return super.getBlockedCreatorEmails();
+    if (!initialLoadRequested.isCompleted) initialLoadRequested.complete();
+    return snapshot.future;
+  }
+}
 
 void main() {
   late _MockWallhaven wallhaven;
@@ -69,12 +107,43 @@ void main() {
     );
   });
 
-  test('only a refresh writes the snapshot', () async {
+  test('each successful page extends the snapshot while a refresh replaces it', () async {
+    var page = 0;
+    when(
+      () => wallhaven.fetchFeed(
+        categoryName: any(named: 'categoryName'),
+        refresh: any(named: 'refresh'),
+        categories: any(named: 'categories'),
+        purity: any(named: 'purity'),
+      ),
+    ).thenAnswer((_) async => Result.success(<WallhavenWallpaper>[_wall('wall-${++page}')]));
+
     await repository.fetchCategoryFeed(category: _cyberpunk, refresh: false);
-    expect(cache.snapshots, isEmpty);
+    final FeedSnapshot firstPage = cache.snapshots.values.single;
+    expect(((firstPage.payload! as Map)['items'] as List), hasLength(1));
+
+    await repository.fetchCategoryFeed(category: _cyberpunk, refresh: false);
+    final FeedSnapshot secondPage = cache.snapshots.values.single;
+    expect(secondPage, isNot(same(firstPage)));
+    expect(((secondPage.payload! as Map)['items'] as List), hasLength(2));
 
     await repository.fetchCategoryFeed(category: _cyberpunk, refresh: true);
     expect(cache.snapshots, hasLength(1));
+    expect(((cache.snapshots.values.single.payload! as Map)['items'] as List), hasLength(1));
+  });
+
+  test('a successful provider page is returned when local cache persistence fails', () async {
+    final repositoryWithBrokenCache = CategoryFeedRepositoryImpl(
+      SettingsLocalDataSource(store),
+      _ThrowingFeedCache(),
+      _MockPrism(),
+      wallhaven,
+      _MockPexels(),
+    );
+
+    final result = await repositoryWithBrokenCache.fetchCategoryFeed(category: _cyberpunk, refresh: true);
+
+    expect(result.data?.items.single.id, 'a');
   });
 
   test('a failed fetch-more is an error even when a snapshot exists', () async {
@@ -86,6 +155,45 @@ void main() {
 
     expect(more.isFailure, isTrue);
     expect(refreshed.data!.items.map((item) => item.id), <String>['a']);
+  });
+
+  test('a cached category snapshot waits for the current block list and filters blocked creators', () async {
+    final _DelayedUserBlockRepository blocks = _DelayedUserBlockRepository();
+    getIt.registerSingleton<UserBlockRepository>(blocks);
+    addTearDown(getIt.reset);
+    cache.snapshots['category/wallhaven.search.cyberpunk.100.100.portrait'] = FeedSnapshot(
+      payload: <String, Object?>{
+        'items': <Map<String, Object?>>[
+          encodeFeedItem(
+            PrismFeedItem(
+              id: 'blocked',
+              wallpaper: PrismWallpaper(
+                core: WallpaperCore(
+                  id: 'blocked',
+                  source: WallpaperSource.prism,
+                  fullUrl: 'https://prism.test/blocked.jpg',
+                  thumbnailUrl: 'https://prism.test/blocked-thumb.jpg',
+                  authorEmail: 'blocked@example.test',
+                ),
+              ),
+            ),
+          ),
+        ],
+        'hasMore': false,
+      },
+      cachedAtUtc: DateTime.now().toUtc(),
+      ttlHours: 6,
+    );
+    offline = true;
+
+    final Future<Result<CategoryFeedPage>> pending = repository.fetchCategoryFeed(category: _cyberpunk, refresh: true);
+    var completed = false;
+    pending.then((_) => completed = true);
+    await blocks.initialLoadRequested.future;
+    expect(completed, isFalse);
+    blocks.snapshot.complete(<String>{'blocked@example.test'});
+
+    expect((await pending).isFailure, isTrue);
   });
 
   test('the snapshot scope changes with the Wallhaven categories and purity filters', () async {

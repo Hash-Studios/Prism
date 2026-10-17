@@ -10,6 +10,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
 import 'package:Prism/core/rating/rate_prompt_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
@@ -101,6 +102,8 @@ class SetWallpaperFlow {
     BuildContext context, {
     required String url,
     String? thumbnailUrl,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
     bool forceSheet = false,
     bool recordHistory = true,
     ValueChanged<bool>? onBusy,
@@ -121,7 +124,13 @@ class SetWallpaperFlow {
     if (choice == null || !context.mounted) return null;
     switch (choice.kind) {
       case SetChoiceKind.adjust:
-        return studioOpener(context, url: url, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint);
+        onBusy?.call(true);
+        try {
+          if (!context.mounted) return null;
+          return await studioOpener(context, url: url, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint);
+        } finally {
+          onBusy?.call(false);
+        }
       case SetChoiceKind.pair:
         return _pair(
           context,
@@ -133,6 +142,8 @@ class SetWallpaperFlow {
           entryPoint: entryPoint,
           messenger: messenger,
           onMatchAccent: onMatchAccent,
+          wallpaperId: wallpaperId,
+          wallpaperSource: wallpaperSource,
         );
       case SetChoiceKind.apply:
         return apply(
@@ -146,6 +157,8 @@ class SetWallpaperFlow {
           usedDefault: usedDefault,
           messenger: messenger,
           onMatchAccent: onMatchAccent,
+          wallpaperId: wallpaperId,
+          wallpaperSource: wallpaperSource,
         );
     }
   }
@@ -175,6 +188,8 @@ class SetWallpaperFlow {
     bool usedDefault = false,
     ScaffoldMessengerState? messenger,
     VoidCallback? onMatchAccent,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
   }) async {
     final ScaffoldMessengerState? host = messenger ?? (context.mounted ? ScaffoldMessenger.maybeOf(context) : null);
     onBusy?.call(true);
@@ -187,6 +202,8 @@ class SetWallpaperFlow {
         useSystemCropper: choice.useSystemCropper,
         thumbnailUrl: thumbnailUrl,
         recordHistory: recordHistory,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
       );
     } finally {
       onBusy?.call(false);
@@ -210,6 +227,8 @@ class SetWallpaperFlow {
           usedDefault: usedDefault,
           messenger: host,
           onMatchAccent: onMatchAccent,
+          wallpaperId: wallpaperId,
+          wallpaperSource: wallpaperSource,
         ),
       ),
     );
@@ -226,6 +245,8 @@ class SetWallpaperFlow {
     required String? entryPoint,
     required ScaffoldMessengerState? messenger,
     required VoidCallback? onMatchAccent,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
   }) async {
     final PairPick? pick = await pairPicker(context, excludeUrl: url);
     if (pick == null) return null;
@@ -240,6 +261,8 @@ class SetWallpaperFlow {
       entryPoint: entryPoint,
       messenger: messenger,
       onMatchAccent: onMatchAccent,
+      wallpaperId: wallpaperId,
+      wallpaperSource: wallpaperSource,
     );
   }
 
@@ -256,6 +279,8 @@ class SetWallpaperFlow {
     required String? entryPoint,
     required ScaffoldMessengerState? messenger,
     required VoidCallback? onMatchAccent,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
     WallpaperSetResult? homeDone,
   }) async {
     onBusy?.call(true);
@@ -270,6 +295,8 @@ class SetWallpaperFlow {
             fit: fit,
             thumbnailUrl: thumbnailUrl,
             recordHistory: recordHistory,
+            wallpaperId: wallpaperId,
+            wallpaperSource: wallpaperSource,
           );
       if (home.isSuccess) {
         lock = await WallpaperService.setWallpaper(
@@ -278,6 +305,8 @@ class SetWallpaperFlow {
           fit: fit,
           thumbnailUrl: pick.candidate.thumbnailUrl,
           recordHistory: recordHistory,
+          wallpaperId: pick.candidate.wallpaperId,
+          wallpaperSource: pick.candidate.wallpaperSource,
         );
       }
     } finally {
@@ -304,6 +333,8 @@ class SetWallpaperFlow {
           entryPoint: entryPoint,
           messenger: messenger,
           onMatchAccent: onMatchAccent,
+          wallpaperId: wallpaperId,
+          wallpaperSource: wallpaperSource,
           homeDone: retryTarget == WallpaperTarget.lock ? home : null,
         ),
       ),
@@ -356,6 +387,8 @@ class SetWallpaperFlow {
 
 class SetWallpaperButton extends StatefulWidget {
   final String? url;
+  final String? wallpaperId;
+  final WallpaperSource? wallpaperSource;
   final String? thumbnailUrl;
 
   /// When true, may show the OS notification permission prompt once after a successful set (e.g. wallpaper detail).
@@ -387,6 +420,8 @@ class SetWallpaperButton extends StatefulWidget {
   const SetWallpaperButton({
     super.key,
     required this.url,
+    this.wallpaperId,
+    this.wallpaperSource,
     this.thumbnailUrl,
     this.promptNotificationPermissionOnSuccess = false,
     this.onSet,
@@ -437,6 +472,8 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         context,
         url: source,
         thumbnailUrl: widget.thumbnailUrl,
+        wallpaperId: widget.wallpaperId,
+        wallpaperSource: widget.wallpaperSource,
         forceSheet: forceSheet,
         entryPoint: widget.entryPoint,
         notes: widget.notes,

@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -23,8 +27,10 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     this._pexelsRepository,
     this._recordPrismWallpaperViewsUsecase,
     this._paletteRepository,
-    this._getWallpaperSetCountUseCase,
-  ) : super(const WallpaperDetailInitial()) {
+    this._getWallpaperSetCountUseCase, [
+    @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
+  ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
+       super(const WallpaperDetailInitial()) {
     on<LoadFromEntity>(_onLoadFromEntity);
     on<LoadFromId>(_onLoadFromId);
     on<FetchViews>(_onFetchViews);
@@ -44,10 +50,13 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final RecordPrismWallpaperViewsUsecase _recordPrismWallpaperViewsUsecase;
   final PaletteRepository _paletteRepository;
   final GetWallpaperSetCountUseCase _getWallpaperSetCountUseCase;
+  final OfflineWallpaperCatalog _offlineCatalog;
   bool _closing = false;
 
   static const String notFoundMessage = 'Wallpaper not found';
   static const String loadFailedMessage = 'Check your connection and try again.';
+  static const Duration _cachedLookupDecisionBudget = Duration(seconds: 2);
+  static const Duration _wallpaperLookupTimeout = Duration(seconds: 30);
 
   @override
   Future<void> close() {
@@ -89,7 +98,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
-    if (currentState.entity.source != WallpaperSource.prism) {
+    if (currentState.entity.source != WallpaperSource.prism || BundledWallpapers.isStarter(currentState.entity)) {
       return;
     }
 
@@ -113,7 +122,10 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
 
   Future<void> _onFetchSetCount(FetchSetCount event, Emitter<WallpaperDetailState> emit) async {
     final currentState = state;
-    if (currentState is! WallpaperDetailLoaded || currentState.entity.source != WallpaperSource.prism) return;
+    if (currentState is! WallpaperDetailLoaded ||
+        currentState.entity.source != WallpaperSource.prism ||
+        BundledWallpapers.isStarter(currentState.entity))
+      return;
 
     final result = await _getWallpaperSetCountUseCase(currentState.entity.id);
     final latestState = state;
@@ -243,7 +255,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       );
     }
 
-    return switch (source) {
+    Future<Result<FeedItemEntity>> fetchRemote() async => switch (source) {
       WallpaperSource.prism => wrap(
         await _prismRepository.fetchById(wallId),
         (wallpaper) => PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
@@ -258,10 +270,33 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       ),
       _ => Result.error(ValidationFailure('Unsupported source: $source')),
     };
+
+    FeedItemEntity? cached;
+    try {
+      cached = await _offlineCatalog.find(source, wallId);
+    } catch (_) {}
+    final Future<Result<FeedItemEntity>> request = fetchRemote();
+    final Result<FeedItemEntity> remote;
+    try {
+      remote = await request.timeout(
+        cached == null ? _wallpaperLookupTimeout : _cachedLookupDecisionBudget,
+        onTimeout: () =>
+            cached == null ? Result.error(const NetworkFailure('Wallpaper lookup timed out')) : Result.success(cached),
+      );
+    } catch (error) {
+      return cached == null ? Result.error(NetworkFailure('$error')) : Result.success(cached);
+    }
+    if (remote.isSuccess || remote.failure is! NetworkFailure) return remote;
+    if (cached != null) return Result.success(cached);
+    return remote;
   }
 
   void _fetchAndUpdateViews(FeedItemEntity entity) {
-    if (_closing || entity.source != WallpaperSource.prism) return;
+    if (_closing ||
+        entity.source != WallpaperSource.prism ||
+        BundledWallpapers.isStarterIdentity(entity.id, entity.source)) {
+      return;
+    }
     add(const FetchViews());
     add(const FetchSetCount());
   }

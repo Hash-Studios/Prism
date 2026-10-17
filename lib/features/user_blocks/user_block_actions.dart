@@ -18,18 +18,30 @@ void _trackBlockAction(String action, {required bool success}) {
   unawaited(analytics.track(UserBlockActionEvent(action: action, result: success ? 'success' : 'failure')));
 }
 
+bool _isPendingSync(Result<void> result) => result.failure?.message.startsWith('Pending sync:') ?? false;
+
+void _showBlockResult(Result<void> result, {required String successMessage}) {
+  if (_isPendingSync(result)) {
+    toasts.info(result.failure!.message.substring('Pending sync:'.length).trim());
+  } else if (result.isFailure) {
+    toasts.error(result.failure?.message ?? 'Could not update blocked accounts');
+  } else {
+    toasts.success(successMessage);
+  }
+}
+
 /// Unblocks a user and tells the viewer how it went. Returns whether it worked.
 Future<bool> unblockUserWithFeedback(BuildContext context, String targetUserId) async {
   final Result<void> result = await getIt<UserBlockRepository>().unblockUser(targetUserId: targetUserId);
   if (!context.mounted) {
     return false;
   }
-  _trackBlockAction('unblock', success: result.isSuccess);
+  _trackBlockAction('unblock', success: result.isSuccess || _isPendingSync(result));
   if (result.isFailure) {
-    toasts.error(result.failure?.message ?? 'Could not unblock');
-    return false;
+    _showBlockResult(result, successMessage: 'Unblocked');
+    return _isPendingSync(result);
   }
-  toasts.success('Unblocked');
+  _showBlockResult(result, successMessage: 'Unblocked');
   return true;
 }
 
@@ -56,13 +68,13 @@ Future<void> confirmAndBlockUser({
   PrismHaptics.tap();
 
   final UserBlockRepository blocks = getIt<UserBlockRepository>();
-  final Result<void> result = await blocks.blockUser(targetUserId: targetUserId);
+  final Result<void> result = await blocks.blockUser(targetUserId: targetUserId, targetEmail: targetEmail);
   if (!context.mounted) {
     return;
   }
-  _trackBlockAction('block', success: result.isSuccess);
+  _trackBlockAction('block', success: result.isSuccess || _isPendingSync(result));
   if (result.isFailure) {
-    toasts.error(result.failure?.message ?? 'Could not block user');
+    _showBlockResult(result, successMessage: 'Blocked $name');
     return;
   }
 
@@ -82,5 +94,5 @@ Future<void> confirmAndBlockUser({
     await session.updateFollowing(next);
   }
 
-  toasts.success('Blocked $name');
+  _showBlockResult(result, successMessage: 'Blocked $name');
 }

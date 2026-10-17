@@ -1,10 +1,12 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/data/categories/category_definition.dart';
+import 'package:Prism/data/collections/provider/collections_without_provider.dart' as collections_data;
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_screen.dart';
@@ -17,6 +19,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_firestore_client.dart';
+import '../../support/fake_feed_cache_local_data_source.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
 
@@ -25,6 +28,7 @@ void main() {
   late _MockCategoryFeedBloc bloc;
 
   setUp(() {
+    collections_data.collections = <Map<String, dynamic>>[];
     firestore = FakeFirestoreClient(
       onQuery: (_) => <FakeDocRow>[
         (id: 'flat', data: <String, dynamic>{'name': 'Flat', 'thumb1': '', 'premium': false}),
@@ -32,6 +36,7 @@ void main() {
       ],
     );
     getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
     AnalyticsRuntime.instance = FakeAppAnalytics();
     bloc = _MockCategoryFeedBloc();
     final state = CategoryFeedState.initial().copyWith(

@@ -38,12 +38,14 @@ class NotificationSignals {
     Future<void> Function(Map<String, dynamic> data)? call,
     Future<void> Function(String userId, DateTime now, int timezoneOffsetMinutes)? writeAppOpenStamp,
     DateTime Function()? clock,
+    Duration networkTimeout = const Duration(seconds: 3),
   }) : _isReady = isReady ?? (() => FirebaseInit.readyFuture),
        _providedSettings = settings,
        _currentUserId = currentUserId ?? _defaultUserId,
        _callSignal = call ?? _callFirebase,
        _writeAppOpenStamp = writeAppOpenStamp ?? _writeFirebaseAppOpenStamp,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _networkTimeout = networkTimeout;
 
   static final NotificationSignals instance = NotificationSignals();
 
@@ -53,6 +55,7 @@ class NotificationSignals {
   final Future<void> Function(Map<String, dynamic> data) _callSignal;
   final Future<void> Function(String userId, DateTime now, int timezoneOffsetMinutes) _writeAppOpenStamp;
   final DateTime Function() _clock;
+  final Duration _networkTimeout;
 
   final _NotificationSignalQueue _settingsQueue = _NotificationSignalQueue();
 
@@ -83,6 +86,8 @@ class NotificationSignals {
         if (_currentUserId().trim() == userId && next != null) {
           await settings.set(PersistenceKeys.pushReturnPending, encodePending(next));
         }
+        final String latestUserId = _currentUserId().trim();
+        if (latestUserId != userId) await _synchronizeLocalUser(settings, latestUserId);
         if (userId.isNotEmpty && _currentUserId().trim() == userId) {
           await _call(type: 'tap', kind: kind);
         }
@@ -104,11 +109,17 @@ class NotificationSignals {
         final List<String> due = returnsToReport(current, now);
         try {
           if (due.isNotEmpty && current != null && userId.isNotEmpty && await _reportReturns(due, userId)) {
-            if (_currentUserId().trim() != userId) return;
-            await settings.set(PersistenceKeys.pushReturnPending, encodePending(markReported(current, due)));
+            if (_currentUserId().trim() == userId) {
+              await settings.set(PersistenceKeys.pushReturnPending, encodePending(markReported(current, due)));
+            }
           }
         } catch (error, stackTrace) {
           logger.w('Next-day return score failed.', tag: 'Push', error: error, stackTrace: stackTrace);
+        }
+        final String latestUserId = _currentUserId().trim();
+        if (latestUserId != userId) {
+          await _synchronizeLocalUser(settings, latestUserId);
+          return;
         }
         await _stampOpen(settings, now, userId);
       });
@@ -145,7 +156,7 @@ class NotificationSignals {
       settings.get<String>(PersistenceKeys.appOpenStampedAtUtc, defaultValue: ''),
     );
     if (!shouldStampAppOpen(last: last, now: now)) return;
-    await _writeAppOpenStamp(userId, now, roundedTimezoneOffsetMinutes(now.timeZoneOffset));
+    await _writeAppOpenStamp(userId, now, roundedTimezoneOffsetMinutes(now.timeZoneOffset)).timeout(_networkTimeout);
     if (_currentUserId().trim() != userId) return;
     await settings.set(PersistenceKeys.appOpenStampedAtUtc, now.toUtc().toIso8601String());
   }
@@ -172,7 +183,7 @@ class NotificationSignals {
       if (kind != null) 'kind': kind,
       if (result != null) 'result': result,
       if (installId != null) 'installId': installId,
-    });
+    }).timeout(_networkTimeout);
   }
 
   Future<void> _withSettings(Future<void> Function(SettingsLocalDataSource settings) action) async {

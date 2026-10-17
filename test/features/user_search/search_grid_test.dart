@@ -94,6 +94,24 @@ void main() {
     expect(find.byType(SeeMoreButton), findsNothing);
   });
 
+  testWidgets('labels local search results and does not offer remote pagination', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchGrid(
+            query: 'forest',
+            provider: SearchProviderValue.wallhaven,
+            initialResults: <FeedItemEntity>[_wallpaper(0)],
+            isLocal: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Saved on this device'), findsOneWidget);
+    expect(find.byType(SeeMoreButton), findsNothing);
+  });
+
   testWidgets('a failed next page shows a retry footer and a tap asks for the page again', (tester) async {
     tester.view.physicalSize = const Size(400, 2800);
     tester.view.devicePixelRatio = 1;

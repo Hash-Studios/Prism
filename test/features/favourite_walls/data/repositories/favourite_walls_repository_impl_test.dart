@@ -1,15 +1,19 @@
 // ignore_for_file: depend_on_referenced_packages
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import '../../../../support/fake_firestore_client.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../support/fav_fixtures.dart';
@@ -31,7 +35,111 @@ class _BatchRecorder implements FirestoreBatch {
   void deleteDoc(String collection, String id) => deleted.add('$collection/$id');
 }
 
-class _BatchingFirestore extends FakeFirestoreClient {
+class _MetadataFirestore extends FakeFirestoreClient {
+  _MetadataFirestore({super.onQuery});
+
+  bool cacheOnlyEmpty = false;
+  List<FakeDocRow>? cacheRows;
+  bool neverEmitServer = false;
+
+  @override
+  Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map,
+  ) {
+    querySpecs.add(spec);
+    final Object? error = queryError;
+    if (error != null) return Stream<({List<T> items, bool isFromCache})>.error(error);
+    if (cacheOnlyEmpty) {
+      return Stream<({List<T> items, bool isFromCache})>.value((items: <T>[], isFromCache: true));
+    }
+    final List<FakeDocRow>? cached = cacheRows;
+    final cacheSnapshot = cached == null
+        ? null
+        : (items: cached.map((row) => map(row.data, row.id)).toList(growable: false), isFromCache: true);
+    if (neverEmitServer && cacheSnapshot != null) {
+      late final StreamController<({List<T> items, bool isFromCache})> controller;
+      controller = StreamController<({List<T> items, bool isFromCache})>(
+        onListen: () => controller.add(cacheSnapshot),
+        onCancel: () {},
+      );
+      return controller.stream;
+    }
+    final rows = onQuery?.call(spec) ?? const <FakeDocRow>[];
+    final serverSnapshot = (
+      items: rows.map((row) => map(row.data, row.id)).toList(growable: false),
+      isFromCache: false,
+    );
+    return Stream<({List<T> items, bool isFromCache})>.fromIterable(<({List<T> items, bool isFromCache})>[
+      if (cacheSnapshot != null) cacheSnapshot,
+      serverSnapshot,
+    ]);
+  }
+}
+
+class _NeverServerControllerFirestore extends _MetadataFirestore {
+  bool cancelled = false;
+  Object? cancelError;
+  void Function()? emitCache;
+  void Function()? emitServerEmpty;
+  void Function()? emitError;
+
+  @override
+  Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map,
+  ) {
+    querySpecs.add(spec);
+    late final StreamController<({List<T> items, bool isFromCache})> controller;
+    controller = StreamController<({List<T> items, bool isFromCache})>(
+      onCancel: () {
+        cancelled = true;
+        final Object? error = cancelError;
+        if (error != null) return Future<void>.error(error);
+      },
+    );
+    emitCache = () => controller.add((
+      items: <T>[
+        map(<String, dynamic>{'id': 'sdk_cached', 'provider': 'prism'}, 'sdk_cached'),
+      ],
+      isFromCache: true,
+    ));
+    emitServerEmpty = () => controller.add((items: <T>[], isFromCache: false));
+    emitError = () => controller.addError(StateError('server read failed'));
+    return controller.stream;
+  }
+}
+
+class _MemoryDurableStore extends DurableJsonStore {
+  _MemoryDurableStore() : super('favourites');
+
+  final Map<String, Map<String, Object?>> records = <String, Map<String, Object?>>{};
+
+  @override
+  Future<Map<String, Object?>?> read(String key) async {
+    return records[key];
+  }
+
+  @override
+  Future<Map<String, Map<String, Object?>>> readAll() async {
+    return Map<String, Map<String, Object?>>.of(records);
+  }
+
+  @override
+  Future<void> write(String key, Map<String, Object?> value) async {
+    records[key] = value;
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    records.remove(key);
+  }
+}
+
+FavoritesLocalDataSource _local() =>
+    FavoritesLocalDataSource(InMemoryLocalStore(), durableStore: _MemoryDurableStore());
+
+class _BatchingFirestore extends _MetadataFirestore {
   final List<List<String>> batches = <List<String>>[];
   Object? batchError;
 
@@ -46,7 +154,7 @@ class _BatchingFirestore extends FakeFirestoreClient {
 }
 
 /// A Firestore whose writes never finish, like a write made with no network.
-class _OfflineWriteFirestore extends FakeFirestoreClient {
+class _OfflineWriteFirestore extends _MetadataFirestore {
   Object? writeError;
 
   @override
@@ -71,16 +179,22 @@ class _OfflineWriteFirestore extends FakeFirestoreClient {
 
   @override
   Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) {
-    return Completer<void>().future;
+    final Object? error = writeError;
+    return error == null ? Completer<void>().future : Future<void>.error(error);
   }
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel('plugins.flutter.io/path_provider'),
+    (_) async => Directory.systemTemp.path,
+  );
   test('successful fetch replaces stale IDs only in the fetched account cache', () async {
-    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final local = _local();
     await local.setWallFavourite('user_a', 'stale_a', true);
     await local.setWallFavourite('user_b', 'stale_b', true);
-    final firestore = FakeFirestoreClient(
+    final firestore = _MetadataFirestore(
       onQuery: (_) => <FakeDocRow>[
         (id: 'doc_1', data: <String, dynamic>{'id': 'wall_b1', 'provider': 'prism'}),
         (id: 'doc_2', data: <String, dynamic>{'id': 'wall_b2', 'provider': 'pexels'}),
@@ -90,7 +204,7 @@ void main() {
 
     final Result<List<FavouriteWallEntity>> result = await repository.fetchFavourites(userId: 'user_b');
 
-    expect(result.isSuccess, isTrue);
+    expect(result.isSuccess, isTrue, reason: result.failure?.message);
     expect(firestore.querySpecs.single.limit, isNull);
     expect(local.isWallFavourite('user_a', 'stale_a'), isTrue);
     expect(local.isWallFavourite('user_b', 'stale_b'), isFalse);
@@ -99,9 +213,9 @@ void main() {
   });
 
   test('failed fetch preserves the account local cache', () async {
-    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final local = _local();
     await local.setWallFavourite('user_b', 'cached_b', true);
-    final firestore = FakeFirestoreClient()..queryError = StateError('offline');
+    final firestore = _MetadataFirestore()..queryError = StateError('offline');
     final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
 
     final Result<List<FavouriteWallEntity>> result = await repository.fetchFavourites(userId: 'user_b');
@@ -110,8 +224,266 @@ void main() {
     expect(local.isWallFavourite('user_b', 'cached_b'), isTrue);
   });
 
+  test('an empty cache snapshot does not erase the saved snapshot before server metadata arrives', () async {
+    final local = _local();
+    await local.saveWallSnapshot('user_b', <FavouriteWallEntity>[prismFav('saved_wall')]);
+    final repository = FavouriteWallsRepositoryImpl(
+      _MetadataFirestore()..cacheOnlyEmpty = true,
+      local,
+      unusedGuestStore(),
+    );
+
+    final result = await repository.fetchFavourites(userId: 'user_b');
+
+    expect(result.isSuccess, isTrue);
+    expect(result.data!.single.id, 'saved_wall');
+    expect((await local.readWallSnapshot('user_b')).single.id, 'saved_wall');
+  });
+
+  test('a nonempty SDK cache snapshot is returned after a short grace when server metadata never arrives', () {
+    fakeAsync((async) {
+      final durable = _MemoryDurableStore();
+      final local = FavoritesLocalDataSource(InMemoryLocalStore(), durableStore: durable);
+      expect(durable.records, isEmpty);
+      final firestore = _MetadataFirestore()
+        ..cacheRows = <FakeDocRow>[
+          (id: 'sdk_cached', data: <String, dynamic>{'id': 'sdk_cached', 'provider': 'prism'}),
+        ]
+        ..neverEmitServer = true;
+      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      Result<List<FavouriteWallEntity>>? result;
+
+      unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
+      async.flushMicrotasks();
+      expect(result, isNull);
+      async.elapse(const Duration(milliseconds: 499));
+      async.flushMicrotasks();
+      expect(result, isNull);
+      async.elapse(const Duration(milliseconds: 1));
+      async.flushMicrotasks();
+
+      expect(result?.isSuccess, isTrue, reason: result?.failure?.message);
+      expect(result?.data?.map((wall) => wall.id), <String>['sdk_cached']);
+    });
+  });
+
+  test('a cached metadata read cancels the Firestore subscription after the grace period', () {
+    fakeAsync((async) {
+      final local = _local();
+      final firestore = _NeverServerControllerFirestore();
+      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      Result<List<FavouriteWallEntity>>? result;
+
+      unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
+      async.flushMicrotasks();
+      firestore.emitCache!();
+      async.flushMicrotasks();
+      expect(firestore.cancelled, isFalse);
+
+      async.elapse(const Duration(milliseconds: 500));
+      async.flushMicrotasks();
+
+      expect(result?.isSuccess, isTrue, reason: result?.failure?.message);
+      expect(result?.data?.map((wall) => wall.id), <String>['sdk_cached']);
+      expect(firestore.cancelled, isTrue);
+    });
+  });
+
+  test('a metadata read with no SDK cache keeps the full server timeout', () {
+    fakeAsync((async) {
+      final firestore = _NeverServerControllerFirestore();
+      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
+      Result<List<FavouriteWallEntity>>? result;
+
+      unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
+      async.flushMicrotasks();
+      async.elapse(const Duration(milliseconds: 7999));
+      async.flushMicrotasks();
+      expect(result, isNull);
+
+      async.elapse(const Duration(milliseconds: 1));
+      async.flushMicrotasks();
+
+      expect(result?.isSuccess, isTrue, reason: result?.failure?.message);
+      expect(result?.data, isEmpty);
+      expect(firestore.cancelled, isTrue);
+    });
+  });
+
+  test('a metadata cleanup failure does not prevent the bounded cached result', () {
+    fakeAsync((async) {
+      final firestore = _NeverServerControllerFirestore()..cancelError = StateError('cleanup failed');
+      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
+      Result<List<FavouriteWallEntity>>? result;
+
+      unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
+      async.flushMicrotasks();
+      firestore.emitCache!();
+      async.flushMicrotasks();
+      async.elapse(const Duration(milliseconds: 500));
+      async.flushMicrotasks();
+
+      expect(result?.isSuccess, isTrue, reason: result?.failure?.message);
+      expect(result?.data?.map((wall) => wall.id), <String>['sdk_cached']);
+      expect(firestore.cancelled, isTrue);
+    });
+  });
+
+  test('a server-confirmed empty snapshot within the cache grace clears the saved snapshot', () {
+    fakeAsync((async) {
+      final local = _local();
+      local.saveWallSnapshot('user_b', <FavouriteWallEntity>[prismFav('stale_wall')]);
+      async.flushMicrotasks();
+      final firestore = _NeverServerControllerFirestore();
+      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+      Result<List<FavouriteWallEntity>>? result;
+
+      unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
+      async.flushMicrotasks();
+      firestore.emitCache!();
+      async.flushMicrotasks();
+      async.elapse(const Duration(milliseconds: 250));
+      expect(result, isNull);
+      firestore.emitServerEmpty!();
+      async.flushMicrotasks();
+
+      expect(result?.isSuccess, isTrue, reason: result?.failure?.message);
+      expect(result?.data, isEmpty);
+      expect(firestore.cancelled, isTrue);
+    });
+  });
+
+  test('a server error during the cache grace returns cached data without an unhandled error', () {
+    fakeAsync((async) {
+      final firestore = _NeverServerControllerFirestore();
+      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
+      Result<List<FavouriteWallEntity>>? result;
+
+      unawaited(repository.fetchFavourites(userId: 'user_b').then((value) => result = value));
+      async.flushMicrotasks();
+      firestore.emitCache!();
+      async.flushMicrotasks();
+      async.elapse(const Duration(milliseconds: 250));
+      firestore.emitError!();
+      async.flushMicrotasks();
+
+      expect(result?.isSuccess, isTrue, reason: result?.failure?.message);
+      expect(result?.data?.map((wall) => wall.id), <String>['sdk_cached']);
+      expect(firestore.cancelled, isTrue);
+    });
+  });
+
+  test('server-confirmed empty favourites clear the stale local snapshot', () async {
+    final local = _local();
+    await local.saveWallSnapshot('user_b', <FavouriteWallEntity>[prismFav('removed_elsewhere')]);
+    final repository = FavouriteWallsRepositoryImpl(_MetadataFirestore(), local, unusedGuestStore());
+
+    final result = await repository.fetchFavourites(userId: 'user_b');
+
+    expect(result.isSuccess, isTrue);
+    expect(result.data, isEmpty);
+    expect(await local.readWallSnapshot('user_b'), isEmpty);
+  });
+
+  test('failed refresh returns the full favourite snapshot saved before restart', () async {
+    final directory = await Directory.systemTemp.createTemp('prism-favourites-test-');
+    final store = tempGuestStore();
+    final local = FavoritesLocalDataSource(
+      InMemoryLocalStore(),
+      durableStore: DurableJsonStore('favourites', directory: directory),
+    );
+    final online = FavouriteWallsRepositoryImpl(_MetadataFirestore(), local, store);
+    await online.toggleFavourite(userId: 'user_b', wall: prismFav('saved_wall'), currentlyFavourited: false);
+
+    final restarted = FavouriteWallsRepositoryImpl(
+      _MetadataFirestore()..queryError = StateError('offline'),
+      FavoritesLocalDataSource(
+        InMemoryLocalStore(),
+        durableStore: DurableJsonStore('favourites', directory: directory),
+      ),
+      store,
+    );
+
+    final Result<List<FavouriteWallEntity>> result = await restarted.fetchFavourites(userId: 'user_b');
+
+    expect(result.isSuccess, isTrue, reason: result.failure?.message);
+    expect(result.data!.single.id, 'saved_wall');
+    expect(result.data!.single.fullUrl, prismFav('saved_wall').fullUrl);
+    await directory.delete(recursive: true);
+  });
+
+  test('an old acknowledgement cannot replace a newer desired revision or another account', () async {
+    final directory = await Directory.systemTemp.createTemp('prism-favourite-outbox-');
+    final local = FavoritesLocalDataSource(
+      InMemoryLocalStore(),
+      durableStore: DurableJsonStore('favourites', directory: directory),
+    );
+    final first = await local.createFavouriteOperation('account_a', 'wall', desired: true, wall: <String, Object?>{});
+    final latest = await local.createFavouriteOperation('account_a', 'wall', desired: false, wall: <String, Object?>{});
+    await local.createFavouriteOperation('account_b', 'wall', desired: true, wall: <String, Object?>{});
+
+    expect(
+      await local.updateFavouriteOperationStatus(
+        'account_a',
+        'wall',
+        first['operationId']! as String,
+        status: 'synced',
+      ),
+      isFalse,
+    );
+    expect((await local.readFavouriteOperation('account_a', 'wall'))!['operationId'], latest['operationId']);
+    expect((await local.readFavouriteOperation('account_a', 'wall'))!['status'], 'pending');
+    expect((await local.readFavouriteOperation('account_b', 'wall'))!['status'], 'pending');
+    await directory.delete(recursive: true);
+  });
+
+  test('a delayed retry skips an operation superseded by a newer desired revision', () async {
+    final local = _local();
+    final first = await local.createFavouriteOperation('owner', 'wall', desired: true, wall: <String, Object?>{});
+    final Completer<void> delayedSend = Completer<void>();
+    final Completer<void> sendStarted = Completer<void>();
+    final send = local.runFavouriteOperationsIfCurrent(
+      'owner',
+      <String, String>{'wall': first['operationId']! as String},
+      () {
+        sendStarted.complete();
+        return delayedSend.future;
+      },
+    );
+    await sendStarted.future;
+    final newerIntent = local.createFavouriteOperation('owner', 'wall', desired: false, wall: <String, Object?>{});
+    delayedSend.complete();
+    expect(await send, isTrue);
+    final latest = await newerIntent;
+    var staleSendCount = 0;
+
+    final bool staleWasSent = await local.runFavouriteOperationsIfCurrent('owner', <String, String>{
+      'wall': first['operationId']! as String,
+    }, () async => staleSendCount++);
+
+    expect(staleWasSent, isFalse);
+    expect(staleSendCount, 0);
+    expect((await local.readFavouriteOperation('owner', 'wall'))!['operationId'], latest['operationId']);
+    expect((await local.readFavouriteOperation('owner', 'wall'))!['desired'], isFalse);
+    expect((await local.readFavouriteOperation('owner', 'wall'))!['status'], 'pending');
+  });
+
+  test('large favourite snapshots are sharded and remain readable as one snapshot', () async {
+    final durable = _MemoryDurableStore();
+    final local = FavoritesLocalDataSource(InMemoryLocalStore(), durableStore: durable);
+    final metadata = List<FavouriteWallEntity>.generate(
+      1200,
+      (index) => prismFav('large-$index', category: 'metadata' * 80),
+    );
+
+    await local.saveWallSnapshot('large-owner', metadata);
+
+    expect(await local.readWallSnapshot('large-owner'), hasLength(1200));
+    expect(durable.records.keys.where((key) => key.startsWith('large-owner::snapshot:')), hasLength(greaterThan(1)));
+  });
+
   test('clearAll deletes in batches, skips blank ids and updates the local cache', () async {
-    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final local = _local();
     final ids = List<String>.generate(450, (i) => 'w$i');
     for (final id in ids) {
       await local.setWallFavourite('u', id, true);
@@ -130,21 +502,22 @@ void main() {
   });
 
   test('clearAll failure keeps the local cache and reports an error', () async {
-    final local = FavoritesLocalDataSource(InMemoryLocalStore());
+    final local = _local();
     await local.setWallFavourite('u', 'w1', true);
-    final firestore = _BatchingFirestore()..batchError = StateError('offline');
+    final firestore = _BatchingFirestore()..batchError = FirestoreError(message: 'denied', code: 'permission-denied');
     final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
 
     final result = await repository.clearAll(userId: 'u', wallIds: <String>['w1']);
 
     expect(result.isFailure, isTrue);
     expect(local.isWallFavourite('u', 'w1'), isTrue);
+    expect((await local.readFavouriteOperation('u', 'w1'))!['status'], 'rejected');
   });
 
   group('offline writes', () {
     test('a heart tap with no network finishes after 8 seconds, keeps the local heart and reports success', () {
       fakeAsync((async) {
-        final local = FavoritesLocalDataSource(InMemoryLocalStore());
+        final local = _local();
         final repository = FavouriteWallsRepositoryImpl(_OfflineWriteFirestore(), local, unusedGuestStore());
         Result<bool>? result;
 
@@ -160,12 +533,16 @@ void main() {
         expect(result?.isSuccess, isTrue);
         expect(result?.data, isTrue);
         expect(local.isWallFavourite('u', 'w1'), isTrue);
+        Map<String, Object?>? operation;
+        unawaited(local.readFavouriteOperation('u', 'w1').then((value) => operation = value));
+        async.flushMicrotasks();
+        expect(operation?['status'], 'pending');
       });
     });
 
     test('an offline removal also clears the local heart at once and succeeds after the timeout', () {
       fakeAsync((async) {
-        final local = FavoritesLocalDataSource(InMemoryLocalStore());
+        final local = _local();
         local.setWallFavourite('u', 'w1', true);
         async.flushMicrotasks();
         final repository = FavouriteWallsRepositoryImpl(_OfflineWriteFirestore(), local, unusedGuestStore());
@@ -182,7 +559,7 @@ void main() {
     });
 
     test('permission-denied rolls the local heart back and reports a failure', () async {
-      final local = FavoritesLocalDataSource(InMemoryLocalStore());
+      final local = _local();
       final firestore = _OfflineWriteFirestore()..writeError = FirestoreError(message: 'no', code: 'permission-denied');
       final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
 
@@ -190,11 +567,37 @@ void main() {
 
       expect(result.isFailure, isTrue);
       expect(local.isWallFavourite('u', 'w1'), isFalse);
+      expect((await local.readFavouriteOperation('u', 'w1'))!['status'], 'rejected');
+    });
+
+    test('an immediate unavailable error keeps the durable favourite intent pending', () async {
+      final local = _local();
+      final firestore = _OfflineWriteFirestore()..writeError = FirestoreError(message: 'offline', code: 'unavailable');
+      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+
+      final result = await repository.toggleFavourite(userId: 'u', wall: prismFav('w1'), currentlyFavourited: false);
+
+      expect(result.isSuccess, isTrue);
+      expect(local.isWallFavourite('u', 'w1'), isTrue);
+      expect((await local.readFavouriteOperation('u', 'w1'))!['status'], 'pending');
+    });
+
+    test('an immediate unavailable clear keeps removals pending without restoring local hearts', () async {
+      final local = _local();
+      await local.setWallFavourite('u', 'w1', true);
+      final firestore = _OfflineWriteFirestore()..writeError = FirestoreError(message: 'offline', code: 'unavailable');
+      final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+
+      final result = await repository.clearAll(userId: 'u', wallIds: <String>['w1']);
+
+      expect(result.isSuccess, isTrue);
+      expect(local.isWallFavourite('u', 'w1'), isFalse);
+      expect((await local.readFavouriteOperation('u', 'w1'))!['status'], 'pending');
     });
 
     test('clearAll with no network finishes after the timeout and keeps the hearts cleared', () {
       fakeAsync((async) {
-        final local = FavoritesLocalDataSource(InMemoryLocalStore());
+        final local = _local();
         local.setWallFavourite('u', 'w1', true);
         async.flushMicrotasks();
         final repository = FavouriteWallsRepositoryImpl(_OfflineWriteFirestore(), local, unusedGuestStore());
@@ -211,12 +614,8 @@ void main() {
 
   group('favouritedAt', () {
     test('every source writes favouritedAt and keeps the one the entity already has', () async {
-      final firestore = FakeFirestoreClient();
-      final repository = FavouriteWallsRepositoryImpl(
-        firestore,
-        FavoritesLocalDataSource(InMemoryLocalStore()),
-        unusedGuestStore(),
-      );
+      final firestore = _MetadataFirestore();
+      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
       final DateTime stamped = DateTime.utc(2026, 5);
 
       for (final FavouriteWallEntity wall in <FavouriteWallEntity>[
@@ -240,7 +639,7 @@ void main() {
     });
 
     test('a fetched list is ordered by favouritedAt, falling back to createdAt for older docs', () async {
-      final firestore = FakeFirestoreClient(
+      final firestore = _MetadataFirestore(
         onQuery: (_) => <FakeDocRow>[
           (
             id: 'old_upload',
@@ -266,11 +665,7 @@ void main() {
           ),
         ],
       );
-      final repository = FavouriteWallsRepositoryImpl(
-        firestore,
-        FavoritesLocalDataSource(InMemoryLocalStore()),
-        unusedGuestStore(),
-      );
+      final repository = FavouriteWallsRepositoryImpl(firestore, _local(), unusedGuestStore());
 
       final result = await repository.fetchFavourites(userId: 'u');
 
@@ -281,8 +676,8 @@ void main() {
 
   group('guest favourites', () {
     test('a guest save goes to the guest store and the guest heart set, not to Firestore', () async {
-      final firestore = FakeFirestoreClient();
-      final local = FavoritesLocalDataSource(InMemoryLocalStore());
+      final firestore = _MetadataFirestore();
+      final local = _local();
       final store = tempGuestStore();
       final repository = FavouriteWallsRepositoryImpl(firestore, local, store);
 
@@ -295,9 +690,9 @@ void main() {
     });
 
     test('a guest list reads back from the store and a guest removal deletes from it', () async {
-      final local = FavoritesLocalDataSource(InMemoryLocalStore());
+      final local = _local();
       final store = tempGuestStore();
-      final repository = FavouriteWallsRepositoryImpl(FakeFirestoreClient(), local, store);
+      final repository = FavouriteWallsRepositoryImpl(_MetadataFirestore(), local, store);
       await repository.toggleFavourite(userId: '', wall: pexelsFav('g1'), currentlyFavourited: false);
       await repository.toggleFavourite(userId: '', wall: prismFav('g2'), currentlyFavourited: false);
 
@@ -315,9 +710,45 @@ void main() {
     });
   });
 
+  test('signed-in bundled starter favourites are stored locally without outbox or Firestore writes', () async {
+    final local = _local();
+    final firestore = _MetadataFirestore();
+    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final starter = prismFav('starter-sunset');
+
+    final result = await repository.toggleFavourite(userId: 'account', wall: starter, currentlyFavourited: false);
+
+    expect(result.isSuccess, isTrue);
+    expect(firestore.writes, isEmpty);
+    expect((await local.readFavouriteOperation('account', 'starter-sunset')), isNull);
+    expect((await local.readWallSnapshot('account')).single.id, 'starter-sunset');
+
+    final fetched = await repository.fetchFavourites(userId: 'account');
+    expect(fetched.data!.single.id, 'starter-sunset');
+    expect(firestore.querySpecs, hasLength(1));
+    expect(firestore.writes, isEmpty);
+  });
+
+  test('clearing a signed-in bundled starter does not enqueue a Firestore delete', () async {
+    final local = _local();
+    final firestore = _MetadataFirestore();
+    final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
+    final starter = prismFav('starter-sunset');
+    await local.saveWallSnapshot('account', <FavouriteWallEntity>[starter]);
+    await local.setWallFavourite('account', starter.id, true);
+
+    final result = await repository.clearAll(userId: 'account', wallIds: <String>[starter.id]);
+
+    expect(result.isSuccess, isTrue);
+    expect(firestore.writes, isEmpty);
+    expect((await local.readFavouriteOperation('account', starter.id)), isNull);
+    expect(local.isWallFavourite('account', starter.id), isFalse);
+    expect(await local.readWallSnapshot('account'), isEmpty);
+  });
+
   test('toggleFavourite writes favouritedAt and fetch maps it back', () async {
-    final local = FavoritesLocalDataSource(InMemoryLocalStore());
-    final firestore = FakeFirestoreClient();
+    final local = _local();
+    final firestore = _MetadataFirestore();
     final repository = FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore());
 
     await repository.toggleFavourite(userId: 'u', wall: prismFav('p1'), currentlyFavourited: false);
@@ -325,7 +756,7 @@ void main() {
     expect(firestore.writes.single.data!['favouritedAt'], isA<DateTime>());
 
     final stamp = DateTime.utc(2026, 3, 4);
-    final reader = FakeFirestoreClient(
+    final reader = _MetadataFirestore(
       onQuery: (_) => <FakeDocRow>[
         (id: 'd1', data: <String, dynamic>{'id': 'p1', 'provider': 'prism', 'favouritedAt': stamp}),
       ],
@@ -337,8 +768,8 @@ void main() {
 
   test('older favourite docs keep a null favourite time and can use createdAt', () async {
     final createdAt = DateTime.utc(2022, 5, 6);
-    final local = FavoritesLocalDataSource(InMemoryLocalStore());
-    final firestore = FakeFirestoreClient(
+    final local = _local();
+    final firestore = _MetadataFirestore(
       onQuery: (_) => <FakeDocRow>[
         (id: 'old', data: <String, dynamic>{'id': 'old', 'provider': 'prism', 'createdAt': createdAt}),
       ],
@@ -356,8 +787,8 @@ void main() {
 
   test('restoring a removed favourite preserves its original favourite time', () async {
     final stamp = DateTime.utc(2026, 3, 4);
-    final local = FavoritesLocalDataSource(InMemoryLocalStore());
-    final firestore = FakeFirestoreClient();
+    final local = _local();
+    final firestore = _MetadataFirestore();
 
     await FavouriteWallsRepositoryImpl(firestore, local, unusedGuestStore()).toggleFavourite(
       userId: 'u',

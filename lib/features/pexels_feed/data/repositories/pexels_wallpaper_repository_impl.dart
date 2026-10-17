@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
 import 'package:Prism/env/env.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/data/dtos/pexels_dtos.dart';
 import 'package:Prism/features/pexels_feed/data/mappers/pexels_dto_mapper.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
@@ -118,16 +122,18 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       final bool hasMore = totalPages == 0 ? payload.photos.isNotEmpty : currentPage < totalPages;
 
       final List<PexelsWallpaper> walls = payload.photos.map((item) => item.toDomain()).toList(growable: false);
-
-      if (refresh) {
+      _remember(walls);
+      try {
         await _cache.write(
           pageKey,
           scope: scope,
           payload: payload.toJson(),
           nextPage: currentPage + 1,
           hasMore: hasMore,
+          append: !refresh,
         );
-      } else {
+      } catch (error) {
+        logger.w('[PexelsWallpaperRepository] feed cache write failed: $error');
         _cache.advance(pageKey, nextPage: currentPage + 1, hasMore: hasMore);
       }
 
@@ -168,12 +174,22 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       }
 
       final Map<String, dynamic> decoded = decodeJsonMap(response.body);
-      return Result.success(PexelsPhotoDto.fromJson(decoded).toDomain());
+      final PexelsWallpaper wallpaper = PexelsPhotoDto.fromJson(decoded).toDomain();
+      _remember(<PexelsWallpaper>[wallpaper]);
+      return Result.success(wallpaper);
     } catch (error, stackTrace) {
       logger.e('[PexelsWallpaperRepository] fetchById failed', error: error, stackTrace: stackTrace);
-      return Result.error(ServerFailure('Failed to fetch Pexels wallpaper by id: $error'));
+      return Result.error(_lookupFailure(error));
     }
   }
+
+  Failure _lookupFailure(Object error) => switch (error) {
+    SocketException() ||
+    HandshakeException() ||
+    TimeoutException() ||
+    http.ClientException() => const NetworkFailure(wallpaperLoadFailureMessage),
+    _ => ServerFailure('Failed to fetch Pexels wallpaper by id: $error'),
+  };
 
   Future<Result<List<PexelsWallpaper>>> _cachedOrFailure({
     required bool refresh,
@@ -204,5 +220,19 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       paginationKey == null || paginationKey == categoryName ? categoryName : '$categoryName.$paginationKey',
     );
     return portraitOnly ? '$slug.portrait' : slug;
+  }
+
+  void _remember(Iterable<PexelsWallpaper> walls) {
+    unawaited(_persistRemembered(walls));
+  }
+
+  Future<void> _persistRemembered(Iterable<PexelsWallpaper> walls) async {
+    try {
+      await OfflineWallpaperCatalog.instance.remember(
+        walls.map((wall) => PexelsFeedItem(id: wall.id, wallpaper: wall)),
+      );
+    } catch (error) {
+      logger.w('[PexelsWallpaperRepository] local catalog write failed: $error');
+    }
   }
 }

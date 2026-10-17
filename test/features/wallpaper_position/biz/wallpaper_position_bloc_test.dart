@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -46,7 +47,8 @@ class _FakeRepository implements WallpaperPositionRepository {
     await renderGate?.future;
     final Object? error = renderError;
     if (error != null) throw error;
-    return File('${directory.path}/placement_${renders.length}.png')..writeAsBytesSync(<int>[1, 2, 3]);
+    final ByteData data = (await source.image.toByteData(format: ui.ImageByteFormat.png))!;
+    return File('${directory.path}/placement_${renders.length}.png')..writeAsBytesSync(data.buffer.asUint8List());
   }
 
   @override

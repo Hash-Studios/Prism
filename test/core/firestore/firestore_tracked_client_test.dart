@@ -1,7 +1,9 @@
 // ignore_for_file: subtype_of_sealed_class, avoid_implementing_value_types
 
+import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/di/injection_module.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
@@ -21,6 +23,10 @@ class _MockDoc extends Mock implements DocumentReference<Map<String, dynamic>> {
 class _MockSnapshot extends Mock implements DocumentSnapshot<Map<String, dynamic>> {}
 
 class _MockQuerySnapshot extends Mock implements QuerySnapshot<Map<String, dynamic>> {}
+
+class _MockSnapshotMetadata extends Mock implements SnapshotMetadata {}
+
+class _TestAppModule extends AppModule {}
 
 class _RecordingSink implements FirestoreTelemetrySink {
   final List<FirestoreTelemetryEvent> events = <FirestoreTelemetryEvent>[];
@@ -58,6 +64,104 @@ void main() {
     client = FirestoreTrackedClient(firestore, sink);
     when(() => firestore.collection('walls')).thenReturn(collection);
     when(() => collection.doc('a')).thenReturn(doc);
+  });
+
+  test('deferred Firestore access does not happen while constructing the client', () async {
+    var factoryCalls = 0;
+    final deferredClient = FirestoreTrackedClient.deferred(() {
+      factoryCalls++;
+      throw StateError('Firebase is not initialized');
+    }, sink);
+
+    expect(factoryCalls, 0);
+    await expectLater(
+      deferredClient.query<String>(
+        const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.offline'),
+        (data, id) => id,
+      ),
+      throwsA(isA<FirestoreError>()),
+    );
+    expect(factoryCalls, 1);
+    expect(sink.events.single.sourceTag, 'test.offline');
+    expect(sink.events.single.success, isFalse);
+  });
+
+  test('the DI Firestore client can be constructed without a Firebase app', () async {
+    final client = _TestAppModule().firestoreClient(sink);
+
+    await expectLater(
+      client.query<String>(
+        const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.no_firebase_app'),
+        (data, id) => id,
+      ),
+      throwsA(isA<FirestoreError>()),
+    );
+    expect(sink.events.single.sourceTag, 'test.no_firebase_app');
+    expect(sink.events.single.success, isFalse);
+  });
+
+  test('watchQueryWithMetadata defers Firestore setup and reports setup failures through the stream', () async {
+    var factoryCalls = 0;
+    final deferredClient = FirestoreTrackedClient.deferred(() {
+      factoryCalls++;
+      throw StateError('Firebase is not initialized');
+    }, sink);
+
+    final Stream<({List<String> items, bool isFromCache})> stream = deferredClient.watchQueryWithMetadata<String>(
+      const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.watch_offline', isStream: true),
+      (data, id) => id,
+    );
+
+    expect(factoryCalls, 0);
+    await expectLater(stream, emitsError(isA<FirestoreError>()));
+
+    expect(factoryCalls, 1);
+    expect(sink.events, hasLength(1));
+    expect(sink.events.single.operation, FirestoreOperation.streamSubscribe);
+    expect(sink.events.single.sourceTag, 'test.watch_offline');
+    expect(sink.events.single.success, isFalse);
+  });
+
+  test('watchQueryWithMetadata includes metadata changes and preserves cancellation', () async {
+    var cancelled = false;
+    final StreamController<QuerySnapshot<Map<String, dynamic>>> snapshots =
+        StreamController<QuerySnapshot<Map<String, dynamic>>>(onCancel: () => cancelled = true);
+    when(() => collection.snapshots(includeMetadataChanges: true)).thenAnswer((_) => snapshots.stream);
+
+    final cacheSnapshot = _MockQuerySnapshot();
+    final cacheMetadata = _MockSnapshotMetadata();
+    when(() => cacheSnapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+    when(() => cacheSnapshot.metadata).thenReturn(cacheMetadata);
+    when(() => cacheMetadata.isFromCache).thenReturn(true);
+
+    final serverSnapshot = _MockQuerySnapshot();
+    final serverMetadata = _MockSnapshotMetadata();
+    when(() => serverSnapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+    when(() => serverSnapshot.metadata).thenReturn(serverMetadata);
+    when(() => serverMetadata.isFromCache).thenReturn(false);
+
+    final Stream<({List<String> items, bool isFromCache})> stream = client.watchQueryWithMetadata<String>(
+      const FirestoreQuerySpec(collection: 'walls', sourceTag: 'test.watch_metadata', isStream: true),
+      (data, id) => id,
+    );
+
+    final Future<void> expectation = expectLater(
+      stream,
+      emitsInOrder(<Matcher>[
+        isA<({List<String> items, bool isFromCache})>()
+            .having((record) => record.items, 'items', isEmpty)
+            .having((record) => record.isFromCache, 'isFromCache', isTrue),
+        isA<({List<String> items, bool isFromCache})>()
+            .having((record) => record.items, 'items', isEmpty)
+            .having((record) => record.isFromCache, 'isFromCache', isFalse),
+      ]),
+    );
+    snapshots
+      ..add(cacheSnapshot)
+      ..add(serverSnapshot);
+    await expectation;
+    verify(() => collection.snapshots(includeMetadataChanges: true)).called(1);
+    expect(cancelled, isTrue);
   });
 
   test('query maps document id range filters and order without treating __name__ as a data field', () async {
@@ -100,7 +204,7 @@ void main() {
 
   test('watchQuery surfaces a stream failure as FirestoreError and records it', () async {
     when(
-      () => collection.snapshots(),
+      () => collection.snapshots(includeMetadataChanges: false),
     ).thenAnswer((_) => Stream<QuerySnapshot<Map<String, dynamic>>>.error(_permissionDenied()));
 
     final Stream<List<String>> stream = client.watchQuery<String>(
@@ -113,6 +217,7 @@ void main() {
     expect(failure.operation, FirestoreOperation.streamSubscribe);
     expect(failure.success, isFalse);
     expect(failure.errorCode, 'permission-denied');
+    verify(() => collection.snapshots(includeMetadataChanges: false)).called(1);
   });
 
   test('a failed stale-while-revalidate refresh is recorded and does not escape as an unhandled error', () async {
@@ -174,6 +279,31 @@ void main() {
     expect(result, isNull);
     expect(sink.events.single.operation, FirestoreOperation.docGet);
     expect(sink.events.single.resultCount, 0);
+  });
+
+  test('query adapts document-ID filters to FieldPath.documentId', () async {
+    final _MockQuery query = _MockQuery();
+    final _MockQuerySnapshot snapshot = _MockQuerySnapshot();
+    when(() => firestore.collection('drawTickets')).thenReturn(collection);
+    when(() => collection.where(FieldPath.documentId, isEqualTo: '2026-W42_u1')).thenReturn(query);
+    when(() => query.where('uid', isEqualTo: 'u1')).thenReturn(query);
+    when(() => query.get()).thenAnswer((_) async => snapshot);
+    when(() => snapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+
+    await client.query<String>(
+      const FirestoreQuerySpec(
+        collection: 'drawTickets',
+        sourceTag: 'test.document_id_filter',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.isEqualTo, value: '2026-W42_u1'),
+          FirestoreFilter(field: 'uid', op: FirestoreFilterOp.isEqualTo, value: 'u1'),
+        ],
+      ),
+      (data, id) => id,
+    );
+
+    verify(() => collection.where(FieldPath.documentId, isEqualTo: '2026-W42_u1')).called(1);
+    verify(() => query.where('uid', isEqualTo: 'u1')).called(1);
   });
 
   test('runBatch failure is mapped and recorded under an empty collection', () async {

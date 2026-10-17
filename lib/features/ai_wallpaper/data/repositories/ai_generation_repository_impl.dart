@@ -5,6 +5,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
@@ -31,26 +32,48 @@ typedef AiSubmissionMetadata = ({String title, String description, String catego
 @lazySingleton
 class AiGenerationRepositoryImpl {
   static const String _apiBase = 'https://prismwalls.com/api/ai';
+  static const int maxLocalHistoryRecords = 50;
 
   AiGenerationRepositoryImpl()
     : _client = http.Client(),
-      _auth = FirebaseAuth.instance,
+      _authOverride = null,
+      _localStore = DurableJsonStore('ai_wallpaper'),
       _requestTimeout = _defaultTimeout;
 
   @visibleForTesting
   AiGenerationRepositoryImpl.forTest({
     required http.Client client,
     required FirebaseAuth auth,
+    DurableJsonStore? localStore,
     Duration requestTimeout = _defaultTimeout,
   }) : _client = client,
-       _auth = auth,
+       _authOverride = auth,
+       _localStore = localStore ?? DurableJsonStore('ai_wallpaper'),
        _requestTimeout = requestTimeout;
 
   static const Duration _defaultTimeout = Duration(seconds: 60);
 
   final http.Client _client;
-  final FirebaseAuth _auth;
+  final FirebaseAuth? _authOverride;
+  final DurableJsonStore _localStore;
   final Duration _requestTimeout;
+  final Map<String, int> _ownerGenerations = <String, int>{};
+  final Map<String, Future<void>> _ownerWriteTails = <String, Future<void>>{};
+
+  FirebaseAuth get _auth => _authOverride ?? FirebaseAuth.instance;
+
+  int _generationFor(String userId) => _ownerGenerations[userId] ?? 0;
+
+  bool _isCurrentGeneration(String userId, int generation) => _generationFor(userId) == generation;
+
+  Future<void> _serializeOwnerWrite(String userId, int generation, Future<void> Function() operation) {
+    final Future<void> previous = _ownerWriteTails[userId] ?? Future<void>.value();
+    final Future<void> write = previous.then((_) async {
+      if (_isCurrentGeneration(userId, generation)) await operation();
+    });
+    _ownerWriteTails[userId] = write.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return write;
+  }
 
   User _requireUser() {
     final user = _auth.currentUser;
@@ -75,6 +98,7 @@ class AiGenerationRepositoryImpl {
     String? chargeTxId,
   }) async {
     final user = _requireUser();
+    final int ownerGeneration = _generationFor(user.uid);
 
     final payload = <String, dynamic>{
       'prompt': prompt,
@@ -95,7 +119,7 @@ class AiGenerationRepositoryImpl {
       coinsSpent: coinsSpent,
     );
     try {
-      await saveHistoryRecord(record);
+      await _saveHistoryRecord(record, ownerGeneration);
     } catch (_) {
       // Keep generation success even if history persistence fails transiently.
     }
@@ -111,6 +135,7 @@ class AiGenerationRepositoryImpl {
     String? chargeTxId,
   }) async {
     final user = _requireUser();
+    final int ownerGeneration = _generationFor(user.uid);
 
     final AiGenerationRecord? original = await _fetchById(generationId);
     final payload = <String, dynamic>{
@@ -134,7 +159,7 @@ class AiGenerationRepositoryImpl {
       parentGenerationId: generationId,
     );
     try {
-      await saveHistoryRecord(record);
+      await _saveHistoryRecord(record, ownerGeneration);
     } catch (_) {
       // Keep variation success even if history persistence fails transiently.
     }
@@ -160,43 +185,194 @@ class AiGenerationRepositoryImpl {
     );
   }
 
-  Future<void> saveHistoryRecord(AiGenerationRecord record) async {
-    await firestoreClient.setDoc(
-      FirebaseCollections.aiGenerations,
-      record.id,
-      record.toJson(),
-      merge: true,
-      sourceTag: 'ai.history.save',
-    );
+  Future<void> saveHistoryRecord(AiGenerationRecord record) =>
+      _saveHistoryRecord(record, _generationFor(record.userId));
+
+  Future<void> _saveHistoryRecord(AiGenerationRecord record, int generation) async {
+    await _serializeOwnerWrite(record.userId, generation, () async {
+      await _localStore.write(_historyKey(record.userId, record.id), _recordJson(record, pending: true));
+      if (!_isCurrentGeneration(record.userId, generation)) return;
+      await _trimLocalHistory(record.userId);
+    });
+    if (!_isCurrentGeneration(record.userId, generation)) return;
+    await firestoreClient
+        .setDoc(
+          FirebaseCollections.aiGenerations,
+          record.id,
+          record.toJson(),
+          merge: true,
+          sourceTag: 'ai.history.save',
+        )
+        .timeout(_requestTimeout);
+    await _writeLocalRecord(record, generation, pending: false);
   }
 
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async {
+    final int generation = _generationFor(userId);
+    late final List<AiGenerationRecord> remote;
     try {
-      final rows = await firestoreClient.query<AiGenerationRecord>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.aiGenerations,
-          sourceTag: 'ai.history.fetch',
-          filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
-          orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: 'createdAt', descending: true)],
-          limit: limit,
-          dedupeWindowMs: 2000,
-        ),
-        (data, docId) => AiGenerationRecord.fromJson(data, fallbackId: docId),
-      );
+      remote = await _fetchRemoteHistory(userId: userId, limit: limit);
+    } catch (_) {
+      if (!_isCurrentGeneration(userId, generation)) return const <AiGenerationRecord>[];
+      final List<AiGenerationRecord> local = await fetchLocalHistory(userId: userId, limit: limit);
+      if (!_isCurrentGeneration(userId, generation)) return const <AiGenerationRecord>[];
+      if (local.isNotEmpty) return local;
+      rethrow;
+    }
+    if (!_isCurrentGeneration(userId, generation)) return const <AiGenerationRecord>[];
+    try {
+      await _serializeOwnerWrite(userId, generation, () async {
+        for (final AiGenerationRecord record in remote) {
+          if (!_isCurrentGeneration(userId, generation)) return;
+          await _localStore.write(_historyKey(userId, record.id), _recordJson(record, pending: false));
+        }
+        if (_isCurrentGeneration(userId, generation)) await _trimLocalHistory(userId);
+      });
+    } on Object {}
+    if (!_isCurrentGeneration(userId, generation)) return const <AiGenerationRecord>[];
+    final List<AiGenerationRecord> pending = await _fetchPendingHistory(userId: userId, limit: limit);
+    if (!_isCurrentGeneration(userId, generation)) return const <AiGenerationRecord>[];
+    final Map<String, AiGenerationRecord> combined = <String, AiGenerationRecord>{
+      for (final AiGenerationRecord record in pending) record.id: record,
+      for (final AiGenerationRecord record in remote) record.id: record,
+    };
+    final List<AiGenerationRecord> result = combined.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return result.take(limit).toList(growable: false);
+  }
+
+  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async {
+    if (userId.trim().isEmpty || limit <= 0) return const <AiGenerationRecord>[];
+    final String prefix = 'history/${Uri.encodeComponent(userId)}/';
+    final Map<String, Map<String, Object?>> records = await _localStore.readAll();
+    final List<AiGenerationRecord> result = <AiGenerationRecord>[];
+    for (final MapEntry<String, Map<String, Object?>> entry in records.entries) {
+      if (!entry.key.startsWith(prefix)) continue;
+      try {
+        final AiGenerationRecord record = AiGenerationRecord.fromJson(entry.value);
+        if (record.userId == userId && record.id.isNotEmpty) result.add(record);
+      } on Object {
+        continue;
+      }
+    }
+    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return result.take(limit).toList(growable: false);
+  }
+
+  Future<List<AiGenerationRecord>> _fetchPendingHistory({required String userId, required int limit}) async {
+    if (limit <= 0) return const <AiGenerationRecord>[];
+    final String prefix = 'history/${Uri.encodeComponent(userId)}/';
+    final Map<String, Map<String, Object?>> records = await _localStore.readAll();
+    final List<AiGenerationRecord> result = <AiGenerationRecord>[];
+    for (final MapEntry<String, Map<String, Object?>> entry in records.entries) {
+      if (!entry.key.startsWith(prefix) || entry.value['_syncState'] != 'pending') continue;
+      try {
+        final AiGenerationRecord record = AiGenerationRecord.fromJson(entry.value);
+        if (record.userId == userId && record.id.isNotEmpty) result.add(record);
+      } on Object {
+        continue;
+      }
+    }
+    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return result.take(limit).toList(growable: false);
+  }
+
+  Future<void> _writeLocalRecord(AiGenerationRecord record, int generation, {required bool pending}) =>
+      _serializeOwnerWrite(record.userId, generation, () async {
+        if (!_isCurrentGeneration(record.userId, generation)) return;
+        await _localStore.write(_historyKey(record.userId, record.id), _recordJson(record, pending: pending));
+      });
+
+  Future<String?> loadPrompt({required String userId}) async {
+    if (userId.trim().isEmpty) return null;
+    final Map<String, Object?>? record = await _localStore.read(_promptKey(userId));
+    if (record == null || record['owner'] != userId || record['prompt'] is! String) return null;
+    return record['prompt']! as String;
+  }
+
+  Future<void> savePrompt({required String userId, required String prompt}) async {
+    if (userId.trim().isEmpty) throw ArgumentError.value(userId, 'userId');
+    final int generation = _generationFor(userId);
+    await _serializeOwnerWrite(
+      userId,
+      generation,
+      () => _localStore.write(_promptKey(userId), <String, Object?>{'owner': userId, 'prompt': prompt}),
+    );
+  }
+
+  Future<void> clearForUser(String userId) async {
+    if (userId.trim().isEmpty) return;
+    final int generation = _generationFor(userId) + 1;
+    _ownerGenerations[userId] = generation;
+    await _serializeOwnerWrite(userId, generation, () async {
+      final String historyPrefix = 'history/${Uri.encodeComponent(userId)}/';
+      final Map<String, Map<String, Object?>> records = await _localStore.readAll();
+      for (final String key in records.keys.where((key) => key.startsWith(historyPrefix))) {
+        await _localStore.delete(key);
+      }
+      await _localStore.delete(_promptKey(userId));
+    });
+  }
+
+  Future<void> _trimLocalHistory(String userId) async {
+    final String prefix = 'history/${Uri.encodeComponent(userId)}/';
+    final Map<String, Map<String, Object?>> records = await _localStore.readAll();
+    final List<MapEntry<String, Map<String, Object?>>> owned = records.entries
+        .where((entry) => entry.key.startsWith(prefix))
+        .toList(growable: false);
+    owned.sort((a, b) => (b.value['createdAt']?.toString() ?? '').compareTo(a.value['createdAt']?.toString() ?? ''));
+    for (final entry in owned.skip(maxLocalHistoryRecords)) {
+      await _localStore.delete(entry.key);
+    }
+  }
+
+  static Map<String, Object?> _recordJson(AiGenerationRecord record, {required bool pending}) => <String, Object?>{
+    ...record.toJson(),
+    'createdAt': record.createdAt.toUtc().toIso8601String(),
+    'submittedAt': record.submittedAt?.toUtc().toIso8601String(),
+    '_syncState': pending ? 'pending' : 'synced',
+  };
+
+  static String _historyKey(String userId, String generationId) =>
+      'history/${Uri.encodeComponent(userId)}/${Uri.encodeComponent(generationId)}';
+
+  static String _promptKey(String userId) => 'prompt/${Uri.encodeComponent(userId)}';
+
+  Future<List<AiGenerationRecord>> _fetchRemoteHistory({required String userId, int limit = 50}) async {
+    try {
+      final rows = await firestoreClient
+          .query<AiGenerationRecord>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.aiGenerations,
+              sourceTag: 'ai.history.fetch',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId),
+              ],
+              orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: 'createdAt', descending: true)],
+              limit: limit,
+              dedupeWindowMs: 2000,
+            ),
+            (data, docId) => AiGenerationRecord.fromJson(data, fallbackId: docId),
+          )
+          .timeout(_requestTimeout);
       return rows;
     } on FirestoreError catch (error) {
       if (error.code != 'failed-precondition') {
         rethrow;
       }
-      final fallbackRows = await firestoreClient.query<AiGenerationRecord>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.aiGenerations,
-          sourceTag: 'ai.history.fetch.missing_index_fallback',
-          filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
-          dedupeWindowMs: 2000,
-        ),
-        (data, docId) => AiGenerationRecord.fromJson(data, fallbackId: docId),
-      );
+      final fallbackRows = await firestoreClient
+          .query<AiGenerationRecord>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.aiGenerations,
+              sourceTag: 'ai.history.fetch.missing_index_fallback',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId),
+              ],
+              dedupeWindowMs: 2000,
+            ),
+            (data, docId) => AiGenerationRecord.fromJson(data, fallbackId: docId),
+          )
+          .timeout(_requestTimeout);
       fallbackRows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       if (limit <= 0 || fallbackRows.length <= limit) {
         return fallbackRows;

@@ -10,6 +10,9 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
@@ -430,6 +433,36 @@ void main() {
       await pumpLoaded(tester);
 
       expect(find.text('2 favourites'), findsOneWidget);
+    });
+
+    testWidgets('sharing mixed favourites replaces a starter local path with its public landing link', (tester) async {
+      const localPath = '/tmp/prism-bundled-wallpapers/starter-sunset.jpg';
+      final starter = PrismFavouriteWall(
+        id: 'starter-sunset',
+        wallpaper: PrismWallpaper(
+          core: const WallpaperCore(
+            id: 'starter-sunset',
+            source: WallpaperSource.prism,
+            fullUrl: localPath,
+            thumbnailUrl: localPath,
+            authorName: 'Prism',
+          ),
+        ),
+      );
+      createToolsBloc(<FavouriteWallEntity>[starter, prismFav('a', author: 'Ada')]);
+      await pumpLoaded(tester);
+
+      await tester.longPress(find.bySemanticsLabel('Wallpaper by Prism'));
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel('Wallpaper by Ada'));
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel('Share'));
+      await settle(tester);
+
+      final String sharedText = (shareCalls.single.arguments as Map)['text'] as String;
+      expect(sharedText, contains('https://prismwalls.com/'));
+      expect(sharedText, contains('https://example.com/a.jpg'));
+      expect(sharedText, isNot(contains(localPath)));
     });
 
     testWidgets('Clear all asks with the count, clears, and Undo restores the list', (tester) async {

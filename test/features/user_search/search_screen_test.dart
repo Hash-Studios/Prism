@@ -48,7 +48,8 @@ WallpaperSearchPage _page(
   List<FeedItemEntity> results, {
   SearchProviderValue provider = SearchProviderValue.wallhaven,
   List<FeedItemEntity> prismResults = const <FeedItemEntity>[],
-}) => (provider: provider, results: results, prismResults: prismResults);
+  bool isLocal = false,
+}) => (provider: provider, results: results, prismResults: prismResults, isLocal: isLocal);
 
 void main() {
   late _MockWallpaperSearchService service;
@@ -249,6 +250,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: const <FeedItemEntity>[],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
 
@@ -265,6 +267,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: <FeedItemEntity>[_wallpaper('wh-1')],
         prismResults: <FeedItemEntity>[_wallpaper('prism-1')],
+        isLocal: false,
       ),
     );
 
@@ -281,6 +284,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: <FeedItemEntity>[_wallpaper('wh-1')],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
     await submit(tester, 'forest');
@@ -300,6 +304,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: <FeedItemEntity>[_wallpaper('wh-1')],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
     await submit(tester, 'forest');
@@ -319,6 +324,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: <FeedItemEntity>[_wallpaper('wh-1')],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
     pendingTagSearch.value = 'mountains';
@@ -339,6 +345,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: <FeedItemEntity>[_wallpaper('wh-1')],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
     await tester.pumpWidget(const MaterialApp(home: SearchScreen()));
@@ -359,6 +366,7 @@ void main() {
         provider: SearchProviderValue.pexels,
         results: <FeedItemEntity>[_wallpaper('px-1')],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
 
@@ -382,6 +390,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: <FeedItemEntity>[_wallpaper('unfiltered-1')],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
     when(
@@ -407,6 +416,7 @@ void main() {
       provider: SearchProviderValue.wallhaven,
       results: <FeedItemEntity>[_wallpaper('filtered-1')],
       prismResults: const <FeedItemEntity>[],
+      isLocal: false,
     ));
     await tester.pump();
     await tester.pump();
@@ -447,6 +457,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: <FeedItemEntity>[_wallpaper('wh-1')],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
 
@@ -465,8 +476,12 @@ void main() {
 
     void answerWith(List<FeedItemEntity> results) {
       when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
-        (_) async =>
-            (provider: SearchProviderValue.wallhaven, results: results, prismResults: const <FeedItemEntity>[]),
+        (_) async => (
+          provider: SearchProviderValue.wallhaven,
+          results: results,
+          prismResults: const <FeedItemEntity>[],
+          isLocal: false,
+        ),
       );
     }
 
@@ -547,6 +562,7 @@ void main() {
           provider: SearchProviderValue.wallhaven,
           results: <FeedItemEntity>[_wallpaper('red-forest')],
           prismResults: const <FeedItemEntity>[],
+          isLocal: false,
         ),
       );
       await submit(tester, 'forest');

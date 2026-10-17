@@ -17,6 +17,8 @@ import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -48,8 +50,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     this._userBlockRepository,
     this._favouriteWallsRepository,
     this._tasteSignals,
-    this._impressions,
-  );
+    this._impressions, {
+    @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
+  }) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance;
 
   final FirestoreClient _firestoreClient;
   final FeedCacheLocalDataSource _feedCacheLocal;
@@ -60,6 +63,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   final FavouriteWallsRepository _favouriteWallsRepository;
   final TasteSignalStore _tasteSignals;
   final FeedImpressionStore _impressions;
+  final OfflineWallpaperCatalog _offlineCatalog;
   final PersonalizedRankingService _rankingService = const PersonalizedRankingService();
   final Random _random = Random();
 
@@ -74,8 +78,24 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
   /// Values the `onWallCategorize` Cloud Function writes to `walls.category`.
   static const List<String> _wallCategories = <String>[
-    'Nature', 'Architecture', 'Cars', 'Anime', 'Space', 'Ocean', 'Flowers', 'Neon', 'Dark', 'Abstract', //
-    '3D Render', 'Minimal', 'Gradient', 'AI Art', 'Cyberpunk', 'Vintage', 'Landscape', 'Galaxy',
+    'Nature',
+    'Architecture',
+    'Cars',
+    'Anime',
+    'Space',
+    'Ocean',
+    'Flowers',
+    'Neon',
+    'Dark',
+    'Abstract', //
+    '3D Render',
+    'Minimal',
+    'Gradient',
+    'AI Art',
+    'Cyberpunk',
+    'Vintage',
+    'Landscape',
+    'Galaxy',
   ];
 
   /// Reused on `page > 1` to avoid Remote Config + Firestore user doc on every scroll page.
@@ -130,7 +150,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       blocked: () async => _userBlockRepository.cachedBlockedCreatorEmails,
     );
     if (cached == null || cached.items.isEmpty) {
-      return null;
+      final List<FeedItemEntity> starters = await BundledWallpapers.load();
+      return PersonalizedFeedPage(
+        items: starters.take(_cachedPageSize).toList(growable: false),
+        hasMore: false,
+        usedKeys: starters.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+      );
     }
     final List<FeedItemEntity> items = cached.items.take(_cachedPageSize).toList(growable: false);
     return PersonalizedFeedPage(
@@ -270,17 +295,20 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         throw StateError('Personalized feed sources failed without ranked candidates');
       }
 
-      final List<FeedItemEntity> merged = _mergeCachedAndNew(
-        request.refresh ? const <FeedItemEntity>[] : request.existingItems,
-        ranking.items,
-      );
+      final List<FeedItemEntity> existingItems = request.refresh
+          ? const <FeedItemEntity>[]
+          : ranking.items.isEmpty
+          ? request.existingItems
+          : request.existingItems.where((item) => !BundledWallpapers.isStarter(item)).toList(growable: false);
+      final List<FeedItemEntity> merged = _mergeCachedAndNew(existingItems, ranking.items);
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
       // Pages 1 and 2 fill the cap, so later pages would only rewrite the same items.
       if (request.refresh || request.page <= 2) {
-        unawaited(_writeCachedItems(scope: cacheScope, cachedItems: merged.take(_cacheCap).toList(growable: false)));
+        await _writeCachedItems(scope: cacheScope, cachedItems: merged.take(_cacheCap).toList(growable: false));
       }
+      unawaited(_rememberInCatalog(ranking.items));
 
       logger.i(
         '[PersonalizedFeed] fetch success',
@@ -302,31 +330,38 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
-      // Only page one falls back to the cache. A later page replays items that are already on screen, which would
-      // end the feed as "caught up" while the network is down.
-      final List<FeedItemEntity> cachedItems = request.page == 1
-          ? await _readCachedItems(scope: cacheScope)
-          : const <FeedItemEntity>[];
+      final List<FeedItemEntity> cachedItems = await _readCachedItems(scope: cacheScope);
+      final List<FeedItemEntity> fallbackItems = cachedItems.isEmpty ? await BundledWallpapers.load() : cachedItems;
       if (!isCurrentSession()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
-      if (cachedItems.isNotEmpty) {
+      if (fallbackItems.isNotEmpty) {
         final Set<String> excluded = <String>{
           ...request.seenKeys,
           ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
         };
-        final List<FeedItemEntity> unseenCachedItems = cachedItems
+        final List<FeedItemEntity> unseenCachedItems = fallbackItems
             .where((item) => !excluded.contains(PersonalizedRankingService.canonicalKey(item)))
             .toList(growable: false);
-        return Result.success(
-          PersonalizedFeedPage(
-            items: unseenCachedItems,
-            hasMore: unseenCachedItems.isNotEmpty,
-            usedKeys: unseenCachedItems.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
-          ),
-        );
+        if (unseenCachedItems.isNotEmpty || fallbackItems.every(BundledWallpapers.isStarter)) {
+          return Result.success(
+            PersonalizedFeedPage(
+              items: unseenCachedItems,
+              hasMore: !fallbackItems.every(BundledWallpapers.isStarter),
+              usedKeys: unseenCachedItems.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+            ),
+          );
+        }
       }
       return Result.error(ServerFailure('Failed to fetch personalized feed: $error'));
+    }
+  }
+
+  Future<void> _rememberInCatalog(Iterable<FeedItemEntity> items) async {
+    try {
+      await _offlineCatalog.remember(items);
+    } catch (error) {
+      logger.w('[PersonalizedFeed] local catalog write failed: $error');
     }
   }
 

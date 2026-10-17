@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -84,21 +87,53 @@ class _ShareButtonState extends State<ShareButton> {
     });
 
     try {
-      final String? link = await createLink(id!, source, url, thumbUrl);
-      if (link == null) {
-        if (mounted) toasts.error("Couldn't create the share link. Try again.");
-        analytics.track(
-          const InviteShareResultEvent(
-            channel: ShareChannelValue.shareSheet,
-            result: EventResultValue.failure,
-            reason: AnalyticsReasonValue.error,
-            sourceContext: 'wallpaper_screen',
-          ),
-        );
-        return;
+      final String itemId = id ?? '';
+      final bool isBundledStarter = BundledWallpapers.isStarterIdentity(itemId, source);
+      final String canonicalLink = isBundledStarter
+          ? 'This bundled wallpaper is available in the Prism app.'
+          : canonicalWallpaperLink(id: itemId, source: source, url: url, thumbUrl: thumbUrl);
+      String link = canonicalLink;
+      if (!isBundledStarter) {
+        try {
+          link =
+              await createLink(itemId, source, url, thumbUrl).timeout(const Duration(milliseconds: 750)) ??
+              canonicalLink;
+        } on TimeoutException catch (error, stackTrace) {
+          logger.w('Short link timed out; sharing canonical wallpaper URL.', error: error, stackTrace: stackTrace);
+        } catch (error, stackTrace) {
+          logger.w('Short link unavailable; sharing canonical wallpaper URL.', error: error, stackTrace: stackTrace);
+        }
       }
       if (!mounted) return;
-      final ShareCardResult shared = await shareCard(context, imageUrl: imageUrl, link: link, contextLine: contextLine);
+      String shareImageUrl = imageUrl;
+      if (isBundledStarter) {
+        try {
+          final file = await BundledWallpapers.localFileForStarter(itemId, source);
+          if (file == null) throw StateError('Bundled wallpaper file is unavailable.');
+          shareImageUrl = file.path;
+        } catch (error, stackTrace) {
+          logger.w('Bundled wallpaper is unavailable for sharing.', error: error, stackTrace: stackTrace);
+          if (mounted) {
+            analytics.track(
+              const InviteShareResultEvent(
+                channel: ShareChannelValue.shareSheet,
+                result: EventResultValue.failure,
+                reason: AnalyticsReasonValue.error,
+                sourceContext: 'wallpaper_screen',
+              ),
+            );
+            toasts.error("Couldn't share this wallpaper right now.");
+          }
+          return;
+        }
+      }
+      if (!mounted) return;
+      final ShareCardResult shared = await shareCard(
+        context,
+        imageUrl: shareImageUrl,
+        link: link,
+        contextLine: contextLine,
+      );
       if (!mounted) return;
       analytics.track(
         InviteShareResultEvent(

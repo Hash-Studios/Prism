@@ -89,9 +89,12 @@ class _FirestoreBatchBridge implements FirestoreBatch {
 }
 
 class FirestoreTrackedClient implements FirestoreClient {
-  FirestoreTrackedClient(this._firestore, this._telemetry);
+  FirestoreTrackedClient(FirebaseFirestore firestore, this._telemetry) : _firestoreFactory = (() => firestore);
 
-  final FirebaseFirestore _firestore;
+  FirestoreTrackedClient.deferred(this._firestoreFactory, this._telemetry);
+
+  final FirebaseFirestore Function() _firestoreFactory;
+  FirebaseFirestore get _firestore => _firestoreFactory();
   final FirestoreTelemetrySink _telemetry;
   final Map<String, Future<_QueryCacheEntry>> _inflightQueries = <String, Future<_QueryCacheEntry>>{};
   final Map<String, _QueryCacheEntry> _queryCache = <String, _QueryCacheEntry>{};
@@ -366,9 +369,9 @@ class FirestoreTrackedClient implements FirestoreClient {
     required String sourceTag,
     bool preferCacheFirst = false,
   }) async {
-    final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
     if (preferCacheFirst) {
       try {
+        final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
         final Stopwatch swCache = Stopwatch()..start();
         final DocumentSnapshot<Map<String, dynamic>> cached = await ref.get(const GetOptions(source: Source.cache));
         if (cached.exists && cached.data() != null) {
@@ -401,7 +404,7 @@ class FirestoreTrackedClient implements FirestoreClient {
       filtersHash: '$collection:$id',
       docId: id,
       resultCount: (doc) => doc.exists ? 1 : 0,
-      body: ref.get,
+      body: () => _firestore.collection(collection).doc(id).get(),
     );
     if (!doc.exists || doc.data() == null) {
       return null;
@@ -517,62 +520,98 @@ class FirestoreTrackedClient implements FirestoreClient {
 
   @override
   Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
-    return watchQueryWithMetadata<T>(spec, map).map((snapshot) => snapshot.items);
+    return _watchQuery<T>(spec, map, includeMetadataChanges: false).map((snapshot) => snapshot.items);
   }
 
   @override
   Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
     FirestoreQuerySpec spec,
     T Function(Map<String, dynamic> data, String docId) map,
-  ) {
-    final Query<Map<String, dynamic>> query = _applySpec(spec);
-    final DateTime start = DateTime.now();
-    unawaited(
-      _telemetry.emit(
-        FirestoreTelemetryEvent(
-          timestamp: start,
-          sourceTag: spec.sourceTag,
-          operation: FirestoreOperation.streamSubscribe,
-          collection: spec.collection,
-          filtersHash: spec.filtersHash,
-          orderBy: _orderByList(spec),
-          limit: spec.limit,
-          durationMs: 0,
-          success: true,
-        ),
-      ),
-    );
-    return query
-        .snapshots()
-        .map(
-          (snapshot) => (
-            items: snapshot.docs.map((doc) => map(doc.data(), doc.id)).toList(growable: false),
-            isFromCache: snapshot.metadata.isFromCache,
-          ),
-        )
-        .transform(
-          StreamTransformer<({List<T> items, bool isFromCache}), ({List<T> items, bool isFromCache})>.fromHandlers(
-            handleError: (Object error, StackTrace stackTrace, EventSink<({List<T> items, bool isFromCache})> sink) {
-              final FirestoreError mapped = mapFirestoreError(error);
-              unawaited(
-                _telemetry.emit(
-                  FirestoreTelemetryEvent(
-                    timestamp: DateTime.now(),
-                    sourceTag: spec.sourceTag,
-                    operation: FirestoreOperation.streamSubscribe,
-                    collection: spec.collection,
-                    filtersHash: spec.filtersHash,
-                    orderBy: _orderByList(spec),
-                    limit: spec.limit,
-                    durationMs: DateTime.now().difference(start).inMilliseconds,
-                    success: false,
-                    errorCode: mapped.code,
-                  ),
-                ),
-              );
-              sink.addError(mapped, stackTrace);
-            },
+  ) => _watchQuery<T>(spec, map, includeMetadataChanges: true);
+
+  Stream<({List<T> items, bool isFromCache})> _watchQuery<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required bool includeMetadataChanges,
+  }) {
+    return Stream<({List<T> items, bool isFromCache})>.multi((controller) {
+      final DateTime start = DateTime.now();
+      StreamSubscription<({List<T> items, bool isFromCache})>? subscription;
+      try {
+        final Query<Map<String, dynamic>> query = _applySpec(spec);
+        final Stream<({List<T> items, bool isFromCache})> snapshots = query
+            .snapshots(includeMetadataChanges: includeMetadataChanges)
+            .map(
+              (snapshot) => (
+                items: snapshot.docs.map((doc) => map(doc.data(), doc.id)).toList(growable: false),
+                isFromCache: snapshot.metadata.isFromCache,
+              ),
+            )
+            .transform(
+              StreamTransformer<({List<T> items, bool isFromCache}), ({List<T> items, bool isFromCache})>.fromHandlers(
+                handleError:
+                    (Object error, StackTrace stackTrace, EventSink<({List<T> items, bool isFromCache})> sink) {
+                      final FirestoreError mapped = mapFirestoreError(error);
+                      unawaited(
+                        _telemetry.emit(
+                          FirestoreTelemetryEvent(
+                            timestamp: DateTime.now(),
+                            sourceTag: spec.sourceTag,
+                            operation: FirestoreOperation.streamSubscribe,
+                            collection: spec.collection,
+                            filtersHash: spec.filtersHash,
+                            orderBy: _orderByList(spec),
+                            limit: spec.limit,
+                            durationMs: DateTime.now().difference(start).inMilliseconds,
+                            success: false,
+                            errorCode: mapped.code,
+                          ),
+                        ),
+                      );
+                      sink.addError(mapped, stackTrace);
+                    },
+              ),
+            );
+        unawaited(
+          _telemetry.emit(
+            FirestoreTelemetryEvent(
+              timestamp: start,
+              sourceTag: spec.sourceTag,
+              operation: FirestoreOperation.streamSubscribe,
+              collection: spec.collection,
+              filtersHash: spec.filtersHash,
+              orderBy: _orderByList(spec),
+              limit: spec.limit,
+              durationMs: 0,
+              success: true,
+            ),
           ),
         );
+        subscription = snapshots.listen(controller.add, onError: controller.addError, onDone: controller.close);
+        controller.onPause = subscription.pause;
+        controller.onResume = subscription.resume;
+      } catch (error, stackTrace) {
+        final FirestoreError mapped = mapFirestoreError(error);
+        unawaited(
+          _telemetry.emit(
+            FirestoreTelemetryEvent(
+              timestamp: DateTime.now(),
+              sourceTag: spec.sourceTag,
+              operation: FirestoreOperation.streamSubscribe,
+              collection: spec.collection,
+              filtersHash: spec.filtersHash,
+              orderBy: _orderByList(spec),
+              limit: spec.limit,
+              durationMs: DateTime.now().difference(start).inMilliseconds,
+              success: false,
+              errorCode: mapped.code,
+            ),
+          ),
+        );
+        controller.addError(mapped, stackTrace);
+        controller.close();
+      }
+      controller.onCancel = () => subscription?.cancel();
+    });
   }
 }
