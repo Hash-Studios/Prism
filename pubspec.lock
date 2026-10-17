@@ -705,10 +705,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_floating_bottom_bar
-      sha256: "399116efe705c1e152f27765d8e155457bc276a6dbe6fccc4e47f543911e6860"
+      sha256: "3063f78c20486bb1a2b5017b1515b82e7aed79dde2efbd30a1c96ee3a84ff228"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "3.0.1"
   flutter_image_compress:
     dependency: "direct main"
     description:
