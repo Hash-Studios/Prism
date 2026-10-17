@@ -12,6 +12,7 @@ abstract class LiveWallpaperState with _$LiveWallpaperState {
     required GradientStyle gradientStyle,
     required bool batterySaver,
     required bool applying,
+    @Default(<String>{}) Set<String> unlockedStyles,
     String? videoPath,
     LiveApplyOutcome? outcome,
   }) = _LiveWallpaperState;
@@ -25,4 +26,9 @@ abstract class LiveWallpaperState with _$LiveWallpaperState {
     batterySaver: false,
     applying: false,
   );
+}
+
+extension LiveWallpaperStateLocks on LiveWallpaperState {
+  /// A paid style is open for Pro users and for 7 days after the user unlocked it with coins.
+  bool isLocked(String styleId, {required bool isFree}) => !isPro && !isFree && !unlockedStyles.contains(styleId);
 }

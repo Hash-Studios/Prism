@@ -109,6 +109,40 @@ void main() {
       await bloc.close();
     });
 
+    test('a style unlocked with coins applies without Pro, and only that style', () async {
+      final LiveWallpaperBloc bloc = build()
+        ..add(const LiveWallpaperEvent.started(isPro: false, unlockedStyles: <String>{'ripple'}))
+        ..add(const LiveWallpaperEvent.motionSelected(MotionStyle.ripple))
+        ..add(LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45));
+      await settle();
+      expect(repository.motionApplies, <MotionStyle>[MotionStyle.ripple]);
+
+      bloc
+        ..add(const LiveWallpaperEvent.outcomeHandled())
+        ..add(const LiveWallpaperEvent.motionSelected(MotionStyle.shimmer))
+        ..add(LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45));
+      await settle();
+      expect(repository.motionApplies, <MotionStyle>[MotionStyle.ripple]);
+      expect(bloc.state.outcome?.status, LiveApplyStatus.proRequired);
+      await bloc.close();
+    });
+
+    test('unlocking a gradient style after the first refusal lets the next apply through', () async {
+      final LiveWallpaperBloc bloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: false))
+        ..add(const LiveWallpaperEvent.gradientSelected(GradientStyle.waves))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      await settle();
+      expect(bloc.state.outcome?.status, LiveApplyStatus.proRequired);
+
+      bloc
+        ..add(const LiveWallpaperEvent.unlockedStylesChanged(<String>{'waves'}))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      await settle();
+      expect(repository.gradientApplies, <GradientStyle>[GradientStyle.waves]);
+      await bloc.close();
+    });
+
     test('free gradients are two styles and the rest need Pro', () {
       expect(GradientStyle.values.where((style) => style.isFree), <GradientStyle>[
         GradientStyle.aurora,

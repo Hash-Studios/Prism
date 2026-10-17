@@ -21,7 +21,7 @@ class LiveWallpaperScreen extends StatelessWidget {
     return BlocProvider<LiveWallpaperBloc>(
       create: (_) =>
           LiveWallpaperBloc(getIt<LiveWallpaperRepository>(), imageUrl: imageUrl)
-            ..add(LiveWallpaperEvent.started(isPro: app_state.prismUser.premium)),
+            ..add(LiveWallpaperEvent.started(isPro: app_state.prismUser.premium, unlockedStyles: activeLiveStyleIds())),
       child: LiveWallpaperView(imageUrl: imageUrl, accentSeed: accentSeed),
     );
   }

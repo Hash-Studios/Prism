@@ -41,7 +41,7 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       _openCollection(normalizedCollectionName);
       return;
     }
-    if (app_state.prismUser.premium) {
+    if (CoinsService.instance.premiumContentUnlocked) {
       _openCollection(normalizedCollectionName);
       return;
     }

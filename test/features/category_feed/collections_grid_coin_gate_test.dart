@@ -5,12 +5,14 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as collections_data;
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/views/widgets/collection_card.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +20,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
+
+class _MockStackRouter extends Mock implements StackRouter {}
 
 class _DelayedPreviewFirestore extends Fake implements FirestoreClient {
   final Completer<Map<String, dynamic>?> response = Completer<Map<String, dynamic>?>();
@@ -38,6 +42,8 @@ class _DelayedPreviewFirestore extends Fake implements FirestoreClient {
 }
 
 void main() {
+  setUpAll(() => registerFallbackValue(CollectionViewRoute(collectionName: 'x')));
+
   setUp(() {
     // The coin gate asks for ad consent before it shows a prompt. The real flow needs the Google UMP plugin.
     AdConsent.instance = AdConsent(
@@ -53,6 +59,7 @@ void main() {
     AdConsent.instance = AdConsent();
     app_state.prismUser = app_constants.createGuestPrismUser();
     CoinsService.instance.balanceNotifier.value = 0;
+    CoinsService.instance.passesNotifier.value = Passes.empty;
     collections_data.collections = <Map<String, dynamic>>[];
     await getIt.reset();
   });
@@ -166,5 +173,41 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(firestore.reads, 1);
+  });
+
+  testWidgets('an active premium pass opens a premium collection with no preview check or sheet', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    CoinsService.instance.passesNotifier.value = Passes(premiumPassUntil: DateTime.now().add(const Duration(hours: 5)));
+    collections_data.collections = <Map<String, dynamic>>[
+      <String, dynamic>{'name': 'Premium', 'premium': true, 'thumb1': '', 'thumb2': ''},
+    ];
+    final _DelayedPreviewFirestore firestore = _DelayedPreviewFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final _MockCategoryFeedBloc bloc = _MockCategoryFeedBloc();
+    when(() => bloc.state).thenReturn(CategoryFeedState.initial());
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.push(any())).thenAnswer((_) async => null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<CategoryFeedBloc>.value(
+            value: bloc,
+            child: const Scaffold(body: CollectionsGrid()),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byType(CollectionCard).first);
+    await tester.pump();
+
+    expect(firestore.reads, 0);
+    expect(find.textContaining('Premium collection'), findsNothing);
+    final CollectionViewRoute route = verify(() => router.push(captureAny())).captured.single as CollectionViewRoute;
+    expect(route.args!.collectionName, 'premium');
   });
 }

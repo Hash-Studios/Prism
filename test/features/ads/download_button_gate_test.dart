@@ -92,6 +92,21 @@ void main() {
   );
   const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 
+  /// Tells the service the server has [left] grace downloads, as a spend reply does.
+  Future<void> useGraceDownloads(int left) async {
+    final prior = backend.onCall;
+    backend.onCall = (name, parameters) async => <String, Object>{
+      'success': true,
+      'changed': false,
+      'bypassed': true,
+      'currentBalance': 100,
+      'graceDownloadsLeft': left,
+      'reason': 'grace_download',
+    };
+    await CoinsService.instance.spend(CoinSpendAction.wallpaperDownload);
+    backend.onCall = prior;
+  }
+
   setUp(() async {
     await backend.install();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -134,6 +149,7 @@ void main() {
     CoinsService.instance.isLinkDownloaded = (_) => false;
     app_state.prismUser.coins = 100;
     CoinsService.instance.balanceNotifier.value = 100;
+    await useGraceDownloads(0);
     await getIt<SettingsLocalDataSource>().set('notificationPermissionPromptedV2', true);
   });
 
@@ -269,6 +285,46 @@ void main() {
 
       expect(find.text('Save · ${CoinPolicy.premiumWallpaperDownload}'), findsOneWidget);
       expect(semanticsLabel(tester), 'Save. Costs ${CoinPolicy.premiumWallpaperDownload} coins');
+    });
+
+    testWidgets('free downloads left show on a standard wallpaper', (tester) async {
+      await useGraceDownloads(2);
+      await pump(tester);
+
+      expect(find.text('Save · Free · 2 left'), findsOneWidget);
+      expect(semanticsLabel(tester), 'Save. Free, 2 free downloads left');
+    });
+
+    testWidgets('free downloads do not apply to a Pro wallpaper', (tester) async {
+      await useGraceDownloads(2);
+      await pump(tester, premiumContent: true);
+
+      expect(find.text('Save · ${CoinPolicy.premiumWallpaperDownload}'), findsOneWidget);
+    });
+
+    testWidgets('an active premium pass makes a Pro wallpaper free', (tester) async {
+      CoinsService.instance.passesNotifier.value = Passes(
+        premiumPassUntil: DateTime.now().add(const Duration(hours: 3)),
+      );
+      addTearDown(() => CoinsService.instance.passesNotifier.value = Passes.empty);
+      await pump(tester, premiumContent: true);
+
+      expect(find.text('Save · Free'), findsOneWidget);
+      expect(semanticsLabel(tester), 'Save. Free with your pass');
+    });
+
+    testWidgets('a free download with an empty balance goes to the server, not to the low balance sheet', (
+      tester,
+    ) async {
+      await useGraceDownloads(1);
+      app_state.prismUser.coins = 0;
+      CoinsService.instance.balanceNotifier.value = 0;
+      await pump(tester);
+      await tapSave(tester);
+
+      expect(find.text('Not enough coins'), findsNothing);
+      expect(spendCalls, hasLength(1));
+      expect(enqueued, hasLength(1));
     });
 
     testWidgets('a Pro user sees that saving is free', (tester) async {
@@ -461,7 +517,7 @@ void main() {
       await tapSave(tester);
 
       expect(find.textContaining('You need ${CoinPolicy.premiumWallpaperDownload} more coins'), findsOneWidget);
-      expect(find.textContaining('Each ad adds ${CoinPolicy.rewardedAd}.'), findsOneWidget);
+      expect(find.textContaining('Each ad adds ${CoinsService.instance.adsRewardNow}.'), findsOneWidget);
     });
 
     testWidgets('leaving the sheet reports a cancelled save', (tester) async {

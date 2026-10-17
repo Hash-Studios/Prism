@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
+import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -103,6 +104,7 @@ class _StripTile extends StatelessWidget {
         memCacheHeight: decodeHeight,
         heroTag: heroTag,
         semanticLabel: wallpaperSemanticLabel(wall.core.authorName),
+        overlay: boostedTagFor(wall),
         onTap: () {
           PrismHaptics.tap();
           unawaited(
