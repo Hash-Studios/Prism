@@ -1218,12 +1218,14 @@ async function verifyCharge(
     ? Date.parse(fields.createdAt.timestampValue)
     : Number.NaN;
   const ageMs = Date.now() - createdAtMs;
+  const cost = AI_COIN_COST_BY_TIER[qualityTier];
+  // Pro members pay half, rounded up (functions/src/economy.ts proPrice).
   const matches = fields.userId?.stringValue === auth.userId
     && fields.action?.stringValue === 'aiGeneration'
     && fields.type?.stringValue === 'debit'
     && fields.status?.stringValue === 'completed'
     && delta != null
-    && -delta === AI_COIN_COST_BY_TIER[qualityTier]
+    && (-delta === cost || -delta === Math.ceil(cost / 2))
     && Number.isFinite(ageMs)
     && ageMs >= -CHARGE_CLOCK_SKEW_MS
     && ageMs <= CHARGE_MAX_AGE_MS;

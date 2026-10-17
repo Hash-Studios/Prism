@@ -3,6 +3,7 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 
+import {installFakeDb} from "./fakeDb";
 import {isViewCooldownActive, parseViews, recordWallpaperView} from "../viewStats";
 
 test("view cooldown blocks only the first hour", () => {
@@ -149,4 +150,13 @@ test("a wallpaper view also counts in the daily doc that expires, and a repeat v
   assert.equal(daily[0].data.day, "20260102");
   assert.deepEqual(daily[0].data.views, {increment: 1});
   assert.equal((daily[0].data.expireAt as admin.firestore.Timestamp).toMillis(), Date.now() + 14 * 86_400_000);
+});
+
+test("a counted wallpaper view feeds the browse quest, a repeat inside the cooldown does not", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T10:00:00Z")});
+  const fake = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  await call();
+  assert.equal(fake.get("questEventRate/u1_2026-01-02_view_wallpaper")?.count, 1);
+  await call();
+  assert.equal(fake.get("questEventRate/u1_2026-01-02_view_wallpaper")?.count, 1);
 });

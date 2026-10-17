@@ -23,7 +23,9 @@ function fake(t: TestContext, options: Options = {}) {
       log.push("anonymize");
     },
   };
-  const docsFor = (collection: string) => [{id: "d1", data: () => ({}), ref: {path: `${collection}/d1`}}];
+  const docsFor = (collection: string) => [{
+    id: "d1", data: () => collection === "boosts" ? {wallId: "w9"} : {}, ref: {path: `${collection}/d1`},
+  }];
   const query = (collection: string) => {
     const q = {
       where: (field: string, op: string, value: unknown) => {
@@ -39,7 +41,7 @@ function fake(t: TestContext, options: Options = {}) {
   };
   t.mock.method(db, "collection", (name: string) => name === "usersv2" ?
     {...query(name), doc: () => userRef} :
-    {...query(name), doc: (id: string) => ({path: `${name}/${id}`})});
+    {...query(name), doc: (id: string) => ({path: `${name}/${id}`, get: async () => ({exists: true})})});
   t.mock.method(db, "recursiveDelete", async (ref: {path: string}) => {
     log.push(`recursive:${ref.path}`);
   });
@@ -87,6 +89,18 @@ test("deleting an account removes every per-user doc, anonymizes, then deletes t
   assert.ok(log.indexOf("anonymize") > log.indexOf("delete:draftSetups/d1"));
   assert.equal(log.at(-1), "auth");
   assert.equal(log.at(-2), "anonymize");
+});
+
+test("draw tickets and boosts are deleted, the boosted wall is cleared and the economy doc goes with private", async (t) => {
+  const log = fake(t);
+  await call();
+  assert.ok(log.includes("query:drawTickets.uid==u1"));
+  assert.ok(log.includes("delete:drawTickets/d1"));
+  assert.ok(log.includes("query:boosts.uid==u1"));
+  assert.ok(log.includes("delete:boosts/d1"));
+  assert.ok(log.includes("update:walls/w9:boostedUntil"));
+  assert.ok(log.includes("recursive:usersv2/u1/private"));
+  assert.ok(log.indexOf("anonymize") > log.indexOf("update:walls/w9:boostedUntil"));
 });
 
 test("a failed delete throws before the profile is anonymized or the auth user removed", async (t) => {
@@ -196,7 +210,7 @@ test("a user without an email still has uid-keyed records deleted and nothing is
   await call();
   assert.ok(log.includes("delete:githubUploads/d1"));
   assert.ok(log.includes("delete:users/u1"));
-  assert.ok(!log.some((entry) => entry.startsWith("update:")));
+  assert.ok(!log.some((entry) => entry.startsWith("update:") && !entry.startsWith("update:walls/w9")));
   assert.ok(!log.includes("delete:notifications/d1"));
 });
 

@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {db, REGION, utcDateString} from "./common";
+import {progressQuestForUser} from "./quests";
 
 export const WALLPAPER_STATS = "wallpaper_stats";
 export const WALLPAPER_STATS_DAILY = "wallpaper_stats_daily";
@@ -118,6 +119,7 @@ async function incrementAndReadViews(uid: string, collection: string, docId: str
     await bumpDaily(docId, "views", now).catch((err: unknown) => {
       logger.warn("Could not record the daily view.", {err});
     });
+    await progressQuestForUser(uid, "view_wallpaper", now);
   }
   return views + 1;
 }

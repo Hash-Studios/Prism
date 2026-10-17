@@ -10,6 +10,7 @@ import {
   RATE_DOC_TTL_MS,
   WALLPAPER_STATS,
 } from "./viewStats";
+import {progressQuestForUser} from "./quests";
 
 const ACTION_FIELDS = {download: "downloads", set: "sets", share: "shares"} as const;
 type WallAction = keyof typeof ACTION_FIELDS;
@@ -61,6 +62,13 @@ export const recordWallpaperAction = onCall(
     await bumpDaily(wallId, field, now).catch((err: unknown) => {
       logger.warn("Could not record the daily wallpaper action.", {err});
     });
+    if (action === "share") {
+      await progressQuestForUser(uid, "share", now);
+    } else {
+      // `set_wall` and the weekly quest count a set or a save.
+      await progressQuestForUser(uid, "set_wallpaper", now);
+      if (action === "download") await progressQuestForUser(uid, "download", now);
+    }
     return {counted: true};
   },
 );
@@ -105,6 +113,7 @@ export const onFavouriteWritten = onDocumentWritten(
       await bumpDaily(wallId, "favs", Date.now()).catch((err: unknown) => {
         logger.warn("Could not record the daily favourite.", {err});
       });
+      await progressQuestForUser(event.params.uid, "favourite");
     }
   },
 );

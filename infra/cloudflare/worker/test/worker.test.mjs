@@ -637,6 +637,19 @@ test('a charge that is still running gets 409 and a failed provider call marks t
   }
 });
 
+test('a Pro half-price debit is accepted for its tier', async () => {
+  const stats = {};
+  const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+  const restore = mockFal({ stats, firestore: () => chargeDoc({ delta: -5 }) });
+  try {
+    const response = await postGeneration(env, { chargeTxId: TX_ID, qualityTier: 'fast' });
+    assert.equal(response.status, 200);
+  } finally {
+    restore();
+  }
+  assert.equal(stats.fal, 1);
+});
+
 test('charge evidence reports not_started for an unseen id, no-store, and 404 for a bad shape', async () => {
   const env = aiEnv(aiKv(), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
   const unseen = await getChargeEvidence(env, 'spend_alice_unseen01');

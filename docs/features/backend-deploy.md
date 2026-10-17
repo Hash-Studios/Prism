@@ -354,3 +354,16 @@ Automated tests:
 | Worker | `make cloudflare-worker-check` (`infra/cloudflare/worker/test/worker.test.mjs`) |
 | Consent | `fvm flutter test --no-pub test/features/ads/ad_consent_test.dart` |
 | Web | `cd web && npm run build` |
+
+## Coin economy v2
+
+Spec: `docs/features/coin-economy-v2.md`. Each step needs the human owner's yes. Do the steps in this order. Old clients keep working at legacy prices until they update.
+
+1. Indexes: `firebase deploy --only firestore:indexes --project prism-wallpapers`. Wait until the new `usersv2`, `walls` and `boosts` indexes show `READY`. Check that the TTL policy on `questEventRate.expireAt` shows in the console.
+2. Rules: `firebase deploy --only firestore:rules --project prism-wallpapers`. The rules remove `premiumPreviewUnlocks` from the owner allow list. Installed clients that write it will get a refusal. Plan this with client adoption.
+3. Functions: `make functions-deploy`. Deploy the AI worker with the functions (`infra/cloudflare/worker/src/ai.ts`).
+4. Config: `cd functions && npm run economy:config -- --init --apply`. Without `--apply` the command is a dry run. To tune a value later: `npm run economy:config -- --set spend.wallpaperDownload=8 --apply`.
+5. Client release. Use the `prism-release` skill.
+6. Draw: `npm run economy:config -- --set flags.drawEnabled=true --apply`, only after the official rules text exists and the store review is done (Apple 5.3.2, Google Play contests policy). The draw ships off.
+
+How to test: run `npm run economy:config` and check that the printed JSON has `"version": 2`. Run `make rules-test` before step 2.

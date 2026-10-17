@@ -7,6 +7,7 @@ import {parseViews, WALLPAPER_STATS, WALLPAPER_STATS_DAILY} from "./viewStats";
 const TRENDING_DAYS = 7;
 const DAY_DECAY = 0.8;
 const LIST_SIZE = 100;
+const MAX_BOOSTS = 10;
 const POPULAR_CANDIDATES = 500;
 const MAX_DAILY_DOCS = 50_000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -54,9 +55,28 @@ export function popularWallIds(stats: Array<{id: string; data: Counts}>): string
   return topIds(scores);
 }
 
+/** Boosted ids (upper-case, newest first) ahead of the scored list, no repeats, at most 100. */
+export function mergeBoosted(boostedIds: string[], scoredIds: string[]): string[] {
+  const boosted = [...new Set(boostedIds.map((id) => id.toUpperCase()))];
+  const seen = new Set(boosted);
+  return [...boosted, ...scoredIds.filter((id) => !seen.has(id.toUpperCase()))].slice(0, LIST_SIZE);
+}
+
+/** Wall ids with an active boost, newest first. */
+async function activeBoostIds(nowMs: number): Promise<string[]> {
+  const snap = await db.collection("boosts").where("endsAt", ">", nowMs)
+    .orderBy("endsAt").orderBy("startsAt", "desc").limit(MAX_BOOSTS).get();
+  return snap.docs
+    .map((doc) => doc.data())
+    .sort((a, b) => count(b.startsAt) - count(a.startsAt))
+    .map((boost) => String(boost.wallId ?? ""))
+    .filter((id) => id !== "");
+}
+
 /**
  * Every 3 hours: writes `trending/current` (last 7 days, newer days count more) and `popular/current` (all time).
  * Both hold at most 100 wallpaper ids, the keys of `wallpaper_stats`. The app reads them.
+ * Walls with an active boost (up to 10) stay at the front of the trending list.
  */
 export const computeTrending = onSchedule(
   {
@@ -69,7 +89,8 @@ export const computeTrending = onSchedule(
     const days = trendingDays(Date.now());
     const dailySnap = await db.collection(WALLPAPER_STATS_DAILY).where("day", "in", days).limit(MAX_DAILY_DOCS).get();
     if (dailySnap.size >= MAX_DAILY_DOCS) logger.warn("computeTrending: daily docs hit the read cap.", {cap: MAX_DAILY_DOCS});
-    const trending = trendingWallIds(dailySnap.docs.map((doc) => doc.data()), days);
+    const scored = trendingWallIds(dailySnap.docs.map((doc) => doc.data()), days);
+    const trending = mergeBoosted(await activeBoostIds(Date.now()), scored);
 
     const statsSnap = await db.collection(WALLPAPER_STATS).orderBy("views", "desc").limit(POPULAR_CANDIDATES).get();
     const popular = popularWallIds(statsSnap.docs.map((doc) => ({id: doc.id, data: doc.data()})));
