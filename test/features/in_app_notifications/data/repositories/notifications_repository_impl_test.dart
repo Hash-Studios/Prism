@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/features/in_app_notifications/data/repositories/notifications_repository_impl.dart';
@@ -8,19 +11,23 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/fake_user_block_repository.dart';
-import '../../../../support/in_memory_local_store.dart';
 import '../../in_app_notification_fixture.dart';
 
 void main() {
   group('NotificationsRepositoryImpl', () {
     late NotificationTombstones tombstones;
+    late Directory directory;
 
     setUp(() {
-      tombstones = NotificationTombstones(InMemoryLocalStore());
+      directory = Directory.systemTemp.createTempSync('notifications_repository_test');
+      tombstones = NotificationTombstones.withStore(
+        DurableJsonStore('notifications_repository_test', directory: directory),
+      );
     });
 
     tearDown(() async {
       await getIt.reset();
+      directory.deleteSync(recursive: true);
     });
 
     test('waits for blocked creators and prunes cached blocked notifications before returning local data', () async {
@@ -94,6 +101,36 @@ void main() {
       expect(await local.readAll(), isEmpty);
     });
 
+    test('a failed durable inbox write is returned as failure, not successful local state', () async {
+      final blocker = File('${directory.path}/not-a-directory')..writeAsStringSync('block');
+      final local = NotificationsLocalDataSource.withStore(
+        DurableJsonStore('notifications_failed_write', directory: Directory(blocker.path)),
+      )..setOwner('account-a');
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+
+      final result = await repo.markAsRead(id: 'notification-a');
+
+      expect(result.isSuccess, isFalse);
+      expect(result.failure, isA<CacheFailure>());
+    });
+
+    test('a failed tombstone write does not report delete success or remove the local notification', () async {
+      final blocker = File('${directory.path}/not-a-directory')..writeAsStringSync('block');
+      tombstones = NotificationTombstones.withStore(
+        DurableJsonStore('notifications_failed_tombstone', directory: Directory(blocker.path)),
+      );
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[notification('notification-a')])
+        ..setOwner('account-a');
+      tombstones.setOwner('account-a');
+      final repo = NotificationsRepositoryImpl(local, tombstones);
+
+      final result = await repo.deleteById(id: 'notification-a');
+
+      expect(result.isSuccess, isFalse);
+      expect(result.failure, isA<CacheFailure>());
+      expect((await local.readAll()).map((item) => item.id), <String>['notification-a']);
+    });
+
     test('delete and deleteByIds remember the removed ids', () async {
       final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
         notification('a'),
@@ -105,7 +142,7 @@ void main() {
       await repo.deleteById(id: 'a');
       await repo.deleteByIds(ids: <String>['b']);
 
-      expect(tombstones.deletedIds(), <String>{'a', 'b'});
+      expect(await tombstones.deletedIds(), <String>{'a', 'b'});
     });
 
     test('clearAll remembers every id and moves the fetch watermark to now instead of resetting it', () async {
@@ -115,8 +152,8 @@ void main() {
 
       await repo.clearAll();
 
-      expect(tombstones.deletedIds(), <String>{'a', 'b'});
-      expect(tombstones.clearedAtUtc()!.isBefore(before), isFalse);
+      expect(await tombstones.deletedIds(), <String>{'a', 'b'});
+      expect((await tombstones.clearedAtUtc())!.isBefore(before), isFalse);
       expect(local.lastFetch, isNotNull);
       expect(local.lastFetch!.isBefore(before), isFalse);
     });
@@ -145,7 +182,7 @@ void main() {
 
       expect(result.data!.map((item) => item.id), containsAll(<String>['a', 'b']));
       expect(result.data!.singleWhere((item) => item.id == 'a').read, isTrue);
-      expect(tombstones.deletedIds(), <String>{'x'});
+      expect(await tombstones.deletedIds(), <String>{'x'});
       expect((await repo.restore(items: const <InAppNotificationEntity>[])).failure, isA<ValidationFailure>());
     });
   });
@@ -154,7 +191,7 @@ void main() {
 class _FakeNotificationsLocalDataSource extends NotificationsLocalDataSource {
   _FakeNotificationsLocalDataSource(List<InAppNotificationEntity> items)
     : _items = List<InAppNotificationEntity>.from(items),
-      super(InMemoryLocalStore());
+      super();
 
   List<InAppNotificationEntity> _items;
   int readCount = 0;

@@ -437,6 +437,24 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                   ),
                   if (wall is LegacyFavouriteWall)
                     IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.4))),
+                  if (wall.syncStatus != FavouriteSyncStatus.synced)
+                    Positioned(
+                      left: PrismSpace.xs,
+                      top: PrismSpace.xs,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHigh.withValues(alpha: 0.94),
+                          borderRadius: BorderRadius.circular(PrismSpace.xs),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
+                          child: Text(
+                            wall.syncStatus == FavouriteSyncStatus.pending ? 'Waiting to sync' : 'Not synced',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ),
+                      ),
+                    ),
                   // A pure white or black hairline keeps dark images from melting into the page.
                   IgnorePointer(
                     child: DecoratedBox(

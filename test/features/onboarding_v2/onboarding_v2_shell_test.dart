@@ -171,8 +171,15 @@ void main() {
       await settleToasts(tester);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-    testWidgets('browsing without an account records the tap and starts the guest path', (tester) async {
+    testWidgets('Android guest browsing is gated by terms and starts the guest path after acceptance', (tester) async {
       await pumpShell(tester, OnboardingV2State.initial());
+
+      await tester.tap(find.text('Browse without an account'));
+      await tester.pump();
+      expect(toasts, <String>['Please agree to the Terms and Privacy policy first.']);
+      verifyNever(() => bloc.add(const OnboardingV2Event.guestBrowseStarted()));
+      await settleToasts(tester);
+
       await tickTerms(tester);
 
       await tester.tap(find.text('Browse without an account'));
@@ -180,12 +187,6 @@ void main() {
 
       expect(analytics.events.map((e) => e.eventName), contains('browse_as_guest_tapped'));
       verify(() => bloc.add(const OnboardingV2Event.guestBrowseStarted())).called(1);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
-
-    testWidgets('Android has no guest button', (tester) async {
-      await pumpShell(tester, OnboardingV2State.initial());
-
-      expect(find.text('Browse without an account'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 

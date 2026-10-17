@@ -167,7 +167,7 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
-  OnboardingV2Bloc buildBloc() => OnboardingV2Bloc(
+  OnboardingV2Bloc buildBloc({bool includeRemoteConfig = true}) => OnboardingV2Bloc(
     fetchStarterPackUseCase,
     saveInterestsUseCase,
     followStarterPackUseCase,
@@ -176,11 +176,21 @@ void main() {
     categoryFeedRepository,
     onboardingRepository,
     settingsLocalDataSource,
-    remoteConfig,
+    remoteConfig: includeRemoteConfig ? remoteConfig : null,
     aiRepository: aiRepository,
   );
 
   Iterable<String> trackedNames() => analytics.events.map((event) => event.eventName);
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'starts with local interest defaults when Remote Config is unavailable',
+    build: () => buildBloc(includeRemoteConfig: false),
+    act: (bloc) => bloc.add(const OnboardingV2Event.started()),
+    verify: (bloc) {
+      expect(bloc.state.loadStatus, LoadStatus.success);
+      expect(bloc.state.interestsData.available, isNotEmpty);
+    },
+  );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'a signed-in user who left onboarding mid-flow resumes past the auth step',
@@ -1541,6 +1551,19 @@ void main() {
       await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
       bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
     }
+
+    test('a stalled recommendation does not block onboarding from loading', () async {
+      when(
+        () => firstWallpaperService.recommendForOnboarding(any()),
+      ).thenAnswer((_) => Completer<OnboardingWallpaperVm?>().future);
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(const OnboardingV2Event.started());
+      final loaded = await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+
+      expect(loaded.wallpaperData.wallpaper, isNull);
+    });
 
     test('a success keeps the screen that was set so the toast can name it', () async {
       when(

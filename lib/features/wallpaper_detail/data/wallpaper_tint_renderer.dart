@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
@@ -73,7 +74,13 @@ Future<ui.Image> decodeForTint(Uint8List bytes, {double deviceLongSidePx = 0}) a
 /// Renders run one at a time. The same [source] and [tint] give the same file again while it still exists. The last
 /// 6 renders are kept and the file of the oldest one is deleted when a 7th is made, so a path stays valid for a few
 /// renders and no longer.
-Future<String> renderTintedWallpaper({required String source, required Color tint, double deviceLongSidePx = 0}) {
+Future<String> renderTintedWallpaper({
+  required String source,
+  required Color tint,
+  double deviceLongSidePx = 0,
+  String? wallpaperId,
+  WallpaperSource? wallpaperSource,
+}) {
   return _inOrder(() async {
     final String key = '$source|${tint.toARGB32()}';
     final String? known = _files.remove(key);
@@ -81,7 +88,7 @@ Future<String> renderTintedWallpaper({required String source, required Color tin
       _files[key] = known;
       return known;
     }
-    final String path = await _renderToFile(source, tint, deviceLongSidePx);
+    final String path = await _renderToFile(source, tint, deviceLongSidePx, wallpaperId, wallpaperSource);
     _files[key] = path;
     while (_files.length > _maxRemembered) {
       await _deleteFile(_files.remove(_files.keys.first)!);
@@ -104,11 +111,19 @@ Future<T> _inOrder<T>(Future<T> Function() task) {
   return result;
 }
 
-Future<String> _renderToFile(String source, Color tint, double deviceLongSidePx) async {
+Future<String> _renderToFile(
+  String source,
+  Color tint,
+  double deviceLongSidePx,
+  String? wallpaperId,
+  WallpaperSource? wallpaperSource,
+) async {
   final Directory directory = await _sessionDirectory();
-  final File input = source.startsWith('http://') || source.startsWith('https://')
-      ? await PrismFullImageCache.instance.getSingleFile(source).timeout(const Duration(seconds: 30))
-      : File(source);
+  final File input = await WallpaperService.resolveToLocalFile(
+    source,
+    wallpaperId: wallpaperId,
+    wallpaperSource: wallpaperSource,
+  ).timeout(const Duration(seconds: 30));
   final ui.Image image = await decodeForTint(await input.readAsBytes(), deviceLongSidePx: deviceLongSidePx);
   final Uint8List png;
   try {

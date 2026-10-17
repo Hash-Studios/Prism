@@ -3,13 +3,17 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:share_plus/share_plus.dart';
+
+import '../../support/offline_asset_fixture.dart';
 
 const ShareResult _shared = ShareResult('', ShareResultStatus.success);
 const ShareResult _dismissed = ShareResult('', ShareResultStatus.dismissed);
@@ -32,6 +36,42 @@ void main() {
       File('card.png');
   Future<File> failRender({required String imageUrl, required String link, String? contextLine}) async =>
       throw StateError('no image');
+
+  testWidgets('an unavailable original shares only the link without an image decode', (tester) async {
+    await pumpContext(tester);
+    await tester.runAsync(() async {
+      final OfflineAssetFixture assets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+      assets.install();
+      const String source = 'https://example.test/not-saved.jpg';
+      when(() => assets.cacheManager.getSingleFile(source)).thenAnswer((_) async {
+        throw const OfflineAssetUnavailableException(source);
+      });
+      var textCalls = 0;
+      try {
+        final ShareCardResult result = await shareWallpaperCard(
+          context,
+          imageUrl: source,
+          link: 'https://prismwalls.com/share?id=not-saved',
+          render: ({required String imageUrl, required String link, String? contextLine}) => renderShareCardFile(
+            imageUrl: imageUrl,
+            link: link,
+            resolveImage: (_) async => fail('An unavailable original must not enter the image decoder.'),
+          ),
+          sendCard: ({required String text, required File file, required BuildContext context}) async =>
+              fail('An unavailable original must not be sent as a card.'),
+          sendText: ({required String text, required BuildContext context}) async {
+            textCalls++;
+            expect(text, contains('https://prismwalls.com/share?id=not-saved'));
+            return _shared;
+          },
+        );
+        expect(result, (format: ShareFormatValue.text, dismissed: false));
+        expect(textCalls, 1);
+      } finally {
+        await assets.dispose();
+      }
+    });
+  });
 
   testWidgets('the card never gets a context line that holds an email address', (tester) async {
     await pumpContext(tester);
@@ -293,6 +333,7 @@ void main() {
         renderShareCardFile(
           imageUrl: 'unused',
           link: 'https://prismwalls.com',
+          wallpaperProvider: const AssetImage('provided-wallpaper'),
           resolveImage: (ImageProvider provider) async {
             resolutions++;
             if (resolutions == 1) return wall;

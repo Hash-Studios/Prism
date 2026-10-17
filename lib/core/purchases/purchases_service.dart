@@ -38,25 +38,44 @@ class PurchasesService {
   PurchasesService._()
     : _addCustomerInfoListener = Purchases.addCustomerInfoUpdateListener,
       _syncSubscriptionOverride = null,
-      _syncRetryBackoff = const Duration(seconds: 2);
+      _syncRetryBackoff = const Duration(seconds: 2),
+      _configurePurchases = Purchases.configure,
+      _logIn = Purchases.logIn,
+      _getCustomerInfo = Purchases.getCustomerInfo,
+      _apiKey = _resolveApiKey;
 
   @visibleForTesting
   PurchasesService.forTesting({
     required void Function(CustomerInfoUpdateListener listener) addCustomerInfoListener,
     Future<void> Function()? syncSubscription,
     Duration syncRetryBackoff = Duration.zero,
+    Future<void> Function(PurchasesConfiguration configuration)? configurePurchases,
+    Future<void> Function(String userId)? logIn,
+    Future<CustomerInfo> Function()? getCustomerInfo,
+    String Function()? apiKey,
   }) : _addCustomerInfoListener = addCustomerInfoListener,
        _syncSubscriptionOverride = syncSubscription,
-       _syncRetryBackoff = syncRetryBackoff;
+       _syncRetryBackoff = syncRetryBackoff,
+       _configurePurchases = configurePurchases ?? Purchases.configure,
+       _logIn = logIn ?? Purchases.logIn,
+       _getCustomerInfo = getCustomerInfo ?? Purchases.getCustomerInfo,
+       _apiKey = apiKey ?? _resolveApiKey;
 
   static final PurchasesService instance = PurchasesService._();
 
   final void Function(CustomerInfoUpdateListener listener) _addCustomerInfoListener;
   final Future<void> Function()? _syncSubscriptionOverride;
   final Duration _syncRetryBackoff;
+  final Future<void> Function(PurchasesConfiguration configuration) _configurePurchases;
+  final Future<dynamic> Function(String userId) _logIn;
+  final Future<CustomerInfo> Function() _getCustomerInfo;
+  final String Function() _apiKey;
+  Future<void> _setupQueue = Future<void>.value();
   bool _configured = false;
   bool _customerInfoListenerRegistered = false;
+  bool _identityTransitionInProgress = false;
   String _configuredUserId = '';
+  int _identityRevision = 0;
 
   /// Skip redundant Firestore subscription updates when state unchanged (co-ordinate with coin sync / reduce usersv2 writes).
   static const Duration _subscriptionPersistThrottle = Duration(minutes: 5);
@@ -83,14 +102,21 @@ class PurchasesService {
     if (kDebugMode) {
       await Purchases.setLogLevel(LogLevel.debug);
     }
-    final configuration = PurchasesConfiguration(_resolveApiKey());
+    final configuration = PurchasesConfiguration(_apiKey());
     if (userId.isNotEmpty) {
       configuration.appUserID = userId;
     }
-    await Purchases.configure(configuration);
+    await _configurePurchases(configuration);
     _configured = true;
     _configuredUserId = userId;
+    _identityRevision++;
     registerCustomerInfoListener();
+  }
+
+  Future<T> _serializeSetup<T>(Future<T> Function() action) {
+    final Future<T> result = _setupQueue.then((_) => action());
+    _setupQueue = result.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return result;
   }
 
   /// Keeps premium in step with store changes (renewal, expiry, refund, purchase on another device) while the app
@@ -100,22 +126,33 @@ class PurchasesService {
     if (_customerInfoListenerRegistered) return;
     _customerInfoListenerRegistered = true;
     _addCustomerInfoListener((CustomerInfo info) {
+      final String eventUserId = _configuredUserId;
+      final int eventIdentityRevision = _identityRevision;
+      if (_identityTransitionInProgress || eventUserId != app_state.prismUser.id.trim()) return;
       unawaited(
-        _applyCustomerInfo(info).catchError((Object error, StackTrace stackTrace) {
+        Future<void>(() async {
+          if (_identityTransitionInProgress ||
+              eventIdentityRevision != _identityRevision ||
+              eventUserId != _configuredUserId ||
+              eventUserId != app_state.prismUser.id.trim()) {
+            return;
+          }
+          await _applyCustomerInfo(info);
+        }).catchError((Object error, StackTrace stackTrace) {
           logger.w('Unable to apply a customer info update.', error: error, stackTrace: stackTrace);
-          return app_state.prismUser.premium;
         }),
       );
     });
   }
 
-  /// Configures RevenueCat early in app startup (before runApp) so the singleton
-  /// is ready before any code, including RevenueCat UI internals, accesses it.
+  /// Configures RevenueCat after the first frame so startup is not blocked.
   /// No-op if already configured or if API key is empty.
   Future<void> configureEarly() async {
-    if (_configured || _resolveApiKey().isEmpty) return;
+    if (_apiKey().isEmpty) return;
     try {
-      await _configure('');
+      await _serializeSetup<void>(() async {
+        if (!_configured) await _configure('');
+      });
     } catch (error, stackTrace) {
       logger.w('RevenueCat early configure failed; will retry on first use.', error: error, stackTrace: stackTrace);
     }
@@ -124,18 +161,22 @@ class PurchasesService {
   /// Ensures RevenueCat is configured and logged in as the given user.
   Future<void> ensureConfigured(String userId) async {
     final targetUserId = userId.trim();
-    if (!_configured) {
-      await _configure(targetUserId);
-      return;
-    }
-    if (targetUserId.isNotEmpty && targetUserId != _configuredUserId) {
-      try {
-        await Purchases.logIn(targetUserId);
-        _configuredUserId = targetUserId;
-      } on PlatformException catch (e) {
-        logger.w('RevenueCat login sync failed: $e');
+    await _serializeSetup<void>(() async {
+      if (!_configured) {
+        await _configure(targetUserId);
+      } else if (targetUserId.isNotEmpty && targetUserId != _configuredUserId) {
+        _identityTransitionInProgress = true;
+        try {
+          await _logIn(targetUserId);
+          _configuredUserId = targetUserId;
+          _identityRevision++;
+        } on PlatformException catch (e) {
+          logger.w('RevenueCat login sync failed: $e');
+        } finally {
+          _identityTransitionInProgress = false;
+        }
       }
-    }
+    });
   }
 
   bool _hasLegacyGrandfatheredAccess(String key, EntitlementInfo entitlement) {
@@ -255,8 +296,18 @@ class PurchasesService {
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
   Future<bool> checkAndPersistPremium({SubscriptionConversionContext? conversionContext}) async {
     try {
-      await ensureConfigured(app_state.prismUser.id);
-      final info = await Purchases.getCustomerInfo();
+      final String requestedUserId = app_state.prismUser.id.trim();
+      await ensureConfigured(requestedUserId);
+      if (_configuredUserId != requestedUserId || app_state.prismUser.id.trim() != requestedUserId) {
+        return app_state.prismUser.premium;
+      }
+      final int requestedIdentityRevision = _identityRevision;
+      final info = await _getCustomerInfo();
+      if (requestedIdentityRevision != _identityRevision ||
+          requestedUserId != _configuredUserId ||
+          requestedUserId != app_state.prismUser.id.trim()) {
+        return app_state.prismUser.premium;
+      }
       return await _applyCustomerInfo(info, conversionContext: conversionContext);
     } on PlatformException catch (e) {
       analytics.track(

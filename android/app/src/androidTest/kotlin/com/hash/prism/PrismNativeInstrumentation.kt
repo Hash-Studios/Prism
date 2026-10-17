@@ -26,12 +26,79 @@ internal class PrismNativeInstrumentation : Instrumentation() {
     override fun onStart() {
         val result = Bundle()
         try {
+            verifyOfflineTileAssets()
             verifyMediaContract()
-            result.putString(OUTPUT_STREAM, "Prism native media checks passed\n")
+            result.putString(OUTPUT_STREAM, "Prism native offline tile and media checks passed\n")
             finish(Activity.RESULT_OK, result)
         } catch (error: Throwable) {
             result.putString(OUTPUT_STREAM, error.stackTraceToString())
             finish(Activity.RESULT_CANCELED, result)
+        }
+    }
+
+    private fun verifyOfflineTileAssets() {
+        val workspace = File.createTempFile("prism-offline-tile", "", targetContext.cacheDir)
+        check(workspace.delete() && workspace.mkdir()) { "Could not create offline tile test directory" }
+        try {
+            val allowedRoot = File(workspace, "allowed").apply { check(mkdirs()) }
+            val outsideRoot = File(workspace, "outside").apply { check(mkdirs()) }
+            val validUrl = "https://example.com/wall.png"
+            val bitmap = Bitmap.createBitmap(3, 3, Bitmap.Config.ARGB_8888)
+            val png = try {
+                ByteArrayOutputStream().also { output ->
+                    check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) { "Could not encode PNG fixture" }
+                }.toByteArray()
+            } finally {
+                bitmap.recycle()
+            }
+            val retained = File(allowedRoot, "wall.png").apply { writeBytes(png) }
+            val validMapping = """{"$validUrl":"${retained.absolutePath}"}"""
+
+            check(OfflineTileAssets.retainedFile(validUrl, validMapping, listOf(allowedRoot)) == retained.canonicalFile) {
+                "Valid retained PNG was not resolved to its exact path"
+            }
+            check(MyTileService.retainedCategoryUrls("[\"$validUrl\"]", validMapping, listOf(allowedRoot)) == listOf(validUrl)) {
+                "Valid category mapping was not retained"
+            }
+
+            val missing = File(allowedRoot, "missing.png")
+            val unsupported = File(allowedRoot, "unsupported.png").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+            val malformed = File(allowedRoot, "malformed.png").apply { writeBytes(png.copyOf(20)) }
+            val invalidUrls = "[\"https://example.com/missing.png\",\"https://example.com/unsupported.png\"," +
+                "\"https://example.com/malformed.png\"]"
+            val invalidMapping = """{"https://example.com/missing.png":"${missing.absolutePath}",""" +
+                "\"https://example.com/unsupported.png\":\"${unsupported.absolutePath}\"," +
+                "\"https://example.com/malformed.png\":\"${malformed.absolutePath}\"}"
+            check(MyTileService.retainedCategoryUrls(invalidUrls, invalidMapping, listOf(allowedRoot)).isEmpty()) {
+                "Missing or invalid retained image bytes were accepted as category candidates"
+            }
+
+            val outside = File(outsideRoot, "wall.png").apply { writeBytes(png) }
+            val outsideMapping = """{"$validUrl":"${outside.absolutePath}"}"""
+            check(OfflineTileAssets.retainedFile(validUrl, outsideMapping, listOf(allowedRoot)) == null) {
+                "Retained image outside the allowed root was accepted"
+            }
+
+            val prefixSibling = File(workspace, "allowed-sibling/wall.png").apply {
+                check(parentFile?.mkdirs() == true)
+                writeBytes(png)
+            }
+            val siblingMapping = """{"$validUrl":"${prefixSibling.absolutePath}"}"""
+            check(OfflineTileAssets.retainedFile(validUrl, siblingMapping, listOf(allowedRoot)) == null) {
+                "Path sharing only the allowed-root prefix was accepted"
+            }
+
+            check(OfflineTileAssets.retainedFile(validUrl, "not-json", listOf(allowedRoot)) == null) {
+                "Malformed retained-path JSON was accepted"
+            }
+            check(MyTileService.retainedCategoryUrls("not-json", validMapping, listOf(allowedRoot)).isEmpty()) {
+                "Malformed category URL JSON was accepted"
+            }
+            check(MyTileService.retainedCategoryUrls("[\"$validUrl\"]", "{}", listOf(allowedRoot)).isEmpty()) {
+                "Category URL without a retained mapping was accepted"
+            }
+        } finally {
+            check(workspace.deleteRecursively()) { "Could not clean offline tile test files" }
         }
     }
 

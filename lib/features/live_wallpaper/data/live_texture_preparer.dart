@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/live_wallpaper/data/texture_geometry.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:injectable/injectable.dart';
@@ -26,7 +26,7 @@ class LiveTexturePreparer {
   Future<String> prepare(String imageUrl, double screenAspectRatio) async {
     final File source;
     try {
-      source = await PrismFullImageCache.instance.getSingleFile(imageUrl).timeout(const Duration(seconds: 30));
+      source = await WallpaperService.resolveToLocalFile(imageUrl).timeout(const Duration(seconds: 30));
     } catch (_) {
       throw const LiveTextureException("Couldn't download the wallpaper. Check your connection and try again.");
     }

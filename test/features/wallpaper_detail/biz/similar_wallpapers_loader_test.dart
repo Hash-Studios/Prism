@@ -100,6 +100,7 @@ void main() {
         provider: SearchProviderValue.wallhaven,
         results: <FeedItemEntity>[_wallhaven('me'), _wallhaven('x')],
         prismResults: const <FeedItemEntity>[],
+        isLocal: false,
       ),
     );
 

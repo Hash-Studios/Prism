@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -15,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
+import '../../support/offline_asset_fixture.dart';
 
 class _Client implements WallpaperClient {
   _Client({this.status = aw.WallpaperOperationStatus.applied});
@@ -62,15 +65,28 @@ void main() {
   late FakeAppAnalytics analytics;
   late SettingsLocalDataSource settings;
   late WallpaperHistoryStore store;
+  late OfflineAssetFixture assets;
   late List<MethodCall> toasts;
+  late String previousFilePath;
+  late String newFilePath;
 
-  setUp(() {
+  setUp(() async {
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     store = WallpaperHistoryStore(settings);
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     getIt.registerSingleton<WallpaperHistoryStore>(store);
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
+    assets = await OfflineAssetFixture.create();
+    assets.install(immediateResolver: true);
+    previousFilePath = assets.createImageSync('previous.png').path;
+    newFilePath = assets.createImageSync('new.png').path;
+    assets.mapSource('/prev.png', File(previousFilePath));
+    assets.mapSource('/new.png', File(newFilePath));
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (call) async => '${assets.directory.path}/${call.method}',
+    );
     toasts = <MethodCall>[];
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (call) async {
@@ -84,9 +100,11 @@ void main() {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    messenger.setMockMethodCallHandler(const MethodChannel('plugins.flutter.io/path_provider'), null);
     await getIt.reset();
     AnalyticsRuntime.reset();
     aw.AsyncWallpaper.debugResetClient();
+    await assets.dispose();
   });
 
   bool toastSaid(String text) =>
@@ -100,6 +118,10 @@ void main() {
     ValueChanged<WallpaperTarget>? onRetry,
     VoidCallback? onMatchAccent,
   }) async {
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 30));
+    });
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -154,7 +176,7 @@ void main() {
     await tester.pump();
 
     expect(client.requests.single.target, aw.WallpaperTarget.home);
-    expect(client.requests.single.source.filePath, '/prev.png');
+    expect(client.requests.single.source.filePath, previousFilePath);
     expect(store.items().map((item) => item.id), ['1']);
     final SetWallUndoneEvent event = analytics.events.whereType<SetWallUndoneEvent>().single;
     expect(event.result, BinaryResultValue.success);
@@ -308,6 +330,10 @@ void main() {
   });
 
   testWidgets('with no live context the snackbar still shows on the messenger taken earlier', (tester) async {
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 30));
+    });
     late ScaffoldMessengerState messenger;
     await tester.pumpWidget(
       MaterialApp(

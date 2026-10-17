@@ -97,14 +97,19 @@ class StartupRepositoryImpl implements StartupRepository {
   @override
   Future<Result<StartupConfigEntity>> bootstrap() async {
     // Wait for Firebase (started in background from main()) before touching RemoteConfig.
-    final bool firebaseReady = await FirebaseInit.readyFuture;
+    await FirebaseInit.waitUntilReady();
 
-    // Only access FirebaseRemoteConfig.instance after Firebase is confirmed ready.
-    final FirebaseRemoteConfig? remoteConfig = firebaseReady ? FirebaseRemoteConfig.instance : null;
+    final FirebaseRemoteConfig? remoteConfig = FirebaseInit.remoteConfigIfInitialized;
 
     try {
       if (remoteConfig != null) {
-        await prepareRemoteConfig(remoteConfig, release: kReleaseMode);
+        try {
+          await prepareRemoteConfig(remoteConfig, release: kReleaseMode).timeout(remoteConfigFetchBudget);
+        } on TimeoutException {
+          logger.w('Remote Config preparation timed out; using locally activated values.', tag: 'StartupRepository');
+        } catch (error) {
+          logger.w('Remote Config preparation failed; using local defaults.', tag: 'StartupRepository', error: error);
+        }
       } else {
         logger.w('Firebase not ready; using hardcoded default config values.', tag: 'StartupRepository');
       }

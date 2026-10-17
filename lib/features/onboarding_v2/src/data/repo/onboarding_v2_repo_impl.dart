@@ -8,6 +8,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
@@ -18,16 +19,21 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: OnboardingV2Repository)
 class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
-  OnboardingV2RepositoryImpl(this._remoteConfig, this._firestoreClient, this._settingsLocal);
+  OnboardingV2RepositoryImpl(
+    this._firestoreClient,
+    this._settingsLocal, {
+    @ignoreParam FirebaseRemoteConfig? remoteConfig,
+  }) : _remoteConfigOverride = remoteConfig;
 
-  final FirebaseRemoteConfig _remoteConfig;
+  final FirebaseRemoteConfig? _remoteConfigOverride;
+  FirebaseRemoteConfig? get _remoteConfig => _remoteConfigOverride ?? FirebaseInit.remoteConfigIfInitialized;
   final FirestoreClient _firestoreClient;
   final SettingsLocalDataSource _settingsLocal;
 
   @override
   Future<Result<List<OnboardingStarterCreatorEntity>>> fetchStarterPack() async {
     try {
-      final raw = _remoteConfig.getString(OnboardingV2Config.remoteConfigStarterPackKey);
+      final raw = _remoteConfig?.getString(OnboardingV2Config.remoteConfigStarterPackKey) ?? '';
       if (raw.isEmpty) {
         return Result.success(<OnboardingStarterCreatorEntity>[]);
       }

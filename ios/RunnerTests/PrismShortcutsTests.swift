@@ -3,11 +3,57 @@ import Testing
 
 #if canImport(PrismShortcutsCore)
 @testable import PrismShortcutsCore
-#else
+#endif
+#if canImport(Runner)
 @testable import Runner
 #endif
 
 struct PrismShortcutsTests {
+  @Test func wallOfTheDayPrefersFreshRemoteURLWhenAvailable() throws {
+    let cached = URL(string: "https://example.com/retained.jpg")!
+    let fresh = URL(string: "https://example.com/current.jpg")!
+
+    let result = try PrismShortcutWallpaperFallback.resolve(fresh: .success(fresh), retained: cached)
+
+    #expect(result == fresh)
+  }
+
+  @Test func wallOfTheDayUsesRetainedURLWhenRemoteLookupFails() throws {
+    let cached = URL(string: "https://example.com/retained.jpg")!
+
+    let result = try PrismShortcutWallpaperFallback.resolve(fresh: .failure(TestFailure.remote), retained: cached)
+
+    #expect(result == cached)
+  }
+
+  @Test func wallOfTheDayPropagatesRemoteFailureWithoutRetainedURL() {
+    do {
+      _ = try PrismShortcutWallpaperFallback.resolve(fresh: .failure(TestFailure.remote), retained: nil)
+      Issue.record("Expected remote lookup failure")
+    } catch {
+      #expect(error as? TestFailure == .remote)
+    }
+  }
+
+  @Test func offlineSupportRootIsCreatedAndExcludedFromBackupAtStartup() throws {
+    let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: support) }
+
+    let root = try #require(Runner.AppDelegate.prepareOfflineRoot(at: support))
+
+    #expect(FileManager.default.fileExists(atPath: root.path))
+    #expect(try root.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true)
+  }
+
+  @Test func imageTransfersKeepSixtySecondResourceTimeoutAndMetadataRemainsBounded() {
+    #expect(PrismShortcutWallpaperLoader.imageSession.configuration.timeoutIntervalForResource == 60)
+    #expect(PrismShortcutWallpaperLoader.metadataSession.configuration.timeoutIntervalForResource == 20)
+  }
+
+  private enum TestFailure: Error, Equatable {
+    case remote
+  }
+
   private func favourite(_ id: String) -> PrismShortcutFavourite {
     PrismShortcutFavourite(id: id, url: URL(string: "https://example.com/\(id).jpg")!)
   }
@@ -127,5 +173,45 @@ struct PrismShortcutsTests {
     #expect(PrismShortcutImageKind(data: Data([0xFF, 0xD8])) == nil)
     #expect(PrismShortcutImageKind(data: Data("RIFF....WEBP".utf8)) == nil)
     #expect(PrismShortcutImageKind(data: Data([0x89, 0x50, 0x4E, 0x47])) == nil)
+  }
+
+  @Test func localFileResolverAcceptsOnlyContainedNonemptyImageFiles() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let image = root.appendingPathComponent("assets/wall.png")
+    try FileManager.default.createDirectory(at: image.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).write(to: image)
+
+    #expect(
+      PrismShortcutLocalFileResolver.resolve(path: "assets/wall.png", roots: [root], maximumBytes: 1024) == image
+    )
+    #expect(PrismShortcutLocalFileResolver.resolve(path: "../wall.png", roots: [root], maximumBytes: 1024) == nil)
+    #expect(PrismShortcutLocalFileResolver.resolve(path: image.path, roots: [root], maximumBytes: 1024) == nil)
+    #expect(PrismShortcutLocalFileResolver.resolve(path: "missing.png", roots: [root], maximumBytes: 1024) == nil)
+
+    let invalid = root.appendingPathComponent("assets/invalid.png")
+    try Data([1, 2, 3]).write(to: invalid)
+    #expect(PrismShortcutLocalFileResolver.resolve(path: "assets/invalid.png", roots: [root], maximumBytes: 1024) == nil)
+  }
+
+  @Test func localFileResolverRejectsFilesAboveTheImageReadLimit() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let image = root.appendingPathComponent("oversized.png")
+    try Data([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).write(to: image)
+    let handle = try FileHandle(forWritingTo: image)
+    try handle.truncate(atOffset: 40 * 1024 * 1024 + 1)
+    try handle.close()
+
+    #expect(
+      PrismShortcutLocalFileResolver.resolve(
+        path: "oversized.png",
+        roots: [root],
+        maximumBytes: 40 * 1024 * 1024
+      ) == nil
+    )
   }
 }

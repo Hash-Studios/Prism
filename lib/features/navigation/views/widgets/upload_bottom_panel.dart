@@ -8,14 +8,21 @@ import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
+import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
 class UploadBottomPanel extends StatefulWidget {
-  const UploadBottomPanel({super.key});
+  const UploadBottomPanel({super.key, @visibleForTesting this.draftStoreForTesting});
+
+  @visibleForTesting
+  final UploadDraftStore? draftStoreForTesting;
 
   @override
   State<UploadBottomPanel> createState() => _UploadBottomPanelState();
@@ -23,6 +30,48 @@ class UploadBottomPanel extends StatefulWidget {
 
 class _UploadBottomPanelState extends State<UploadBottomPanel> {
   final ImagePicker _picker = ImagePicker();
+  late final UploadDraftStore _draftStore = widget.draftStoreForTesting ?? UploadDraftStore();
+  UploadDraft? _latestDraft;
+  late String _latestDraftOwner = _draftOwner;
+  int _draftLookupGeneration = 0;
+
+  String get _draftOwner => app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty
+      ? app_state.prismUser.id
+      : UploadDraftStore.guestOwner;
+  UploadDraft? get _visibleDraft => _latestDraftOwner == _draftOwner ? _latestDraft : null;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLatestDraft();
+  }
+
+  Future<void> _loadLatestDraft({String? ownerOverride}) async {
+    final String owner = ownerOverride ?? _draftOwner;
+    final int generation = ++_draftLookupGeneration;
+    try {
+      final UploadDraft? draft = await _draftStore.latestForOwner(owner);
+      if (!mounted || generation != _draftLookupGeneration || owner != _draftOwner) return;
+      setState(() {
+        _latestDraftOwner = owner;
+        _latestDraft = draft?.owner == owner ? draft : null;
+      });
+    } catch (error, stackTrace) {
+      logger.w('Could not restore upload draft entry', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  void _resumeLatestDraft() {
+    final UploadDraft? draft = _latestDraftOwner == _draftOwner ? _latestDraft : null;
+    if (draft == null || draft.owner != _draftOwner) {
+      setState(() => _latestDraft = null);
+      _loadLatestDraft();
+      return;
+    }
+    final router = context.router;
+    Navigator.pop(context);
+    router.push(UploadWallRoute(image: draft.file));
+  }
 
   Future<void> _pickWallpaperImage() async {
     final int limit = uploadPickLimit(
@@ -80,7 +129,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     final TextStyle caption = PrismTextStyles.caption(context);
     final Color chevron = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35);
 
-    return PrismSheetBody(
+    final Widget content = PrismSheetBody(
       title: 'Create',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,6 +142,15 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                 subtitle: 'From your gallery',
                 onTap: _onWallpaperTap,
               ),
+              if (_visibleDraft case final draft?)
+                PrismRow(
+                  icon: Icons.drafts_rounded,
+                  title: 'Resume saved upload',
+                  subtitle: draft.metadata.title.isEmpty
+                      ? 'Continue editing your saved wallpaper'
+                      : draft.metadata.title,
+                  onTap: _resumeLatestDraft,
+                ),
               PrismRow(
                 icon: Icons.auto_awesome_rounded,
                 title: 'AI wallpaper',
@@ -121,5 +179,25 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
         ],
       ),
     );
+    final SessionBloc? sessionBloc = context.read<SessionBloc?>();
+    if (sessionBloc == null) return content;
+    return BlocListener<SessionBloc, SessionState>(
+      bloc: sessionBloc,
+      listenWhen: (previous, current) => _ownerForSession(previous) != _ownerForSession(current),
+      listener: (_, state) {
+        final String owner = _ownerForSession(state);
+        _draftLookupGeneration++;
+        setState(() {
+          _latestDraftOwner = owner;
+          _latestDraft = null;
+        });
+        if (owner == _draftOwner) _loadLatestDraft(ownerOverride: owner);
+      },
+      child: content,
+    );
   }
+
+  String _ownerForSession(SessionState state) => state.session.loggedIn && state.session.userId.trim().isNotEmpty
+      ? state.session.userId
+      : UploadDraftStore.guestOwner;
 }

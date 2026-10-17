@@ -85,6 +85,20 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   final Future<AiGenerationRecord> Function()? variation;
   final List<({AiStylePreset style, AiQualityTier quality, int coinsSpent})> requests = [];
   final List<String?> chargeTxIds = <String?>[];
+  final Map<String, String> prompts = <String, String>{};
+
+  @override
+  Future<String?> loadPrompt({required String userId}) async => prompts[userId];
+
+  @override
+  Future<void> savePrompt({required String userId, required String prompt}) async {
+    prompts[userId] = prompt;
+  }
+
+  @override
+  Future<void> clearForUser(String userId) async {
+    prompts.remove(userId);
+  }
 
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async => <AiGenerationRecord>[

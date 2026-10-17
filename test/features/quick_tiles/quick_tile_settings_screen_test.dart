@@ -3,6 +3,10 @@ import 'package:Prism/core/analytics/events/generated/analytics_events.g.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,6 +47,40 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
     AnalyticsRuntime.reset();
     await getIt.reset();
+  });
+
+  test('offline category tile candidates require an exact category and a retained asset', () {
+    FeedItemEntity item(String id, {String? category, String? author}) => FeedItemEntity.prism(
+      id: id,
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.com/$id.jpg',
+          thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+          category: category,
+          authorName: author,
+        ),
+      ),
+    );
+
+    final List<String> candidates = categoryTileCandidates(
+      <FeedItemEntity>[
+        item('exact', category: 'Nature'),
+        item('author-match', category: 'Abstract', author: 'Nature'),
+        item('substring', category: 'Nature Photography'),
+        item('not-retained', category: 'Nature'),
+      ],
+      category: 'Nature',
+      source: WallpaperSource.prism,
+      retainedPaths: <String, String>{
+        'https://example.com/exact.jpg': '/retained/exact',
+        'https://example.com/author-match.jpg': '/retained/author-match',
+        'https://example.com/substring.jpg': '/retained/substring',
+      },
+    );
+
+    expect(candidates, <String>['https://example.com/exact.jpg']);
   });
 
   Future<void> pumpScreen(WidgetTester tester, {bool settle = true}) async {

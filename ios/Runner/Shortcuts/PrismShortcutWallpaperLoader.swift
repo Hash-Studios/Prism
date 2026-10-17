@@ -8,30 +8,60 @@ enum PrismShortcutLoadError: Error {
 
 enum PrismShortcutWallpaperLoader {
   static let maximumImageBytes = 40 * 1024 * 1024
-  private static let session: URLSession = {
+  static let imageSession: URLSession = {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.timeoutIntervalForRequest = 30
     configuration.timeoutIntervalForResource = 60
     return URLSession(configuration: configuration)
   }()
+  static let metadataSession: URLSession = {
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.timeoutIntervalForRequest = 10
+    configuration.timeoutIntervalForResource = 20
+    return URLSession(configuration: configuration)
+  }()
 
   static func wallOfTheDayImageURL() async throws -> URL {
-    let configuration = try firebaseConfiguration()
-    let pointer = try await document(configuration, collection: "wall_of_the_day", id: "current")
-    guard let wallID = PrismFirestoreREST.stringField("wallId", in: pointer) else {
-      throw PrismShortcutLoadError.missingField
+    let retainedURL: URL?
+    if let cached = UserDefaults.standard.string(forKey: "flutter.quick_tile.wotd.url"),
+      let url = PrismShortcutFavourites.httpsURL(cached), localImageData(for: url) != nil
+    {
+      retainedURL = url
+    } else {
+      retainedURL = nil
     }
-    let wall = try await document(configuration, collection: "walls", id: wallID)
-    guard let link = PrismFirestoreREST.stringField("wallpaper_url", in: wall),
-      let url = PrismShortcutFavourites.httpsURL(link)
-    else {
-      throw PrismShortcutLoadError.missingField
+    return try await freshThenRetained(cachedURL: retainedURL) {
+      let configuration = try firebaseConfiguration()
+      let pointer = try await document(configuration, collection: "wall_of_the_day", id: "current")
+      guard let wallID = PrismFirestoreREST.stringField("wallId", in: pointer) else {
+        throw PrismShortcutLoadError.missingField
+      }
+      let wall = try await document(configuration, collection: "walls", id: wallID)
+      guard let link = PrismFirestoreREST.stringField("wallpaper_url", in: wall),
+        let url = PrismShortcutFavourites.httpsURL(link)
+      else {
+        throw PrismShortcutLoadError.missingField
+      }
+      return url
     }
-    return url
+  }
+
+  static func freshThenRetained(
+    cachedURL: URL?,
+    fetchFresh: () async throws -> URL
+  ) async throws -> URL {
+    let fresh: Result<URL, Error>
+    do {
+      fresh = .success(try await fetchFresh())
+    } catch {
+      fresh = .failure(error)
+    }
+    return try PrismShortcutWallpaperFallback.resolve(fresh: fresh, retained: cachedURL)
   }
 
   static func imageData(from url: URL) async throws -> Data {
-    let (file, response) = try await session.download(from: url)
+    if let local = localImageData(for: url) { return local }
+    let (file, response) = try await imageSession.download(from: url)
     defer { try? FileManager.default.removeItem(at: file) }
     guard let http = response as? HTTPURLResponse, http.statusCode == 200,
       response.expectedContentLength <= Int64(maximumImageBytes)
@@ -46,6 +76,27 @@ enum PrismShortcutWallpaperLoader {
     }
     try Task.checkCancellation()
     return try Data(contentsOf: file)
+  }
+
+  private static func localImageData(for url: URL) -> Data? {
+    guard
+      let raw = UserDefaults.standard.string(forKey: PrismShortcutFavourites.nativeAssetPathsKey),
+      let paths = try? JSONDecoder().decode([String: String].self, from: Data(raw.utf8)),
+      let relativePath = paths[url.absoluteString]
+    else { return nil }
+    let fileManager = FileManager.default
+    guard
+      let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+      let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
+    else { return nil }
+    let retainedRoot = support.appendingPathComponent("prism/offline/assets", isDirectory: true)
+    let downloadsRoot = documents.appendingPathComponent("PrismDownloads", isDirectory: true)
+    guard let file = PrismShortcutLocalFileResolver.resolve(
+      path: relativePath,
+      roots: [retainedRoot, downloadsRoot],
+      maximumBytes: maximumImageBytes
+    ) else { return nil }
+    return try? Data(contentsOf: file)
   }
 
   private static func firebaseConfiguration() throws -> (projectID: String, apiKey: String) {
@@ -80,7 +131,7 @@ enum PrismShortcutWallpaperLoader {
     if let bundleID = Bundle.main.bundleIdentifier {
       request.setValue(bundleID, forHTTPHeaderField: "X-Ios-Bundle-Identifier")
     }
-    let (data, response) = try await session.data(for: request)
+    let (data, response) = try await metadataSession.data(for: request)
     guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
       throw PrismShortcutLoadError.badResponse
     }

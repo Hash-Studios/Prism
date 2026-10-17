@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -73,14 +74,25 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
-    final aw.WallpaperSourceType sourceType = config.source == AutoRotateSource.downloads
-        ? aw.WallpaperSourceType.file
-        : aw.WallpaperSourceType.url;
+    Map<String, String> retainedPaths = const <String, String>{};
+    try {
+      retainedPaths = await OfflineAssetStore.instance.localPaths();
+    } catch (_) {}
+    final List<aw.WallpaperRotationSource> sources = imageUrls
+        .map((source) {
+          if (_isLocalSource(source)) {
+            return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: _rotationSource(source));
+          }
+          final String? retainedPath = retainedPaths[source];
+          if (retainedPath != null) {
+            return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: retainedPath);
+          }
+          return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.url, source: source);
+        })
+        .toList(growable: false);
     final aw.WallpaperResult result = await aw.AsyncWallpaper.startWallpaperRotation(
       aw.WallpaperRotationRequest(
-        sources: imageUrls
-            .map((url) => aw.WallpaperRotationSource(sourceType: sourceType, source: url))
-            .toList(growable: false),
+        sources: sources,
         target: aw.WallpaperTarget.values.byName(config.target.name),
         intervalMinutes: config.intervalMinutes,
         order: config.shuffle ? aw.WallpaperRotationOrder.shuffle : aw.WallpaperRotationOrder.sequential,
@@ -156,7 +168,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
       case AutoRotateSource.history:
         // The history order changes with every wallpaper Prism sets. Sorting keeps the list the same for the same
         // wallpapers, so a new entry for a wallpaper already in the list does not restart the rotation.
-        return _uniqueHttps(_history.items().map((item) => item.fullUrl)).toList()..sort();
+        return _uniqueHistorySources(_history.items().map((item) => item.fullUrl)).toList()..sort();
       case AutoRotateSource.favourites:
       case AutoRotateSource.downloads:
         return const <String>[];
@@ -179,6 +191,24 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         .where((url) => Uri.tryParse(url)?.scheme.toLowerCase() == 'https')
         .where(seen.add)
         .toList(growable: false);
+  }
+
+  List<String> _uniqueHistorySources(Iterable<String> sources) {
+    final Set<String> seen = <String>{};
+    return sources
+        .where((source) => _isLocalSource(source) || Uri.tryParse(source)?.scheme.toLowerCase() == 'https')
+        .where(seen.add)
+        .toList(growable: false);
+  }
+
+  bool _isLocalSource(String source) {
+    final Uri? uri = Uri.tryParse(source);
+    return uri?.scheme == 'file' || (uri?.scheme.isEmpty ?? false) && source.startsWith('/');
+  }
+
+  String _rotationSource(String source) {
+    final Uri? uri = Uri.tryParse(source);
+    return uri?.scheme == 'file' ? uri!.toFilePath() : source;
   }
 
   @override

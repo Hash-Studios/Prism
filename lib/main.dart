@@ -24,6 +24,7 @@ import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
+import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
@@ -43,6 +44,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -208,6 +210,7 @@ Future<void> main() async {
       // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
       // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(PurchasesService.instance.configureEarly());
         unawaited(
           FirebaseInit.readyFuture.then(
             (firebaseInitialized) => _deferredStartup(firebaseInitialized: firebaseInitialized),
@@ -259,6 +262,13 @@ Future<void> main() async {
       }
 
       configureDependencies();
+      // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
+      final persistedUser = app_state.prismUser;
+      final notificationOwner = persistedUser.loggedIn && persistedUser.id.trim().isNotEmpty
+          ? persistedUser.id
+          : 'guest';
+      getIt<NotificationsLocalDataSource>().setOwner(notificationOwner);
+      getIt<NotificationTombstones>().setOwner(notificationOwner);
       await Future.wait(<Future<void>>[
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
         SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
@@ -267,10 +277,6 @@ Future<void> main() async {
           themeMode == 'Light' ||
           (themeMode == 'System' && PlatformDispatcher.instance.platformBrightness == Brightness.light);
       applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: lightChrome ? Brightness.dark : Brightness.light);
-
-      await FirebaseInit.readyFuture;
-
-      await PurchasesService.instance.configureEarly();
 
       runApp(
         LogToastOverlay(
@@ -473,6 +479,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   DateTime? _lastCoinSyncAt;
 
   Future<bool> _restoreLoginStatus() async {
+    if (!await FirebaseInit.readyFuture) return app_state.prismUser.loggedIn;
     final bool value = await globalGoogleAuth.isSignedIn();
     if (!value) {
       // Ensure stale profile data from previous sessions cannot make the app behave as logged in.
@@ -982,10 +989,18 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
           },
         ),
         BlocListener<SessionBloc, SessionState>(
-          listenWhen: (previous, current) => previous.session.loggedIn && !current.session.loggedIn,
+          listenWhen: (previous, current) =>
+              previous.session.userId != current.session.userId ||
+              previous.session.loggedIn != current.session.loggedIn,
           listener: (context, state) {
+            final ownerId = state.session.loggedIn && state.session.userId.trim().isNotEmpty
+                ? state.session.userId
+                : 'guest';
+            getIt<NotificationsLocalDataSource>().setOwner(ownerId);
+            getIt<NotificationTombstones>().setOwner(ownerId);
+            clearInAppNotificationSyncGateAll();
             if (getIt.isRegistered<InAppNotificationsBloc>()) {
-              getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
+              getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
             }
           },
         ),
@@ -999,32 +1014,33 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             _startupGate.markBootstrapCompleted();
           },
         ),
-        const WotdQuickTileListener(),
       ],
-      child: ShortcutsFavouritesListener(
-        child: FavouriteQuickTileListener(
-          child: ListenableBuilder(
-            listenable: DebugFlags.instance,
-            builder: (context, _) => MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              builder: (context, child) {
-                app_state.notchSize = MediaQuery.paddingOf(context).top;
-                return child ?? const SizedBox.shrink();
-              },
-              routerConfig: _appRouter.config(
-                deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
-                deepLinkBuilder: _routerDeepLinkBuilder,
-                navigatorObservers: () => [
-                  ...AnalyticsRuntime.buildNavigatorObservers(),
-                  if (MonitoringRuntime.reporter.isEnabled)
-                    SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
-                ],
+      child: WotdQuickTileListener(
+        child: ShortcutsFavouritesListener(
+          child: FavouriteQuickTileListener(
+            child: ListenableBuilder(
+              listenable: DebugFlags.instance,
+              builder: (context, _) => MaterialApp.router(
+                debugShowCheckedModeBanner: false,
+                builder: (context, child) {
+                  app_state.notchSize = MediaQuery.paddingOf(context).top;
+                  return child ?? const SizedBox.shrink();
+                },
+                routerConfig: _appRouter.config(
+                  deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
+                  deepLinkBuilder: _routerDeepLinkBuilder,
+                  navigatorObservers: () => [
+                    ...AnalyticsRuntime.buildNavigatorObservers(),
+                    if (MonitoringRuntime.reporter.isEnabled)
+                      SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
+                  ],
+                ),
+                showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
+                showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
+                theme: context.prismLightTheme(),
+                darkTheme: context.prismDarkTheme(),
+                themeMode: context.prismThemeMode(),
               ),
-              showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
-              showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
-              theme: context.prismLightTheme(),
-              darkTheme: context.prismDarkTheme(),
-              themeMode: context.prismThemeMode(),
             ),
           ),
         ),

@@ -31,10 +31,14 @@ void main() {
     );
   });
 
-  test('an onboarded but signed-out Android user is forced back to onboarding', () {
+  test('an onboarded guest can return to the dashboard on every platform', () {
     expect(
       shouldShowOnboarding(isLoggedIn: false, isOnboarded: true, v2Enabled: true, guestBrowsingAllowed: false),
       isTrue,
+    );
+    expect(
+      shouldShowOnboarding(isLoggedIn: false, isOnboarded: true, v2Enabled: true, guestBrowsingAllowed: true),
+      isFalse,
     );
   });
 

@@ -87,4 +87,23 @@ void main() {
     expect(merged, 0);
     expect(firestore.querySpecs, isEmpty);
   });
+
+  test('bundled starter favourites remain local and are not queried or written to Firestore', () async {
+    await store.put('starter-sunset', <String, dynamic>{
+      'id': 'starter-sunset',
+      'provider': 'Prism',
+      'url': '/tmp/untrusted-starter-path.jpg',
+      'thumb': '/tmp/untrusted-starter-path.jpg',
+    });
+    await local.setWallFavourite('', 'starter-sunset', true);
+    final firestore = MergeFirestore();
+
+    final int merged = await GuestFavouritesMerger(firestore, store, local).mergeInto('uid');
+
+    expect(merged, 0);
+    expect(firestore.querySpecs, isEmpty);
+    expect(firestore.batches, isEmpty);
+    expect((await store.readAll()).keys, <String>['starter-sunset']);
+    expect(local.isWallFavourite('', 'starter-sunset'), isTrue);
+  });
 }

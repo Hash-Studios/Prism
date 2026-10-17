@@ -79,9 +79,9 @@ void main() {
     when(() => remoteConfig.getString(any())).thenReturn('');
 
     repository = OnboardingV2RepositoryImpl(
-      remoteConfig,
       FirestoreTrackedClient(firestore, telemetry),
       SettingsLocalDataSource(store),
+      remoteConfig: remoteConfig,
     );
   });
 

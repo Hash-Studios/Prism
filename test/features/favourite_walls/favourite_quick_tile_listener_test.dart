@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -10,6 +13,7 @@ import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_til
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,7 +38,25 @@ SessionState _session(String userId) => SessionState.initial().copyWith(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  late Directory offlineDirectory;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    offlineDirectory = await Directory.systemTemp.createTemp('prism-tile-assets-test');
+    OfflineAssetStore.testOverride = OfflineAssetStore(directory: offlineDirectory);
+  });
+
+  tearDown(() async {
+    OfflineAssetStore.testOverride = null;
+    debugDefaultTargetPlatformOverride = null;
+    if (await offlineDirectory.exists()) await offlineDirectory.delete(recursive: true);
+  });
+
   testWidgets('tile tracks edits, retains refreshes and clears favourites across accounts and logout', (tester) async {
+    final source = File('${offlineDirectory.path}/one.png')
+      ..writeAsBytesSync(<int>[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    await OfflineAssetStore.instance.retain('https://example.com/one.jpg', file: source);
     SharedPreferences.setMockInitialValues(<String, Object>{PersistenceKeys.quickTileFavsTarget: 'both'});
     final favourites = _FavouriteBloc();
     final session = _SessionBloc();
@@ -54,6 +76,11 @@ void main() {
     );
     await tester.pump();
     expect((await QuickTileConfigService.loadFavsTileConfig())?.wallUrls, <String>['https://example.com/one.jpg']);
+    final SharedPreferences initialPrefs = await SharedPreferences.getInstance();
+    final Map<String, dynamic> nativePaths =
+        jsonDecode(initialPrefs.getString('offline.native_asset_paths')!) as Map<String, dynamic>;
+    expect(nativePaths.keys, <String>['https://example.com/one.jpg']);
+    expect(File(nativePaths.values.single as String).existsSync(), isTrue);
 
     favouriteStates.add(_favourites('a', 'https://example.com/two.jpg'));
     await tester.pump();
@@ -69,6 +96,8 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect((await QuickTileConfigService.loadFavsTileConfig())?.wallUrls, isEmpty);
+    final SharedPreferences clearedPrefs = await SharedPreferences.getInstance();
+    expect(clearedPrefs.getString('offline.native_asset_paths'), '{}');
 
     favouriteStates.add(_favourites('a', 'https://example.com/stale.jpg'));
     await tester.pump();
@@ -90,7 +119,6 @@ void main() {
   });
 
   testWidgets('tile keeps the cached favourites on cold start until they load, and clears on logout', (tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{PersistenceKeys.quickTileFavsTarget: 'both'});
     await QuickTileConfigService.pushFavWallUrls(<String>['https://example.com/cached.jpg']);
     final favourites = _FavouriteBloc();
     final session = _SessionBloc();

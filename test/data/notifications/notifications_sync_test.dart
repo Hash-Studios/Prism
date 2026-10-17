@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
@@ -12,10 +15,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
 import '../../support/fake_user_block_repository.dart';
-import '../../support/in_memory_local_store.dart';
 
 class _MemoryNotificationsLocal extends NotificationsLocalDataSource {
-  _MemoryNotificationsLocal() : super(InMemoryLocalStore());
+  _MemoryNotificationsLocal() : super();
 
   List<InAppNotificationEntity> items = <InAppNotificationEntity>[];
   DateTime? lastFetch;
@@ -44,7 +46,7 @@ class _MemoryNotificationsLocal extends NotificationsLocalDataSource {
   Future<void> clearAll() async => items = <InAppNotificationEntity>[];
 
   @override
-  DateTime? lastFetchAtUtc() => lastFetch;
+  Future<DateTime?> lastFetchAtUtc() async => lastFetch;
 
   @override
   Future<void> setLastFetchAtUtc(DateTime value) async => lastFetch = value;
@@ -65,6 +67,7 @@ void main() {
   late FakeFirestoreClient client;
   late DateTime recent;
   late DateTime older;
+  late Directory directory;
 
   setUp(() async {
     await getIt.reset();
@@ -72,7 +75,8 @@ void main() {
     recent = DateTime.now().toUtc().subtract(const Duration(hours: 1));
     older = DateTime.now().toUtc().subtract(const Duration(days: 2));
     local = _MemoryNotificationsLocal();
-    tombstones = NotificationTombstones(InMemoryLocalStore());
+    directory = Directory.systemTemp.createTempSync('notifications_sync_test');
+    tombstones = NotificationTombstones.withStore(DurableJsonStore('notifications_sync_test', directory: directory));
     client = FakeFirestoreClient(
       onQuery: (FirestoreQuerySpec spec) => <FakeDocRow>[
         (id: 'a', data: _remoteDoc('first', recent)),
@@ -98,37 +102,83 @@ void main() {
       ..email = '';
     clearInAppNotificationSyncGateAll();
     await getIt.reset();
+    directory.deleteSync(recursive: true);
   });
 
   test('a forced sync restores everything when nothing was deleted', () async {
     await syncInAppNotificationsFromRemote(force: true);
 
     expect(local.items.map((item) => item.title), unorderedEquals(<String>['first', 'second']));
+    expect(client.querySpecs.single.cachePolicy, FirestoreCachePolicy.networkOnly);
+    expect(client.querySpecs.single.dedupeWindowMs, 0);
+  });
+
+  test('a sync started for account A is discarded after switching to account B', () async {
+    final blocks = FakeUserBlockRepository.pending();
+    await getIt.unregister<UserBlockRepository>();
+    getIt.registerSingleton<UserBlockRepository>(blocks);
+
+    final pending = syncInAppNotificationsFromRemote(force: true);
+    await Future<void>.delayed(Duration.zero);
+    app_state.prismUser
+      ..loggedIn = true
+      ..id = 'user-2'
+      ..email = 'other@example.com';
+    clearInAppNotificationSyncGateAll();
+    blocks.completeInitial(<String>{});
+
+    await pending;
+
+    expect(client.querySpecs, isEmpty);
+    expect(local.items, isEmpty);
+  });
+
+  test('a signed-in session without an ID uses the guest stores and does not fall back to email', () async {
+    local.setOwner('previous-account');
+    tombstones.setOwner('previous-account');
+    app_state.prismUser
+      ..loggedIn = true
+      ..id = '  '
+      ..email = 'user@example.com';
+
+    await syncInAppNotificationsFromRemote(force: true);
+
+    expect(local.ownerId, 'guest');
+    expect(tombstones.ownerId, 'guest');
+    expect(client.querySpecs, isEmpty);
   });
 
   test('a deleted notification stays deleted after a forced sync', () async {
+    tombstones.setOwner('user-1');
     await tombstones.addDeleted(<String>[_idFor('first', recent)]);
 
     await syncInAppNotificationsFromRemote(force: true);
 
+    expect(tombstones.ownerId, 'user-1');
     expect(local.items.map((item) => item.title), <String>['second']);
   });
 
   test('a deleted notification stays deleted after an incremental sync', () async {
+    tombstones.setOwner('user-1');
     local.lastFetch = DateTime.now().toUtc().subtract(const Duration(days: 3));
     await tombstones.addDeleted(<String>[_idFor('second', older)]);
 
     await syncInAppNotificationsFromRemote();
 
+    expect(tombstones.ownerId, 'user-1');
     expect(local.items.map((item) => item.title), <String>['first']);
+    expect(client.querySpecs.single.cachePolicy, FirestoreCachePolicy.networkOnly);
+    expect(client.querySpecs.single.dedupeWindowMs, 0);
   });
 
   test('after a clear, a forced sync only asks for notifications newer than the clear', () async {
+    tombstones.setOwner('user-1');
     final clearedAt = DateTime.now().toUtc().subtract(const Duration(hours: 5));
     await tombstones.markCleared(const <String>[], clearedAt);
 
     await syncInAppNotificationsFromRemote(force: true);
 
+    expect(tombstones.ownerId, 'user-1');
     expect(local.items.map((item) => item.title), <String>['first']);
     final since =
         client.querySpecs.single.filters.firstWhere((filter) => filter.field == 'createdAt').value! as DateTime;

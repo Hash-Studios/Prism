@@ -12,6 +12,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
@@ -32,6 +33,7 @@ import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -44,7 +46,6 @@ import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
 import 'package:Prism/features/wallpaper_detail/biz/similar_wallpapers_loader.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
-import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
@@ -65,6 +66,10 @@ import 'package:intl/intl.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
+
+@visibleForTesting
+bool shouldRecordWallpaperSetStats(FeedItemEntity entity) =>
+    entity.source == WallpaperSource.prism && !BundledWallpapers.isStarter(entity);
 
 @RoutePage()
 class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
@@ -149,6 +154,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   final ValueNotifier<double> _panelPosition = ValueNotifier<double>(0);
   bool _accentToastShown = false;
   bool _openRecorded = false;
+  String? _offlinePreviewKey;
+  Future<File?>? _offlinePreviewFuture;
 
   void _recordTaste(TasteAction action, FeedItemEntity entity) {
     final TasteSignal signal = entity.when(
@@ -1035,7 +1042,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     Future<String> Function()? prepareSource;
     DownloadVariant? variant;
     if (tint != null) {
-      prepareSource = () => renderTintedWallpaper(source: source, tint: tint, deviceLongSidePx: deviceLongSidePx);
+      prepareSource = () => renderTintedWallpaper(
+        source: source,
+        tint: tint,
+        deviceLongSidePx: deviceLongSidePx,
+        wallpaperId: entity.id,
+        wallpaperSource: entity.source,
+      );
       variant = DownloadVariant(key: _tintKey(tint), prepare: prepareSource);
     } else if (localFile != null) {
       final String? savedKey = _savedTintKeyOf(localFile.path);
@@ -1049,16 +1062,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         variant: variant,
         isPremiumContent: isPremiumFeedItem(entity, app_state.premiumCollections),
         contentId: entity.id,
+        wallpaperSource: entity.source,
         sourceContext: _getSourceContext(state),
         onDownloaded: () {
           _recordTaste(TasteAction.download, entity);
-          unawaited(
-            getIt<DownloadedWallIndex>().remember(
-              link: variant?.identityOf(url) ?? url,
-              id: entity.id,
-              source: entity.source,
-            ),
-          );
         },
       );
       return label == null ? button : PressScale(child: button);
@@ -1075,6 +1082,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
               child: SetWallpaperButton(
                 label: 'Set',
                 url: source,
+                wallpaperId: entity.id,
+                wallpaperSource: entity.source,
                 prepareSource: prepareSource,
                 thumbnailUrl: entity.thumbnailUrl,
                 promptNotificationPermissionOnSuccess: true,
@@ -1113,22 +1122,39 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
         WallpaperBarAction(
           label: 'Edit',
-          child: EditButton(url: entity.fullUrl, prepareSource: prepareSource ?? localSource),
+          child: EditButton(
+            url: entity.fullUrl,
+            wallpaperId: entity.id,
+            wallpaperSource: entity.source,
+            prepareSource: prepareSource ?? localSource,
+          ),
         ),
       ],
     );
   }
 
   /// Opens Make it live. The first palette colour seeds its gradients, so they follow this wallpaper.
-  void _openMakeItLive(BuildContext context, WallpaperDetailLoaded state) {
-    context.router.push(LiveWallpaperRoute(imageUrl: state.entity.fullUrl, accentSeed: state.colors?.firstOrNull));
+  Future<void> _openMakeItLive(BuildContext context, WallpaperDetailLoaded state) async {
+    final entity = state.entity;
+    String imageUrl = entity.fullUrl;
+    try {
+      imageUrl = (await WallpaperService.resolveToLocalFile(
+        entity.fullUrl,
+        allowNetwork: false,
+        wallpaperId: entity.id,
+        wallpaperSource: entity.source,
+      )).path;
+    } catch (_) {}
+    if (context.mounted) {
+      await context.router.push(LiveWallpaperRoute(imageUrl: imageUrl, accentSeed: state.colors?.firstOrNull));
+    }
   }
 
   Size _screenPixels(BuildContext context) => MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
 
   void _onWallpaperSet(FeedItemEntity entity) {
     _recordTaste(TasteAction.set, entity);
-    if (entity.source == WallpaperSource.prism) {
+    if (shouldRecordWallpaperSetStats(entity)) {
       unawaited(getIt<RecordWallpaperActionUseCase>()(entity.id, WallpaperAction.set));
     }
   }
@@ -1164,10 +1190,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final tags = wallpaperTags(entity);
     final notes = wallpaperResolutionNotes(entity.wallpaperCore, _screenPixels(context));
     final bool canBlock = canBlockWallCreator(entity);
-    final String? reportWallDocId = switch (entity) {
-      PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId,
-      _ => null,
-    };
+    final String? reportWallDocId = BundledWallpapers.isStarter(entity)
+        ? null
+        : switch (entity) {
+            PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId,
+            _ => null,
+          };
     const gap = SizedBox(height: 12);
     Widget padded(Widget child) =>
         Padding(padding: const EdgeInsets.fromLTRB(_sheetHPad, 0, _sheetHPad, 12), child: child);
@@ -1316,6 +1344,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                   context,
                   link: widget.localFile?.path ?? entity.fullUrl,
                   file: widget.localFile != null,
+                  wallpaperId: entity.id,
+                  wallpaperSource: entity.source,
                   thumbnailUrl: entity.thumbnailUrl,
                   tint: state.tint,
                 );
@@ -1356,7 +1386,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final String thumb = entity.thumbnailUrl.trim();
     final String full = entity.fullUrl.trim();
     final int cacheWidth = previewCacheWidth(MediaQuery.sizeOf(context).width, MediaQuery.devicePixelRatioOf(context));
-    final bool useProgressive = thumb.isNotEmpty && full.isNotEmpty && full != thumb;
+    final bool fullIsNetwork = isValidNetworkUrl(full);
+    final bool thumbIsNetwork = isValidNetworkUrl(thumb);
+    final bool useProgressive = thumbIsNetwork && fullIsNetwork && full != thumb;
 
     Widget imageLayer;
     final File? localFile = widget.localFile;
@@ -1367,6 +1399,24 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         cacheWidth: cacheWidth,
         errorBuilder: (_, _, _) =>
             const GlintState(kind: GlintStateKind.error, title: 'Downloaded wallpaper is unavailable'),
+      );
+    } else if (full.startsWith('assets/')) {
+      imageLayer = Image.asset(
+        full,
+        fit: BoxFit.cover,
+        cacheWidth: cacheWidth,
+        errorBuilder: (_, _, _) =>
+            Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
+      );
+    } else if (!fullIsNetwork && full.isNotEmpty) {
+      final Uri? uri = Uri.tryParse(full);
+      final String path = uri?.scheme == 'file' ? uri!.toFilePath() : full;
+      imageLayer = Image.file(
+        File(path),
+        fit: BoxFit.cover,
+        cacheWidth: cacheWidth,
+        errorBuilder: (_, _, _) =>
+            Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
       );
     } else if (useProgressive) {
       imageLayer = Stack(
@@ -1406,12 +1456,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ],
       );
     } else {
-      final String url = full.isNotEmpty ? full : thumb;
+      final String url = fullIsNetwork ? full : thumb;
       if (url.isEmpty) {
         imageLayer = Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
       } else {
         imageLayer = CachedNetworkImage(
-          cacheManager: full.isNotEmpty ? PrismFullImageCache.instance : PrismImageCache.instance,
+          cacheManager: fullIsNetwork ? PrismFullImageCache.instance : PrismImageCache.instance,
           imageUrl: url,
           memCacheWidth: cacheWidth,
           fadeInDuration: context.motion(const Duration(milliseconds: 180)),
@@ -1429,9 +1479,45 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       }
     }
 
+    final Widget offlineAwareImage = localFile != null || full.isEmpty || !fullIsNetwork
+        ? imageLayer
+        : FutureBuilder<File?>(
+            future: _offlinePreviewFor(entity),
+            builder: (BuildContext context, AsyncSnapshot<File?> snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) return imageLayer;
+              final File? retained = snapshot.data;
+              if (retained == null || !retained.existsSync()) return imageLayer;
+              return Image.file(
+                retained,
+                fit: BoxFit.cover,
+                cacheWidth: cacheWidth,
+                errorBuilder: (_, _, _) => imageLayer,
+              );
+            },
+          );
+
     return SizedBox.expand(
-      child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: imageLayer),
+      child: _HueTint(
+        tint: state.tint,
+        duration: context.motion(const Duration(milliseconds: 220)),
+        child: offlineAwareImage,
+      ),
     );
+  }
+
+  Future<File?> _offlinePreviewFor(FeedItemEntity entity) {
+    final String url = entity.fullUrl.trim();
+    final String key = '${entity.source.wireValue}\u0000${entity.id}\u0000$url';
+    if (_offlinePreviewKey != key) {
+      _offlinePreviewKey = key;
+      _offlinePreviewFuture = WallpaperService.resolveToLocalFile(
+        url,
+        allowNetwork: false,
+        wallpaperId: entity.id,
+        wallpaperSource: entity.source,
+      ).then<File?>((File file) => file).catchError((Object _) => null);
+    }
+    return _offlinePreviewFuture ?? Future<File?>.value();
   }
 
   Color _chromeColor(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {

@@ -3,6 +3,7 @@ package com.hash.prism
 import android.app.WallpaperManager
 import android.content.SharedPreferences
 import android.os.Build
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.service.quicksettings.Tile
@@ -67,20 +68,34 @@ internal abstract class WallpaperTileService : TileService() {
         updateTile()
         executor.execute {
             var file: File? = null
+            var temporaryFile = false
             try {
-                val wallpaper = wallpaper(applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE))
-                file = File.createTempFile("prism-tile-", ".tmp", cacheDir)
-                PrismImageTransfer.download(wallpaper.url, file)
-                PrismImageValidation.mime(file)
+                val prefs = applicationContext.getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
+                val wallpaper = wallpaper(prefs)
+                file = OfflineTileAssets.retainedFile(
+                    wallpaper.url,
+                    prefs.getString(OfflineTileAssets.PATHS_PREFERENCE, null),
+                    listOf(
+                        File(filesDir, "prism/offline/assets/assets"),
+                        File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Prism/Downloads"),
+                        File(Environment.getExternalStorageDirectory(), "Prism/Downloads"),
+                    ),
+                )
+                if (file == null) {
+                    file = File.createTempFile("prism-tile-", ".tmp", cacheDir)
+                    temporaryFile = true
+                    PrismImageTransfer.download(wallpaper.url, file)
+                    PrismImageValidation.mime(file)
+                }
                 val manager = WallpaperManager.getInstance(applicationContext)
                 if (!manager.isWallpaperSupported || !manager.isSetWallpaperAllowed) throw WallpaperUnavailableException()
-                file.inputStream().use { manager.setStream(it, null, false, wallpaper.target.flags) }
+                checkNotNull(file).inputStream().use { manager.setStream(it, null, false, wallpaper.target.flags) }
                 mainHandler.post { if (!destroyed) Toast.makeText(applicationContext, R.string.tile_wallpaper_updated, Toast.LENGTH_SHORT).show() }
             } catch (error: Throwable) {
                 Log.w("PrismTile", "Could not apply wallpaper", error)
                 mainHandler.post { if (!destroyed) Toast.makeText(applicationContext, tileErrorMessage(error), Toast.LENGTH_SHORT).show() }
             } finally {
-                file?.delete()
+                if (temporaryFile) file?.delete()
                 mainHandler.post { applying = false; if (!destroyed) updateTile() }
             }
         }

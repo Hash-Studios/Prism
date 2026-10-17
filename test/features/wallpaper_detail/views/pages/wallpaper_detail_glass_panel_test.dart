@@ -39,6 +39,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/offline_asset_fixture.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -77,10 +78,23 @@ bool _isWallpaperLayer(Widget widget) => widget is CachedNetworkImage && widget.
 
 Finder _wallpaper() => find.descendant(of: find.byType(ShakeOnce), matching: find.byWidgetPredicate(_isWallpaperLayer));
 
+Future<void> _waitForCachedImage(WidgetTester tester) async {
+  final Stopwatch timeout = Stopwatch()..start();
+  while (find.byType(CachedNetworkImage).evaluate().isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)).timeout(const Duration(seconds: 2)),
+    );
+    await tester.pump();
+  }
+}
+
 void main() {
   String? copied;
+  late OfflineAssetFixture offlineAssets;
 
-  setUp(() {
+  setUp(() async {
+    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineAssets.install();
     copied = null;
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
@@ -96,6 +110,7 @@ void main() {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    await offlineAssets.dispose();
     await getIt.reset();
     AnalyticsRuntime.reset();
   });
@@ -138,6 +153,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await _waitForCachedImage(tester);
   }
 
   Future<void> openPanel(WidgetTester tester) async {

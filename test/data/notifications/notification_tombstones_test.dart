@@ -1,52 +1,112 @@
-import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'dart:async';
+import 'dart:io';
+
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../support/in_memory_local_store.dart';
-
 void main() {
-  late InMemoryLocalStore store;
-  late NotificationTombstones tombstones;
+  late Directory directory;
 
   setUp(() {
-    store = InMemoryLocalStore();
-    tombstones = NotificationTombstones(store);
+    directory = Directory.systemTemp.createTempSync('notification_tombstones_test');
   });
 
-  test('persists deleted ids under the shared key and ignores blanks and repeats', () async {
+  tearDown(() => directory.deleteSync(recursive: true));
+
+  test('persists deleted ids, ignores blanks and repeats, and caps the list', () async {
+    final store = DurableJsonStore('notification_tombstones_test', directory: directory);
+    final tombstones = NotificationTombstones.withStore(store)..setOwner('account-a');
     await tombstones.addDeleted(<String>['a', '', 'a', 'b']);
 
-    expect(store.get(PersistenceKeys.notificationsDeletedIds), <String>['a', 'b']);
-    expect(NotificationTombstones(store).deletedIds(), <String>{'a', 'b'});
-  });
+    expect(await NotificationTombstones.withStore(store).deletedIds(), isEmpty);
+    final reopened = NotificationTombstones.withStore(store)..setOwner('account-a');
+    expect(await reopened.deletedIds(), <String>{'a', 'b'});
 
-  test('keeps only the newest 500 ids', () async {
-    await tombstones.addDeleted(List<String>.generate(NotificationTombstones.maxIds, (i) => 'id$i'));
-    await tombstones.addDeleted(<String>['newest']);
-
-    final ids = tombstones.deletedIds();
+    await reopened.addDeleted(List<String>.generate(NotificationTombstones.maxIds, (i) => 'id$i'));
+    await reopened.addDeleted(<String>['newest']);
+    final ids = await reopened.deletedIds();
     expect(ids, hasLength(NotificationTombstones.maxIds));
     expect(ids, contains('newest'));
     expect(ids, isNot(contains('id0')));
   });
 
-  test('removeDeleted forgets the given ids', () async {
-    await tombstones.addDeleted(<String>['a', 'b']);
+  test('deleted ids and clear watermark are isolated by owner', () async {
+    final tombstones = NotificationTombstones.withStore(
+      DurableJsonStore('notification_tombstone_owners', directory: directory),
+    )..setOwner('account-a');
+    await tombstones.markCleared(<String>['same-id'], DateTime.utc(2026, 1, 5));
 
-    await tombstones.removeDeleted(<String>['a']);
+    tombstones.setOwner('account-b');
+    expect(await tombstones.deletedIds(), isEmpty);
+    expect(await tombstones.clearedAtUtc(), isNull);
 
-    expect(tombstones.deletedIds(), <String>{'b'});
+    tombstones.setOwner('account-a');
+    expect(await tombstones.deletedIds(), <String>{'same-id'});
+    expect(await tombstones.clearedAtUtc(), DateTime.utc(2026, 1, 5));
   });
 
-  test('fetchFloor uses the last clear only when it is later than the backfill start', () async {
+  test('a tombstone write started for one owner is discarded after an owner-generation change', () async {
+    final store = _DelayedReadStore('notification_tombstone_generation', directory: directory);
+    final tombstones = NotificationTombstones.withStore(store)..setOwner('account-a');
+    final pending = tombstones.addDeleted(<String>['private-a']);
+    await Future<void>.delayed(Duration.zero);
+
+    tombstones.setOwner('account-b');
+    store.completeRead();
+    await pending;
+
+    expect(await store.readAll(), isEmpty);
+    tombstones.setOwner('account-a');
+    expect(await tombstones.deletedIds(), isEmpty);
+  });
+
+  test('removeDeleted forgets the given ids and clearForUser deletes only that owner record', () async {
+    final tombstones = NotificationTombstones.withStore(
+      DurableJsonStore('notification_tombstone_delete', directory: directory),
+    )..setOwner('account-a');
+    await tombstones.addDeleted(<String>['a', 'b']);
+    await tombstones.removeDeleted(<String>['a']);
+    expect(await tombstones.deletedIds(), <String>{'b'});
+    await tombstones.clearForUser('account-a');
+    expect(await tombstones.deletedIds(), isEmpty);
+  });
+
+  test('fetchFloor respects the last clear watermark', () async {
+    final tombstones = NotificationTombstones.withStore(
+      DurableJsonStore('notification_tombstone_floor', directory: directory),
+    )..setOwner('account-a');
     final backfill = DateTime.utc(2026);
-    expect(tombstones.fetchFloor(backfill), backfill);
+    expect(await tombstones.fetchFloor(backfill), backfill);
 
     await tombstones.markCleared(<String>['a'], DateTime.utc(2025, 12));
-    expect(tombstones.fetchFloor(backfill), backfill);
+    expect(await tombstones.fetchFloor(backfill), backfill);
 
     await tombstones.markCleared(<String>['b'], DateTime.utc(2026, 1, 5));
-    expect(tombstones.fetchFloor(backfill), DateTime.utc(2026, 1, 5));
-    expect(tombstones.deletedIds(), <String>{'a', 'b'});
+    expect(await tombstones.fetchFloor(backfill), DateTime.utc(2026, 1, 5));
+    expect(await tombstones.deletedIds(), <String>{'a', 'b'});
   });
+
+  test('a durable write failure is surfaced to the caller', () async {
+    final blockerPath = File('${directory.path}/not-a-directory')..writeAsStringSync('block');
+    final tombstones = NotificationTombstones.withStore(
+      DurableJsonStore('notification_tombstone_failure', directory: Directory(blockerPath.path)),
+    )..setOwner('account-a');
+
+    await expectLater(tombstones.addDeleted(<String>['id']), throwsA(isA<FileSystemException>()));
+  });
+}
+
+class _DelayedReadStore extends DurableJsonStore {
+  _DelayedReadStore(super.name, {required super.directory});
+
+  final Completer<void> _readGate = Completer<void>();
+
+  void completeRead() => _readGate.complete();
+
+  @override
+  Future<Map<String, Object?>?> read(String key) async {
+    await _readGate.future;
+    return super.read(key);
+  }
 }

@@ -32,6 +32,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/offline_asset_fixture.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -72,8 +73,11 @@ Finder _wallpaper() => find.descendant(of: find.byType(ShakeOnce), matching: fin
 
 void main() {
   String? copied;
+  late OfflineAssetFixture offlineAssets;
 
-  setUp(() {
+  setUp(() async {
+    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineAssets.install();
     copied = null;
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<TasteSignalStore>(TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore())));
@@ -89,6 +93,7 @@ void main() {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    await offlineAssets.dispose();
     await getIt.reset();
     AnalyticsRuntime.reset();
   });
@@ -131,6 +136,10 @@ void main() {
       ),
     );
     await tester.pump();
+    for (int attempt = 0; attempt < 10 && find.byType(CachedNetworkImage).evaluate().isEmpty; attempt++) {
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+    }
   }
 
   final Finder accentSwatch = find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Accent color');
@@ -187,6 +196,10 @@ void main() {
         ),
       );
       await tester.pump();
+      for (int attempt = 0; attempt < 10 && find.byType(CachedNetworkImage).evaluate().isEmpty; attempt++) {
+        await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+        await tester.pump();
+      }
       await tester.pump(const Duration(milliseconds: 50));
     }
 

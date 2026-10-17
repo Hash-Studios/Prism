@@ -33,6 +33,7 @@ class SearchGrid extends StatefulWidget {
     required this.initialResults,
     this.prismResults = const <FeedItemEntity>[],
     this.filters = const SearchFilters(),
+    this.isLocal = false,
   });
 
   final String query;
@@ -42,6 +43,7 @@ class SearchGrid extends StatefulWidget {
   /// Prism catalogue walls that match [query]. Shown first, in a "From Prism" row.
   final List<FeedItemEntity> prismResults;
   final SearchFilters filters;
+  final bool isLocal;
 
   @override
   State<SearchGrid> createState() => _SearchGridState();
@@ -55,7 +57,7 @@ class _SearchGridState extends State<SearchGrid> {
   bool _loadMoreFailed = false;
   int _currentPage = 1;
 
-  bool get _hasExternalResults => widget.provider != SearchProviderValue.prism;
+  bool get _hasExternalResults => !widget.isLocal && widget.provider != SearchProviderValue.prism;
 
   int get _queryLength => widget.query.trim().length;
 
@@ -208,6 +210,13 @@ class _SearchGridState extends State<SearchGrid> {
           physics: const AlwaysScrollableScrollPhysics(),
           scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
           slivers: <Widget>[
+            if (widget.isLocal)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.sm, PrismSpace.md, PrismSpace.xs),
+                  child: Text('Saved on this device', style: Theme.of(context).textTheme.labelMedium),
+                ),
+              ),
             if (widget.prismResults.isNotEmpty)
               SliverToBoxAdapter(
                 child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper),

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -16,6 +19,8 @@ import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:async_wallpaper/pigeon_impl_api.dart' as api;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:flutter_cache_manager/file.dart' as cache_file;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -24,6 +29,8 @@ import '../../support/in_memory_local_store.dart';
 class _MockWalls extends Mock implements PrismWallpaperRepository {}
 
 class _MockWotd extends Mock implements WallOfTheDayRepository {}
+
+class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 PrismWallpaper _wall(String url) => PrismWallpaper(
   core: WallpaperCore(id: url, source: WallpaperSource.prism, fullUrl: url, thumbnailUrl: ''),
@@ -36,6 +43,10 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const String stopChannel = 'dev.flutter.pigeon.async_wallpaper.WallpaperApi.stopWallpaperRotation';
   const String statusChannel = 'dev.flutter.pigeon.async_wallpaper.WallpaperApi.getWallpaperRotationStatus';
+  const BasicMessageChannel<Object?> rotationChannel = BasicMessageChannel<Object?>(
+    'dev.flutter.pigeon.async_wallpaper.WallpaperApi.startWallpaperRotation',
+    api.WallpaperApi.pigeonChannelCodec,
+  );
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
   late AutoRotateRepositoryImpl repository;
@@ -55,8 +66,10 @@ void main() {
 
   tearDown(() {
     debugDefaultTargetPlatformOverride = null;
+    OfflineAssetStore.testOverride = null;
     messenger.setMockMessageHandler(stopChannel, null);
     messenger.setMockMessageHandler(statusChannel, null);
+    messenger.setMockDecodedMessageHandler<Object?>(rotationChannel, null);
   });
 
   test('reports a rejected native stop instead of treating it as stopped', () async {
@@ -190,19 +203,120 @@ void main() {
       expect(await repository.loadRemoteUrls(AutoRotateSource.wallOfTheDay), isNull);
     });
 
-    test('history gives unique https urls in a stable order', () async {
+    test('history gives unique local paths and https urls in a stable order', () async {
       final DateTime now = DateTime.utc(2026, 5);
       await history.record(_applied('1', 'https://a.test/b.jpg', now));
       await history.record(_applied('2', 'https://a.test/a.jpg', now.add(const Duration(hours: 1))));
       await history.record(_applied('3', 'https://a.test/b.jpg', now.add(const Duration(hours: 2))));
       await history.record(_applied('4', '/storage/local.jpg', now.add(const Duration(hours: 3))));
+      await history.record(_applied('6', '/storage/another.jpg', now.add(const Duration(hours: 5))));
 
       final first = await repository.loadRemoteUrls(AutoRotateSource.history);
       await history.record(_applied('5', 'https://a.test/a.jpg', now.add(const Duration(hours: 4))));
       final second = await repository.loadRemoteUrls(AutoRotateSource.history);
 
-      expect(first, <String>['https://a.test/a.jpg', 'https://a.test/b.jpg']);
+      expect(first, <String>[
+        '/storage/another.jpg',
+        '/storage/local.jpg',
+        'https://a.test/a.jpg',
+        'https://a.test/b.jpg',
+      ]);
       expect(second, first);
+    });
+
+    test('history rotation preserves local files alongside remote URLs', () async {
+      api.WallpaperRotationConfigData? request;
+      messenger.setMockDecodedMessageHandler<Object?>(rotationChannel, (message) async {
+        request = (message! as List<Object?>).single! as api.WallpaperRotationConfigData;
+        return <Object?>[true];
+      });
+
+      expect(
+        await repository.start(const AutoRotateConfig(source: AutoRotateSource.history), <String>[
+          '/storage/emulated/0/Prism/wall.jpg',
+          'https://img.test/remote.jpg',
+        ]),
+        isTrue,
+      );
+      expect(
+        request!.sources!.map((source) => (source!.source, source.sourceType)).toList(),
+        <(String?, api.RotationSourceTypeData?)>[
+          ('/storage/emulated/0/Prism/wall.jpg', api.RotationSourceTypeData.file),
+          ('https://img.test/remote.jpg', api.RotationSourceTypeData.url),
+        ],
+      );
+    });
+
+    test('temporary cache hits stay URLs while retained originals stay local after cache cleanup', () async {
+      const String temporaryUrl = 'https://images.example/temporary.jpg';
+      const String retainedUrl = 'https://images.example/retained.jpg';
+      final Directory root = await Directory.systemTemp.createTemp('auto-rotate-retained-');
+      addTearDown(() => root.delete(recursive: true));
+      final File original = File('${root.path}/original.jpg')..writeAsBytesSync(<int>[0xff, 0xd8, 0xff, 0xe0]);
+      final File temporary = File('${root.path}/temporary.jpg')..writeAsBytesSync(<int>[0xff, 0xd8, 0xff, 0xe0]);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (_) async => root.path,
+      );
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          null,
+        );
+      });
+      final cache_file.File cached = await IOFileSystem('rotation-test').createFile('temporary.jpg');
+      await cached.writeAsBytes(await temporary.readAsBytes());
+      final _MockCacheManager cache = _MockCacheManager();
+      when(
+        () => cache.getFileFromCache(temporaryUrl),
+      ).thenAnswer((_) async => FileInfo(cached, FileSource.Cache, DateTime.utc(2026), temporaryUrl));
+      when(() => cache.emptyCache()).thenAnswer((_) async {});
+      final OfflineAssetStore assets = OfflineAssetStore(
+        directory: Directory('${root.path}/store'),
+        cacheManager: cache,
+      );
+      OfflineAssetStore.testOverride = assets;
+      final File retained = await assets.retain(retainedUrl, file: original);
+      expect((await assets.lookup(temporaryUrl))?.path, cached.path);
+      api.WallpaperRotationConfigData? request;
+      messenger.setMockDecodedMessageHandler<Object?>(rotationChannel, (message) async {
+        request = (message! as List<Object?>).single! as api.WallpaperRotationConfigData;
+        return <Object?>[true];
+      });
+
+      expect(
+        await repository.start(const AutoRotateConfig(source: AutoRotateSource.history), <String>[
+          temporaryUrl,
+          retainedUrl,
+        ]),
+        isTrue,
+      );
+
+      expect(
+        request!.sources!.map((source) => (source!.source, source.sourceType)).toList(),
+        <(String?, api.RotationSourceTypeData?)>[
+          (temporaryUrl, api.RotationSourceTypeData.url),
+          (retained.path, api.RotationSourceTypeData.file),
+        ],
+      );
+
+      await cache.emptyCache();
+      when(() => cache.getFileFromCache(temporaryUrl)).thenAnswer((_) async => null);
+      expect((await assets.localPaths())[retainedUrl], retained.path);
+      expect(
+        await repository.start(const AutoRotateConfig(source: AutoRotateSource.history), <String>[
+          temporaryUrl,
+          retainedUrl,
+        ]),
+        isTrue,
+      );
+      expect(
+        request!.sources!.map((source) => (source!.source, source.sourceType)).toList(),
+        <(String?, api.RotationSourceTypeData?)>[
+          (temporaryUrl, api.RotationSourceTypeData.url),
+          (retained.path, api.RotationSourceTypeData.file),
+        ],
+      );
     });
 
     test('favourites and downloads are not loaded by the repository', () async {

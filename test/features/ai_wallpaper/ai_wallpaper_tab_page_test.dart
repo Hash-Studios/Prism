@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -7,6 +8,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
@@ -46,6 +48,18 @@ class _AsyncThrowingShareTapAnalytics extends FakeAppAnalytics {
   }
 }
 
+class _FailingResolveOfflineAssetStore extends OfflineAssetStore {
+  _FailingResolveOfflineAssetStore() : super(directory: Directory.systemTemp);
+
+  int resolveCalls = 0;
+
+  @override
+  Future<File> resolve(String source, {bool allowNetwork = true}) async {
+    resolveCalls++;
+    throw const SocketException('offline');
+  }
+}
+
 class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
   _FakeAiGenerationRepository(this.record, this.metadata, {this.history});
 
@@ -58,6 +72,16 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) =>
       history?.call() ?? Future<List<AiGenerationRecord>>.value(<AiGenerationRecord>[record]);
+
+  @override
+  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
+      const <AiGenerationRecord>[];
+
+  @override
+  Future<String?> loadPrompt({required String userId}) async => null;
+
+  @override
+  Future<void> savePrompt({required String userId, required String prompt}) async {}
 
   @override
   Future<AiSubmissionMetadata> prefillSubmissionMetadata({
@@ -100,6 +124,41 @@ AiGenerationRecord _record({
 const AiSubmissionMetadata _emptyMetadata = (title: '', description: '', category: '', tags: <String>[]);
 
 void main() {
+  testWidgets('failed save resolution clears the saving lock so the user can retry', (tester) async {
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final _FailingResolveOfflineAssetStore assets = _FailingResolveOfflineAssetStore();
+    OfflineAssetStore.testOverride = assets;
+    addTearDown(() => OfflineAssetStore.testOverride = null);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(
+            _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
+            Completer<AiSubmissionMetadata>(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(assets.resolveCalls, 2);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('AI share is single-flight, reports the chosen image and records tap and success', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;

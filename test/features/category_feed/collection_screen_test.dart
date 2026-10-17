@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
@@ -17,6 +18,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_firestore_client.dart';
+import '../../support/fake_feed_cache_local_data_source.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
 
@@ -32,6 +34,7 @@ void main() {
       ],
     );
     getIt.registerSingleton<FirestoreClient>(firestore);
+    getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
     AnalyticsRuntime.instance = FakeAppAnalytics();
     bloc = _MockCategoryFeedBloc();
     final state = CategoryFeedState.initial().copyWith(

@@ -4,12 +4,15 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
+import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
+import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
@@ -20,6 +23,30 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_app_analytics.dart';
 
 const MethodChannel _toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+
+class _FailingUploadDraftStore extends UploadDraftStore {
+  @override
+  Future<UploadDraft?> read({required String owner, required String draftId}) async => null;
+
+  @override
+  Future<UploadDraft> save({
+    required String owner,
+    required String draftId,
+    required File selectedFile,
+    required SubmissionMetadata metadata,
+  }) async => throw StateError('disk full');
+}
+
+class _DraftStoreFixture {
+  const _DraftStoreFixture(this.root);
+
+  final Directory root;
+
+  UploadDraftStore open() => UploadDraftStore(
+    store: DurableJsonStore('upload_screen_test', directory: Directory('${root.path}/records')),
+    directory: Directory('${root.path}/files'),
+  );
+}
 
 class _TestAppRouter extends AppRouter {
   _TestAppRouter(this.uploadRoute);
@@ -87,6 +114,124 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
   }
+
+  Future<_DraftStoreFixture> makeDraftStore(WidgetTester tester) async {
+    final Directory root = (await tester.runAsync(
+      () => Directory.systemTemp.createTemp('prism-upload-screen-draft-'),
+    ))!;
+    addTearDown(() => tester.runAsync(() => root.delete(recursive: true)));
+    return _DraftStoreFixture(root);
+  }
+
+  testWidgets('keeps a draft on normal exit and restores its metadata after reopening', (tester) async {
+    await setViewport(tester);
+    final File image = await makeImage(tester);
+    final _DraftStoreFixture fixture = await makeDraftStore(tester);
+    UploadDraftStore drafts = fixture.open();
+    final String draftId = await UploadDraftStore.idForFile(image);
+
+    Widget uploader() =>
+        UploadWallScreen(image: image, prepareImageForTesting: () async {}, draftStoreForTesting: drafts);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => uploader())),
+              child: const Text('Open uploader'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open uploader'));
+    await tester.pumpAndSettle();
+    await pumpImagePreparation(tester);
+    await tester.ensureVisible(find.byType(TextField).first);
+    await tester.enterText(find.byType(TextField).first, 'Northern lights');
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Leave this upload?'), findsOneWidget);
+    await tester.tap(find.text('Keep draft'));
+    await tester.pumpAndSettle();
+    expect(find.text('Upload wallpaper'), findsNothing);
+
+    drafts = fixture.open();
+    await tester.tap(find.text('Open uploader'));
+    await tester.pumpAndSettle();
+    await pumpImagePreparation(tester);
+    await tester.ensureVisible(find.byType(TextField).first);
+
+    final UploadDraft? restored = await drafts.read(owner: UploadDraftStore.guestOwner, draftId: draftId);
+    expect(restored?.metadata.title, 'Northern lights');
+    expect(tester.widget<TextField>(find.byType(TextField).first).controller!.text, 'Northern lights');
+    expect(await restored!.file.exists(), isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('explicit discard removes only this owner draft', (tester) async {
+    await setViewport(tester);
+    final File image = await makeImage(tester);
+    final UploadDraftStore drafts = (await makeDraftStore(tester)).open();
+    final String draftId = await UploadDraftStore.idForFile(image);
+    await drafts.save(
+      owner: 'another-account',
+      draftId: draftId,
+      selectedFile: image,
+      metadata: const SubmissionMetadata(title: 'Other owner draft'),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(image: image, prepareImageForTesting: () async {}, draftStoreForTesting: drafts),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Leave this upload?'), findsOneWidget);
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+
+    expect(await drafts.read(owner: UploadDraftStore.guestOwner, draftId: draftId), isNull);
+    expect((await drafts.read(owner: 'another-account', draftId: draftId))?.metadata.title, 'Other owner draft');
+    expect(find.text('Upload wallpaper'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('stays on the screen when keeping a draft fails to persist', (tester) async {
+    await setViewport(tester);
+    final File image = await makeImage(tester);
+    final messages = <String?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(_toastChannel, (call) async {
+      if (call.method == 'showToast') messages.add((call.arguments as Map<Object?, Object?>)['msg'] as String?);
+      return true;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(_toastChannel, null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          draftStoreForTesting: _FailingUploadDraftStore(),
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Keep draft'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Upload wallpaper'), findsOneWidget);
+    expect(find.text('Leave this upload?'), findsNothing);
+    expect(messages, <String?>['Could not save this draft. Try again.']);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('prepares locally, blocks duplicate taps while busy, then opens review status', (tester) async {
     await setViewport(tester);

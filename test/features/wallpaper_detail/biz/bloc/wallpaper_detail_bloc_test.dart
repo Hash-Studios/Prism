@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
@@ -48,8 +52,10 @@ void main() {
   late _MockRecordViews views;
   late _MockSetCount setCount;
   late WallpaperDetailBloc bloc;
+  late Directory catalogDirectory;
 
-  setUp(() {
+  setUp(() async {
+    catalogDirectory = await Directory.systemTemp.createTemp('wallpaper-detail-catalog-');
     prism = _MockPrismRepository();
     palette = _MockPaletteRepository();
     wallhaven = _MockWallhavenRepository();
@@ -58,11 +64,15 @@ void main() {
     when(() => setCount(any())).thenAnswer((_) async => Result.success<int?>(null));
     when(() => palette.generatePalette(any())).thenAnswer((_) async => Result.error(const NetworkFailure('x')));
     when(() => views(any())).thenAnswer((_) async => Result.success('7'));
-    bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount);
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: catalogDirectory),
+    );
+    bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount, catalog);
     addTearDown(bloc.close);
+    addTearDown(() => catalogDirectory.delete(recursive: true));
   });
 
-  Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 10));
+  Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 40));
 
   test('a failed fetch never shows the raw failure text and keeps the thumbnail for the error screen', () async {
     when(() => prism.fetchById('abc')).thenAnswer(
@@ -95,6 +105,72 @@ void main() {
     await settle();
 
     expect(bloc.state, const WallpaperDetailError(message: 'Wallpaper not found'));
+  });
+
+  test('an ID lookup uses the local catalog after a transport failure', () async {
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: catalogDirectory),
+    );
+    await catalog.remember(const <FeedItemEntity>[PrismFeedItem(id: 'abc', wallpaper: _wallpaper)]);
+    when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
+    bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount, catalog);
+    addTearDown(bloc.close);
+
+    bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
+    await settle();
+
+    expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
+    verify(() => prism.fetchById('abc')).called(1);
+  });
+
+  test('a slow ID lookup succeeds when no saved fallback exists', () async {
+    when(() => prism.fetchById('abc')).thenAnswer((_) async {
+      await Future<void>.delayed(const Duration(seconds: 3));
+      return Result.success<PrismWallpaper?>(_wallpaper);
+    });
+
+    bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
+    await Future<void>.delayed(const Duration(seconds: 3, milliseconds: 100));
+
+    expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
+    verify(() => prism.fetchById('abc')).called(1);
+  });
+
+  test('saved detail content returns after the short decision budget', () async {
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: catalogDirectory),
+    );
+    await catalog.remember(const <FeedItemEntity>[PrismFeedItem(id: 'abc', wallpaper: _wallpaper)]);
+    bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount, catalog);
+    addTearDown(bloc.close);
+    when(() => prism.fetchById('abc')).thenAnswer((_) async {
+      await Future<void>.delayed(const Duration(seconds: 3));
+      return Result.success<PrismWallpaper?>(_wallpaper);
+    });
+
+    final Stopwatch stopwatch = Stopwatch()..start();
+    bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
+    await Future<void>.delayed(const Duration(seconds: 2, milliseconds: 100));
+
+    expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 3)));
+    verify(() => prism.fetchById('abc')).called(1);
+  });
+
+  test('a successful not-found response does not show stale catalog content', () async {
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: catalogDirectory),
+    );
+    await catalog.remember(const <FeedItemEntity>[PrismFeedItem(id: 'abc', wallpaper: _wallpaper)]);
+    bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount, catalog);
+    addTearDown(bloc.close);
+    when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+
+    bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
+    await settle();
+
+    expect(bloc.state, const WallpaperDetailError(message: 'Wallpaper not found'));
+    verify(() => prism.fetchById('abc')).called(1);
   });
 
   test('the set count of a Prism wall lands in the loaded state', () async {
@@ -135,6 +211,30 @@ void main() {
     );
     await settle();
 
+    verifyNever(() => setCount(any()));
+  });
+
+  test('bundled starter entities never request server-side views or set counts', () async {
+    const FeedItemEntity starter = PrismFeedItem(
+      id: 'starter-sunset',
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: 'starter-sunset',
+          source: WallpaperSource.prism,
+          fullUrl: '/local/starter-sunset.jpg',
+          thumbnailUrl: '/local/starter-sunset.jpg',
+        ),
+      ),
+    );
+    expect(BundledWallpapers.isStarter(starter), isTrue);
+
+    bloc.add(const LoadFromEntity(entity: starter));
+    await settle();
+    bloc.add(const FetchViews());
+    bloc.add(const FetchSetCount());
+    await settle();
+
+    verifyNever(() => views(any()));
     verifyNever(() => setCount(any()));
   });
 

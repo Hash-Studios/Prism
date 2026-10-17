@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -7,9 +10,14 @@ import 'package:async_wallpaper/pigeon_impl_api.dart' as wallpaper_api;
 // ignore: implementation_imports
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
+import '../../support/offline_asset_fixture.dart';
+
+class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 aw.WallpaperOperationResult _result(
   aw.WallpaperOperationStatus status, {
@@ -78,31 +86,167 @@ void main() {
     wallpaper_api.WallpaperApi.pigeonChannelCodec,
   );
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  late OfflineAssetFixture assets;
+
+  setUp(() async {
+    assets = await OfflineAssetFixture.create();
+    assets.install();
+  });
+
+  tearDown(() => assets.dispose());
   tearDown(() => messenger.setMockDecodedMessageHandler<Object?>(channel, null));
 
-  for (final source in <String, String>{
-    'file:///tmp/filtered%20wall%23one.png': '/tmp/filtered wall#one.png',
-    '/storage/emulated/0//wall.png': '/storage/emulated/0/wall.png',
-  }.entries) {
-    test('applies ${source.key} as its decoded local path', () async {
-      wallpaper_api.StaticWallpaperRequestData? request;
-      messenger.setMockDecodedMessageHandler<Object?>(channel, (message) async {
-        request = (message! as List<Object?>).single! as wallpaper_api.StaticWallpaperRequestData;
-        return <Object?>[
-          wallpaper_api.OperationResultData(
-            status: wallpaper_api.OperationStatusData.applied,
-            requestedTarget: wallpaper_api.WallpaperTargetData.home,
-            home: wallpaper_api.TargetResultData(status: wallpaper_api.TargetStatusData.applied),
-          ),
-        ];
-      });
+  test('a local-only cache miss reports unavailable without a network request', () async {
+    const String source = 'https://example.test/not-saved.jpg';
+    when(() => assets.cacheManager.getFileFromCache(source)).thenAnswer((_) async => null);
 
-      expect(await WallpaperService.setWallpaperFromSource(source.key, WallpaperTarget.home), isTrue);
-      expect(request?.source?.filePath, source.value);
-      expect(request?.source?.kind, wallpaper_api.WallpaperSourceKindData.filePath);
-      expect(request?.target, wallpaper_api.WallpaperTargetData.home);
+    await expectLater(
+      WallpaperService.resolveToLocalFile(source, allowNetwork: false),
+      throwsA(isA<OfflineAssetUnavailableException>()),
+    );
+
+    verifyNever(() => assets.cacheManager.getSingleFile(any()));
+  });
+
+  test('an unavailable original fails before any native wallpaper action', () async {
+    const String source = 'https://example.test/not-saved.jpg';
+    when(() => assets.cacheManager.getFileFromCache(source)).thenAnswer((_) async => null);
+    when(() => assets.cacheManager.getSingleFile(source)).thenAnswer((_) async {
+      throw const OfflineAssetUnavailableException(source);
     });
-  }
+    final _FakeClient client = _FakeClient(<aw.WallpaperOperationStatus>[aw.WallpaperOperationStatus.applied]);
+    aw.AsyncWallpaper.debugSetClient(client);
+    addTearDown(aw.AsyncWallpaper.debugResetClient);
+
+    final WallpaperSetResult result = await WallpaperService.setWallpaper(
+      source,
+      WallpaperTarget.home,
+      recordHistory: false,
+    );
+
+    expect(result.isFailure, isTrue);
+    expect(result.message, 'This wallpaper is not saved on this device. Connect to the internet and try again.');
+    expect(result.errorCode, 'offline_unavailable');
+    expect(client.requests, isEmpty);
+  });
+
+  test('a network socket failure reports offline availability before any native action', () async {
+    const String source = 'https://example.test/socket-failure.jpg';
+    when(() => assets.cacheManager.getFileFromCache(source)).thenAnswer((_) async => null);
+    when(() => assets.cacheManager.getSingleFile(source)).thenThrow(const SocketException('Network is unreachable'));
+    final _FakeClient client = _FakeClient(<aw.WallpaperOperationStatus>[aw.WallpaperOperationStatus.applied]);
+    aw.AsyncWallpaper.debugSetClient(client);
+    addTearDown(aw.AsyncWallpaper.debugResetClient);
+
+    final WallpaperSetResult result = await WallpaperService.setWallpaper(
+      source,
+      WallpaperTarget.home,
+      recordHistory: false,
+    );
+
+    expect(result.message, WallpaperService.offlineUnavailableMessage);
+    expect(result.errorCode, 'offline_unavailable');
+    expect(client.requests, isEmpty);
+  });
+
+  test('a corrupt original is not reported as an offline availability failure', () async {
+    const String source = 'https://example.test/corrupt.jpg';
+    when(() => assets.cacheManager.getFileFromCache(source)).thenAnswer((_) async => null);
+    when(() => assets.cacheManager.getSingleFile(source)).thenThrow(const FormatException('Invalid image'));
+    final _FakeClient client = _FakeClient(<aw.WallpaperOperationStatus>[aw.WallpaperOperationStatus.applied]);
+    aw.AsyncWallpaper.debugSetClient(client);
+    addTearDown(aw.AsyncWallpaper.debugResetClient);
+
+    final WallpaperSetResult result = await WallpaperService.setWallpaper(
+      source,
+      WallpaperTarget.home,
+      recordHistory: false,
+    );
+
+    expect(result.message, WallpaperService.failedMessage);
+    expect(result.errorCode, 'load_failed');
+    expect(client.requests, isEmpty);
+  });
+
+  test('resolves stale cached originals locally without requesting the network', () async {
+    final Directory root = Directory.systemTemp.createTempSync('wallpaper-resolver-test-');
+    const MethodChannel pathProvider = MethodChannel('plugins.flutter.io/path_provider');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      pathProvider,
+      (_) async => root.path,
+    );
+    late String cachedPath;
+    addTearDown(() async {
+      await root.delete(recursive: true);
+      OfflineAssetStore.testOverride = null;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(pathProvider, null);
+    });
+    const String source = 'https://example.test/stale-wallpaper.jpg';
+    final File stale = File('${root.path}/stale.jpg');
+    await stale.writeAsBytes(await (await assets.createImage('stale.jpg')).readAsBytes());
+    final _MockCacheManager cache = _MockCacheManager();
+    when(() => cache.getFileFromCache(source)).thenAnswer((_) async {
+      final cacheFile = await IOFileSystem('wallpaper-resolver-test').createFile('stale-cache.jpg');
+      await cacheFile.writeAsBytes(await stale.readAsBytes());
+      cachedPath = cacheFile.path;
+      return FileInfo(cacheFile, FileSource.Cache, DateTime(2000), source);
+    });
+    OfflineAssetStore.testOverride = OfflineAssetStore(
+      directory: Directory('${root.path}/retained'),
+      cacheManager: cache,
+    );
+
+    final File resolved = await WallpaperService.resolveToLocalFile(source, allowNetwork: false);
+
+    expect(resolved.path, cachedPath);
+    verifyNever(() => cache.getSingleFile(any()));
+  });
+
+  test('decodes a file URI before passing the local image path to the platform', () async {
+    final File image = await assets.createImage('filtered wall#one.png');
+    final String source = image.uri.toString();
+    final String expectedPath = image.path;
+    wallpaper_api.StaticWallpaperRequestData? request;
+    messenger.setMockDecodedMessageHandler<Object?>(channel, (message) async {
+      request = (message! as List<Object?>).single! as wallpaper_api.StaticWallpaperRequestData;
+      return <Object?>[
+        wallpaper_api.OperationResultData(
+          status: wallpaper_api.OperationStatusData.applied,
+          requestedTarget: wallpaper_api.WallpaperTargetData.home,
+          home: wallpaper_api.TargetResultData(status: wallpaper_api.TargetStatusData.applied),
+        ),
+      ];
+    });
+
+    expect(await WallpaperService.setWallpaperFromSource(source, WallpaperTarget.home), isTrue);
+    expect(request?.source?.filePath, expectedPath);
+    expect(request?.source?.kind, wallpaper_api.WallpaperSourceKindData.filePath);
+    expect(request?.target, wallpaper_api.WallpaperTargetData.home);
+  });
+
+  test('normalizes a repeated separator in a local image path', () async {
+    final File image = await assets.createImage('wall.png');
+    final String source = image.path.replaceFirst('/images/', '/images/0//');
+    final String expectedPath = image.path.replaceFirst('/images/', '/images/0/');
+    await Directory('${assets.directory.path}/images/0').create(recursive: true);
+    await image.copy(expectedPath);
+    wallpaper_api.StaticWallpaperRequestData? request;
+    messenger.setMockDecodedMessageHandler<Object?>(channel, (message) async {
+      request = (message! as List<Object?>).single! as wallpaper_api.StaticWallpaperRequestData;
+      return <Object?>[
+        wallpaper_api.OperationResultData(
+          status: wallpaper_api.OperationStatusData.applied,
+          requestedTarget: wallpaper_api.WallpaperTargetData.home,
+          home: wallpaper_api.TargetResultData(status: wallpaper_api.TargetStatusData.applied),
+        ),
+      ];
+    });
+
+    expect(await WallpaperService.setWallpaperFromSource(source, WallpaperTarget.home), isTrue);
+    expect(request?.source?.filePath, expectedPath);
+    expect(request?.source?.kind, wallpaper_api.WallpaperSourceKindData.filePath);
+    expect(request?.target, wallpaper_api.WallpaperTargetData.home);
+  });
 
   group('status mapping', () {
     tearDown(aw.AsyncWallpaper.debugResetClient);
@@ -193,6 +337,7 @@ void main() {
     test('the system cropper gets a content URI and is not retried', () async {
       const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
       final List<Object?> cropArguments = <Object?>[];
+      final File image = await assets.createImage('crop-wall.png');
       messenger.setMockMethodCallHandler(cropChannel, (MethodCall call) async {
         cropArguments.add(call.arguments);
         return 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.png';
@@ -201,15 +346,14 @@ void main() {
       final _FakeClient client = _FakeClient([aw.WallpaperOperationStatus.failed]);
       aw.AsyncWallpaper.debugSetClient(client);
       await WallpaperService.setWallpaper(
-        '/tmp/wall.png',
+        image.path,
         WallpaperTarget.home,
         useSystemCropper: true,
         recordHistory: false,
       );
-      expect(cropArguments, ['/tmp/wall.png']);
+      expect(cropArguments, [image.path]);
       expect(client.requests, hasLength(1));
       expect(client.requests.single.strategy, aw.WallpaperApplyStrategy.systemCropper);
-      // The plugin refuses the cropper for a file path, so every crop failed before.
       expect(
         client.requests.single.source.contentUri,
         'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.png',
@@ -356,14 +500,19 @@ void main() {
 
   group('history recording', () {
     late WallpaperHistoryStore store;
+    late Directory temporaryDirectory;
+    late Directory cacheDirectory;
 
-    setUp(() {
+    setUp(() async {
       store = WallpaperHistoryStore(SettingsLocalDataSource(InMemoryLocalStore()));
       getIt.registerSingleton<WallpaperHistoryStore>(store);
-      TestWidgetsFlutterBinding.ensureInitialized();
+      temporaryDirectory = Directory('${assets.directory.path}/temporary');
+      cacheDirectory = Directory('${assets.directory.path}/cache');
+      await temporaryDirectory.create(recursive: true);
+      await cacheDirectory.create(recursive: true);
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
         const MethodChannel('plugins.flutter.io/path_provider'),
-        (call) async => call.method == 'getTemporaryDirectory' ? '/scratch/temp' : '/scratch/cache',
+        (call) async => call.method == 'getTemporaryDirectory' ? temporaryDirectory.path : cacheDirectory.path,
       );
     });
 
@@ -375,6 +524,13 @@ void main() {
       await getIt.reset();
       aw.AsyncWallpaper.debugResetClient();
     });
+
+    Future<File> createHistoryImage(String path) async {
+      final File source = await assets.createImage('history-source.png');
+      final File image = File(path);
+      await image.parent.create(recursive: true);
+      return source.copy(image.path);
+    }
 
     test('a success is recorded once with its target', () async {
       aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
@@ -388,8 +544,10 @@ void main() {
     test('a file in the temp or cache directory is not recorded, other local files are', () async {
       aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
 
-      await WallpaperService.setWallpaper('/scratch/temp/ai_1.png', WallpaperTarget.home);
-      await WallpaperService.setWallpaper('/scratch/cache/libCachedImageData/x.png', WallpaperTarget.home);
+      final File temporaryImage = await createHistoryImage('${temporaryDirectory.path}/ai_1.png');
+      final File cachedImage = await createHistoryImage('${cacheDirectory.path}/libCachedImageData/x.png');
+      await WallpaperService.setWallpaper(temporaryImage.path, WallpaperTarget.home);
+      await WallpaperService.setWallpaper(cachedImage.path, WallpaperTarget.home);
       expect(store.items(), isEmpty);
 
       await WallpaperService.setWallpaper('/storage/emulated/0/Pictures/Prism/saved.png', WallpaperTarget.home);
@@ -398,8 +556,11 @@ void main() {
 
     test('history keeps the original wall when a rendered copy is set', () async {
       aw.AsyncWallpaper.debugSetClient(_FakeClient([aw.WallpaperOperationStatus.applied]));
+      final File renderedImage = await createHistoryImage(
+        '${temporaryDirectory.path}/prism_edit/position_1/placement.png',
+      );
       await WallpaperService.setWallpaper(
-        '/scratch/temp/prism_edit/position_1/placement.png',
+        renderedImage.path,
         WallpaperTarget.home,
         historySource: 'https://img.prismwalls.com/full.jpg',
         historyThumbnail: 'https://img.prismwalls.com/thumb.jpg',

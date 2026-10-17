@@ -21,10 +21,10 @@ class PersonalizedInterestsCatalog {
   const PersonalizedInterestsCatalog._();
 
   static Future<List<PersonalizedInterest>> load({
-    required FirebaseRemoteConfig remoteConfig,
+    required FirebaseRemoteConfig? remoteConfig,
     required SettingsLocalDataSource settingsLocal,
   }) async {
-    final remoteRaw = remoteConfig.getString(personalizedInterestsRemoteConfigKey).trim();
+    final remoteRaw = remoteConfig?.getString(personalizedInterestsRemoteConfigKey).trim() ?? '';
     final remote = _decode(remoteRaw);
     if (remote.isNotEmpty) {
       await settingsLocal.set(personalizedInterestsLocalCacheKey, remoteRaw);

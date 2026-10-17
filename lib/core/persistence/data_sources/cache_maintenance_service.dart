@@ -2,9 +2,8 @@ import 'dart:io';
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/app_icons_local_data_source.dart';
-import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
-import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/widgets.dart';
@@ -16,22 +15,27 @@ import 'package:path_provider/path_provider.dart';
 @lazySingleton
 class CacheMaintenanceService {
   CacheMaintenanceService(
-    this._notificationsLocal,
-    this._feedCacheLocal,
     this._appIconsLocal, {
     @ignoreParam BaseCacheManager? imageCache,
     @ignoreParam BaseCacheManager? thumbnailCache,
     @ignoreParam BaseCacheManager? fullImageCache,
+    @ignoreParam OfflineAssetStore? offlineAssetStore,
   }) : _imageCache = imageCache,
        _thumbnailCache = thumbnailCache,
-       _fullImageCache = fullImageCache;
+       _fullImageCache = fullImageCache,
+       _offlineAssetStore = offlineAssetStore;
 
-  final NotificationsLocalDataSource _notificationsLocal;
-  final FeedCacheLocalDataSource _feedCacheLocal;
   final AppIconsLocalDataSource _appIconsLocal;
   final BaseCacheManager? _imageCache;
   final BaseCacheManager? _thumbnailCache;
   final BaseCacheManager? _fullImageCache;
+  final OfflineAssetStore? _offlineAssetStore;
+
+  Future<int> retainedAssetBytes() => (_offlineAssetStore ?? OfflineAssetStore.instance).storedBytes;
+
+  Future<Map<String, String>> retainedAssetPaths() => (_offlineAssetStore ?? OfflineAssetStore.instance).localPaths();
+
+  Future<void> clearRetainedAssets() => (_offlineAssetStore ?? OfflineAssetStore.instance).clearRetained();
 
   Future<void> clearTransientCache() async {
     final steps = <Future<void> Function()>[
@@ -40,9 +44,6 @@ class CacheMaintenanceService {
       () => (_fullImageCache ?? PrismFullImageCache.instance).emptyCache(),
       () async => PaintingBinding.instance.imageCache.clear(),
       clearTintedWallpapers,
-      _notificationsLocal.clearAll,
-      _notificationsLocal.clearLastFetchAtUtc,
-      _feedCacheLocal.clearAllFeedCaches,
       _appIconsLocal.clear,
       () async {
         final documents = await getApplicationDocumentsDirectory();

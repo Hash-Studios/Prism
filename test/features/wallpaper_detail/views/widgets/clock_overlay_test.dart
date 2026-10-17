@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
@@ -139,6 +141,40 @@ void main() {
     expect(image.color, isNull);
     expect(image.colorBlendMode, isNull);
     expect(find.byType(ColorFiltered), findsNothing);
+  });
+
+  testWidgets('lock preview uses a retained original after temporary cache cleanup', (tester) async {
+    const String url = 'https://images.example/clock-preview.jpg';
+    final Directory root = await Directory.systemTemp.createTemp('clock-retained-preview-');
+    addTearDown(() async {
+      OfflineAssetStore.testOverride = null;
+      await root.delete(recursive: true);
+    });
+    final File original = await _solidPng(root, Colors.indigo);
+    final _MockCacheManager cache = _MockCacheManager();
+    when(() => cache.getFileFromCache(url)).thenAnswer((_) async => null);
+    final OfflineAssetStore assets = OfflineAssetStore(
+      directory: Directory('${root.path}/retained'),
+      cacheManager: cache,
+    );
+    OfflineAssetStore.testOverride = assets;
+    final File retained = await assets.retain(url, file: original);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ClockOverlay(link: url, file: false, wallpaperId: 'clock-wall', wallpaperSource: WallpaperSource.prism),
+      ),
+    );
+    await _settleImages(tester);
+
+    expect(
+      tester
+          .widgetList<Image>(find.byType(Image))
+          .any((Image image) => image.image is FileImage && (image.image as FileImage).file.path == retained.path),
+      isTrue,
+    );
+    verifyNever(() => cache.getSingleFile(any()));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a tint puts a hue filter of that colour over the image', (tester) async {

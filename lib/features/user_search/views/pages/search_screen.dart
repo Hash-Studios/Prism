@@ -260,6 +260,7 @@ class _SearchScreenState extends State<SearchScreen> {
           initialResults: page.results,
           prismResults: page.prismResults,
           filters: _filters,
+          isLocal: page.isLocal,
         );
       },
     );

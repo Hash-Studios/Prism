@@ -119,7 +119,9 @@ void main() {
     });
     await getIt.reset();
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
-    getIt.registerSingleton<CacheMaintenanceService>(_MockCacheMaintenanceService());
+    final cacheMaintenance = _MockCacheMaintenanceService();
+    when(cacheMaintenance.retainedAssetBytes).thenAnswer((_) async => 0);
+    getIt.registerSingleton<CacheMaintenanceService>(cacheMaintenance);
     sessionRepository = _MockSessionRepository();
     when(() => sessionRepository.currentUser).thenReturn(testUser());
     getIt.registerSingleton<SessionRepository>(sessionRepository);
@@ -731,6 +733,14 @@ void main() {
   });
 
   group('storage', () {
+    Future<void> openSavedOfflineDialog(WidgetTester tester) async {
+      final Finder savedOffline = find.text('Saved offline');
+      await tester.scrollUntilVisible(savedOffline, 300, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(savedOffline);
+      await tester.tap(savedOffline);
+      await tester.pumpAndSettle();
+    }
+
     testWidgets('Data saver is off by default and saves the choice', (tester) async {
       await pumpSettings(tester);
 
@@ -819,6 +829,83 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(messages, isEmpty);
+    });
+
+    testWidgets('Saved offline shows retained size and limit, and cancel preserves retained originals', (tester) async {
+      final cache = getIt<CacheMaintenanceService>();
+      final Completer<void> retainedReadStarted = Completer<void>();
+      final Completer<int> retainedBytes = Completer<int>();
+      when(cache.retainedAssetBytes).thenAnswer((_) {
+        if (!retainedReadStarted.isCompleted) retainedReadStarted.complete();
+        return retainedBytes.future;
+      });
+      await pumpSettings(tester);
+
+      await waitForRealIo(tester, () => retainedReadStarted.isCompleted, reason: 'retained offline storage size');
+      retainedBytes.complete(12 * 1024 * 1024);
+      await tester.pump();
+      await tester.scrollUntilVisible(find.text('Saved offline'), 300, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(find.text('Saved offline'));
+      await waitForRealIo(
+        tester,
+        () => find.text('12.0 MB used · 512 MiB limit').evaluate().isNotEmpty,
+        reason: 'the retained offline storage label',
+      );
+      expect(find.text('12.0 MB used · 512 MiB limit'), findsOneWidget);
+
+      await openSavedOfflineDialog(tester);
+      expect(find.text('Remove saved offline wallpapers?'), findsOneWidget);
+      expect(find.textContaining('Downloads, drafts and catalog data stay untouched.'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      verifyNever(() => cache.clearRetainedAssets());
+    });
+
+    testWidgets('confirming Saved offline removes retained assets and refreshes its size', (tester) async {
+      final cache = getIt<CacheMaintenanceService>();
+      var retainedBytes = 2048;
+      when(cache.retainedAssetBytes).thenAnswer((_) async => retainedBytes);
+      when(() => cache.clearRetainedAssets()).thenAnswer((_) {
+        retainedBytes = 0;
+        return Future<void>.value();
+      });
+      await pumpSettings(tester);
+
+      await openSavedOfflineDialog(tester);
+      await tester.tap(find.text('Remove saved offline'));
+      await tester.pumpAndSettle();
+
+      verify(() => cache.clearRetainedAssets()).called(1);
+      expect(find.text('0 B used · 512 MiB limit'), findsOneWidget);
+      expect(messages, <String>['Saved offline wallpapers removed.']);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('failed Saved offline removal shows an error and keeps the known size', (tester) async {
+      final cache = getIt<CacheMaintenanceService>();
+      when(cache.retainedAssetBytes).thenAnswer((_) async => 2048);
+      when(() => cache.clearRetainedAssets()).thenThrow(StateError('disk unavailable'));
+      await pumpSettings(tester);
+
+      await openSavedOfflineDialog(tester);
+      await tester.tap(find.text('Remove saved offline'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 KB used · 512 MiB limit'), findsOneWidget);
+      expect(messages, <String>["Couldn't remove saved offline wallpapers. Try again."]);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('Clear all downloads copy distinguishes Downloads from saved offline originals', (tester) async {
+      await pumpSettings(tester);
+
+      expect(find.textContaining('saved offline copies stay'), findsOneWidget);
+      await tester.tap(find.text('Clear all downloads'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Saved offline copies are not affected.'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
     });
   });
 

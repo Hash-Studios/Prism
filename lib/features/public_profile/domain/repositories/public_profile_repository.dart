@@ -7,6 +7,9 @@ abstract class PublicProfileRepository {
   /// Live profile for an email or username. Emits `null` when no user matches.
   Stream<PublicProfileEntity?> watchProfile(String identifier);
 
+  /// Clears this owner's snapshots after queued snapshot writes finish.
+  Future<void> clearForUser(String userId);
+
   Future<Result<({List<PublicProfileWallEntity> items, bool hasMore})>> fetchWalls({
     required String email,
     required bool refresh,

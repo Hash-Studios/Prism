@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -21,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
+import '../../support/offline_asset_fixture.dart';
 
 class _ThrowingSettings extends SettingsLocalDataSource {
   _ThrowingSettings() : super(InMemoryLocalStore());
@@ -32,11 +34,38 @@ class _ThrowingSettings extends SettingsLocalDataSource {
 class _MockAdsBloc extends MockBloc<AdsEvent, AdsState> implements AdsBloc {}
 
 void main() {
+  late OfflineAssetFixture offlineFixture;
+  const BasicMessageChannel<Object?> listDownloadsChannel = BasicMessageChannel<Object?>(
+    'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+    PrismMediaHostApi.pigeonChannelCodec,
+  );
+
+  setUp(() async {
+    offlineFixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineFixture.install(immediateResolver: true);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+      listDownloadsChannel,
+      (_) async => <Object?>[DownloadItemsResult(success: true, items: const <String>[])],
+    );
+  });
+
+  tearDown(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+      listDownloadsChannel,
+      null,
+    );
+    await offlineFixture.dispose();
+  });
+
   AdConsent consent({required bool canRequestAds}) => AdConsent(
     requestInfoUpdate: () async {},
     showFormIfRequired: () async {},
     canRequestAds: () async => canRequestAds,
   );
+
+  Future<void> flushIo(WidgetTester tester) async {
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+  }
 
   List<String> recordHaptics(WidgetTester tester) {
     const MethodChannel channel = MethodChannel('prism/haptics');
@@ -55,14 +84,22 @@ void main() {
   }
 
   for (final source in <String, bool>{
-    '/tmp/filtered wall.png': true,
-    'file:///tmp/filtered%20wall.png': true,
-    '/data/user/0/com.hash.prism/cache/wall.png': true,
-    'https://example.com/com.hash.prism/wall.jpg': false,
+    'absolute local file': true,
+    'file URI': true,
+    'Android-style local file': true,
+    'remote URL': false,
   }.entries) {
-    testWidgets('downloads ${source.key} with the correct native source kind', (tester) async {
+    testWidgets('downloads a ${source.key} with the correct native source kind', (tester) async {
       getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
       app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+      final File image = (await tester.runAsync(() => offlineFixture.createImage('filtered wall.png')))!;
+      final String link = switch (source.key) {
+        'absolute local file' => image.path,
+        'file URI' => image.uri.toString(),
+        'Android-style local file' => image.path,
+        _ => 'https://example.com/com.hash.prism/wall.jpg',
+      };
+      final String expectedLink = source.value ? image.path : link;
       final requests = <Object?>[];
       final channels = <BasicMessageChannel<Object?>>[
         for (final method in <String>['saveMedia', 'enqueueDownload'])
@@ -87,25 +124,19 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: DownloadButton(link: source.key)),
+          home: Scaffold(body: DownloadButton(link: link)),
         ),
       );
       await tester.tap(find.byType(CircularMenuButton));
+      await flushIo(tester);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(requests, hasLength(1));
-      if (source.value) {
-        final request = requests.single! as SaveMediaRequest;
-        expect(request.link, source.key);
-        expect(request.isLocalFile, isTrue);
-        expect(request.kind, SaveMediaKind.wallpaper);
-      } else {
-        final request = requests.single! as DownloadRequest;
-        expect(request.link, source.key);
-        expect(request.filenameWithoutExtension, 'wall');
-        expect(request.isLocalFile, isFalse);
-      }
+      final DownloadRequest request = requests.single! as DownloadRequest;
+      expect(request.link, expectedLink);
+      expect(request.isLocalFile, source.value);
+      expect(request.filenameWithoutExtension, source.value ? 'filtered wall' : 'wall');
     });
   }
 
@@ -135,6 +166,7 @@ void main() {
       ),
     );
     await tester.tap(find.text('Free with Pro'));
+    await flushIo(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -167,6 +199,7 @@ void main() {
       ),
     );
     await tester.tap(find.byType(CircularMenuButton));
+    await flushIo(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -258,6 +291,7 @@ void main() {
       ),
     );
     await tester.tap(find.byType(CircularMenuButton));
+    await flushIo(tester);
     await tester.pump();
     await tester.pumpWidget(const MaterialApp(home: SizedBox()));
     downloadFinished.complete();

@@ -1,12 +1,17 @@
+import 'dart:io';
+
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/prism_wall_search.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
@@ -19,9 +24,10 @@ import '../../support/fake_user_block_repository.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
-  _FakeWallhavenRepository(this.result);
+  _FakeWallhavenRepository(this.result, {this.delay = Duration.zero});
 
   final Result<List<WallhavenWallpaper>> result;
+  final Duration delay;
   int? lastCategories;
   int? lastPurity;
   bool? lastRefresh;
@@ -47,6 +53,7 @@ class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
     String? colors,
   }) async {
     calls++;
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
     lastCategoryName = categoryName;
     lastColors = colors;
     lastCategories = categories;
@@ -90,6 +97,18 @@ class _FakePexelsRepository implements PexelsWallpaperRepository {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _DelayedPrismFirestore extends FakeFirestoreClient {
+  _DelayedPrismFirestore(this.delay, {super.onQuery});
+
+  final Duration delay;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (spec.sourceTag.startsWith('PrismWallSearch')) await Future<void>.delayed(delay);
+    return super.query(spec, map);
+  }
 }
 
 WallhavenWallpaper _wallhaven(String id) => WallhavenWallpaper(
@@ -139,6 +158,62 @@ Map<String, dynamic> _prismDoc(
 };
 
 void main() {
+  test('a slow remote search succeeds when there is no saved fallback', () async {
+    final repository = _FakeWallhavenRepository(
+      Result.success(<WallhavenWallpaper>[_wallhaven('slow')]),
+      delay: const Duration(seconds: 4),
+    );
+    final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), wallhavenRepository: repository);
+
+    final page = await service.search('mountain');
+
+    expect(page.results.map((wall) => wall.id), <String>['slow']);
+    expect(page.isLocal, isFalse);
+    expect(repository.calls, 1);
+  });
+
+  test('slow successful Prism search results are retained when the local catalog is empty', () async {
+    final FakeFirestoreClient firestore = _DelayedPrismFirestore(
+      const Duration(seconds: 4),
+      onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+          ? <FakeDocRow>[(id: 'prism-slow', data: _prismDoc('prism-slow'))]
+          : const <FakeDocRow>[],
+    );
+    final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), firestore: firestore);
+
+    final page = await service.search('mountain');
+
+    expect(page.prismResults.map((item) => item.id), <String>['prism-slow']);
+  });
+
+  test('saved search results return at the short decision budget', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('wallpaper-search-catalog-');
+    addTearDown(() => directory.delete(recursive: true));
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: directory),
+    );
+    await catalog.remember(<FeedItemEntity>[WallhavenFeedItem(id: 'saved', wallpaper: _wallhaven('saved'))]);
+    final repository = _FakeWallhavenRepository(
+      Result.success(<WallhavenWallpaper>[_wallhaven('remote')]),
+      delay: const Duration(seconds: 4),
+    );
+    final service = WallpaperSearchService(
+      repository,
+      _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+      SettingsLocalDataSource(InMemoryLocalStore()),
+      PrismWallSearch(FakeFirestoreClient(), FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+      catalog,
+    );
+
+    final Stopwatch stopwatch = Stopwatch()..start();
+    final page = await service.search('saved');
+
+    expect(page.results.map((wall) => wall.id), <String>['saved']);
+    expect(page.isLocal, isTrue);
+    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 4)));
+    expect(repository.calls, 1);
+  });
+
   test('search returns Wallhaven results when Wallhaven answers', () async {
     final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
 
@@ -167,6 +242,44 @@ void main() {
     );
 
     await expectLater(service.search('mountain'), throwsA(isA<WallpaperSearchException>()));
+  });
+
+  test('both provider failures fall back to matching public metadata with an explicit local scope', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('local-wallpaper-search-');
+    addTearDown(() => directory.delete(recursive: true));
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: directory),
+    );
+    await catalog.remember(const <FeedItemEntity>[
+      PrismFeedItem(
+        id: 'local-wall',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'local-wall',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://example.test/wall.jpg',
+            thumbnailUrl: 'https://example.test/thumb.jpg',
+          ),
+          title: 'Moss forest',
+          tags: <String>['green'],
+        ),
+      ),
+    ]);
+    final service = WallpaperSearchService(
+      _FakeWallhavenRepository(Result.error<List<WallhavenWallpaper>>(const ServerFailure('offline'))),
+      _FakePexelsRepository(Result.error<List<PexelsWallpaper>>(const ServerFailure('offline'))),
+      SettingsLocalDataSource(InMemoryLocalStore()),
+      PrismWallSearch(
+        FakeFirestoreClient()..queryError = StateError('offline'),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      ),
+      catalog,
+    );
+
+    final page = await service.search('moss');
+
+    expect(page.isLocal, isTrue);
+    expect(page.results.map((item) => item.id), <String>['local-wall']);
   });
 
   test('search returns a Prism-only page when both providers fail but Prism has matches', () async {

@@ -4,6 +4,9 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/utils/url_utils.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
@@ -30,10 +33,19 @@ const int _sampleWidth = 32;
 /// Full-screen preview of the wallpaper under a lock screen clock or a home screen dock.
 /// The image is shown as it will be set. The clock text is black or white, whichever reads on the top third.
 class ClockOverlay extends StatefulWidget {
-  const ClockOverlay({required this.link, required this.file, this.thumbnailUrl, this.tint});
+  const ClockOverlay({
+    required this.link,
+    required this.file,
+    this.wallpaperId,
+    this.wallpaperSource,
+    this.thumbnailUrl,
+    this.tint,
+  });
 
   final String link;
   final bool file;
+  final String? wallpaperId;
+  final WallpaperSource? wallpaperSource;
 
   /// Shown while the full image loads.
   final String? thumbnailUrl;
@@ -52,19 +64,42 @@ class _ClockOverlayState extends State<ClockOverlay> {
   Color? _textColor;
   ImageStream? _sampleStream;
   ImageStreamListener? _sampleListener;
+  Future<File?>? _localFileFuture;
+  File? _localFile;
 
-  ImageProvider get _provider =>
-      widget.file ? FileImage(File(widget.link)) : CachedNetworkImageProvider(widget.link, cacheManager: _cache);
+  ImageProvider get _provider => _localFile != null
+      ? FileImage(_localFile!)
+      : widget.link.startsWith('assets/')
+      ? AssetImage(widget.link)
+      : CachedNetworkImageProvider(widget.link, cacheManager: _cache);
 
   BaseCacheManager get _cache => PrismFullImageCache.instance;
 
   @override
   void initState() {
     super.initState();
-    _sampleText();
+    _localFileFuture = _resolveLocalFile();
+    unawaited(_sampleText());
   }
 
-  void _sampleText() {
+  Future<File?> _resolveLocalFile() async {
+    if (widget.file) return File(widget.link);
+    if (widget.link.startsWith('assets/')) return null;
+    try {
+      return await WallpaperService.resolveToLocalFile(
+        widget.link,
+        allowNetwork: false,
+        wallpaperId: widget.wallpaperId,
+        wallpaperSource: widget.wallpaperSource,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _sampleText() async {
+    _localFile = await _localFileFuture;
+    if (!mounted) return;
     final ImageStream stream = ResizeImage(_provider, width: _sampleWidth).resolve(ImageConfiguration.empty);
     final ImageStreamListener listener = ImageStreamListener(
       (info, _) {
@@ -120,31 +155,58 @@ class _ClockOverlayState extends State<ClockOverlay> {
       color: placeholder,
       child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
     );
-    if (widget.file) {
+    if (widget.file || (!isValidNetworkUrl(widget.link) && !widget.link.startsWith('assets/'))) {
+      final Uri? uri = Uri.tryParse(widget.link);
+      final String path = uri?.scheme == 'file' ? uri!.toFilePath() : widget.link;
       return SizedBox.expand(
         child: _tinted(
-          Image.file(File(widget.link), fit: BoxFit.cover, cacheWidth: cacheWidth, errorBuilder: (_, _, _) => error()),
+          Image.file(
+            _localFile ?? File(path),
+            fit: BoxFit.cover,
+            cacheWidth: cacheWidth,
+            errorBuilder: (_, _, _) => error(),
+          ),
+        ),
+      );
+    }
+    if (widget.link.startsWith('assets/')) {
+      return SizedBox.expand(
+        child: _tinted(
+          Image.asset(widget.link, fit: BoxFit.cover, cacheWidth: cacheWidth, errorBuilder: (_, _, _) => error()),
         ),
       );
     }
     final String thumbnail = widget.thumbnailUrl?.trim() ?? '';
     return SizedBox.expand(
-      child: CachedNetworkImage(
-        cacheManager: _cache,
-        imageUrl: widget.link,
-        fit: BoxFit.cover,
-        memCacheWidth: cacheWidth,
-        imageBuilder: _tintedBuilder,
-        placeholder: (_, _) => thumbnail.isEmpty
-            ? ColoredBox(color: placeholder)
-            : CachedNetworkImage(
-                cacheManager: PrismImageCache.instance,
-                imageUrl: thumbnail,
-                fit: BoxFit.cover,
-                imageBuilder: _tintedBuilder,
-                errorWidget: (_, _, _) => ColoredBox(color: placeholder),
-              ),
-        errorWidget: (_, _, _) => error(),
+      child: FutureBuilder<File?>(
+        future: _localFileFuture,
+        builder: (BuildContext context, AsyncSnapshot<File?> snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) return ColoredBox(color: placeholder);
+          final File? local = snapshot.data;
+          if (local != null) {
+            _localFile = local;
+            return _tinted(
+              Image.file(local, fit: BoxFit.cover, cacheWidth: cacheWidth, errorBuilder: (_, _, _) => error()),
+            );
+          }
+          return CachedNetworkImage(
+            cacheManager: _cache,
+            imageUrl: widget.link,
+            fit: BoxFit.cover,
+            memCacheWidth: cacheWidth,
+            imageBuilder: _tintedBuilder,
+            placeholder: (_, _) => thumbnail.isEmpty
+                ? ColoredBox(color: placeholder)
+                : CachedNetworkImage(
+                    cacheManager: PrismImageCache.instance,
+                    imageUrl: thumbnail,
+                    fit: BoxFit.cover,
+                    imageBuilder: _tintedBuilder,
+                    errorWidget: (_, _, _) => ColoredBox(color: placeholder),
+                  ),
+            errorWidget: (_, _, _) => error(),
+          );
+        },
       ),
     );
   }
@@ -327,6 +389,8 @@ Future<void> pushClockPreview(
   BuildContext context, {
   required String link,
   required bool file,
+  String? wallpaperId,
+  WallpaperSource? wallpaperSource,
   String? thumbnailUrl,
   Color? tint,
 }) {
@@ -337,7 +401,14 @@ Future<void> pushClockPreview(
       reverseTransitionDuration: context.motion(PrismDurations.fast),
       pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
         opacity: animation.drive(CurveTween(curve: PrismCurves.enter)),
-        child: ClockOverlay(link: link, file: file, thumbnailUrl: thumbnailUrl, tint: tint),
+        child: ClockOverlay(
+          link: link,
+          file: file,
+          wallpaperId: wallpaperId,
+          wallpaperSource: wallpaperSource,
+          thumbnailUrl: thumbnailUrl,
+          tint: tint,
+        ),
       ),
       fullscreenDialog: true,
       opaque: false,

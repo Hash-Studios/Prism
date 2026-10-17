@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
@@ -6,7 +7,9 @@ import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallhaven_feed/data/dtos/wallhaven_dtos.dart';
 import 'package:Prism/features/wallhaven_feed/data/mappers/wallhaven_dto_mapper.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
@@ -93,16 +96,19 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       final bool hasMore = currentPage < lastPage;
 
       final List<WallhavenWallpaper> walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
+      _remember(walls);
 
-      if (refresh) {
+      try {
         await _cache.write(
           pageKey,
           scope: scope,
           payload: payload.toJson(),
           nextPage: currentPage + 1,
           hasMore: hasMore,
+          append: !refresh,
         );
-      } else {
+      } catch (error) {
+        logger.w('[WallhavenWallpaperRepository] feed cache write failed: $error');
         _cache.advance(pageKey, nextPage: currentPage + 1, hasMore: hasMore);
       }
 
@@ -152,16 +158,19 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       final Map<String, dynamic> decoded = decodeJsonMap(response.body);
       final WallhavenSearchResponseDto payload = WallhavenSearchResponseDto.fromJson(decoded);
       final List<WallhavenWallpaper> walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
+      _remember(walls);
 
-      if (page == 1) {
+      try {
         await _cache.write(
           _toplistKey,
           scope: _toplistScope,
           payload: payload.toJson(),
           nextPage: page + 1,
           hasMore: walls.isNotEmpty,
+          append: page > 1,
         );
-      } else {
+      } catch (error) {
+        logger.w('[WallhavenWallpaperRepository] toplist cache write failed: $error');
         _cache.advance(_toplistKey, nextPage: page + 1, hasMore: walls.isNotEmpty);
       }
 
@@ -214,12 +223,22 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
 
       final Map<String, dynamic> decoded = decodeJsonMap(response.body);
       final WallhavenSingleResponseDto payload = WallhavenSingleResponseDto.fromJson(decoded);
-      return Result.success(payload.data?.toDomain());
+      final WallhavenWallpaper? wallpaper = payload.data?.toDomain();
+      if (wallpaper != null) _remember(<WallhavenWallpaper>[wallpaper]);
+      return Result.success(wallpaper);
     } catch (error, stackTrace) {
       logger.e('[WallhavenWallpaperRepository] fetchById failed', error: error, stackTrace: stackTrace);
-      return Result.error(const ServerFailure(wallpaperLoadFailureMessage));
+      return Result.error(_lookupFailure(error));
     }
   }
+
+  Failure _lookupFailure(Object error) => switch (error) {
+    SocketException() ||
+    HandshakeException() ||
+    TimeoutException() ||
+    http.ClientException() => const NetworkFailure(wallpaperLoadFailureMessage),
+    _ => const ServerFailure(wallpaperLoadFailureMessage),
+  };
 
   Future<Result<List<WallhavenWallpaper>>> _cachedOrFailure({
     required bool refresh,
@@ -266,5 +285,19 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       if (sorting != null) 'sort_${feedCacheSlug(sorting)}',
       if (colors != null) 'color_${feedCacheSlug(colors)}',
     ].join('.');
+  }
+
+  void _remember(Iterable<WallhavenWallpaper> walls) {
+    unawaited(_persistRemembered(walls));
+  }
+
+  Future<void> _persistRemembered(Iterable<WallhavenWallpaper> walls) async {
+    try {
+      await OfflineWallpaperCatalog.instance.remember(
+        walls.map((wall) => WallhavenFeedItem(id: wall.id, wallpaper: wall)),
+      );
+    } catch (error) {
+      logger.w('[WallhavenWallpaperRepository] local catalog write failed: $error');
+    }
   }
 }

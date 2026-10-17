@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/public_profile/data/repositories/public_profile_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
@@ -69,24 +72,38 @@ FakeDocRow _user(String email, {String name = ''}) =>
     (id: 'id_$email', data: <String, dynamic>{'email': email, 'name': name, 'username': email.split('@').first});
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Directory storeDirectory;
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel('plugins.flutter.io/path_provider'),
+    (_) async => storeDirectory.path,
+  );
   late _WatchingClient client;
   late FakeUserBlockRepository blocks;
   late PublicProfileRepositoryImpl repo;
 
-  setUp(() {
+  setUp(() async {
+    storeDirectory = await Directory.systemTemp.createTemp('prism-public-profile-test-');
     client = _WatchingClient();
     blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
     repo = PublicProfileRepositoryImpl(client, blocks);
   });
 
+  tearDown(() async {
+    await storeDirectory.delete(recursive: true);
+  });
+
   group('watchProfile', () {
-    test('looks a user up by email or by username', () {
-      repo.watchProfile(' me@x.com ');
-      repo.watchProfile('kevin');
+    test('looks a user up by email or by username', () async {
+      final first = repo.watchProfile(' me@x.com ').listen((_) {});
+      final second = repo.watchProfile('kevin').listen((_) {});
+      await Future<void>.delayed(Duration.zero);
 
       final fields = client.watchSpecs.map((spec) => spec.filters.single).toList();
       expect((fields[0].field, fields[0].value), ('email', 'me@x.com'));
       expect((fields[1].field, fields[1].value), ('username', 'kevin'));
+      await first.cancel();
+      await second.cancel();
     });
 
     test('emits the profile, or null when nobody matches', () async {
@@ -137,6 +154,57 @@ void main() {
         <String>[],
       ]);
     });
+
+    test('a profile larger than the snapshot limit still reaches the remote subscriber', () async {
+      final String name = 'x' * (1024 * 1024);
+      final Completer<int> receivedNameLength = Completer<int>();
+      final subscription = repo.watchProfile('large-profile@x.com').listen((profile) {
+        if (profile != null && !receivedNameLength.isCompleted) {
+          receivedNameLength.complete(profile.name.length);
+        }
+      });
+      await Future<void>.delayed(Duration.zero);
+      client.rows.add(<FakeDocRow>[
+        (id: 'large-profile', data: <String, dynamic>{'email': 'large-profile@x.com', 'name': name}),
+      ]);
+
+      expect(await receivedNameLength.future.timeout(const Duration(seconds: 2)), name.length);
+      await subscription.cancel();
+    });
+
+    test('a profile snapshot is available after restart before the next remote snapshot', () async {
+      const email = 'offline-profile-snapshot@prism.test';
+      final Completer<void> received = Completer<void>();
+      final subscription = repo.watchProfile(email).listen((profile) {
+        if (profile?.name == 'Saved profile' && !received.isCompleted) received.complete();
+      });
+      await Future<void>.delayed(Duration.zero);
+      client.rows.add(<FakeDocRow>[_user(email, name: 'Saved profile')]);
+      await received.future.timeout(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await subscription.cancel();
+
+      final restarted = PublicProfileRepositoryImpl(_WatchingClient(), blocks);
+      final cached = await restarted.watchProfile(email).first.timeout(const Duration(seconds: 2));
+
+      expect(cached?.name, 'Saved profile');
+    });
+  });
+
+  test('a profile stream write that arrives after owner cleanup cannot restore the snapshot', () async {
+    app_state.prismUser = profileUser(id: 'profile-owner');
+    const String email = 'late-profile@prism.test';
+    final subscription = repo.watchProfile(email).listen((_) {});
+    await Future<void>.delayed(Duration.zero);
+    await repo.clearForUser('profile-owner');
+
+    client.rows.add(<FakeDocRow>[_user(email, name: 'Late profile')]);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    await subscription.cancel();
+
+    final DurableJsonStore snapshots = DurableJsonStore('public_profiles');
+    expect(await snapshots.read('profile-owner::${email.toLowerCase()}'), isNull);
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
   group('follow', () {
@@ -205,6 +273,24 @@ void main() {
   });
 
   group('fetchUserSummariesPage', () {
+    test('real durable JSON summary snapshots restore after repository restart while offline', () async {
+      const String owner = 'summary-restart-owner';
+      app_state.prismUser = profileUser(id: owner);
+      client.onQuery = (_) => <FakeDocRow>[_user('offline-summary@prism.test', name: 'Cached Name')];
+      final first = await repo.fetchUserSummariesPage(allEmails: <String>['offline-summary@prism.test'], page: 0);
+      expect(first.data!.items.single.name, 'Cached Name');
+
+      final offlineClient = _WatchingClient()..queryError = StateError('offline after restart');
+      final restarted = PublicProfileRepositoryImpl(offlineClient, blocks);
+      final restored = await restarted.fetchUserSummariesPage(
+        allEmails: <String>['offline-summary@prism.test'],
+        page: 0,
+      );
+
+      expect(restored.isSuccess, isTrue);
+      expect(restored.data!.items.single.name, 'Cached Name');
+    });
+
     test('reads one page in chunks of ten, in the order given, and flags followed users', () async {
       app_state.prismUser = profileUser();
       app_state.prismUser.following = <String>['u3@x.com'];
@@ -269,6 +355,27 @@ void main() {
 
       expect(result.data!.items, hasLength(12));
       expect(result.data!.hasMore, isTrue);
+    });
+
+    test('profile walls restore from a real durable snapshot after restart while offline', () async {
+      const String owner = 'walls-restart-owner';
+      app_state.prismUser = profileUser(id: owner);
+      client.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'offline-wall',
+          data: <String, dynamic>{'wallpaper_url': 'https://example.test/wall.jpg', 'email': 'creator@prism.test'},
+        ),
+      ];
+      final first = await repo.fetchWalls(email: 'creator@prism.test', refresh: true);
+      expect(first.data!.items.single.id, 'offline-wall');
+
+      final offlineClient = _WatchingClient()..queryError = StateError('offline after restart');
+      final restarted = PublicProfileRepositoryImpl(offlineClient, blocks);
+      final restored = await restarted.fetchWalls(email: 'creator@prism.test', refresh: true);
+
+      expect(restored.isSuccess, isTrue);
+      expect(restored.data!.items.single.id, 'offline-wall');
+      expect(restored.data!.items.single.wallpaperUrl, 'https://example.test/wall.jpg');
     });
   });
 }

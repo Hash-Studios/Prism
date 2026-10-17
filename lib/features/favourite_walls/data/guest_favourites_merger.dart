@@ -6,6 +6,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:injectable/injectable.dart';
 
@@ -27,6 +29,17 @@ class GuestFavouritesMerger {
   Future<int> mergeInto(String userId) async {
     final Map<String, Map<String, Object?>> saved = await _store.readAll();
     if (saved.isEmpty) return 0;
+    final starterIds = saved.entries
+        .where(
+          (entry) => BundledWallpapers.isStarterIdentity(
+            entry.key,
+            WallpaperSourceX.fromWire(entry.value['provider']?.toString() ?? ''),
+          ),
+        )
+        .map((entry) => entry.key)
+        .toSet();
+    final cloudSaved = Map<String, Map<String, Object?>>.from(saved)..removeWhere((id, _) => starterIds.contains(id));
+    if (cloudSaved.isEmpty) return 0;
     final String path = 'usersv2/$userId/images';
     final Set<String> existing =
         (await _firestoreClient
@@ -36,7 +49,7 @@ class GuestFavouritesMerger {
                 )
                 .timeout(_networkTimeout))
             .toSet();
-    final List<MapEntry<String, Map<String, Object?>>> missing = saved.entries
+    final List<MapEntry<String, Map<String, Object?>>> missing = cloudSaved.entries
         .where((entry) => !existing.contains(entry.key))
         .toList(growable: false);
     for (int start = 0; start < missing.length; start += _maxBatchWrites) {
@@ -52,8 +65,8 @@ class GuestFavouritesMerger {
           }, sourceTag: 'favourite_walls.guest_merge')
           .timeout(_networkTimeout);
     }
-    await _store.clear();
-    await _favoritesLocal.replaceWallFavourites('', const <String>[]);
+    await _store.remove(cloudSaved.keys);
+    await _favoritesLocal.replaceWallFavourites('', starterIds);
     if (missing.isNotEmpty) unawaited(analytics.track(GuestFavouritesMergedEvent(count: missing.length)));
     return missing.length;
   }

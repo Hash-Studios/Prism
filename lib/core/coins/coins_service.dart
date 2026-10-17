@@ -329,9 +329,10 @@ class CoinsService with WidgetsBindingObserver {
   @visibleForTesting
   Duration abandonedDownloadAfter = const Duration(minutes: 2);
 
-  /// Answers whether a link is already in the Downloads index. The Save pill reads it, and recovery asks it for an entry
-  /// moved in from an old marker. Tests replace it.
   DownloadedLinkCheck isLinkDownloaded = isLinkInDownloadedIndex;
+
+  @visibleForTesting
+  VerifiedLegacyNativeDownloadCheck verifiedLegacyNativeDownloadCheck = hasVerifiedLegacyNativeDownload;
   int? _adsRemaining;
   String _adsRemainingDay = '';
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
@@ -1075,9 +1076,13 @@ class CoinsService with WidgetsBindingObserver {
         continue;
       }
       if (entry.remaining(nowMs, abandonedDownloadAfter) > Duration.zero) continue;
-      if (entry.legacy && isLinkDownloaded(entry.link)) {
-        resolved.add(entry.txId);
-        continue;
+      if (entry.legacy) {
+        final bool hasSavedNativeFile = await verifiedLegacyNativeDownloadCheck(entry.link);
+        if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
+        if (hasSavedNativeFile) {
+          resolved.add(entry.txId);
+          continue;
+        }
       }
       if (app_state.prismUser.id != userId || !_canMutateCoins()) break;
       final CoinMutationResult refund = await refundSpend(

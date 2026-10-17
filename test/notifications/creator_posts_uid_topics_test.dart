@@ -36,6 +36,9 @@ class _FakeProfiles implements PublicProfileRepository {
   bool failing = false;
 
   @override
+  Future<void> clearForUser(String userId) async {}
+
+  @override
   Stream<PublicProfileEntity?> watchProfile(String identifier) {
     reads.add(identifier);
     if (failing) return Stream<PublicProfileEntity?>.error(StateError('offline'));

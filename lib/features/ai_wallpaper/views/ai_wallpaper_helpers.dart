@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
@@ -9,8 +10,13 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+const Duration aiAssetTransferTimeout = Duration(seconds: 30);
+
 bool isAiOfflineOrNetworkError(Object error) {
-  if (error is SocketException || error is TimeoutException || error is http.ClientException) {
+  if (error is SocketException ||
+      error is HandshakeException ||
+      error is TimeoutException ||
+      error is http.ClientException) {
     return true;
   }
   if (error is FirebaseException && (error.code == 'unavailable' || error.code == 'deadline-exceeded')) {
@@ -60,12 +66,10 @@ String aiCommunityId(String generationId) {
 }
 
 Future<File> aiDownloadToTempFile(String url) async {
-  final http.Response response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
-  if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw HttpException('download_failed', uri: Uri.parse(url));
-  }
+  final File source = await OfflineAssetStore.instance.resolve(url).timeout(aiAssetTransferTimeout);
   final Directory directory = await getTemporaryDirectory();
-  final File file = File('${directory.path}/ai_${DateTime.now().millisecondsSinceEpoch}.png');
-  await file.writeAsBytes(response.bodyBytes, flush: true);
+  final String extension = source.path.contains('.') ? source.path.substring(source.path.lastIndexOf('.')) : '.image';
+  final File file = File('${directory.path}/ai_${DateTime.now().millisecondsSinceEpoch}$extension');
+  await source.copy(file.path);
   return file;
 }

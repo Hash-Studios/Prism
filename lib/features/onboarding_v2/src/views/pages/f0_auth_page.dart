@@ -41,7 +41,6 @@ class F0AuthPage extends StatefulWidget {
   final VoidCallback onGoogle;
   final VoidCallback onApple;
 
-  /// iOS only: browse without an account.
   final VoidCallback onBrowse;
 
   @override
@@ -187,11 +186,10 @@ class _F0AuthPageState extends State<F0AuthPage> {
                                             ? null
                                             : () => _gated(widget.onGoogle, provider: _Provider.google),
                                       ),
-                                      if (ios)
-                                        WelcomeTextButton(
-                                          label: 'Browse without an account',
-                                          onPressed: () => _gated(widget.onBrowse),
-                                        ),
+                                      WelcomeTextButton(
+                                        label: 'Browse without an account',
+                                        onPressed: () => _gated(widget.onBrowse),
+                                      ),
                                     ],
                                   );
                                 },

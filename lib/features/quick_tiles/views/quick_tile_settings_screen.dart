@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/quick_settings_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
@@ -10,11 +12,16 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, visibleForTesting;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 @RoutePage()
 class QuickTileSettingsScreen extends StatefulWidget {
@@ -100,6 +107,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
 
   Future<void> _saveAll() async {
     try {
+      await _prepareCategoryChoices();
       await Future.wait([
         QuickTileConfigService.saveCategoryTileConfig(
           categoryName: _selectedCategoryName,
@@ -114,6 +122,31 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
       logger.e('Failed to save quick tile settings', error: e, stackTrace: stackTrace);
       if (!mounted) return;
       toasts.error('Could not save quick tile settings');
+    }
+  }
+
+  Future<void> _prepareCategoryChoices() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      final items = await OfflineWallpaperCatalog.instance.search(
+        _selectedCategoryName,
+        limit: OfflineWallpaperCatalog.maxRecords,
+      );
+      final paths = await OfflineAssetStore.instance.localPaths();
+      final candidates = categoryTileCandidates(
+        items,
+        category: _selectedCategoryName,
+        source: _selectedCategorySource,
+        retainedPaths: paths,
+      );
+      final selectedPaths = <String, String>{for (final url in candidates) url: paths[url]!};
+      await NativeAssetPathsStore.replaceGroup('category', selectedPaths);
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (!await prefs.setString('quick_tile.category.wall_urls', jsonEncode(candidates))) {
+        throw StateError('Prepared category wallpapers could not be persisted');
+      }
+    } catch (error, stackTrace) {
+      logger.w('Could not prepare offline category tile choices', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -197,6 +230,23 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
       ],
     );
   }
+}
+
+@visibleForTesting
+List<String> categoryTileCandidates(
+  Iterable<FeedItemEntity> items, {
+  required String category,
+  required WallpaperSource source,
+  required Map<String, String> retainedPaths,
+}) {
+  final String expectedCategory = category.trim().toLowerCase();
+  return <String>{
+    for (final FeedItemEntity item in items)
+      if (item.source == source &&
+          item.wallpaperCore.category?.trim().toLowerCase() == expectedCategory &&
+          retainedPaths.containsKey(item.fullUrl))
+        item.fullUrl,
+  }.take(100).toList(growable: false);
 }
 
 class _TileCard extends StatelessWidget {

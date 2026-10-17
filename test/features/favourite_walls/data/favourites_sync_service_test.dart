@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart
 import 'package:Prism/features/favourite_walls/data/guest_favourites_merger.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 
 import '../../../support/in_memory_local_store.dart';
 import '../support/guest_store_fixture.dart';
@@ -36,6 +38,11 @@ class _WatchFirestore extends MergeFirestore {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel('plugins.flutter.io/path_provider'),
+    (_) async => Directory.systemTemp.path,
+  );
   late _WatchFirestore firestore;
   late FavoritesLocalDataSource local;
   late GuestFavouritesStore guests;
@@ -182,6 +189,50 @@ void main() {
 
     expect(firestore.batches.single.sets.single.id, 'g1');
     expect(await guests.readAll(), isEmpty);
+  });
+
+  test('replayed favourite operations restore known date fields before Firestore writes', () async {
+    final operation = await local.createFavouriteOperation(
+      'u',
+      'replayed',
+      desired: true,
+      wall: <String, Object?>{
+        'id': 'replayed',
+        'provider': 'Prism',
+        'url': 'https://img.test/full.jpg',
+        'thumb': 'https://img.test/thumb.jpg',
+        'createdAt': '2026-01-02T03:04:05.000Z',
+        'favouritedAt': '2026-02-03T04:05:06.000Z',
+      },
+    );
+
+    await service.start('u');
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(firestore.writes.single.data!['createdAt'], DateTime.utc(2026, 1, 2, 3, 4, 5));
+    expect(firestore.writes.single.data!['favouritedAt'], DateTime.utc(2026, 2, 3, 4, 5, 6));
+    expect((await local.readFavouriteOperation('u', 'replayed'))!['status'], 'synced');
+    expect(operation['status'], 'pending');
+  });
+
+  test('a previously queued bundled starter is never replayed to Firestore', () async {
+    await local.createFavouriteOperation(
+      'u',
+      'starter-sunset',
+      desired: true,
+      wall: <String, Object?>{
+        'id': 'starter-sunset',
+        'provider': 'Prism',
+        'url': '/tmp/untrusted-starter-path.jpg',
+        'thumb': '/tmp/untrusted-starter-path.jpg',
+      },
+    );
+
+    await service.start('u');
+    await settle();
+
+    expect(firestore.writes, isEmpty);
+    expect((await local.readFavouriteOperation('u', 'starter-sunset'))!['status'], 'synced');
   });
 
   test('a failed guest merge does not stop the sync and keeps the guest list', () async {

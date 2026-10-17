@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:crypto/crypto.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/public_user_doc_dto.dart';
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
@@ -7,6 +10,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -14,6 +18,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
+import 'package:Prism/features/public_profile/domain/public_profile_snapshot_codec.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:injectable/injectable.dart';
@@ -24,6 +29,9 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
 
   final FirestoreClient _firestoreClient;
   final UserBlockRepository _userBlockRepository;
+  final DurableJsonStore _profileSnapshots = DurableJsonStore('public_profiles');
+  final Map<String, Future<void>> _snapshotWriteTails = <String, Future<void>>{};
+  final Set<String> _clearingSnapshotOwners = <String>{};
   final Map<String, String> _wallCursorByEmail = <String, String>{};
   static const int _profileReadDedupeMs = 30000;
   static const int _searchChunkSize = 30;
@@ -33,7 +41,27 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   @override
   Stream<PublicProfileEntity?> watchProfile(String identifier) {
     final String value = identifier.trim();
-    return _firestoreClient
+    return _watchProfileWithCache(value);
+  }
+
+  @override
+  Future<void> clearForUser(String userId) async {
+    final String owner = userId.trim();
+    if (owner.isEmpty) return;
+    _clearingSnapshotOwners.add(owner);
+    await _serializeSnapshotWrite(owner, () async {
+      final Map<String, Map<String, Object?>> records = await _profileSnapshots.readAll();
+      for (final String key in records.keys.where((key) => key.startsWith('$owner::'))) {
+        await _profileSnapshots.delete(key);
+      }
+    }, allowClearing: true);
+  }
+
+  Stream<PublicProfileEntity?> _watchProfileWithCache(String value) async* {
+    final String owner = _snapshotOwner;
+    final String key = '$owner::${value.toLowerCase()}';
+    final remote = StreamController<PublicProfileEntity?>();
+    final subscription = _firestoreClient
         .watchQuery<_UserRow>(
           FirestoreQuerySpec(
             collection: FirebaseCollections.usersV2,
@@ -68,7 +96,74 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
             coverPhoto: doc.coverPhoto,
             badges: doc.badges,
           );
-        });
+        })
+        .listen(remote.add, onError: remote.addError);
+    try {
+      Map<String, Object?>? saved;
+      try {
+        saved = await _profileSnapshots.read(key);
+      } catch (_) {}
+      if (saved != null && _snapshotOwner == owner) {
+        yield _profileFromMap(saved);
+      }
+      await for (final profile in remote.stream) {
+        if (_snapshotOwner != owner) return;
+        if (profile != null) {
+          try {
+            await _writeSnapshot(owner, key, _profileToMap(profile));
+          } catch (_) {}
+          if (_snapshotOwner != owner) return;
+        }
+        yield profile;
+      }
+    } finally {
+      await subscription.cancel();
+      await remote.close();
+    }
+  }
+
+  PublicProfileEntity _profileFromMap(Map<String, Object?> data) => PublicProfileEntity(
+    id: data['id']?.toString() ?? '',
+    name: data['name']?.toString() ?? '',
+    email: data['email']?.toString() ?? '',
+    username: data['username']?.toString() ?? '',
+    profilePhoto: data['profilePhoto']?.toString() ?? '',
+    bio: data['bio']?.toString() ?? '',
+    followers: (data['followers'] as List? ?? const <Object?>[]).map((value) => value.toString()).toList(),
+    following: (data['following'] as List? ?? const <Object?>[]).map((value) => value.toString()).toList(),
+    links: Map<String, String>.from(data['links'] as Map? ?? const <String, String>{}),
+    coverPhoto: data['coverPhoto']?.toString() ?? '',
+    badges: (data['badges'] as List? ?? const <Object?>[]).map((value) => value.toString()).toList(),
+  );
+
+  Map<String, Object?> _profileToMap(PublicProfileEntity profile) => <String, Object?>{
+    'id': profile.id,
+    'name': profile.name,
+    'email': profile.email,
+    'username': profile.username,
+    'profilePhoto': profile.profilePhoto,
+    'bio': profile.bio,
+    'followers': profile.followers,
+    'following': profile.following,
+    'links': profile.links,
+    'coverPhoto': profile.coverPhoto,
+    'badges': profile.badges,
+  };
+
+  Future<void> _writeSnapshot(String owner, String key, Map<String, Object?> value) =>
+      _serializeSnapshotWrite(owner, () => _profileSnapshots.write(key, value));
+
+  Future<void> _serializeSnapshotWrite(String owner, Future<void> Function() action, {bool allowClearing = false}) {
+    final Future<void> previous = _snapshotWriteTails[owner] ?? Future<void>.value();
+    final Future<void> next = previous.catchError((Object _) {}).then((_) async {
+      if (!allowClearing && _clearingSnapshotOwners.contains(owner)) return;
+      await action();
+    });
+    final Future<void> tail = next.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    _snapshotWriteTails[owner] = tail;
+    return next.whenComplete(() {
+      if (identical(_snapshotWriteTails[owner], tail)) _snapshotWriteTails.remove(owner);
+    });
   }
 
   @override
@@ -76,7 +171,12 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String email,
     required bool refresh,
   }) async {
+    final String owner = _snapshotOwner;
+    final String snapshotKey = '$owner::walls:${email.trim().toLowerCase()}';
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    if (_snapshotOwner != owner) {
+      return Result.error(const ServerFailure('Account changed while loading profile walls.'));
+    }
     if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
       return Result.success((items: const <PublicProfileWallEntity>[], hasMore: false));
     }
@@ -97,14 +197,55 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
         ),
         (data, docId) => _WallRow(docId: docId, doc: WallDocDto.fromJson(data)),
       );
+      if (_snapshotOwner != owner) {
+        return Result.error(const ServerFailure('Account changed while loading profile walls.'));
+      }
       if (rows.isNotEmpty) {
         _wallCursorByEmail[email] = rows.last.docId;
       }
 
       final items = rows.map((row) => _mapWall(row.doc, row.docId)).toList(growable: false);
+      Map<String, Object?>? previous;
+      if (!refresh) {
+        try {
+          previous = await _profileSnapshots.read(snapshotKey);
+        } catch (_) {}
+      }
+      final Map<String, WallDocDto> uniqueRows = <String, WallDocDto>{
+        if (previous != null)
+          for (final row in PublicProfileSnapshotCodec.decodeWalls(previous)) row.id: row,
+        for (final row in rows) (row.doc.id.isNotEmpty ? row.doc.id : row.docId): row.doc,
+      };
+      try {
+        await _writeSnapshot(
+          owner,
+          snapshotKey,
+          PublicProfileSnapshotCodec.encodeWalls(
+            uniqueRows.entries.map(
+              (entry) => entry.value.id.isEmpty ? entry.value.copyWith(id: entry.key) : entry.value,
+            ),
+            hasMore: rows.length == 12,
+          ),
+        );
+      } catch (_) {}
+      if (_snapshotOwner != owner) {
+        return Result.error(const ServerFailure('Account changed while loading profile walls.'));
+      }
 
       return Result.success((items: items, hasMore: rows.length == 12));
     } catch (error) {
+      if (_snapshotOwner == owner) {
+        try {
+          final cached = await _profileSnapshots.read(snapshotKey);
+          if (cached != null && _snapshotOwner == owner) {
+            final List<WallDocDto> docs = PublicProfileSnapshotCodec.decodeWalls(cached);
+            final items = docs
+                .map((doc) => PublicProfileSnapshotCodec.wallFromDto(doc, doc.id))
+                .toList(growable: false);
+            return Result.success((items: items, hasMore: cached['hasMore'] as bool? ?? false));
+          }
+        } catch (_) {}
+      }
       return Result.error(ServerFailure('Unable to fetch profile walls: $error'));
     }
   }
@@ -195,14 +336,17 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required List<String> allEmails,
     required int page,
   }) async {
+    final String owner = _snapshotOwner;
+    final List<String> unique = _uniqueEmails(allEmails);
     try {
-      final unique = _uniqueEmails(allEmails);
       final start = page * _summariesPageSize;
       if (start >= unique.length) {
         return Result.success((items: const <UserSummaryEntity>[], hasMore: false));
       }
       final end = math.min(start + _summariesPageSize, unique.length);
       final pageEmails = unique.sublist(start, end);
+      final String pageIdentity = sha256.convert(utf8.encode(pageEmails.join(','))).toString();
+      final String cacheKey = '$owner::summaries:$page:$pageIdentity';
 
       // Firestore whereIn is limited to 10 items per query, so chunk the page.
       final chunkedResults = await Future.wait(<Future<List<_UserRow>>>[
@@ -233,12 +377,35 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       };
       // Preserve the original ordering of the input email list.
       final ordered = pageEmails.map((e) => byEmail[e]).whereType<UserSummaryEntity>().toList(growable: false);
-
+      if (_snapshotOwner == owner) {
+        try {
+          await _writeSnapshot(
+            owner,
+            cacheKey,
+            PublicProfileSnapshotCodec.encodeSummaries(ordered, hasMore: end < unique.length),
+          );
+        } catch (_) {}
+      }
       return Result.success((items: ordered, hasMore: end < unique.length));
     } catch (error) {
+      if (_snapshotOwner == owner) {
+        try {
+          final start = page * _summariesPageSize;
+          final end = math.min(start + _summariesPageSize, unique.length);
+          final pageIdentity = sha256.convert(utf8.encode(unique.sublist(start, end).join(','))).toString();
+          final cacheKey = '$owner::summaries:$page:$pageIdentity';
+          final cached = await _profileSnapshots.read(cacheKey);
+          if (cached != null && _snapshotOwner == owner) {
+            final List<UserSummaryEntity> items = PublicProfileSnapshotCodec.decodeSummaries(cached);
+            return Result.success((items: items, hasMore: cached['hasMore'] as bool? ?? false));
+          }
+        } catch (_) {}
+      }
       return Result.error(ServerFailure('Unable to fetch user summaries page: $error'));
     }
   }
+
+  String get _snapshotOwner => app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '__guest';
 
   @override
   Future<Result<List<UserSummaryEntity>>> searchUsersByUsername({

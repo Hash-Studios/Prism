@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -18,6 +20,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -27,6 +30,8 @@ class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperD
     implements WallpaperDetailBloc {}
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 FeedItemEntity _wallpaper() => const FeedItemEntity.pexels(
   id: 'pexels-1',
@@ -39,6 +44,15 @@ FeedItemEntity _wallpaper() => const FeedItemEntity.pexels(
     ),
   ),
 );
+
+Future<File> _writePreviewPng(Directory directory) async {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 40, 80), Paint()..color = Colors.teal);
+  final ui.Image image = await recorder.endRecording().toImage(40, 80);
+  final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+  image.dispose();
+  return File('${directory.path}/original.png')..writeAsBytesSync(bytes.buffer.asUint8List());
+}
 
 void main() {
   setUpAll(
@@ -145,6 +159,52 @@ void main() {
     await pumpFileError(tester);
 
     expect(find.text('Downloaded wallpaper is unavailable'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('loaded detail renders a retained original after the temporary image cache is empty', (tester) async {
+    const String url = 'https://images.example/full.jpg';
+    final Directory root = Directory.systemTemp.createTempSync('detail-retained-preview-');
+    addTearDown(() async {
+      OfflineAssetStore.testOverride = null;
+      await tester.runAsync(() => root.delete(recursive: true));
+    });
+    final File original = (await tester.runAsync(() => _writePreviewPng(root)))!;
+    final _MockCacheManager cache = _MockCacheManager();
+    when(() => cache.getFileFromCache(url)).thenAnswer((_) async => null);
+    final OfflineAssetStore assets = OfflineAssetStore(
+      directory: Directory('${root.path}/retained'),
+      cacheManager: cache,
+    );
+    OfflineAssetStore.testOverride = assets;
+    final File retained = (await tester.runAsync(() => assets.retain(url, file: original)))!;
+    final bloc = _MockWallpaperDetailBloc();
+    whenListen(
+      bloc,
+      const Stream<WallpaperDetailState>.empty(),
+      initialState: WallpaperDetailLoaded(entity: _wallpaper(), paletteLoading: false, colors: const [Colors.teal]),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<WallpaperDetailBloc>.value(
+          value: bloc,
+          child: const WallpaperDetailScreen(wallId: 'pexels-1', source: WallpaperSource.pexels),
+        ),
+      ),
+    );
+    for (int i = 0; i < 20; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+
+    final List<FileImage> displayedLocalImages = tester
+        .widgetList<Image>(find.byType(Image))
+        .map((Image image) => image.image is ResizeImage ? (image.image as ResizeImage).imageProvider : image.image)
+        .whereType<FileImage>()
+        .toList(growable: false);
+    expect(displayedLocalImages.any((FileImage image) => image.file.path == retained.path), isTrue);
+    verifyNever(() => cache.getSingleFile(any()));
     expect(tester.takeException(), isNull);
   });
 

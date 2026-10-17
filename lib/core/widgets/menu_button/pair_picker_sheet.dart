@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -15,10 +16,12 @@ enum PairSource { favourites, downloads, history }
 
 /// One wall in the picker.
 class PairCandidate {
-  const PairCandidate({required this.fullUrl, required this.thumbnailUrl});
+  const PairCandidate({required this.fullUrl, required this.thumbnailUrl, this.wallpaperId, this.wallpaperSource});
 
   final String fullUrl;
   final String thumbnailUrl;
+  final String? wallpaperId;
+  final WallpaperSource? wallpaperSource;
 }
 
 /// The wall the user picked for the lock screen.
@@ -54,7 +57,14 @@ List<PairCandidate> _favouriteCandidates(BuildContext context) {
         .read<FavouriteWallsBloc>()
         .state
         .items
-        .map((wall) => PairCandidate(fullUrl: wall.fullUrl, thumbnailUrl: wall.thumbnailUrl))
+        .map(
+          (wall) => PairCandidate(
+            fullUrl: wall.fullUrl,
+            thumbnailUrl: wall.thumbnailUrl,
+            wallpaperId: wall.id,
+            wallpaperSource: wall.source,
+          ),
+        )
         .where((item) => item.fullUrl.isNotEmpty)
         .toList(growable: false);
   } catch (error) {

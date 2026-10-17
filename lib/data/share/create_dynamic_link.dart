@@ -103,6 +103,13 @@ class _ShortLinkService {
 const _CanonicalLinkBuilder _canonicalLinkBuilder = _CanonicalLinkBuilder();
 const _ShortLinkService _shortLinkService = _ShortLinkService();
 
+String canonicalWallpaperLink({
+  required String id,
+  required WallpaperSource source,
+  String? url,
+  required String thumbUrl,
+}) => _canonicalLinkBuilder.wallpaper(id: id, source: source, url: url, thumbUrl: thumbUrl).toString();
+
 void _trackDynamicLinkCreateResult({
   required ShareTypeValue shareType,
   required EventResultValue result,
@@ -140,7 +147,7 @@ Future<String?> createDynamicLink(
   String? title,
 }) async {
   try {
-    final Uri canonical = _canonicalLinkBuilder.wallpaper(id: id, source: source, url: url, thumbUrl: thumbUrl);
+    final Uri canonical = Uri.parse(canonicalWallpaperLink(id: id, source: source, url: url, thumbUrl: thumbUrl));
     final String link = await _buildShareableLink(
       type: 'share',
       canonicalUri: canonical,

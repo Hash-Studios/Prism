@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -8,7 +9,9 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -108,6 +111,7 @@ void main() {
     service.pendingRetryInterval = const Duration(seconds: 30);
     service.abandonedDownloadAfter = const Duration(minutes: 2);
     service.isLinkDownloaded = isLinkInDownloadedIndex;
+    service.verifiedLegacyNativeDownloadCheck = hasVerifiedLegacyNativeDownload;
   });
 
   String stored(String key) => getIt<SettingsLocalDataSource>().get<String>(key, defaultValue: '');
@@ -765,8 +769,8 @@ void main() {
       expect(txIds(refunds), <Object?>['spend_tx_legacy']);
     });
 
-    test('a legacy marker whose link is in the Downloads index is dropped without a refund', () async {
-      service.isLinkDownloaded = (link) => link == linkA;
+    test('a legacy marker with a verified native download is dropped without a refund', () async {
+      service.verifiedLegacyNativeDownloadCheck = (link) async => link == linkA;
       await seedLegacyMarker(at: msAgo(const Duration(minutes: 3)));
       final refunds = recordRefunds();
 
@@ -777,8 +781,8 @@ void main() {
       expect(ledger(), isEmpty);
     });
 
-    test('a legacy marker whose link is not in the Downloads index is refunded', () async {
-      service.isLinkDownloaded = (link) => link == linkB;
+    test('a legacy marker without a verified native download is refunded', () async {
+      service.verifiedLegacyNativeDownloadCheck = (link) async => link == linkB;
       await seedLegacyMarker(at: msAgo(const Duration(minutes: 3)));
       final refunds = recordRefunds();
 
@@ -788,17 +792,54 @@ void main() {
       expect(ledger(), isEmpty);
     });
 
-    test('a legacy marker that waits for its grace period is still judged by the index when it comes of age', () async {
+    test('a legacy marker that waits for its grace period is checked when it comes of age', () async {
       service.abandonedDownloadAfter = const Duration(milliseconds: 300);
       await seedLegacyMarker(at: msAgo(const Duration(milliseconds: 100)));
       final refunds = recordRefunds();
       await service.refundAbandonedDownload();
-      service.isLinkDownloaded = (link) => link == linkA;
+      service.verifiedLegacyNativeDownloadCheck = (link) async => link == linkA;
 
       await Future<void>.delayed(const Duration(milliseconds: 600));
 
       expect(refunds, isEmpty);
       expect(ledger(), isEmpty);
+    });
+
+    test('account switch during legacy native verification stops recovery for the old owner', () async {
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      await settings.set('downloaded_walls_v1', '{"a":{"id":"legacy-a","source":"prism"}}');
+      await seed(<Map<String, Object?>>[entry()..['legacy'] = true]);
+      final String originalOwner = app_state.prismUser.id;
+      final Directory directory = Directory.systemTemp.createTempSync('prism_coin_legacy_owner');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final File saved = File('${directory.path}/a.jpg')
+        ..writeAsBytesSync(base64Decode('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='));
+      const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+        PrismMediaHostApi.pigeonChannelCodec,
+      );
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, (
+        _,
+      ) async {
+        app_state.prismUser = app_constants.createGuestPrismUser();
+        return <Object?>[
+          DownloadItemsResult(success: true, items: <String>[saved.path]),
+        ];
+      });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+          channel,
+          null,
+        ),
+      );
+      final DownloadedWallIndex index = DownloadedWallIndex(settings, ownerId: () => originalOwner);
+      service.verifiedLegacyNativeDownloadCheck = index.hasVerifiedLegacyNativeFile;
+      final refunds = recordRefunds();
+
+      await service.refundAbandonedDownload();
+
+      expect(refunds, isEmpty);
+      expect(ledger().single['userId'], originalOwner);
     });
 
     test('an entry written by this build never consults the Downloads index', () async {

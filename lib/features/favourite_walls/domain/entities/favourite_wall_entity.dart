@@ -5,7 +5,12 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 
 sealed class FavouriteWallEntity {
-  const FavouriteWallEntity({required this.id, required this.source, this.favouritedAt});
+  const FavouriteWallEntity({
+    required this.id,
+    required this.source,
+    this.favouritedAt,
+    this.syncStatus = FavouriteSyncStatus.synced,
+  });
 
   factory FavouriteWallEntity.fromFeedItem(FeedItemEntity item) => item.when(
     prism: (_, wallpaper) => PrismFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
@@ -18,6 +23,7 @@ sealed class FavouriteWallEntity {
 
   /// When the user saved the wall. Docs written before this field existed have none.
   final DateTime? favouritedAt;
+  final FavouriteSyncStatus syncStatus;
 
   String get thumbnailUrl;
   String get fullUrl;
@@ -31,17 +37,63 @@ sealed class FavouriteWallEntity {
   FeedItemEntity toFeedItem();
 
   FavouriteWallEntity withFavouritedAt(DateTime at) => switch (this) {
-    PrismFavouriteWall(:final wallpaper) => PrismFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at),
-    WallhavenFavouriteWall(:final wallpaper) => WallhavenFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at),
-    PexelsFavouriteWall(:final wallpaper) => PexelsFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at),
+    PrismFavouriteWall(:final wallpaper) => PrismFavouriteWall(
+      id: id,
+      wallpaper: wallpaper,
+      favouritedAt: at,
+      syncStatus: syncStatus,
+    ),
+    WallhavenFavouriteWall(:final wallpaper) => WallhavenFavouriteWall(
+      id: id,
+      wallpaper: wallpaper,
+      favouritedAt: at,
+      syncStatus: syncStatus,
+    ),
+    PexelsFavouriteWall(:final wallpaper) => PexelsFavouriteWall(
+      id: id,
+      wallpaper: wallpaper,
+      favouritedAt: at,
+      syncStatus: syncStatus,
+    ),
     LegacyFavouriteWall(:final legacyPayload) => LegacyFavouriteWall(
       id: id,
       source: source,
       legacyPayload: legacyPayload,
       favouritedAt: at,
+      syncStatus: syncStatus,
+    ),
+  };
+
+  FavouriteWallEntity withSyncStatus(FavouriteSyncStatus status) => switch (this) {
+    PrismFavouriteWall(:final wallpaper) => PrismFavouriteWall(
+      id: id,
+      wallpaper: wallpaper,
+      favouritedAt: favouritedAt,
+      syncStatus: status,
+    ),
+    WallhavenFavouriteWall(:final wallpaper) => WallhavenFavouriteWall(
+      id: id,
+      wallpaper: wallpaper,
+      favouritedAt: favouritedAt,
+      syncStatus: status,
+    ),
+    PexelsFavouriteWall(:final wallpaper) => PexelsFavouriteWall(
+      id: id,
+      wallpaper: wallpaper,
+      favouritedAt: favouritedAt,
+      syncStatus: status,
+    ),
+    LegacyFavouriteWall(:final legacyPayload) => LegacyFavouriteWall(
+      id: id,
+      source: source,
+      legacyPayload: legacyPayload,
+      favouritedAt: favouritedAt,
+      syncStatus: status,
     ),
   };
 }
+
+enum FavouriteSyncStatus { pending, synced, rejected }
 
 enum FavouriteSort { recentlyAdded, oldest, source }
 
@@ -95,7 +147,7 @@ int compareByCreatedAtAsc(FavouriteWallEntity a, FavouriteWallEntity b) {
 }
 
 final class PrismFavouriteWall extends FavouriteWallEntity {
-  const PrismFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt})
+  const PrismFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt, super.syncStatus})
     : super(source: WallpaperSource.prism);
 
   final PrismWallpaper wallpaper;
@@ -120,11 +172,11 @@ final class PrismFavouriteWall extends FavouriteWallEntity {
 
   @override
   PrismFavouriteWall withFavouritedAt(DateTime at) =>
-      PrismFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at);
+      PrismFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at, syncStatus: syncStatus);
 }
 
 final class WallhavenFavouriteWall extends FavouriteWallEntity {
-  const WallhavenFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt})
+  const WallhavenFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt, super.syncStatus})
     : super(source: WallpaperSource.wallhaven);
 
   final WallhavenWallpaper wallpaper;
@@ -149,11 +201,11 @@ final class WallhavenFavouriteWall extends FavouriteWallEntity {
 
   @override
   WallhavenFavouriteWall withFavouritedAt(DateTime at) =>
-      WallhavenFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at);
+      WallhavenFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at, syncStatus: syncStatus);
 }
 
 final class PexelsFavouriteWall extends FavouriteWallEntity {
-  const PexelsFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt})
+  const PexelsFavouriteWall({required super.id, required this.wallpaper, super.favouritedAt, super.syncStatus})
     : super(source: WallpaperSource.pexels);
 
   final PexelsWallpaper wallpaper;
@@ -178,7 +230,7 @@ final class PexelsFavouriteWall extends FavouriteWallEntity {
 
   @override
   PexelsFavouriteWall withFavouritedAt(DateTime at) =>
-      PexelsFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at);
+      PexelsFavouriteWall(id: id, wallpaper: wallpaper, favouritedAt: at, syncStatus: syncStatus);
 }
 
 /// Used when the existing Firestore doc cannot be resolved to a typed variant
@@ -189,6 +241,7 @@ final class LegacyFavouriteWall extends FavouriteWallEntity {
     required super.source,
     required this.legacyPayload,
     super.favouritedAt,
+    super.syncStatus,
   });
 
   final JsonMap legacyPayload;
