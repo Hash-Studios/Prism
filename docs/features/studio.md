@@ -60,6 +60,12 @@ A 64-bit dHash was tried first. It called different After Dark walls the same, b
 - A verified Studio wall is not evidence for the `firstWallpaperUpload` coin award. A failed provenance lookup awards no coins. A community wall that merely claims `origin: studio` still follows the community path.
 - A rejection writes the usual "Wallpaper Rejected" notice to the Studio account. Nobody uses that account on a device, so no push arrives.
 
+### Telegram post
+
+- `onStudioWallApproved` (`functions/src/studio/telegram.ts`) posts the first Studio wall approved each day (India time) to the Telegram channel in `TELEGRAM_CHAT_ID`, with the bot in `TELEGRAM_BOT_TOKEN`. Other walls approved that day are not posted.
+- The post is the wall image and a caption: the subject scene from the prompt, the collection, and up to 5 hashtags.
+- `studioTelegramPosts/{yyyy-mm-dd}` claims the day before the send. A clear failure frees the day for the next approval. A lost Telegram response keeps the day, so a post is never sent twice.
+
 ### Model
 
 The default is GPT Image 2.5 Sunburst on fal at `high` quality, about $0.07 for one 1440x3200 image. It was first on the LMArena and Artificial Analysis image boards in October 2026, and it makes the exact phone size with no crop or upscale. It has no seed input.

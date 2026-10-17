@@ -32,3 +32,4 @@ export {claimUsername} from "./claimUsername";
 export {onUserCreated} from "./onUserCreated";
 export {processStudioCandidate} from "./studio/process";
 export {planStudioBatch, runStudioBatch} from "./studio/planRun";
+export {onStudioWallApproved} from "./studio/telegram";
