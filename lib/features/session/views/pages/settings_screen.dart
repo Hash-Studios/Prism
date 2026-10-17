@@ -246,6 +246,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         app_state.prismUser.bio,
         app_state.prismUser.profilePhoto,
         context: context,
+        followerCount: app_state.prismUser.followers.length,
       );
     } catch (error, stackTrace) {
       logger.w('Sharing the profile link failed.', error: error, stackTrace: stackTrace);

@@ -4,7 +4,7 @@ This folder contains the Cloudflare implementation for:
 - `POST /api/links` short-link creation
 - `GET /api/links/{code}` short-link resolution for app deep-link handler
 - `GET /l/{code}` short-link resolution
-- `GET /og/{code}.png` social preview image endpoint
+- `GET /og/{code}.jpg` link preview card (the old `.png` path serves the same card)
 - `GET /.well-known/assetlinks.json` (Android App Links association)
 - `GET /.well-known/apple-app-site-association` (iOS Universal Links association)
 - `GET /apple-app-site-association` (iOS fallback association endpoint)
@@ -152,7 +152,15 @@ Verify response contains `route`, `route_v2`, and `canonical_identifier`.
 - Set Firebase auth verification vars:
   - `FIREBASE_PROJECT_ID` (for Prism this is `prism-wallpapers`)
   - Optional debug logs: `FIREBASE_AUTH_DEBUG=true` in non-prod only
-- If Browser Rendering is unavailable, `og:image` falls back to source image URL.
+- If Browser Rendering is unavailable, `og:image` falls back to the source image, else to `OG_FALLBACK_IMAGE` (the website home card).
+
+## Link preview cards
+
+- `src/og_card.ts` holds the card HTML. Browser Rendering takes a 1200x630 JPEG of it once per link, and the worker stores it.
+- Wallpaper, setup and profile links get the data card. Invite links get the showcase card.
+- Wallpaper cards read views, favourites and downloads from the public `wallpaper_stats` document. The app sends the creator, resolution, profile counts and gallery.
+- Fonts, the logo and the invite wallpapers load from `master` on GitHub (`assets/` and `web/public/assets/og/`). Merge them before you deploy.
+- To change the design, edit `src/og_card.ts` and increase `OG_CARD_VERSION` in `src/index.ts`. Old links then render the new card on their next preview request, under a new image URL.
 
 ## AI routing config
 

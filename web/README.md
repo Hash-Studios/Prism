@@ -67,6 +67,7 @@ Update these files:
 ## Images used by the site
 
 - App icon: `public/assets/ios.png`
-- Screenshots: `public/assets/screenshots/screen1.jpg` to `screen4.jpg`
+- Link preview card for every page: `public/assets/og/home.jpg` (1200×630). The link worker uses it as its fallback, and uses `invite-1.jpg` to `invite-3.jpg` on invite cards.
+- Screenshot: `public/assets/screenshots/screen4.jpg`
 
 If you want to refresh visuals later, keep the same filenames to avoid changing code references.

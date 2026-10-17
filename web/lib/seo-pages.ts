@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { APP_NAME, SITE_URL } from "@/lib/site-config";
+import { APP_NAME, OG_IMAGE, SITE_URL } from "@/lib/site-config";
 
 export type SeoRouteContent = {
   slug: "4k-wallpapers" | "amoled-wallpapers" | "collections";
@@ -76,7 +76,7 @@ export const seoRouteOrder: SeoRouteContent["slug"][] = [
   "collections",
 ];
 
-export function seoMetadata(slug: SeoRouteContent["slug"], image: string): Metadata {
+export function seoMetadata(slug: SeoRouteContent["slug"]): Metadata {
   const { title, description } = seoRouteContent[slug];
 
   return {
@@ -87,8 +87,8 @@ export function seoMetadata(slug: SeoRouteContent["slug"], image: string): Metad
       url: `${SITE_URL}/${slug}`,
       title,
       description,
-      images: [{ url: image, width: 390, height: 844 }],
+      images: [OG_IMAGE],
     },
-    twitter: { card: "summary_large_image", title, description, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [OG_IMAGE.url] },
   };
 }

@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { AiQuotaCoordinator, gptImageSize, seedreamImageSize } from '../src/ai.ts';
 import { verifyFirebaseIdTokenFromRequest } from '../src/firebase_auth.ts';
 import worker from '../src/index.ts';
+import { formatCount, renderOgCardHtml } from '../src/og_card.ts';
 
 globalThis.crypto ??= webcrypto;
 
@@ -857,6 +858,181 @@ test('createLink keeps a flat campaign of short strings and drops anything else'
   assert.equal(
     await stored(Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`k${i}`, 'v']))),
     undefined,
+  );
+});
+
+const RENDER_ENV = { BROWSER_RENDERING_ACCOUNT_ID: 'acct', BROWSER_RENDERING_API_TOKEN: 'token' };
+
+function mockOgRender({ stats = null, renderStatus = 200 } = {}) {
+  const originalFetch = globalThis.fetch;
+  const calls = { renders: [], firestore: [] };
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes('/browser-rendering/screenshot')) {
+      calls.renders.push(JSON.parse(init.body));
+      return renderStatus === 200
+        ? new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]))
+        : new Response('down', { status: renderStatus });
+    }
+    if (url.startsWith('https://firestore.googleapis.com/')) {
+      calls.firestore.push(url);
+      return stats == null ? new Response('{}', { status: 404 }) : Response.json({ fields: stats });
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  };
+  return { calls, restore: () => { globalThis.fetch = originalFetch; } };
+}
+
+function storedLink(code, type, canonicalPath, preview, extra = {}) {
+  return [code, JSON.stringify({
+    code,
+    type,
+    canonical_url: `https://prismwalls.com${canonicalPath}`,
+    created_at: new Date().toISOString(),
+    preview,
+    version: 1,
+    ...extra,
+  })];
+}
+
+function getOg(env, path) {
+  return worker.fetch(new Request(`https://prismwalls.com${path}`), env, { waitUntil() {} });
+}
+
+test('createLink stores creator, counts and gallery, drops bad values and returns a versioned JPEG URL', async () => {
+  const env = workerEnv();
+  const response = await postLink(env, {
+    type: 'user',
+    canonical_url: 'https://prismwalls.com/user/maya',
+    preview: {
+      title: 'Maya Rao (@maya)',
+      username: 'maya',
+      creator_name: '<b>Maya</b> Rao',
+      image_source_url: 'https://lh3.googleusercontent.com/a/photo=s96-c',
+      follower_count: 2400,
+      wallpaper_count: -3,
+      gallery: [
+        'https://raw.githubusercontent.com/a/1.jpg',
+        'https://evil.example.com/2.jpg',
+        42,
+        'https://raw.githubusercontent.com/a/3.jpg',
+        'https://raw.githubusercontent.com/a/4.jpg',
+      ],
+    },
+  });
+  assert.equal(response.status, 201);
+  const { code, og_image_url: ogImageUrl } = await response.json();
+  assert.equal(ogImageUrl, `https://prismwalls.com/og/${code}.jpg?v=2`);
+
+  const { preview, version } = JSON.parse(await env.LINKS_KV.get(code));
+  assert.equal(version, 2);
+  assert.equal(preview.creator_name, 'Maya Rao');
+  assert.equal(preview.image_source_url, 'https://lh3.googleusercontent.com/a/photo=s96-c');
+  assert.equal(preview.follower_count, 2400);
+  assert.equal(preview.wallpaper_count, null);
+  assert.deepEqual(preview.gallery, ['https://raw.githubusercontent.com/a/1.jpg', 'https://raw.githubusercontent.com/a/3.jpg']);
+});
+
+test('an old share link renders the new card once, as a JPEG with its public wallpaper counts', async () => {
+  const env = workerEnv({
+    ...RENDER_ENV,
+    LINKS_KV: new MemoryKv([
+      storedLink('OldWall1', 'share', SHARE_PATH, {
+        title: 'wall-1 - Prism',
+        wall_id: 'wall-1',
+        provider: 'Prism',
+        image_source_url: 'https://raw.githubusercontent.com/Hash-Studios/x.jpg',
+      }, { og_storage: 'kv' }),
+      ['og:OldWall1-v1.png', Buffer.from([0x89, 0x50]).toString('base64')],
+    ]),
+  });
+  const { calls, restore } = mockOgRender({ stats: { views: { integerValue: '3048' }, favs: { integerValue: '1' } } });
+  try {
+    const first = await getOg(env, '/og/OldWall1.png');
+    assert.equal(first.status, 200);
+    assert.equal(first.headers.get('content-type'), 'image/jpeg');
+    assert.equal(calls.renders.length, 1);
+    assert.deepEqual(calls.renders[0].screenshotOptions, { type: 'jpeg', quality: 85 });
+    assert.match(calls.firestore[0], /\/documents\/wallpaper_stats\/WALL-1$/);
+
+    const html = calls.renders[0].html;
+    assert.match(html, />Wallpaper on Prism</);
+    assert.doesNotMatch(html, /wall-1 - Prism/);
+    assert.match(html, />3k<\/div><div class="lbl">Views</);
+    assert.match(html, />1<\/div><div class="lbl">Favourite</);
+    assert.match(html, /raw\.githubusercontent\.com\/Hash-Studios\/x\.jpg/);
+
+    const record = JSON.parse(await env.LINKS_KV.get('OldWall1'));
+    assert.equal(record.version, 2);
+    assert.equal(record.og_storage, 'kv');
+
+    const second = await getOg(env, '/og/OldWall1.jpg');
+    assert.equal(second.headers.get('content-type'), 'image/jpeg');
+    assert.equal(calls.renders.length, 1);
+  } finally {
+    restore();
+  }
+});
+
+test('when the new card fails to render, an old link keeps its old image with a short cache', async () => {
+  const env = workerEnv({
+    ...RENDER_ENV,
+    LINKS_KV: new MemoryKv([
+      storedLink('OldWall2', 'share', SHARE_PATH, { title: 'Sunset', wall_id: 'wall-1' }, { og_storage: 'kv' }),
+      ['og:OldWall2-v1.png', Buffer.from([0x89, 0x50]).toString('base64')],
+    ]),
+  });
+  const { restore } = mockOgRender({ renderStatus: 500 });
+  try {
+    const response = await getOg(env, '/og/OldWall2.jpg');
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'image/png');
+    assert.equal(response.headers.get('cache-control'), 'public, max-age=300');
+    assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [0x89, 0x50]);
+    assert.equal(JSON.parse(await env.LINKS_KV.get('OldWall2')).version, 1);
+  } finally {
+    restore();
+  }
+});
+
+test('profile and invite cards read names from old titles and never query wallpaper counts', async () => {
+  const env = workerEnv({
+    ...RENDER_ENV,
+    LINKS_KV: new MemoryKv([
+      storedLink('OldUser1', 'user', '/user/maya', { title: 'Maya Rao (@maya)', username: 'maya' }),
+      storedLink('OldRefr1', 'refer', '/refer/uid-1', {
+        title: 'Maya Rao invited you to Prism',
+        image_source_url: 'https://lh3.googleusercontent.com/a/photo',
+      }),
+      storedLink('OldRefr2', 'refer', '/refer/uid-2', { title: 'Join Prism' }),
+    ]),
+  });
+  const { calls, restore } = mockOgRender();
+  try {
+    for (const code of ['OldUser1', 'OldRefr1', 'OldRefr2']) {
+      assert.equal((await getOg(env, `/og/${code}.jpg`)).status, 200);
+    }
+    const [profile, invite, anonymous] = calls.renders.map((render) => render.html);
+    assert.match(profile, /<div class="title"[^>]*>Maya Rao<span class="handle">@maya<\/span>/);
+    assert.match(profile, /class="big-avatar" src="[^"]*prism\.webp"/);
+    assert.doesNotMatch(profile, /class="stats"/);
+    assert.match(invite, /<img class="avatar" src="https:\/\/lh3\.googleusercontent\.com\/a\/photo"/);
+    assert.match(invite, /<b>Maya Rao<\/b><\/span><span class="sub">invited you to Prism/);
+    assert.match(invite, /web\/public\/assets\/og\/invite-1\.jpg/);
+    assert.match(anonymous, /<b>Join Prism<\/b>/);
+    assert.equal(calls.firestore.length, 0);
+  } finally {
+    restore();
+  }
+});
+
+test('card HTML escapes text, shows the logo without an image, and counts read short', () => {
+  const html = renderOgCardHtml({ kind: 'wallpaper', label: 'Wallpaper', title: 'Tom & "Jerry" <3', image: '', stats: [], chip: null });
+  assert.match(html, /Tom &amp; &quot;Jerry&quot; &lt;3/);
+  assert.match(html, /<img class="logo" src="[^"]*prism\.webp"/);
+  assert.deepEqual(
+    [0, 999, 1000, 1234, 51_000, 2_500_000].map(formatCount),
+    ['0', '999', '1k', '1.2k', '51k', '2.5M'],
   );
 });
 
