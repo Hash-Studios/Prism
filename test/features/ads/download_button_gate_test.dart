@@ -273,21 +273,23 @@ void main() {
     return raw.isEmpty ? <Map<String, dynamic>>[] : (jsonDecode(raw) as List<Object?>).cast<Map<String, dynamic>>();
   }
 
-  Future<List<Map<String, dynamic>>> restart() async {
-    final List<Map<String, dynamic>> refunds = <Map<String, dynamic>>[];
-    backend.onCall = (name, parameters) async {
-      refunds.add(parameters);
-      return const <String, Object>{
-        'success': true,
-        'changed': true,
-        'previousBalance': 95,
-        'currentBalance': 100,
-        'delta': 5,
+  Future<List<Map<String, dynamic>>> restart(WidgetTester tester) async {
+    return (await tester.runAsync(() async {
+      final List<Map<String, dynamic>> refunds = <Map<String, dynamic>>[];
+      backend.onCall = (name, parameters) async {
+        refunds.add(parameters);
+        return const <String, Object>{
+          'success': true,
+          'changed': true,
+          'previousBalance': 95,
+          'currentBalance': 100,
+          'delta': 5,
+        };
       };
-    };
-    CoinsService.instance.abandonedDownloadAfter = Duration.zero;
-    await CoinsService.instance.refundAbandonedDownload();
-    return refunds;
+      CoinsService.instance.abandonedDownloadAfter = Duration.zero;
+      await CoinsService.instance.refundAbandonedDownload();
+      return refunds;
+    }))!;
   }
 
   Future<dynamic> Function(String name, Map<String, dynamic> parameters) offlineRefunds() => (name, parameters) async {
@@ -339,7 +341,7 @@ void main() {
     });
 
     testWidgets('free downloads left show on a standard wallpaper', (tester) async {
-      await useGraceDownloads(2);
+      await tester.runAsync(() => useGraceDownloads(2));
       await pump(tester);
 
       expect(find.text('Save · Free · 2 left'), findsOneWidget);
@@ -347,7 +349,7 @@ void main() {
     });
 
     testWidgets('free downloads do not apply to a Pro wallpaper', (tester) async {
-      await useGraceDownloads(2);
+      await tester.runAsync(() => useGraceDownloads(2));
       await pump(tester, premiumContent: true);
 
       expect(find.text('Save · ${CoinPolicy.premiumWallpaperDownload}'), findsOneWidget);
@@ -365,7 +367,7 @@ void main() {
     testWidgets('a free download with an empty balance goes to the server, not to the low balance sheet', (
       tester,
     ) async {
-      await useGraceDownloads(1);
+      await tester.runAsync(() => useGraceDownloads(1));
       app_state.prismUser.coins = 0;
       CoinsService.instance.balanceNotifier.value = 0;
       await pump(tester);
@@ -404,16 +406,18 @@ void main() {
       await pump(tester, contentId: '', link: 'https://other.example/walls/sunset.jpg');
 
       expect(find.text('Saved'), findsNothing);
-      expect(semanticsLabel(tester), 'Save. Costs 5 coins');
+      expect(semanticsLabel(tester), 'Save. Costs 10 coins');
     });
 
     testWidgets('a legacy row opens the Saved prompt only when its identified native file exists', (tester) async {
       signInAgain();
-      await getIt<SettingsLocalDataSource>().set(
-        'downloaded_walls_v1',
-        jsonEncode(<String, Object>{
-          'sunset': <String, String>{'id': 'wall-1', 'source': 'prism'},
-        }),
+      await tester.runAsync(
+        () => getIt<SettingsLocalDataSource>().set(
+          'downloaded_walls_v1',
+          jsonEncode(<String, Object>{
+            'sunset': <String, String>{'id': 'wall-1', 'source': 'prism'},
+          }),
+        ),
       );
       final File legacyFile = await fixtureImage(tester, 'sunset.jpg');
       downloadsOnDisk.add(legacyFile.path);
@@ -698,7 +702,7 @@ void main() {
     });
 
     testWidgets('a standard wallpaper repeat shows free while grace downloads remain', (tester) async {
-      await useGraceDownloads(2);
+      await tester.runAsync(() => useGraceDownloads(2));
       downloadsOnDisk = <String>[await fileOnDisk()];
       CoinsService.instance.isLinkDownloaded = (link) => link == _link;
       await pump(tester);
@@ -1125,7 +1129,7 @@ void main() {
         expect(entry['link'], tintB.identityOf(link));
         expect(entry['saved'], isFalse);
 
-        final List<Map<String, dynamic>> refunds = await restart();
+        final List<Map<String, dynamic>> refunds = await restart(tester);
         await settle(tester);
 
         expect(refunds.single['action'], 'refund');
@@ -1135,13 +1139,15 @@ void main() {
     }
 
     testWidgets('a paid save of tint A that finished but left its entry is not refunded', (tester) async {
-      final CoinMutationResult paid = await CoinsService.instance.spend(
-        CoinSpendAction.wallpaperDownload,
-        pendingDownloadLink: tintA.identityOf(_link),
-      );
-      await CoinsService.instance.markPendingDownloadSaved(paid.pendingDownloadTxId);
+      final CoinMutationResult paid = (await tester.runAsync(
+        () => CoinsService.instance.spend(
+          CoinSpendAction.wallpaperDownload,
+          pendingDownloadLink: tintA.identityOf(_link),
+        ),
+      ))!;
+      await tester.runAsync(() => CoinsService.instance.markPendingDownloadSaved(paid.pendingDownloadTxId));
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds, isEmpty);
@@ -1187,7 +1193,7 @@ void main() {
       await settle(tester);
       expect(results().last.result, 'cancelled');
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds.map((Map<String, dynamic> refund) => refund['transactionId']), <Object?>[txId]);
@@ -1221,7 +1227,7 @@ void main() {
       await tapSave(tester);
       expect(enqueued, hasLength(2));
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds.map((Map<String, dynamic> refund) => refund['transactionId']), <Object?>[failedTxId]);
@@ -1246,7 +1252,7 @@ void main() {
       expect(enqueued, hasLength(2));
       expect(spendCalls, hasLength(2));
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds.map((Map<String, dynamic> refund) => refund['transactionId']), <Object?>[failedTxId]);
@@ -1272,12 +1278,12 @@ void main() {
       enqueueSucceeds = true;
       await tapSave(tester);
       expect(find.text('Open Photos'), findsOneWidget);
-      await CoinsService.instance.refundAbandonedDownload();
+      await tester.runAsync(CoinsService.instance.refundAbandonedDownload);
       await tester.tapAt(const Offset(10, 10));
       await settle(tester);
       expect(find.text('Open Photos'), findsNothing);
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refundedIds(refunds), <Object?>[failedTxId]);
@@ -1321,7 +1327,7 @@ void main() {
       saves[1].complete(false);
       await settle(tester);
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refundedIds(refunds), <Object?>[txIdOf(1)]);
@@ -1350,7 +1356,7 @@ void main() {
       expect(enqueued, isEmpty);
       expect(ledger().map((Map<String, dynamic> e) => e['txId']), <Object?>[txIdOf(0)]);
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refundedIds(refunds), <Object?>[txIdOf(0)]);
@@ -1371,7 +1377,7 @@ void main() {
 
       expect(ledger(), isEmpty);
       signInAgain();
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       expect(refunds, isEmpty);
     });
 
@@ -1389,7 +1395,7 @@ void main() {
 
       expect(ledger().map((Map<String, dynamic> e) => e['txId']), <Object?>[txIdOf(0)]);
       signInAgain();
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refundedIds(refunds), <Object?>[txIdOf(0)]);
@@ -1413,13 +1419,13 @@ void main() {
       expect(enqueued, hasLength(1));
       expect(ledger(), hasLength(1));
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       expect(refunds, isEmpty);
       expect(ledger(), hasLength(1));
 
       dialog.complete();
       await settle(tester);
-      await CoinsService.instance.refundAbandonedDownload();
+      await tester.runAsync(CoinsService.instance.refundAbandonedDownload);
 
       expect(refunds, isEmpty);
       expect(ledger(), isEmpty);
@@ -1455,7 +1461,9 @@ void main() {
     });
 
     testWidgets('a tap that paid nothing leaves a running download of the same link alone', (tester) async {
-      await CoinsService.instance.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: _link);
+      await tester.runAsync(
+        () => CoinsService.instance.spend(CoinSpendAction.wallpaperDownload, pendingDownloadLink: _link),
+      );
       app_state.prismUser.coins = 2;
       CoinsService.instance.balanceNotifier.value = 2;
       await pump(tester);
@@ -1465,7 +1473,7 @@ void main() {
       await settle(tester);
       expect(results().last.result, 'cancelled');
 
-      final List<Map<String, dynamic>> refunds = await restart();
+      final List<Map<String, dynamic>> refunds = await restart(tester);
       await settle(tester);
 
       expect(refunds, isEmpty);

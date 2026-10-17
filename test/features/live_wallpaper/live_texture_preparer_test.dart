@@ -1,32 +1,24 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockCacheManager extends Mock implements BaseCacheManager {}
+import '../../support/offline_asset_fixture.dart';
 
 class _MockImageCompress extends Mock implements FlutterImageCompressPlatform {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() => registerFallbackValue(Uint8List(0)));
-  late _MockCacheManager cache;
-
-  setUp(() {
-    cache = _MockCacheManager();
-    PrismFullImageCache.testOverride = cache;
-  });
-
-  tearDown(() => PrismFullImageCache.testOverride = null);
 
   test('downloads the wallpaper through the full-size image cache', () async {
-    when(() => cache.getSingleFile(any())).thenThrow(Exception('offline'));
+    final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    fixture.install();
+    addTearDown(fixture.dispose);
 
     await expectLater(
       const LiveTexturePreparer().prepare('https://example.com/a.jpg', 0.45),
@@ -38,21 +30,16 @@ void main() {
         ),
       ),
     );
-    verify(() => cache.getSingleFile('https://example.com/a.jpg')).called(1);
+    verify(() => fixture.cacheManager.getSingleFile('https://example.com/a.jpg')).called(1);
   });
 
   testWidgets('decodes and crops a small image before writing compressed bytes', (tester) async {
     await tester.runAsync(() async {
-      final directory = await Directory.systemTemp.createTemp('live_texture_test_');
-      addTearDown(() => directory.delete(recursive: true));
-      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-      const paths = MethodChannel('plugins.flutter.io/path_provider');
+      final OfflineAssetFixture fixture = await OfflineAssetFixture.create(cacheMissByDefault: true);
+      fixture.install(immediateResolver: true);
+      addTearDown(fixture.dispose);
       final originalCompress = FlutterImageCompressPlatform.instance;
-      addTearDown(() {
-        FlutterImageCompressPlatform.instance = originalCompress;
-        messenger.setMockMethodCallHandler(paths, null);
-      });
-      messenger.setMockMethodCallHandler(paths, (_) async => directory.path);
+      addTearDown(() => FlutterImageCompressPlatform.instance = originalCompress);
       final recorder = ui.PictureRecorder();
       ui.Canvas(recorder).drawPaint(ui.Paint());
       final picture = recorder.endRecording();
@@ -60,9 +47,9 @@ void main() {
       final data = (await image.toByteData(format: ui.ImageByteFormat.png))!;
       image.dispose();
       picture.dispose();
-      final source = await IOFileSystem('test_source').createFile('source.png');
+      final File source = await fixture.createImage('source.png');
       await source.writeAsBytes(data.buffer.asUint8List());
-      when(() => cache.getSingleFile(any())).thenAnswer((_) async => source);
+      fixture.mapSource('https://example.com/a.png', source);
       final compressed = Uint8List.fromList(<int>[255, 216, 255, 217]);
       final compress = _MockImageCompress();
       FlutterImageCompressPlatform.instance = compress;
@@ -75,9 +62,9 @@ void main() {
         return compressed;
       });
 
-      final path = await const LiveTexturePreparer().prepare('https://example.com/a.png', 0.5);
+      final String path = await const LiveTexturePreparer().prepare('https://example.com/a.png', 0.5);
 
-      expect(path, '${directory.path}/live_wallpaper_texture.jpg');
+      expect(path, '${fixture.directory.path}/live_wallpaper_texture.jpg');
       expect(await File(path).readAsBytes(), compressed);
     });
   });

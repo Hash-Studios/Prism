@@ -90,7 +90,7 @@ void main() {
   setUpAll(() => registerFallbackValue(const FetchViews()));
 
   setUp(() async {
-    offlineAssets = await OfflineAssetFixture.create();
+    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
     offlineAssets.install();
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
     app_state.prismUser = profileUser(loggedIn: false);

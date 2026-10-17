@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -41,6 +42,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/coins_test_backend.dart';
+import '../../../../support/offline_asset_fixture.dart';
 
 class _DetailTestAssetStore extends OfflineAssetStore {
   _DetailTestAssetStore({required super.directory, required this.sourceFile});
@@ -83,9 +85,11 @@ Future<void> _installEmptyOfflineAssetStore() async {
   );
   OfflineAssetStore.testOverride = store;
   PrismImageCache.testOverride = cacheManager;
+  PrismFullImageCache.testOverride = cacheManager;
   addTearDown(() async {
     OfflineAssetStore.testOverride = null;
     PrismImageCache.testOverride = null;
+    PrismFullImageCache.testOverride = null;
     if (directory.existsSync()) await directory.delete(recursive: true);
   });
 }
@@ -146,8 +150,11 @@ void main() {
 
   late DownloadedWallIndex downloaded;
   late SettingsLocalDataSource settings;
+  late OfflineAssetFixture offlineAssets;
 
-  setUp(() {
+  setUp(() async {
+    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineAssets.install();
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     downloaded = DownloadedWallIndex(settings);
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
@@ -156,7 +163,10 @@ void main() {
     getIt.registerSingleton<DownloadedWallIndex>(downloaded);
   });
 
-  tearDown(() => getIt.reset());
+  tearDown(() async {
+    await offlineAssets.dispose();
+    await getIt.reset();
+  });
 
   Future<_MockWallpaperDetailBloc> pumpDetail(WidgetTester tester, WallpaperDetailLoaded state) async {
     final bloc = _MockWallpaperDetailBloc();

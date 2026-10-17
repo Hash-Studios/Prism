@@ -492,15 +492,20 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
           if (_session.currentUser.id != id) {
             return Result.error(const ServerFailure('Account changed while loading blocks.'));
           }
+          final pending = records.entries.where(
+            (entry) =>
+                entry.key.startsWith('$id::') &&
+                entry.value['owner'] == id &&
+                (entry.value['status'] == 'pending' || entry.value['status'] == 'rejected'),
+          );
+          if (saved == null && pending.isEmpty) {
+            return Result.error(ServerFailure('Failed to load blocked users: $e'));
+          }
           final Map<String, BlockedUserListRow> rows = <String, BlockedUserListRow>{
             for (final row in saved == null ? const <BlockedUserListRow>[] : UserBlockSnapshotCodec.decodeRows(saved))
               row.blockedUid: row,
           };
-          for (final entry in records.entries.where(
-            (entry) =>
-                entry.key.startsWith('$id::') &&
-                (entry.value['status'] == 'pending' || entry.value['status'] == 'rejected'),
-          )) {
+          for (final entry in pending) {
             final String target = entry.value['targetId']?.toString() ?? entry.key.substring('$id::'.length);
             if (entry.value['desired'] == true) {
               rows[target] = BlockedUserListRow(

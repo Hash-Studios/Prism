@@ -40,6 +40,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
+import '../../../../support/wait_for_real_io.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -74,7 +75,9 @@ FeedItemEntity _prism() => const FeedItemEntity.prism(
   ),
 );
 
-bool _isWallpaperLayer(Widget widget) => widget is CachedNetworkImage && widget.imageUrl.endsWith('thumb.jpg');
+bool _isWallpaperLayer(Widget widget) =>
+    (widget is CachedNetworkImage && widget.imageUrl.endsWith('thumb.jpg')) ||
+    (widget is Image && (widget.image is FileImage || widget.image is ResizeImage));
 
 Finder _wallpaper() => find.descendant(of: find.byType(ShakeOnce), matching: find.byWidgetPredicate(_isWallpaperLayer));
 
@@ -93,7 +96,7 @@ void main() {
   late OfflineAssetFixture offlineAssets;
 
   setUp(() async {
-    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineAssets = await OfflineAssetFixture.create();
     offlineAssets.install();
     copied = null;
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
@@ -437,7 +440,11 @@ void main() {
       ),
     );
 
-    Future<void> pumpWithRealBloc(WidgetTester tester, Result<PaletteEntity> paletteResult) async {
+    Future<WallpaperDetailBloc> pumpWithRealBloc(
+      WidgetTester tester,
+      Result<PaletteEntity> paletteResult, {
+      bool requirePalette = true,
+    }) async {
       useDeviceWithHomeIndicator(tester);
       final palette = _MockPaletteRepository();
       final views = _MockRecordViews();
@@ -465,12 +472,38 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
+      await waitForRealIo(tester, () {
+        final WallpaperDetailState state = bloc.state;
+        final bool paletteReady =
+            !requirePalette || (state is WallpaperDetailLoaded && state.colors?.isNotEmpty == true);
+        final bool imageReady = find
+            .descendant(of: _wallpaper(), matching: find.byType(RawImage))
+            .evaluate()
+            .isNotEmpty;
+        return paletteReady && imageReady;
+      }, reason: 'the wallpaper palette and cached preview image to load');
+      expect(
+        bloc.state,
+        isA<WallpaperDetailLoaded>().having(
+          (state) => requirePalette ? state.colors : state.entity.id,
+          'loaded wallpaper',
+          requirePalette ? isNotEmpty : 'prism-1',
+        ),
+      );
+      expect(
+        find.descendant(of: _wallpaper(), matching: find.byType(RawImage)),
+        findsAtLeastNWidgets(1),
+        reason: 'the cached wallpaper image has decoded before color interactions',
+      );
+      return bloc;
     }
 
     ColorFilter? tintOnWallpaper(WidgetTester tester) {
-      final Finder tinted = find.ancestor(of: _wallpaper(), matching: find.byType(ColorFiltered));
-      return tinted.evaluate().isEmpty ? null : tester.widget<ColorFiltered>(tinted).colorFilter;
+      final List<ColorFiltered> filters = tester
+          .widgetList<ColorFiltered>(find.descendant(of: find.byType(ShakeOnce), matching: find.byType(ColorFiltered)))
+          .toList(growable: false);
+      expect(filters, hasLength(lessThanOrEqualTo(1)), reason: 'the wallpaper has at most one hue tint');
+      return filters.isEmpty ? null : filters.single.colorFilter;
     }
 
     List<AnalyticsActionValue> trackedActions() =>
@@ -479,10 +512,17 @@ void main() {
     testWidgets('a tap tints the wallpaper with the next palette colour and a long press brings the original back', (
       tester,
     ) async {
-      await pumpWithRealBloc(tester, twoColours);
+      final WallpaperDetailBloc bloc = await pumpWithRealBloc(tester, twoColours);
       expect(tintOnWallpaper(tester), isNull);
 
       await tester.tapAt(const Offset(195, 300));
+      await tester.pump();
+      await waitForRealIo(
+        tester,
+        () => bloc.state is WallpaperDetailLoaded && (bloc.state as WallpaperDetailLoaded).colorChanged,
+        reason: 'the wallpaper accent selection to update',
+      );
+      expect((bloc.state as WallpaperDetailLoaded).accent, const Color(0xFFFF0000));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -503,17 +543,37 @@ void main() {
     ) async {
       await pumpDetail(tester, loaded(colors: const <Color>[Colors.teal, Colors.red], accent: Colors.teal));
       await openPanel(tester);
+      await waitForRealIo(
+        tester,
+        () =>
+            find
+                .descendant(
+                  of: find.ancestor(of: find.bySemanticsLabel('Original wallpaper colors'), matching: find.byType(Row)),
+                  matching: find.byWidgetPredicate((Widget widget) {
+                    if (widget is! Image) return false;
+                    final ImageProvider provider = widget.image is ResizeImage
+                        ? (widget.image as ResizeImage).imageProvider
+                        : widget.image;
+                    return provider is FileImage;
+                  }),
+                )
+                .evaluate()
+                .length ==
+            3,
+        reason: 'the three local palette swatch images to load',
+      );
 
-      final List<CachedNetworkImage> swatches = tester
-          .widgetList<CachedNetworkImage>(
-            find.byWidgetPredicate((w) => w is CachedNetworkImage && w.memCacheWidth == 240),
-          )
+      final Finder originalSwatch = find.bySemanticsLabel('Original wallpaper colors');
+      final Finder swatchRow = find.ancestor(of: originalSwatch, matching: find.byType(Row));
+      final List<Image> swatches = tester
+          .widgetList<Image>(find.descendant(of: swatchRow, matching: find.byType(Image)))
           .toList();
-
-      expect(swatches.map((swatch) => (swatch.imageUrl, swatch.color, swatch.colorBlendMode)), <Object>[
-        ('https://img.test/thumb.jpg', null, null),
-        ('https://img.test/thumb.jpg', Colors.teal, BlendMode.hue),
-        ('https://img.test/thumb.jpg', Colors.red, BlendMode.hue),
+      expect(swatches, hasLength(3));
+      expect(swatches.every((swatch) => swatch.image is FileImage), isTrue);
+      expect(swatches.map((swatch) => (swatch.color, swatch.colorBlendMode)), <Object>[
+        (null, null),
+        (Colors.teal, BlendMode.hue),
+        (Colors.red, BlendMode.hue),
       ]);
     });
 
@@ -550,7 +610,7 @@ void main() {
     });
 
     testWidgets('with no palette a tap leaves the original wallpaper', (tester) async {
-      await pumpWithRealBloc(tester, Result.error(const NetworkFailure('x')));
+      await pumpWithRealBloc(tester, Result.error(const NetworkFailure('x')), requirePalette: false);
 
       await tester.tapAt(const Offset(195, 300));
       await tester.pump(const Duration(milliseconds: 400));

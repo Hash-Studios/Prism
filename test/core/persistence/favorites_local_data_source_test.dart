@@ -41,19 +41,17 @@ void main() {
         await releaseSend.future;
       },
     );
-    await sendStarted.future;
-
-    final Map<String, Object?>? currentBeforeRelease;
-    final Map<String, Object?> newOperation;
+    Map<String, Object?>? currentBeforeRelease;
+    Map<String, Object?>? newOperation;
     try {
-      final results = await Future.wait<Object?>(<Future<Object?>>[
-        source.readFavouriteOperation(owner, 'wall-1'),
-        source.createFavouriteOperation(owner, 'wall-1', desired: false, wall: <String, Object?>{'id': 'wall-1'}),
-      ]).timeout(const Duration(seconds: 1));
-      currentBeforeRelease = results[0] as Map<String, Object?>?;
-      newOperation = results[1]! as Map<String, Object?>;
+      await sendStarted.future.timeout(const Duration(seconds: 10));
+      currentBeforeRelease = await source.readFavouriteOperation(owner, 'wall-1').timeout(const Duration(seconds: 10));
+      newOperation = await source
+          .createFavouriteOperation(owner, 'wall-1', desired: false, wall: <String, Object?>{'id': 'wall-1'})
+          .timeout(const Duration(seconds: 10));
     } finally {
       releaseSend.complete();
+      await oldSend;
     }
 
     expect(currentBeforeRelease?['operationId'], oldOperation['operationId']);

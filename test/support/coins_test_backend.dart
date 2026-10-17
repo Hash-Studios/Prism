@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_snapshot_store.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:cloud_functions/cloud_functions.dart';
@@ -34,6 +38,7 @@ class CoinsTestBackend {
   late String userId;
 
   Future<void> install() async {
+    CoinsService.instance.setEconomySnapshotStoreForTest(EconomySnapshotStore(store: _MemoryCoinsSnapshotStore()));
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockDecodedMessageHandler<Object?>(
       const BasicMessageChannel<Object?>(
@@ -97,6 +102,41 @@ class CoinsTestBackend {
       ..id = userId
       ..loggedIn = true
       ..coins = 100;
+  }
+}
+
+class _MemoryCoinsSnapshotStore extends DurableJsonStore {
+  _MemoryCoinsSnapshotStore() : super('coins_test_memory');
+
+  final Map<String, Map<String, Object?>> _records = <String, Map<String, Object?>>{};
+
+  Map<String, Object?> _copy(Map<String, Object?> value) =>
+      (jsonDecode(jsonEncode(value))! as Map).cast<String, Object?>();
+
+  @override
+  Future<Map<String, Object?>?> read(String key) async {
+    final Map<String, Object?>? value = _records[key];
+    return value == null ? null : _copy(value);
+  }
+
+  @override
+  Future<Map<String, Map<String, Object?>>> readAll() async => _records.map(
+    (String key, Map<String, Object?> value) => MapEntry<String, Map<String, Object?>>(key, _copy(value)),
+  );
+
+  @override
+  Future<void> write(String key, Map<String, Object?> value) async {
+    _records[key] = _copy(value);
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    _records.remove(key);
+  }
+
+  @override
+  Future<void> clear() async {
+    _records.clear();
   }
 }
 

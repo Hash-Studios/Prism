@@ -13,9 +13,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../support/wait_for_real_io.dart';
+
 class _MockStackRouter extends Mock implements StackRouter {}
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
+
+class _MockFile extends Mock implements File {}
+
+class _PendingOfflineAssetStore extends OfflineAssetStore {
+  _PendingOfflineAssetStore(this.resolution) : super();
+
+  final Completer<File> resolution;
+  final Completer<void> resolveStarted = Completer<void>();
+
+  @override
+  Future<File> resolve(String source, {bool allowNetwork = true}) {
+    if (!resolveStarted.isCompleted) resolveStarted.complete();
+    return resolution.future;
+  }
+}
 
 const String _tinyGif = 'R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 
@@ -35,6 +52,7 @@ void main() {
 
   late Directory directory;
   late _MockCacheManager cacheManager;
+  int temporaryDirectoryCalls = 0;
   const MethodChannel pathChannel = MethodChannel('plugins.flutter.io/path_provider');
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -42,13 +60,17 @@ void main() {
   setUp(() {
     directory = Directory.systemTemp.createTempSync('edit_button_test_');
     cacheManager = _MockCacheManager();
+    temporaryDirectoryCalls = 0;
     OfflineAssetStore.testOverride = OfflineAssetStore(
       directory: Directory('${directory.path}/retained'),
       cacheManager: cacheManager,
     );
     when(() => cacheManager.getFileFromCache(any())).thenAnswer((_) async => null);
     when(() => cacheManager.getSingleFile(any())).thenThrow(StateError('Unexpected network request in edit test.'));
-    messenger.setMockMethodCallHandler(pathChannel, (_) async => directory.path);
+    messenger.setMockMethodCallHandler(pathChannel, (_) async {
+      temporaryDirectoryCalls++;
+      return directory.path;
+    });
     messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
   });
 
@@ -84,11 +106,7 @@ void main() {
 
     await tester.pumpWidget(_host(router, 'https://img.test/wallpaper.gif'));
     await tester.tap(find.byType(EditButton));
-    for (int attempt = 0; attempt < 100 && !pushed.isCompleted; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-      await tester.pump();
-    }
-    expect(pushed.isCompleted, isTrue);
+    await waitForRealIo(tester, () => pushed.isCompleted, reason: 'edit route push after source preparation');
     final WallpaperFilterRoute route = await pushed.future;
     final File source = File(route.args!.filePath);
     expect(activeSource.readAsBytesSync(), <int>[9, 8, 7]);
@@ -96,13 +114,8 @@ void main() {
     expect(source.readAsBytesSync(), downloaded.readAsBytesSync());
     expect(source.parent.path, isNot(editDirectory.path));
 
-    await tester.runAsync(() async {
-      routeResult.complete();
-      for (int attempt = 0; attempt < 100 && source.parent.existsSync(); attempt++) {
-        await Future<void>.delayed(Duration.zero);
-      }
-    });
-    await tester.pump();
+    routeResult.complete();
+    await waitForRealIo(tester, () => !source.parent.existsSync(), reason: 'edit session cleanup after route close');
     expect(source.parent.existsSync(), isFalse);
     expect(activeSource.readAsBytesSync(), <int>[9, 8, 7]);
     expect(tester.takeException(), isNull);
@@ -204,35 +217,27 @@ void main() {
   testWidgets('does not create a source or route after disposal while the download is pending', (tester) async {
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.push(any())).thenAnswer((_) async => null);
-    final Completer<void> received = Completer<void>();
-    final Completer<void> downloadReady = Completer<void>();
-    final downloaded = (await tester.runAsync(() async {
-      final file = await IOFileSystem(directory.path).createFile('pending.gif');
-      await file.writeAsBytes(base64Decode(_tinyGif));
-      return file;
-    }))!;
-    when(() => cacheManager.getSingleFile(any())).thenAnswer((_) {
-      if (!received.isCompleted) received.complete();
-      return downloadReady.future.then((_) => downloaded);
+    final Completer<File> resolution = Completer<File>();
+    final _PendingOfflineAssetStore assetStore = _PendingOfflineAssetStore(resolution);
+    OfflineAssetStore.testOverride = assetStore;
+    final Completer<void> readStarted = Completer<void>();
+    final _MockFile resolvedFile = _MockFile();
+    when(() => resolvedFile.readAsBytes()).thenAnswer((_) async {
+      if (!readStarted.isCompleted) readStarted.complete();
+      return Uint8List.fromList(<int>[1, 2, 3]);
     });
 
     await tester.pumpWidget(_host(router, 'https://img.test/pending.gif'));
     await tester.tap(find.byType(EditButton));
-    for (int attempt = 0; attempt < 100 && !received.isCompleted; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-      await tester.pump();
-    }
-    expect(received.isCompleted, isTrue);
+    await waitForRealIo(tester, () => assetStore.resolveStarted.isCompleted, reason: 'asset resolution starts');
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(() async {
-      downloadReady.complete();
-      await Future<void>.delayed(Duration.zero);
+      resolution.complete(resolvedFile);
     });
-    for (int attempt = 0; attempt < 10; attempt++) {
-      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-      await tester.pump();
-    }
+    await waitForRealIo(tester, () => readStarted.isCompleted, reason: 'resolved file read starts after disposal');
+    await tester.pump();
 
+    expect(temporaryDirectoryCalls, 0);
     expect(Directory('${directory.path}/prism_edit').existsSync(), isFalse);
     verifyNever(() => router.push(any()));
     expect(tester.takeException(), isNull);

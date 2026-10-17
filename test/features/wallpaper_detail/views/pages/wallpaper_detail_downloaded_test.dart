@@ -29,6 +29,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/wait_for_real_io.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -197,6 +198,12 @@ void main() {
     final _MockCacheManager thumbnailCache = _MockCacheManager();
     when(() => fullCache.getFileFromCache(url)).thenAnswer((_) async => null);
     when(() => thumbnailCache.getFileFromCache(any())).thenAnswer((_) async => null);
+    when(
+      () => fullCache.getFileStream(any(), withProgress: any(named: 'withProgress')),
+    ).thenAnswer((_) => Stream<FileResponse>.error(const SocketException('Offline')));
+    when(
+      () => thumbnailCache.getFileStream(any(), withProgress: any(named: 'withProgress')),
+    ).thenAnswer((_) => Stream<FileResponse>.error(const SocketException('Offline')));
     final ({Directory root, OfflineAssetStore assets, File retained}) setup = (await tester.runAsync(() async {
       final Directory root = await Directory.systemTemp.createTemp('detail-retained-preview-');
       final File original = await _writePreviewPng(root);
@@ -250,6 +257,22 @@ void main() {
         ),
       ),
     );
+    await waitForRealIo(
+      tester,
+      () =>
+          find
+              .byWidgetPredicate((Widget widget) {
+                if (widget is! Image) return false;
+                final ImageProvider provider = widget.image is ResizeImage
+                    ? (widget.image as ResizeImage).imageProvider
+                    : widget.image;
+                return provider is FileImage && provider.file.path == setup.retained.path;
+              })
+              .evaluate()
+              .length ==
+          4,
+      reason: 'the retained original and its three swatch images to appear',
+    );
     expect(
       find.byWidgetPredicate((Widget widget) => widget is CachedNetworkImage && widget.imageUrl == url),
       findsNothing,
@@ -300,10 +323,8 @@ void main() {
     expect(accentSwatches.map((Semantics semantics) => semantics.properties.selected), <bool?>[true, false]);
     verifyNever(() => fullCache.getSingleFile(any()));
     verifyNever(() => fullCache.getFileFromCache(any()));
-    verifyNever(() => fullCache.getFileStream(any(), withProgress: any(named: 'withProgress')));
     verifyNever(() => thumbnailCache.getSingleFile(any()));
     verifyNever(() => thumbnailCache.getFileFromCache(any()));
-    verifyNever(() => thumbnailCache.getFileStream(any(), withProgress: any(named: 'withProgress')));
     expect(tester.takeException(), isNull);
   });
 

@@ -9,8 +9,10 @@ import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_snapshot_store.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -76,12 +78,14 @@ Future<Uint8List> _smallPng() async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  late Directory economyDirectory;
+
   setUpAll(() async {
     setupFirebaseCoreMocks();
     await Firebase.initializeApp();
   });
 
-  setUp(() {
+  setUp(() async {
     // The coin gate asks for ad consent before it shows a prompt. The real flow needs the Google UMP plugin.
     AdConsent.instance = AdConsent(
       requestInfoUpdate: () async {},
@@ -97,6 +101,10 @@ void main() {
       ..coins = 0;
     CoinsService.instance.balanceNotifier.value = 0;
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    economyDirectory = Directory.systemTemp.createTempSync('wallpaper_filter_economy_');
+    CoinsService.instance.setEconomySnapshotStoreForTest(
+      EconomySnapshotStore(store: DurableJsonStore('wallpaper_filter', directory: economyDirectory)),
+    );
   });
 
   tearDown(() async {
@@ -104,6 +112,7 @@ void main() {
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
+    if (economyDirectory.existsSync()) economyDirectory.deleteSync(recursive: true);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_functionsChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_mediaChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_setWallpaperChannel, null);
@@ -212,6 +221,10 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       _toastChannel,
       (_) async => true,
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      _pathProviderChannel,
+      (_) async => directory.path,
     );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_functionsChannel, (
       message,
@@ -615,6 +628,7 @@ Future<void> _tapInvert(WidgetTester tester) async {
   }
   await tester.tap(find.text('Invert'));
   await tester.pump();
+  await _waitForEditorReady(tester);
 }
 
 Future<void> _waitForSignal(WidgetTester tester, Completer<void> signal, String reason) async {

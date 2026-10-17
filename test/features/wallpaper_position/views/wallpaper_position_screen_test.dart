@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/wait_for_real_io.dart';
 
 class _Repository implements WallpaperPositionRepository {
   _Repository(this.directory);
@@ -40,7 +42,8 @@ class _Repository implements WallpaperPositionRepository {
   @override
   Future<File> render(PlacementSource source, WallpaperPlacement placement, ui.Size outputSize) async {
     renders.add(placement);
-    return File('${directory.path}/placement.png')..writeAsBytesSync(<int>[1]);
+    final ByteData data = (await source.image.toByteData(format: ui.ImageByteFormat.png))!;
+    return File('${directory.path}/placement.png')..writeAsBytesSync(data.buffer.asUint8List());
   }
 
   @override
@@ -294,15 +297,14 @@ void main() {
     await pumpScreen(tester, onResult: (value) => result = value);
 
     await tester.tap(find.text('Home screen'));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
-    await tester.pump();
+    await waitForRealIo(tester, () => result != null, reason: 'home wallpaper set result');
     await tester.pump(const Duration(milliseconds: 600));
 
     expect(repository.renders, hasLength(1));
     expect(client.requests.single.target, aw.WallpaperTarget.home);
     expect(find.byType(WallpaperPositionScreen), findsNothing);
     expect(result, isA<WallpaperSetResult>().having((r) => r.isSuccess, 'isSuccess', isTrue));
-    await tester.pump(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('a failed set keeps the studio open and offers Try again', (tester) async {
@@ -310,8 +312,11 @@ void main() {
     await pumpScreen(tester);
 
     await tester.tap(find.text('Lock screen'));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
-    await tester.pump();
+    await waitForRealIo(
+      tester,
+      () => find.text('Try again').evaluate().isNotEmpty,
+      reason: 'failed wallpaper set feedback',
+    );
     await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.byType(WallpaperPositionScreen), findsOneWidget);

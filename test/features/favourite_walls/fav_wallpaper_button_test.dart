@@ -295,12 +295,8 @@ void main() {
   });
 
   group('as a guest', () {
-    late GuestFavouritesStore guests;
-
     setUp(() {
       app_state.prismUser = app_constants.createGuestPrismUser();
-      guests = memoryGuestStore();
-      getIt.registerSingleton<GuestFavouritesStore>(guests);
       when(() => toggleUseCase(any())).thenAnswer((_) async {
         await favorites.setWallFavourite('', 'wall_1', true);
         return Result.success(true);
@@ -311,6 +307,7 @@ void main() {
         toasts.where((call) => call.method == 'showToast').map((call) => (call.arguments as Map)['msg']);
 
     testWidgets('the heart saves without asking for a sign-in', (tester) async {
+      getIt.registerSingleton<GuestFavouritesStore>(memoryGuestStore());
       final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
       addTearDown(bloc.close);
 
@@ -325,6 +322,8 @@ void main() {
     });
 
     testWidgets('the third guest save shows the sign-in nudge once', (tester) async {
+      final guests = memoryGuestStore();
+      getIt.registerSingleton<GuestFavouritesStore>(guests);
       await guests.put('a', <String, dynamic>{'id': 'a'});
       await guests.put('b', <String, dynamic>{'id': 'b'});
       await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
@@ -337,6 +336,8 @@ void main() {
     });
 
     testWidgets('the second guest save shows no nudge', (tester) async {
+      final guests = memoryGuestStore();
+      getIt.registerSingleton<GuestFavouritesStore>(guests);
       await guests.put('a', <String, dynamic>{'id': 'a'});
       await guests.put('wall_1', <String, dynamic>{'id': 'wall_1'});
       final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);

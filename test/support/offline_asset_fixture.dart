@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -45,18 +47,33 @@ class OfflineAssetFixture {
     );
     final _MockCacheManager cacheManager = _MockCacheManager();
     final OfflineAssetFixture fixture = OfflineAssetFixture._(directory, cacheManager, cacheMissByDefault);
+    await fixture.cachedImageFor('prism-offline-fixture-preview');
     when(() => cacheManager.getFileFromCache(any())).thenAnswer((invocation) async {
       final String source = invocation.positionalArguments.single as String;
       if (fixture.cacheMissByDefault) return null;
-      return FileInfo(await fixture.cachedImageFor(source), FileSource.Cache, DateTime(2000), source);
+      final cache_file.File preview = await fixture._cacheFiles.values.first;
+      return FileInfo(preview, FileSource.Cache, DateTime(2000), source);
     });
     when(() => cacheManager.getSingleFile(any())).thenAnswer((_) async {
       throw StateError('Unexpected network request in offline wallpaper test.');
     });
+    when(() => cacheManager.getFileStream(any(), withProgress: any(named: 'withProgress'))).thenAnswer((
+      invocation,
+    ) async* {
+      final String source = invocation.positionalArguments.single as String;
+      if (fixture.cacheMissByDefault) {
+        throw StateError('Unexpected network request in offline wallpaper test: $source');
+      }
+      final cache_file.File preview = await fixture._cacheFiles.values.first;
+      yield FileInfo(preview, FileSource.Cache, DateTime(2000), source);
+    });
+    when(() => cacheManager.dispose()).thenAnswer((_) async {});
     return fixture;
   }
 
   void install({bool immediateResolver = false}) {
+    PrismImageCache.testOverride = cacheManager;
+    PrismFullImageCache.testOverride = cacheManager;
     OfflineAssetStore.testOverride = immediateResolver
         ? _ImmediateResolverAssetStore(filesBySource: _sourceFiles, directory: Directory('${directory.path}/retained'))
         : OfflineAssetStore(directory: Directory('${directory.path}/retained'), cacheManager: cacheManager);
@@ -90,6 +107,8 @@ class OfflineAssetFixture {
 
   Future<void> dispose() async {
     OfflineAssetStore.testOverride = null;
+    PrismImageCache.testOverride = null;
+    PrismFullImageCache.testOverride = null;
     for (final pendingFile in _cacheFiles.values) {
       final cacheDirectory = (await pendingFile).parent;
       if (await cacheDirectory.exists()) await cacheDirectory.delete(recursive: true);

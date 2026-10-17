@@ -20,7 +20,9 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import '../../support/fake_app_analytics.dart';
+import '../../support/wait_for_real_io.dart';
 
 const MethodChannel _toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 
@@ -110,9 +112,24 @@ void main() {
   }
 
   Future<void> pumpImagePreparation(WidgetTester tester) async {
-    await tester.pump();
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
-    await tester.pump();
+    await waitForRealIo(
+      tester,
+      () =>
+          find.text('Ready to submit').evaluate().isNotEmpty ||
+          find.text('Image could not be prepared').evaluate().isNotEmpty,
+      reason: 'upload image preparation',
+      pumpDuration: const Duration(milliseconds: 16),
+    );
+  }
+
+  Future<T> waitForStoreOperation<T>(WidgetTester tester, Future<T> operation, {required String reason}) async {
+    final Completer<T> result = Completer<T>();
+    operation.then(
+      result.complete,
+      onError: (Object error, StackTrace stackTrace) => result.completeError(error, stackTrace),
+    );
+    await waitForRealIo(tester, () => result.isCompleted, reason: reason);
+    return result.future;
   }
 
   Future<_DraftStoreFixture> makeDraftStore(WidgetTester tester) async {
@@ -123,12 +140,12 @@ void main() {
     return _DraftStoreFixture(root);
   }
 
-  testWidgets('keeps a draft on normal exit and restores its metadata after reopening', (tester) async {
+  testWidgets('restores a draft and discards only the current owner draft', (tester) async {
     await setViewport(tester);
     final File image = await makeImage(tester);
     final _DraftStoreFixture fixture = await makeDraftStore(tester);
     UploadDraftStore drafts = fixture.open();
-    final String draftId = await UploadDraftStore.idForFile(image);
+    final String draftId = (await tester.runAsync(() => UploadDraftStore.idForFile(image)))!;
 
     Widget uploader() =>
         UploadWallScreen(image: image, prepareImageForTesting: () async {}, draftStoreForTesting: drafts);
@@ -146,8 +163,13 @@ void main() {
       ),
     );
     await tester.tap(find.text('Open uploader'));
-    await tester.pumpAndSettle();
-    await pumpImagePreparation(tester);
+    await waitForRealIo(
+      tester,
+      () => find.text('Ready to submit').evaluate().isNotEmpty,
+      reason: 'initial upload draft read and image preparation',
+      pumpDuration: const Duration(milliseconds: 16),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.ensureVisible(find.byType(TextField).first);
     await tester.enterText(find.byType(TextField).first, 'Northern lights');
     await tester.pump(const Duration(milliseconds: 100));
@@ -156,48 +178,70 @@ void main() {
 
     expect(find.text('Leave this upload?'), findsOneWidget);
     await tester.tap(find.text('Keep draft'));
-    await tester.pumpAndSettle();
+    await waitForRealIo(
+      tester,
+      () => find.text('Upload wallpaper').evaluate().isEmpty,
+      reason: 'draft save and normal exit',
+      pumpDuration: const Duration(milliseconds: 16),
+    );
     expect(find.text('Upload wallpaper'), findsNothing);
 
     drafts = fixture.open();
     await tester.tap(find.text('Open uploader'));
-    await tester.pumpAndSettle();
-    await pumpImagePreparation(tester);
+    await waitForRealIo(
+      tester,
+      () => find.text('Ready to submit').evaluate().isNotEmpty,
+      reason: 'reopened upload draft read and image preparation',
+      pumpDuration: const Duration(milliseconds: 16),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.ensureVisible(find.byType(TextField).first);
 
-    final UploadDraft? restored = await drafts.read(owner: UploadDraftStore.guestOwner, draftId: draftId);
+    final UploadDraft? restored = await waitForStoreOperation(
+      tester,
+      drafts.read(owner: UploadDraftStore.guestOwner, draftId: draftId),
+      reason: 'verify persisted upload draft',
+    );
     expect(restored?.metadata.title, 'Northern lights');
     expect(tester.widget<TextField>(find.byType(TextField).first).controller!.text, 'Northern lights');
-    expect(await restored!.file.exists(), isTrue);
-    expect(tester.takeException(), isNull);
-  });
+    expect(await tester.runAsync(restored!.file.exists), isTrue);
 
-  testWidgets('explicit discard removes only this owner draft', (tester) async {
-    await setViewport(tester);
-    final File image = await makeImage(tester);
-    final UploadDraftStore drafts = (await makeDraftStore(tester)).open();
-    final String draftId = await UploadDraftStore.idForFile(image);
-    await drafts.save(
-      owner: 'another-account',
-      draftId: draftId,
-      selectedFile: image,
-      metadata: const SubmissionMetadata(title: 'Other owner draft'),
-    );
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UploadWallScreen(image: image, prepareImageForTesting: () async {}, draftStoreForTesting: drafts),
+    await waitForStoreOperation(
+      tester,
+      drafts.save(
+        owner: 'another-account',
+        draftId: draftId,
+        selectedFile: image,
+        metadata: const SubmissionMetadata(title: 'Other owner draft'),
       ),
+      reason: 'seed other owner draft',
     );
-    await pumpImagePreparation(tester);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.text('Leave this upload?'), findsOneWidget);
     await tester.tap(find.text('Discard'));
-    await tester.pumpAndSettle();
-
-    expect(await drafts.read(owner: UploadDraftStore.guestOwner, draftId: draftId), isNull);
-    expect((await drafts.read(owner: 'another-account', draftId: draftId))?.metadata.title, 'Other owner draft');
+    await waitForRealIo(
+      tester,
+      () => find.text('Upload wallpaper').evaluate().isEmpty,
+      reason: 'draft discard and normal exit',
+      pumpDuration: const Duration(milliseconds: 16),
+    );
+    expect(
+      await waitForStoreOperation(
+        tester,
+        drafts.read(owner: UploadDraftStore.guestOwner, draftId: draftId),
+        reason: 'verify discarded guest draft',
+      ),
+      isNull,
+    );
+    expect(
+      (await waitForStoreOperation(
+        tester,
+        drafts.read(owner: 'another-account', draftId: draftId),
+        reason: 'verify other owner draft remains',
+      ))?.metadata.title,
+      'Other owner draft',
+    );
     expect(find.text('Upload wallpaper'), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -231,6 +275,7 @@ void main() {
     expect(find.text('Leave this upload?'), findsNothing);
     expect(messages, <String?>['Could not save this draft. Try again.']);
     expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('prepares locally, blocks duplicate taps while busy, then opens review status', (tester) async {

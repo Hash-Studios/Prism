@@ -18,6 +18,7 @@ import '../support/merge_firestore.dart';
 class _WatchFirestore extends MergeFirestore {
   final List<FirestoreQuerySpec> watched = <FirestoreQuerySpec>[];
   final List<void Function(Map<String, Map<String, dynamic>> docs, bool fromCache)> emitters = [];
+  Completer<void> _cancelledSignal = Completer<void>();
   int cancelled = 0;
 
   @override
@@ -27,7 +28,13 @@ class _WatchFirestore extends MergeFirestore {
   ) {
     watched.add(spec);
     final StreamController<({List<T> items, bool isFromCache})> controller =
-        StreamController<({List<T> items, bool isFromCache})>(onCancel: () => cancelled++);
+        StreamController<({List<T> items, bool isFromCache})>(
+          onCancel: () {
+            cancelled++;
+            if (!_cancelledSignal.isCompleted) _cancelledSignal.complete();
+          },
+          sync: true,
+        );
     emitters.add((docs, fromCache) {
       controller.add((items: docs.entries.map((e) => map(e.value, e.key)).toList(), isFromCache: fromCache));
     });
@@ -35,6 +42,70 @@ class _WatchFirestore extends MergeFirestore {
   }
 
   void emit(Map<String, Map<String, dynamic>> docs, {bool fromCache = false}) => emitters.last(docs, fromCache);
+
+  Future<void> waitForCancellation(int count) async {
+    while (cancelled < count) {
+      final signal = _cancelledSignal.future;
+      await signal;
+      _cancelledSignal = Completer<void>();
+    }
+  }
+}
+
+class _RecordingFavoritesLocalDataSource extends FavoritesLocalDataSource {
+  _RecordingFavoritesLocalDataSource(super.store);
+
+  final List<({String wallId, String status, bool changed})> statusUpdates =
+      <({String wallId, String status, bool changed})>[];
+  Completer<void> _statusSignal = Completer<void>();
+  int activeOperationReads = 0;
+  Completer<void> _operationReadsDrained = Completer<void>()..complete();
+
+  @override
+  Future<Map<String, Map<String, Object?>>> readFavouriteOperations(String userId) async {
+    activeOperationReads++;
+    if (activeOperationReads == 1) _operationReadsDrained = Completer<void>();
+    try {
+      return await super.readFavouriteOperations(userId);
+    } finally {
+      activeOperationReads--;
+      if (activeOperationReads == 0 && !_operationReadsDrained.isCompleted) _operationReadsDrained.complete();
+    }
+  }
+
+  Future<void> waitForOperationReadsToDrain() async {
+    while (activeOperationReads > 0) {
+      await _operationReadsDrained.future;
+    }
+  }
+
+  @override
+  Future<bool> updateFavouriteOperationStatus(
+    String userId,
+    String wallId,
+    String operationId, {
+    required String status,
+    String? error,
+  }) async {
+    final bool changed = await super.updateFavouriteOperationStatus(
+      userId,
+      wallId,
+      operationId,
+      status: status,
+      error: error,
+    );
+    statusUpdates.add((wallId: wallId, status: status, changed: changed));
+    if (!_statusSignal.isCompleted) _statusSignal.complete();
+    return changed;
+  }
+
+  Future<void> waitForStatus(String wallId, String status) async {
+    while (!statusUpdates.any((update) => update.wallId == wallId && update.status == status && update.changed)) {
+      final signal = _statusSignal.future;
+      await signal;
+      _statusSignal = Completer<void>();
+    }
+  }
 }
 
 void main() {
@@ -44,21 +115,30 @@ void main() {
     (_) async => Directory.systemTemp.path,
   );
   late _WatchFirestore firestore;
-  late FavoritesLocalDataSource local;
+  late _RecordingFavoritesLocalDataSource local;
   late GuestFavouritesStore guests;
   late FavouritesSyncService service;
   late List<FavouritesSyncUpdate> updates;
+  Completer<void> updateSignal = Completer<void>();
 
   setUp(() {
+    updateSignal = Completer<void>();
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'u'
       ..loggedIn = true;
     firestore = _WatchFirestore();
-    local = FavoritesLocalDataSource(InMemoryLocalStore());
+    local = _RecordingFavoritesLocalDataSource(InMemoryLocalStore());
     guests = tempGuestStore();
     service = FavouritesSyncService(firestore, local, GuestFavouritesMerger(firestore, guests, local));
+    addTearDown(() async {
+      await service.stop();
+      await local.waitForOperationReadsToDrain();
+    });
     updates = <FavouritesSyncUpdate>[];
-    service.listen(updates.add);
+    service.listen((update) {
+      updates.add(update);
+      if (!updateSignal.isCompleted) updateSignal.complete();
+    });
   });
 
   tearDown(() async {
@@ -66,7 +146,13 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
-  Future<void> settle() => Future<void>.delayed(Duration.zero);
+  Future<void> waitForUpdateCount(int count) async {
+    while (updates.length < count) {
+      final signal = updateSignal.future;
+      await signal;
+      updateSignal = Completer<void>();
+    }
+  }
 
   test('watches the signed-in user images with the sync source tag', () async {
     await service.start('u');
@@ -84,7 +170,7 @@ void main() {
       'a': <String, dynamic>{'id': 'a', 'provider': 'prism'},
       'b': <String, dynamic>{'id': 'b', 'provider': 'pexels'},
     });
-    await settle();
+    await waitForUpdateCount(1);
 
     expect(updates.single.userId, 'u');
     expect(updates.single.items.map((wall) => wall.id), <String>['a', 'b']);
@@ -97,13 +183,11 @@ void main() {
     await service.start('u');
 
     firestore.emit(const <String, Map<String, dynamic>>{}, fromCache: true);
-    await settle();
-
     expect(updates, isEmpty);
     expect(local.isWallFavourite('u', 'a'), isTrue, reason: 'a cold cache must not wipe the hearts');
 
     firestore.emit(const <String, Map<String, dynamic>>{});
-    await settle();
+    await waitForUpdateCount(1);
 
     expect(updates.single.items, isEmpty);
     expect(local.isWallFavourite('u', 'a'), isFalse);
@@ -115,7 +199,7 @@ void main() {
     firestore.emit(<String, Map<String, dynamic>>{
       'a': <String, dynamic>{'id': 'a', 'provider': 'prism'},
     }, fromCache: true);
-    await settle();
+    await waitForUpdateCount(1);
 
     expect(updates.single.items.single.id, 'a');
   });
@@ -125,11 +209,15 @@ void main() {
     firestore.emit(<String, Map<String, dynamic>>{
       'a': <String, dynamic>{'id': 'a', 'provider': 'prism'},
     });
-    await settle();
+    await waitForUpdateCount(1);
     final List<FavouritesSyncUpdate> late = <FavouritesSyncUpdate>[];
+    final Completer<void> lateUpdate = Completer<void>();
 
-    final sub = service.listen(late.add);
-    await settle();
+    final sub = service.listen((update) {
+      late.add(update);
+      if (!lateUpdate.isCompleted) lateUpdate.complete();
+    });
+    await lateUpdate.future;
     await sub.cancel();
 
     expect(late.single.items.single.id, 'a');
@@ -147,12 +235,11 @@ void main() {
     firestore.emit(<String, Map<String, dynamic>>{
       'a': <String, dynamic>{'id': 'a', 'provider': 'prism'},
     });
-    await settle();
+    await waitForUpdateCount(1);
 
     await service.stop();
     final List<FavouritesSyncUpdate> late = <FavouritesSyncUpdate>[];
     final sub = service.listen(late.add);
-    await settle();
     await sub.cancel();
 
     expect(firestore.cancelled, 1);
@@ -166,8 +253,7 @@ void main() {
     firestore.emit(<String, Map<String, dynamic>>{
       'a': <String, dynamic>{'id': 'a', 'provider': 'prism'},
     });
-    await settle();
-    await settle();
+    await firestore.waitForCancellation(1);
 
     expect(updates, isEmpty);
     expect(local.isWallFavourite('u', 'a'), isFalse);
@@ -207,7 +293,7 @@ void main() {
     );
 
     await service.start('u');
-    await Future<void>.delayed(const Duration(milliseconds: 10));
+    await local.waitForStatus('replayed', 'synced');
 
     expect(firestore.writes.single.data!['createdAt'], DateTime.utc(2026, 1, 2, 3, 4, 5));
     expect(firestore.writes.single.data!['favouritedAt'], DateTime.utc(2026, 2, 3, 4, 5, 6));
@@ -229,7 +315,7 @@ void main() {
     );
 
     await service.start('u');
-    await settle();
+    await local.waitForStatus('starter-sunset', 'synced');
 
     expect(firestore.writes, isEmpty);
     expect((await local.readFavouriteOperation('u', 'starter-sunset'))!['status'], 'synced');

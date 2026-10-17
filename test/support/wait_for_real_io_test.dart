@@ -22,4 +22,20 @@ void main() {
       throwsA(isA<TestFailure>().having((error) => error.message, 'message', contains('native save completion'))),
     );
   });
+
+  testWidgets('an optional frame duration advances animations until ready', (tester) async {
+    final before = tester.binding.clock.now();
+    var ready = false;
+    Future<void>.delayed(const Duration(milliseconds: 32), () => ready = true);
+
+    await waitForRealIo(
+      tester,
+      () => ready,
+      reason: 'fake-clock animation completion',
+      pumpDuration: const Duration(milliseconds: 16),
+    );
+
+    expect(ready, isTrue);
+    expect(tester.binding.clock.now().difference(before), const Duration(milliseconds: 32));
+  });
 }

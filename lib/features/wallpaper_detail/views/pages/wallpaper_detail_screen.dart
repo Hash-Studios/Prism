@@ -1515,7 +1515,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             future: _offlinePreviewFor(entity),
             builder: (BuildContext context, AsyncSnapshot<File?> snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return ColoredBox(color: Theme.of(context).primaryColor);
+                return imageLayer;
               }
               final File? retained = snapshot.data;
               if (retained == null || !retained.existsSync()) return imageLayer;

@@ -38,6 +38,8 @@ import 'package:mocktail/mocktail.dart';
 import '../../../../support/coins_test_backend.dart';
 import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../../../support/offline_asset_fixture.dart';
+import '../../../../support/wait_for_real_io.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
@@ -79,20 +81,28 @@ void main() {
   const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 
   late Directory directory;
+  late OfflineAssetFixture offlineAssets;
   late List<String> spent;
   late List<DownloadRequest> enqueued;
   late List<String> downloadsOnDisk;
   late _MockStackRouter router;
+  late bool filterRoutePushed;
 
   setUp(() async {
     await backend.install();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    directory = Directory.systemTemp.createTempSync('detail_saved_tint');
+    offlineAssets = await OfflineAssetFixture.create(cacheMissByDefault: true);
+    offlineAssets.install();
+    directory = offlineAssets.directory;
     spent = <String>[];
     enqueued = <DownloadRequest>[];
     downloadsOnDisk = <String>[];
     router = _MockStackRouter();
-    when(() => router.push(any())).thenAnswer((_) async => null);
+    filterRoutePushed = false;
+    when(() => router.push(any())).thenAnswer((_) async {
+      filterRoutePushed = true;
+      return null;
+    });
     backend.onCall = (name, parameters) async {
       spent.add(name);
       return <String, Object>{
@@ -143,7 +153,7 @@ void main() {
     await getIt<SettingsLocalDataSource>().delete('pendingDownloads_v2');
     await getIt<SettingsLocalDataSource>().delete('notificationPermissionPromptedV2');
     await getIt.reset();
-    directory.deleteSync(recursive: true);
+    await offlineAssets.dispose();
   });
 
   File downloadedFile(String name) => File('assets/images/prism.webp').copySync('${directory.path}/$name');
@@ -170,13 +180,6 @@ void main() {
     await tester.pump();
   }
 
-  Future<void> settle(WidgetTester tester) async {
-    await tester.pump();
-    for (int i = 0; i < 40; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-  }
-
   Future<void> rememberSavedTint(String identity) =>
       getIt<DownloadedWallIndex>().remember(link: identity, id: 'pexels-1', source: WallpaperSource.pexels);
 
@@ -198,23 +201,47 @@ void main() {
       downloadsOnDisk = <String>[file.path];
       await rememberSavedTint('full_tint-ff8800.png');
       await pumpReopened(tester, file);
-      await tester.runAsync(() async {});
 
       await tester.tap(find.byType(PrimaryActionPill));
-      await settle(tester);
+      await waitForRealIo(
+        tester,
+        () => find.text('Already in Downloads').evaluate().isNotEmpty,
+        reason: 'the already-downloaded confirmation to appear',
+      );
 
       expect(find.text('Already in Downloads'), findsOneWidget);
       expect(spent, isEmpty);
       expect(enqueued, isEmpty);
 
-      await tester.tap(find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)'));
-      await settle(tester);
+      final Finder downloadAgain = find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(downloadAgain);
+      await tester.tap(downloadAgain);
+      await waitForRealIo(
+        tester,
+        () => spent.contains('spendCoins') && enqueued.isNotEmpty,
+        reason: 'the confirmed download to charge and enqueue the tinted file',
+      );
 
       expect(spent, <String>['spendCoins']);
       expect(enqueued, hasLength(1));
       expect(enqueued.single.link, file.path);
       expect(enqueued.single.isLocalFile, isTrue);
       expect(enqueued.single.filenameWithoutExtension, 'full_tint-ff8800');
+      await waitForRealIo(
+        tester,
+        () => find.text('Set it as your wallpaper').evaluate().isNotEmpty,
+        reason: 'the iOS wallpaper guide after saving',
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.ensureVisible(find.text('Done'));
+      await tester.tap(find.text('Done'));
+      await waitForRealIo(
+        tester,
+        () => !tester.widget<PrimaryActionPill>(find.byType(PrimaryActionPill)).isLoading,
+        reason: 'the download action to finish its bookkeeping',
+      );
+      await tester.pump(const Duration(seconds: 1));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('Edit opens the tinted file itself', (tester) async {
@@ -222,9 +249,10 @@ void main() {
       await pumpReopened(tester, file);
 
       await tester.tap(find.byTooltip('Edit'));
-      await settle(tester);
+      await waitForRealIo(tester, () => filterRoutePushed, reason: 'the saved tinted file edit route to open');
 
       verify(() => router.push(WallpaperFilterRoute(filePath: file.path))).called(1);
+      await tester.pump(const Duration(seconds: 1));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('a colour picked on top is its own variation, not the saved one', (tester) async {
@@ -258,9 +286,10 @@ void main() {
       expect(tester.widget<EditButton>(find.byType(EditButton)).prepareSource, isNotNull);
 
       await tester.tap(find.byTooltip('Edit'));
-      await settle(tester);
+      await waitForRealIo(tester, () => filterRoutePushed, reason: 'the untinted file edit route to open');
 
       verify(() => router.push(WallpaperFilterRoute(filePath: file.path))).called(1);
+      await tester.pump(const Duration(seconds: 1));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 }
