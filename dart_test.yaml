@@ -1,0 +1,3 @@
+tags:
+  qa_render:
+    description: Screen renders for PR proof, run with --dart-define=QA_RENDER=1
