@@ -180,6 +180,24 @@ test("a failed send frees the day for the next approval", async (t) => {
   assert.equal(posts.length, 1);
 });
 
+test("a timed-out image transfer releases the daily claim for the next approval", async (t) => {
+  const store = installTelegramFakeDb(t);
+  let deadlines = 0;
+  t.mock.method(AbortSignal, "timeout", () =>
+    deadlines++ === 0 ? AbortSignal.abort() : new AbortController().signal);
+  const posts: string[] = [];
+  t.mock.method(globalThis, "fetch", async (url: string, init?: RequestInit) => {
+    init?.signal?.throwIfAborted();
+    if (!url.includes("api.telegram.org")) return new Response(new Uint8Array([1]));
+    posts.push(url);
+    return new Response(JSON.stringify({ok: true, result: {message_id: 1}}));
+  });
+  await assert.rejects(postFirstStudioWallOfDay("w1", wall, "token", "-100", morning));
+  assert.equal(store.has("studioTelegramPosts/2026-10-17"), false);
+  assert.equal(await postFirstStudioWallOfDay("w2", wall, "token", "-100", morning), true);
+  assert.equal(posts.length, 1);
+});
+
 test("release-on-failure cannot distinguish an accepted post with a lost response", async (t) => {
   const first = verifiedStudioWall();
   const second = {...first, studioRunId: "run-2", studioCandidateId: "candidate-2"};
