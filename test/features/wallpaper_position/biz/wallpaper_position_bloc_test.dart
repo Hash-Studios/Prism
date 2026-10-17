@@ -117,8 +117,6 @@ void main() {
     return recorder.endRecording().toImage(4, 8);
   }
 
-  Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 20));
-
   // Waits on real time for a state, so a slow runner cannot assert early or leak a late apply into the next test.
   Future<void> until(WidgetTester tester, bool Function(WallpaperPositionState state) done, {void Function()? then}) =>
       tester.runAsync(() async {
@@ -179,7 +177,7 @@ void main() {
     bloc.add(const WallpaperPositionEvent.moved(dx: 0.5, dy: -0.25, zoom: 2));
     bloc.add(const WallpaperPositionEvent.dimChanged(0.3));
     bloc.add(const WallpaperPositionEvent.previewModeChanged(PlacementPreviewMode.home));
-    await tester.runAsync(settle);
+    await tester.pump();
 
     expect(
       bloc.state.placement,
@@ -198,7 +196,7 @@ void main() {
     await start(tester);
 
     bloc.add(const WallpaperPositionEvent.dimChanged(0.9));
-    await tester.runAsync(settle);
+    await tester.pump();
 
     expect(bloc.state.placement.dim, 0.6);
   });
@@ -208,15 +206,15 @@ void main() {
     final int start0 = bloc.state.syncToken;
 
     bloc.add(const WallpaperPositionEvent.moved(dx: 1, dy: 1, zoom: 3));
-    await tester.runAsync(settle);
+    await tester.pump();
     expect(bloc.state.syncToken, start0);
 
     bloc.add(const WallpaperPositionEvent.fitChanged(PlacementFit.fitColor));
-    await tester.runAsync(settle);
+    await tester.pump();
     expect(bloc.state.syncToken, start0 + 1);
 
     bloc.add(const WallpaperPositionEvent.resetRequested());
-    await tester.runAsync(settle);
+    await tester.pump();
     expect(bloc.state.syncToken, start0 + 2);
   });
 
@@ -226,7 +224,7 @@ void main() {
     bloc.add(const WallpaperPositionEvent.dimChanged(0.4));
     bloc.add(const WallpaperPositionEvent.moved(dx: 1, dy: 1, zoom: 3));
     bloc.add(const WallpaperPositionEvent.resetRequested());
-    await tester.runAsync(settle);
+    await tester.pump();
 
     expect(bloc.state.placement, const WallpaperPlacement(previewMode: PlacementPreviewMode.home));
   });
@@ -333,6 +331,8 @@ void main() {
       );
 
       bloc.add(const WallpaperPositionEvent.applyRequested(target: WallpaperTarget.lock, outputSize: screen));
+      await tester.pump();
+      expect(bloc.state.status, WallpaperPositionStatus.applying);
       await applied(tester, then: repository.renderGate!.complete);
 
       expect(repository.renders, hasLength(1));
@@ -341,7 +341,7 @@ void main() {
 
     testWidgets('apply before the wall has loaded does nothing', (tester) async {
       bloc.add(const WallpaperPositionEvent.applyRequested(target: WallpaperTarget.home, outputSize: screen));
-      await tester.runAsync(settle);
+      await tester.pump();
 
       expect(repository.renders, isEmpty);
       expect(bloc.state.status, WallpaperPositionStatus.loading);
