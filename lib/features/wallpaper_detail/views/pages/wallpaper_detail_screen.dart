@@ -582,15 +582,41 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Widget _buildColorBar(BuildContext context, WallpaperDetailLoaded state) {
+    final String fullUrl = state.entity.fullUrl.trim();
+    if (widget.localFile != null || !isValidNetworkUrl(fullUrl)) {
+      return _buildColorBarWithImage(context, state, localFile: widget.localFile);
+    }
+
+    return FutureBuilder<File?>(
+      future: _offlinePreviewFor(state.entity),
+      builder: (BuildContext context, AsyncSnapshot<File?> snapshot) {
+        final bool pending = snapshot.connectionState != ConnectionState.done;
+        final File? retained = snapshot.data;
+        return _buildColorBarWithImage(
+          context,
+          state,
+          localFile: !pending && retained != null && retained.existsSync() ? retained : null,
+          withholdThumbnail: pending,
+        );
+      },
+    );
+  }
+
+  Widget _buildColorBarWithImage(
+    BuildContext context,
+    WallpaperDetailLoaded state, {
+    required File? localFile,
+    bool withholdThumbnail = false,
+  }) {
     final colors = state.colors;
-    final thumbnailUrl = state.entity.thumbnailUrl.trim();
+    final thumbnailUrl = withholdThumbnail ? '' : state.entity.thumbnailUrl.trim();
 
     // Build the default (no-filter) swatch + one swatch per palette color.
     final swatches = <Widget>[
       _buildColorSwatch(
         context: context,
         thumbnailUrl: thumbnailUrl,
-        localFile: widget.localFile,
+        localFile: localFile,
         color: null,
         isSelected: !state.colorChanged,
         onTap: () {
@@ -602,7 +628,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         _buildColorSwatch(
           context: context,
           thumbnailUrl: thumbnailUrl,
-          localFile: widget.localFile,
+          localFile: localFile,
           color: color,
           isSelected: state.colorChanged && color == state.accent,
           onTap: () => _handleColorSelected(context, color),
@@ -1484,7 +1510,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         : FutureBuilder<File?>(
             future: _offlinePreviewFor(entity),
             builder: (BuildContext context, AsyncSnapshot<File?> snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) return imageLayer;
+              if (snapshot.connectionState != ConnectionState.done) {
+                return ColoredBox(color: Theme.of(context).primaryColor);
+              }
               final File? retained = snapshot.data;
               if (retained == null || !retained.existsSync()) return imageLayer;
               return Image.file(

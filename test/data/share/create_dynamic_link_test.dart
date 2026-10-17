@@ -63,6 +63,86 @@ void main() {
     expect(copiedToClipboard(), isFalse);
   });
 
+  test('starter wallpapers use the public app landing link without requesting a short link', () async {
+    var requests = 0;
+    final client = MockClient((_) async {
+      requests++;
+      return http.Response('{"short_url":"https://prismwalls.com/s/abc"}', 200);
+    });
+    final fake = FakeAppAnalytics();
+    AnalyticsRuntime.instance = fake;
+
+    expect(
+      canonicalWallpaperLink(
+        id: 'starter-sunset',
+        source: WallpaperSource.prism,
+        url: '/tmp/prism-bundled-wallpapers/starter-sunset.jpg',
+        thumbUrl: '/tmp/prism-bundled-wallpapers/starter-sunset.jpg',
+      ),
+      'https://prismwalls.com/',
+    );
+    final link = await withApi(
+      () => createDynamicLink(
+        'starter-sunset',
+        WallpaperSource.prism,
+        '/tmp/prism-bundled-wallpapers/starter-sunset.jpg',
+        '/tmp/prism-bundled-wallpapers/starter-sunset.jpg',
+      ),
+      client,
+    );
+
+    expect(link, 'https://prismwalls.com/');
+    expect(requests, 0);
+    expect(link, isNot(contains('/tmp/')));
+    expect(fake.events.whereType<DynamicLinkCreateResultEvent>().single.result, EventResultValue.success);
+  });
+
+  test('starter identity is source-qualified', () async {
+    var requests = 0;
+    final client = MockClient((_) async {
+      requests++;
+      return http.Response('{}', 200);
+    });
+
+    final link = await withApi(
+      () => createDynamicLink(
+        'starter-sunset',
+        WallpaperSource.pexels,
+        'https://example.com/full.jpg',
+        'https://example.com/thumb.jpg',
+      ),
+      client,
+    );
+
+    expect(requests, 1);
+    expect(link, contains('id=starter-sunset'));
+    expect(link, contains('source=pexels'));
+  });
+
+  test('copying a starter shares only the safe landing link without a request', () async {
+    var requests = 0;
+    final client = MockClient((_) async {
+      requests++;
+      return http.Response('{"short_url":"https://prismwalls.com/s/abc"}', 200);
+    });
+
+    final copied = await withApi(
+      () => copyWallpaperLink(
+        'starter-prism',
+        WallpaperSource.prism,
+        '/tmp/prism-bundled-wallpapers/starter-prism.jpg',
+        '/tmp/prism-bundled-wallpapers/starter-prism.jpg',
+      ),
+      client,
+    );
+
+    expect(copied, isTrue);
+    expect(requests, 0);
+    final call = platformCalls.singleWhere((c) => c.method == 'Clipboard.setData');
+    expect((call.arguments as Map)['text'], 'Hey check this out ➜ https://prismwalls.com/');
+    expect((call.arguments as Map)['text'], isNot(contains('/tmp/')));
+  });
+
   test('falls back to the canonical link when the link service is down', () async {
     final client = MockClient((_) async => throw http.ClientException('offline'));
 

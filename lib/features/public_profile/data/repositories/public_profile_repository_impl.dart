@@ -57,69 +57,83 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     }, allowClearing: true);
   }
 
-  Stream<PublicProfileEntity?> _watchProfileWithCache(String value) async* {
+  Stream<PublicProfileEntity?> _watchProfileWithCache(String value) {
     final String owner = _snapshotOwner;
     final String key = '$owner::${value.toLowerCase()}';
-    final remote = StreamController<PublicProfileEntity?>();
-    final subscription = _firestoreClient
-        .watchQuery<_UserRow>(
-          FirestoreQuerySpec(
-            collection: FirebaseCollections.usersV2,
-            sourceTag: 'profile.stream.v2',
-            filters: <FirestoreFilter>[
-              FirestoreFilter(
-                field: value.contains('@') ? 'email' : 'username',
-                op: FirestoreFilterOp.isEqualTo,
-                value: value,
-              ),
-            ],
-            limit: 1,
-            isStream: true,
-          ),
-          (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
-        )
-        .map((rows) {
-          if (rows.isEmpty) {
-            return null;
-          }
-          final PublicUserDocDto doc = rows.first.doc;
-          return PublicProfileEntity(
-            id: rows.first.docId,
-            name: doc.name,
-            email: doc.email,
-            username: doc.username,
-            profilePhoto: doc.profilePhoto,
-            bio: doc.bio,
-            followers: doc.followers,
-            following: doc.following,
-            links: doc.links,
-            coverPhoto: doc.coverPhoto,
-            badges: doc.badges,
-          );
-        })
-        .listen(remote.add, onError: remote.addError);
-    try {
-      Map<String, Object?>? saved;
-      try {
-        saved = await _profileSnapshots.read(key);
-      } catch (_) {}
-      if (saved != null && _snapshotOwner == owner) {
-        yield _profileFromMap(saved);
-      }
-      await for (final profile in remote.stream) {
-        if (_snapshotOwner != owner) return;
-        if (profile != null) {
+    return Stream<PublicProfileEntity?>.multi((controller) {
+      final remote = StreamController<PublicProfileEntity?>();
+      final subscription = _firestoreClient
+          .watchQuery<_UserRow>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.usersV2,
+              sourceTag: 'profile.stream.v2',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(
+                  field: value.contains('@') ? 'email' : 'username',
+                  op: FirestoreFilterOp.isEqualTo,
+                  value: value,
+                ),
+              ],
+              limit: 1,
+              isStream: true,
+            ),
+            (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
+          )
+          .map((rows) {
+            if (rows.isEmpty) {
+              return null;
+            }
+            final PublicUserDocDto doc = rows.first.doc;
+            return PublicProfileEntity(
+              id: rows.first.docId,
+              name: doc.name,
+              email: doc.email,
+              username: doc.username,
+              profilePhoto: doc.profilePhoto,
+              bio: doc.bio,
+              followers: doc.followers,
+              following: doc.following,
+              links: doc.links,
+              coverPhoto: doc.coverPhoto,
+              badges: doc.badges,
+            );
+          })
+          .listen(remote.add, onError: remote.addError, onDone: remote.close);
+      var cancelled = false;
+      controller.onCancel = () async {
+        cancelled = true;
+        await subscription.cancel();
+        if (remote.hasListener) await remote.close();
+      };
+
+      unawaited(() async {
+        try {
+          Map<String, Object?>? saved;
           try {
-            await _writeSnapshot(owner, key, _profileToMap(profile));
+            saved = await _profileSnapshots.read(key);
           } catch (_) {}
-          if (_snapshotOwner != owner) return;
+          if (cancelled) return;
+          if (saved != null && _snapshotOwner == owner) {
+            controller.add(_profileFromMap(saved));
+            if (cancelled) return;
+          }
+          await for (final profile in remote.stream) {
+            if (cancelled || _snapshotOwner != owner) return;
+            if (profile != null) {
+              try {
+                await _writeSnapshot(owner, key, _profileToMap(profile));
+              } catch (_) {}
+              if (cancelled || _snapshotOwner != owner) return;
+            }
+            controller.add(profile);
+          }
+        } catch (error, stackTrace) {
+          if (!cancelled) controller.addError(error, stackTrace);
+        } finally {
+          if (!cancelled) controller.close();
         }
-        yield profile;
-      }
-    } finally {
-      await subscription.cancel();
-      await remote.close();
-    }
+      }());
+    });
   }
 
   PublicProfileEntity _profileFromMap(Map<String, Object?> data) => PublicProfileEntity(

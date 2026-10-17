@@ -63,10 +63,14 @@ class _DelayedUserBlockRepository extends FakeUserBlockRepository {
   _DelayedUserBlockRepository() : super.pending();
 
   final Completer<Set<String>> snapshot = Completer<Set<String>>();
+  final Completer<void> initialLoadRequested = Completer<void>();
 
   @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) =>
-      waitForInitialLoad ? snapshot.future : super.getBlockedCreatorEmails();
+  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) {
+    if (!waitForInitialLoad) return super.getBlockedCreatorEmails();
+    if (!initialLoadRequested.isCompleted) initialLoadRequested.complete();
+    return snapshot.future;
+  }
 }
 
 void main() {
@@ -161,9 +165,17 @@ void main() {
       payload: <String, Object?>{
         'items': <Map<String, Object?>>[
           encodeFeedItem(
-            WallhavenFeedItem(
+            PrismFeedItem(
               id: 'blocked',
-              wallpaper: _wall('blocked', email: 'blocked@example.test'),
+              wallpaper: PrismWallpaper(
+                core: WallpaperCore(
+                  id: 'blocked',
+                  source: WallpaperSource.prism,
+                  fullUrl: 'https://prism.test/blocked.jpg',
+                  thumbnailUrl: 'https://prism.test/blocked-thumb.jpg',
+                  authorEmail: 'blocked@example.test',
+                ),
+              ),
             ),
           ),
         ],
@@ -175,7 +187,10 @@ void main() {
     offline = true;
 
     final Future<Result<CategoryFeedPage>> pending = repository.fetchCategoryFeed(category: _cyberpunk, refresh: true);
-    await Future<void>.delayed(Duration.zero);
+    var completed = false;
+    pending.then((_) => completed = true);
+    await blocks.initialLoadRequested.future;
+    expect(completed, isFalse);
     blocks.snapshot.complete(<String>{'blocked@example.test'});
 
     expect((await pending).isFailure, isTrue);

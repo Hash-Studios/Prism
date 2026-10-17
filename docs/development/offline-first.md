@@ -23,6 +23,8 @@ Paged feeds keep a bounded recent window. After enough deep scrolling, a cold of
 
 Android now permits guest entry to the dashboard, as iOS already does. Account-only routes still require sign-in. A first offline installation uses two bundled wallpapers instead of requiring a remote feed.
 
+Bundled wallpapers have no public server identity. Their detail share sends the local image. Link-only actions use the Prism app landing page, not a wallpaper link containing a device path.
+
 The previous notification inbox was device-global and did not record an owner. The new inbox does not import those records into an account, because their owner cannot be established safely. The old cache is not deleted by this change. Server-backed notifications return after the account reconnects. New inbox records and read state are owner-scoped and durable.
 
 A successful native photo save and a retained original are separate results. If local storage rejects retention or an acquisition record, the native save can still succeed. The app cannot waive a later charge without an exact owner-scoped acquisition record and verified original bytes.

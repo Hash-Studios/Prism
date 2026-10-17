@@ -34,6 +34,10 @@ class _FakeRepository extends Fake implements AiGenerationRepositoryImpl {
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async => history;
 
   @override
+  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
+      const <AiGenerationRecord>[];
+
+  @override
   Future<String?> loadPrompt({required String userId}) async => prompts[userId];
 
   @override

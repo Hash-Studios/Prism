@@ -143,10 +143,78 @@ The round 29 delta review closed both round 26 findings. It found no remaining c
 
 The round 31 focused run passed 120 tests and failed four. The Firestore stream emitted both expected records, but its test compared list identity inside records. Structural field matchers preserve the content and metadata-order checks. The download failures concern fake-async store construction and pending completion timers. No production behavior was changed for these fixture repairs.
 
-Master advanced to `48ac7cb1a` with the share-preview changes from PR 490. The offline implementation will merge those changes before its final full gate. This keeps the proof tied to the combined tree, including the shared detail, favourites, settings, and link paths.
+Master advanced to `48ac7cb1a` with the share-preview changes from PR 490. Merge `1d158a291` combined those changes without conflicts. The next full gate covers the shared detail, favourites, settings, and link paths.
+
+Claude Sonnet 5.5 found no merge-induced defect in those four files. It did find two starter share entry points that the earlier starter guard missed. Long-press sharing and favourites could send temporary file paths to the public link service. The link boundary now returns the public app landing page for source-qualified starters without requesting a short link. Multi-favourite text replaces starter paths with the same landing page. Ordinary wallpapers keep their preview metadata and canonical links. The focused share suite passed all 48 tests, including actual clipboard and mixed-selection share text assertions.
+
+The parent stopped full gate 33 at 297 passing Flutter tests to apply that repair. Its exit code was 130, and its interrupted loading error is not a product failure or a passing gate. Download round 32 passed all 72 tests. The final full gate must run again after the starter share repair.
+
+## Gate 35 repair checkpoint
+
+Claude Sonnet 5.5 closed the starter-sharing finding in its narrow follow-up. It confirmed the source-qualified identity guard, public-request bypass, and safe single- and multi-share text. It did not provide device or full-suite proof.
+
+Gate 35 passed the static checks, including analysis with 116 informational findings and no errors or warnings. The Flutter run reached 2,531 passes, one skip, and 30 failures before all four test slots stalled. The parent interrupted it with exit code 130. Its shutdown errors are interruption artifacts, not additional product findings. This is not a completed or green gate.
+
+The four stalled files were upload entry, collections grid, downloaded detail, and clock overlay. The repeated upload test label was the reporter's oldest active test, not proof that it passed. The parent corrected that earlier status claim.
+
+Readonly Luna diagnostics traced several failures to stale fakes and asynchronous fixture assumptions. AI fakes omit the new local-history method. Profile tests share a single-subscription fake stream and cancel before durable I/O completes. Upload setup mixes fake-zone construction with real-zone writes. Collections tests retain module state or seed the wrong provider type. Repairs must keep the owner, money, block, cancellation, and retained-file assertions. A possible profile cleanup stall also needs a focused regression before a production change.
+
+Three disjoint Luna owners now repair profile, native/upload, and AI/category tests. Only one owns the Flutter compiler at a time. The later downloaded-image and wallpaper-action failures remain in the repair queue. A fresh full gate must cover the final tree.
+
+The repaired profile fixtures passed 16 tests and failed three in focused run 41. Both cancellation before the remote stream is consumed and cached-first restart reads stalled. The new bounded cancellation regression also failed. This confirms a production cleanup defect, rather than only fixture drift. The profile owner now has the exact repository and test file for a minimal lifecycle repair. AI/category and four detail fixture repairs are ready for focused tests. The action-bar acquisition tests still need to exercise the real download flow instead of invoking its notification callback directly.
+
+The first profile correction removed the blocking controller-close await. It fixed cached-first reads but left cancellation during the initial cache read stalled. The final correction observes cancellation at the subscription boundary. The owner reports all 20 profile tests passing. The native/upload owner's earlier test runs failed or stalled before its final edits; those runs do not verify the final fixture changes.
+
+Parent run 44 reached 118 passes and 11 failures before interruption with four stalled files. Its timeout wrapper returned zero despite the failed and interrupted log. That exit code does not establish success. Shortcut setup called shared preferences before installing its fake. Upload, collection refresh, and wallpaper action fixtures still waited across paused fake-clock boundaries. Dedicated owners repair those waits without dropping their behavior assertions.
+
+Claude Sonnet 5.5 reviewed the exact profile rewrite and found no concrete lifecycle or owner-isolation defect. It ruled out the suspected fake-watcher readiness gap. The parent run still timed out while waiting two seconds for profile events that include a flushed disk write. A slow first write under load is plausible but unproved. The review remains inconclusive until repeated parent runs pass. Cancellation counters establish watcher cleanup; a later event sent to an unsubscribed broadcast fake is not independent proof of ignored late writes.
+
+Native fixture round 45 completed with six passes and four failures. All four upload tests passed, including retained-draft resume without reselecting its deleted picker source. The remaining shortcut failures occur after its first iOS case. The parent traced the persistent future to the nested native-path store. Its continuation belongs to the previous widget test's stopped fake clock. The repair will retain the five iOS scenarios in one test clock instead of adding production reset code. This diagnosis is not a passing test result.
+
+## Gates 48 and 49
+
+Generation round 47 passed and produced no generated-file diff. Parent run 48 passed all 20 profile tests, including cancellation and durable restart reads. It then reached 166 passes and ten failures before the action-bar test stalled after native save. The parent interrupted it with exit code 130. Collection refresh, set-flow feedback, and retained-image rendering still require fixture repairs. No full gate passed.
+
+Parent run 49 passed all 26 tests across profile, shortcuts, and upload entry with exit code zero. The five iOS shortcut scenarios now share one widget test clock, with their original assertions intact. Android still has a separate no-write test. No production queue reset was added. The retained-upload case still deletes the picker source and resumes its retained copy without opening the picker.
+
+The profile has now passed two parent runs after the subscription-boundary rewrite. Only the first disk-backed profile/null event wait uses the ten-second disk-observation budget. Watcher readiness and the cancellation regressions retain their two-second bounds. These runs do not prove the cause of the earlier slow write or establish full-suite success.
+
+## Gates 51 to 54
+
+All 23 action-bar tests passed in the focused worker run and again in parent run 51. Parent run 51 still failed because two other files did not compile. An explicit nullable type on `tester.runAsync<File?>` fixed those two compilation errors. The action tests retain their one-spend, tinted-byte, original-identity, owner-isolation, and failed-save checks.
+
+Parent render run 52 completed with 46 passes and six failures. Retained-image tests reached missing path-provider plugins and failed to find the expected local image. Network preview tests also failed to find their expected image widget. These are unresolved runtime failures, not evidence that the offline rendering contract works. A fresh Luna owner has the two render fixtures and the exclusive compiler slot.
+
+Parent set-and-refresh run 53 completed with 18 passes and one failure. Both accent actions and the observed collection refresh passed. The remaining landscape safe-area test failed because the shared test helper replaced its explicit view dimensions. The new surface override is limited to the accent test. Parent run 55 verified the correction with all 19 tests passing and exit code zero.
+
+Render worker 53 completed with 48 passes and four failures. A direct real-zone resolver call returns the retained file, but that alone does not prove widget rendering. The parent found that detail mounts its network image while the retained lookup is still pending. A new owner now has the two widget sources and their fixtures to defer that fallback and prove actual local rendering. Claude Sonnet 5.5 is checking the remaining failure causes independently.
+
+Claude Sonnet 5.5 independently confirmed the premature detail network fetch. The placeholder repair leaves the existing network image as the fallback after a completed local lookup. Clock preview already has that ordering and does not need a production change. The review also confirmed that fixture waits can block a frame needed to start their own completion signal. Its explanation that six pumps cannot complete the nested disk operations remains an inference until measured. The repaired tests must wait for the exact retained image or cache signal, and they must observe `getFileStream` on the actual image cache managers.
+
+## Parent run 57
+
+The render worker passed all 52 tests after the main-image placeholder and fixture fixes. The parent rejected its change to an empty thumbnail in the retained-detail fixture. That avoids the color swatches' existing network path instead of proving that the full detail works offline. A new owner must share the retained original with every swatch and restore a nonempty thumbnail in the regression.
+
+Parent run 57 completed all 15 focused files with 226 passes and two failures. The profile badge-mapping test timed out after two seconds while observing events that include durable writes. The existing ten-second disk-observation budget now applies consistently to profile events and restart reads. Explicit watcher and cancellation bounds remain two seconds, including cached-first cancellation. The other failure checks image tint before the newly gated image has resolved. Its fixture must wait for the actual image without weakening the hue assertion. These corrections still require parent verification.
+
+## Frozen gate 65
+
+The swatch regression now keeps its nonempty thumbnail and two palette colors. It checks four retained-file images, including all three swatches, their hue modes and selected identity, and no requests through either image cache manager. The worker's full downloaded-detail file passed all eight tests.
+
+Parent run 62 completed with 226 passes and two action-bar finder failures. All 20 profile tests and the restored retained-image regression passed. The finder matched the main thumbnail and two swatches. The parent limited it to the `Wallpaper` semantics subtree. Parent run 64 then passed all 23 action-bar tests. No hue assertion was removed.
+
+The earlier gates 48 and 49 description of only one disk-event timeout is superseded by the parent 57 correction. All disk-backed profile event waits now use the existing ten-second budget. Watcher readiness and cancellation bounds remain two seconds, including the cached-first cancellation regression.
+
+Claude Sonnet 5.5 found no new blocker in the final production and test delta. This was a static review, not runtime proof. It confirmed that no new code comments were added and the earlier removals were not restored. It flagged a possible extra full-size image decode for retained swatches, the new pending placeholder's flicker risk, and cosmetic differences in starter share text. These remain device-review considerations, not measured regressions. The pump-count explanation remains inferred.
+
+Full gate 65 passed static checks and reached 506 Flutter test passes without a reported failure. The parent interrupted it after discovering that master advanced to `4fd037348`, the coin-economy v2 merge. This is a partial result, not a full gate pass.
+
+## Latest-master integration 66
+
+The new base changes 315 files since `48ac7cb1a`, including startup, coins, entitlements, wallpaper detail, and native entry points. The current repair delta is preserved in a commit before a normal merge. Three Luna reviewers inspect disjoint economy, native, and catalog overlaps. The merged tree requires fresh generation and verification. Hosted CI and the user's device round remain pending.
 
 ## Evidence limits
 
-The inherited trail contains estimated timestamps, with append-only correction rows. Several early rows name local `/tmp` logs that are not portable PR artifacts. Later committed tests and hosted checks must carry the final proof. The foundation commit proves its six files only, not the uncommitted integration tree.
+The inherited trail contains estimated timestamps, with append-only correction rows. Several early rows name local `/tmp` logs that are not portable PR artifacts. Later committed tests and hosted checks must carry the final proof. The foundation commit proves its six files only. The later implementation commit and master merge preserve the wider integration tree but do not replace its full verification.
 
 No device screenshots or runtime results have been claimed. The user owns the iOS and Android verification round before merge. Linux cannot run the iOS suite that imports ImageIO. Local checks, hosted checks, and device acceptance remain separate gates.

@@ -1,5 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -108,6 +109,26 @@ class _PanelRoute extends PageRouteInfo<void> {
   static const String name = 'PanelRoute';
 }
 
+class _ObservedUploadDraftStore extends UploadDraftStore {
+  _ObservedUploadDraftStore({required super.store, required super.directory});
+
+  final Completer<void> latestLookupCompleted = Completer<void>();
+
+  @override
+  Future<UploadDraft?> latestForOwner(String owner) async {
+    try {
+      return await super.latestForOwner(owner);
+    } finally {
+      if (!latestLookupCompleted.isCompleted) latestLookupCompleted.complete();
+    }
+  }
+}
+
+class _EmptyUploadDraftStore extends UploadDraftStore {
+  @override
+  Future<UploadDraft?> latestForOwner(String owner) async => null;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late ImagePickerPlatform previousPicker;
@@ -140,7 +161,7 @@ void main() {
   Future<List<EditWallRouteArgs>> pickWith(WidgetTester tester, _Picker picker) async {
     ImagePickerPlatform.instance = picker;
     final opened = <EditWallRouteArgs>[];
-    final router = _PanelRouter(opened.add);
+    final router = _PanelRouter(opened.add, draftStore: _EmptyUploadDraftStore());
     await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
     await router.navigatePath('/');
     await tester.pumpAndSettle();
@@ -184,27 +205,25 @@ void main() {
   });
 
   testWidgets('resumes the latest owner draft from its retained copy without opening the picker', (tester) async {
-    final Directory root = (await tester.runAsync(() => Directory.systemTemp.createTemp('prism-upload-entry-test')))!;
-    final UploadDraftStore drafts = UploadDraftStore(
-      store: DurableJsonStore('upload_entry_test', directory: Directory('${root.path}/records')),
-      directory: Directory('${root.path}/app-support/prism/offline/upload_drafts'),
-    );
+    final (Directory root, _ObservedUploadDraftStore drafts, File pickedOriginal, UploadDraft retained) = (await tester
+        .runAsync(() async {
+          final Directory root = await Directory.systemTemp.createTemp('prism-upload-entry-test');
+          final _ObservedUploadDraftStore drafts = _ObservedUploadDraftStore(
+            store: DurableJsonStore('upload_entry_test', directory: Directory('${root.path}/records')),
+            directory: Directory('${root.path}/app-support/prism/offline/upload_drafts'),
+          );
+          final File original = File('${root.path}/picker-source.png')..writeAsBytesSync(utf8.encode('image-bytes'));
+          final UploadDraft draft = await drafts.save(
+            owner: UploadDraftStore.guestOwner,
+            draftId: 'saved-draft',
+            selectedFile: original,
+            metadata: const SubmissionMetadata(title: 'My saved wallpaper'),
+          );
+          return (root, drafts, original, draft);
+        }))!;
     addTearDown(() async {
-      await tester.runAsync(() async {
-        await drafts.latestForOwner(UploadDraftStore.guestOwner);
-        await root.delete(recursive: true);
-      });
+      await tester.runAsync(() => root.delete(recursive: true));
     });
-    final (File pickedOriginal, UploadDraft retained) = (await tester.runAsync(() async {
-      final File original = File('${root.path}/picker-source.png')..writeAsBytesSync(utf8.encode('image-bytes'));
-      final UploadDraft draft = await drafts.save(
-        owner: UploadDraftStore.guestOwner,
-        draftId: 'saved-draft',
-        selectedFile: original,
-        metadata: const SubmissionMetadata(title: 'My saved wallpaper'),
-      );
-      return (original, draft);
-    }))!;
     await tester.runAsync(() async {
       await pickedOriginal.delete();
     });
@@ -219,8 +238,8 @@ void main() {
     await tester.pumpAndSettle();
     await waitForRealIo(
       tester,
-      () => find.text('Resume saved upload').evaluate().isNotEmpty,
-      reason: 'the retained upload draft to appear in the panel',
+      () => drafts.latestLookupCompleted.isCompleted && find.text('Resume saved upload').evaluate().isNotEmpty,
+      reason: 'the retained upload draft lookup to complete and appear in the panel',
     );
 
     expect(find.text('Resume saved upload'), findsOneWidget);

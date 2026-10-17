@@ -19,6 +19,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -286,7 +287,21 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         );
       }
       if (!mounted) return;
-      final String text = link ?? walls.map((wall) => wall.fullUrl).where((url) => url.isNotEmpty).join('\n');
+      final String text =
+          link ??
+          walls
+              .map(
+                (wall) => BundledWallpapers.isStarterIdentity(wall.id, wall.source)
+                    ? canonicalWallpaperLink(
+                        id: wall.id,
+                        source: wall.source,
+                        url: wall.fullUrl,
+                        thumbUrl: wall.thumbnailUrl,
+                      )
+                    : wall.fullUrl,
+              )
+              .where((url) => url.isNotEmpty)
+              .join('\n');
       if (text.isEmpty) return;
       await ShareService.shareText(text: text, context: context);
     } catch (error, stackTrace) {

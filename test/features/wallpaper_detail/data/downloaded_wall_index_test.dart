@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -105,7 +104,7 @@ void main() {
     final Directory directory = Directory.systemTemp.createTempSync('prism_verified_legacy_download');
     addTearDown(() => directory.deleteSync(recursive: true));
     final File saved = File('${directory.path}/legacy-wall.jpg')
-      ..writeAsBytesSync(base64Decode('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='));
+      ..writeAsBytesSync(File('assets/images/prism.webp').readAsBytesSync());
     const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
       'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
       PrismMediaHostApi.pigeonChannelCodec,
@@ -136,7 +135,7 @@ void main() {
     await saved.writeAsBytes(<int>[1]);
     expect(await legacyIndex.hasVerifiedLegacyNativeFile('https://example.com/legacy-wall.jpg'), isFalse);
 
-    await saved.writeAsBytes(base64Decode('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='));
+    await saved.writeAsBytes(File('assets/images/prism.webp').readAsBytesSync());
     saved.deleteSync();
     listedFiles = <String>[saved.path];
     expect(await legacyIndex.hasVerifiedLegacyNativeFile('https://example.com/legacy-wall.jpg'), isFalse);

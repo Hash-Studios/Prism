@@ -106,6 +106,10 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   ];
 
   @override
+  Future<List<AiGenerationRecord>> fetchLocalHistory({required String userId, int limit = 50}) async =>
+      const <AiGenerationRecord>[];
+
+  @override
   Future<AiGenerationRecord> generate({
     required String prompt,
     required AiStylePreset stylePreset,
@@ -223,14 +227,7 @@ void main() {
     );
 
     expect(hapticTypes, isEmpty);
-    expect(
-      toastCalls.any(
-        (call) =>
-            (call.arguments as Map<Object?, Object?>)['msg'] ==
-            "You're offline. History will refresh when you're connected.",
-      ),
-      isTrue,
-    );
+    expect(toastCalls, isEmpty);
 
     hapticTypes.clear();
     toastCalls.clear();
@@ -239,6 +236,10 @@ void main() {
 
     expect(hapticTypes, <Object?>['HapticFeedbackType.mediumImpact', 'HapticFeedbackType.errorNotification']);
     expect(toastCalls, hasLength(1));
+    expect(
+      (toastCalls.single.arguments as Map<Object?, Object?>)['msg'],
+      "You're offline. Saved history is still available.",
+    );
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
