@@ -76,6 +76,40 @@ void main() {
     });
   });
 
+  group('zero-delta receipts', () {
+    test('the repository hides them but keeps the cursor on the last row read', () async {
+      firestore.onQuery = (_) => <FakeDocRow>[_row(0), _row(1, delta: 0), _row(2, delta: 0)];
+
+      final batch = await CoinHistoryRepository(client: firestore).fetchPage();
+
+      expect(batch.items.map((e) => e.id), <String>['tx-0']);
+      expect(batch.cursor, 'tx-2');
+    });
+
+    testWidgets('the page does not list them and pages from the raw cursor', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      firestore.onQuery = (spec) => spec.startAfterDocId == null
+          ? <FakeDocRow>[_row(0, delta: 8, action: 'dailyLogin'), for (int i = 1; i < 40; i++) _row(i, delta: 0)]
+          : <FakeDocRow>[_row(40, delta: -10)];
+
+      await tester.pumpWidget(const MaterialApp(home: CoinHistoryPage()));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('+8'), findsOneWidget);
+      expect(find.text('0'), findsNothing);
+      await tester.tap(find.text('Show more'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(firestore.querySpecs.last.startAfterDocId, 'tx-39');
+      expect(find.text('-10'), findsOneWidget);
+    });
+  });
+
   group('CoinHistoryPage', () {
     Future<void> pumpPage(WidgetTester tester) async {
       tester.view.physicalSize = const Size(800, 2400);

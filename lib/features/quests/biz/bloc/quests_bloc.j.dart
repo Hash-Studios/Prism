@@ -1,0 +1,41 @@
+import 'dart:async';
+
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/features/quests/domain/repositories/quests_repository.dart';
+import 'package:bloc/bloc.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:injectable/injectable.dart';
+
+part 'quests_event.j.dart';
+part 'quests_state.j.dart';
+part 'quests_bloc.j.freezed.dart';
+
+@injectable
+class QuestsBloc extends Bloc<QuestsEvent, QuestsState> {
+  QuestsBloc(this._repository) : super(const QuestsState()) {
+    on<_Started>(_onStarted);
+    on<_Refreshed>((_, _) => _repository.refresh());
+    on<_ChestOpened>(_onChestOpened);
+    on<_AwardsShown>((_, _) => _repository.consumeAwards());
+  }
+
+  final QuestsRepository _repository;
+
+  Future<void> _onStarted(_Started event, Emitter<QuestsState> emit) async {
+    unawaited(_repository.refresh());
+    await Future.wait(<Future<void>>[
+      emit.forEach<QuestState?>(_repository.watchQuests(), onData: (quests) => state.copyWith(quests: quests)),
+      emit.forEach<List<QuestAward>>(_repository.watchAwards(), onData: (awards) => state.copyWith(awards: awards)),
+    ]);
+  }
+
+  Future<void> _onChestOpened(_ChestOpened event, Emitter<QuestsState> emit) async {
+    if (state.opening) return;
+    emit(state.copyWith(opening: true));
+    final ChestResult chest = await _repository.openChest();
+    emit(state.copyWith(opening: false, chest: chest));
+    if (chest.outcome == ChestOutcome.locked || chest.outcome == ChestOutcome.alreadyOpened) {
+      unawaited(_repository.refresh());
+    }
+  }
+}

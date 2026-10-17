@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -11,6 +12,9 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
+/// The lowest price in the Shop catalog. The Shop tile says "from" this.
+const int _shopFromPrice = 100;
+
 /// "Use your coins": what coins buy, with the price of each. Streak freeze runs [onStreakFreeze].
 class RewardsSpendSection extends StatelessWidget {
   const RewardsSpendSection({super.key, this.onStreakFreeze});
@@ -19,6 +23,12 @@ class RewardsSpendSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final int graceLeft = CoinsService.instance.graceDownloadsLeft;
+    final String? graceNote = graceLeft <= 0
+        ? null
+        : graceLeft == CoinPolicy.graceDownloads
+        ? 'first $graceLeft free'
+        : '$graceLeft free left';
     final List<_SpendTile> tiles = <_SpendTile>[
       _SpendTile(
         icon: Icons.auto_awesome_rounded,
@@ -26,6 +36,20 @@ class RewardsSpendSection extends StatelessWidget {
         price: 'from ${CoinPolicy.aiGenerationFast}',
         spokenPrice: 'from ${CoinPolicy.aiGenerationFast} coins',
         onTap: () => context.router.root.push(AiTabRoute()),
+      ),
+      _SpendTile(
+        icon: Icons.lock_open_rounded,
+        label: 'Drops',
+        price: '${CoinPolicy.dropWall} a wall',
+        spokenPrice: '${CoinPolicy.dropWall} coins a wall',
+        onTap: () => context.router.root.push(const DropsRoute()),
+      ),
+      _SpendTile(
+        icon: Icons.storefront_outlined,
+        label: 'Shop',
+        price: 'from $_shopFromPrice',
+        spokenPrice: 'from $_shopFromPrice coins',
+        onTap: () => context.router.root.push(const ShopRoute()),
       ),
       _SpendTile(
         icon: Icons.workspace_premium_rounded,
@@ -36,26 +60,31 @@ class RewardsSpendSection extends StatelessWidget {
             context.router.root.navigate(const DashboardRoute(children: <PageRouteInfo>[CollectionTabRoute()])),
       ),
       _SpendTile(
-        icon: Icons.image_outlined,
-        label: 'Premium wallpaper',
-        price: '${CoinPolicy.premiumWallpaperDownload}',
-        spokenPrice: '${CoinPolicy.premiumWallpaperDownload} coins',
+        icon: Icons.rocket_launch_outlined,
+        label: 'Boost',
+        price: '${CoinPolicy.boostWall}',
+        spokenPrice: '${CoinPolicy.boostWall} coins',
         onTap: () => _showInfo(
           context,
-          title: 'Premium wallpaper',
+          title: 'Boost',
           body:
-              'Downloading a premium wallpaper costs ${CoinPolicy.premiumWallpaperDownload} coins. Pro makes it free.',
+              'Put one of your approved wallpapers at the front of Trending. A boost costs ${CoinPolicy.boostWall} coins. '
+              'Open your wallpaper and tap Boost.',
+          showPro: false,
         ),
       ),
       _SpendTile(
-        icon: Icons.tune_rounded,
-        label: 'Filters',
-        price: '${CoinPolicy.premiumFilter} per edit',
-        spokenPrice: '${CoinPolicy.premiumFilter} coins per edit',
+        icon: Icons.card_giftcard_rounded,
+        label: 'Gift a pass',
+        price: '${CoinPolicy.giftPremiumPass}',
+        spokenPrice: '${CoinPolicy.giftPremiumPass} coins',
         onTap: () => _showInfo(
           context,
-          title: 'Filters',
-          body: 'Each premium filter edit costs ${CoinPolicy.premiumFilter} coins. Pro makes filters free.',
+          title: 'Gift a pass',
+          body:
+              'Give a friend 24 hours of Pro content for ${CoinPolicy.giftPremiumPass} coins. '
+              'Open their profile and tap Gift a 24 h pass.',
+          showPro: false,
         ),
       ),
       _SpendTile(
@@ -70,11 +99,15 @@ class RewardsSpendSection extends StatelessWidget {
         icon: Icons.download_rounded,
         label: 'Downloads',
         price: '${CoinPolicy.wallpaperDownload}',
-        spokenPrice: '${CoinPolicy.wallpaperDownload} coins',
+        note: graceNote,
+        spokenPrice: '${CoinPolicy.wallpaperDownload} coins${graceNote == null ? '' : ', $graceNote'}',
         onTap: () => _showInfo(
           context,
           title: 'Downloads',
-          body: 'Each wallpaper download costs ${CoinPolicy.wallpaperDownload} coins. Pro makes downloads free.',
+          body:
+              'Each wallpaper download costs ${CoinPolicy.wallpaperDownload} coins.'
+              '${graceNote == null ? '' : ' Your first ${CoinPolicy.graceDownloads} are free.'} '
+              'Pro makes downloads free.',
         ),
       ),
     ];
@@ -102,7 +135,7 @@ class RewardsSpendSection extends StatelessWidget {
     );
   }
 
-  static void _showInfo(BuildContext context, {required String title, required String body}) {
+  static void _showInfo(BuildContext context, {required String title, required String body, bool showPro = true}) {
     showPrismSheet<void>(
       context: context,
       useSafeArea: true,
@@ -110,22 +143,23 @@ class RewardsSpendSection extends StatelessWidget {
         title: title,
         message: body,
         actions: <Widget>[
-          PrismButton(
-            label: 'See Pro',
-            expand: true,
-            onPressed: () {
-              Navigator.of(sheetContext).pop();
-              PaywallOrchestrator.instance.presentOrRequireSignIn(
-                context,
-                placement: PaywallPlacement.mainUpsell,
-                source: 'rewards_spend_sheet',
-              );
-            },
-          ),
+          if (showPro)
+            PrismButton(
+              label: 'See Pro',
+              expand: true,
+              onPressed: () {
+                Navigator.of(sheetContext).pop();
+                PaywallOrchestrator.instance.presentOrRequireSignIn(
+                  context,
+                  placement: PaywallPlacement.mainUpsell,
+                  source: 'rewards_spend_sheet',
+                );
+              },
+            ),
           PrismButton(
             label: 'Close',
             expand: true,
-            variant: PrismButtonVariant.ghost,
+            variant: showPro ? PrismButtonVariant.ghost : PrismButtonVariant.primary,
             onPressed: () => Navigator.of(sheetContext).pop(),
           ),
         ],
@@ -141,6 +175,7 @@ class _SpendTile extends StatelessWidget {
     required this.price,
     required this.spokenPrice,
     required this.onTap,
+    this.note,
     this.haptic = true,
   });
 
@@ -149,6 +184,9 @@ class _SpendTile extends StatelessWidget {
   final String price;
   final String spokenPrice;
   final VoidCallback? onTap;
+
+  /// A second caption line under the price, for example "first 3 free".
+  final String? note;
   final bool haptic;
 
   @override
@@ -195,6 +233,7 @@ class _SpendTile extends StatelessWidget {
                   ),
                 ],
               ),
+              if (note != null) Text(note!, style: PrismTextStyles.caption(context)),
             ],
           ),
         ),

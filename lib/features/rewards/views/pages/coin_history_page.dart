@@ -42,6 +42,7 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
   bool _loadingMore = false;
   bool _failed = false;
   bool _hasMore = false;
+  String? _cursor;
   _HistoryFilter? _filter;
 
   @override
@@ -52,7 +53,7 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
   }
 
   Future<void> _load() async {
-    final bool first = _items.isEmpty;
+    final bool first = _cursor == null;
     setState(() {
       _failed = false;
       if (first) {
@@ -62,11 +63,12 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
       }
     });
     try {
-      final CoinHistoryBatch batch = await _repository.fetchPage(startAfterDocId: first ? null : _items.last.id);
+      final CoinHistoryBatch batch = await _repository.fetchPage(startAfterDocId: first ? null : _cursor);
       if (!mounted) return;
       setState(() {
         _items.addAll(batch.items);
         _hasMore = batch.hasMore;
+        _cursor = batch.cursor;
       });
     } catch (_) {
       if (!mounted) return;

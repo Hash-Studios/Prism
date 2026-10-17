@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
+import 'package:Prism/features/rewards/views/widgets/pro_spin_card.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -37,6 +39,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   }
 
   Future<void> _watchRewardedAdAndCreditCoins() async {
+    final int reward = CoinsService.instance.adsRewardNow;
     final bool credited = await CoinGate.forContext(context).watchAdForCoins(
       sourceTag: 'coins.hub.rewarded_ad',
       upsellSource: 'coin_hub_rewarded_ad',
@@ -44,7 +47,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
       adErrorMessage: 'Ad was not completed.',
     );
     if (credited) {
-      toasts.success('+${CoinPolicy.rewardedAd} coins');
+      toasts.success('+$reward coins');
     }
   }
 
@@ -61,32 +64,36 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   }
 
   Widget _buildRows(BuildContext context, CoinEarnFlags flags) {
+    final bool isPro = app_state.prismUser.premium;
+    final String proMultiplier = '${EconomyConfig.current.award.proStreakMultiplier}';
     final List<Widget> rows = <Widget>[
       _EarnRow(
         icon: Icons.local_fire_department_rounded,
         title: 'Daily streak',
-        subtitle: 'Open Prism every day. +${CoinPolicy.streak7Bonus} each week.',
+        subtitle: isPro ? 'Open Prism every day. Pro earns x$proMultiplier.' : 'Open Prism every day.',
         reward: '+${CoinPolicy.streakDay1To2Daily} to +${CoinPolicy.streakDay7Daily}',
       ),
-      if (app_state.prismUser.premium) ...<Widget>[
+      _EarnRow(
+        icon: Icons.redeem_rounded,
+        title: 'Day 7 chest',
+        subtitle: 'Finish a week of streak days.',
+        reward: '+${CoinPolicy.streakChestMin} to +${CoinPolicy.streakChestMax}',
+      ),
+      if (isPro)
         _EarnRow(
           icon: Icons.workspace_premium_outlined,
-          title: 'Pro daily bonus',
-          subtitle: 'Included with Pro, once a day',
-          reward: '+${CoinPolicy.proDailyBonus}',
+          title: 'Pro spin',
+          subtitle: 'Once a day',
+          reward: '+${proSpinRange().low} to +${proSpinRange().high}',
         ),
-        _EarnRow(
-          icon: Icons.local_fire_department_outlined,
-          title: 'Pro streak bonus',
-          subtitle: 'Extra coins on every daily streak claim',
-          reward: '+${CoinPolicy.proStreakDailyBonus} to +${CoinPolicy.proStreak7Bonus}',
-        ),
-      ],
       _EarnRow(
         icon: Icons.play_circle_outline_rounded,
         title: 'Watch a video',
-        subtitle: _loadingReward ? 'Loading a video' : 'Up to 20 a day',
-        reward: '+${CoinPolicy.rewardedAd}',
+        subtitle: _loadingReward
+            ? 'Loading a video'
+            : 'First one of the day +${CoinPolicy.rewardedAdFirstOfDay}, then +${CoinPolicy.rewardedAd}. '
+                  'Up to ${EconomyConfig.current.award.rewardedAdMaxPerDay} a day.',
+        reward: '+${CoinsService.instance.adsRewardNow}',
         loading: _loadingReward,
         onTap: _onWatchAdTapped,
       ),

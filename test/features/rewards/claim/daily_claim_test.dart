@@ -186,9 +186,13 @@ void main() {
       expect(find.text('See rewards'), findsOneWidget);
 
       await close();
-      await open(_r(day: 7, count: 14, week: true, daily: 15, bonus: 40));
+      await open(_r(day: 7, count: 14, week: true, daily: 10, bonus: 30));
+      expect(find.text('Day 7 chest'), findsOneWidget);
+      expect(find.text('+10 today · +30 Day 7 chest'), findsOneWidget);
+
+      await close();
+      await open(_r(day: 7, count: 14, week: true, daily: 10));
       expect(find.text('Week complete!'), findsOneWidget);
-      expect(find.text('+15 today · +40 week bonus'), findsOneWidget);
 
       await close();
       await open(_r(broken: true, daily: 5));

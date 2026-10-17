@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -161,9 +162,16 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
         showReward: true,
       );
     }
-    if (r.milestone != null) return (title: '${r.milestone}-day streak!', sub: null, showReward: true);
+    final bool chest = r.isWeekComplete && r.streakBonusReward > 0;
+    if (r.milestone != null) {
+      return (title: '${r.milestone}-day streak!', sub: chest ? 'Day 7 chest' : null, showReward: true);
+    }
     if (r.isWeekComplete) {
-      return (title: 'Week complete!', sub: 'Day ${r.streakCount} of your streak', showReward: true);
+      return (
+        title: chest ? 'Day 7 chest' : 'Week complete!',
+        sub: 'Day ${r.streakCount} of your streak',
+        showReward: true,
+      );
     }
     return (title: 'Day ${r.streakCount}', sub: null, showReward: true);
   }
@@ -172,8 +180,8 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
     final StreakClaimResult r = widget.result;
     final List<String> parts = <String>[
       '+${r.dailyReward} today',
-      if (r.streakBonusReward > 0) '+${r.streakBonusReward} week bonus',
-      if (r.proBonusReward > 0) '+${r.proBonusReward} Pro bonus',
+      if (r.streakBonusReward > 0) '+${r.streakBonusReward} Day 7 chest',
+      if (r.proBonusReward > 0) '+${r.proBonusReward} x${EconomyConfig.current.award.proStreakMultiplier} Pro',
     ];
     return parts.length > 1 ? parts.join(' · ') : null;
   }
