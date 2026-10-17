@@ -255,6 +255,7 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
           const SizedBox(height: PrismSpace.xl),
           StreakCycleStrip(
             cycleDay: r.streakDay,
+            streakCount: r.streakCount,
             showRewards: false,
             startDelay: PrismDurations.slow + PrismDurations.fast,
           ),

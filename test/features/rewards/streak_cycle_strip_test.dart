@@ -48,4 +48,15 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(find.byIcon(Icons.check_rounded), findsNWidgets(2));
   });
+
+  testWidgets('strip labels the real streak week after day 7', (tester) async {
+    await tester.pumpWidget(_app(kDarkTheme, const StreakCycleStrip(cycleDay: 6, streakCount: 13, showRewards: false)));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Day 1'), findsNothing);
+    for (int day = 8; day <= 14; day++) {
+      expect(find.text('Day $day'), findsOneWidget);
+    }
+    expect(find.byIcon(Icons.check_rounded), findsNWidgets(6));
+    expect(find.byIcon(Icons.card_giftcard_rounded), findsOneWidget);
+  });
 }

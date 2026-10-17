@@ -93,7 +93,7 @@ class _HeroCard extends StatelessWidget {
           const SizedBox(height: PrismSpace.sm),
           Text(statusLine, style: PrismTextStyles.body(context)),
           const SizedBox(height: PrismSpace.md),
-          StreakCycleStrip(cycleDay: cycleDay, todayDay: todayDay),
+          StreakCycleStrip(cycleDay: cycleDay, streakCount: count, todayDay: todayDay),
           const SizedBox(height: PrismSpace.sm),
           Row(
             children: <Widget>[
