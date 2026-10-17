@@ -336,3 +336,17 @@ Chest open rate and doubled share.
 - **Cosmetics.** Catalog ids are never deleted, only `retired`. A `proOnly` frame renders only while the profile is premium.
 - **UI.** The Drop card lives on Rewards only, no Home card. Earn coins sits above Use your coins. "Watch a video" appears only when the balance is short. Spin and chest sheets use a coin animation, not Glint; Celebrate is for rank-up and streak milestones only. Spin and chest sheets show their odds.
 - **Day boundaries.** Quests, spin and ads use UTC days; the streak keeps its locked local day. Documented, accepted.
+
+## As built (2026-10-17)
+
+Differences from the text above that the code settled:
+
+- Drop prices are snapshotted on the drop doc at planning time and `unlockDrop` charges those, so a mid-week config change never changes a live drop.
+- The day 7 chest is its own ledger action, `streakChest` (reason `streak_day_7_chest`).
+- Every free spend outcome (grace, pass, premium bypass) with a `requestId` writes a zero-delta receipt so a replay cannot burn a second grace download. The app hides zero-delta rows from the activity list.
+- Quest events the server counts carry a dedupe id (`uid_wallId_day`, or the trigger event id for favourites), so a set and a download of one wall on one day count once.
+- The client sends `pricingVersion: 2` and `qualityTier` for AI. The AI worker accepts the receipt's `basePrice` or its Pro half and requires the receipt tier to match.
+- `economyConfig` is readable by guests. `premiumPreviewUnlocks` stays in the owner allow list until clients below 3.4.1 are gone.
+- Android alternate icons: `MainActivity` keeps the launcher filter; each icon alias carries the launcher and deep-link filters; the widget opens the app through the package launch intent.
+- The economy simulation test (`functions/src/__tests__/economySim.test.ts`) reports about 50 coins a day for an engaged free user with the defaults. The owner's "first ad pays 20" sets that floor; lower `rewardedAdFirstOfDay` or the quest chest to tighten.
+- Deferred: coin packs; AdMob server-side verification; a device pass for app icon switching, the Shop, Drops, the Leaderboard and the Draw.
