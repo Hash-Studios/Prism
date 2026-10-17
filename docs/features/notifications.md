@@ -141,7 +141,7 @@ Cloud Function event
 | Streak reminder | `sendStreakReminders` runs every 15 minutes, `timeoutSeconds: 540`. It handles users in chunks of 25 with `Promise.allSettled`, in pages of 200. It writes the sent marker first and rolls it back if the push fails. |
 | Win-back | `sendWinBackPushes` runs every 15 minutes. It sends to the UTC offsets where it is 18:00 local. Steps are 7, 14, 30, and 60 days since `lastAppOpenAt`. Each step stays open for 2 days. Day 7 and 14 open the feed, day 30 opens AI, and day 60 opens Wall of the Day. The Android channel is `recommendations`. The Recommendations switch (`marketingPushes`) still gates it. A missed evening sends the next day, once. Deploy the `usersv2` index on `appOpenTimezoneOffsetMinutes` + `lastAppOpenAt` before this query, or the job fails. |
 | Last app open | A signed-in open writes `lastAppOpenAt` (server timestamp) and `appOpenTimezoneOffsetMinutes` (offset rounded to 15 minutes), at most every 15 minutes. A user with no last open is not eligible for win-back. |
-| Scoreboard | Daily counts are in `metrics/notificationScoreboard/days/{utc date}`: sends, accepts, fails, taps, next-day returns, and permission results. Accepts are FCM API accepts. A personal push to the uid topic and the token counts as two. Admins see the last 14 days on the Notifications tab. |
+| Scoreboard | Daily counts are split across `metrics/notificationScoreboard/days/{utc date}_{00-31}`: sends, accepts, fails, taps, next-day returns, and permission results. Accepts are FCM API accepts. A personal push to the uid topic and the token counts as two. Admins see the sum of those shards for the last 14 UTC dates on the Notifications tab. |
 
 ### Wall of the Day topics
 

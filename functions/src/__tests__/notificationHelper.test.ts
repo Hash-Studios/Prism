@@ -187,7 +187,18 @@ test("a personal uid-topic and token each count as an FCM attempt", async (t) =>
     uid: "u1", email: "sam@example.com", legacyToken: "legacy-token",
   });
   assert.deepEqual(sent.map((message) => message.topic ?? message.token), ["u_u1", "session-token"]);
-  assert.deepEqual(documents.get(day), {sends: {post: 2}, accepts: {post: 2}});
+  const totals = {sends: {} as Record<string, number>, accepts: {} as Record<string, number>};
+  for (const [path, data] of documents) {
+    assert.equal(path.startsWith(`${day}_`), true, path);
+    for (const outcome of ["sends", "accepts"] as const) {
+      const bucket = data[outcome] as Record<string, number> | undefined;
+      for (const [kind, count] of Object.entries(bucket ?? {})) {
+        totals[outcome][kind] = (totals[outcome][kind] ?? 0) + count;
+      }
+    }
+  }
+  assert.equal(documents.has(day), false);
+  assert.deepEqual(totals, {sends: {post: 2}, accepts: {post: 2}});
 });
 
 test("an inbox-only notification with a known kind does not count as a push", async (t) => {

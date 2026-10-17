@@ -10,6 +10,8 @@ import {
   planNotificationSignal,
   recordNotificationSignal,
   recordPushOutcome,
+  SCOREBOARD_SHARD_COUNT,
+  scoreboardShardDocId,
   scoreKindFor,
 } from "../notificationScoreboard";
 
@@ -19,6 +21,29 @@ test("client and server notification kinds match", () => {
   assert.ok(block);
   const kinds = [...block[1].matchAll(/'([a-z_]+)'/g)].map((match) => match[1]);
   assert.deepEqual(kinds, [...NOTIFICATION_KINDS]);
+  const row = readFileSync(path.join(__dirname, "../../../lib/notifications/scoreboard_row.dart"), "utf8");
+  const shards = row.match(/notificationScoreboardShardCount = (\d+);/);
+  assert.ok(shards);
+  assert.equal(Number(shards[1]), SCOREBOARD_SHARD_COUNT);
+});
+
+test("shard ids stay inside one UTC day and sort with that day", () => {
+  assert.equal(scoreboardShardDocId("2026-10-17", 0), "2026-10-17_00");
+  assert.equal(scoreboardShardDocId("2026-10-17", 31), "2026-10-17_31");
+  assert.equal(scoreboardShardDocId("2026-10-17", 32), "2026-10-17_00");
+  assert.deepEqual([
+    "2026-10-18",
+    scoreboardShardDocId("2026-10-17", 31),
+    "2026-10-04",
+    scoreboardShardDocId("2026-10-03", 31),
+    scoreboardShardDocId("2026-10-17", 0),
+  ].sort(), [
+    "2026-10-03_31",
+    "2026-10-04",
+    "2026-10-17_00",
+    "2026-10-17_31",
+    "2026-10-18",
+  ]);
 });
 
 test("score kind prefers an explicit label, then the route", () => {
@@ -64,6 +89,7 @@ test("a live scoreboard ref counts the attempt and a get-only stub does not", as
   const days = new Map<string, Record<string, unknown>>();
   const originalDoc = db.doc.bind(db);
   const originalTx = db.runTransaction.bind(db);
+  const originalRandom = Math.random;
   const warn = Object.getOwnPropertyDescriptor(logger, "warn");
   Object.defineProperty(logger, "warn", {configurable: true, value: () => undefined});
   let transactions = 0;
@@ -91,20 +117,75 @@ test("a live scoreboard ref counts the attempt and a get-only stub does not", as
     });
   });
   try {
+    Math.random = () => 0;
     await recordPushOutcome("win_back", "sends", new Date("2026-10-17T12:00:00Z"));
     await recordPushOutcome("win_back", "accepts", new Date("2026-10-17T12:00:00Z"));
     await recordPushOutcome("wotd", "sends", new Date("2026-10-17T12:00:00Z"));
     await recordPushOutcome("nope", "fails", new Date("2026-10-17T12:00:00Z"));
-    const day = days.get("metrics/notificationScoreboard/days/2026-10-17");
-    assert.deepEqual(day, {sends: {win_back: 1, wotd: 1}, accepts: {win_back: 1}});
+    const first = "metrics/notificationScoreboard/days/2026-10-17_00";
+    assert.deepEqual(days.get(first), {sends: {win_back: 1, wotd: 1}, accepts: {win_back: 1}});
+    Math.random = () => 0.5;
+    await recordPushOutcome("follower", "sends", new Date("2026-10-17T12:00:00Z"));
+    assert.deepEqual(days.get(first), {sends: {win_back: 1, wotd: 1}, accepts: {win_back: 1}});
+    assert.deepEqual(days.get("metrics/notificationScoreboard/days/2026-10-17_16"), {sends: {follower: 1}});
+    assert.equal(days.has("metrics/notificationScoreboard/days/2026-10-17"), false);
     const before = transactions;
     t.mock.method(db, "doc", () => ({get: async () => ({data: () => ({})})}));
     await recordPushOutcome("win_back", "sends", new Date("2026-10-17T12:00:00Z"));
     assert.equal(transactions, before);
   } finally {
+    Math.random = originalRandom;
     t.mock.method(db, "doc", originalDoc);
     t.mock.method(db, "runTransaction", originalTx);
     if (warn) Object.defineProperty(logger, "warn", warn);
+  }
+});
+
+test("push retry reuses the shard selected before the transaction", async (t) => {
+  const originalDoc = db.doc.bind(db);
+  const originalTransaction = db.runTransaction.bind(db);
+  const originalRandom = Math.random;
+  const documents = new Map<string, Record<string, unknown>>();
+  const counterPaths: string[] = [];
+  let transactions = 0;
+  t.mock.method(db, "doc", (path: string) => ({path, firestore: db}));
+  t.mock.method(db, "runTransaction", async (callback: (tx: {
+    get: (ref: {path: string}) => Promise<{data: () => Record<string, unknown> | undefined}>;
+    set: (ref: {path: string}, data: Record<string, unknown>, options?: {merge?: boolean}) => void;
+  }) => Promise<void>) => {
+    transactions += 1;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const writes: Array<{path: string; data: Record<string, unknown>; merge: boolean}> = [];
+      await callback({
+        get: async (ref) => {
+          counterPaths.push(ref.path);
+          return {data: () => documents.get(ref.path)};
+        },
+        set: (ref, data, options) => writes.push({path: ref.path, data, merge: options?.merge ?? false}),
+      });
+      if (attempt === 0) {
+        Math.random = () => 0.75;
+        continue;
+      }
+      for (const write of writes) {
+        const prior = write.merge ? documents.get(write.path) ?? {} : {};
+        documents.set(write.path, {...prior, ...write.data});
+      }
+    }
+  });
+  try {
+    Math.random = () => 0;
+    await recordPushOutcome("post", "sends", new Date("2026-10-17T12:00:00Z"));
+    assert.equal(transactions, 1);
+    assert.deepEqual(counterPaths, [
+      "metrics/notificationScoreboard/days/2026-10-17_00",
+      "metrics/notificationScoreboard/days/2026-10-17_00",
+    ]);
+    assert.deepEqual(documents.get(counterPaths[0]), {sends: {post: 1}});
+  } finally {
+    Math.random = originalRandom;
+    t.mock.method(db, "doc", originalDoc);
+    t.mock.method(db, "runTransaction", originalTransaction);
   }
 });
 
@@ -139,12 +220,94 @@ test("the callable atomically dedupes signals and preserves sibling kinds", asyn
     assert.deepEqual(await call({type: "tap", kind: "wotd"}), {ok: true, counted: true});
     assert.deepEqual(await call({type: "tap", kind: "wotd"}), {ok: true, counted: false});
     assert.deepEqual(await call({type: "tap", kind: "follower"}), {ok: true, counted: true});
+    assert.deepEqual(await call({type: "tap", kind: "win_back"}), {ok: true, counted: true});
     assert.deepEqual(await call({type: "permission", result: "granted"}), {ok: true, counted: true});
     assert.deepEqual(await call({type: "permission", result: "declined"}), {ok: true, counted: false});
-    assert.deepEqual(docs.get(`metrics/notificationScoreboard/days/${utcDateString()}`), {
-      taps: {wotd: 1, follower: 1},
-      permissionGranted: 1,
-    });
+    const day = utcDateString();
+    const counters = [...docs.entries()].filter(([path]) => path.startsWith(`metrics/notificationScoreboard/days/${day}_`));
+    assert.equal(docs.has(`metrics/notificationScoreboard/signals/uid-1_tap_${day}_wotd`), true);
+    assert.equal(docs.has(`metrics/notificationScoreboard/days/${day}`), false);
+    const taps: Record<string, number> = {};
+    let granted = 0;
+    for (const [, data] of counters) {
+      const bucket = data.taps as Record<string, number> | undefined;
+      for (const [kind, count] of Object.entries(bucket ?? {})) taps[kind] = (taps[kind] ?? 0) + count;
+      if (typeof data.permissionGranted === "number") granted += data.permissionGranted;
+    }
+    assert.deepEqual(taps, {wotd: 1, follower: 1, win_back: 1});
+    assert.equal(counters.filter(([, data]) => {
+      const bucket = data.taps as Record<string, number> | undefined;
+      return bucket?.wotd === 1 && bucket.win_back === 1;
+    }).length, 1);
+    assert.equal(granted, 1);
+  } finally {
+    t.mock.method(db, "doc", originalDoc);
+    t.mock.method(db, "runTransaction", originalTransaction);
+  }
+});
+
+test("signal retries keep the dedupe and counter document paths stable", async (t) => {
+  const originalDoc = db.doc.bind(db);
+  const originalTransaction = db.runTransaction.bind(db);
+  const documents = new Map<string, Record<string, unknown>>();
+  const counterPaths: string[] = [];
+  const signalPaths: string[] = [];
+  let transactions = 0;
+  t.mock.method(db, "doc", (path: string) => ({path, firestore: db}));
+  t.mock.method(db, "runTransaction", async (callback: (tx: {
+    get: (ref: {path: string}) => Promise<{exists: boolean; data: () => Record<string, unknown> | undefined}>;
+    set: (ref: {path: string}, data: Record<string, unknown>, options?: {merge?: boolean}) => void;
+  }) => Promise<unknown>) => {
+    transactions += 1;
+    const invoke = async () => {
+      const writes: Array<{path: string; data: Record<string, unknown>; merge: boolean}> = [];
+      const result = await callback({
+        get: async (ref) => {
+          if (ref.path.includes("/signals/")) signalPaths.push(ref.path);
+          else counterPaths.push(ref.path);
+          const data = documents.get(ref.path);
+          return {exists: data !== undefined, data: () => data};
+        },
+        set: (ref, data, options) => writes.push({path: ref.path, data, merge: options?.merge ?? false}),
+      });
+      return {result, writes};
+    };
+    const commit = (writes: Array<{path: string; data: Record<string, unknown>; merge: boolean}>) => {
+      for (const write of writes) {
+        const prior = write.merge ? documents.get(write.path) ?? {} : {};
+        documents.set(write.path, {...prior, ...write.data});
+      }
+    };
+    if (transactions > 1) {
+      const attempt = await invoke();
+      commit(attempt.writes);
+      return attempt.result;
+    }
+    // Discard the first staged attempt as Firestore does on a conflict, then commit the retry.
+    await invoke();
+    const retryAttempt = await invoke();
+    commit(retryAttempt.writes);
+    return retryAttempt.result;
+  });
+  try {
+    const result = await recordNotificationSignal.run({
+      data: {type: "tap", kind: "win_back"},
+      auth: {uid: "uid-1"},
+    } as unknown as Parameters<typeof recordNotificationSignal.run>[0]);
+    assert.deepEqual(result, {ok: true, counted: true});
+    assert.equal(signalPaths.length, 2);
+    assert.equal(signalPaths[0], signalPaths[1]);
+    assert.equal(counterPaths.length, 2);
+    assert.equal(counterPaths[0], counterPaths[1]);
+    assert.match(counterPaths[0], /\/days\/\d{4}-\d{2}-\d{2}_\d{2}$/);
+    assert.equal(documents.size, 2);
+    assert.equal(documents.has(signalPaths[1]), true);
+    assert.deepEqual(documents.get(counterPaths[0]), {taps: {win_back: 1}});
+    assert.deepEqual(await recordNotificationSignal.run({
+      data: {type: "tap", kind: "win_back"},
+      auth: {uid: "uid-1"},
+    } as unknown as Parameters<typeof recordNotificationSignal.run>[0]), {ok: true, counted: false});
+    assert.deepEqual(documents.get(counterPaths[0]), {taps: {win_back: 1}});
   } finally {
     t.mock.method(db, "doc", originalDoc);
     t.mock.method(db, "runTransaction", originalTransaction);

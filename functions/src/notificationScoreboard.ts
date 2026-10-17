@@ -23,6 +23,26 @@ type KindOutcome = (typeof KIND_OUTCOMES)[number];
 
 const INSTALL_ID = /^[A-Za-z0-9_-]{8,80}$/;
 
+/** Spreads one UTC day across shard docs so a burst does not all transact on one document. */
+export const SCOREBOARD_SHARD_COUNT = 32;
+
+/** `{utc date}_{00-31}`. The date prefix stays sortable. */
+export function scoreboardShardDocId(day: string, index: number): string {
+  const shard = ((index % SCOREBOARD_SHARD_COUNT) + SCOREBOARD_SHARD_COUNT) % SCOREBOARD_SHARD_COUNT;
+  return `${day}_${String(shard).padStart(2, "0")}`;
+}
+
+function randomShardDocId(day: string): string {
+  return scoreboardShardDocId(day, Math.floor(Math.random() * SCOREBOARD_SHARD_COUNT));
+}
+
+/** Stable shard for a signal so a transaction retry updates the same counter. */
+function signalShardDocId(day: string, signalId: string): string {
+  let hash = 0;
+  for (let i = 0; i < signalId.length; i++) hash = (hash + signalId.charCodeAt(i)) % SCOREBOARD_SHARD_COUNT;
+  return scoreboardShardDocId(day, hash);
+}
+
 export function isNotificationKind(value: string): value is NotificationKind {
   return (NOTIFICATION_KINDS as readonly string[]).includes(value);
 }
@@ -72,8 +92,8 @@ export function applyScore(
   return bucket;
 }
 
-function dayRef(day: string) {
-  return db.doc(`metrics/notificationScoreboard/days/${day}`);
+function counterRef(docId: string) {
+  return db.doc(`metrics/notificationScoreboard/days/${docId}`);
 }
 
 /** Test stubs implement get and nothing else. A live ref exposes the Firestore client. */
@@ -88,7 +108,7 @@ function isLiveRef(ref: unknown): boolean {
 export async function recordPushOutcome(kind: string, outcome: "sends" | "accepts" | "fails", at = new Date()): Promise<void> {
   if (!isNotificationKind(kind)) return;
   try {
-    const ref = dayRef(utcDateString(at));
+    const ref = counterRef(randomShardDocId(utcDateString(at)));
     if (!isLiveRef(ref)) return;
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
@@ -143,7 +163,7 @@ export function planNotificationSignal(
 
 async function claimSignal(plan: Extract<SignalPlan, {ok: true}>, day: string): Promise<boolean> {
   const signal = db.doc(`metrics/notificationScoreboard/signals/${plan.signalId}`);
-  const ref = dayRef(day);
+  const ref = counterRef(signalShardDocId(day, plan.signalId));
   return db.runTransaction(async (tx) => {
     const existing = await tx.get(signal);
     if (existing.exists) return false;
