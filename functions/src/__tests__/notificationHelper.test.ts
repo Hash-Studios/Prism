@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
-import {db} from "../common";
+import {logger} from "firebase-functions/v2";
+import {db, utcDateString} from "../common";
 
 import {
   emailToTopic,
@@ -119,6 +120,57 @@ function personalSetup(t: test.TestContext, sessionToken?: string) {
 
 const personal = {title: "t", body: "b", data: {route: "r"}, modifier: "sam@example.com", channelId: "c"};
 
+function scoreboardSetup(t: test.TestContext, options: {failWrites?: boolean} = {}) {
+  const day = `metrics/notificationScoreboard/days/${utcDateString()}`;
+  const documents = new Map<string, Record<string, unknown>>();
+  const attempts: string[] = [];
+  const inboxWrites: string[] = [];
+  let transactionQueue = Promise.resolve();
+  t.mock.method(db, "doc", (path: string) => path.endsWith("/private/session") ? {
+    get: async () => ({data: () => ({fcmToken: "session-token"})}),
+  } : ({path, firestore: db}));
+  t.mock.method(db, "runTransaction", async (callback: (tx: {
+    get: (ref: {path: string}) => Promise<{exists: boolean; data: () => Record<string, unknown> | undefined}>;
+    set: (ref: {path: string}, data: Record<string, unknown>, options?: {merge?: boolean}) => void;
+  }) => Promise<unknown>) => {
+    attempts.push("transaction");
+    if (options.failWrites) throw new Error("scoreboard unavailable");
+    const priorTransaction = transactionQueue;
+    let releaseTransaction: () => void = () => undefined;
+    transactionQueue = new Promise<void>((resolve) => {
+      releaseTransaction = resolve;
+    });
+    await priorTransaction;
+    try {
+      const writes: Array<{path: string; data: Record<string, unknown>; merge: boolean}> = [];
+      const result = await callback({
+        get: async (ref) => {
+          const data = documents.get(ref.path);
+          return {exists: data !== undefined, data: () => data};
+        },
+        set: (ref, data, setOptions) => writes.push({path: ref.path, data, merge: setOptions?.merge ?? false}),
+      });
+      for (const write of writes) {
+        const prior = write.merge ? documents.get(write.path) ?? {} : {};
+        documents.set(write.path, {...prior, ...write.data});
+      }
+      return result;
+    } finally {
+      releaseTransaction();
+    }
+  });
+  const sent: Sent[] = [];
+  t.mock.method(admin.messaging(), "send", async (message: Sent) => {
+    sent.push(message);
+    return "id";
+  });
+  t.mock.method(db, "collection", (name: string) => name === "notifications" ? {
+    add: async () => inboxWrites.push("add"),
+    doc: () => ({set: async () => inboxWrites.push("set")}),
+  } : ({add: async () => undefined}));
+  return {day, documents, attempts, inboxWrites, sent};
+}
+
 test("a personal push goes to the uid topic and the session token under one collapse key", async (t) => {
   const {inbox, sent} = personalSetup(t, "session-token");
   const ok = await sendToUser(personal, {uid: "u1", email: "sam@example.com", legacyToken: "legacy-token"});
@@ -127,6 +179,93 @@ test("a personal push goes to the uid topic and the session token under one coll
   assert.deepEqual(sent.map((m) => m.topic ?? m.token), ["u_u1", "session-token"]);
   assert.ok(sent[0].android?.notification?.tag?.startsWith("p_"));
   assert.equal(sent[0].android?.notification?.tag, sent[1].android?.notification?.tag);
+});
+
+test("a personal uid-topic and token each count as an FCM attempt", async (t) => {
+  const {day, documents, sent} = scoreboardSetup(t);
+  await sendToUser({...personal, data: {route: "wall"}, scoreKind: "post"}, {
+    uid: "u1", email: "sam@example.com", legacyToken: "legacy-token",
+  });
+  assert.deepEqual(sent.map((message) => message.topic ?? message.token), ["u_u1", "session-token"]);
+  assert.deepEqual(documents.get(day), {sends: {post: 2}, accepts: {post: 2}});
+});
+
+test("an inbox-only notification with a known kind does not count as a push", async (t) => {
+  const {documents, attempts, inboxWrites} = scoreboardSetup(t);
+  await sendNotification({...personal, data: {route: "wall"}, scoreKind: "post"});
+  assert.deepEqual(inboxWrites, ["add"]);
+  assert.equal(attempts.length, 0);
+  assert.equal(documents.size, 0);
+});
+
+test("an unknown route with an FCM target sends but does not count", async (t) => {
+  const {documents, attempts, sent} = scoreboardSetup(t);
+  await sendNotification({...personal, data: {route: "unrecognized"}, fcmTarget: {token: "device-token"}, pushOnly: true});
+  assert.equal(sent.length, 1);
+  assert.equal(attempts.length, 0);
+  assert.equal(documents.size, 0);
+});
+
+test("an email-prefix topic with a known kind does not send or count", async (t) => {
+  const {documents, attempts, sent} = scoreboardSetup(t);
+  await sendNotification({
+    ...personal,
+    data: {route: "wall"},
+    scoreKind: "post",
+    fcmTarget: {topic: emailToTopic("sam@example.com")},
+    pushOnly: true,
+  });
+  assert.equal(sent.length, 0);
+  assert.equal(attempts.length, 0);
+  assert.equal(documents.size, 0);
+});
+
+test("a recipient lookup failure does not count as an FCM failure", async (t) => {
+  const {documents, attempts, sent} = scoreboardSetup(t);
+  const failing = {
+    where: () => failing,
+    limit: () => failing,
+    get: async () => {
+      throw new Error("lookup failed");
+    },
+  };
+  t.mock.method(db, "collection", (name: string) => name === "usersv2" ? failing : ({add: async () => undefined}));
+  const error = Object.getOwnPropertyDescriptor(logger, "error");
+  Object.defineProperty(logger, "error", {configurable: true, value: () => undefined});
+  try {
+    const ok = await sendNotification({
+      ...personal,
+      data: {route: "wall"},
+      scoreKind: "post",
+      fcmTarget: {topic: "u_u1"},
+    });
+    assert.equal(ok, false);
+    assert.equal(sent.length, 0);
+    assert.equal(attempts.length, 0);
+    assert.equal(documents.size, 0);
+  } finally {
+    if (error) Object.defineProperty(logger, "error", error);
+  }
+});
+
+test("scoreboard write failures do not fail an accepted push", async (t) => {
+  const {attempts, sent} = scoreboardSetup(t, {failWrites: true});
+  const warn = Object.getOwnPropertyDescriptor(logger, "warn");
+  Object.defineProperty(logger, "warn", {configurable: true, value: () => undefined});
+  try {
+    const ok = await sendNotification({
+      ...personal,
+      data: {route: "wall"},
+      scoreKind: "post",
+      fcmTarget: {token: "device-token"},
+      pushOnly: true,
+    });
+    assert.equal(ok, true);
+    assert.equal(sent.length, 1);
+    assert.equal(attempts.length, 2);
+  } finally {
+    if (warn) Object.defineProperty(logger, "warn", warn);
+  }
 });
 
 test("a personal push falls back to the legacy token and never uses the email-prefix topic", async (t) => {

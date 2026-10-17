@@ -239,6 +239,24 @@
       ]
     },
     {
+      "collectionGroup": "usersv2",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "appOpenTimezoneOffsetMinutes",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastAppOpenAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "walls",
       "queryScope": "COLLECTION",
       "fields": [

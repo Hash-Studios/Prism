@@ -223,6 +223,39 @@ void main() {
       );
       expect(NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'announcement'}), isNull);
       expect(NotificationRouteMapper.pushKindFor(<String, dynamic>{}), isNull);
+      expect(
+        NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'home', 'push_kind': 'win_back'}),
+        PushKindValue.winBack,
+      );
+      expect(
+        NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'ai', 'push_kind': 'win_back'}),
+        PushKindValue.winBack,
+      );
+      expect(
+        NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'wall_of_the_day', 'push_kind': 'win_back'}),
+        PushKindValue.winBack,
+      );
+      expect(
+        NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'announcement', 'push_kind': 'rejection'}),
+        PushKindValue.rejection,
+      );
+    });
+
+    test('win-back opens the feed, AI, or Wall of the Day', () async {
+      final home = await mapper.fromPayload(<String, dynamic>{
+        'route': 'home',
+        'push_kind': 'win_back',
+      }, sourceTag: 'test');
+      final ai = await mapper.fromPayload(<String, dynamic>{'route': 'ai', 'push_kind': 'win_back'}, sourceTag: 'test');
+      final wall = await mapper.fromPayload(<String, dynamic>{
+        'route': 'wall_of_the_day',
+        'push_kind': 'win_back',
+      }, sourceTag: 'test');
+
+      expect(home, isA<HomeTabRoute>());
+      expect(ai, isA<AiTabRoute>());
+      expect(wall, isA<HomeTabRoute>());
+      expect(openedKinds(), <PushKindValue?>[PushKindValue.winBack, PushKindValue.winBack, PushKindValue.winBack]);
     });
 
     test('a push tap records push_opened once with its kind', () async {
@@ -243,6 +276,19 @@ void main() {
       mapper.trackPushOpened(<String, dynamic>{'route': 'follower', 'url': 'https://prismwalls.com/user/ana'});
 
       expect(openedKinds(), <PushKindValue?>[PushKindValue.follower]);
+    });
+
+    test('measured tap hook receives the explicit push kind without Firebase access', () async {
+      final List<String> measuredKinds = <String>[];
+      NotificationRouteMapper.onMeasuredTap = (String kind) async => measuredKinds.add(kind);
+      try {
+        mapper.trackPushOpened(<String, dynamic>{'route': 'home', 'push_kind': 'win_back'});
+        await Future<void>.delayed(Duration.zero);
+
+        expect(measuredKinds, <String>['win_back']);
+      } finally {
+        NotificationRouteMapper.onMeasuredTap = null;
+      }
     });
   });
 }

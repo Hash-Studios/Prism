@@ -2,6 +2,7 @@ import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db as database, findUserByEmail, str} from "./common";
+import {recordPushOutcome, scoreKindFor} from "./notificationScoreboard";
 
 export interface NotificationData extends Record<string, string> {
   route: string;
@@ -26,6 +27,8 @@ export interface NotificationPayload {
   collapseKey?: string;
   /** Fixed inbox doc id, so a retried or repeated event rewrites one doc instead of adding another. */
   docId?: string;
+  /** Scoreboard kind. When omitted, the route is used. Unknown routes are not counted. */
+  scoreKind?: string;
 }
 
 /**
@@ -84,28 +87,38 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
   }
 
   const message = fcmMessage({...payload, fcmTarget: payload.fcmTarget});
+  const kind = scoreKindFor(payload);
 
-  try {
-    if ("topic" in payload.fcmTarget && payload.modifier.includes("@")) {
-      if (payload.fcmTarget.topic === emailToTopic(payload.modifier)) {
-        logger.warn("Refusing to push a personal notification to an email-prefix topic.", {route: payload.data.route});
-        return true;
-      }
-      if (!payload.pushOnly) {
+  if ("topic" in payload.fcmTarget && payload.modifier.includes("@")) {
+    if (payload.fcmTarget.topic === emailToTopic(payload.modifier)) {
+      logger.warn("Refusing to push a personal notification to an email-prefix topic.", {route: payload.data.route});
+      return true;
+    }
+    if (!payload.pushOnly) {
+      try {
         const user = await findUserByEmail(payload.modifier);
         if (isLoggedOut(user?.data())) return true;
+      } catch (err) {
+        logger.error("Failed to resolve the personal notification recipient.", {err, route: payload.data.route});
+        return false;
       }
     }
+  }
 
+  try {
+    if (kind) await recordPushOutcome(kind, "sends");
     const messageId = await messaging.send(message);
+    if (kind) await recordPushOutcome(kind, "accepts");
     logger.info("FCM push sent.", {
       messageId,
       route: payload.data.route,
+      kind,
       target: payload.fcmTarget,
     });
     return true;
   } catch (err) {
-    logger.error("Failed to send FCM push.", {err, route: payload.data.route});
+    if (kind) await recordPushOutcome(kind, "fails");
+    logger.error("Failed to send FCM push.", {err, route: payload.data.route, kind});
     return false;
   }
 }
@@ -114,6 +127,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
 export function fcmMessage(
   payload: NotificationPayload & {fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>},
 ): admin.messaging.Message {
+  const kind = scoreKindFor(payload);
   return {
     notification: {
       title: payload.title,
@@ -121,6 +135,7 @@ export function fcmMessage(
     },
     data: {
       ...payload.data,
+      ...(kind ? {push_kind: kind} : {}),
       channel_id: payload.channelId,
       ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
     },

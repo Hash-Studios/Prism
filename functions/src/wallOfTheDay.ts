@@ -230,6 +230,7 @@ async function announce(wallId: string): Promise<void> {
     modifier: "all",
     fcmTarget: {topic: "wall_of_the_day"},
     docId: `wotd_${utcDateString()}`,
+    scoreKind: "wotd",
   });
   if (!delivered) {
     throw new Error("Wall of the day push failed.");
@@ -251,6 +252,7 @@ async function notifyCreator(wallId: string, creatorEmail: string, url: string, 
       imageUrl,
       modifier: creatorEmail,
       channelId: "wall_of_the_day",
+      scoreKind: "wotd_creator",
       collapseKey: `wotd_creator_${day}`,
       docId: `wotd_creator_${day}`,
     }, creatorEmail);
@@ -371,7 +373,9 @@ async function sendDueBuckets(slotMs: number): Promise<void> {
         payload = await wotdPushPayload(claim.wallId);
         payloads.set(claim.wallId, payload);
       }
-      delivered = await sendNotification({...payload, modifier: "all", fcmTarget: {topic}, pushOnly: true});
+      delivered = await sendNotification({
+        ...payload, modifier: "all", fcmTarget: {topic}, pushOnly: true, scoreKind: "wotd",
+      });
     } finally {
       if (!delivered) await releaseBucket(topic, claim.claimId, claim.previous);
     }

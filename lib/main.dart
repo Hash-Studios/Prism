@@ -67,6 +67,7 @@ import 'package:Prism/features/wall_of_the_day/views/widgets/wotd_quick_tile_lis
 import 'package:Prism/firebase_options.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
+import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -897,6 +898,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       hasConnection: () => getIt<ConnectivityService>().hasConnection(),
       retry: (String code) => unawaited(_resolveAndNavigateShortCode(code, isRetry: true)),
     );
+    NotificationRouteMapper.onMeasuredTap = NotificationSignals.instance.onTap;
     localNotification
       ..router = _appRouter
       ..onPushTap = _handlePushTap
@@ -919,6 +921,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     );
     unawaited(_listenForPushMessages());
     unawaited(_watchSession());
+    unawaited(NotificationSignals.instance.onResumed());
   }
 
   Future<void> _refreshWotdTopics() async {
@@ -940,6 +943,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         context.read<WotdBloc>().add(const WotdEvent.started());
       }
       unawaited(_refreshWotdTopics());
+      unawaited(NotificationSignals.instance.onResumed());
       unawaited(_shortLinkRetry.onResumed());
       if (_lastCoinSyncResume == null || now.difference(_lastCoinSyncResume!) >= _coinSyncResumeThrottle) {
         _lastCoinSyncResume = now;

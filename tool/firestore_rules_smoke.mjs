@@ -26,6 +26,7 @@ const seed = () => Promise.all([
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
+const C = tok('c', 'c@x.com');
 const cases = [
   ['no-op follow (already following)', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']) }, A, ['followers']), 200],
   ['follow', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com', 'b@x.com']) }, Bu, ['followers']), 200],
@@ -40,6 +41,62 @@ const cases = [
   ['owner sets own tier', () => req('PATCH', 'usersv2/b', { subscriptionTier: { stringValue: 'pro' } }, Bu, ['subscriptionTier']), 403],
   ['owner sets a coin award flag', () => req('PATCH', 'usersv2/b', coinState({ profileCompletionRewarded: { booleanValue: true } }), Bu, ['coinState.profileCompletionRewarded']), 403],
   ['owner toggles streak reminder', () => req('PATCH', 'usersv2/b', coinState({ streakReminderEnabled: { booleanValue: false } }), Bu, ['coinState.streakReminderEnabled']), 200],
+  ['owner updates an unrelated field without an app-open offset', () => req('PATCH', 'usersv2/b', {
+    name: { stringValue: 'B' },
+  }, Bu, ['name']), 200],
+  ['owner creates profile without app-open fields', () => req('PATCH', 'usersv2/c', {
+    id: { stringValue: 'c' }, name: { stringValue: 'C' },
+  }, C), 200],
+  ['owner cannot create profile with stale last app open', () => req('PATCH', 'usersv2/c-stale', {
+    id: { stringValue: 'c-stale' },
+    lastAppOpenAt: { timestampValue: new Date(Date.now() - 6 * 60 * 1000).toISOString() },
+  }, tok('c-stale', 'c-stale@x.com')), 403],
+  ['owner cannot create profile with invalid app-open offset', () => req('PATCH', 'usersv2/c-offset', {
+    id: { stringValue: 'c-offset' }, appOpenTimezoneOffsetMinutes: { integerValue: '9999' },
+  }, tok('c-offset', 'c-offset@x.com')), 403],
+  ['admin seeds profile with stale app-open timestamp', () => req('PATCH', 'usersv2/d', {
+    id: { stringValue: 'd' }, lastAppOpenAt: { timestampValue: new Date(Date.now() - 6 * 60 * 1000).toISOString() },
+  }, ADM), 200],
+  ['owner can update offset without revalidating old timestamp', () => req('PATCH', 'usersv2/d', {
+    appOpenTimezoneOffsetMinutes: { integerValue: '60' },
+  }, tok('d', 'd@x.com'), ['appOpenTimezoneOffsetMinutes']), 200],
+  ['owner stamps last app open', () => req('PATCH', 'usersv2/b', {
+    lastAppOpenAt: { timestampValue: new Date().toISOString() },
+    appOpenTimezoneOffsetMinutes: { integerValue: '330' },
+  }, Bu, ['lastAppOpenAt', 'appOpenTimezoneOffsetMinutes']), 200],
+  ['owner accepts a recent last app open', () => req('PATCH', 'usersv2/b', {
+    lastAppOpenAt: { timestampValue: new Date(Date.now() - 4 * 60 * 1000).toISOString() },
+  }, Bu, ['lastAppOpenAt']), 200],
+  ['owner accepts a last app open within one minute ahead', () => req('PATCH', 'usersv2/b', {
+    lastAppOpenAt: { timestampValue: new Date(Date.now() + 50 * 1000).toISOString() },
+  }, Bu, ['lastAppOpenAt']), 200],
+  ['owner backdates last app open', () => req('PATCH', 'usersv2/b', {
+    lastAppOpenAt: { timestampValue: new Date(Date.now() - 6 * 60 * 1000).toISOString() },
+  }, Bu, ['lastAppOpenAt']), 403],
+  ['owner sets last app open too far ahead', () => req('PATCH', 'usersv2/b', {
+    lastAppOpenAt: { timestampValue: new Date(Date.now() + 2 * 60 * 1000).toISOString() },
+  }, Bu, ['lastAppOpenAt']), 403],
+  ['owner sets a wild timezone offset', () => req('PATCH', 'usersv2/b', {
+    appOpenTimezoneOffsetMinutes: { integerValue: '9999' },
+  }, Bu, ['appOpenTimezoneOffsetMinutes']), 403],
+  ['owner sets a timezone offset below the allowed range', () => req('PATCH', 'usersv2/b', {
+    appOpenTimezoneOffsetMinutes: { integerValue: '-735' },
+  }, Bu, ['appOpenTimezoneOffsetMinutes']), 403],
+  ['owner sets the minimum timezone offset', () => req('PATCH', 'usersv2/b', {
+    appOpenTimezoneOffsetMinutes: { integerValue: '-720' },
+  }, Bu, ['appOpenTimezoneOffsetMinutes']), 200],
+  ['owner sets the maximum timezone offset', () => req('PATCH', 'usersv2/b', {
+    appOpenTimezoneOffsetMinutes: { integerValue: '840' },
+  }, Bu, ['appOpenTimezoneOffsetMinutes']), 200],
+  ['owner sets an offset off the 15 minute grid', () => req('PATCH', 'usersv2/b', {
+    appOpenTimezoneOffsetMinutes: { integerValue: '7' },
+  }, Bu, ['appOpenTimezoneOffsetMinutes']), 403],
+  ['owner sets a non-integer timezone offset', () => req('PATCH', 'usersv2/b', {
+    appOpenTimezoneOffsetMinutes: { doubleValue: 30.5 },
+  }, Bu, ['appOpenTimezoneOffsetMinutes']), 403],
+  ['owner stamps a west-of-UTC offset', () => req('PATCH', 'usersv2/b', {
+    appOpenTimezoneOffsetMinutes: { integerValue: '-300' },
+  }, Bu, ['appOpenTimezoneOffsetMinutes']), 200],
   ['user writes a coin ledger entry', () => req('PATCH', 'coinTransactions/t1', {
     userId: { stringValue: 'b' }, delta: { integerValue: '500' },
   }, Bu), 403],
@@ -64,6 +121,9 @@ const cases = [
   ['user writes the username registry', () => req('PATCH', 'usernames/mine', { uid: { stringValue: 'b' } }, Bu), 403],
   ['user writes a wall action rate doc', () => req('PATCH', 'wallActionRate/b_W1_set', { lastAt: { stringValue: 'x' } }, Bu), 403],
   ['user writes a daily stats doc', () => req('PATCH', 'wallpaper_stats_daily/20260102_W1', { sets: { integerValue: '9' } }, Bu), 403],
+  ['user writes a notification scoreboard metric', () => req('PATCH', 'metrics/notificationScoreboard', { sends: { integerValue: '9' } }, Bu), 403],
+  ['user writes a notification scoreboard day', () => req('PATCH', 'metrics/notificationScoreboard/days/20261017', { sends: { integerValue: '9' } }, Bu), 403],
+  ['user writes a notification scoreboard signal', () => req('PATCH', 'metrics/notificationScoreboard/signals/s1', { sentAt: { stringValue: 'x' } }, Bu), 403],
 ];
 await seed();
 let bad = 0;

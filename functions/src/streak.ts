@@ -434,6 +434,7 @@ async function remindUser(
     },
     modifier: userEmail,
     channelId: REMINDER_CHANNEL_ID,
+    scoreKind: "streak_reminder",
     fcmTarget: {token: fcmToken},
     docId: `streak_${userDoc.ref.id}_${todayLocalKey}`,
   });

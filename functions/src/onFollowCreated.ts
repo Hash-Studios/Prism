@@ -104,6 +104,7 @@ export const onFollowCreated = onDocumentUpdated(
         },
         modifier: followedUserEmail,
         channelId: "followers",
+        scoreKind: "follower",
         collapseKey: followCollapseKey(followerEmail),
         docId: followInboxDocId(followedUid, followerEmail),
       };
