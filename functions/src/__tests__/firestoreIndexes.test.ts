@@ -37,3 +37,19 @@ test("walls have the colour search index: colors contains, review, newest first"
   assert.deepEqual(index.fields.slice(1).map((f) => [f.fieldPath, f.order]),
     [["review", "ASCENDING"], ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]);
 });
+
+const hasIndex = (collectionGroup: string, fields: Array<[string, string]>) =>
+  config.indexes.some((i) => i.collectionGroup === collectionGroup &&
+    JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order])) === JSON.stringify(fields));
+
+test("economy v2 indexes: weekly xp leaderboard, drop reservation queue, active boosts", () => {
+  assert.ok(hasIndex("usersv2", [["xpWeek.weekKey", "ASCENDING"], ["xpWeek.xp", "DESCENDING"]]));
+  assert.ok(hasIndex("walls", [["dropReserved", "ASCENDING"], ["review", "ASCENDING"], ["createdAt", "ASCENDING"]]));
+  assert.ok(hasIndex("boosts", [["endsAt", "ASCENDING"], ["startsAt", "DESCENDING"]]));
+  assert.ok(hasIndex("draws", [["status", "ASCENDING"], ["settledAt", "DESCENDING"]]));
+});
+
+test("quest event rate docs expire through a TTL policy on expireAt", () => {
+  assert.ok(config.fieldOverrides.some((o) => o.collectionGroup === "questEventRate" && o.fieldPath === "expireAt" &&
+    o.ttl === true));
+});

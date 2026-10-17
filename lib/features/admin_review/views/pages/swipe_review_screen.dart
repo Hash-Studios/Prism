@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
+import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.dart';
@@ -238,6 +239,8 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
             customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
               const CustomSemanticsAction(label: 'Approve'): () => _dismissFromSemantics(approve: true),
               const CustomSemanticsAction(label: 'Reject'): () => _dismissFromSemantics(approve: false),
+              if (canReserveForDrop(currentWall))
+                const CustomSemanticsAction(label: 'Reserve for Drop'): _reserveForDrop,
             },
             child: Stack(
               alignment: Alignment.center,
@@ -296,6 +299,12 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     );
   }
 
+  void _reserveForDrop() {
+    if (_phase == _SwipePhase.animating) return;
+    PrismHaptics.tap();
+    _bloc.add(const ReviewBatchSwipeReserved());
+  }
+
   void _dismissFromSemantics({required bool approve}) {
     if (_phase == _SwipePhase.animating) return;
     if (approve) {
@@ -329,6 +338,13 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
             }
           },
         ),
+        if (state.currentWall case final FirestoreDocument wall when canReserveForDrop(wall))
+          _ActionButton(
+            icon: Icons.auto_awesome_motion_outlined,
+            label: 'Reserve',
+            semanticLabel: 'Reserve for Drop',
+            onTap: _reserveForDrop,
+          ),
         _ActionButton(
           icon: Icons.skip_next_rounded,
           label: 'Skip',

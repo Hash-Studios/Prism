@@ -70,7 +70,7 @@ void main() {
     expect(find.byIcon(Icons.lock_outline_rounded), findsNWidgets(3));
     await tester.tap(find.text('Starfield'));
     await tester.pump();
-    expect(find.text('Unlock with Prism Pro'), findsOneWidget);
+    expect(find.text('Unlock · 20 coins'), findsOneWidget);
   });
 
   testWidgets('a Pro user sees no locks', (tester) async {

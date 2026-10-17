@@ -142,7 +142,10 @@ class NotificationRouteMapper {
       case 'ai':
         return AiTabRoute();
       case 'streak_reminder':
+      case 'rewards':
         return const RewardsTabRoute();
+      case 'drops':
+        return const DropsRoute();
       case 'follower':
         if (profileIdentifier.isNotEmpty) {
           return ProfileRoute(profileIdentifier: profileIdentifier);

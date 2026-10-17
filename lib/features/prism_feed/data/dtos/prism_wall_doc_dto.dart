@@ -32,6 +32,7 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @JsonKey(name: 'is_streak_exclusive') @Default(false) bool isStreakExclusive,
     @JsonKey(name: 'required_streak_days') int? requiredStreakDays,
     @JsonKey(name: 'streak_shop_coin_cost') int? streakShopCoinCost,
+    @FirestoreDateTimeConverter() DateTime? boostedUntil,
   }) = _PrismWallDocDto;
 
   factory PrismWallDocDto.fromJson(Map<String, dynamic> json) => _$PrismWallDocDtoFromJson(json);

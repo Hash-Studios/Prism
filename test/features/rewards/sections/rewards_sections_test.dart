@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/rewards/views/widgets/pro_spin_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
@@ -111,20 +113,68 @@ void main() {
     expect(find.text('Show less'), findsNothing);
   });
 
-  testWidgets('earn section lists the Pro bonuses only for Pro users', (tester) async {
+  testWidgets('activity hides zero-delta receipts', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    final firestore = CoinsTestFirestore();
+    firestore.transactions = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'tx-free',
+        'userId': 'user-1',
+        'action': 'wallpaperDownload',
+        'delta': 0,
+        'createdAt': DateTime.now(),
+      },
+      <String, dynamic>{
+        'id': 'tx-paid',
+        'userId': 'user-1',
+        'action': 'streakFreeze',
+        'delta': -50,
+        'createdAt': DateTime.now(),
+      },
+    ];
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    await tester.binding.setSurfaceSize(const Size(400, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_host(const RewardsActivitySection(), Brightness.dark));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('-50'), findsOneWidget);
+    expect(find.text('0'), findsNothing);
+    expect(find.text('Wallpaper download'), findsNothing);
+  });
+
+  testWidgets('earn section lists the Pro spin and the Pro streak multiplier only for Pro users', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
-    expect(find.text('Pro daily bonus'), findsNothing);
-    expect(find.text('Pro streak bonus'), findsNothing);
-    final int plainBonusRewards = find.text('+${CoinPolicy.proDailyBonus}').evaluate().length;
+    expect(find.text('Pro spin'), findsNothing);
+    expect(find.textContaining('Pro earns'), findsNothing);
+    expect(find.text('Day 7 chest'), findsOneWidget);
+    expect(find.text('+${CoinPolicy.streakChestMin} to +${CoinPolicy.streakChestMax}'), findsOneWidget);
 
     app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.dark));
-    expect(find.text('Pro daily bonus'), findsOneWidget);
-    expect(find.text('+${CoinPolicy.proDailyBonus}'), findsNWidgets(plainBonusRewards + 1));
-    expect(find.text('Pro streak bonus'), findsOneWidget);
-    expect(find.text('+${CoinPolicy.proStreakDailyBonus} to +${CoinPolicy.proStreak7Bonus}'), findsOneWidget);
+    final range = proSpinRange();
+    expect(find.text('Pro spin'), findsOneWidget);
+    expect(find.text('+${range.low} to +${range.high}'), findsOneWidget);
+    expect(find.text('Open Prism every day. Pro earns x1.5.'), findsOneWidget);
+  });
+
+  testWidgets('earn section labels the first video of the day and the daily cap', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
+    expect(
+      find.text(
+        'First one of the day +${CoinPolicy.rewardedAdFirstOfDay}, then +${CoinPolicy.rewardedAd}. '
+        'Up to ${EconomyConfig.current.award.rewardedAdMaxPerDay} a day.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('+${CoinsService.instance.adsRewardNow}'), findsOneWidget);
   });
 
   testWidgets('PrismTextStyles titles are not the legacy dark grey on a dark theme', (tester) async {
@@ -259,6 +309,22 @@ void main() {
     verify(() => bloc.add(const StreakShopLoaded())).called(greaterThanOrEqualTo(1));
   });
 
+  testWidgets('spend grid: Pro users see the half prices and the Shop shows its lowest live price', (tester) async {
+    addTearDown(EconomyConfig.resetForTest);
+    EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+      'shopPrices': <String, int>{'glow_ember': 80, 'glow_founders': 10},
+      'flags': <String, Object>{'foundersUntil': '2020-01-01T00:00:00Z'},
+    });
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    await tester.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_host(const RewardsSpendSection(), Brightness.light));
+
+    expect(find.text('from ${proPrice(CoinPolicy.aiGenerationFast, true)}'), findsOneWidget);
+    expect(find.text('${proPrice(CoinPolicy.dropWall, true)} a wall'), findsOneWidget);
+    expect(find.text('from 80'), findsOneWidget);
+  });
+
   for (final Brightness brightness in Brightness.values) {
     group('${brightness.name} theme', () {
       testWidgets('spend section shows prices from CoinPolicy and runs the freeze callback', (tester) async {
@@ -269,8 +335,17 @@ void main() {
 
         expect(find.text('Use your coins'), findsOneWidget);
         expect(find.text('from ${CoinPolicy.aiGenerationFast}'), findsOneWidget);
-        expect(find.text('${CoinPolicy.premiumWallpaperDownload}'), findsOneWidget);
-        expect(find.text('${CoinPolicy.premiumFilter} per edit'), findsOneWidget);
+        expect(find.text('${CoinPolicy.dropWall} a wall'), findsOneWidget);
+        expect(find.text('from 100'), findsOneWidget);
+        expect(find.bySemanticsLabel('Boost, ${CoinPolicy.boostWall} coins'), findsOneWidget);
+        expect(find.bySemanticsLabel('Gift a pass, ${CoinPolicy.giftPremiumPass} coins'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(
+            'Downloads, ${CoinPolicy.wallpaperDownload} coins, first ${CoinPolicy.graceDownloads} free',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('first ${CoinPolicy.graceDownloads} free'), findsOneWidget);
 
         await tester.tap(find.text('Streak freeze'));
         expect(freezeTaps, 1);

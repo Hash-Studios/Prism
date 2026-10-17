@@ -1,25 +1,46 @@
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('daily streak reward climbs the ladder and caps at day 7', () {
-    const expected = <int, int>{0: 5, 1: 5, 2: 5, 3: 8, 4: 8, 5: 12, 6: 12, 7: 15, 30: 15};
+  test('daily streak reward follows the config table and caps at day 7', () {
+    const expected = <int, int>{0: 3, 1: 3, 2: 3, 3: 5, 4: 5, 5: 8, 6: 8, 7: 10, 30: 10};
     for (final entry in expected.entries) {
       expect(CoinPolicy.streakDailyRewardForDay(entry.key), entry.value, reason: 'day ${entry.key}');
     }
   });
 
-  test('streak bonus is paid only from day 7', () {
+  test('day 7 adds the smallest chest', () {
     expect(CoinPolicy.streakBonusRewardForDay(6), 0);
-    expect(CoinPolicy.streakBonusRewardForDay(7), 40);
+    expect(CoinPolicy.streakBonusRewardForDay(7), 15);
   });
 
-  test('total streak reward adds the bonus to the daily reward', () {
-    expect(CoinPolicy.streakTotalRewardForDay(6), 12);
-    expect(CoinPolicy.streakTotalRewardForDay(7), 55);
-    expect(CoinPolicy.streakClaimRewardForDay(3, isPro: false), 8);
-    expect(CoinPolicy.streakClaimRewardForDay(3, isPro: true), 13);
-    expect(CoinPolicy.streakClaimRewardForDay(7, isPro: true), 75);
+  test('Pro claims pay the multiplier on the whole day, rounded up', () {
+    expect(CoinPolicy.streakTotalRewardForDay(6), 8);
+    expect(CoinPolicy.streakTotalRewardForDay(7), 25);
+    expect(CoinPolicy.streakClaimRewardForDay(3, isPro: false), 5);
+    expect(CoinPolicy.streakClaimRewardForDay(3, isPro: true), 8);
+    expect(CoinPolicy.streakClaimRewardForDay(7, isPro: true), 38);
+    expect(CoinPolicy.proStreakDailyBonus, 2);
+    expect(CoinPolicy.proStreak7Bonus, 13);
+  });
+
+  test('getters read the loaded config', () {
+    addTearDown(EconomyConfig.resetForTest);
+    EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+      'spend': <String, dynamic>{'wallpaperDownload': 7},
+      'award': <String, dynamic>{
+        'rewardedAd': 4,
+        'proSpin': <Map<String, num>>[
+          <String, num>{'coins': 30, 'weight': 1},
+          <String, num>{'coins': 25, 'weight': 1},
+        ],
+      },
+    });
+    expect(CoinPolicy.wallpaperDownload, 7);
+    expect(CoinPolicy.rewardedAd, 4);
+    expect(CoinPolicy.proDailyBonus, 25);
+    expect(CoinPolicy.premiumWallpaperDownload, 25);
   });
 
   test('isStreakAlive allows one missed day per held freeze', () {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
+import {weekKey} from "../economy";
 import {AI_SPEND_SETTLE_MS, BADGES, badgeIo, checkBadges, evaluateBadges, isProfileComplete, settledCount, type BadgeFacts} from "../badges";
 
 const NONE: BadgeFacts = {
@@ -85,6 +86,7 @@ function fakeDb(
   onGetQuery?: (collection: string, limit: number | undefined) => void,
 ) {
   const docRef = (path: string) => ({path, get: async () => snapOf(path)});
+  t.mock.method(db, "doc", (path: string) => docRef(path));
   const snapOf = (path: string) => {
     const data = path.startsWith("usersv2/") ? store.user : path.startsWith("badgeCheckRate/") ? store.rate : undefined;
     const snapshot = data === undefined ? undefined : structuredClone(data);
@@ -193,6 +195,8 @@ test("checkBadges: awards coin badges once, credits coins and writes the ledger"
   ]);
   assert.equal(first.currentBalance, 210);
   assert.equal(store.user.coins, 210);
+  assert.equal(store.user.xp, 200);
+  assert.deepEqual(store.user.xpWeek, {weekKey: weekKey(1_700_000_000_000), xp: 200});
   assert.deepEqual((store.user.badges as {id: string}[]).map((b) => b.id), ["week_warrior", "streak_master", "prism_veteran"]);
   assert.deepEqual(Object.keys(store.ledger).sort(), [
     "coinTransactions/ctx_badgeReward_u1_prism_veteran",
@@ -393,6 +397,7 @@ test("checkBadges: zero-coin badges add no coins and no ledger rows", async (t) 
     {id: "profile_complete", coins: 0},
   ]);
   assert.equal(store.user.coins, 10);
+  assert.equal(store.user.xp, undefined);
   assert.deepEqual(store.ledger, {});
 });
 

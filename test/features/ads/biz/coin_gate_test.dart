@@ -28,8 +28,15 @@ void main() {
     prompts = <CoinGatePrompt>[];
   });
 
-  CoinGateSpec spec({int? nudgeBelow, bool confirmFirst = false, bool mounted = true}) => CoinGateSpec(
-    action: CoinSpendAction.premiumFilter,
+  CoinGateSpec spec({
+    int? nudgeBelow,
+    bool confirmFirst = false,
+    bool mounted = true,
+    bool premiumBypass = true,
+    CoinSpendAction action = CoinSpendAction.premiumFilter,
+  }) => CoinGateSpec(
+    action: action,
+    premiumBypass: premiumBypass,
     tags: _tags,
     upsellSource: 'upsell',
     upgradeSource: 'upgrade',
@@ -51,6 +58,19 @@ void main() {
     expect(await CoinGate(port).run(spec()), CoinGateResult.performedFree);
     expect(performed, 1);
     expect(port.log, isEmpty);
+  });
+
+  test('premium user pays when the spec turns the bypass off', () async {
+    port.isPremium = true;
+    expect(await CoinGate(port).run(spec(premiumBypass: false)), CoinGateResult.performed);
+    expect(port.log, <String>['spend:x.spend']);
+  });
+
+  test('premium user pays for actions outside the config bypass set', () async {
+    port.isPremium = true;
+    expect(await CoinGate(port).run(spec(action: CoinSpendAction.boostWall)), isNot(CoinGateResult.performedFree));
+    expect(port.log.first, 'spend:x.spend');
+    expect(performed, 0);
   });
 
   test('enough coins: spends then performs', () async {
@@ -302,9 +322,13 @@ void main() {
     expect(performed, 0);
   });
 
-  test('two ads can cover a Pro wallpaper that costs more than one ad pays', () async {
+  test('several ads can cover a Pro wallpaper that costs more than one ad pays', () async {
     port.balance = 0;
-    final List<CoinGateChoice> choices = <CoinGateChoice>[CoinGateChoice.watchAd, CoinGateChoice.watchAd];
+    final List<CoinGateChoice> choices = <CoinGateChoice>[
+      CoinGateChoice.watchAd,
+      CoinGateChoice.watchAd,
+      CoinGateChoice.watchAd,
+    ];
     final CoinGateResult result = await CoinGate(port).run(
       CoinGateSpec(
         action: CoinSpendAction.premiumWallpaperDownload,
@@ -324,8 +348,8 @@ void main() {
       ),
     );
     expect(result, CoinGateResult.performed);
-    expect(prompts.map((p) => p.missing), <int>[15, 5]);
-    expect(port.log.where((e) => e == 'ad'), hasLength(2));
+    expect(prompts.map((p) => p.missing), <int>[25, 15, 5]);
+    expect(port.log.where((e) => e == 'ad'), hasLength(3));
     expect(performed, 1);
     expect(port.balance, 5);
   });

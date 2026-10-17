@@ -14,6 +14,7 @@ final class PrismWallpaper {
     this.requiredStreakDays,
     this.streakShopCoinCost,
     this.firestoreDocumentId,
+    this.boostedUntil,
   });
 
   final WallpaperCore core;
@@ -33,6 +34,11 @@ final class PrismWallpaper {
 
   /// Firestore document id in [walls] when loaded from Prism; used for UGC reporting.
   final String? firestoreDocumentId;
+
+  /// End of the paid trending boost. Null when the wall was never boosted.
+  final DateTime? boostedUntil;
+
+  bool isBoostedAt(DateTime now) => boostedUntil?.isAfter(now) ?? false;
 
   String get id => core.id;
   WallpaperSource get source => core.source;

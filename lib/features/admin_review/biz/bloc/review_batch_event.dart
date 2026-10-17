@@ -17,6 +17,10 @@ class ReviewBatchSwipeRejected extends ReviewBatchEvent {
   const ReviewBatchSwipeRejected({this.reason = 'Does not meet community guidelines'});
 }
 
+class ReviewBatchSwipeReserved extends ReviewBatchEvent {
+  const ReviewBatchSwipeReserved();
+}
+
 class ReviewBatchSwipeSkipped extends ReviewBatchEvent {
   const ReviewBatchSwipeSkipped();
 }

@@ -9,6 +9,8 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/downloaded_link_lookup.dart';
+import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/coins/pending_download.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -32,6 +34,8 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/widgets.dart';
 
+export 'package:Prism/core/coins/economy_state.dart';
+
 class CoinMutationResult {
   const CoinMutationResult({
     required this.success,
@@ -46,6 +50,8 @@ class CoinMutationResult {
     this.unknownOutcomeTransactionId = '',
     this.pendingDownloadTxId = '',
     this.adsRemaining,
+    this.graceDownloadsLeft,
+    this.passUntil,
   });
 
   final bool success;
@@ -68,6 +74,12 @@ class CoinMutationResult {
   /// Rewarded ads the user can still watch today. Only the `rewardedAd` award reply sets it.
   final int? adsRemaining;
 
+  /// Free downloads left after a spend reply that reports them.
+  final int? graceDownloadsLeft;
+
+  /// End of the pass a pass spend (auto-rotate, live wallpaper style) bought.
+  final DateTime? passUntil;
+
   CoinMutationResult withPendingDownloadTxId(String txId) => CoinMutationResult(
     success: success,
     changed: changed,
@@ -81,6 +93,8 @@ class CoinMutationResult {
     unknownOutcomeTransactionId: unknownOutcomeTransactionId,
     pendingDownloadTxId: txId,
     adsRemaining: adsRemaining,
+    graceDownloadsLeft: graceDownloadsLeft,
+    passUntil: passUntil,
   );
 
   // ignore: prefer_constructors_over_static_methods
@@ -225,6 +239,7 @@ class StreakClaimResult {
     required this.totalReward,
     required this.newBalance,
     this.milestone,
+    this.isChest = false,
   });
 
   /// Reads a claimDailyStreak payload. Fields an older backend does not send get safe defaults.
@@ -246,6 +261,7 @@ class StreakClaimResult {
       freezesLeft: max(0, parseIntOr(payload['freezesLeft'])),
       isWeekComplete: payload['isWeekComplete'] == null ? cycleDay == 7 : asBool(payload['isWeekComplete']),
       milestone: payload['milestone'] == null ? null : parseIntOr(payload['milestone']),
+      isChest: asBool(payload['isChest']),
       dailyReward: parseIntOr(payload['dailyReward']),
       streakBonusReward: parseIntOr(payload['streakBonusReward']),
       proBonusReward: parseIntOr(payload['proBonusReward']),
@@ -264,6 +280,7 @@ class StreakClaimResult {
   final int freezesUsed;
   final int freezesLeft;
   final bool isWeekComplete;
+  final bool isChest;
   final int? milestone;
   final int dailyReward;
   final int streakBonusReward;
@@ -306,6 +323,22 @@ class CoinsService with WidgetsBindingObserver {
   static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
   static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
+
+  /// Spends the server can refund (`REFUNDABLE_ACTIONS` in coinsCallables.ts). Only these go to the refund queue.
+  static const Set<CoinSpendAction> refundableSpendActions = <CoinSpendAction>{
+    CoinSpendAction.wallpaperDownload,
+    CoinSpendAction.premiumWallpaperDownload,
+    CoinSpendAction.aiGeneration,
+  };
+
+  /// Spends whose request id is stored until a definite reply, so a retry replays the same charge.
+  static const Set<CoinSpendAction> _replayedSpendActions = <CoinSpendAction>{
+    CoinSpendAction.wallpaperDownload,
+    CoinSpendAction.premiumWallpaperDownload,
+    CoinSpendAction.premiumFilter,
+    CoinSpendAction.liveWallpaperStyle,
+    CoinSpendAction.autoRotatePass7d,
+  };
   final Queue<Completer<void>> _refundQueueWaiters = Queue<Completer<void>>();
   bool _refundQueueHeld = false;
   bool _pendingRetryInFlight = false;
@@ -345,6 +378,77 @@ class CoinsService with WidgetsBindingObserver {
   final Set<(String, String)> _publishedClaimDays = <(String, String)>{};
   String? _pendingFreezeUserId;
   String? _pendingFreezeRequestId;
+
+  final ValueNotifier<XpStatus> xpNotifier = ValueNotifier<XpStatus>(XpStatus.empty());
+  final ValueNotifier<QuestState?> questsNotifier = ValueNotifier<QuestState?>(null);
+
+  /// Quest items the server just paid. The UI shows them, then calls [consumeQuestAwards].
+  final ValueNotifier<List<QuestAward>> questAwardsNotifier = ValueNotifier<List<QuestAward>>(const <QuestAward>[]);
+  final ValueNotifier<Inventory> inventoryNotifier = ValueNotifier<Inventory>(Inventory.empty);
+
+  /// Unlocked Drop walls by wall id.
+  final ValueNotifier<Map<String, DropUnlock>> dropsUnlockedNotifier = ValueNotifier<Map<String, DropUnlock>>(
+    const <String, DropUnlock>{},
+  );
+  final ValueNotifier<Passes> passesNotifier = ValueNotifier<Passes>(Passes.empty);
+  String _economyUserId = '';
+
+  /// The user whose root XP was read, so a later rise can be announced as a rank up.
+  String _xpUserId = '';
+  int _economyRev = -1;
+  int _graceDownloadsUsed = 0;
+  String? _adsTodayDay;
+  int _adsTodayCount = 0;
+  final Map<String, String> _pendingEconomyRequests = <String, String>{};
+  final Set<String> _spendRequestsInFlight = <String>{};
+
+  /// The cached economy state belongs to the signed-in user.
+  bool get _ownsEconomyState => _canMutateCoins() && _economyUserId == app_state.prismUser.id;
+
+  /// Free downloads the user has left. Until the signed-in user's own count loads, a new account's allowance.
+  int get graceDownloadsLeft =>
+      _ownsEconomyState ? max(0, CoinPolicy.graceDownloads - _graceDownloadsUsed) : CoinPolicy.graceDownloads;
+
+  /// The signed-in user's passes. Empty while the cached passes belong to someone else.
+  Passes get currentPasses => _ownsEconomyState ? passesNotifier.value : Passes.empty;
+
+  /// Premium collections and premium walls are open: Pro or an active premium pass.
+  bool get premiumContentUnlocked => app_state.prismUser.premium || currentPasses.premiumPassActive(DateTime.now());
+
+  /// Auto-rotate is open: Pro or an active auto-rotate pass.
+  bool get autoRotateUnlocked => app_state.prismUser.premium || currentPasses.autoRotatePassActive(DateTime.now());
+
+  /// What the next rewarded ad pays: more for the first ad of the UTC day.
+  int get adsRewardNow {
+    final String? day = _adsTodayDay;
+    if (day != null) {
+      return day == _utcDayKey() && _adsTodayCount > 0 ? CoinPolicy.rewardedAd : CoinPolicy.rewardedAdFirstOfDay;
+    }
+    final int? remaining = adsRemainingToday;
+    return remaining == null || remaining == EconomyConfig.current.award.rewardedAdMaxPerDay
+        ? CoinPolicy.rewardedAdFirstOfDay
+        : CoinPolicy.rewardedAd;
+  }
+
+  void consumeQuestAwards() => questAwardsNotifier.value = const <QuestAward>[];
+
+  /// Sets the passes as the signed-in user's own, as a sync from the server would.
+  @visibleForTesting
+  void setPassesForTest(Passes passes) {
+    _ensureEconomyUser(app_state.prismUser.id);
+    passesNotifier.value = passes;
+  }
+
+  /// Clears every per-user value at once. Sign-out calls it; the next sign-in loads the new user's state.
+  void resetSession() {
+    consumeLastClaim();
+    balanceNotifier.value = app_state.prismUser.coins;
+    streakNotifier.value = StreakStatus.empty;
+    earnFlagsNotifier.value = CoinEarnFlags.empty;
+    _adsRemaining = null;
+    _adsRemainingDay = '';
+    _resetEconomy('');
+  }
 
   StreakClaimResult? get pendingClaimForCurrentUser {
     if (!_canMutateCoins() || _pendingClaimUserId != app_state.prismUser.id) consumeLastClaim();
@@ -438,6 +542,8 @@ class CoinsService with WidgetsBindingObserver {
       return;
     }
     final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
+    final Future<Map<String, dynamic>?> privateEconomy = _readPrivateEconomy(userId);
     // The server owns coinState defaults now; the rules block writing it from the client,
     // so this only reads and defaults locally/in-memory instead of persisting anything.
     final Map<String, dynamic>? data = await firestoreClient.getById<Map<String, dynamic>>(
@@ -446,7 +552,9 @@ class CoinsService with WidgetsBindingObserver {
       (value, _) => value,
       sourceTag: 'coins.bootstrap',
     );
+    final Map<String, dynamic>? privateData = await privateEconomy;
     if (!_canMutateCoins() || userId != app_state.prismUser.id) return;
+    _syncPrivateEconomy(userId, privateData);
     if (_pendingClaimUserId != userId) consumeLastClaim();
     if (data == null) {
       await refreshStreakStatus();
@@ -463,13 +571,16 @@ class CoinsService with WidgetsBindingObserver {
       return app_state.prismUser.coins;
     }
     final String userId = app_state.prismUser.id;
+    final Future<Map<String, dynamic>?> privateEconomy = _readPrivateEconomy(userId);
     final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
       FirebaseCollections.usersV2,
       userId,
       (data, _) => data,
       sourceTag: 'coins.refresh_balance',
     );
+    final Map<String, dynamic>? privateData = await privateEconomy;
     if (!_canMutateCoins() || userId != app_state.prismUser.id) return app_state.prismUser.coins;
+    _syncPrivateEconomy(userId, privateData);
     if (userData == null) {
       return app_state.prismUser.coins;
     }
@@ -481,9 +592,7 @@ class CoinsService with WidgetsBindingObserver {
 
   Future<StreakStatus> refreshStreakStatus() async {
     if (!_canMutateCoins()) {
-      consumeLastClaim();
-      earnFlagsNotifier.value = CoinEarnFlags.empty;
-      streakNotifier.value = StreakStatus.empty;
+      resetSession();
       return StreakStatus.empty;
     }
     final String userId = app_state.prismUser.id;
@@ -571,12 +680,23 @@ class CoinsService with WidgetsBindingObserver {
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (action == CoinEarnAction.rewardedAd) {
       _noteAdsRemaining(result.adsRemaining);
+      if (result.changed) {
+        _noteAdWatched();
+        _markBonusQuestDone(QuestEvent.watchAd);
+      }
       final String prefix = '$_awardTransactionPrefix${userId}_';
       if (result.unknownOutcomeTransactionId.startsWith(prefix)) {
         await _rememberPendingReward(result.unknownOutcomeTransactionId.substring(prefix.length), userId: userId);
       }
     }
-    if (result.changed) _logEarn(action: action, amount: amount ?? result.delta, sourceTag: sourceTag, reason: reason);
+    if (result.changed) {
+      _logEarn(
+        action: action,
+        amount: result.delta > 0 ? result.delta : amount ?? 0,
+        sourceTag: sourceTag,
+        reason: reason,
+      );
+    }
     return result;
   }
 
@@ -587,18 +707,78 @@ class CoinsService with WidgetsBindingObserver {
     String? reason,
     String? label,
     String? pendingDownloadLink,
+    String? styleId,
   }) async {
     if (!_canMutateCoins()) {
       return _notLoggedIn;
     }
     final int amount = amountOverride ?? action.cost();
-    if (amount <= 0) {
+    if (amount < 0) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
 
+    final String requestKey = 'pendingSpendRequest.${action.name}.${styleId ?? ''}.${app_state.prismUser.id}';
+    // A second tap while the first still runs gets its own request, so two purchases never share one charge.
+    final bool replayed = _replayedSpendActions.contains(action) && _spendRequestsInFlight.add(requestKey);
+    final CoinMutationResult result;
+    try {
+      result = await _spendOnce(
+        action,
+        amount: amount,
+        requestKey: replayed ? requestKey : null,
+        sourceTag: sourceTag,
+        reason: reason,
+        label: label,
+        pendingDownloadLink: pendingDownloadLink,
+        styleId: styleId,
+      );
+    } finally {
+      if (replayed) _spendRequestsInFlight.remove(requestKey);
+    }
+    // The replayed debit was refunded while its reply was lost. The stored request is gone, so this charges anew.
+    if (replayed && result.reason == 'spend_refunded') {
+      return spend(
+        action,
+        sourceTag: sourceTag,
+        amountOverride: amountOverride,
+        reason: reason,
+        label: label,
+        pendingDownloadLink: pendingDownloadLink,
+        styleId: styleId,
+      );
+    }
+    return result;
+  }
+
+  /// One spend call. A non-null [requestKey] stores the request id until a definite reply and replays it on retry.
+  Future<CoinMutationResult> _spendOnce(
+    CoinSpendAction action, {
+    required int amount,
+    required String? requestKey,
+    required String sourceTag,
+    required String? reason,
+    required String? label,
+    required String? pendingDownloadLink,
+    required String? styleId,
+  }) async {
     final String userId = app_state.prismUser.id;
-    final String? requestId = pendingDownloadLink == null ? null : _newRequestId();
-    final String? pendingTxId = requestId == null ? null : '$_spendTransactionPrefix${userId}_$requestId';
+    final SettingsLocalDataSource settings = _settings;
+    String? requestId;
+    if (requestKey != null) {
+      final String stored = settings.isOpen ? settings.get<String>(requestKey, defaultValue: '') : '';
+      requestId = _pendingEconomyRequests[requestKey] ??= stored.isNotEmpty ? stored : _newRequestId();
+      try {
+        if (settings.isOpen) await settings.set(requestKey, requestId);
+      } catch (error, stackTrace) {
+        // Without the stored id a lost reply cannot be replayed after a restart. The spend still runs.
+        logCoinError(sourceTag: 'coins.spend.request_store', error: error, stackTrace: stackTrace);
+      }
+    } else if (pendingDownloadLink != null) {
+      requestId = _newRequestId();
+    }
+    final String? pendingTxId = pendingDownloadLink == null || requestId == null
+        ? null
+        : '$_spendTransactionPrefix${userId}_$requestId';
     if (pendingDownloadLink != null && pendingTxId != null) {
       final bool persisted = await _updatePendingDownloads('coins.download.ledger_write', (
         Map<String, PendingDownload> ledger,
@@ -633,9 +813,21 @@ class CoinsService with WidgetsBindingObserver {
         allowPremiumBypass: true,
         label: label,
         requestId: requestId,
+        extra: <String, Object?>{if (styleId != null) 'styleId': styleId},
       );
 
+      if (requestKey != null && result.unknownOutcomeTransactionId.isEmpty) {
+        if (_pendingEconomyRequests[requestKey] == requestId) _pendingEconomyRequests.remove(requestKey);
+        if (settings.isOpen && settings.get<String>(requestKey, defaultValue: '') == requestId) {
+          await settings.delete(requestKey);
+        }
+        // A replay that landed settles the earlier lost reply, so its queued refund must not run.
+        if (result.success && result.changed) {
+          await _forgetPendingRefund('$_spendTransactionPrefix${userId}_$requestId');
+        }
+      }
       _applyLocalBalance(result.currentBalance, delta: result.delta);
+      if (userId == app_state.prismUser.id) _applySpendState(action, result, styleId: styleId);
       if (result.unknownOutcomeTransactionId.isNotEmpty) {
         await _rememberPendingRefund(
           result.unknownOutcomeTransactionId,
@@ -652,7 +844,7 @@ class CoinsService with WidgetsBindingObserver {
           onPersisted: () => _liveDownloadTxIds.remove(pendingTxId),
         );
       }
-      if (result.changed) _logSpend(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+      if (result.changed) _logSpend(action: action, amount: -result.delta, sourceTag: sourceTag, reason: reason);
       return pendingTxId != null && charged ? result.withPendingDownloadTxId(pendingTxId) : result;
     } catch (_) {
       // No caller gets the txId, so no save will run. The stored entry stays for recovery to refund.
@@ -705,15 +897,15 @@ class CoinsService with WidgetsBindingObserver {
         ),
       );
     }
-    final int cost = qualityTier.coinCost;
     final String reservingUserId = app_state.prismUser.id;
+    // The server prices the tier (Pro pays half); the reply delta is the real charge.
     final CoinMutationResult mutation = await _callCoinMutation(
       userId: reservingUserId,
       callableName: 'spendCoins',
-      amount: cost,
       action: CoinSpendAction.aiGeneration.name,
       sourceTag: sourceTag,
       reason: 'ai_generation_reserved',
+      extra: <String, Object?>{'qualityTier': qualityTier.apiValue},
     );
     _applyLocalBalance(mutation.currentBalance, delta: mutation.delta);
     if (mutation.unknownOutcomeTransactionId.isNotEmpty) {
@@ -725,7 +917,12 @@ class CoinsService with WidgetsBindingObserver {
       transactionId: mutation.transactionId,
     );
     if (result.mode == AiChargeMode.coinSpend && mutation.changed) {
-      _logSpend(action: CoinSpendAction.aiGeneration, amount: cost, sourceTag: sourceTag, reason: 'ai_generation');
+      _logSpend(
+        action: CoinSpendAction.aiGeneration,
+        amount: result.coinsSpent,
+        sourceTag: sourceTag,
+        reason: 'ai_generation',
+      );
     }
     analytics.track(
       AiChargeReservedEvent(
@@ -819,15 +1016,25 @@ class CoinsService with WidgetsBindingObserver {
     String? userId,
     CoinSpendAction action = CoinSpendAction.aiGeneration,
     String? reason,
-  }) => _rememberPending(
-    key: transactionId,
-    userId: userId,
-    entry: <String, dynamic>{
-      'transactionId': transactionId,
-      'action': action.name,
-      'reason': reason ?? _failedRefundReason(action),
-    },
-  );
+  }) {
+    if (!refundableSpendActions.contains(action)) return Future<void>.value();
+    return _rememberPending(
+      key: transactionId,
+      userId: userId,
+      entry: <String, dynamic>{
+        'transactionId': transactionId,
+        'action': action.name,
+        'reason': reason ?? _failedRefundReason(action),
+      },
+    );
+  }
+
+  Future<void> _forgetPendingRefund(String transactionId) => _withRefundQueueLock(() async {
+    final List<Map<String, dynamic>> entries = _readPendingEntries();
+    final int before = entries.length;
+    entries.removeWhere((Map<String, dynamic> e) => !_isRewardEntry(e) && _entryKey(e) == transactionId);
+    if (entries.length != before) await _writePendingEntries(entries);
+  });
 
   Future<void> _rememberPendingReward(String requestId, {String? userId}) => _rememberPending(
     key: requestId,
@@ -954,7 +1161,9 @@ class CoinsService with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(retryPendingRefunds());
+    if (state != AppLifecycleState.resumed) return;
+    unawaited(retryPendingRefunds());
+    unawaited(EconomyConfig.refreshIfStale());
   }
 
   Map<String, PendingDownload> _readPendingDownloads() {
@@ -1152,7 +1361,7 @@ class CoinsService with WidgetsBindingObserver {
     if (normalizedKey.isEmpty) {
       return false;
     }
-    if (app_state.prismUser.premium) {
+    if (premiumContentUnlocked) {
       return true;
     }
     if (!_canMutateCoins()) {
@@ -1205,7 +1414,7 @@ class CoinsService with WidgetsBindingObserver {
     final CoinMutationResult result;
     try {
       final HttpsCallableResult<dynamic> response = await appFunctions.httpsCallable('unlockPremiumPreview').call(
-        <String, dynamic>{'collectionKey': normalizedKey, 'sourceTag': sourceTag},
+        <String, dynamic>{'collectionKey': normalizedKey, 'sourceTag': sourceTag, 'pricingVersion': 2},
       );
       if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
       final Map<String, dynamic> data = toJsonMap(response.data);
@@ -1280,6 +1489,7 @@ class CoinsService with WidgetsBindingObserver {
             ? null
             : DateTime.fromMillisecondsSinceEpoch(nextReminderAtUtcMillis, isUtc: true),
       );
+      if (claimed) _grantLocalXp(_xpForCoins(totalReward));
       if (claimed && _publishedClaimDays.add((userId, todayLocalKey))) {
         _pendingClaimUserId = userId;
         lastClaimNotifier.value = result;
@@ -1408,14 +1618,6 @@ class CoinsService with WidgetsBindingObserver {
     return count > 0 ? count : streakDay;
   }
 
-  Future<CoinMutationResult> maybeAwardProDailyBonus() {
-    return _awardFixed(
-      CoinEarnAction.proDailyBonus,
-      sourceTag: 'coins.claim_pro_daily_bonus',
-      reason: 'pro_daily_bonus',
-    );
-  }
-
   Future<CoinMutationResult> maybeAwardProfileCompletion() {
     if (!_canMutateCoins()) {
       return Future.value(_notLoggedIn);
@@ -1513,9 +1715,557 @@ class CoinsService with WidgetsBindingObserver {
           profileCompletionRewarded: true,
         );
       }
-      _logEarn(action: action, amount: action.defaultAmount(), sourceTag: sourceTag, reason: logReason);
+      _logEarn(action: action, amount: result.delta, sourceTag: sourceTag, reason: logReason);
     }
     return result;
+  }
+
+  // Coin economy v2: private economy state, quests, spin, shop, drops, boosts, gifts, draw.
+
+  Future<Map<String, dynamic>?> _readPrivateEconomy(String userId) async {
+    try {
+      return await firestoreClient.getById<Map<String, dynamic>>(
+        FirebaseCollections.userPrivate(userId),
+        'economy',
+        (data, _) => data,
+        sourceTag: 'coins.private_economy',
+      );
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.private_economy', error: error, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  void _resetEconomy(String userId) {
+    _economyUserId = userId;
+    _xpUserId = '';
+    _economyRev = -1;
+    _graceDownloadsUsed = 0;
+    _adsTodayDay = null;
+    _adsTodayCount = 0;
+    xpNotifier.value = XpStatus.empty();
+    questsNotifier.value = null;
+    questAwardsNotifier.value = const <QuestAward>[];
+    inventoryNotifier.value = Inventory.empty;
+    dropsUnlockedNotifier.value = const <String, DropUnlock>{};
+    passesNotifier.value = Passes.empty;
+  }
+
+  void _ensureEconomyUser(String userId) {
+    if (_economyUserId != userId) _resetEconomy(userId);
+  }
+
+  /// Social fields on the root doc: XP, equipped cosmetics, today's ad count.
+  void _syncRootEconomy(Map<String, dynamic> userData, Map<String, dynamic> coinState) {
+    final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
+    _setXp(XpStatus.fromUserData(userData), announce: _xpUserId == userId);
+    _xpUserId = userId;
+    final Map<String, dynamic> cosmetics = toJsonMap(userData['cosmetics']);
+    inventoryNotifier.value = inventoryNotifier.value.withEquipped(
+      frame: _optionalString(cosmetics['frame']),
+      nameGlow: _optionalString(cosmetics['nameGlow']),
+    );
+    final Map<String, dynamic> adsToday = toJsonMap(coinState['adsToday']);
+    final String? day = _optionalString(adsToday['day']);
+    if (day != null) {
+      _adsTodayDay = day;
+      _adsTodayCount = parseIntOr(adsToday['count']);
+    }
+  }
+
+  /// Owner-only state from `usersv2/{uid}/private/economy`. A doc older than the state already held is ignored.
+  void _syncPrivateEconomy(String userId, Map<String, dynamic>? data) {
+    _ensureEconomyUser(userId);
+    if (data == null) return;
+    final int rev = parseIntOr(data['rev']);
+    if (rev < _economyRev) return;
+    _economyRev = rev;
+    questsNotifier.value = QuestState.fromMap(data['quests']);
+    inventoryNotifier.value = inventoryNotifier.value.withOwned(
+      Set<String>.unmodifiable(toJsonMap(toJsonMap(data['inventory'])['owned']).keys),
+    );
+    final Map<String, DropUnlock> unlocked = <String, DropUnlock>{};
+    toJsonMap(toJsonMap(data['drops'])['unlocked']).forEach((String wallId, Object? raw) {
+      final Map<String, dynamic> entry = toJsonMap(raw);
+      unlocked[wallId] = DropUnlock(
+        wallId: wallId,
+        weekKey: entry['weekKey']?.toString() ?? '',
+        url: entry['url']?.toString() ?? '',
+      );
+    });
+    dropsUnlockedNotifier.value = Map<String, DropUnlock>.unmodifiable(unlocked);
+    passesNotifier.value = Passes.fromMap(data['passes']);
+    _graceDownloadsUsed = max(0, parseIntOr(data['graceDownloadsUsed']));
+  }
+
+  void _setXp(XpStatus next, {required bool announce}) {
+    final XpStatus previous = xpNotifier.value;
+    xpNotifier.value = next;
+    if (announce && next.rank.min > previous.rank.min) {
+      analytics.track(RankUpEvent(rank: next.rank.id, xp: next.xp));
+    }
+  }
+
+  void _grantLocalXp(int xp) {
+    if (xp <= 0) return;
+    final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
+    _setXp(xpNotifier.value.plus(xp), announce: _xpUserId == userId);
+  }
+
+  int _xpForCoins(int coins) => max(0, (coins * EconomyConfig.current.xp.perCoinEarned).round());
+
+  /// Mirrors the server, which ticks the ad and spin bonus quests inside the ad credit and the spin.
+  void _markBonusQuestDone(QuestEvent event) {
+    final QuestState? quests = questsNotifier.value;
+    final QuestItem? bonus = quests?.bonus;
+    if (quests == null || bonus == null || bonus.event != event || bonus.claimed) return;
+    if (quests.dayKey != economyDayKey(DateTime.now())) return;
+    questsNotifier.value = quests.withBonus(
+      QuestItem(id: bonus.id, event: bonus.event, target: bonus.target, progress: bonus.target, claimed: true),
+    );
+  }
+
+  void _noteAdWatched() {
+    _ensureEconomyUser(app_state.prismUser.id);
+    final String today = _utcDayKey();
+    _adsTodayCount = _adsTodayDay == today ? _adsTodayCount + 1 : 1;
+    _adsTodayDay = today;
+  }
+
+  /// Local mirror of what a spend wrote on the server: grace downloads and passes.
+  void _applySpendState(CoinSpendAction action, CoinMutationResult result, {String? styleId}) {
+    if (!result.success) return;
+    _ensureEconomyUser(app_state.prismUser.id);
+    final int? graceLeft = result.graceDownloadsLeft;
+    if (graceLeft != null) _graceDownloadsUsed = max(0, CoinPolicy.graceDownloads - graceLeft);
+    final DateTime? until = result.passUntil;
+    if (until == null) return;
+    final Passes passes = passesNotifier.value;
+    if (action == CoinSpendAction.autoRotatePass7d) {
+      passesNotifier.value = passes.copyWith(autoRotatePassUntil: until);
+    } else if (action == CoinSpendAction.liveWallpaperStyle && styleId != null) {
+      passesNotifier.value = passes.copyWith(
+        liveStyles: Map<String, DateTime>.unmodifiable(<String, DateTime>{...passes.liveStyles, styleId: until}),
+      );
+    }
+  }
+
+  static DateTime? _msToUtc(Object? raw) {
+    final int ms = parseIntOr(raw);
+    return ms > 0 ? DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true) : null;
+  }
+
+  static String? _optionalString(Object? raw) => raw is String && raw.trim().isNotEmpty ? raw.trim() : null;
+
+  /// Calls an economy callable. Returns null when the session changed before the reply.
+  Future<_EconomyReply?> _callEconomy(
+    String name,
+    Map<String, Object?> params, {
+    required String userId,
+    required String sourceTag,
+    Duration? timeout,
+  }) async {
+    try {
+      final HttpsCallable callable = appFunctions.httpsCallable(
+        name,
+        options: timeout == null ? null : HttpsCallableOptions(timeout: timeout),
+      );
+      final HttpsCallableResult<dynamic> response = await callable.call(<String, Object?>{
+        ...params,
+        'sourceTag': sourceTag,
+      });
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return null;
+      final Map<String, dynamic> data = toJsonMap(response.data);
+      if (data['currentBalance'] is num) {
+        _applyLocalBalance(parseIntOr(data['currentBalance']), delta: parseIntOr(data['delta']));
+      }
+      return _EconomyReply(data);
+    } on FirebaseFunctionsException catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return null;
+      return _EconomyReply(<String, dynamic>{'success': false, 'reason': error.code}, errorCode: error.code);
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return null;
+      return const _EconomyReply(<String, dynamic>{'success': false, 'reason': 'unknown'}, errorCode: 'unknown');
+    }
+  }
+
+  /// Calls a paid economy callable with a request id stored until a definite answer, so a retry after a crash or a
+  /// lost reply replays the same purchase instead of paying twice. [scope] names the thing bought.
+  Future<_EconomyReply?> _economyPurchase(
+    String name,
+    String scope,
+    Map<String, Object?> params, {
+    required String sourceTag,
+  }) async {
+    final String userId = app_state.prismUser.id;
+    final String key = 'pendingEconomyRequest.$name.$scope.$userId';
+    final SettingsLocalDataSource settings = _settings;
+    final String stored = settings.isOpen ? settings.get<String>(key, defaultValue: '') : '';
+    final String requestId = _pendingEconomyRequests[key] ??= stored.isNotEmpty ? stored : _newRequestId();
+    if (settings.isOpen) await settings.set(key, requestId);
+    if (!_canMutateCoins() || userId != app_state.prismUser.id) return null;
+    final _EconomyReply? reply = await _callEconomy(
+      name,
+      <String, Object?>{...params, 'requestId': requestId},
+      userId: userId,
+      sourceTag: sourceTag,
+    );
+    if (reply != null && reply.definite) {
+      if (_pendingEconomyRequests[key] == requestId) _pendingEconomyRequests.remove(key);
+      if (settings.isOpen && settings.get<String>(key, defaultValue: '') == requestId) await settings.delete(key);
+    }
+    return reply;
+  }
+
+  void _applyQuestReply(Map<String, dynamic> data) {
+    final int? rev = parseInt(data['rev']);
+    if (rev != null && rev < _economyRev) return;
+    if (rev != null) _economyRev = rev;
+    if (data.containsKey('quests')) questsNotifier.value = QuestState.fromMap(data['quests']);
+  }
+
+  /// Reports a quest [event] (null syncs only) and refreshes [questsNotifier]. Paid items land in
+  /// [questAwardsNotifier]. Never throws. Only [QuestEvent.clientReported] events are sent; the server counts the rest.
+  Future<QuestState?> progressQuest(QuestEvent? event) async {
+    if (!_canMutateCoins()) return null;
+    if (event != null && !event.clientReported) return questsNotifier.value;
+    final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
+    final _EconomyReply? reply = await _callEconomy(
+      'progressQuest',
+      <String, Object?>{if (event != null) 'event': event.wireValue, if (event != null) 'eventId': _newRequestId()},
+      userId: userId,
+      sourceTag: 'coins.quests.progress',
+      timeout: const Duration(seconds: 10),
+    );
+    if (reply == null || reply.errorCode != null) return questsNotifier.value;
+    final int? rev = parseInt(reply.data['rev']);
+    if (rev != null && rev < _economyRev) return questsNotifier.value;
+    _applyQuestReply(reply.data);
+    final Object? rawAwards = reply.data['awarded'];
+    final List<QuestAward> awards = <QuestAward>[
+      if (rawAwards is List)
+        for (final Object? raw in rawAwards)
+          if (toJsonMap(raw)['id'] is String)
+            QuestAward(
+              id: toJsonMap(raw)['id'] as String,
+              coins: parseIntOr(toJsonMap(raw)['coins']),
+              xp: parseIntOr(toJsonMap(raw)['xp']),
+            ),
+    ];
+    if (awards.isNotEmpty) {
+      questAwardsNotifier.value = List<QuestAward>.unmodifiable(<QuestAward>[...questAwardsNotifier.value, ...awards]);
+      for (final QuestAward award in awards) {
+        analytics.track(QuestCompletedEvent(questId: award.id, coins: award.coins, xp: award.xp));
+      }
+      _grantLocalXp(awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp));
+    }
+    return questsNotifier.value;
+  }
+
+  /// Fire-and-forget quest report for UI code. A no-op for guests and for events the server counts itself.
+  void reportQuestEvent(QuestEvent event) {
+    if (!_canMutateCoins() || !event.clientReported) return;
+    try {
+      unawaited(progressQuest(event));
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.quests.report', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// The Pro daily spin. The server picks the segment.
+  Future<ProSpinResult> claimProSpin() async {
+    if (!_canMutateCoins()) return const ProSpinResult(ProSpinOutcome.failed, reason: 'not_logged_in');
+    final _EconomyReply? reply = await _economyPurchase(
+      'claimProSpin',
+      'daily',
+      const <String, Object?>{},
+      sourceTag: 'coins.pro_spin',
+    );
+    if (reply == null) return const ProSpinResult(ProSpinOutcome.failed, reason: 'session_changed');
+    final String reason = reply.reason;
+    if (!reply.success) {
+      return ProSpinResult(switch (reason) {
+        'pro_spin_already_claimed' => ProSpinOutcome.alreadyClaimed,
+        'pro_spin_requires_premium' => ProSpinOutcome.notPro,
+        _ => ProSpinOutcome.failed,
+      }, reason: reason);
+    }
+    final int coins = parseIntOr(reply.data['coins']);
+    final int segment = parseIntOr(reply.data['segment'], fallback: -1);
+    if (reply.changed) {
+      analytics.track(ProSpinClaimedEvent(coins: coins, segment: segment));
+      _logEarn(action: CoinEarnAction.proSpin, amount: coins, sourceTag: 'coins.pro_spin');
+      _grantLocalXp(_xpForCoins(coins));
+    }
+    _markBonusQuestDone(QuestEvent.proSpin);
+    return ProSpinResult(ProSpinOutcome.won, coins: coins, segment: segment, reason: reason);
+  }
+
+  /// Opens today's quest chest once the three daily items are claimed.
+  Future<ChestResult> openQuestChest() async {
+    if (!_canMutateCoins()) return const ChestResult(ChestOutcome.failed, reason: 'not_logged_in');
+    final String dayKey = questsNotifier.value?.dayKey ?? economyDayKey(DateTime.now());
+    final _EconomyReply? reply = await _economyPurchase(
+      'openQuestChest',
+      dayKey,
+      const <String, Object?>{},
+      sourceTag: 'coins.quests.chest',
+    );
+    if (reply == null) return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
+    final String reason = reply.reason;
+    if (!reply.success) {
+      return ChestResult(switch (reason) {
+        'quest_chest_locked' => ChestOutcome.locked,
+        'quest_chest_already_opened' => ChestOutcome.alreadyOpened,
+        _ => ChestOutcome.failed,
+      }, reason: reason);
+    }
+    _applyQuestReply(reply.data);
+    final int coins = parseIntOr(reply.data['coins']);
+    final String? itemId = _optionalString(reply.data['itemId']);
+    if (itemId != null) {
+      inventoryNotifier.value = inventoryNotifier.value.withOwned(
+        Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
+      );
+    }
+    if (reply.changed) {
+      analytics.track(QuestChestOpenedEvent(coins: coins, itemId: itemId));
+      _logEarn(action: CoinEarnAction.questChest, amount: coins, sourceTag: 'coins.quests.chest');
+    }
+    return ChestResult(
+      ChestOutcome.opened,
+      coins: coins,
+      doubled: reply.data['doubled'] == true,
+      itemId: itemId,
+      reason: reason,
+    );
+  }
+
+  Future<ShopPurchaseResult> purchaseShopItem(String itemId) async {
+    if (!_canMutateCoins()) return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'not_logged_in');
+    final _EconomyReply? reply = await _economyPurchase('purchaseShopItem', itemId, <String, Object?>{
+      'itemId': itemId,
+    }, sourceTag: 'coins.shop.purchase');
+    if (reply == null) return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'session_changed');
+    final Object? rawOwned = reply.data['owned'];
+    if (rawOwned is List) {
+      inventoryNotifier.value = inventoryNotifier.value.withOwned(
+        Set<String>.unmodifiable(rawOwned.whereType<String>()),
+      );
+    } else if (reply.success) {
+      inventoryNotifier.value = inventoryNotifier.value.withOwned(
+        Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
+      );
+    }
+    final Set<String> owned = inventoryNotifier.value.owned;
+    final String reason = reply.reason;
+    if (reply.success) {
+      if (reply.changed) {
+        _logSpend(
+          action: CoinSpendAction.shopItem,
+          amount: -reply.delta,
+          sourceTag: 'coins.shop.purchase',
+          reason: itemId,
+        );
+      }
+      return ShopPurchaseResult(ShopPurchaseOutcome.purchased, owned: owned, reason: reason);
+    }
+    return ShopPurchaseResult(
+      reply.insufficient
+          ? ShopPurchaseOutcome.insufficient
+          : switch (reason) {
+              'shop_item_owned' => ShopPurchaseOutcome.owned,
+              'shop_item_pro_only' => ShopPurchaseOutcome.proOnly,
+              'shop_item_rank_locked' => ShopPurchaseOutcome.rankLocked,
+              'shop_item_expired' => ShopPurchaseOutcome.expired,
+              _ => ShopPurchaseOutcome.failed,
+            },
+      owned: owned,
+      reason: reason,
+    );
+  }
+
+  /// Equips [itemId] in [slot], or clears the slot when [itemId] is null. Returns true when the server accepted it.
+  Future<bool> equipCosmetic(CosmeticSlot slot, String? itemId) async {
+    if (!_canMutateCoins()) return false;
+    final String userId = app_state.prismUser.id;
+    final _EconomyReply? reply = await _callEconomy(
+      'equipCosmetic',
+      <String, Object?>{'slot': slot.name, 'itemId': itemId},
+      userId: userId,
+      sourceTag: 'coins.shop.equip',
+    );
+    if (reply == null || !reply.success) return false;
+    final Map<String, dynamic> cosmetics = reply.data.containsKey('cosmetics')
+        ? toJsonMap(reply.data['cosmetics'])
+        : <String, dynamic>{
+            'frame': slot == CosmeticSlot.frame ? itemId : inventoryNotifier.value.frame,
+            'nameGlow': slot == CosmeticSlot.nameGlow ? itemId : inventoryNotifier.value.nameGlow,
+          };
+    inventoryNotifier.value = inventoryNotifier.value.withEquipped(
+      frame: _optionalString(cosmetics['frame']),
+      nameGlow: _optionalString(cosmetics['nameGlow']),
+    );
+    return true;
+  }
+
+  /// Unlocks one wall of the week's Drop, or every wall left when [wallId] is null.
+  Future<DropUnlockResult> unlockDrop({required String weekKey, String? wallId}) async {
+    if (!_canMutateCoins()) return const DropUnlockResult(DropUnlockOutcome.failed, reason: 'not_logged_in');
+    final _EconomyReply? reply = await _economyPurchase(
+      'unlockDrop',
+      '${weekKey}_${wallId ?? 'pack'}',
+      <String, Object?>{'weekKey': weekKey, 'wallId': wallId},
+      sourceTag: 'coins.drops.unlock',
+    );
+    if (reply == null) return const DropUnlockResult(DropUnlockOutcome.failed, reason: 'session_changed');
+    final String reason = reply.reason;
+    final Object? rawUnlocked = reply.data['unlocked'];
+    final List<DropUnlock> unlocked = <DropUnlock>[
+      if (rawUnlocked is List)
+        for (final Object? raw in rawUnlocked)
+          if (toJsonMap(raw)['id'] is String)
+            DropUnlock(
+              wallId: toJsonMap(raw)['id'] as String,
+              weekKey: weekKey,
+              url: toJsonMap(raw)['url']?.toString() ?? '',
+            ),
+    ];
+    if (unlocked.isNotEmpty) {
+      dropsUnlockedNotifier.value = Map<String, DropUnlock>.unmodifiable(<String, DropUnlock>{
+        ...dropsUnlockedNotifier.value,
+        for (final DropUnlock u in unlocked) u.wallId: u,
+      });
+    }
+    if (reply.success) {
+      if (!reply.changed && (reason == 'drop_wall_already_unlocked' || reason == 'drop_pack_nothing_left')) {
+        return DropUnlockResult(DropUnlockOutcome.alreadyUnlocked, unlocked: unlocked, reason: reason);
+      }
+      if (reply.changed) {
+        _logSpend(
+          action: wallId == null ? CoinSpendAction.dropPack : CoinSpendAction.dropWall,
+          amount: -reply.delta,
+          sourceTag: 'coins.drops.unlock',
+          reason: weekKey,
+        );
+      }
+      return DropUnlockResult(DropUnlockOutcome.unlocked, unlocked: unlocked, reason: reason);
+    }
+    return DropUnlockResult(
+      reply.insufficient
+          ? DropUnlockOutcome.insufficient
+          : switch (reason) {
+              'drop_not_live' || 'drops_disabled' => DropUnlockOutcome.notLive,
+              _ => DropUnlockOutcome.failed,
+            },
+      reason: reason,
+    );
+  }
+
+  /// Boosts the caller's approved wall to the front of Trending for 24 hours.
+  Future<BoostResult> boostWall(String wallId) async {
+    if (!_canMutateCoins()) return const BoostResult(BoostOutcome.failed, reason: 'not_logged_in');
+    final _EconomyReply? reply = await _economyPurchase('boostWall', wallId, <String, Object?>{
+      'wallId': wallId,
+    }, sourceTag: 'coins.boost');
+    if (reply == null) return const BoostResult(BoostOutcome.failed, reason: 'session_changed');
+    final String reason = reply.reason;
+    if (reply.success) {
+      if (reply.changed) {
+        _logSpend(action: CoinSpendAction.boostWall, amount: -reply.delta, sourceTag: 'coins.boost', reason: wallId);
+      }
+      return BoostResult(BoostOutcome.boosted, endsAt: _msToUtc(reply.data['endsAt']), reason: reason);
+    }
+    return BoostResult(
+      reply.insufficient
+          ? BoostOutcome.insufficient
+          : switch (reason) {
+              'boost_active' => BoostOutcome.active,
+              'boost_not_owner' || 'permission-denied' => BoostOutcome.notOwner,
+              'boost_wall_not_approved' => BoostOutcome.notApproved,
+              'boost_slots_full' => BoostOutcome.slotsFull,
+              _ => BoostOutcome.failed,
+            },
+      endsAt: _msToUtc(reply.data['endsAt']),
+      nextFreeAt: _msToUtc(reply.data['nextFreeAt']),
+      reason: reason,
+    );
+  }
+
+  /// Sends [recipientUid] a 24 hour premium pass.
+  Future<GiftResult> giftPremiumPass(String recipientUid) async {
+    if (!_canMutateCoins()) return const GiftResult(GiftOutcome.failed, reason: 'not_logged_in');
+    final _EconomyReply? reply = await _economyPurchase('giftPremiumPass', recipientUid, <String, Object?>{
+      'recipientUid': recipientUid,
+    }, sourceTag: 'coins.gift');
+    if (reply == null) return const GiftResult(GiftOutcome.failed, reason: 'session_changed');
+    final String reason = reply.reason;
+    if (reply.success) {
+      if (reply.changed) {
+        _logSpend(action: CoinSpendAction.giftPremiumPass, amount: -reply.delta, sourceTag: 'coins.gift');
+      }
+      return GiftResult(GiftOutcome.sent, expiresAt: _msToUtc(reply.data['expiresAt']), reason: reason);
+    }
+    return GiftResult(
+      reply.insufficient
+          ? GiftOutcome.insufficient
+          : switch (reason) {
+              'gift_recipient_premium' => GiftOutcome.recipientPremium,
+              'gift_sender_too_new' => GiftOutcome.senderTooNew,
+              'gift_blocked' => GiftOutcome.blocked,
+              _ when reason.startsWith('gift_') && reason.contains('limit') => GiftOutcome.limit,
+              _ => GiftOutcome.failed,
+            },
+      reason: reason,
+    );
+  }
+
+  /// Buys one ticket for this week's Prism Draw.
+  Future<DrawTicketResult> buyDrawTicket() async {
+    if (!_canMutateCoins()) return const DrawTicketResult(DrawTicketOutcome.failed, reason: 'not_logged_in');
+    final _EconomyReply? reply = await _economyPurchase(
+      'buyDrawTicket',
+      economyWeekKey(DateTime.now()),
+      const <String, Object?>{},
+      sourceTag: 'coins.draw.ticket',
+    );
+    if (reply == null) return const DrawTicketResult(DrawTicketOutcome.failed, reason: 'session_changed');
+    final String reason = reply.reason;
+    final int tickets = parseIntOr(reply.data['tickets']);
+    final DateTime? closesAt = _msToUtc(reply.data['closesAt']);
+    final String weekKey = reply.data['weekKey']?.toString() ?? '';
+    if (reply.success) {
+      if (reply.changed) {
+        _logSpend(action: CoinSpendAction.drawTicket, amount: -reply.delta, sourceTag: 'coins.draw.ticket');
+      }
+      return DrawTicketResult(
+        DrawTicketOutcome.bought,
+        tickets: tickets,
+        closesAt: closesAt,
+        weekKey: weekKey,
+        reason: reason,
+      );
+    }
+    return DrawTicketResult(
+      reply.insufficient
+          ? DrawTicketOutcome.insufficient
+          : switch (reason) {
+              'draw_ticket_limit' => DrawTicketOutcome.limit,
+              'draw_disabled' => DrawTicketOutcome.disabled,
+              'draw_closed' => DrawTicketOutcome.closed,
+              'draw_pro_not_eligible' => DrawTicketOutcome.proNotEligible,
+              _ => DrawTicketOutcome.failed,
+            },
+      tickets: tickets,
+      closesAt: closesAt,
+      weekKey: weekKey,
+      reason: reason,
+    );
   }
 
   bool _canMutateCoins() {
@@ -1534,6 +2284,7 @@ class CoinsService with WidgetsBindingObserver {
     String? transactionId,
     String? label,
     String? requestId,
+    Map<String, Object?> extra = const <String, Object?>{},
   }) async {
     final bool idempotent = callableName == 'spendCoins' || (callableName == 'awardCoins' && action == 'rewardedAd');
     final String transactionPrefix = callableName == 'spendCoins' ? _spendTransactionPrefix : _awardTransactionPrefix;
@@ -1550,6 +2301,8 @@ class CoinsService with WidgetsBindingObserver {
       if (effectiveRequestId != null) 'requestId': effectiveRequestId,
       if (trimmedLabel != null && trimmedLabel.isNotEmpty)
         'label': trimmedLabel.length > _maxLabelLength ? trimmedLabel.substring(0, _maxLabelLength) : trimmedLabel,
+      if (callableName == 'spendCoins') 'pricingVersion': 2,
+      ...extra,
     };
     final int attempts = effectiveRequestId == null ? 1 : 2;
     bool mayHaveCommitted = false;
@@ -1582,6 +2335,8 @@ class CoinsService with WidgetsBindingObserver {
           reason: data['reason']?.toString() ?? reason,
           transactionId: data['transactionId']?.toString() ?? '',
           adsRemaining: data['adsRemaining'] is num ? parseIntOr(data['adsRemaining']) : null,
+          graceDownloadsLeft: data['graceDownloadsLeft'] is num ? parseIntOr(data['graceDownloadsLeft']) : null,
+          passUntil: _msToUtc(data['passUntil']),
         );
       } on FirebaseFunctionsException catch (error, stackTrace) {
         logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
@@ -1684,6 +2439,7 @@ class CoinsService with WidgetsBindingObserver {
   StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData) {
     final Map<String, dynamic> coinState = toJsonMap(userData[_coinStateField]);
     earnFlagsNotifier.value = CoinEarnFlags.fromCoinState(coinState);
+    _syncRootEconomy(userData, coinState);
     final int timezoneOffsetMinutes =
         parseInt(coinState['streakClaimTimezoneOffsetMinutes']) ??
         parseInt(coinState[_streakTimezoneOffsetMinutesField]) ??
@@ -1815,4 +2571,24 @@ class CoinsService with WidgetsBindingObserver {
       fields: <String, Object?>{'sourceTag': sourceTag},
     );
   }
+}
+
+class _EconomyReply {
+  const _EconomyReply(this.data, {this.errorCode});
+
+  final Map<String, dynamic> data;
+
+  /// Set when the callable threw. Null for any reply the server sent.
+  final String? errorCode;
+
+  /// The server answered for sure, so a stored request id can go. A lost or failed call may still have committed.
+  bool get definite =>
+      errorCode == null ||
+      !const <String>{'deadline-exceeded', 'unavailable', 'internal', 'unknown'}.contains(errorCode);
+
+  bool get success => data['success'] == true;
+  bool get changed => data['changed'] == true;
+  bool get insufficient => data['insufficientBalance'] == true;
+  int get delta => parseIntOr(data['delta']);
+  String get reason => data['reason']?.toString() ?? '';
 }

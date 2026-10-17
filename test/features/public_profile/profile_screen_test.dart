@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
@@ -476,5 +478,134 @@ void main() {
     expect(find.text('You blocked Ana Rivera'), findsOneWidget);
     expect(find.text('Unblock'), findsOneWidget);
     expect(find.text('Follow'), findsNothing);
+  });
+
+  group('cosmetics, rank and gifts', () {
+    const PublicProfileEntity dressed = PublicProfileEntity(
+      id: 'u2',
+      name: 'Ana Rivera',
+      email: 'ana@example.com',
+      username: 'ana_rivera',
+      profilePhoto: '',
+      bio: '',
+      followers: <String>[],
+      following: <String>[],
+      links: <String, String>{},
+      coverPhoto: '',
+      frameId: 'frame_aurora',
+      nameGlowId: 'glow_ember',
+      xp: 600,
+    );
+
+    tearDown(() {
+      CoinsService.instance.inventoryNotifier.value = Inventory.empty;
+      CoinsService.instance.balanceNotifier.value = 0;
+    });
+
+    testWidgets('another profile shows the rank tag, the frame and the glowing name', (tester) async {
+      await pumpScreen(tester, identifier: 'ana@example.com');
+      repository.profiles.add(dressed);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('Silver'), findsOneWidget);
+      expect(find.byKey(ProfileFrame.ringKey), findsOneWidget);
+      expect(find.ancestor(of: find.text('Ana Rivera'), matching: find.byType(ShaderMask)), findsOneWidget);
+    });
+
+    testWidgets('a profile with no cosmetics keeps the plain ring and name', (tester) async {
+      await pumpScreen(tester, identifier: 'ana@example.com');
+      repository.profiles.add(_ana);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('Bronze'), findsOneWidget);
+      expect(find.byKey(ProfileFrame.ringKey), findsNothing);
+      expect(find.ancestor(of: find.text('Ana Rivera'), matching: find.byType(ShaderMask)), findsNothing);
+    });
+
+    testWidgets('a Pro frame draws only while the profile is premium', (tester) async {
+      await pumpScreen(tester, identifier: 'ana@example.com');
+      repository.profiles.add(
+        const PublicProfileEntity(
+          id: 'u2',
+          name: 'Ana Rivera',
+          email: 'ana@example.com',
+          username: 'ana_rivera',
+          profilePhoto: '',
+          bio: '',
+          followers: <String>[],
+          following: <String>[],
+          links: <String, String>{},
+          coverPhoto: '',
+          frameId: 'frame_prism',
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byKey(ProfileFrame.ringKey), findsNothing);
+
+      repository.profiles.add(
+        const PublicProfileEntity(
+          id: 'u2',
+          name: 'Ana Rivera',
+          email: 'ana@example.com',
+          username: 'ana_rivera',
+          profilePhoto: '',
+          bio: '',
+          followers: <String>[],
+          following: <String>[],
+          links: <String, String>{},
+          coverPhoto: '',
+          frameId: 'frame_prism',
+          premium: true,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byKey(ProfileFrame.ringKey), findsOneWidget);
+    });
+
+    testWidgets('own profile updates when a frame is equipped', (tester) async {
+      await pumpScreen(tester);
+      expect(find.byKey(ProfileFrame.ringKey), findsNothing);
+
+      CoinsService.instance.inventoryNotifier.value = const Inventory(
+        owned: <String>{'frame_ring'},
+        frame: 'frame_ring',
+      );
+      await tester.pump();
+
+      expect(find.byKey(ProfileFrame.ringKey), findsOneWidget);
+      expect(find.byTooltip('Gift a 24 h pass'), findsNothing);
+    });
+
+    testWidgets('another profile offers the gift sheet', (tester) async {
+      CoinsService.instance.balanceNotifier.value = 500;
+      await pumpScreen(tester, identifier: 'ana@example.com');
+      repository.profiles.add(_ana);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(find.byTooltip('Gift a 24 h pass'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Gift a 24-hour Pro pass'), findsOneWidget);
+      expect(
+        find.textContaining('Ana Rivera gets premium collections and premium walls until tomorrow.'),
+        findsOneWidget,
+      );
+      expect(find.text('Send gift'), findsOneWidget);
+      expect(find.text('Earn coins'), findsNothing);
+    });
+
+    testWidgets('the gift sheet offers Earn coins and blocks sending when the balance is short', (tester) async {
+      CoinsService.instance.balanceNotifier.value = 0;
+      await pumpScreen(tester, identifier: 'ana@example.com');
+      repository.profiles.add(_ana);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await tester.tap(find.byTooltip('Gift a 24 h pass'));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Earn coins'), findsOneWidget);
+      final PrismButton send = tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Send gift'));
+      expect(send.onPressed, isNull);
+    });
   });
 }

@@ -67,6 +67,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
             links: doc.links,
             coverPhoto: doc.coverPhoto,
             badges: doc.badges,
+            frameId: doc.cosmetics['frame'],
+            nameGlowId: doc.cosmetics['nameGlow'],
+            xp: doc.xp,
+            premium: doc.premium,
           );
         });
   }

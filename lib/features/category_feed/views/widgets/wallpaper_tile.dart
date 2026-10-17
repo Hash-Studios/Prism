@@ -27,6 +27,7 @@ class WallpaperTile extends StatelessWidget {
     this.quickActions = false,
     this.onShowLessLikeThis,
     this.sourceContext,
+    this.overlay,
   });
 
   final FeedItemEntity item;
@@ -43,6 +44,9 @@ class WallpaperTile extends StatelessWidget {
 
   /// Replaces the analytics source context that the tile derives from the wallpaper source.
   final String? sourceContext;
+
+  /// Drawn over the tile, for example a positioned tag. It sits next to the favourite heart.
+  final Widget? overlay;
 
   /// Legacy grid-column hint for callers that need a fixed decode size.
   final int? crossAxisCount;
@@ -61,6 +65,13 @@ class WallpaperTile extends StatelessWidget {
         _ => 'home_wallpaper_grid_tile',
       };
 
+  Widget? _overlay() {
+    final Widget? heart = quickActions ? _FavouriteBadge(itemId: item.id) : null;
+    final Widget? extra = overlay;
+    if (heart == null || extra == null) return heart ?? extra;
+    return Stack(fit: StackFit.expand, children: <Widget>[extra, heart]);
+  }
+
   @override
   Widget build(BuildContext context) {
     final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
@@ -74,7 +85,7 @@ class WallpaperTile extends StatelessWidget {
       heroTag: heroTag,
       semanticLabel: item.semanticLabel,
       memCacheHeight: decodeHeight,
-      overlay: quickActions ? _FavouriteBadge(itemId: item.id) : null,
+      overlay: _overlay(),
       onTap: () {
         PrismHaptics.tap();
         unawaited(

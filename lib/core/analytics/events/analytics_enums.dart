@@ -18,6 +18,14 @@ extension CoinSpendActionWire on CoinSpendAction {
     CoinSpendAction.premiumFilter => 'premium_filter',
     CoinSpendAction.premiumPreview24h => 'premium_preview_24h',
     CoinSpendAction.streakFreeze => 'streak_freeze',
+    CoinSpendAction.liveWallpaperStyle => 'live_wallpaper_style',
+    CoinSpendAction.autoRotatePass7d => 'auto_rotate_pass_7d',
+    CoinSpendAction.dropWall => 'drop_wall',
+    CoinSpendAction.dropPack => 'drop_pack',
+    CoinSpendAction.boostWall => 'boost_wall',
+    CoinSpendAction.giftPremiumPass => 'gift_premium_pass',
+    CoinSpendAction.drawTicket => 'draw_ticket',
+    CoinSpendAction.shopItem => 'shop_item',
   };
 }
 
@@ -161,6 +169,7 @@ enum TargetTypeValue {
   user,
   setup,
   refer,
+  screen,
   shortCode,
   unknown;
 

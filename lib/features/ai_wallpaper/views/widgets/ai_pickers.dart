@@ -1,5 +1,6 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
@@ -184,7 +185,7 @@ class _QualityOption extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: '${tier.label}, ${tier.coinCost} coins',
+      label: '${tier.label}, ${tier.costFor(isPro: app_state.prismUser.premium)} coins',
       excludeSemantics: true,
       onTap: onTap,
       child: PressScale(
@@ -211,7 +212,10 @@ class _QualityOption extends StatelessWidget {
                   children: <Widget>[
                     const PrismCoinIcon(size: 14),
                     const SizedBox(width: PrismSpace.xxs),
-                    Text('${tier.coinCost}', style: PrismTextStyles.caption(context)),
+                    Text(
+                      '${tier.costFor(isPro: app_state.prismUser.premium)}',
+                      style: PrismTextStyles.caption(context),
+                    ),
                   ],
                 ),
               ],

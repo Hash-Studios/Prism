@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -235,6 +236,7 @@ class GoogleAuth {
       );
     }
     app_state.prismUser = createGuestPrismUser();
+    CoinsService.instance.resetSession();
     // isSignedIn() reads FirebaseAuth.currentUser directly, so it must actually be cleared
     // here too. Used for Apple-signed-in users as well, not just Google.
     bool firebaseSignOutSucceeded = true;

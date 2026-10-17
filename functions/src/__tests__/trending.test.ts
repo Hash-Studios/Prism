@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
-import {computeTrending, popularWallIds, trendingDays, trendingWallIds} from "../trending";
+import {db} from "../common";
+import {computeTrending, mergeBoosted, popularWallIds, trendingDays, trendingWallIds} from "../trending";
 import {installFakeDb} from "./fakeDb";
 
 const NOW = new Date("2026-01-10T12:00:00Z");
@@ -71,4 +72,50 @@ test("computeTrending writes trending/current and popular/current from the stats
   assert.deepEqual(trending?.wallIds, ["A", "B"]);
   assert.ok(trending?.updatedAt instanceof admin.firestore.Timestamp);
   assert.deepEqual(store.get("popular/current")?.wallIds, ["Z", "B", "A"]);
+});
+
+test("computeTrending keeps active boosts, newest first, ahead of the scored list", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const ms = NOW.getTime();
+  const store = installFakeDb(t, {
+    "wallpaper_stats_daily/20260110_A": {wallId: "A", day: "20260110", sets: 2},
+    "wallpaper_stats_daily/20260110_B": {wallId: "B", day: "20260110", sets: 1},
+    "boosts/B": {wallId: "B", uid: "u1", startsAt: ms - 1000, endsAt: ms + 1000},
+    "boosts/n": {wallId: "n", uid: "u2", startsAt: ms - 500, endsAt: ms + 2000},
+    "boosts/OLD": {wallId: "OLD", uid: "u3", startsAt: ms - 9000, endsAt: ms - 1},
+  });
+  await computeTrending.run({jobName: "t", scheduleTime: NOW.toISOString()});
+  assert.deepEqual(store.get("trending/current")?.wallIds, ["N", "B", "A"]);
+});
+
+test("computeTrending keeps a boost bought while the job reads the stats", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const ms = NOW.getTime();
+  const store = installFakeDb(t, {"wallpaper_stats_daily/20260110_A": {wallId: "A", day: "20260110", sets: 2}});
+  const fakeCollection = db.collection.bind(db);
+  t.mock.method(db, "collection", (name: string) => {
+    const collection = fakeCollection(name);
+    if (name !== "wallpaper_stats") return collection;
+    return {
+      orderBy: (...args: Parameters<typeof collection.orderBy>) => ({
+        limit: (n: number) => ({
+          get: async () => {
+            store.set("boosts/LATE", {wallId: "LATE", uid: "u1", startsAt: ms, endsAt: ms + 1000});
+            return collection.orderBy(...args).limit(n).get();
+          },
+        }),
+      }),
+    };
+  });
+  await computeTrending.run({jobName: "t", scheduleTime: NOW.toISOString()});
+  assert.deepEqual(store.get("trending/current")?.wallIds, ["LATE", "A"]);
+});
+
+test("mergeBoosted keeps the boosted ids first and the list at 100", () => {
+  assert.deepEqual(mergeBoosted([], ["A", "B"]), ["A", "B"]);
+  assert.deepEqual(mergeBoosted(["x", "X", "b"], ["A", "B"]), ["X", "B", "A"]);
+  const merged = mergeBoosted(["Z"], Array.from({length: 100}, (_, i) => `W${i}`));
+  assert.equal(merged.length, 100);
+  assert.equal(merged[0], "Z");
+  assert.equal(merged[99], "W98");
 });

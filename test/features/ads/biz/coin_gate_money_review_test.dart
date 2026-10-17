@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -98,6 +99,6 @@ void main() {
     );
     expect(result, CoinGateResult.cancelled);
     expect(prompts.single.phase, CoinGatePhase.insufficient);
-    expect(port.log, <String>['nudge:x.low:15']);
+    expect(port.log, <String>['nudge:x.low:${CoinPolicy.premiumWallpaperDownload}']);
   });
 }

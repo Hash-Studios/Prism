@@ -1,5 +1,7 @@
 import 'package:Prism/core/account/account_copy.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -66,6 +68,11 @@ class SettingsAccountCard extends StatelessWidget {
                       const SizedBox(width: PrismSpace.xs),
                       const PrismTag(label: 'Pro', tone: PrismTone.accent),
                     ],
+                    const SizedBox(width: PrismSpace.xs),
+                    ValueListenableBuilder<XpStatus>(
+                      valueListenable: CoinsService.instance.xpNotifier,
+                      builder: (BuildContext context, XpStatus xp, _) => PrismTag(label: xp.rank.id.inCaps),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 2),

@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -9,6 +12,7 @@ import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
+import 'package:Prism/features/auto_rotate/views/auto_rotate_entitlement.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
@@ -140,7 +144,8 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
       context.read<AutoRotateBloc>().add(
         AutoRotateEvent.started(
           favouriteUrls: _urlsOf(favourites),
-          isPro: latestSessionAfterLoad.session.loggedIn && latestSessionAfterLoad.session.premium,
+          isPro: autoRotateEntitled(latestSessionAfterLoad.session),
+          passUntil: autoRotatePassEnd(latestSessionAfterLoad.session),
         ),
       );
     } catch (_) {
@@ -226,22 +231,92 @@ class _Message extends StatelessWidget {
   }
 }
 
-class _ProPrompt extends StatelessWidget {
+class _ProPrompt extends StatefulWidget {
   const _ProPrompt();
 
   @override
+  State<_ProPrompt> createState() => _ProPromptState();
+}
+
+class _ProPromptState extends State<_ProPrompt> {
+  bool _buying = false;
+
+  Future<void> _buyPass() async {
+    if (!app_state.prismUser.loggedIn) {
+      googleSignInPopUp(context, () => unawaited(_buyPass()));
+      return;
+    }
+    if (_buying) return;
+    setState(() => _buying = true);
+    final CoinMutationResult result = await CoinsService.instance.spend(
+      CoinSpendAction.autoRotatePass7d,
+      sourceTag: 'auto_rotate.pass',
+    );
+    if (!mounted) return;
+    setState(() => _buying = false);
+    if (result.success) {
+      context.read<AutoRotateBloc>().add(
+        AutoRotateEvent.entitlementChanged(
+          isPro: true,
+          userId: context.read<SessionBloc>().state.session.userId,
+          passUntil: result.passUntil,
+        ),
+      );
+      toasts.success('Auto-rotate is on for 7 days.');
+    } else if (result.insufficientBalance) {
+      toasts.error('Not enough coins. Earn coins in Rewards.');
+    } else {
+      toasts.error("Couldn't unlock auto-rotate. Try again.");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return _Message(
-      kind: GlintStateKind.empty,
-      text: 'Auto-rotate is a Prism Pro feature.',
-      buttonLabel: 'See Prism Pro',
-      onPressed: () {
-        if (!app_state.prismUser.loggedIn) {
-          googleSignInPopUp(context, () => _presentAutoRotatePaywall(context));
-        } else {
-          _presentAutoRotatePaywall(context);
-        }
-      },
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(PrismSpace.page),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Glint(),
+              const SizedBox(height: PrismSpace.md),
+              Text(
+                'Auto-rotate is a Prism Pro feature.',
+                textAlign: TextAlign.center,
+                style: PrismTextStyles.cardTitle(context),
+              ),
+              const SizedBox(height: PrismSpace.xxs),
+              Text(
+                'Try it for 7 days with coins, or get Prism Pro.',
+                textAlign: TextAlign.center,
+                style: PrismTextStyles.body(context),
+              ),
+              const SizedBox(height: PrismSpace.md),
+              PrismButton(
+                label: '7-day pass · ${CoinPolicy.autoRotatePass7d} coins',
+                expand: true,
+                loading: _buying,
+                onPressed: () => unawaited(_buyPass()),
+              ),
+              const SizedBox(height: PrismSpace.xs),
+              PrismButton(
+                label: 'See Prism Pro',
+                expand: true,
+                variant: PrismButtonVariant.ghost,
+                onPressed: () {
+                  if (!app_state.prismUser.loggedIn) {
+                    googleSignInPopUp(context, () => _presentAutoRotatePaywall(context));
+                  } else {
+                    _presentAutoRotatePaywall(context);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -258,6 +333,14 @@ class _Controls extends StatelessWidget {
     final int next = state.status.nextRunEpochMs;
     if (!state.status.isRunning || next <= 0) return 'Scheduled';
     return 'Next change around ${DateFormat.jm().format(DateTime.fromMillisecondsSinceEpoch(next))}';
+  }
+
+  /// When the 7-day pass ends. Null for Pro users and when no pass is active.
+  DateTime? _passEnd() {
+    if (app_state.prismUser.premium) return null;
+    final Passes passes = CoinsService.instance.currentPasses;
+    final DateTime? end = passes.autoRotatePassUntil;
+    return end != null && passes.autoRotatePassActive(DateTime.now()) ? end : null;
   }
 
   @override
@@ -309,6 +392,14 @@ class _Controls extends StatelessWidget {
             ),
           ],
         ),
+        if (_passEnd() case final DateTime end)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.sm, PrismSpace.xs, 0),
+            child: Text(
+              'Pass active until ${DateFormat.MMMd().add_jm().format(end.toLocal())}',
+              style: PrismTextStyles.caption(context),
+            ),
+          ),
         if (state.starting)
           _ProgressRow(label: 'Preparing ${state.sourceCount} wallpapers')
         else if (caching && cached < status.totalCount)

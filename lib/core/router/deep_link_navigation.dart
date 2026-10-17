@@ -62,6 +62,13 @@ class DeepLinkNavigation {
       case ReferLinkIntent():
         await onReferral(action.inviterId);
         return const RewardsTabRoute();
+      case ScreenLinkIntent():
+        return switch (action.screen) {
+          DeepLinkScreen.shop => const ShopRoute(),
+          DeepLinkScreen.drops => const DropsRoute(),
+          DeepLinkScreen.leaderboard => const LeaderboardRoute(),
+          DeepLinkScreen.draw => const DrawRoute(),
+        };
       case ShortCodeIntent():
         final result = await ShortLinkResolver(client: httpClient, parser: parser).resolve(action.code);
         return result is ShortLinkResolved ? _mapActionToRoute(result.action) : null;

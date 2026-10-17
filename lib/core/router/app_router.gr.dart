@@ -417,6 +417,90 @@ class DownloadWallpaperRouteArgs {
 }
 
 /// generated route for
+/// [DrawPage]
+class DrawRoute extends PageRouteInfo<void> {
+  const DrawRoute({List<PageRouteInfo>? children})
+    : super(DrawRoute.name, initialChildren: children);
+
+  static const String name = 'DrawRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return WrappedRoute(child: const DrawPage());
+    },
+  );
+}
+
+/// generated route for
+/// [DropDetailPage]
+class DropDetailRoute extends PageRouteInfo<DropDetailRouteArgs> {
+  DropDetailRoute({
+    Key? key,
+    required String weekKey,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DropDetailRoute.name,
+         args: DropDetailRouteArgs(key: key, weekKey: weekKey),
+         rawPathParams: {'weekKey': weekKey},
+         initialChildren: children,
+       );
+
+  static const String name = 'DropDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<DropDetailRouteArgs>(
+        orElse: () =>
+            DropDetailRouteArgs(weekKey: pathParams.getString('weekKey')),
+      );
+      return DropDetailPage(key: args.key, weekKey: args.weekKey);
+    },
+  );
+}
+
+class DropDetailRouteArgs {
+  const DropDetailRouteArgs({this.key, required this.weekKey});
+
+  final Key? key;
+
+  final String weekKey;
+
+  @override
+  String toString() {
+    return 'DropDetailRouteArgs{key: $key, weekKey: $weekKey}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DropDetailRouteArgs) return false;
+    return key == other.key && weekKey == other.weekKey;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ weekKey.hashCode;
+}
+
+/// generated route for
+/// [DropsPage]
+class DropsRoute extends PageRouteInfo<void> {
+  const DropsRoute({List<PageRouteInfo>? children})
+    : super(DropsRoute.name, initialChildren: children);
+
+  static const String name = 'DropsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DropsPage();
+    },
+  );
+}
+
+/// generated route for
 /// [EditProfilePanel]
 class EditProfilePanelRoute extends PageRouteInfo<void> {
   const EditProfilePanelRoute({List<PageRouteInfo>? children})
@@ -644,6 +728,22 @@ class IosShortcutsGuideRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const IosShortcutsGuideScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [LeaderboardPage]
+class LeaderboardRoute extends PageRouteInfo<void> {
+  const LeaderboardRoute({List<PageRouteInfo>? children})
+    : super(LeaderboardRoute.name, initialChildren: children);
+
+  static const String name = 'LeaderboardRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return WrappedRoute(child: const LeaderboardPage());
     },
   );
 }
@@ -1076,6 +1176,22 @@ class SharePrismRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return SharePrismScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [ShopPage]
+class ShopRoute extends PageRouteInfo<void> {
+  const ShopRoute({List<PageRouteInfo>? children})
+    : super(ShopRoute.name, initialChildren: children);
+
+  static const String name = 'ShopRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const ShopPage();
     },
   );
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -55,6 +56,7 @@ class _WotdCardContent extends StatelessWidget {
 
   void _openWallpaper(BuildContext context) {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
+    CoinsService.instance.reportQuestEvent(QuestEvent.viewWotd);
     final PrismWallpaper? wallpaper = entity.wallpaper;
     context.router.push(
       wallpaper != null

@@ -375,9 +375,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     if (!reservation.success || reservation.mode == AiChargeMode.insufficient) {
       CoinsService.instance.logLowBalanceNudge(
         sourceTag: 'coins.ai_generation.low_balance',
-        requiredCoins: qualityTier.coinCost,
+        requiredCoins: qualityTier.costFor(isPro: app_state.prismUser.premium),
       );
-      toasts.error('Need ${qualityTier.coinCost} coins to generate.');
+      toasts.error('Need ${qualityTier.costFor(isPro: app_state.prismUser.premium)} coins to generate.');
       setState(() => _loadingGeneration = false);
       return;
     }
@@ -679,7 +679,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       context,
       controller: _variationController,
       maxChars: _maxVariationChars,
-      cost: (_latest?.qualityTier ?? _selectedQualityTier).coinCost,
+      cost: (_latest?.qualityTier ?? _selectedQualityTier).costFor(isPro: app_state.prismUser.premium),
       enabled: app_state.aiVariationsEnabled && _latest != null && !_loadingGeneration,
       onSubmit: _generateVariation,
     );
@@ -809,7 +809,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       builder: (BuildContext context, int coinBalance, _) => ListenableBuilder(
         listenable: _promptController,
         builder: (BuildContext context, _) => AiGenerateBar(
-          cost: _selectedQualityTier.coinCost,
+          cost: _selectedQualityTier.costFor(isPro: app_state.prismUser.premium),
           balance: coinBalance,
           hasPrompt: _promptController.text.trim().isNotEmpty,
           loading: _loadingGeneration,

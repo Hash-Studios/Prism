@@ -47,7 +47,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  const String freezeLabel = 'Streak freeze, ${CoinPolicy.streakFreezeCost} coins';
+  final String freezeLabel = 'Streak freeze, ${CoinPolicy.streakFreezeCost} coins';
 
   testWidgets('capped freeze action emits only the error outcome haptic', (tester) async {
     CoinsService.instance.streakNotifier.value = StreakStatus.empty.copyWith(freezes: CoinPolicy.maxStreakFreezes);
@@ -74,7 +74,7 @@ void main() {
   testWidgets('premium tile semantics action shares the pointer haptic path', (tester) async {
     await pumpSpendSection(tester);
     final SemanticsHandle semanticsHandle = tester.ensureSemantics();
-    tester.semantics.tap(find.semantics.byLabel('Premium wallpaper, ${CoinPolicy.premiumWallpaperDownload} coins'));
+    tester.semantics.tap(find.semantics.byLabel(RegExp('^Downloads, ${CoinPolicy.wallpaperDownload} coins')));
     await tester.pump();
 
     expect(haptics, <String>['tap']);

@@ -61,7 +61,8 @@ service cloud.firestore {
           && request.resource.data.get('subscriptionTier', 'free') == 'free'
           && request.resource.data.get('followers', []).size() == 0
           && request.resource.data.get('badges', []).size() == 0
-          && !('coinState' in request.resource.data);
+          && !('coinState' in request.resource.data)
+          && !request.resource.data.keys().hasAny(['xp', 'xpWeek', 'cosmetics', 'quests', 'inventory', 'drops']);
     }
 
     // Owners may only touch the client-side coinState keys; award flags stay server-owned.
@@ -102,6 +103,15 @@ service cloud.firestore {
       return timestampOk && offsetOk;
     }
 
+    // Drop and boost fields on walls are server and admin owned.
+    function wallDropKeysAbsent() {
+      return !request.resource.data.keys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil']);
+    }
+
+    function wallDropKeysUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil']);
+    }
+
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
     match /wall_of_the_day/{docId} {
       allow read: if true;
@@ -133,10 +143,12 @@ service cloud.firestore {
       allow create: if isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
-              && request.resource.data.review != true);
+              && request.resource.data.review != true
+              && wallDropKeysAbsent());
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
+              && wallDropKeysUntouched()
               && request.resource.data.email == resource.data.email
               && resource.data.review != true
               && request.resource.data.review != true);
@@ -208,6 +220,12 @@ service cloud.firestore {
           || canToggleFollowersOnly()
           || isConfiguredAdmin();
       allow delete: if isConfiguredAdmin();
+
+      // Coin economy state (quests, inventory, unlocked drops, passes): owner read, server write.
+      match /private/economy {
+        allow read: if isOwner(userId) || isConfiguredAdmin();
+        allow write: if false;
+      }
 
       match /private/session {
         allow read, write: if isOwner(userId) || isConfiguredAdmin();
@@ -342,6 +360,40 @@ service cloud.firestore {
       match /signals/{signalId} {
         allow read, write: if false;
       }
+    }
+
+    // Coin economy v2. Config, drops, boosts, draws and leaderboards are read-only to signed-in users.
+    // questEventRate and giftRateDaily have no match: default deny.
+    match /economyConfig/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /drops/{weekKey} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /boosts/{wallId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /draws/{weekKey} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /drawTickets/{ticketId} {
+      // The id is `{weekKey}_{uid}`, so the owner can read a ticket that does not exist yet.
+      allow get: if isSignedIn() && ticketId == ticketId.split('_')[0] + '_' + request.auth.uid;
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /leaderboards/{weekKey} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
 
     // Deny everything else by default.

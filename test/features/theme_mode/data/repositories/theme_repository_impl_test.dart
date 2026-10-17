@@ -1,5 +1,6 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/data/repositories/theme_repository_impl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +31,30 @@ void main() {
     expect(dark.themeId, 'kDMaterial Dark');
     expect(dark.accentColorValue, 0xffe57697);
     expect(preferences.mode, ThemeMode.system);
+  });
+
+  test('the first read stores the selected themes as legacy themes and later reads keep them', () async {
+    store.data['settings.lightThemeID'] = 'kLRose';
+    store.data['settings.darkThemeID'] = 'kDOlive';
+
+    repository.readSync();
+    await repository.update(lightThemeId: 'kLCoffee', darkThemeId: 'kDSky');
+    repository.readSync();
+
+    expect(store.data['settings.$legacyThemesSettingsKey'], 'kLRose,kDOlive');
+    expect(readLegacyThemes(SettingsLocalDataSource(store)), <String>{'kLRose', 'kDOlive'});
+  });
+
+  test('an update before any read still records the themes that were selected before it', () async {
+    store.data['settings.lightThemeID'] = 'kLRose';
+
+    await repository.update(lightThemeId: 'kLCoffee');
+
+    expect(readLegacyThemes(SettingsLocalDataSource(store)), <String>{'kLRose', 'kDMaterial Dark'});
+  });
+
+  test('without legacy themes nothing is grandfathered', () {
+    expect(readLegacyThemes(SettingsLocalDataSource(store)), isEmpty);
   });
 
   test('setLightTheme stores the theme id and its default accent', () async {

@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
-import {db, REGION} from "./common";
+import {db, REGION, str} from "./common";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -9,6 +9,8 @@ const AI_GENERATIONS = "aiGenerations";
 const DRAFT_SETUPS = "draftSetups";
 const BLOCKED_USERS = "blockedUsers";
 const GITHUB_UPLOADS = "githubUploads";
+const DRAW_TICKETS = "drawTickets";
+const BOOSTS = "boosts";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
 const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens"];
@@ -46,6 +48,16 @@ async function queueUpdateWhere(
 ): Promise<void> {
   const snap = await db.collection(collection).where(field, op, value).get();
   snap.docs.forEach((doc) => queue(doc.ref, data));
+}
+
+/** Deletes the user's boosts and clears `boostedUntil` on the walls they boosted. */
+async function queueBoosts(uid: string, queue: QueueDelete, queueUpdate: QueueUpdate): Promise<void> {
+  const snap = await db.collection(BOOSTS).where("uid", "==", uid).get();
+  for (const doc of snap.docs) {
+    queue(doc.ref);
+    const wallRef = db.collection("walls").doc(str(doc.data().wallId) || doc.id);
+    if ((await wallRef.get()).exists) queueUpdate(wallRef, {boostedUntil: admin.firestore.FieldValue.delete()});
+  }
 }
 
 async function queueDeleteByIdPrefix(collection: string, prefix: string, queue: QueueDelete): Promise<void> {
@@ -98,6 +110,8 @@ export const deleteAccount = onCall({region: REGION, cors: true, timeoutSeconds:
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
     if (email) await queueDeleteWhereEqual(DRAFT_SETUPS, "email", email, queue);
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
+    await queueDeleteWhereEqual(DRAW_TICKETS, "uid", callerUid, queue);
+    await queueBoosts(callerUid, queue, queueUpdate);
     // The email may be stored as typed or in lower case.
     for (const address of new Set(email ? [email, email.toLowerCase()] : [])) {
       for (const collection of SCRUBBED_BY_EMAIL) {

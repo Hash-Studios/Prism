@@ -1,4 +1,6 @@
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -8,6 +10,8 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
+import 'package:Prism/features/drops/drops.dart';
+import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
@@ -20,8 +24,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+import '../quests/fake_quests_repository.dart';
 
 class _MockBadgesBloc extends MockBloc<BadgesEvent, BadgesState> implements BadgesBloc {}
+
+class _MockDropsBloc extends MockBloc<DropsEvent, DropsState> implements DropsBloc {}
+
+/// The Rewards page builds the Today card and the Drop card, which each read a bloc from [getIt].
+void _registerEconomyBlocs() {
+  getIt.registerFactory<QuestsBloc>(() => QuestsBloc(FakeQuestsRepository()));
+  getIt.registerFactory<DropsBloc>(() {
+    final _MockDropsBloc drops = _MockDropsBloc();
+    whenListen(drops, const Stream<DropsState>.empty(), initialState: DropsState.initial());
+    return drops;
+  });
+}
 
 class _MockShopBloc extends MockBloc<StreakShopEvent, StreakShopState> implements StreakShopBloc {}
 
@@ -58,6 +75,7 @@ void main() {
   tearDown(() async {
     app_state.prismUser = app_constants.createGuestPrismUser();
     svc.streakNotifier.value = StreakStatus.empty;
+    svc.xpNotifier.value = XpStatus.empty();
     svc.balanceNotifier.value = balance;
     await getIt.reset();
   });
@@ -110,6 +128,7 @@ void main() {
     final _MockBadgesBloc badges = _MockBadgesBloc();
     whenListen(badges, const Stream<BadgesState>.empty(), initialState: const BadgesState());
     getIt.registerFactory<BadgesBloc>(() => badges);
+    _registerEconomyBlocs();
     getIt.registerSingleton<FirestoreClient>(CoinsTestFirestore());
     await tester.pumpWidget(MaterialApp(theme: kDarkTheme, home: const RewardsPage(showBack: false)));
     await tester.pump();
@@ -136,6 +155,7 @@ void main() {
     final _MockBadgesBloc badges = _MockBadgesBloc();
     whenListen(badges, const Stream<BadgesState>.empty(), initialState: const BadgesState());
     getIt.registerFactory<BadgesBloc>(() => badges);
+    _registerEconomyBlocs();
     getIt.registerSingleton<FirestoreClient>(CoinsTestFirestore());
     await tester.pumpWidget(
       MaterialApp(
@@ -221,6 +241,7 @@ void main() {
       final _MockBadgesBloc badges = _MockBadgesBloc();
       whenListen(badges, const Stream<BadgesState>.empty(), initialState: const BadgesState());
       getIt.registerFactory<BadgesBloc>(() => badges);
+      _registerEconomyBlocs();
       final CoinsTestFirestore firestore = CoinsTestFirestore()
         ..transactions = <Map<String, dynamic>>[
           for (int i = 0; i < 9; i++)
@@ -256,7 +277,8 @@ void main() {
       expect(find.text('Use your coins'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      await tester.scrollUntilVisible(find.text('Earn coins'), 200, scrollable: find.byType(Scrollable).first);
+      // Earn coins sits above Use your coins, which the link just scrolled to.
+      await tester.scrollUntilVisible(find.text('Earn coins'), -200, scrollable: find.byType(Scrollable).first);
       await tester.pump();
       expect(find.text('Watch a video'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -316,7 +338,10 @@ void main() {
       await _pump(tester, theme, const RewardsHero());
       expect(find.text('0'), findsOneWidget);
       expect(find.text('Open Prism every day to build a streak.'), findsOneWidget);
-      expect(find.text('Finish day 7 for a +40 week bonus'), findsOneWidget);
+      expect(
+        find.text('Finish day 7 for a chest of +${CoinPolicy.streakChestMin} to +${CoinPolicy.streakChestMax}'),
+        findsOneWidget,
+      );
       expect(find.text('Day 7'), findsOneWidget);
       expect(find.textContaining('Best'), findsNothing);
     });
@@ -334,6 +359,25 @@ void main() {
       expect(find.text('Best 21 days'), findsOneWidget);
       expect(find.textContaining('Today is done. Come back tomorrow for +'), findsOneWidget);
       expect(find.byIcon(Icons.check_rounded), findsNWidgets(5));
+    });
+
+    testWidgets('hero: rank chip and XP bar ($mode)', (tester) async {
+      svc.xpNotifier.value = XpStatus(xp: 1240, weekXp: 40, rank: EconomyConfig.current.rankFor(1240));
+      await _pump(tester, theme, const RewardsHero());
+      expect(find.text('Silver'), findsOneWidget);
+      expect(find.text('1\u00A0240 / 2\u00A0000 XP to Gold'), findsOneWidget);
+      final LinearProgressIndicator bar = tester.widget(find.byType(LinearProgressIndicator));
+      expect(bar.value, closeTo((1240 - 500) / (2000 - 500), 0.001));
+      expect(find.bySemanticsLabel('Silver rank, 1\u00A0240 / 2\u00A0000 XP to Gold'), findsOneWidget);
+    });
+
+    testWidgets('hero: the top rank has no next step ($mode)', (tester) async {
+      svc.xpNotifier.value = XpStatus(xp: 9000, weekXp: 0, rank: EconomyConfig.current.rankFor(9000));
+      await _pump(tester, theme, const RewardsHero());
+      expect(find.text('Prism'), findsOneWidget);
+      expect(find.text('Prism rank'), findsOneWidget);
+      final LinearProgressIndicator bar = tester.widget(find.byType(LinearProgressIndicator));
+      expect(bar.value, 1);
     });
 
     testWidgets('freeze card: slots and full state ($mode)', (tester) async {

@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/biz/coin_gate_port.dart';
 import 'package:Prism/features/ads/biz/rewarded_ad_flow.dart';
@@ -139,6 +140,7 @@ class CoinGateSpec {
     this.onPaid,
     this.onSpent,
     this.retrySpec,
+    this.premiumBypass = true,
   });
 
   final CoinSpendAction action;
@@ -207,6 +209,9 @@ class CoinGateSpec {
 
   /// Build the next gate attempt after an ad was credited. Null means try once, then return if still insufficient.
   final CoinGateSpec Function()? retrySpec;
+
+  /// False makes Pro users go through the spend too, for sinks that Pro pays for.
+  final bool premiumBypass;
 }
 
 /// One place for the premium bypass, spend, low-balance sheet, rewarded ad, credit, retry, refund sequence.
@@ -223,7 +228,7 @@ class CoinGate {
     if (!spec.isMounted()) {
       return CoinGateResult.cancelled;
     }
-    if (_port.isPremium && spec.spend == null) {
+    if (_premiumShortcut(spec)) {
       return await _perform(spec, 'premium_bypass') ? CoinGateResult.performedFree : CoinGateResult.failedNotRefunded;
     }
 
@@ -242,7 +247,7 @@ class CoinGate {
     String spendTag = spec.tags.spend;
 
     while (true) {
-      if (_port.isPremium && spec.spend == null) {
+      if (_premiumShortcut(spec)) {
         return await _perform(spec, 'premium_bypass') ? CoinGateResult.performedFree : CoinGateResult.failedNotRefunded;
       }
       bool nudgeSpendSelected = false;
@@ -293,7 +298,7 @@ class CoinGate {
         }
       }
 
-      if (_port.isPremium && spec.spend == null) {
+      if (_premiumShortcut(spec)) {
         return await _perform(spec, 'premium_bypass') ? CoinGateResult.performedFree : CoinGateResult.failedNotRefunded;
       }
       final CoinGateResult result = await _spendAndPerform(spec, spendTag);
@@ -312,6 +317,13 @@ class CoinGate {
       prompt = CoinGatePrompt(phase: CoinGatePhase.insufficient, cost: cost, balance: _port.balance);
     }
   }
+
+  /// Pro runs the action free only for actions in the config bypass set, as the server does.
+  bool _premiumShortcut(CoinGateSpec spec) =>
+      _port.isPremium &&
+      spec.spend == null &&
+      spec.premiumBypass &&
+      EconomyConfig.current.proBypassActions.contains(spec.action.name);
 
   Future<CoinGatePrompt> _withAdState(CoinGatePrompt prompt) async {
     bool adsAllowed = true;
