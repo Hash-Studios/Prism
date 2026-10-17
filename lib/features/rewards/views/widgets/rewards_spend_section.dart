@@ -1,19 +1,19 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-
-/// The lowest price in the Shop catalog. The Shop tile says "from" this.
-const int _shopFromPrice = 100;
 
 /// "Use your coins": what coins buy, with the price of each. Streak freeze runs [onStreakFreeze].
 class RewardsSpendSection extends StatelessWidget {
@@ -24,6 +24,10 @@ class RewardsSpendSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int graceLeft = CoinsService.instance.graceDownloadsLeft;
+    final bool isPro = app_state.prismUser.premium;
+    final int aiFrom = proPrice(CoinPolicy.aiGenerationFast, isPro);
+    final int dropWall = proPrice(CoinPolicy.dropWall, isPro);
+    final int shopFrom = shopFromPrice(DateTime.now());
     final String? graceNote = graceLeft <= 0
         ? null
         : graceLeft == CoinPolicy.graceDownloads
@@ -33,22 +37,22 @@ class RewardsSpendSection extends StatelessWidget {
       _SpendTile(
         icon: Icons.auto_awesome_rounded,
         label: 'AI wallpaper',
-        price: 'from ${CoinPolicy.aiGenerationFast}',
-        spokenPrice: 'from ${CoinPolicy.aiGenerationFast} coins',
+        price: 'from $aiFrom',
+        spokenPrice: 'from $aiFrom coins',
         onTap: () => context.router.root.push(AiTabRoute()),
       ),
       _SpendTile(
         icon: Icons.lock_open_rounded,
         label: 'Drops',
-        price: '${CoinPolicy.dropWall} a wall',
-        spokenPrice: '${CoinPolicy.dropWall} coins a wall',
+        price: '$dropWall a wall',
+        spokenPrice: '$dropWall coins a wall',
         onTap: () => context.router.root.push(const DropsRoute()),
       ),
       _SpendTile(
         icon: Icons.storefront_outlined,
         label: 'Shop',
-        price: 'from $_shopFromPrice',
-        spokenPrice: 'from $_shopFromPrice coins',
+        price: 'from $shopFrom',
+        spokenPrice: 'from $shopFrom coins',
         onTap: () => context.router.root.push(const ShopRoute()),
       ),
       _SpendTile(

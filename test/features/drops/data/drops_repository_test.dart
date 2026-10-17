@@ -80,31 +80,6 @@ void main() {
     });
   });
 
-  group('fetchPast', () {
-    test('asks for ended Drops, newest first, with a limit', () async {
-      client.onQuery = (_) => [
-        (id: '2026-W41', data: _doc(startsAt: ms - 9000, endsAt: ms - 1000)),
-        (id: '2026-W40', data: _doc(startsAt: ms - 19000, endsAt: ms - 11000)),
-      ];
-
-      final drops = (await repository.fetchPast(now, limit: 5)).data!;
-
-      final FirestoreQuerySpec spec = client.querySpecs.single;
-      expect(spec.sourceTag, 'drops.past');
-      expect(spec.filters.single.op, FirestoreFilterOp.isLessThanOrEqualTo);
-      expect(spec.filters.single.value, ms);
-      expect(spec.orderBy.single.descending, isTrue);
-      expect(spec.limit, 5);
-      expect(drops.map((d) => d.weekKey), <String>['2026-W41', '2026-W40']);
-    });
-
-    test('is a failure when the query throws', () async {
-      client.queryError = StateError('boom');
-
-      expect((await repository.fetchPast(now)).isFailure, isTrue);
-    });
-  });
-
   group('fetchByWeekKey', () {
     test('reads the doc by id', () async {
       client.docs[FirebaseCollections.drops] = {'2026-W41': _doc(startsAt: ms - 9000, endsAt: ms - 1000)};

@@ -67,7 +67,10 @@ void main() {
 
   void stubLoad({DropEntity? live, List<DropEntity> past = const <DropEntity>[]}) {
     when(() => repository.fetchLive(any())).thenAnswer((_) async => Result.success(live));
-    when(() => repository.fetchPast(any(), limit: any(named: 'limit'))).thenAnswer((_) async => Result.success(past));
+    when(() => repository.fetchByWeekKey(any())).thenAnswer((_) async => Result.success(null));
+    for (final DropEntity drop in past) {
+      when(() => repository.fetchByWeekKey(drop.weekKey)).thenAnswer((_) async => Result.success(drop));
+    }
   }
 
   void reply(Object? Function(String name, Map<String, dynamic> params) answer) {
@@ -90,7 +93,9 @@ void main() {
       'A': DropUnlock(wallId: 'A', weekKey: '2026-W41', url: 'https://full.test/A.jpg'),
     };
 
-    final state = await loaded();
+    await loaded();
+    await pumpEventQueue();
+    final DropsState state = bloc.state;
 
     expect(state.drop, live);
     expect(state.past, <DropEntity>[old]);
@@ -101,7 +106,7 @@ void main() {
     expect(analytics.events.single.toWireParameters(), containsPair('week_key', '2026-W42'));
   });
 
-  test('a past Drop with no owned wall stays out of the vault', () async {
+  test('a past Drop with no owned wall is never fetched', () async {
     stubLoad(
       live: dropEntity(),
       past: <DropEntity>[
@@ -110,6 +115,49 @@ void main() {
     );
 
     expect((await loaded()).vault, isEmpty);
+    verifyNever(() => repository.fetchByWeekKey(any()));
+  });
+
+  test('the vault holds every owned week, not only recent ones, and fetches each Drop once', () async {
+    final List<DropEntity> old = <DropEntity>[
+      for (int week = 1; week <= 20; week++)
+        dropEntity(weekKey: '2025-W${week.toString().padLeft(2, '0')}', wallIds: <String>['W$week']),
+    ];
+    stubLoad(live: dropEntity(), past: old);
+    CoinsService.instance.dropsUnlockedNotifier.value = <String, DropUnlock>{
+      for (int week = 1; week <= 20; week++)
+        'W$week': DropUnlock(wallId: 'W$week', weekKey: '2025-W${week.toString().padLeft(2, '0')}', url: 'u'),
+    };
+
+    await loaded();
+    await pumpEventQueue();
+    final DropsState state = bloc.state;
+    expect(state.vault.map((DropEntity d) => d.weekKey).first, '2025-W20');
+    expect(state.vault, hasLength(20));
+
+    CoinsService.instance.dropsUnlockedNotifier.value = <String, DropUnlock>{
+      ...CoinsService.instance.dropsUnlockedNotifier.value,
+      'A': const DropUnlock(wallId: 'A', weekKey: '2026-W42', url: 'u'),
+    };
+    await pumpEventQueue();
+    verify(() => repository.fetchByWeekKey('2025-W01')).called(1);
+    verifyNever(() => repository.fetchByWeekKey('2026-W42'));
+  });
+
+  test('the vault fetches at most the newest 52 owned weeks', () async {
+    stubLoad();
+    CoinsService.instance.dropsUnlockedNotifier.value = <String, DropUnlock>{
+      for (int i = 0; i < 60; i++)
+        'W$i': DropUnlock(
+          wallId: 'W$i',
+          weekKey: '${2020 + i ~/ 50}-W${(i % 50 + 1).toString().padLeft(2, '0')}',
+          url: 'u',
+        ),
+    };
+
+    await loaded();
+    await pumpEventQueue();
+    verify(() => repository.fetchByWeekKey(any())).called(DropsBloc.vaultCap);
   });
 
   test('started with a week key loads that Drop only', () async {
@@ -126,16 +174,16 @@ void main() {
 
   test('a failed load of the live Drop is a failure', () async {
     when(() => repository.fetchLive(any())).thenAnswer((_) async => Result.error(const ServerFailure('x')));
-    when(() => repository.fetchPast(any(), limit: any(named: 'limit'))).thenAnswer((_) async => Result.success([]));
 
     expect((await loaded()).status, LoadStatus.failure);
   });
 
   test('a failed vault load still shows the live Drop', () async {
     when(() => repository.fetchLive(any())).thenAnswer((_) async => Result.success(dropEntity()));
-    when(
-      () => repository.fetchPast(any(), limit: any(named: 'limit')),
-    ).thenAnswer((_) async => Result.error(const ServerFailure('x')));
+    when(() => repository.fetchByWeekKey(any())).thenAnswer((_) async => Result.error(const ServerFailure('x')));
+    CoinsService.instance.dropsUnlockedNotifier.value = const <String, DropUnlock>{
+      'A': DropUnlock(wallId: 'A', weekKey: '2026-W41', url: 'https://full.test/A.jpg'),
+    };
 
     final state = await loaded();
 

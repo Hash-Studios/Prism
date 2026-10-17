@@ -323,7 +323,7 @@ export function duplicateSpendResponse<T extends Record<string, unknown>>(
     success: true,
     changed: true,
     previousBalance: typeof original.balanceBefore === "number" ? Math.trunc(original.balanceBefore) : balance,
-    currentBalance: typeof original.balanceAfter === "number" ? Math.trunc(original.balanceAfter) : balance,
+    currentBalance: balance,
     delta,
     reason,
     transactionId: typeof original.id === "string" ? original.id : "",

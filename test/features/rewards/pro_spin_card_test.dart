@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/rewards/views/widgets/pro_spin_card.dart';
@@ -105,19 +106,28 @@ void main() {
     expect(find.textContaining('coins'), findsNothing);
   });
 
+  QuestState spinClaimed(String dayKey) => QuestState(
+    dayKey: dayKey,
+    items: const <QuestItem>[],
+    weekKey: '2026-W42',
+    chestOpened: false,
+    chestDoubled: false,
+    bonus: const QuestItem(id: 'pro_spin', event: QuestEvent.proSpin, target: 1, progress: 1, claimed: true),
+  );
+
   testWidgets('the card starts as done when the Pro spin bonus quest is claimed', (tester) async {
-    CoinsService.instance.questsNotifier.value = const QuestState(
-      dayKey: '2026-10-17',
-      items: <QuestItem>[],
-      weekKey: '2026-W42',
-      chestOpened: false,
-      chestDoubled: false,
-      bonus: QuestItem(id: 'pro_spin', event: QuestEvent.proSpin, target: 1, progress: 1, claimed: true),
-    );
+    CoinsService.instance.questsNotifier.value = spinClaimed(economyDayKey(DateTime.now()));
     await pumpCard(tester, pro: true);
 
     expect(find.text('Back tomorrow'), findsOneWidget);
     expect(find.text('Spin'), findsNothing);
+  });
+
+  testWidgets('a claimed bonus from an earlier UTC day does not mark the spin done', (tester) async {
+    CoinsService.instance.questsNotifier.value = spinClaimed('2020-01-01');
+    await pumpCard(tester, pro: true);
+
+    expect(find.text('Spin'), findsOneWidget);
   });
 
   testWidgets('the odds sheet lists every segment with its share', (tester) async {

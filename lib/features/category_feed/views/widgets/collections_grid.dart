@@ -95,7 +95,8 @@ class _CollectionsGridState extends State<CollectionsGrid> {
           : 'Preview this premium collection for 24 hours for ${CoinPolicy.premiumPreview24h} coins.',
       options: [
         CoinGateOption(label: 'Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})', value: CoinGateChoice.spend),
-        CoinGateOption(label: '${watchAdOptionLabel()} and unlock', value: CoinGateChoice.watchAd),
+        if (prompt.missing > 0 && prompt.canWatchAd)
+          CoinGateOption(label: '${watchAdOptionLabel()} and unlock', value: CoinGateChoice.watchAd),
         const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
       ],
     );

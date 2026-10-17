@@ -6,6 +6,8 @@ abstract class DropsState with _$DropsState {
     required LoadStatus status,
     required DateTime now,
     DropEntity? drop,
+
+    /// Past Drops the user owns walls from, newest first. Fetched once each and kept.
     @Default(<DropEntity>[]) List<DropEntity> past,
     @Default(<String, DropUnlock>{}) Map<String, DropUnlock> unlocked,
 

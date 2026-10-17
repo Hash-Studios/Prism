@@ -161,7 +161,7 @@ class _EntryRow extends StatelessWidget {
                     child: Text('$position', style: PrismTextStyles.numeral(context, 18), textAlign: TextAlign.center),
                   ),
                   const SizedBox(width: PrismSpace.sm),
-                  PrismAvatar(url: entry.photo, name: name, size: 40),
+                  PrismAvatar(url: entry.photo, name: name, size: 40, frameId: entry.frameId, premium: entry.premium),
                   const SizedBox(width: PrismSpace.sm),
                   Expanded(
                     child: Row(

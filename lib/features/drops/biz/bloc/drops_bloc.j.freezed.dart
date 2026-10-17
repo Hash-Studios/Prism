@@ -466,7 +466,8 @@ as Map<String, DropUnlock>,
 /// @nodoc
 mixin _$DropsState {
 
- LoadStatus get status; DateTime get now; DropEntity? get drop; List<DropEntity> get past; Map<String, DropUnlock> get unlocked;/// The wall id being unlocked, or [DropsBloc.packKey] for the pack.
+ LoadStatus get status; DateTime get now; DropEntity? get drop;/// Past Drops the user owns walls from, newest first. Fetched once each and kept.
+ List<DropEntity> get past; Map<String, DropUnlock> get unlocked;/// The wall id being unlocked, or [DropsBloc.packKey] for the pack.
  String? get busyKey;/// The newest unlock reply. The page toasts it once.
  DropUnlockResult? get lastResult;
 /// Create a copy of DropsState
@@ -672,7 +673,9 @@ class _DropsState extends DropsState {
 @override final  LoadStatus status;
 @override final  DateTime now;
 @override final  DropEntity? drop;
+/// Past Drops the user owns walls from, newest first. Fetched once each and kept.
  final  List<DropEntity> _past;
+/// Past Drops the user owns walls from, newest first. Fetched once each and kept.
 @override@JsonKey() List<DropEntity> get past {
   if (_past is EqualUnmodifiableListView) return _past;
   // ignore: implicit_dynamic_type

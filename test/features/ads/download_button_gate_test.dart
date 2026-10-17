@@ -303,9 +303,7 @@ void main() {
     });
 
     testWidgets('an active premium pass makes a Pro wallpaper free', (tester) async {
-      CoinsService.instance.passesNotifier.value = Passes(
-        premiumPassUntil: DateTime.now().add(const Duration(hours: 3)),
-      );
+      CoinsService.instance.setPassesForTest(Passes(premiumPassUntil: DateTime.now().add(const Duration(hours: 3))));
       addTearDown(() => CoinsService.instance.passesNotifier.value = Passes.empty);
       await pump(tester, premiumContent: true);
 

@@ -48,14 +48,35 @@ class _SpinCard extends StatefulWidget {
   State<_SpinCard> createState() => _SpinCardState();
 }
 
-class _SpinCardState extends State<_SpinCard> with SingleTickerProviderStateMixin {
+class _SpinCardState extends State<_SpinCard> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _reveal = AnimationController(vsync: this, duration: PrismDurations.slow * 2);
   bool _spinning = false;
-  bool _spun = false;
+
+  /// The UTC day of the spin this card saw land. The flag means nothing on another day.
+  String? _spunDay;
   int _won = 0;
+
+  bool get _spun => _spunDay == economyDayKey(DateTime.now());
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || _spunDay == null || _spun) return;
+    setState(() {
+      _spunDay = null;
+      _won = 0;
+      _reveal.value = 0;
+    });
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _reveal.dispose();
     super.dispose();
   }
@@ -70,7 +91,7 @@ class _SpinCardState extends State<_SpinCard> with SingleTickerProviderStateMixi
         PrismHaptics.success();
         setState(() {
           _spinning = false;
-          _spun = true;
+          _spunDay = economyDayKey(DateTime.now());
           _won = result.coins;
         });
         if (context.reduceMotion) {
@@ -81,7 +102,7 @@ class _SpinCardState extends State<_SpinCard> with SingleTickerProviderStateMixi
       case ProSpinOutcome.alreadyClaimed:
         setState(() {
           _spinning = false;
-          _spun = true;
+          _spunDay = economyDayKey(DateTime.now());
         });
         _reveal.value = 1;
       case ProSpinOutcome.notPro:
@@ -130,7 +151,7 @@ class _SpinCardState extends State<_SpinCard> with SingleTickerProviderStateMixi
     return ValueListenableBuilder<QuestState?>(
       valueListenable: CoinsService.instance.questsNotifier,
       builder: (context, quests, _) {
-        final QuestItem? bonus = quests?.bonus;
+        final QuestItem? bonus = quests?.dayKey == economyDayKey(DateTime.now()) ? quests?.bonus : null;
         final bool done = _spun || (bonus != null && bonus.id == 'pro_spin' && bonus.claimed);
         final TextStyle caption = PrismTextStyles.caption(context);
         return PrismCard(

@@ -92,7 +92,11 @@ class _AutoRotateSessionListenerState extends State<AutoRotateSessionListener> w
       return;
     }
     context.read<AutoRotateBloc>().add(
-      AutoRotateEvent.entitlementChanged(isPro: autoRotateEntitled(state.session), userId: state.session.userId),
+      AutoRotateEvent.entitlementChanged(
+        isPro: autoRotateEntitled(state.session),
+        userId: state.session.userId,
+        passUntil: autoRotatePassEnd(state.session),
+      ),
     );
     final FavouriteWallsState favourites = context.read<FavouriteWallsBloc>().state;
     if (state.session.loggedIn &&

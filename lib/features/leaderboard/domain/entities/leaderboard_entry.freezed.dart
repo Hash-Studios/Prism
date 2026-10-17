@@ -14,7 +14,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LeaderboardEntry {
 
- String get uid; String get name; String get username; String get photo; int get xp; String get rank; String? get frameId; bool get isMe;
+ String get uid; String get name; String get username; String get photo; int get xp; String get rank; String? get frameId;/// A Pro frame draws only for a premium profile.
+ bool get premium; bool get isMe;
 /// Create a copy of LeaderboardEntry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +26,16 @@ $LeaderboardEntryCopyWith<LeaderboardEntry> get copyWith => _$LeaderboardEntryCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LeaderboardEntry&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.name, name) || other.name == name)&&(identical(other.username, username) || other.username == username)&&(identical(other.photo, photo) || other.photo == photo)&&(identical(other.xp, xp) || other.xp == xp)&&(identical(other.rank, rank) || other.rank == rank)&&(identical(other.frameId, frameId) || other.frameId == frameId)&&(identical(other.isMe, isMe) || other.isMe == isMe));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LeaderboardEntry&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.name, name) || other.name == name)&&(identical(other.username, username) || other.username == username)&&(identical(other.photo, photo) || other.photo == photo)&&(identical(other.xp, xp) || other.xp == xp)&&(identical(other.rank, rank) || other.rank == rank)&&(identical(other.frameId, frameId) || other.frameId == frameId)&&(identical(other.premium, premium) || other.premium == premium)&&(identical(other.isMe, isMe) || other.isMe == isMe));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,uid,name,username,photo,xp,rank,frameId,isMe);
+int get hashCode => Object.hash(runtimeType,uid,name,username,photo,xp,rank,frameId,premium,isMe);
 
 @override
 String toString() {
-  return 'LeaderboardEntry(uid: $uid, name: $name, username: $username, photo: $photo, xp: $xp, rank: $rank, frameId: $frameId, isMe: $isMe)';
+  return 'LeaderboardEntry(uid: $uid, name: $name, username: $username, photo: $photo, xp: $xp, rank: $rank, frameId: $frameId, premium: $premium, isMe: $isMe)';
 }
 
 
@@ -45,7 +46,7 @@ abstract mixin class $LeaderboardEntryCopyWith<$Res>  {
   factory $LeaderboardEntryCopyWith(LeaderboardEntry value, $Res Function(LeaderboardEntry) _then) = _$LeaderboardEntryCopyWithImpl;
 @useResult
 $Res call({
- String uid, String name, String username, String photo, int xp, String rank, String? frameId, bool isMe
+ String uid, String name, String username, String photo, int xp, String rank, String? frameId, bool premium, bool isMe
 });
 
 
@@ -62,7 +63,7 @@ class _$LeaderboardEntryCopyWithImpl<$Res>
 
 /// Create a copy of LeaderboardEntry
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? uid = null,Object? name = null,Object? username = null,Object? photo = null,Object? xp = null,Object? rank = null,Object? frameId = freezed,Object? isMe = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? uid = null,Object? name = null,Object? username = null,Object? photo = null,Object? xp = null,Object? rank = null,Object? frameId = freezed,Object? premium = null,Object? isMe = null,}) {
   return _then(_self.copyWith(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -71,7 +72,8 @@ as String,photo: null == photo ? _self.photo : photo // ignore: cast_nullable_to
 as String,xp: null == xp ? _self.xp : xp // ignore: cast_nullable_to_non_nullable
 as int,rank: null == rank ? _self.rank : rank // ignore: cast_nullable_to_non_nullable
 as String,frameId: freezed == frameId ? _self.frameId : frameId // ignore: cast_nullable_to_non_nullable
-as String?,isMe: null == isMe ? _self.isMe : isMe // ignore: cast_nullable_to_non_nullable
+as String?,premium: null == premium ? _self.premium : premium // ignore: cast_nullable_to_non_nullable
+as bool,isMe: null == isMe ? _self.isMe : isMe // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -157,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String name,  String username,  String photo,  int xp,  String rank,  String? frameId,  bool isMe)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uid,  String name,  String username,  String photo,  int xp,  String rank,  String? frameId,  bool premium,  bool isMe)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LeaderboardEntry() when $default != null:
-return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.rank,_that.frameId,_that.isMe);case _:
+return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.rank,_that.frameId,_that.premium,_that.isMe);case _:
   return orElse();
 
 }
@@ -178,10 +180,10 @@ return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.r
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String name,  String username,  String photo,  int xp,  String rank,  String? frameId,  bool isMe)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uid,  String name,  String username,  String photo,  int xp,  String rank,  String? frameId,  bool premium,  bool isMe)  $default,) {final _that = this;
 switch (_that) {
 case _LeaderboardEntry():
-return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.rank,_that.frameId,_that.isMe);case _:
+return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.rank,_that.frameId,_that.premium,_that.isMe);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -198,10 +200,10 @@ return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.r
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String name,  String username,  String photo,  int xp,  String rank,  String? frameId,  bool isMe)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uid,  String name,  String username,  String photo,  int xp,  String rank,  String? frameId,  bool premium,  bool isMe)?  $default,) {final _that = this;
 switch (_that) {
 case _LeaderboardEntry() when $default != null:
-return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.rank,_that.frameId,_that.isMe);case _:
+return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.rank,_that.frameId,_that.premium,_that.isMe);case _:
   return null;
 
 }
@@ -213,7 +215,7 @@ return $default(_that.uid,_that.name,_that.username,_that.photo,_that.xp,_that.r
 
 
 class _LeaderboardEntry implements LeaderboardEntry {
-  const _LeaderboardEntry({required this.uid, required this.name, required this.username, required this.photo, required this.xp, required this.rank, this.frameId, this.isMe = false});
+  const _LeaderboardEntry({required this.uid, required this.name, required this.username, required this.photo, required this.xp, required this.rank, this.frameId, this.premium = false, this.isMe = false});
   
 
 @override final  String uid;
@@ -223,6 +225,8 @@ class _LeaderboardEntry implements LeaderboardEntry {
 @override final  int xp;
 @override final  String rank;
 @override final  String? frameId;
+/// A Pro frame draws only for a premium profile.
+@override@JsonKey() final  bool premium;
 @override@JsonKey() final  bool isMe;
 
 /// Create a copy of LeaderboardEntry
@@ -235,16 +239,16 @@ _$LeaderboardEntryCopyWith<_LeaderboardEntry> get copyWith => __$LeaderboardEntr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LeaderboardEntry&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.name, name) || other.name == name)&&(identical(other.username, username) || other.username == username)&&(identical(other.photo, photo) || other.photo == photo)&&(identical(other.xp, xp) || other.xp == xp)&&(identical(other.rank, rank) || other.rank == rank)&&(identical(other.frameId, frameId) || other.frameId == frameId)&&(identical(other.isMe, isMe) || other.isMe == isMe));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LeaderboardEntry&&(identical(other.uid, uid) || other.uid == uid)&&(identical(other.name, name) || other.name == name)&&(identical(other.username, username) || other.username == username)&&(identical(other.photo, photo) || other.photo == photo)&&(identical(other.xp, xp) || other.xp == xp)&&(identical(other.rank, rank) || other.rank == rank)&&(identical(other.frameId, frameId) || other.frameId == frameId)&&(identical(other.premium, premium) || other.premium == premium)&&(identical(other.isMe, isMe) || other.isMe == isMe));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,uid,name,username,photo,xp,rank,frameId,isMe);
+int get hashCode => Object.hash(runtimeType,uid,name,username,photo,xp,rank,frameId,premium,isMe);
 
 @override
 String toString() {
-  return 'LeaderboardEntry(uid: $uid, name: $name, username: $username, photo: $photo, xp: $xp, rank: $rank, frameId: $frameId, isMe: $isMe)';
+  return 'LeaderboardEntry(uid: $uid, name: $name, username: $username, photo: $photo, xp: $xp, rank: $rank, frameId: $frameId, premium: $premium, isMe: $isMe)';
 }
 
 
@@ -255,7 +259,7 @@ abstract mixin class _$LeaderboardEntryCopyWith<$Res> implements $LeaderboardEnt
   factory _$LeaderboardEntryCopyWith(_LeaderboardEntry value, $Res Function(_LeaderboardEntry) _then) = __$LeaderboardEntryCopyWithImpl;
 @override @useResult
 $Res call({
- String uid, String name, String username, String photo, int xp, String rank, String? frameId, bool isMe
+ String uid, String name, String username, String photo, int xp, String rank, String? frameId, bool premium, bool isMe
 });
 
 
@@ -272,7 +276,7 @@ class __$LeaderboardEntryCopyWithImpl<$Res>
 
 /// Create a copy of LeaderboardEntry
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? name = null,Object? username = null,Object? photo = null,Object? xp = null,Object? rank = null,Object? frameId = freezed,Object? isMe = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? uid = null,Object? name = null,Object? username = null,Object? photo = null,Object? xp = null,Object? rank = null,Object? frameId = freezed,Object? premium = null,Object? isMe = null,}) {
   return _then(_LeaderboardEntry(
 uid: null == uid ? _self.uid : uid // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -281,7 +285,8 @@ as String,photo: null == photo ? _self.photo : photo // ignore: cast_nullable_to
 as String,xp: null == xp ? _self.xp : xp // ignore: cast_nullable_to_non_nullable
 as int,rank: null == rank ? _self.rank : rank // ignore: cast_nullable_to_non_nullable
 as String,frameId: freezed == frameId ? _self.frameId : frameId // ignore: cast_nullable_to_non_nullable
-as String?,isMe: null == isMe ? _self.isMe : isMe // ignore: cast_nullable_to_non_nullable
+as String?,premium: null == premium ? _self.premium : premium // ignore: cast_nullable_to_non_nullable
+as bool,isMe: null == isMe ? _self.isMe : isMe // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

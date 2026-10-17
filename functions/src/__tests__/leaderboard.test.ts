@@ -16,13 +16,13 @@ test("entries carry the shaped fields, the equipped frame and the rank from life
   const entries = leaderboardEntries([
     {id: "a", data: {
       name: "Ann", username: "ann", profilePhoto: "http://p/a.png", xp: 2100, xpWeek: {weekKey: KEY, xp: 300},
-      cosmetics: {frame: "frame_ring"},
+      cosmetics: {frame: "frame_ring"}, premium: true,
     }},
     {id: "b", data: {name: " Bea ", username: "", xpWeek: {weekKey: KEY, xp: 120}, xp: 120}},
   ], aged("a", "b"), DEFAULT_ECONOMY, NOW);
   assert.deepEqual(entries, [
-    {uid: "a", name: "Ann", username: "ann", photo: "http://p/a.png", xp: 300, frame: "frame_ring", rank: "gold"},
-    {uid: "b", name: "Bea", username: "", photo: "", xp: 120, frame: null, rank: "bronze"},
+    {uid: "a", name: "Ann", username: "ann", photo: "http://p/a.png", xp: 300, frame: "frame_ring", rank: "gold", premium: true},
+    {uid: "b", name: "Bea", username: "", photo: "", xp: 120, frame: null, rank: "bronze", premium: false},
   ]);
 });
 

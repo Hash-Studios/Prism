@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 
@@ -87,6 +89,17 @@ ShopItem? shopItem(String id) {
 
 /// The catalog price unless the economy config overrides it.
 int shopPriceFor(ShopItem item) => EconomyConfig.current.shopPrices[item.id] ?? item.price;
+
+/// The lowest price among the items on sale at [now], with config overrides applied.
+int shopFromPrice(DateTime now, {EconomyConfig? config}) {
+  final EconomyConfig economy = config ?? EconomyConfig.current;
+  final DateTime? foundersUntil = economy.flags.foundersUntilAt;
+  final bool foundersOpen = foundersUntil != null && now.toUtc().isBefore(foundersUntil);
+  return shopCatalog
+      .where((ShopItem item) => foundersOpen || !item.founders)
+      .map((ShopItem item) => economy.shopPrices[item.id] ?? item.price)
+      .reduce(min);
+}
 
 List<ShopItem> shopItemsOf(ShopItemKind kind) =>
     shopCatalog.where((ShopItem item) => item.kind == kind).toList(growable: false);

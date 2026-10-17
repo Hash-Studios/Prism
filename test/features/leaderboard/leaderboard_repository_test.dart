@@ -12,7 +12,15 @@ import '../../support/fake_firestore_client.dart';
 
 const String _week = '2026-W42';
 
-FakeDocRow _user(String uid, {int? weekXp, String week = _week, int xp = 0, bool deleted = false, String? frame}) => (
+FakeDocRow _user(
+  String uid, {
+  int? weekXp,
+  String week = _week,
+  int xp = 0,
+  bool deleted = false,
+  String? frame,
+  bool premium = false,
+}) => (
   id: uid,
   data: <String, dynamic>{
     'name': 'Name $uid',
@@ -22,6 +30,7 @@ FakeDocRow _user(String uid, {int? weekXp, String week = _week, int xp = 0, bool
     if (weekXp != null) 'xpWeek': <String, dynamic>{'weekKey': week, 'xp': weekXp},
     if (deleted) 'deleted': true,
     if (frame != null) 'cosmetics': <String, dynamic>{'frame': frame},
+    if (premium) 'premium': true,
   },
 );
 
@@ -59,6 +68,7 @@ void main() {
               'xp': 120,
               'rank': 'silver',
               'frame': 'frame_ring',
+              'premium': true,
             },
             <String, dynamic>{
               'uid': 'me',
@@ -78,6 +88,7 @@ void main() {
         ('a', 120, 'silver', 'frame_ring', false),
         ('me', 90, 'bronze', null, true),
       ]);
+      expect(entries.map((e) => e.premium), <bool>[true, false]);
     });
 
     test('a missing board is an empty list', () async {
@@ -92,7 +103,7 @@ void main() {
         _user('b', weekXp: 80),
         _user('d', weekXp: 500, week: '2026-W41', xp: 600),
         _user('e', weekXp: 999, deleted: true),
-        _user('a', weekXp: 10, frame: 'frame_ring'),
+        _user('a', weekXp: 10, frame: 'frame_ring', premium: true),
       ];
 
       final Result<List<LeaderboardEntry>> result = await repository.fetchFriends(<String>['x@x.com'], _week);
@@ -102,6 +113,8 @@ void main() {
       expect(entries.firstWhere((e) => e.uid == 'me').isMe, isTrue);
       expect(entries.firstWhere((e) => e.uid == 'me').rank, 'silver');
       expect(entries.firstWhere((e) => e.uid == 'a').frameId, 'frame_ring');
+      expect(entries.firstWhere((e) => e.uid == 'a').premium, isTrue);
+      expect(entries.firstWhere((e) => e.uid == 'b').premium, isFalse);
       expect(entries.firstWhere((e) => e.uid == 'd').rank, 'silver');
     });
 

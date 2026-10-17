@@ -23,11 +23,14 @@ class DropsBloc extends Bloc<DropsEvent, DropsState> {
     on<_Refreshed>(_onRefreshed);
     on<_UnlockRequested>(_onUnlockRequested);
     on<_Ticked>((_, emit) => emit(state.copyWith(now: DateTime.now())));
-    on<_UnlockedChanged>((event, emit) => emit(state.copyWith(unlocked: event.unlocked)));
+    on<_UnlockedChanged>(_onUnlockedChanged);
     CoinsService.instance.dropsUnlockedNotifier.addListener(_onUnlockedNotifier);
   }
 
   static const String packKey = '__pack__';
+
+  /// Past Drops the vault shows at most, newest first.
+  static const int vaultCap = 52;
 
   final DropsRepository _repository;
   Timer? _timer;
@@ -63,15 +66,40 @@ class DropsBloc extends Bloc<DropsEvent, DropsState> {
       );
       return;
     }
-    final (Result<DropEntity?> live, Result<List<DropEntity>> past) = await (
-      _repository.fetchLive(now),
-      _repository.fetchPast(now),
-    ).wait;
+    final Result<DropEntity?> live = await _repository.fetchLive(now);
     live.fold(
-      onSuccess: (drop) => emit(
-        state.copyWith(status: LoadStatus.success, now: now, drop: drop, past: past.data ?? const <DropEntity>[]),
-      ),
+      onSuccess: (drop) => emit(state.copyWith(status: LoadStatus.success, now: now, drop: drop)),
       onFailure: (_) => emit(state.copyWith(status: LoadStatus.failure)),
+    );
+    if (live.isSuccess) await _fillVault(emit);
+  }
+
+  Future<void> _onUnlockedChanged(_UnlockedChanged event, Emitter<DropsState> emit) async {
+    emit(state.copyWith(unlocked: event.unlocked));
+    if (_weekKey == null && state.status == LoadStatus.success) await _fillVault(emit);
+  }
+
+  /// Loads the Drop of every past week the user owns a wall from. Loaded Drops stay in [DropsState.past].
+  Future<void> _fillVault(Emitter<DropsState> emit) async {
+    final String? liveWeek = state.drop?.weekKey;
+    final List<String> weeks =
+        state.unlocked.values
+            .map((DropUnlock u) => u.weekKey)
+            .where((String week) => week.isNotEmpty && week != liveWeek)
+            .toSet()
+            .toList()
+          ..sort((String a, String b) => b.compareTo(a));
+    final Set<String> cached = <String>{for (final DropEntity d in state.past) d.weekKey};
+    final List<String> missing = weeks.take(vaultCap).where((String week) => !cached.contains(week)).toList();
+    if (missing.isEmpty) return;
+    final List<Result<DropEntity?>> results = await Future.wait(missing.map(_repository.fetchByWeekKey));
+    final List<DropEntity> fetched = results.map((Result<DropEntity?> r) => r.data).nonNulls.toList();
+    if (fetched.isEmpty) return;
+    emit(
+      state.copyWith(
+        past: <DropEntity>[...state.past, ...fetched]
+          ..sort((DropEntity a, DropEntity b) => b.weekKey.compareTo(a.weekKey)),
+      ),
     );
   }
 

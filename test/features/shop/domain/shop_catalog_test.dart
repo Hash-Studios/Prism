@@ -130,4 +130,14 @@ void main() {
       expect(frameStyle('frame_prism').colors.length, 9);
     });
   });
+
+  test('shopFromPrice is the lowest live price, with overrides, skipping founders items once sold out', () {
+    final DateTime now = DateTime.utc(2026, 10, 17);
+    expect(shopFromPrice(now, config: EconomyConfig.defaults), 100);
+    final EconomyConfig cheapFounders = EconomyConfig.fromMap(<String, dynamic>{
+      'shopPrices': <String, int>{'frame_founders': 50},
+    });
+    expect(shopFromPrice(now, config: cheapFounders), 50);
+    expect(shopFromPrice(DateTime.utc(2027), config: cheapFounders), 100);
+  });
 }

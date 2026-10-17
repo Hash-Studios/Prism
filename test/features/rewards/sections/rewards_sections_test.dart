@@ -309,6 +309,22 @@ void main() {
     verify(() => bloc.add(const StreakShopLoaded())).called(greaterThanOrEqualTo(1));
   });
 
+  testWidgets('spend grid: Pro users see the half prices and the Shop shows its lowest live price', (tester) async {
+    addTearDown(EconomyConfig.resetForTest);
+    EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+      'shopPrices': <String, int>{'glow_ember': 80, 'glow_founders': 10},
+      'flags': <String, Object>{'foundersUntil': '2020-01-01T00:00:00Z'},
+    });
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    await tester.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_host(const RewardsSpendSection(), Brightness.light));
+
+    expect(find.text('from ${proPrice(CoinPolicy.aiGenerationFast, true)}'), findsOneWidget);
+    expect(find.text('${proPrice(CoinPolicy.dropWall, true)} a wall'), findsOneWidget);
+    expect(find.text('from 80'), findsOneWidget);
+  });
+
   for (final Brightness brightness in Brightness.values) {
     group('${brightness.name} theme', () {
       testWidgets('spend section shows prices from CoinPolicy and runs the freeze callback', (tester) async {

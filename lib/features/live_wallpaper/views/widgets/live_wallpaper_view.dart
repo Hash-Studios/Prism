@@ -31,15 +31,8 @@ enum _LiveMode {
 
 enum _UnlockChoice { coins, pro }
 
-/// Ids of the paid styles the user unlocked with coins and that are still open.
-Set<String> activeLiveStyleIds() {
-  final DateTime now = DateTime.now();
-  final Passes passes = CoinsService.instance.passesNotifier.value;
-  return <String>{
-    for (final String id in passes.liveStyles.keys)
-      if (passes.liveStyleActive(id, now)) id,
-  };
-}
+/// The paid styles the signed-in user unlocked with coins, each with the end of its unlock.
+Map<String, DateTime> liveStyleUnlocks() => CoinsService.instance.currentPasses.liveStyles;
 
 typedef VideoPicker = Future<String?> Function();
 
@@ -61,9 +54,30 @@ class LiveWallpaperView extends StatefulWidget {
   State<LiveWallpaperView> createState() => _LiveWallpaperViewState();
 }
 
-class _LiveWallpaperViewState extends State<LiveWallpaperView> {
+class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindingObserver {
   late _LiveMode _mode = widget.imageUrl == null ? _LiveMode.gradients : _LiveMode.photo;
   int _seedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// An unlock may have ended, or been bought on another device, while the app was away.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    context.read<LiveWallpaperBloc>()
+      ..add(LiveWallpaperEvent.proChanged(app_state.prismUser.premium))
+      ..add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()));
+  }
 
   List<_LiveMode> get _modes => <_LiveMode>[
     if (widget.imageUrl != null) _LiveMode.photo,
@@ -147,7 +161,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
         );
         if (!mounted) return;
         if (result.success) {
-          bloc.add(LiveWallpaperEvent.unlockedStylesChanged(activeLiveStyleIds()));
+          bloc.add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()));
           toasts.success('$label is unlocked for 7 days.');
         } else if (result.insufficientBalance) {
           toasts.error('Not enough coins. Earn coins in Rewards.');

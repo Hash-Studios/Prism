@@ -16,15 +16,51 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Today's quests: three daily items, the bonus item, the chest and the weekly quest.
 /// [onOpenProSpin] scrolls to the Pro spin card. Pro users tap it from the bonus row.
-class TodayCard extends StatelessWidget {
+class TodayCard extends StatefulWidget {
   const TodayCard({super.key, this.onOpenProSpin});
 
   final VoidCallback? onOpenProSpin;
 
   @override
+  State<TodayCard> createState() => _TodayCardState();
+}
+
+class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
+  late final QuestsBloc _bloc = getIt<QuestsBloc>()..add(const QuestsEvent.started());
+
+  /// The Rewards tab stays built under other tabs and pushed routes.
+  bool _visible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final bool visible = TickerMode.valuesOf(context).enabled && (ModalRoute.of(context)?.isCurrent ?? true);
+    if (visible && !_visible) _bloc.add(const QuestsEvent.refreshed());
+    _visible = visible;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _visible) _bloc.add(const QuestsEvent.refreshed());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _bloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider<QuestsBloc>(
-      create: (_) => getIt<QuestsBloc>()..add(const QuestsEvent.started()),
+    return BlocProvider<QuestsBloc>.value(
+      value: _bloc,
       child: MultiBlocListener(
         listeners: <BlocListener<QuestsBloc, QuestsState>>[
           BlocListener<QuestsBloc, QuestsState>(
@@ -44,7 +80,7 @@ class TodayCard extends StatelessWidget {
           builder: (context, state) {
             final QuestState? quests = state.quests;
             if (quests == null) return const SizedBox.shrink();
-            return _TodayView(quests: quests, opening: state.opening, onOpenProSpin: onOpenProSpin);
+            return _TodayView(quests: quests, opening: state.opening, onOpenProSpin: widget.onOpenProSpin);
           },
         ),
       ),
@@ -134,56 +170,63 @@ class _ItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return Semantics(
-      container: true,
-      label: semanticLabel,
-      excludeSemantics: true,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 52),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: cs.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(PrismRadius.xs + 2),
-                ),
-                child: Icon(icon, size: 18, color: cs.onSurface),
-              ),
-              const SizedBox(width: PrismSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 52),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+        child: Row(
+          children: <Widget>[
+            // Only the description merges into one node; the trailing buttons stay reachable on their own.
+            Expanded(
+              child: Semantics(
+                container: true,
+                label: semanticLabel,
+                excludeSemantics: true,
+                child: Row(
                   children: <Widget>[
-                    Text(title, style: PrismTextStyles.rowTitle(context)),
-                    if (subtitle != null) Text(subtitle!, style: PrismTextStyles.caption(context)),
-                    if (progress != null) ...<Widget>[
-                      const SizedBox(height: PrismSpace.xs),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween<double>(end: progress),
-                        duration: context.motion(PrismDurations.base),
-                        curve: PrismCurves.enter,
-                        builder: (context, value, _) => ClipRRect(
-                          borderRadius: BorderRadius.circular(PrismRadius.pill),
-                          child: LinearProgressIndicator(
-                            value: value,
-                            minHeight: 3,
-                            color: cs.primary,
-                            backgroundColor: cs.onSurface.withValues(alpha: 0.08),
-                          ),
-                        ),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: cs.onSurface.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(PrismRadius.xs + 2),
                       ),
-                    ],
+                      child: Icon(icon, size: 18, color: cs.onSurface),
+                    ),
+                    const SizedBox(width: PrismSpace.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(title, style: PrismTextStyles.rowTitle(context)),
+                          if (subtitle != null) Text(subtitle!, style: PrismTextStyles.caption(context)),
+                          if (progress != null) ...<Widget>[
+                            const SizedBox(height: PrismSpace.xs),
+                            TweenAnimationBuilder<double>(
+                              tween: Tween<double>(end: progress),
+                              duration: context.motion(PrismDurations.base),
+                              curve: PrismCurves.enter,
+                              builder: (context, value, _) => ClipRRect(
+                                borderRadius: BorderRadius.circular(PrismRadius.pill),
+                                child: LinearProgressIndicator(
+                                  value: value,
+                                  minHeight: 3,
+                                  color: cs.primary,
+                                  backgroundColor: cs.onSurface.withValues(alpha: 0.08),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-              if (trailing != null) ...<Widget>[const SizedBox(width: PrismSpace.sm), trailing!],
-            ],
-          ),
+            ),
+            if (trailing != null) ...<Widget>[const SizedBox(width: PrismSpace.sm), trailing!],
+          ],
         ),
       ),
     );

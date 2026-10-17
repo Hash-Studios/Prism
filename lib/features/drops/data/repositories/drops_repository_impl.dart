@@ -39,32 +39,6 @@ class DropsRepositoryImpl implements DropsRepository {
   }
 
   @override
-  Future<Result<List<DropEntity>>> fetchPast(DateTime now, {int limit = 12}) async {
-    try {
-      final List<DropEntity?> rows = await _firestoreClient.query<DropEntity?>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.drops,
-          sourceTag: 'drops.past',
-          filters: <FirestoreFilter>[
-            FirestoreFilter(
-              field: 'endsAt',
-              op: FirestoreFilterOp.isLessThanOrEqualTo,
-              value: now.millisecondsSinceEpoch,
-            ),
-          ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'endsAt', descending: true)],
-          limit: limit,
-        ),
-        (data, docId) => dropFromMap(data, docId),
-      );
-      return Result.success(rows.nonNulls.toList(growable: false));
-    } catch (error, stackTrace) {
-      logger.e('[DropsRepository] fetchPast failed', error: error, stackTrace: stackTrace);
-      return Result.error(const ServerFailure("Couldn't load past Drops. Check your connection and try again."));
-    }
-  }
-
-  @override
   Future<Result<DropEntity?>> fetchByWeekKey(String weekKey) async {
     try {
       final DropEntity? drop = await _firestoreClient.getById<DropEntity?>(

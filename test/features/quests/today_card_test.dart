@@ -172,4 +172,31 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('syncs again on resume and when the card shows again after a pushed route', (tester) async {
+    final FakeQuestsRepository repo = await pumpCard(tester, questState());
+    expect(repo.refreshes, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(repo.refreshes, 2);
+
+    final NavigatorState navigator = tester.state<NavigatorState>(find.byType(Navigator));
+    navigator.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Other'))));
+    await tester.pumpAndSettle();
+    expect(repo.refreshes, 2);
+    navigator.pop();
+    await tester.pumpAndSettle();
+    expect(repo.refreshes, 3);
+  });
+
+  testWidgets('a quest row merges only its text; the trailing button keeps its own node', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    await pumpCard(tester, allClaimed());
+
+    expect(find.bySemanticsLabel('Set or save a wallpaper, done'), findsOneWidget);
+    expect(find.bySemanticsLabel('Open'), findsOneWidget);
+    handle.dispose();
+  });
 }

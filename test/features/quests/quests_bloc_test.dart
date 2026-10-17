@@ -71,4 +71,31 @@ void main() {
     expect(repo.refreshes, 1);
     await bloc.close();
   });
+
+  test('quests from an earlier UTC day are hidden until the server sends today', () async {
+    final FakeQuestsRepository repo = FakeQuestsRepository(quests: questState(dayKey: '2020-01-01'));
+    final QuestsBloc bloc = QuestsBloc(repo)..add(const QuestsEvent.started());
+    await pumpEventQueue();
+    expect(bloc.state.quests, isNull);
+
+    repo.quests.value = questState();
+    await pumpEventQueue();
+    expect(bloc.state.quests, isNotNull);
+    await bloc.close();
+  });
+
+  test('refreshed syncs again and drops the quests once the day has turned', () async {
+    final FakeQuestsRepository repo = FakeQuestsRepository(quests: questState());
+    final QuestsBloc bloc = QuestsBloc(repo)..add(const QuestsEvent.started());
+    await pumpEventQueue();
+    expect(bloc.state.quests, isNotNull);
+
+    bloc.clock = () => DateTime.now().add(const Duration(days: 1));
+    bloc.add(const QuestsEvent.refreshed());
+    await pumpEventQueue();
+
+    expect(repo.refreshes, 2);
+    expect(bloc.state.quests, isNull);
+    await bloc.close();
+  });
 }

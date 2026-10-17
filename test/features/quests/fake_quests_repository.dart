@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/features/quests/domain/repositories/quests_repository.dart';
 import 'package:flutter/foundation.dart';
 
@@ -61,8 +62,9 @@ QuestState questState({
   QuestItem? weekly,
   bool chestOpened = false,
   bool chestDoubled = false,
+  String? dayKey,
 }) => QuestState(
-  dayKey: '2026-10-17',
+  dayKey: dayKey ?? economyDayKey(DateTime.now()),
   items:
       items ??
       <QuestItem>[

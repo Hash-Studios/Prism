@@ -145,6 +145,7 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
         AutoRotateEvent.started(
           favouriteUrls: _urlsOf(favourites),
           isPro: autoRotateEntitled(latestSessionAfterLoad.session),
+          passUntil: autoRotatePassEnd(latestSessionAfterLoad.session),
         ),
       );
     } catch (_) {
@@ -255,7 +256,11 @@ class _ProPromptState extends State<_ProPrompt> {
     setState(() => _buying = false);
     if (result.success) {
       context.read<AutoRotateBloc>().add(
-        AutoRotateEvent.entitlementChanged(isPro: true, userId: context.read<SessionBloc>().state.session.userId),
+        AutoRotateEvent.entitlementChanged(
+          isPro: true,
+          userId: context.read<SessionBloc>().state.session.userId,
+          passUntil: result.passUntil,
+        ),
       );
       toasts.success('Auto-rotate is on for 7 days.');
     } else if (result.insufficientBalance) {
@@ -333,7 +338,7 @@ class _Controls extends StatelessWidget {
   /// When the 7-day pass ends. Null for Pro users and when no pass is active.
   DateTime? _passEnd() {
     if (app_state.prismUser.premium) return null;
-    final Passes passes = CoinsService.instance.passesNotifier.value;
+    final Passes passes = CoinsService.instance.currentPasses;
     final DateTime? end = passes.autoRotatePassUntil;
     return end != null && passes.autoRotatePassActive(DateTime.now()) ? end : null;
   }

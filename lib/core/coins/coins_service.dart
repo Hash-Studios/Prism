@@ -323,6 +323,22 @@ class CoinsService with WidgetsBindingObserver {
   static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
   static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
+
+  /// Spends the server can refund (`REFUNDABLE_ACTIONS` in coinsCallables.ts). Only these go to the refund queue.
+  static const Set<CoinSpendAction> refundableSpendActions = <CoinSpendAction>{
+    CoinSpendAction.wallpaperDownload,
+    CoinSpendAction.premiumWallpaperDownload,
+    CoinSpendAction.aiGeneration,
+  };
+
+  /// Spends whose request id is stored until a definite reply, so a retry replays the same charge.
+  static const Set<CoinSpendAction> _replayedSpendActions = <CoinSpendAction>{
+    CoinSpendAction.wallpaperDownload,
+    CoinSpendAction.premiumWallpaperDownload,
+    CoinSpendAction.premiumFilter,
+    CoinSpendAction.liveWallpaperStyle,
+    CoinSpendAction.autoRotatePass7d,
+  };
   final Queue<Completer<void>> _refundQueueWaiters = Queue<Completer<void>>();
   bool _refundQueueHeld = false;
   bool _pendingRetryInFlight = false;
@@ -384,17 +400,23 @@ class CoinsService with WidgetsBindingObserver {
   String? _adsTodayDay;
   int _adsTodayCount = 0;
   final Map<String, String> _pendingEconomyRequests = <String, String>{};
+  final Set<String> _spendRequestsInFlight = <String>{};
 
-  /// Free downloads the user has left.
-  int get graceDownloadsLeft => max(0, CoinPolicy.graceDownloads - _graceDownloadsUsed);
+  /// The cached economy state belongs to the signed-in user.
+  bool get _ownsEconomyState => _canMutateCoins() && _economyUserId == app_state.prismUser.id;
+
+  /// Free downloads the user has left. Until the signed-in user's own count loads, a new account's allowance.
+  int get graceDownloadsLeft =>
+      _ownsEconomyState ? max(0, CoinPolicy.graceDownloads - _graceDownloadsUsed) : CoinPolicy.graceDownloads;
+
+  /// The signed-in user's passes. Empty while the cached passes belong to someone else.
+  Passes get currentPasses => _ownsEconomyState ? passesNotifier.value : Passes.empty;
 
   /// Premium collections and premium walls are open: Pro or an active premium pass.
-  bool get premiumContentUnlocked =>
-      app_state.prismUser.premium || passesNotifier.value.premiumPassActive(DateTime.now());
+  bool get premiumContentUnlocked => app_state.prismUser.premium || currentPasses.premiumPassActive(DateTime.now());
 
   /// Auto-rotate is open: Pro or an active auto-rotate pass.
-  bool get autoRotateUnlocked =>
-      app_state.prismUser.premium || passesNotifier.value.autoRotatePassActive(DateTime.now());
+  bool get autoRotateUnlocked => app_state.prismUser.premium || currentPasses.autoRotatePassActive(DateTime.now());
 
   /// What the next rewarded ad pays: more for the first ad of the UTC day.
   int get adsRewardNow {
@@ -409,6 +431,24 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   void consumeQuestAwards() => questAwardsNotifier.value = const <QuestAward>[];
+
+  /// Sets the passes as the signed-in user's own, as a sync from the server would.
+  @visibleForTesting
+  void setPassesForTest(Passes passes) {
+    _ensureEconomyUser(app_state.prismUser.id);
+    passesNotifier.value = passes;
+  }
+
+  /// Clears every per-user value at once. Sign-out calls it; the next sign-in loads the new user's state.
+  void resetSession() {
+    consumeLastClaim();
+    balanceNotifier.value = app_state.prismUser.coins;
+    streakNotifier.value = StreakStatus.empty;
+    earnFlagsNotifier.value = CoinEarnFlags.empty;
+    _adsRemaining = null;
+    _adsRemainingDay = '';
+    _resetEconomy('');
+  }
 
   StreakClaimResult? get pendingClaimForCurrentUser {
     if (!_canMutateCoins() || _pendingClaimUserId != app_state.prismUser.id) consumeLastClaim();
@@ -502,6 +542,7 @@ class CoinsService with WidgetsBindingObserver {
       return;
     }
     final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
     final Future<Map<String, dynamic>?> privateEconomy = _readPrivateEconomy(userId);
     // The server owns coinState defaults now; the rules block writing it from the client,
     // so this only reads and defaults locally/in-memory instead of persisting anything.
@@ -551,10 +592,7 @@ class CoinsService with WidgetsBindingObserver {
 
   Future<StreakStatus> refreshStreakStatus() async {
     if (!_canMutateCoins()) {
-      consumeLastClaim();
-      earnFlagsNotifier.value = CoinEarnFlags.empty;
-      streakNotifier.value = StreakStatus.empty;
-      _resetEconomy('');
+      resetSession();
       return StreakStatus.empty;
     }
     final String userId = app_state.prismUser.id;
@@ -675,13 +713,72 @@ class CoinsService with WidgetsBindingObserver {
       return _notLoggedIn;
     }
     final int amount = amountOverride ?? action.cost();
-    if (amount <= 0) {
+    if (amount < 0) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
 
+    final String requestKey = 'pendingSpendRequest.${action.name}.${styleId ?? ''}.${app_state.prismUser.id}';
+    // A second tap while the first still runs gets its own request, so two purchases never share one charge.
+    final bool replayed = _replayedSpendActions.contains(action) && _spendRequestsInFlight.add(requestKey);
+    final CoinMutationResult result;
+    try {
+      result = await _spendOnce(
+        action,
+        amount: amount,
+        requestKey: replayed ? requestKey : null,
+        sourceTag: sourceTag,
+        reason: reason,
+        label: label,
+        pendingDownloadLink: pendingDownloadLink,
+        styleId: styleId,
+      );
+    } finally {
+      if (replayed) _spendRequestsInFlight.remove(requestKey);
+    }
+    // The replayed debit was refunded while its reply was lost. The stored request is gone, so this charges anew.
+    if (replayed && result.reason == 'spend_refunded') {
+      return spend(
+        action,
+        sourceTag: sourceTag,
+        amountOverride: amountOverride,
+        reason: reason,
+        label: label,
+        pendingDownloadLink: pendingDownloadLink,
+        styleId: styleId,
+      );
+    }
+    return result;
+  }
+
+  /// One spend call. A non-null [requestKey] stores the request id until a definite reply and replays it on retry.
+  Future<CoinMutationResult> _spendOnce(
+    CoinSpendAction action, {
+    required int amount,
+    required String? requestKey,
+    required String sourceTag,
+    required String? reason,
+    required String? label,
+    required String? pendingDownloadLink,
+    required String? styleId,
+  }) async {
     final String userId = app_state.prismUser.id;
-    final String? requestId = pendingDownloadLink == null ? null : _newRequestId();
-    final String? pendingTxId = requestId == null ? null : '$_spendTransactionPrefix${userId}_$requestId';
+    final SettingsLocalDataSource settings = _settings;
+    String? requestId;
+    if (requestKey != null) {
+      final String stored = settings.isOpen ? settings.get<String>(requestKey, defaultValue: '') : '';
+      requestId = _pendingEconomyRequests[requestKey] ??= stored.isNotEmpty ? stored : _newRequestId();
+      try {
+        if (settings.isOpen) await settings.set(requestKey, requestId);
+      } catch (error, stackTrace) {
+        // Without the stored id a lost reply cannot be replayed after a restart. The spend still runs.
+        logCoinError(sourceTag: 'coins.spend.request_store', error: error, stackTrace: stackTrace);
+      }
+    } else if (pendingDownloadLink != null) {
+      requestId = _newRequestId();
+    }
+    final String? pendingTxId = pendingDownloadLink == null || requestId == null
+        ? null
+        : '$_spendTransactionPrefix${userId}_$requestId';
     if (pendingDownloadLink != null && pendingTxId != null) {
       final bool persisted = await _updatePendingDownloads('coins.download.ledger_write', (
         Map<String, PendingDownload> ledger,
@@ -719,6 +816,16 @@ class CoinsService with WidgetsBindingObserver {
         extra: <String, Object?>{if (styleId != null) 'styleId': styleId},
       );
 
+      if (requestKey != null && result.unknownOutcomeTransactionId.isEmpty) {
+        if (_pendingEconomyRequests[requestKey] == requestId) _pendingEconomyRequests.remove(requestKey);
+        if (settings.isOpen && settings.get<String>(requestKey, defaultValue: '') == requestId) {
+          await settings.delete(requestKey);
+        }
+        // A replay that landed settles the earlier lost reply, so its queued refund must not run.
+        if (result.success && result.changed) {
+          await _forgetPendingRefund('$_spendTransactionPrefix${userId}_$requestId');
+        }
+      }
       _applyLocalBalance(result.currentBalance, delta: result.delta);
       if (userId == app_state.prismUser.id) _applySpendState(action, result, styleId: styleId);
       if (result.unknownOutcomeTransactionId.isNotEmpty) {
@@ -909,15 +1016,25 @@ class CoinsService with WidgetsBindingObserver {
     String? userId,
     CoinSpendAction action = CoinSpendAction.aiGeneration,
     String? reason,
-  }) => _rememberPending(
-    key: transactionId,
-    userId: userId,
-    entry: <String, dynamic>{
-      'transactionId': transactionId,
-      'action': action.name,
-      'reason': reason ?? _failedRefundReason(action),
-    },
-  );
+  }) {
+    if (!refundableSpendActions.contains(action)) return Future<void>.value();
+    return _rememberPending(
+      key: transactionId,
+      userId: userId,
+      entry: <String, dynamic>{
+        'transactionId': transactionId,
+        'action': action.name,
+        'reason': reason ?? _failedRefundReason(action),
+      },
+    );
+  }
+
+  Future<void> _forgetPendingRefund(String transactionId) => _withRefundQueueLock(() async {
+    final List<Map<String, dynamic>> entries = _readPendingEntries();
+    final int before = entries.length;
+    entries.removeWhere((Map<String, dynamic> e) => !_isRewardEntry(e) && _entryKey(e) == transactionId);
+    if (entries.length != before) await _writePendingEntries(entries);
+  });
 
   Future<void> _rememberPendingReward(String requestId, {String? userId}) => _rememberPending(
     key: requestId,
@@ -1723,8 +1840,8 @@ class CoinsService with WidgetsBindingObserver {
     _ensureEconomyUser(app_state.prismUser.id);
     final int? graceLeft = result.graceDownloadsLeft;
     if (graceLeft != null) _graceDownloadsUsed = max(0, CoinPolicy.graceDownloads - graceLeft);
-    if (!result.changed) return;
-    final DateTime until = result.passUntil ?? DateTime.now().toUtc().add(const Duration(days: 7));
+    final DateTime? until = result.passUntil;
+    if (until == null) return;
     final Passes passes = passesNotifier.value;
     if (action == CoinSpendAction.autoRotatePass7d) {
       passesNotifier.value = passes.copyWith(autoRotatePassUntil: until);

@@ -18,7 +18,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       (event, emit) => event.map<Future<void>>(
         started: (event) => _onStarted(event, emit),
         proChanged: (event) async => emit(state.copyWith(isPro: event.isPro)),
-        unlockedStylesChanged: (event) async => emit(state.copyWith(unlockedStyles: event.styleIds)),
+        unlockedStylesChanged: (event) async => emit(state.copyWith(unlockedStyles: event.unlockedStyles)),
         motionSelected: (event) async => emit(state.copyWith(motionStyle: event.style)),
         gradientSelected: (event) async => emit(state.copyWith(gradientStyle: event.style)),
         batterySaverChanged: (event) async => emit(state.copyWith(batterySaver: event.enabled)),

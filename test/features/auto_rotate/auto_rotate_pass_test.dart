@@ -111,17 +111,22 @@ void main() {
     expect(calls.single.$2['action'], 'autoRotatePass7d');
     expect(calls.single.$2['sourceTag'], 'auto_rotate.pass');
     expect(CoinsService.instance.autoRotateUnlocked, isTrue);
-    verify(() => autoRotateBloc.add(AutoRotateEvent.entitlementChanged(isPro: true, userId: backend.userId))).called(1);
+    final DateTime until = CoinsService.instance.currentPasses.autoRotatePassUntil!;
+    verify(
+      () =>
+          autoRotateBloc.add(AutoRotateEvent.entitlementChanged(isPro: true, userId: backend.userId, passUntil: until)),
+    ).called(1);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('an active pass starts the bloc as unlocked and shows when it ends', (tester) async {
-    CoinsService.instance.passesNotifier.value = Passes(
-      autoRotatePassUntil: DateTime.now().add(const Duration(days: 3)),
-    );
+    final DateTime until = DateTime.now().add(const Duration(days: 3));
+    CoinsService.instance.setPassesForTest(Passes(autoRotatePassUntil: until));
     when(() => autoRotateBloc.state).thenReturn(AutoRotateState.initial().copyWith(loaded: true, isPro: true));
     await pumpScreen(tester);
 
-    verify(() => autoRotateBloc.add(const AutoRotateEvent.started(favouriteUrls: <String>[], isPro: true))).called(1);
+    verify(
+      () => autoRotateBloc.add(AutoRotateEvent.started(favouriteUrls: const <String>[], isPro: true, passUntil: until)),
+    ).called(1);
     expect(find.textContaining('Pass active until'), findsOneWidget);
     expect(find.text('7-day pass · 50 coins'), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));

@@ -11,6 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_app_analytics.dart';
 import 'fake_live_wallpaper_repository.dart';
 
+final DateTime later = DateTime.now().add(const Duration(days: 3));
+
 void main() {
   final LivePalette palette = LivePalette.fromAccent(const Color(0xFFE57697), dark: true);
   late FakeLiveWallpaperRepository repository;
@@ -111,7 +113,7 @@ void main() {
 
     test('a style unlocked with coins applies without Pro, and only that style', () async {
       final LiveWallpaperBloc bloc = build()
-        ..add(const LiveWallpaperEvent.started(isPro: false, unlockedStyles: <String>{'ripple'}))
+        ..add(LiveWallpaperEvent.started(isPro: false, unlockedStyles: <String, DateTime>{'ripple': later}))
         ..add(const LiveWallpaperEvent.motionSelected(MotionStyle.ripple))
         ..add(LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45));
       await settle();
@@ -127,6 +129,22 @@ void main() {
       await bloc.close();
     });
 
+    test('an unlock that has ended locks the style again on the next apply', () async {
+      final LiveWallpaperBloc bloc = build()
+        ..add(
+          LiveWallpaperEvent.started(
+            isPro: false,
+            unlockedStyles: <String, DateTime>{'ripple': DateTime.now().subtract(const Duration(minutes: 1))},
+          ),
+        )
+        ..add(const LiveWallpaperEvent.motionSelected(MotionStyle.ripple))
+        ..add(LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45));
+      await settle();
+      expect(repository.motionApplies, isEmpty);
+      expect(bloc.state.outcome?.status, LiveApplyStatus.proRequired);
+      await bloc.close();
+    });
+
     test('unlocking a gradient style after the first refusal lets the next apply through', () async {
       final LiveWallpaperBloc bloc = build(imageUrl: null)
         ..add(const LiveWallpaperEvent.started(isPro: false))
@@ -136,7 +154,7 @@ void main() {
       expect(bloc.state.outcome?.status, LiveApplyStatus.proRequired);
 
       bloc
-        ..add(const LiveWallpaperEvent.unlockedStylesChanged(<String>{'waves'}))
+        ..add(LiveWallpaperEvent.unlockedStylesChanged(<String, DateTime>{'waves': later}))
         ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
       await settle();
       expect(repository.gradientApplies, <GradientStyle>[GradientStyle.waves]);

@@ -95,6 +95,24 @@ void main() {
     expect(find.byType(PrismSegmented<LeaderboardTab>), findsOneWidget);
   });
 
+  testWidgets('a row passes the frame and the premium flag to the avatar', (tester) async {
+    const LeaderboardEntry framed = LeaderboardEntry(
+      uid: 'p',
+      name: 'Pia',
+      username: 'pia',
+      photo: '',
+      xp: 300,
+      rank: 'gold',
+      frameId: 'frame_prism',
+      premium: true,
+    );
+    await pumpPage(tester, loaded(global: const <LeaderboardEntry>[framed]));
+
+    final PrismAvatar avatar = tester.widget<PrismAvatar>(find.byType(PrismAvatar));
+    expect(avatar.frameId, 'frame_prism');
+    expect(avatar.premium, isTrue);
+  });
+
   testWidgets('tapping a row opens the profile', (tester) async {
     await pumpPage(tester, loaded());
 

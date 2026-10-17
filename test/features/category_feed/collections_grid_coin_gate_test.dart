@@ -109,6 +109,38 @@ void main() {
     expect(firestore.reads, 2);
   });
 
+  for (final (int balance, bool offersVideo) in <(int, bool)>[(100, false), (0, true)]) {
+    testWidgets('the preview sheet offers a video only when the balance is short (balance $balance)', (tester) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'user-1'
+        ..loggedIn = true
+        ..coins = balance;
+      CoinsService.instance.balanceNotifier.value = balance;
+      collections_data.collections = <Map<String, dynamic>>[
+        <String, dynamic>{'name': 'Premium', 'premium': true, 'thumb1': '', 'thumb2': ''},
+      ];
+      final _DelayedPreviewFirestore firestore = _DelayedPreviewFirestore()..response.complete(null);
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      final _MockCategoryFeedBloc bloc = _MockCategoryFeedBloc();
+      when(() => bloc.state).thenReturn(CategoryFeedState.initial());
+      await tester.pumpWidget(
+        MaterialApp(
+          home: BlocProvider<CategoryFeedBloc>.value(
+            value: bloc,
+            child: const Scaffold(body: CollectionsGrid()),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(CollectionCard).first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})'), findsOneWidget);
+      expect(find.textContaining('Watch a video'), offersVideo ? findsOneWidget : findsNothing);
+    });
+  }
+
   testWidgets('a failed preview check releases the tap guard after the prompt closes', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-1'
@@ -179,7 +211,7 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-1'
       ..loggedIn = true;
-    CoinsService.instance.passesNotifier.value = Passes(premiumPassUntil: DateTime.now().add(const Duration(hours: 5)));
+    CoinsService.instance.setPassesForTest(Passes(premiumPassUntil: DateTime.now().add(const Duration(hours: 5))));
     collections_data.collections = <Map<String, dynamic>>[
       <String, dynamic>{'name': 'Premium', 'premium': true, 'thumb1': '', 'thumb2': ''},
     ];

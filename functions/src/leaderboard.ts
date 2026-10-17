@@ -33,6 +33,7 @@ export interface LeaderboardEntry {
   xp: number;
   frame: string | null;
   rank: string;
+  premium: boolean;
 }
 
 /**
@@ -62,6 +63,7 @@ export function leaderboardEntries(
         xp,
         frame: str(data.cosmetics?.frame) || null,
         rank: rankFor(typeof data.xp === "number" ? data.xp : xp, config).id,
+        premium: data.premium === true,
       };
     });
 }

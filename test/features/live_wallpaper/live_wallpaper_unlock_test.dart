@@ -45,7 +45,7 @@ void main() {
 
   Future<void> pump(WidgetTester tester) async {
     bloc = LiveWallpaperBloc(repository)
-      ..add(LiveWallpaperEvent.started(isPro: false, unlockedStyles: activeLiveStyleIds()));
+      ..add(LiveWallpaperEvent.started(isPro: false, unlockedStyles: liveStyleUnlocks()));
     addTearDown(bloc.close);
     await tester.pumpWidget(
       MaterialApp(
@@ -77,26 +77,67 @@ void main() {
     expect(calls.single.$2['action'], 'liveWallpaperStyle');
     expect(calls.single.$2['styleId'], 'starfield');
     expect(calls.single.$2['sourceTag'], 'live_wallpaper.style');
-    expect(bloc.state.unlockedStyles, contains('starfield'));
+    expect(bloc.state.unlockedStyles.keys, contains('starfield'));
+    expect(bloc.state.unlockedStyles['starfield']!.isAfter(DateTime.now().add(const Duration(days: 6))), isTrue);
     expect(find.text('Set live wallpaper'), findsOneWidget);
     expect(repository.gradientApplies, isEmpty);
   });
 
   testWidgets('a style that is still unlocked from earlier opens with no lock', (tester) async {
-    CoinsService.instance.passesNotifier.value = Passes(
-      liveStyles: <String, DateTime>{
-        'starfield': DateTime.now().add(const Duration(days: 2)),
-        'plasma': DateTime.now().subtract(const Duration(days: 1)),
-      },
+    CoinsService.instance.setPassesForTest(
+      Passes(
+        liveStyles: <String, DateTime>{
+          'starfield': DateTime.now().add(const Duration(days: 2)),
+          'plasma': DateTime.now().subtract(const Duration(days: 1)),
+        },
+      ),
     );
     await pump(tester);
 
-    expect(bloc.state.unlockedStyles, <String>{'starfield'});
+    expect(bloc.state.isLocked('starfield', isFree: false), isFalse);
+    expect(bloc.state.isLocked('plasma', isFree: false), isTrue);
     await tester.tap(find.text('Starfield'));
     await tester.pump();
     expect(find.text('Set live wallpaper'), findsOneWidget);
     await tester.tap(find.text('Plasma'));
     await tester.pump();
     expect(find.text('Unlock · 20 coins'), findsOneWidget);
+  });
+
+  testWidgets('a spend reply without passUntil leaves the style locked', (tester) async {
+    backend.onCall = (String name, Map<String, dynamic> params) async {
+      calls.add((name, params));
+      return <String, Object?>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 100,
+        'currentBalance': 80,
+        'delta': -20,
+        'reason': 'ok',
+      };
+    };
+    await pump(tester);
+    await tester.tap(find.text('Starfield'));
+    await tester.pump();
+    await tester.tap(find.text('Unlock · 20 coins'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unlock Starfield for 7 days · 20 coins'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(bloc.state.unlockedStyles, isEmpty);
+  });
+
+  testWidgets('resume reads the passes again', (tester) async {
+    await pump(tester);
+    expect(bloc.state.unlockedStyles, isEmpty);
+    CoinsService.instance.setPassesForTest(
+      Passes(liveStyles: <String, DateTime>{'starfield': DateTime.now().add(const Duration(days: 2))}),
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+
+    expect(bloc.state.unlockedStyles.keys, <String>['starfield']);
   });
 }

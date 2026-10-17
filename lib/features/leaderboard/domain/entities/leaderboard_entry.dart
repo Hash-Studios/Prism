@@ -12,6 +12,9 @@ abstract class LeaderboardEntry with _$LeaderboardEntry {
     required int xp,
     required String rank,
     String? frameId,
+
+    /// A Pro frame draws only for a premium profile.
+    @Default(false) bool premium,
     @Default(false) bool isMe,
   }) = _LeaderboardEntry;
 }

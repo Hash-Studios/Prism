@@ -99,6 +99,7 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
       xp: parseIntOr(raw['xp']),
       rank: raw['rank']?.toString() ?? '',
       frameId: _nonEmpty(raw['frame']),
+      premium: raw['premium'] == true,
       isMe: uid.isNotEmpty && uid == myId,
     );
   }
@@ -114,6 +115,7 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
       xp: week['weekKey'] == currentWeekKey ? parseIntOr(week['xp']) : 0,
       rank: EconomyConfig.current.rankFor(parseIntOr(data['xp'])).id,
       frameId: _nonEmpty(toJsonMap(data['cosmetics'])['frame']),
+      premium: data['premium'] == true,
       isMe: uid == myId,
     );
   }
@@ -129,6 +131,7 @@ class LeaderboardRepositoryImpl implements LeaderboardRepository {
       xp: coins.xpNotifier.value.weekXp,
       rank: coins.xpNotifier.value.rank.id,
       frameId: coins.inventoryNotifier.value.frame,
+      premium: me.premium,
       isMe: true,
     );
   }

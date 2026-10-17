@@ -50,7 +50,11 @@ AiGenerationRecord _record() => AiGenerationRecord(
 );
 
 void main() {
-  Future<void> pumpPage(WidgetTester tester, {List<AiGenerationRecord> history = const <AiGenerationRecord>[]}) async {
+  Future<void> pumpPage(
+    WidgetTester tester, {
+    List<AiGenerationRecord> history = const <AiGenerationRecord>[],
+    bool premium = false,
+  }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -59,7 +63,8 @@ void main() {
     addTearDown(getIt.reset);
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-1'
-      ..loggedIn = true;
+      ..loggedIn = true
+      ..premium = premium;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     CoinsService.instance.balanceNotifier.value = 100;
     await tester.pumpWidget(MaterialApp(home: AiWallpaperTabPage(repository: _FakeRepository(history))));
@@ -123,6 +128,20 @@ void main() {
     expect(find.text('Get coins'), findsOneWidget);
     expect(find.text('Generate'), findsNothing);
     expect(find.text('You need ${AiQualityTier.fast.coinCost} coins. You have 0.'), findsOneWidget);
+  });
+
+  testWidgets('Pro users see and are gated on the half price', (tester) async {
+    await pumpPage(tester, premium: true);
+    final int half = AiQualityTier.fast.costFor(isPro: true);
+
+    CoinsService.instance.balanceNotifier.value = half;
+    await tester.pump();
+    expect(find.text('Generate'), findsOneWidget);
+    expect(find.text('${AiQualityTier.quality.costFor(isPro: true)}'), findsOneWidget);
+
+    CoinsService.instance.balanceNotifier.value = half - 1;
+    await tester.pump();
+    expect(find.text('You need $half coins. You have ${half - 1}.'), findsOneWidget);
   });
 
   testWidgets('a result shows Save as the accent action and Generate as tonal', (tester) async {
