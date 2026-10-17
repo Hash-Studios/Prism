@@ -5,19 +5,28 @@ import android.content.Context
 import android.content.pm.PackageManager
 import com.hash.prism.pigeon.PrismAppIconHostApi
 
-/** Switches the launcher icon by enabling one activity-alias from the manifest and disabling the others. */
+/**
+ * Switches the launcher icon. MainActivity is the default icon; each alternate icon is an activity-alias
+ * from the manifest. Exactly one launcher component is enabled at a time.
+ */
 internal class PrismAppIconHostApiImpl(context: Context) : PrismAppIconHostApi {
     private val context = context.applicationContext
 
     override fun setAppIcon(iconName: String?, callback: (Result<Boolean>) -> Unit) {
-        val target = if (iconName == null) DEFAULT_ALIAS else ALIASES[iconName]
-        if (target == null) {
+        val target = iconName?.let { ALIASES[it] }
+        if (iconName != null && target == null) {
             callback(Result.success(false))
             return
         }
         try {
-            setEnabled(target, true)
-            (ALIASES.values + DEFAULT_ALIAS).filter { it != target }.forEach { setEnabled(it, false) }
+            if (target == null) {
+                setState(MAIN_ACTIVITY, PackageManager.COMPONENT_ENABLED_STATE_DEFAULT)
+                ALIASES.values.forEach { setState(it, PackageManager.COMPONENT_ENABLED_STATE_DISABLED) }
+            } else {
+                setState(target, PackageManager.COMPONENT_ENABLED_STATE_ENABLED)
+                setState(MAIN_ACTIVITY, PackageManager.COMPONENT_ENABLED_STATE_DISABLED)
+                ALIASES.values.filter { it != target }.forEach { setState(it, PackageManager.COMPONENT_ENABLED_STATE_DISABLED) }
+            }
             callback(Result.success(true))
         } catch (error: Exception) {
             callback(Result.success(false))
@@ -30,18 +39,14 @@ internal class PrismAppIconHostApiImpl(context: Context) : PrismAppIconHostApi {
 
     override fun supportsAlternateIcons(): Boolean = true
 
-    private fun component(alias: String) = ComponentName(context, "com.hash.prism.$alias")
+    private fun component(name: String) = ComponentName(context, "com.hash.prism.$name")
 
-    private fun setEnabled(alias: String, enabled: Boolean) {
-        context.packageManager.setComponentEnabledSetting(
-            component(alias),
-            if (enabled) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            PackageManager.DONT_KILL_APP,
-        )
+    private fun setState(name: String, state: Int) {
+        context.packageManager.setComponentEnabledSetting(component(name), state, PackageManager.DONT_KILL_APP)
     }
 
     private companion object {
-        const val DEFAULT_ALIAS = "IconDefault"
+        const val MAIN_ACTIVITY = "MainActivity"
         val ALIASES = mapOf(
             "AppIconNoir" to "IconNoir",
             "AppIconGlass" to "IconGlass",
