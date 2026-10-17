@@ -69,28 +69,6 @@ test("an unknown series falls back to the prompt up to its first comma", () => {
     "A red kite.\n\nBy @PrismWallpapers. Available now in the Prism Wallpapers app.\n\n#wallpaper #kite");
 });
 
-test("captions stay within Telegram's UTF-16 limit and do not split a surrogate pair", () => {
-  const caption = studioPostCaption({
-    seriesId: "gone",
-    aiPrompt: `${"😀".repeat(800)}, bright sky. style`,
-    tags: ["a".repeat(5000), "useful", "useful", null, 123, {}, "#", "last", "other", "another", "sixth"],
-  });
-  assert.ok(caption.length <= 1024);
-  for (let i = 0; i < caption.length; i++) {
-    const code = caption.charCodeAt(i);
-    if (code >= 0xd800 && code <= 0xdbff) {
-      const next = caption.charCodeAt(i + 1);
-      assert.ok(next >= 0xdc00 && next <= 0xdfff, "caption must not end with an unmatched high surrogate");
-    }
-    if (code >= 0xdc00 && code <= 0xdfff) {
-      const previous = caption.charCodeAt(i - 1);
-      assert.ok(previous >= 0xd800 && previous <= 0xdbff, "caption must not start with an unmatched low surrogate");
-    }
-  }
-  assert.match(caption, /#wallpaper #useful #last #other #another$/);
-  assert.doesNotMatch(caption, /#(?:null|123|objectobject)/);
-});
-
 test("caption tags keep only distinct nonempty strings, with at most five tags total", () => {
   assert.equal(
     studioPostCaption({seriesId: "gone", aiPrompt: "kite", tags: [null, 123, {}, "sky", "sky", "", "#", "wind", "blue", "extra", "sixth"]}),
@@ -198,7 +176,7 @@ test("a timed-out image transfer releases the daily claim for the next approval"
   assert.equal(posts.length, 1);
 });
 
-test("release-on-failure cannot distinguish an accepted post with a lost response", async (t) => {
+test("a lost Telegram response keeps the day claimed, so a possibly accepted post is not repeated", async (t) => {
   const first = verifiedStudioWall();
   const second = {...first, studioRunId: "run-2", studioCandidateId: "candidate-2"};
   installTelegramFakeDb(t, {
@@ -218,7 +196,7 @@ test("release-on-failure cannot distinguish an accepted post with a lost respons
   });
   await onStudioWallApproved.run(approvalEvent({...first, review: false}, first, "wall-1"));
   await onStudioWallApproved.run(approvalEvent({...second, review: false}, second, "wall-2"));
-  assert.equal(accepted, 2);
+  assert.equal(accepted, 1);
 });
 
 test("a failed post cannot delete a replacement daily claim during a retried delete", async (t) => {

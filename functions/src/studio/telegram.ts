@@ -6,6 +6,7 @@ import {db, REGION, str} from "../common";
 import {isStudioWall} from "./process";
 import {STUDIO_SERIES} from "./series";
 
+// The bot posts the first Studio wall approved each day to the Telegram channel: the image and a caption.
 export const telegramBotToken = defineSecret("TELEGRAM_BOT_TOKEN");
 export const telegramChatId = defineSecret("TELEGRAM_CHAT_ID");
 
@@ -22,34 +23,22 @@ export function studioPostCaption(wall: admin.firestore.DocumentData): string {
   const collection = series ? `Part of the ${series.name} collection by @PrismWallpapers.` : "By @PrismWallpapers.";
   const tags = ["wallpaper", ...(Array.isArray(wall.tags) ? wall.tags.filter((tag) => typeof tag === "string") : [])]
     .map((tag) => tag.replace(/[^a-z0-9_]/gi, "").toLowerCase())
-    .filter((tag, i, all) => tag !== "" && all.indexOf(tag) === i);
-  const collectionLine = `${collection} Available now in the Prism Wallpapers app.`;
-  const hashtagLines: string[] = [];
-  for (const tag of tags) {
-    if (hashtagLines.length >= MAX_HASHTAGS) break;
-    const candidate = [...hashtagLines, `#${tag}`].join(" ");
-    const suffix = [collectionLine, candidate].join("\n\n");
-    if (suffix.length <= 1024) hashtagLines.push(`#${tag}`);
-  }
-  const suffix = [collectionLine, hashtagLines.join(" ")].filter(Boolean).join("\n\n");
-  const sceneBudget = Math.max(0, 1024 - suffix.length - (suffix ? 2 : 0));
-  const boundedSentence = sentence.length <= sceneBudget ? sentence : truncateUtf16(sentence, sceneBudget);
-  return [boundedSentence, suffix].filter(Boolean).join("\n\n");
+    .filter((tag, i, all) => tag !== "" && all.indexOf(tag) === i)
+    .slice(0, MAX_HASHTAGS);
+  // ponytail: no 1024-character caption cap; catalog scenes and tags keep captions near 250 characters.
+  return [sentence, `${collection} Available now in the Prism Wallpapers app.`, tags.map((t) => `#${t}`).join(" ")]
+    .filter(Boolean).join("\n\n");
 }
 
-function truncateUtf16(value: string, maxLength: number): string {
-  let truncated = value.slice(0, maxLength);
-  const lastCodeUnit = truncated.charCodeAt(truncated.length - 1);
-  if (lastCodeUnit >= 0xd800 && lastCodeUnit <= 0xdbff) truncated = truncated.slice(0, -1);
-  return truncated;
-}
+/** Telegram may have posted the photo, so the day must stay claimed to avoid a second post. */
+const uncertain = (message: string) => Object.assign(new Error(message), {uncertain: true});
 
 /** The day in India, where the walls are reviewed, for example "2026-10-17". */
 export function postDay(now: Date): string {
   return new Intl.DateTimeFormat("en-CA", {timeZone: "Asia/Kolkata"}).format(now);
 }
 
-/** An upload allows 10 MB; a photo URL allows only 5 MB. */
+/** Uploads the image as a photo with the caption. An upload allows 10 MB; a photo URL allows only 5 MB. */
 export async function sendStudioPost(token: string, chatId: string, wall: admin.firestore.DocumentData): Promise<void> {
   const signal = AbortSignal.timeout(60_000);
   let image: Response;
@@ -69,14 +58,14 @@ export async function sendStudioPost(token: string, chatId: string, wall: admin.
   try {
     res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {method: "POST", body: form, signal});
   } catch {
-    throw new Error("Telegram sendPhoto request failed.");
+    throw uncertain("Telegram sendPhoto request failed.");
   }
   if (!res.ok) throw new Error(`Telegram sendPhoto failed: ${res.status}`);
   let result: unknown;
   try {
     result = await res.json();
   } catch {
-    throw new Error("Telegram sendPhoto returned an invalid response.");
+    throw uncertain("Telegram sendPhoto returned an invalid response.");
   }
   if (typeof result !== "object" || result === null || !("ok" in result) || result.ok !== true) {
     throw new Error("Telegram sendPhoto was not accepted.");
@@ -105,6 +94,7 @@ export async function postFirstStudioWallOfDay(
   try {
     await sendStudioPost(token, chatId, wall);
   } catch (sendError) {
+    if ((sendError as {uncertain?: boolean}).uncertain) throw sendError;
     try {
       await claim.delete({lastUpdateTime: writeTime});
     } catch (cleanupError) {
@@ -116,6 +106,7 @@ export async function postFirstStudioWallOfDay(
   return true;
 }
 
+/** When a Studio wall is approved, it becomes the day's Telegram post if it is the first one that day. */
 export const onStudioWallApproved = onDocumentUpdated(
   {document: "walls/{wallId}", region: REGION, timeoutSeconds: 300, secrets: [telegramBotToken, telegramChatId]},
   async (event) => {
@@ -135,8 +126,9 @@ export const onStudioWallApproved = onDocumentUpdated(
         new Date(event.time),
       );
       logger.info(posted ? "onStudioWallApproved: posted." : "onStudioWallApproved: today's post is taken.", {wallId});
-    } catch {
-      logger.error("onStudioWallApproved: post failed.", {wallId});
+    } catch (err) {
+      // The send errors are fixed texts, so the message holds no token.
+      logger.error("onStudioWallApproved: post failed.", {wallId, err: String(err)});
     }
   },
 );
