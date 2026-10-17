@@ -28,8 +28,9 @@ class _FailingRefreshFirestore extends CoinsTestFirestore {
     required String sourceTag,
     bool preferCacheFirst = false,
   }) async {
+    if (collection != 'usersv2') return null;
     getByIdCalls++;
-    readStarted.complete();
+    if (!readStarted.isCompleted) readStarted.complete();
     return map(await response.future, id);
   }
 }
@@ -158,7 +159,7 @@ void main() {
     response.complete(<String, Object>{'newBadges': <Object>[], 'badges': <Object>[], 'currentBalance': 110});
 
     expect((await check).isSuccess, isTrue);
-    expect(firestore.getByIdCalls, 1);
+    expect(firestore.userDocReads, 1);
     expect(app_state.prismUser.coins, 175);
     expect(CoinsService.instance.balanceNotifier.value, 175);
   });
@@ -180,7 +181,7 @@ void main() {
     response.complete(<String, Object>{'newBadges': <Object>[], 'badges': <Object>[], 'currentBalance': 110});
 
     expect((await check).isSuccess, isTrue);
-    expect(firestore.getByIdCalls, 1);
+    expect(firestore.userDocReads, 1);
     expect(app_state.prismUser.coins, 100);
     expect(CoinsService.instance.balanceNotifier.value, 100);
   });

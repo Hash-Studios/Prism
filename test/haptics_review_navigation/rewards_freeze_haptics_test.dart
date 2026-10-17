@@ -74,7 +74,7 @@ void main() {
   testWidgets('premium tile semantics action shares the pointer haptic path', (tester) async {
     await pumpSpendSection(tester);
     final SemanticsHandle semanticsHandle = tester.ensureSemantics();
-    tester.semantics.tap(find.semantics.byLabel('Premium wallpaper, ${CoinPolicy.premiumWallpaperDownload} coins'));
+    tester.semantics.tap(find.semantics.byLabel(RegExp('^Downloads, ${CoinPolicy.wallpaperDownload} coins')));
     await tester.pump();
 
     expect(haptics, <String>['tap']);

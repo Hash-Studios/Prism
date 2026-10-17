@@ -14,7 +14,7 @@ String _kindLabel(ShopItemKind kind) => switch (kind) {
   ShopItemKind.theme => 'Themes',
   ShopItemKind.appIcon => 'Icons',
   ShopItemKind.frame => 'Frames',
-  ShopItemKind.nameGlow => 'Name glows',
+  ShopItemKind.nameGlow => 'Glows',
 };
 
 @RoutePage()
