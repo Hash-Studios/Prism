@@ -4,6 +4,9 @@ export const PLAY_STORE_URL =
 export const APP_STORE_URL = "https://apps.apple.com/app/id1405860595";
 // Replace with your repository URL if project path changes.
 export const GITHUB_URL = "https://github.com/Hash-Studios/Prism";
+// Same links as the badges in the repository README.
+export const TELEGRAM_URL = "https://t.me/PrismWallpapers";
+export const X_URL = "https://x.com/PrismWallpapers";
 // Replace with your canonical production domain.
 export const SITE_URL = "https://prismwalls.com";
 export const APP_NAME = "Prism Wallpapers";
