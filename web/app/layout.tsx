@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
-import { APP_NAME, SITE_URL } from "@/lib/site-config";
+import { APP_NAME, OG_IMAGE, SITE_URL } from "@/lib/site-config";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -31,14 +31,7 @@ export const metadata: Metadata = {
     description:
       "Discover high-quality wallpapers and curated collections with Prism Wallpapers. Built for personalization lovers on Android and iOS.",
     siteName: APP_NAME,
-    images: [
-      {
-        url: "/assets/screenshots/screen1.jpg",
-        width: 390,
-        height: 844,
-        alt: "Prism Wallpapers app screenshot",
-      },
-    ],
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
@@ -46,7 +39,7 @@ export const metadata: Metadata = {
       "Prism Wallpapers - Premium Wallpaper App for Android and iOS",
     description:
       "Discover high-quality wallpapers and curated collections with Prism Wallpapers.",
-    images: ["/assets/screenshots/screen1.jpg"],
+    images: [OG_IMAGE.url],
   },
 };
 

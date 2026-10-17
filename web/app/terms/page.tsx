@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Section } from "@/components/legal/section";
 import { Footer } from "@/components/sections/footer";
 import { Header } from "@/components/sections/header";
-import { APP_NAME, CONTACT_EMAIL, EFFECTIVE_DATE, SITE_URL } from "@/lib/site-config";
+import { APP_NAME, CONTACT_EMAIL, EFFECTIVE_DATE, OG_IMAGE, SITE_URL } from "@/lib/site-config";
 
 
 const title = `Terms of Use | ${APP_NAME}`;
@@ -18,6 +18,7 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/terms`,
     title,
     description,
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary",

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:flutter/services.dart';
@@ -101,6 +102,72 @@ void main() {
       expect(preview['title'], 'Join Prism');
       expect(preview, isNot(contains('image_source_url')));
     }
+  });
+
+  test('a profile link sends the name, counts and at most 4 gallery thumbnails for the preview card', () async {
+    final bodies = await capture(
+      () => createUserDynamicLink(
+        'Ana',
+        'ana_w',
+        'ana@example.com',
+        '',
+        'https://img/p.png',
+        followerCount: 12,
+        wallpaperCount: 7,
+        gallery: <String>[
+          'https://img/1.jpg',
+          'https://img/2.jpg',
+          'https://img/3.jpg',
+          'https://img/4.jpg',
+          'https://img/5.jpg',
+        ],
+      ),
+    );
+    final withoutCounts = await capture(() => createUserDynamicLink('Ana', 'ana_w', 'ana@example.com', '', ''));
+
+    final preview = bodies.single['preview'] as Map;
+    expect(preview['creator_name'], 'Ana');
+    expect(preview['follower_count'], 12);
+    expect(preview['wallpaper_count'], 7);
+    expect(preview['gallery'], <String>[
+      'https://img/1.jpg',
+      'https://img/2.jpg',
+      'https://img/3.jpg',
+      'https://img/4.jpg',
+    ]);
+    expect(withoutCounts.single['preview'] as Map, isNot(contains('follower_count')));
+    expect(withoutCounts.single['preview'] as Map, isNot(contains('gallery')));
+  });
+
+  test('the invite preview sends the inviter name on its own, never an email', () async {
+    final named = await capture(() => createSharingPrismLink('uid1', inviterName: 'Ana'));
+    final emailName = await capture(() => createSharingPrismLink('uid1', inviterName: 'ana@example.com'));
+
+    expect((named.single['preview'] as Map)['creator_name'], 'Ana');
+    expect(emailName.single['preview'] as Map, isNot(contains('creator_name')));
+  });
+
+  test('a wallpaper link sends the creator, photo and resolution, and drops a creator that is an email', () async {
+    WallpaperCore core(String author) => WallpaperCore(
+      id: 'w1',
+      source: WallpaperSource.prism,
+      fullUrl: 'https://img/f.png',
+      thumbnailUrl: 'https://img/t.png',
+      resolution: '1080x2400',
+      authorName: author,
+      authorPhoto: 'https://img/ana.png',
+    );
+    final bodies = await capture(() async {
+      await createDynamicLink('w1', WallpaperSource.prism, null, 'https://img/t.png', core: core('Ana'));
+      await createDynamicLink('w1', WallpaperSource.prism, null, 'https://img/t.png', core: core('ana@example.com'));
+    });
+
+    final named = bodies[0]['preview'] as Map;
+    expect(named['creator_name'], 'Ana');
+    expect(named['creator_photo_url'], 'https://img/ana.png');
+    expect(named['resolution'], '1080x2400');
+    expect(bodies[1]['preview'] as Map, isNot(contains('creator_name')));
+    expect(bodies[1].toString(), isNot(contains('ana@example.com')));
   });
 
   test('a wallpaper link preview drops a title that holds an email address', () async {

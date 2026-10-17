@@ -3,16 +3,21 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +59,8 @@ void main() {
       original?.call(details);
     };
     final GlobalKey<ScaffoldState> key = GlobalKey<ScaffoldState>();
+    final _MockPublicProfileBloc profileBloc = _MockPublicProfileBloc();
+    when(() => profileBloc.state).thenReturn(PublicProfileState.initial());
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -62,7 +69,10 @@ void main() {
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
-          child: Scaffold(key: key, drawer: const ProfileDrawer(), body: const SizedBox()),
+          child: BlocProvider<PublicProfileBloc>.value(
+            value: profileBloc,
+            child: Scaffold(key: key, drawer: const ProfileDrawer(), body: const SizedBox()),
+          ),
         ),
       ),
     );
