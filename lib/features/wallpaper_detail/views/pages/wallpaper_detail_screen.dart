@@ -1117,7 +1117,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             thumbUrl: entity.thumbnailUrl,
             contextLine: _shareContextLine(entity),
             createLink: (id, source, url, thumbUrl) =>
-                createDynamicLink(id, source, url, thumbUrl, title: previewTitle),
+                createDynamicLink(id, source, url, thumbUrl, title: previewTitle, core: entity.wallpaperCore),
           ),
         ),
         WallpaperBarAction(

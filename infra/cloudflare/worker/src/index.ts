@@ -1,5 +1,6 @@
 import { AiQuotaCoordinator, type AiEnvBindings, bumpRateLimit, handleAiApiRequest } from './ai';
 import { maybeHandleAssociationRequest } from './association_files';
+import { formatCount, type OgCard, type OgChip, type OgStat, renderOgCardHtml } from './og_card';
 
 export interface Env extends AiEnvBindings {
   LINKS_KV: KVNamespace;
@@ -22,6 +23,12 @@ interface CreateLinkPreviewInput {
   provider?: string;
   wall_id?: string;
   setup_name?: string;
+  creator_name?: unknown;
+  creator_photo_url?: unknown;
+  resolution?: unknown;
+  follower_count?: unknown;
+  wallpaper_count?: unknown;
+  gallery?: unknown;
 }
 
 interface CreateLinkRequest {
@@ -32,7 +39,7 @@ interface CreateLinkRequest {
   preview?: CreateLinkPreviewInput;
 }
 
-interface PreviewSnapshot {
+interface PreviewDefaults {
   title: string;
   description: string;
   image_source_url: string;
@@ -42,6 +49,21 @@ interface PreviewSnapshot {
   setup_name: string;
   app_store_url: string;
   play_store_url: string;
+}
+
+interface PreviewSnapshot extends PreviewDefaults {
+  creator_name: string;
+  creator_photo_url: string;
+  resolution: string;
+  follower_count: number | null;
+  wallpaper_count: number | null;
+  gallery: string[];
+}
+
+interface WallpaperStats {
+  views: number | null;
+  favs: number | null;
+  downloads: number | null;
 }
 
 interface LinkRecord {
@@ -71,9 +93,20 @@ const PREVIEW_IMAGE_HOSTS = new Set([
   'w.wallhaven.cc',
   'th.wallhaven.cc',
   'prismwalls.com',
+  'lh3.googleusercontent.com',
+  'lh4.googleusercontent.com',
+  'lh5.googleusercontent.com',
+  'lh6.googleusercontent.com',
+  'firebasestorage.googleapis.com',
 ]);
 const SHORT_CODE_REGEX = /^[A-Za-z0-9]{7,10}$/;
 const DEFAULT_OG_VERSION = 1;
+// Bump when the card design changes: old links then render a new card under a new image URL.
+const OG_CARD_VERSION = 2;
+const OG_ASSET_BASE = 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/web/public/assets/og';
+const INVITE_GALLERY = [1, 2, 3].map((n) => `${OG_ASSET_BASE}/invite-${n}.jpg`);
+const GALLERY_MAX_ITEMS = 4;
+const WALLPAPER_STATS_TIMEOUT_MS = 4000;
 const IOS_APP_ID = '1405860595';
 const CREATE_LINK_MAX_BODY_BYTES = 8 * 1024;
 const CAMPAIGN_MAX_KEYS = 10;
@@ -183,7 +216,7 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
     preview,
     og_image_path: null,
     og_storage: null,
-    version: DEFAULT_OG_VERSION,
+    version: OG_CARD_VERSION,
   };
 
   await persistLinkRecord(code, record, env);
@@ -197,7 +230,7 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
       }
       const updatedRecord: LinkRecord = {
         ...record,
-        og_image_path: `/og/${code}.png`,
+        og_image_path: `/og/${code}.jpg`,
         og_storage: ogPersisted,
       };
       await persistLinkRecord(code, updatedRecord, env);
@@ -310,11 +343,12 @@ async function resolveShortLink(pathname: string, request: Request, env: Env): P
 
 async function getOgImage(pathname: string, method: string, env: Env): Promise<Response> {
   const codePart = pathname.replace('/og/', '').trim();
-  if (!codePart.endsWith('.png')) {
+  const extension = ['.jpg', '.png'].find((ext) => codePart.endsWith(ext));
+  if (extension == null) {
     return new Response('Not found', { status: 404 });
   }
 
-  const code = codePart.replace('.png', '').trim();
+  const code = codePart.slice(0, -extension.length).trim();
   if (!SHORT_CODE_REGEX.test(code)) {
     return new Response('Invalid code', { status: 400 });
   }
@@ -324,26 +358,37 @@ async function getOgImage(pathname: string, method: string, env: Env): Promise<R
     return new Response('Not found', { status: 404 });
   }
 
-  const fromStorage = await fetchOgImageFromStorage(code, record, env);
-  if (fromStorage != null) {
-    if (method === 'HEAD') {
-      return new Response(null, { status: fromStorage.status, headers: fromStorage.headers });
+  if (record.version === OG_CARD_VERSION) {
+    const fromStorage = await fetchOgImageFromStorage(code, record, env);
+    if (fromStorage != null) {
+      return imageResponse(fromStorage, method);
     }
-    return fromStorage;
   }
 
   const generatedStorage = await generateAndPersistOgImage(code, record, env);
   if (generatedStorage != null) {
-    record.og_image_path = `/og/${code}.png`;
-    record.og_storage = generatedStorage;
-    await persistLinkRecord(code, record, env);
+    const updated: LinkRecord = {
+      ...record,
+      og_image_path: `/og/${code}.jpg`,
+      og_storage: generatedStorage,
+      version: OG_CARD_VERSION,
+    };
+    await persistLinkRecord(code, updated, env);
 
-    const generated = await fetchOgImageFromStorage(code, record, env);
+    const generated = await fetchOgImageFromStorage(code, updated, env);
     if (generated != null) {
-      if (method === 'HEAD') {
-        return new Response(null, { status: generated.status, headers: generated.headers });
-      }
-      return generated;
+      return imageResponse(generated, method);
+    }
+  }
+
+  // The new card failed to render: an older card is still better than the fallback. Cache it only briefly,
+  // because the versioned URL gets the new card once a render succeeds.
+  if (record.version !== OG_CARD_VERSION) {
+    const legacy = await fetchOgImageFromStorage(code, record, env);
+    if (legacy != null) {
+      const headers = new Headers(legacy.headers);
+      headers.set('cache-control', 'public, max-age=300');
+      return imageResponse(new Response(legacy.body, { status: legacy.status, headers }), method);
     }
   }
 
@@ -353,6 +398,13 @@ async function getOgImage(pathname: string, method: string, env: Env): Promise<R
   }
 
   return new Response('No preview image available', { status: 404 });
+}
+
+function imageResponse(response: Response, method: string): Response {
+  if (method === 'HEAD') {
+    return new Response(null, { status: response.status, headers: response.headers });
+  }
+  return response;
 }
 
 function fallbackToStore(request: Request, env: Env): Response {
@@ -687,12 +739,18 @@ function normalizePreview(
     setup_name: clipText(sanitizeText(input?.setup_name ?? defaults.setup_name), 80),
     app_store_url: env.APP_STORE_URL,
     play_store_url: env.PLAY_STORE_URL,
+    creator_name: clipText(sanitizeText(textInput(input?.creator_name)), 60),
+    creator_photo_url: sanitizeImageUrl(textInput(input?.creator_photo_url)),
+    resolution: clipText(sanitizeText(textInput(input?.resolution)), 20),
+    follower_count: countInput(input?.follower_count),
+    wallpaper_count: countInput(input?.wallpaper_count),
+    gallery: galleryInput(input?.gallery),
   };
 
   return merged;
 }
 
-function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewSnapshot {
+function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewDefaults {
   const parsedCanonical = parseCanonicalFromUrl(canonical);
 
   if (type === 'share') {
@@ -788,6 +846,24 @@ function sanitizeImageUrl(value: string): string {
   }
 }
 
+function textInput(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function countInput(value: unknown): number | null {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
+function galleryInput(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .slice(0, GALLERY_MAX_ITEMS)
+    .map((item) => sanitizeImageUrl(textInput(item)))
+    .filter((url) => url.length > 0);
+}
+
 async function generateUniqueCode(env: Env): Promise<string> {
   for (let i = 0; i < 10; i += 1) {
     const code = generateCode(8);
@@ -810,23 +886,23 @@ function generateCode(length: number): string {
 }
 
 async function generateAndPersistOgImage(code: string, record: LinkRecord, env: Env): Promise<OgStorageType | null> {
-  const pngBytes = await renderOgImageWithBrowserRendering(code, record, env);
-  if (pngBytes == null) {
+  const imageBytes = await renderOgImageWithBrowserRendering(record, env);
+  if (imageBytes == null) {
     return null;
   }
 
-  const objectKey = ogObjectKey(code, record.version);
+  const objectKey = ogObjectKey(code, OG_CARD_VERSION);
   if (env.OG_IMAGES != null) {
-    await env.OG_IMAGES.put(objectKey, pngBytes, {
+    await env.OG_IMAGES.put(objectKey, imageBytes, {
       httpMetadata: {
-        contentType: 'image/png',
+        contentType: ogContentType(OG_CARD_VERSION),
         cacheControl: 'public, max-age=31536000, immutable',
       },
     });
     return 'r2';
   }
 
-  const kvPayload = toBase64(pngBytes);
+  const kvPayload = toBase64(imageBytes);
   await env.LINKS_KV.put(`og:${objectKey}`, kvPayload);
   return 'kv';
 }
@@ -839,7 +915,7 @@ async function fetchOgImageFromStorage(code: string, record: LinkRecord, env: En
     if (object != null) {
       return new Response(object.body, {
         headers: {
-          'content-type': object.httpMetadata?.contentType ?? 'image/png',
+          'content-type': object.httpMetadata?.contentType ?? ogContentType(record.version),
           'cache-control': object.httpMetadata?.cacheControl ?? 'public, max-age=31536000, immutable',
         },
       });
@@ -851,7 +927,7 @@ async function fetchOgImageFromStorage(code: string, record: LinkRecord, env: En
     if (isNonEmptyString(base64)) {
       return new Response(fromBase64(base64), {
         headers: {
-          'content-type': 'image/png',
+          'content-type': ogContentType(record.version),
           'cache-control': 'public, max-age=31536000, immutable',
         },
       });
@@ -861,13 +937,14 @@ async function fetchOgImageFromStorage(code: string, record: LinkRecord, env: En
   return null;
 }
 
-async function renderOgImageWithBrowserRendering(code: string, record: LinkRecord, env: Env): Promise<Uint8Array | null> {
+async function renderOgImageWithBrowserRendering(record: LinkRecord, env: Env): Promise<Uint8Array | null> {
   if (!isNonEmptyString(env.BROWSER_RENDERING_ACCOUNT_ID) || !isNonEmptyString(env.BROWSER_RENDERING_API_TOKEN)) {
     return null;
   }
 
   const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.BROWSER_RENDERING_ACCOUNT_ID}/browser-rendering/screenshot`;
-  const htmlTemplate = renderOgCardHtml(record, code);
+  const stats = await fetchWallpaperStats(record, env);
+  const htmlTemplate = renderOgCardHtml(ogCardFromRecord(record, stats));
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -881,8 +958,13 @@ async function renderOgImageWithBrowserRendering(code: string, record: LinkRecor
         width: 1200,
         height: 630,
       },
+      // Fonts and images load from the network; wait for them before the screenshot.
+      gotoOptions: {
+        waitUntil: 'networkidle0',
+      },
       screenshotOptions: {
-        type: 'png',
+        type: 'jpeg',
+        quality: 85,
       },
     }),
   });
@@ -895,91 +977,125 @@ async function renderOgImageWithBrowserRendering(code: string, record: LinkRecor
   return new Uint8Array(await response.arrayBuffer());
 }
 
-function renderOgCardHtml(record: LinkRecord, code: string): string {
+/** Public counters for a Prism wallpaper. Other sources and failures give null, so the card shows no counts. */
+async function fetchWallpaperStats(record: LinkRecord, env: Env): Promise<WallpaperStats | null> {
+  if (record.type !== 'share' || !isNonEmptyString(env.FIREBASE_PROJECT_ID)) {
+    return null;
+  }
+  const source = new URL(record.canonical_url).searchParams.get('source') || record.preview.provider;
+  const wallId = record.preview.wall_id.trim().toUpperCase();
+  if (source.toLowerCase() !== 'prism' || wallId.length === 0) {
+    return null;
+  }
+
+  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}`
+    + `/databases/(default)/documents/wallpaper_stats/${encodeURIComponent(wallId)}`;
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(WALLPAPER_STATS_TIMEOUT_MS) });
+    if (!response.ok) {
+      return null;
+    }
+    const doc = await response.json() as { fields?: Record<string, { integerValue?: unknown; doubleValue?: unknown }> };
+    const count = (name: string): number | null => {
+      const raw = doc.fields?.[name]?.integerValue ?? doc.fields?.[name]?.doubleValue;
+      const value = typeof raw === 'string' || typeof raw === 'number' ? Number(raw) : Number.NaN;
+      return Number.isFinite(value) && value >= 0 ? Math.floor(value) : null;
+    };
+    return { views: count('views'), favs: count('favs'), downloads: count('downloads') };
+  } catch (error) {
+    console.warn('Wallpaper stats fetch failed', error);
+    return null;
+  }
+}
+
+function ogCardFromRecord(record: LinkRecord, stats: WallpaperStats | null): OgCard {
   const preview = record.preview;
-  const title = escapeHtml(preview.title || 'Prism');
-  const description = escapeHtml(preview.description || 'Discover amazing wallpapers on Prism.');
-  const subtitle = escapeHtml(buildSubtitle(record));
-  const image = isNonEmptyString(preview.image_source_url) ? preview.image_source_url : PRISM_APP_ICON_URL;
-  const cta = escapeHtml(buildCtaText(record.type));
-  const typeBadge = escapeHtml(record.type.toUpperCase());
 
-  return `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    width: 1200px;
-    height: 630px;
-    background: #0a0b14;
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    overflow: hidden;
-  }
-</style>
-</head>
-<body>
-  <img src="${escapeAttribute(image)}" alt="bg" style="position:absolute;inset:-40px;width:1280px;height:710px;object-fit:cover;filter:blur(32px) brightness(.45) saturate(1.2);" />
-  <div style="position:absolute;inset:0;background:linear-gradient(120deg,rgba(9,10,20,.85) 0%, rgba(18,20,34,.73) 40%, rgba(13,14,25,.88) 100%);"></div>
-  <div style="position:absolute;inset:0;padding:42px 48px;display:flex;gap:34px;">
-    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <img src="${escapeAttribute(PRISM_APP_ICON_URL)}" alt="Prism" style="width:52px;height:52px;border-radius:12px;box-shadow:0 8px 22px rgba(0,0,0,.35);" />
-        <div style="font-size:40px;font-weight:800;letter-spacing:.2px;">Prism</div>
-        <div style="margin-left:10px;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:14px;font-weight:700;letter-spacing:.8px;color:#efeaff;background:rgba(255,255,255,.07);">${typeBadge}</div>
-      </div>
-      <div style="margin-top:24px;font-size:62px;font-weight:850;line-height:1.02;letter-spacing:-.8px;max-width:700px;white-space:pre-wrap;">${title}</div>
-      <div style="margin-top:14px;font-size:30px;font-weight:600;color:#cfc8ff;">${subtitle}</div>
-      <div style="margin-top:16px;font-size:28px;line-height:1.28;color:#ece9ff;max-width:760px;">${description}</div>
-      <div style="margin-top:auto;display:flex;align-items:center;gap:14px;">
-        <div style="padding:14px 18px;border-radius:14px;background:linear-gradient(90deg,#7f6cf9 0%,#8a5fff 45%,#6f8dff 100%);font-size:22px;font-weight:800;box-shadow:0 10px 24px rgba(94,76,214,.35);">${cta}</div>
-        <div style="font-size:22px;color:#c4bdf3;">prismwalls.com/l/${escapeHtml(code)}</div>
-      </div>
-    </div>
-    <div style="width:390px;display:flex;align-items:center;justify-content:center;">
-      <div style="position:relative;width:350px;height:520px;border-radius:24px;padding:9px;background:linear-gradient(160deg,rgba(255,255,255,.55),rgba(255,255,255,.06));box-shadow:0 18px 34px rgba(0,0,0,.45);">
-        <div style="position:absolute;inset:9px;border-radius:16px;overflow:hidden;background:#111;">
-          <img src="${escapeAttribute(image)}" alt="preview" style="width:100%;height:100%;object-fit:cover;" />
-        </div>
-        <div style="position:absolute;left:16px;right:16px;bottom:18px;padding:12px 14px;border-radius:12px;background:rgba(5,6,12,.62);backdrop-filter:blur(6px);font-size:17px;font-weight:700;color:#f0efff;line-height:1.25;border:1px solid rgba(255,255,255,.2);">
-          Open in Prism app to view full quality
-        </div>
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
-function buildSubtitle(record: LinkRecord): string {
-  if (record.type === 'share') {
-    const left = record.preview.wall_id || 'Wallpaper';
-    const right = record.preview.provider || 'Prism';
-    return `${left} · ${right}`;
-  }
-  if (record.type === 'setup') {
-    return record.preview.setup_name || 'Setup';
-  }
   if (record.type === 'user') {
-    return record.preview.username ? `@${record.preview.username}` : 'Creator profile';
+    const handle = preview.username ? `@${preview.username}` : '';
+    const name = profileName(preview, handle);
+    const hidden = (preview.wallpaper_count ?? 0) - preview.gallery.length;
+    return {
+      kind: 'profile',
+      name,
+      handle: name === handle ? '' : handle,
+      photo: preview.image_source_url,
+      stats: countStats([
+        ['image', preview.wallpaper_count, 'Wallpaper'],
+        ['users', preview.follower_count, 'Follower'],
+      ]),
+      gallery: preview.gallery,
+      more: hidden > 0 ? `+${formatCount(hidden)} more` : '',
+    };
   }
-  return 'Invite';
+
+  if (record.type === 'refer') {
+    const name = preview.creator_name || (/^(.+) invited you to Prism$/.exec(preview.title)?.[1] ?? '');
+    const chip: OgChip = name
+      ? { photo: preview.image_source_url, prefix: '', name, detail: 'invited you to Prism' }
+      : { photo: '', prefix: '', name: 'Join Prism', detail: 'Wallpapers for Android and iOS' };
+    return { kind: 'invite', gallery: INVITE_GALLERY, chip };
+  }
+
+  if (record.type === 'setup') {
+    return {
+      kind: 'wallpaper',
+      label: 'Setup',
+      title: preview.setup_name || stripPrismSuffix(preview.title) || 'Prism setup',
+      image: preview.image_source_url,
+      stats: [],
+      chip: null,
+    };
+  }
+
+  const wallpaperStats = countStats([
+    ['eye', stats?.views ?? null, 'View'],
+    ['heart', stats?.favs ?? null, 'Favourite'],
+    ['download', stats?.downloads ?? null, 'Download'],
+  ]);
+  if (preview.resolution) {
+    wallpaperStats.push({ icon: 'phone', value: preview.resolution.replace(/\s*x\s*/i, '×'), label: 'Resolution' });
+  }
+  const title = stripPrismSuffix(preview.title);
+  const provider = preview.provider && preview.provider.toLowerCase() !== 'prism' ? `on ${preview.provider}` : '';
+  return {
+    kind: 'wallpaper',
+    label: 'Wallpaper',
+    // Old links used "<wall id> - Prism" as the title; an id means nothing on the card.
+    title: title && title !== preview.wall_id ? title : 'Wallpaper on Prism',
+    image: preview.image_source_url,
+    stats: wallpaperStats.slice(0, 3),
+    chip: preview.creator_name
+      ? { photo: preview.creator_photo_url, prefix: 'by', name: preview.creator_name, detail: provider }
+      : null,
+  };
 }
 
-function buildCtaText(type: LinkType): string {
-  if (type === 'share') {
-    return 'Open Wallpaper in Prism';
+function countStats(items: Array<[OgStat['icon'], number | null, string]>): OgStat[] {
+  return items
+    .filter(([, value]) => value != null && value > 0)
+    .map(([icon, value, noun]) => ({
+      icon,
+      value: formatCount(value as number),
+      label: value === 1 ? noun : `${noun}s`,
+    }));
+}
+
+function profileName(preview: PreviewSnapshot, handle: string): string {
+  if (preview.creator_name) {
+    return preview.creator_name;
   }
-  if (type === 'setup') {
-    return 'Open Setup in Prism';
+  if (handle && preview.title.endsWith(` (${handle})`)) {
+    return preview.title.slice(0, -(handle.length + 3)).trim() || handle;
   }
-  if (type === 'user') {
-    return 'View Creator in Prism';
+  if (handle && preview.title === `${handle} on Prism`) {
+    return handle;
   }
-  return 'Install Prism App';
+  return preview.title || handle || 'Prism creator';
+}
+
+function stripPrismSuffix(title: string): string {
+  return title.endsWith(' - Prism') ? title.slice(0, -' - Prism'.length).trim() : title;
 }
 
 function renderCrawlerPreviewHtml(code: string, record: LinkRecord, env: Env): string {
@@ -1153,7 +1269,7 @@ function isCrawlerRequest(request: Request): boolean {
 
 function getOgImageUrl(record: LinkRecord, env: Env): string {
   if (isNonEmptyString(record.code)) {
-    return `https://${DOMAIN}/og/${record.code}.png`;
+    return `https://${DOMAIN}/og/${record.code}.jpg?v=${OG_CARD_VERSION}`;
   }
   if (isNonEmptyString(record.preview.image_source_url)) {
     return record.preview.image_source_url;
@@ -1199,7 +1315,11 @@ function mapRouteV2FromType(type: LinkType): string {
 }
 
 function ogObjectKey(code: string, version: number): string {
-  return `${code}-v${version}.png`;
+  return `${code}-v${version}.${version >= OG_CARD_VERSION ? 'jpg' : 'png'}`;
+}
+
+function ogContentType(version: number): string {
+  return version >= OG_CARD_VERSION ? 'image/jpeg' : 'image/png';
 }
 
 function getClientIp(request: Request): string {

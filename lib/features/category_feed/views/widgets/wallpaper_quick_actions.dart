@@ -66,7 +66,14 @@ Future<void> showWallpaperQuickActions(
       await _toggleFavourite(context, item, favourite: !isFavourite);
     case _QuickAction.share:
       unawaited(
-        copyWallpaperLink(item.id, item.source, item.fullUrl, item.thumbnailUrl, title: wallpaperPreviewTitle(item)),
+        copyWallpaperLink(
+          item.id,
+          item.source,
+          item.fullUrl,
+          item.thumbnailUrl,
+          title: wallpaperPreviewTitle(item),
+          core: item.wallpaperCore,
+        ),
       );
     case _QuickAction.set:
       try {
