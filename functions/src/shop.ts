@@ -101,6 +101,9 @@ export const purchaseShopItem = onCall(
       const current = {previousBalance: balance, currentBalance: balance, owned: Object.keys(owned)};
       if (txSnap.exists) {
         const original = txSnap.data() ?? {};
+        if (original.itemId !== item.id) {
+          throw new HttpsError("invalid-argument", "requestId was used for another item.");
+        }
         response = {
           ...response,
           ...current,
@@ -128,17 +131,20 @@ export const purchaseShopItem = onCall(
       const rev = typeof privateData?.rev === "number" ? privateData.rev : 0;
       tx.update(userRef, {coins: balance - price});
       tx.set(privateRef, {rev: rev + 1, inventory: {owned: nextOwned}}, {merge: true});
-      tx.set(txRef, coinTransactionDoc({
-        id: txId,
-        userId: callerUid,
-        at: admin.firestore.Timestamp.now(),
-        delta: -price,
-        balanceBefore: balance,
-        action: "shopItem",
-        description: item.name,
-        sourceTag: "shop.purchase.callable",
-        reason: `shop_${item.id}`,
-      }));
+      tx.set(txRef, {
+        ...coinTransactionDoc({
+          id: txId,
+          userId: callerUid,
+          at: admin.firestore.Timestamp.now(),
+          delta: -price,
+          balanceBefore: balance,
+          action: "shopItem",
+          description: item.name,
+          sourceTag: "shop.purchase.callable",
+          reason: `shop_${item.id}`,
+        }),
+        itemId: item.id,
+      });
       response = {
         ...response,
         success: true,

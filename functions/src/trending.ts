@@ -63,9 +63,9 @@ export function mergeBoosted(boostedIds: string[], scoredIds: string[]): string[
 }
 
 /** Wall ids with an active boost, newest first. */
-async function activeBoostIds(nowMs: number): Promise<string[]> {
-  const snap = await db.collection("boosts").where("endsAt", ">", nowMs)
-    .orderBy("endsAt").orderBy("startsAt", "desc").limit(MAX_BOOSTS).get();
+async function activeBoostIds(tx: admin.firestore.Transaction, nowMs: number): Promise<string[]> {
+  const snap = await tx.get(db.collection("boosts").where("endsAt", ">", nowMs)
+    .orderBy("endsAt").orderBy("startsAt", "desc").limit(MAX_BOOSTS));
   return snap.docs
     .map((doc) => doc.data())
     .sort((a, b) => count(b.startsAt) - count(a.startsAt))
@@ -90,13 +90,20 @@ export const computeTrending = onSchedule(
     const dailySnap = await db.collection(WALLPAPER_STATS_DAILY).where("day", "in", days).limit(MAX_DAILY_DOCS).get();
     if (dailySnap.size >= MAX_DAILY_DOCS) logger.warn("computeTrending: daily docs hit the read cap.", {cap: MAX_DAILY_DOCS});
     const scored = trendingWallIds(dailySnap.docs.map((doc) => doc.data()), days);
-    const trending = mergeBoosted(await activeBoostIds(Date.now()), scored);
 
     const statsSnap = await db.collection(WALLPAPER_STATS).orderBy("views", "desc").limit(POPULAR_CANDIDATES).get();
     const popular = popularWallIds(statsSnap.docs.map((doc) => ({id: doc.id, data: doc.data()})));
 
     const updatedAt = admin.firestore.Timestamp.now();
-    await db.collection("trending").doc("current").set({wallIds: trending, updatedAt});
+    const trendingRef = db.collection("trending").doc("current");
+    // boostWall writes trending/current in its own transaction. Reading the doc and the boosts here makes the two
+    // conflict, so a boost bought while this job runs is kept.
+    const trending = await db.runTransaction(async (tx) => {
+      await tx.get(trendingRef);
+      const ids = mergeBoosted(await activeBoostIds(tx, Date.now()), scored);
+      tx.set(trendingRef, {wallIds: ids, updatedAt});
+      return ids;
+    });
     await db.collection("popular").doc("current").set({wallIds: popular, updatedAt});
     logger.info("computeTrending: updated.", {trending: trending.length, popular: popular.length});
   },

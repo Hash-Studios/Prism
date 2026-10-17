@@ -160,14 +160,17 @@ function settleSeed(extra: Doc = {}): Record<string, Doc> {
 }
 
 function mockIo(t: TestContext, options: {proFails?: boolean} = {}) {
-  const calls = {pro: [] as string[], notified: [] as string[]};
+  const calls = {pro: [] as string[], starts: [] as number[], notified: [] as string[], modifiers: [] as string[]};
   const state = {proFails: options.proFails ?? false};
-  t.mock.method(drawIo, "grantPro", async (uid: string) => {
+  t.mock.method(drawIo, "grantPro", async (uid: string, startMs: number) => {
     calls.pro.push(uid);
+    calls.starts.push(startMs);
     if (state.proFails) throw new Error("RevenueCat answered 500");
   });
-  t.mock.method(drawIo, "notifyWinner", async (uid: string) => {
-    calls.notified.push(uid);
+  t.mock.method(drawIo, "notify", async (payload: {modifier: string}, recipient: {uid: string}) => {
+    calls.notified.push(recipient.uid);
+    calls.modifiers.push(payload.modifier);
+    return true;
   });
   return Object.assign(calls, {state});
 }
@@ -261,6 +264,37 @@ test("a RevenueCat failure keeps the item, records the error, and a later run fi
   assert.equal(draw?.winnerNotified, true);
   assert.equal(draw?.prizeGrantError, undefined);
   assert.deepEqual(calls.pro, ["b", "b"]);
+  assert.deepEqual(calls.starts, [SETTLE_AT, SETTLE_AT]);
+  assert.equal(draw?.prizeProStartMs, SETTLE_AT);
   assert.deepEqual(calls.notified, ["b"]);
   assert.equal(store.get("usersv2/b/private/economy")?.rev, 1);
+});
+
+test("the winner notice goes to the inbox by email", async (t) => {
+  const calls = mockIo(t);
+  setup(t, settleSeed());
+  await runSettleDraw(SETTLE_AT, () => 0.5);
+  assert.deepEqual(calls.modifiers, ["bea@example.com"]);
+});
+
+test("a winner with no email gets the notice by uid", async (t) => {
+  const calls = mockIo(t);
+  setup(t, {...settleSeed(), "usersv2/b": {name: "Bea"}});
+  await runSettleDraw(SETTLE_AT, () => 0.5);
+  assert.deepEqual(calls.modifiers, ["b"]);
+});
+
+test("grantPro asks RevenueCat for one month from the stored start", async (t) => {
+  process.env.REVENUECAT_SECRET_KEY = "test_key";
+  t.after(() => delete process.env.REVENUECAT_SECRET_KEY);
+  const sent: Array<{url: string; body: unknown}> = [];
+  t.mock.method(globalThis, "fetch", async (url: string, init: {body: string}) => {
+    sent.push({url, body: JSON.parse(init.body)});
+    return new Response("{}", {status: 201});
+  });
+  await drawIo.grantPro("b", 1234);
+  assert.deepEqual(sent, [{
+    url: "https://api.revenuecat.com/v1/subscribers/b/entitlements/prism_v3_pro_access/promotional",
+    body: {duration: "monthly", start_time_ms: 1234},
+  }]);
 });

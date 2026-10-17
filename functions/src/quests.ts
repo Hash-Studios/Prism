@@ -156,10 +156,13 @@ export const progressQuest = onCall(
   },
 );
 
-/** Counts one event for `uid` from a function that already saw it. Never throws: quests must not break the caller. */
-export async function progressQuestForUser(uid: string, event: QuestEvent, nowMs = Date.now()): Promise<void> {
+/**
+ * Counts one event for `uid` from a function that already saw it. `eventId` names the source event, so a retried
+ * trigger or callable counts once. Never throws: quests must not break the caller.
+ */
+export async function progressQuestForUser(uid: string, event: QuestEvent, eventId: string, nowMs = Date.now()): Promise<void> {
   try {
-    await runProgress(uid, event, null, "quest_synced", nowMs);
+    await runProgress(uid, event, eventId, "quest_synced", nowMs);
   } catch (err) {
     logger.warn("Could not record the quest event.", {event, err});
   }
@@ -215,9 +218,9 @@ export const openQuestChest = onCall(
           itemId: typeof stored.itemId === "string" ? stored.itemId : null,
           doubled: stored.doubled === true,
           quests: state,
-          previousBalance: balance,
-          currentBalance: balance,
-          delta: 0,
+          previousBalance: int(stored.balanceBefore, balance),
+          currentBalance: int(stored.balanceAfter, balance),
+          delta: int(stored.delta, 0),
           reason: "quest_chest_replay",
           transactionId: chestRef.id,
           rev,

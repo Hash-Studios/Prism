@@ -82,6 +82,10 @@ const cases = [
   ['user writes a draw', () => req('PATCH', 'draws/2026-W42', { status: { stringValue: 'settled' } }, Bu), 403],
   ['owner reads own draw ticket', () => req('GET', 'drawTickets/2026-W42_b', null, Bu), 200],
   ['user reads another uid draw ticket', () => req('GET', 'drawTickets/2026-W42_b', null, A), 403],
+  // 404 means the read was allowed and the doc is missing.
+  ['owner gets own missing draw ticket', () => req('GET', 'drawTickets/2026-W43_b', null, Bu), 404],
+  ['user gets another uid missing draw ticket', () => req('GET', 'drawTickets/2026-W43_b', null, A), 403],
+  ['user gets a ticket id with an extra suffix', () => req('GET', 'drawTickets/2026-W43_b_b', null, Bu), 403],
   ['owner writes own draw ticket', () => req('PATCH', 'drawTickets/2026-W42_b', { uid: { stringValue: 'b' }, count: { integerValue: '5' } }, Bu), 403],
   ['signed-in reads the leaderboard', () => req('GET', 'leaderboards/current', null, Bu), 200],
   ['user writes the leaderboard', () => req('PATCH', 'leaderboards/current', { weekKey: { stringValue: 'x' } }, Bu), 403],

@@ -160,3 +160,14 @@ test("a counted wallpaper view feeds the browse quest, a repeat inside the coold
   await call();
   assert.equal(fake.get("questEventRate/u1_2026-01-02_view_wallpaper")?.count, 1);
 });
+
+test("a second view of one wall after the cooldown, same day, does not feed the browse quest again", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T10:00:00Z")});
+  const fake = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  await call();
+  t.mock.timers.setTime(new Date("2026-01-02T12:00:00Z").getTime());
+  await call();
+  assert.equal(fake.get("questEventRate/u1_2026-01-02_view_wallpaper")?.count, 1);
+  await call("w2");
+  assert.equal(fake.get("questEventRate/u1_2026-01-02_view_wallpaper")?.count, 2);
+});

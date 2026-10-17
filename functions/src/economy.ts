@@ -227,9 +227,15 @@ export function parseEconomy(raw: unknown): EconomyConfig {
   merged.award = award;
   merged.proDiscountActions = merged.proDiscountActions.filter((a) => typeof a === "string");
   merged.proBypassActions = merged.proBypassActions.filter((a) => typeof a === "string" && !NEVER_BYPASSED.has(a));
-  const ranks = merged.xp.ranks.length === 0 ||
-    merged.xp.ranks.some((r) => !isRecord(r) || typeof r.min !== "number") ? defaults.xp.ranks : merged.xp.ranks;
-  merged.xp = {...merged.xp, ranks: [...ranks].sort((a, b) => a.min - b.min)};
+  const ranks = merged.xp.ranks;
+  const ranksOk = ranks.length > 0 &&
+    ranks.every((r) => isRecord(r) && typeof r.id === "string" && r.id !== "" && isIntIn(r.min, Number.MAX_SAFE_INTEGER)) &&
+    new Set(ranks.map((r) => r.id)).size === ranks.length &&
+    Math.min(...ranks.map((r) => r.min)) === 0;
+  merged.xp = {
+    perCoinEarned: isNumberIn(merged.xp.perCoinEarned, 0, 10) ? merged.xp.perCoinEarned : defaults.xp.perCoinEarned,
+    ranks: ranksOk ? [...ranks].sort((a, b) => a.min - b.min) : defaults.xp.ranks,
+  };
   return merged;
 }
 
@@ -308,12 +314,17 @@ export interface XpFields {
  * `userData` is the snapshot read inside the same transaction.
  */
 export function grantXp(userData: admin.firestore.DocumentData, xp: number, nowMs: number): XpFields {
-  const gained = Math.max(0, Math.trunc(xp));
-  const currentXp = typeof userData.xp === "number" ? userData.xp : 0;
+  const gained = safeXp(xp);
   const key = weekKey(nowMs);
   const rawWeek = isRecord(userData.xpWeek) ? userData.xpWeek : {};
-  const weekXp = rawWeek.weekKey === key && typeof rawWeek.xp === "number" ? rawWeek.xp : 0;
-  return {xp: currentXp + gained, xpWeek: {weekKey: key, xp: weekXp + gained}};
+  const weekXp = rawWeek.weekKey === key ? safeXp(rawWeek.xp) : 0;
+  return {xp: safeXp(safeXp(userData.xp) + gained), xpWeek: {weekKey: key, xp: safeXp(weekXp + gained)}};
+}
+
+/** A non-negative safe integer; anything else counts as 0. */
+function safeXp(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.trunc(value)));
 }
 
 /** XP for coins earned, per config. Refunds pass 0. */

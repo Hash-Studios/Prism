@@ -89,6 +89,17 @@ test("purchaseShopItem replay returns the original result and charges once", asy
   assert.equal((store.get("usersv2/u1/private/economy") as {rev: number}).rev, 4);
 });
 
+test("purchaseShopItem refuses a replayed requestId with another itemId", async (t) => {
+  resetEconomyCache();
+  const store = installFakeDb(t, seed({}));
+  await buy("frame_ring");
+  await assert.rejects(() => buy("glow_ember"), {code: "invalid-argument"});
+  assert.equal(store.get("usersv2/u1")?.coins, 380);
+  assert.equal(store.get("coinTransactions/ctx_shop_u1_request_0001")?.itemId, "frame_ring");
+  assert.deepEqual(Object.keys((store.get("usersv2/u1/private/economy") as {inventory: {owned: object}}).inventory.owned),
+    ["frame_ring"]);
+});
+
 test("purchaseShopItem charges the full catalog price to Pro and honours config overrides", async (t) => {
   resetEconomyCache();
   const store = installFakeDb(t, seed({premium: true}, {}, {"economyConfig/current": {shopPrices: {glow_ocean: 40}}}));

@@ -6,7 +6,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {duplicateSpendResponse, isValidRequestId} from "./coinsCallables";
 import {coinTransactionDoc, db, REGION, str} from "./common";
 import {loadEconomy, weekBounds, weekKey, weightedPick} from "./economy";
-import {sendToUser} from "./notificationHelper";
+import {type PersonalPayload, type PushRecipient, sendToUser} from "./notificationHelper";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -21,29 +21,32 @@ const revenueCatSecret = defineSecret("REVENUECAT_SECRET_KEY");
 
 /** Overridable in tests. */
 export const drawIo = {
-  async grantPro(uid: string): Promise<void> {
+  /** A fixed `startMs` makes a retried grant end on the same day instead of adding a second month. */
+  async grantPro(uid: string, startMs: number): Promise<void> {
     const url = `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(uid)}` +
       "/entitlements/prism_v3_pro_access/promotional";
     const response = await fetch(url, {
       method: "POST",
       headers: {"Authorization": `Bearer ${revenueCatSecret.value()}`, "Content-Type": "application/json"},
-      body: JSON.stringify({duration: "monthly"}),
+      body: JSON.stringify({duration: "monthly", start_time_ms: startMs}),
     });
     if (!response.ok) throw new Error(`RevenueCat answered ${response.status}`);
   },
-  async notifyWinner(uid: string, drawWeek: string, user: admin.firestore.DocumentData): Promise<void> {
-    const email = str(user.email);
-    await sendToUser({
-      title: "You won the Prism Draw",
-      body: "One month of Pro and the Prism frame are yours.",
-      data: {route: "rewards"},
-      // The in-app inbox lists personal notifications by the recipient's email.
-      modifier: email || uid,
-      channelId: "draw",
-      docId: `draw_${drawWeek}_winner`,
-    }, {uid, email, loggedOut: user.loggedIn === false, legacyToken: user.fcmToken});
-  },
+  notify: (payload: PersonalPayload, recipient: PushRecipient): Promise<boolean> => sendToUser(payload, recipient),
 };
+
+async function notifyWinner(uid: string, drawWeek: string, user: admin.firestore.DocumentData): Promise<void> {
+  const email = str(user.email);
+  await drawIo.notify({
+    title: "You won the Prism Draw",
+    body: "One month of Pro and the Prism frame are yours.",
+    data: {route: "rewards"},
+    // The in-app inbox lists personal notifications by the recipient's email.
+    modifier: email || uid,
+    channelId: "draw",
+    docId: `draw_${drawWeek}_winner`,
+  }, {uid, email, loggedOut: user.loggedIn === false, legacyToken: user.fcmToken});
+}
 
 /** When the draw of the week containing `nowMs` closes: the next Monday 00:00 UTC. */
 export function nextCloseMs(nowMs: number): number {
@@ -230,14 +233,20 @@ async function grantPrize(key: string, nowMs: number): Promise<void> {
   }
   if (draw.prizeProGranted !== true) {
     await step("prizeProGranted", async () => {
-      await drawIo.grantPro(winnerUid);
+      const startMs = await db.runTransaction(async (tx) => {
+        const stored = num((await tx.get(drawRef)).data()?.prizeProStartMs);
+        if (stored > 0) return stored;
+        tx.update(drawRef, {prizeProStartMs: nowMs});
+        return nowMs;
+      });
+      await drawIo.grantPro(winnerUid, startMs);
       await drawRef.update({prizeProGranted: true});
     });
   }
   if (draw.winnerNotified !== true && draw.prizeItemGranted === true && draw.prizeProGranted === true) {
     await step("winnerNotified", async () => {
       const user = (await db.collection(USERS).doc(winnerUid).get()).data() ?? {};
-      await drawIo.notifyWinner(winnerUid, key, user);
+      await notifyWinner(winnerUid, key, user);
       await drawRef.update({winnerNotified: true});
     });
   }

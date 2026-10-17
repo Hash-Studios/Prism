@@ -111,6 +111,30 @@ test("parseEconomy: ranks are sorted by min", () => {
   assert.deepEqual(config.xp.ranks.map((r) => r.id), ["bronze", "gold"]);
 });
 
+test("parseEconomy: a rank table without unique ids, integer mins or a rank at 0 falls back", () => {
+  const bad = [
+    [{id: "a", min: 0}, {id: "a", min: 10}],
+    [{id: "a", min: 0}, {id: "", min: 10}],
+    [{id: "a", min: 0}, {id: 7, min: 10}],
+    [{id: "a", min: 0}, {id: "b", min: 1.5}],
+    [{id: "a", min: 0}, {id: "b", min: -1}],
+    [{id: "a", min: 0}, {id: "b", min: Number.POSITIVE_INFINITY}],
+    [{id: "a", min: 5}, {id: "b", min: 10}],
+    [null, {id: "a", min: 0}],
+  ];
+  for (const ranks of bad) {
+    assert.deepEqual(parseEconomy({xp: {ranks}}).xp.ranks, DEFAULT_ECONOMY.xp.ranks, JSON.stringify(ranks));
+  }
+});
+
+test("parseEconomy: xp.perCoinEarned is kept in 0..10", () => {
+  assert.equal(parseEconomy({xp: {perCoinEarned: 0}}).xp.perCoinEarned, 0);
+  assert.equal(parseEconomy({xp: {perCoinEarned: 2.5}}).xp.perCoinEarned, 2.5);
+  for (const perCoinEarned of [-1, 11, 1e9]) {
+    assert.equal(parseEconomy({xp: {perCoinEarned}}).xp.perCoinEarned, 1, String(perCoinEarned));
+  }
+});
+
 test("loadEconomy: reads the config doc and caches it for a minute", async (t) => {
   resetEconomyCache();
   t.after(resetEconomyCache);
@@ -153,6 +177,16 @@ test("grantXp: adds within the same week and resets the weekly count on a new we
   assert.deepEqual(next, {xp: 120, xpWeek: {weekKey: "2026-W43", xp: 20}});
   assert.deepEqual(grantXp({}, 5.9, monday), {xp: 5, xpWeek: {weekKey: "2026-W43", xp: 5}});
   assert.deepEqual(grantXp({xp: 10}, -3, monday), {xp: 10, xpWeek: {weekKey: "2026-W43", xp: 0}});
+});
+
+test("grantXp: stays a safe integer for huge, negative or broken stored values", () => {
+  const monday = at("2026-10-19T08:00:00Z");
+  const max = Number.MAX_SAFE_INTEGER;
+  assert.deepEqual(grantXp({xp: max, xpWeek: {weekKey: "2026-W43", xp: max}}, 10, monday),
+    {xp: max, xpWeek: {weekKey: "2026-W43", xp: max}});
+  assert.deepEqual(grantXp({xp: Number.NaN, xpWeek: {weekKey: "2026-W43", xp: -5}}, Number.POSITIVE_INFINITY, monday),
+    {xp: 0, xpWeek: {weekKey: "2026-W43", xp: 0}});
+  assert.deepEqual(grantXp({xp: -20}, 1e30, monday), {xp: max, xpWeek: {weekKey: "2026-W43", xp: max}});
 });
 
 test("seededPick: same seed same pick, distinct items, never more than the pool", () => {

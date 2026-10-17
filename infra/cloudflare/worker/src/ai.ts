@@ -1218,12 +1218,19 @@ async function verifyCharge(
     ? Date.parse(fields.createdAt.timestampValue)
     : Number.NaN;
   const ageMs = Date.now() - createdAtMs;
-  const cost = AI_COIN_COST_BY_TIER[qualityTier];
+  // Receipts from economy v2 carry the tier and its config price; older receipts are checked against the fixed table.
+  const basePrice = firestoreNumber(fields.basePrice);
+  const v2Receipt = fields.qualityTier != null || basePrice != null;
+  const cost = v2Receipt ? basePrice : AI_COIN_COST_BY_TIER[qualityTier];
   // Pro members pay half, rounded up (functions/src/economy.ts proPrice).
   const matches = fields.userId?.stringValue === auth.userId
     && fields.action?.stringValue === 'aiGeneration'
     && fields.type?.stringValue === 'debit'
     && fields.status?.stringValue === 'completed'
+    && (!v2Receipt || fields.qualityTier?.stringValue === qualityTier)
+    && cost != null
+    && Number.isInteger(cost)
+    && cost > 0
     && delta != null
     && (-delta === cost || -delta === Math.ceil(cost / 2))
     && Number.isFinite(ageMs)

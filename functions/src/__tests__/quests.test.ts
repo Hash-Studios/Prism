@@ -122,19 +122,26 @@ test("progressQuest auto-claims once and pays coins, xp and the ledger", async (
 
 test("progressQuestForUser feeds the weekly quest and pays it on the fifth set", async (t) => {
   const store = installFakeDb(t, {[USER]: userDoc()});
-  for (let i = 0; i < 5; i += 1) await progressQuestForUser(UID, "set_wallpaper", NOW);
+  for (let i = 0; i < 5; i += 1) await progressQuestForUser(UID, "set_wallpaper", `wall_${i}`, NOW);
   const quests = (store.get(PRIVATE) as {quests: QuestState}).quests;
   assert.equal(quests.weekly.progress, 5);
   assert.equal(quests.weekly.claimed, true);
   assert.ok(store.has(`coinTransactions/ctx_quest_${UID}_${weekKey(NOW)}_weekly_set_5`));
   const coins = (store.get(USER) as Doc).coins as number;
-  await progressQuestForUser(UID, "set_wallpaper", NOW);
+  await progressQuestForUser(UID, "set_wallpaper", "wall_5", NOW);
   assert.equal((store.get(USER) as Doc).coins, coins);
+});
+
+test("progressQuestForUser counts a repeated eventId once", async (t) => {
+  const store = installFakeDb(t, {[USER]: userDoc()});
+  await progressQuestForUser(UID, "set_wallpaper", "wall_a", NOW);
+  await progressQuestForUser(UID, "set_wallpaper", "wall_a", NOW);
+  assert.equal((store.get(PRIVATE) as {quests: QuestState}).quests.weekly.progress, 1);
 });
 
 test("progressQuestForUser never throws", async (t) => {
   installFakeDb(t);
-  await progressQuestForUser("missing-user", "share", NOW);
+  await progressQuestForUser("missing-user", "share", "share_1", NOW);
 });
 
 test("the callable takes only the client events and ignores the rest", async (t) => {
@@ -204,11 +211,15 @@ test("the chest pays once, replays the same result, and refuses a new request", 
   const txDoc = store.get(`coinTransactions/ctx_questChest_${UID}_${dayKey(NOW)}`) as Doc;
   assert.equal(txDoc.coins, 10);
 
+  store.set(USER, {...store.get(USER), coins: 150});
   const replay = await chest();
   assert.equal(replay.success, true);
   assert.equal(replay.coins, 10);
   assert.equal(replay.changed, false);
-  assert.equal((store.get(USER) as Doc).coins, 110);
+  assert.equal(replay.delta, 10);
+  assert.equal(replay.previousBalance, 100);
+  assert.equal(replay.currentBalance, 110);
+  assert.equal((store.get(USER) as Doc).coins, 150);
 
   const other = await chest({requestId: "chest-req-2"});
   assert.equal(other.success, false);

@@ -283,11 +283,14 @@ test("a replayed request returns the stored unlock and charges nothing", async (
   resetEconomyCache();
   await call({weekKey: KEY, wallId: "W3", requestId: REQ});
   store.set(`drops/${KEY}`, {...live, startsAt: 1, endsAt: 2});
+  store.set("usersv2/u1", {...store.get("usersv2/u1"), coins: 900});
   const replay = await call({weekKey: KEY, wallId: "W3", requestId: REQ});
   assert.equal(replay.success, true);
   assert.equal(replay.changed, false);
   assert.equal(replay.reason, "duplicate");
+  assert.equal(replay.previousBalance, 500);
   assert.equal(replay.currentBalance, 470);
+  assert.equal(replay.delta, -30);
   assert.deepEqual(replay.unlocked, [{id: "W3", url: "https://img/f3.jpg"}]);
-  assert.equal(store.get("usersv2/u1")?.coins, 470);
+  assert.equal(store.get("usersv2/u1")?.coins, 900);
 });

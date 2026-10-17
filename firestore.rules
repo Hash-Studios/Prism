@@ -338,7 +338,9 @@ service cloud.firestore {
     }
 
     match /drawTickets/{ticketId} {
-      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      // The id is `{weekKey}_{uid}`, so the owner can read a ticket that does not exist yet.
+      allow get: if isSignedIn() && ticketId == ticketId.split('_')[0] + '_' + request.auth.uid;
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
       allow write: if false;
     }
 

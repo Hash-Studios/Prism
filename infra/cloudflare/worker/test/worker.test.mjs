@@ -494,6 +494,8 @@ function chargeDoc(overrides = {}) {
       status: { stringValue: f.status },
       delta: { integerValue: String(f.delta) },
       createdAt: { timestampValue: f.createdAt },
+      ...(f.qualityTier == null ? {} : { qualityTier: { stringValue: f.qualityTier } }),
+      ...(f.basePrice == null ? {} : { basePrice: { integerValue: String(f.basePrice) } }),
     },
   });
 }
@@ -648,6 +650,29 @@ test('a Pro half-price debit is accepted for its tier', async () => {
     restore();
   }
   assert.equal(stats.fal, 1);
+});
+
+test('a v2 receipt is checked against its own tier and base price', async () => {
+  const cases = [
+    ['config price, Pro half', { qualityTier: 'fast', basePrice: 12, delta: -6 }, 'fast', 200],
+    ['config price, full', { qualityTier: 'fast', basePrice: 12, delta: -12 }, 'fast', 200],
+    ['tier mismatch', { qualityTier: 'fast', basePrice: 10, delta: -10 }, 'balanced', 402],
+    ['delta off the base price', { qualityTier: 'fast', basePrice: 12, delta: -10 }, 'fast', 402],
+    ['base price without tier', { basePrice: 10, delta: -10 }, 'fast', 402],
+    ['zero base price', { qualityTier: 'fast', basePrice: 0, delta: 0 }, 'fast', 402],
+  ];
+  for (const [label, overrides, qualityTier, status] of cases) {
+    const stats = {};
+    const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
+    const restore = mockFal({ stats, firestore: () => chargeDoc(overrides) });
+    try {
+      const response = await postGeneration(env, { chargeTxId: TX_ID, qualityTier });
+      assert.equal(response.status, status, label);
+    } finally {
+      restore();
+    }
+    assert.equal(stats.fal ?? 0, status === 200 ? 1 : 0, label);
+  }
 });
 
 test('charge evidence reports not_started for an unseen id, no-store, and 404 for a bad shape', async () => {

@@ -327,6 +327,7 @@ export function duplicateSpendResponse<T extends Record<string, unknown>>(
     delta,
     reason,
     transactionId: typeof original.id === "string" ? original.id : "",
+    ...coinState(original.replay),
   };
 }
 
@@ -662,6 +663,9 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     transactionId: string;
     graceDownloadsLeft?: number;
     passUntil?: number;
+    styleId?: string;
+    qualityTier?: AiTier;
+    basePrice?: number;
   } = {
     success: false,
     changed: false,
@@ -674,6 +678,10 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     transactionId: "",
   };
   const initialResponse = {...response};
+  const actionFields = {
+    ...(qualityTier ? {qualityTier, basePrice} : {}),
+    ...(typeof styleId === "string" ? {styleId} : {}),
+  };
 
   await db.runTransaction(async (tx) => {
     response = {...initialResponse};
@@ -687,13 +695,45 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     const liveStyles = coinState(passes.liveStyles);
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const free = (fields: {reason: string; graceDownloadsLeft?: number; passUntil?: number}) => {
-      response = {...response, ...fields, success: true, bypassed: true, previousBalance: previous, currentBalance: previous};
+      const replay = {...actionFields, ...fields};
+      response = {...response, ...replay, success: true, bypassed: true, previousBalance: previous, currentBalance: previous};
+      // A zero-delta receipt so a retried request replays the bypass instead of using grace or a pass again.
+      if (spendTxRef) {
+        writeTx(tx, {
+          userId: callerUid,
+          delta: 0,
+          previous,
+          action,
+          sourceTag,
+          reason: fields.reason,
+          description: label,
+          fixedId: spendTxRef.id,
+          extra: {...actionFields, bypassed: true, replay},
+        });
+      }
     };
     if (spendTxSnap?.exists) {
       const original = spendTxSnap.data() ?? {};
-      response = original.status === "completed" ?
-        duplicateSpendResponse(response, original, previous, reason) :
-        {...response, previousBalance: previous, currentBalance: previous, reason: "spend_refunded", transactionId: spendTxRef?.id ?? ""};
+      if (original.status !== "completed") {
+        response = {
+          ...response,
+          previousBalance: previous,
+          currentBalance: previous,
+          reason: "spend_refunded",
+          transactionId: spendTxRef?.id ?? "",
+        };
+      } else if (original.bypassed === true) {
+        response = {
+          ...response,
+          ...coinState(original.replay),
+          success: true,
+          bypassed: true,
+          previousBalance: previous,
+          currentBalance: previous,
+        };
+      } else {
+        response = duplicateSpendResponse(response, original, previous, reason);
+      }
       return;
     }
     if (data.premium === true && bypassRequested) {
@@ -735,6 +775,7 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       writePrivate(tx, privateRef, privateData, {passes: {...passes, liveStyles: {...liveStyles, [styleId]: passUntil}}});
     }
     const passReply = passUntil === undefined ? {} : {passUntil};
+    const replay = {...actionFields, ...passReply};
     if (cost <= 0) {
       free({reason: `${action}_free`, ...passReply});
       return;
@@ -750,11 +791,11 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       reason,
       description: label,
       fixedId: spendTxRef?.id,
-      extra: qualityTier ? {qualityTier, basePrice} : undefined,
+      extra: {...actionFields, replay},
     });
     response = {
       ...response,
-      ...passReply,
+      ...replay,
       transactionId: txId,
       success: true,
       changed: true,
@@ -866,14 +907,16 @@ export const processReferral = onCall(CALLABLE_OPTIONS, async (request: Callable
   return result;
 });
 
-export const unlockPremiumPreview = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<{collectionKey?: unknown}>) => {
+type PreviewRequest = {collectionKey?: unknown; pricingVersion?: unknown};
+
+export const unlockPremiumPreview = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<PreviewRequest>) => {
   const callerUid = uid(request);
   const key = requiredText(request.data?.collectionKey, "collectionKey").toLowerCase();
   if (/^__.*__$/.test(key)) throw new HttpsError("invalid-argument", "Invalid collection key.");
-  const cost = (await loadEconomy()).spend.premiumPreview24h;
+  const nowMs = Date.now();
+  const cost = spendBasePrice("premiumPreview24h", request.data, await loadEconomy(), nowMs).basePrice;
   const userRef = db.collection(USERS).doc(callerUid);
   const privateRef = privateEconomyRef(callerUid);
-  const nowMs = Date.now();
   const empty = {
     success: false,
     changed: false,

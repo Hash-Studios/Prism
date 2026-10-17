@@ -7,7 +7,23 @@ import {type EconomyConfig, loadEconomy, rankFor, weekKey} from "./economy";
 const USERS = "usersv2";
 const LEADERBOARDS = "leaderboards";
 const TOP = 50;
+// Extra rows so the board still holds 50 after deleted and new accounts are left out.
+const CANDIDATES = 100;
+const AUTH_BATCH = 100;
 const MIN_ACCOUNT_AGE_MS = 7 * 86_400_000;
+
+/** Overridable in tests. */
+export const leaderboardIo = {
+  /** Account creation time from Firebase Auth by uid. The client can write `usersv2.createdAt`, Auth it cannot. */
+  async accountCreatedMs(uids: string[]): Promise<Map<string, number>> {
+    const created = new Map<string, number>();
+    for (let i = 0; i < uids.length; i += AUTH_BATCH) {
+      const result = await admin.auth().getUsers(uids.slice(i, i + AUTH_BATCH).map((uid) => ({uid})));
+      for (const user of result.users) created.set(user.uid, Date.parse(user.metadata.creationTime));
+    }
+    return created;
+  },
+};
 
 export interface LeaderboardEntry {
   uid: string;
@@ -19,22 +35,23 @@ export interface LeaderboardEntry {
   rank: string;
 }
 
-/** `createdAt` is an ISO string in the app. A missing or unreadable value counts as too new. */
-function accountAgeOk(createdAt: unknown, nowMs: number): boolean {
-  const ms = typeof createdAt === "string" ? Date.parse(createdAt) :
-    typeof createdAt === "number" ? createdAt :
-      createdAt instanceof admin.firestore.Timestamp ? createdAt.toMillis() : NaN;
-  return Number.isFinite(ms) && nowMs - ms >= MIN_ACCOUNT_AGE_MS;
-}
-
-/** Entries for the top users, in the order given. Deleted users and accounts under 7 days old are left out. */
+/**
+ * Entries for the top 50 users, in the order given. Deleted users and accounts under 7 days old are left out; an
+ * account with no creation time in `createdMs` counts as too new.
+ */
 export function leaderboardEntries(
   docs: Array<{id: string; data: admin.firestore.DocumentData}>,
+  createdMs: Map<string, number>,
   config: EconomyConfig,
   nowMs: number,
 ): LeaderboardEntry[] {
   return docs
-    .filter(({data}) => data.deleted !== true && accountAgeOk(data.createdAt, nowMs))
+    .filter(({id, data}) => {
+      const created = createdMs.get(id);
+      return data.deleted !== true && created !== undefined && Number.isFinite(created) &&
+        nowMs - created >= MIN_ACCOUNT_AGE_MS;
+    })
+    .slice(0, TOP)
     .map(({id, data}) => {
       const xp = typeof data.xpWeek?.xp === "number" ? Math.trunc(data.xpWeek.xp) : 0;
       return {
@@ -55,9 +72,11 @@ export async function runSnapshotLeaderboard(nowMs: number): Promise<void> {
   const snap = await db.collection(USERS)
     .where("xpWeek.weekKey", "==", key)
     .orderBy("xpWeek.xp", "desc")
-    .limit(TOP)
+    .limit(CANDIDATES)
     .get();
-  const entries = leaderboardEntries(snap.docs.map((doc) => ({id: doc.id, data: doc.data()})), config, nowMs);
+  const docs = snap.docs.map((doc) => ({id: doc.id, data: doc.data()}));
+  const createdMs = await leaderboardIo.accountCreatedMs(docs.filter((d) => d.data.deleted !== true).map((d) => d.id));
+  const entries = leaderboardEntries(docs, createdMs, config, nowMs);
   const board = {weekKey: key, updatedAt: admin.firestore.Timestamp.fromMillis(nowMs), entries};
   await db.collection(LEADERBOARDS).doc(key).set(board);
   await db.collection(LEADERBOARDS).doc("current").set(board);

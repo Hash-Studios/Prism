@@ -16,6 +16,7 @@ import {
   spendBasePrice,
   spendCoins,
   STREAK_RESCUE_COST,
+  unlockPremiumPreview,
 } from "../coinsCallables";
 import {DEFAULT_ECONOMY, ECONOMY_CONFIG_DOC, parseEconomy, resetEconomyCache, weekKey} from "../economy";
 import {buildQuestState} from "../questCatalog";
@@ -1195,6 +1196,94 @@ test("spendCoins liveWallpaperStyle: needs a valid styleId; Pro with bypass pays
   const pro = await v2Spend({action: "liveWallpaperStyle", styleId: "neon", allowPremiumBypass: true});
   assert.equal(pro.reason, "liveWallpaperStyle_premium_bypass");
   assert.equal(store.get(USER)?.coins, 50);
+});
+
+test("spendCoins: a grace download with a requestId writes a zero receipt and a replay uses no more grace", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 100}});
+  const first = await v2Spend({action: "wallpaperDownload", requestId: "grace_request_1"});
+  const replay = await v2Spend({action: "wallpaperDownload", requestId: "grace_request_1"});
+  for (const result of [first, replay]) {
+    assert.equal(result.success, true);
+    assert.equal(result.changed, false);
+    assert.equal(result.bypassed, true);
+    assert.equal(result.reason, "grace_download");
+    assert.equal(result.graceDownloadsLeft, 2);
+    assert.equal(result.delta, 0);
+  }
+  assert.equal(store.get(PRIVATE)?.graceDownloadsUsed, 1);
+  const receipt = store.get("coinTransactions/spend_user-1_grace_request_1") ?? {};
+  assert.equal(receipt.status, "completed");
+  assert.equal(receipt.delta, 0);
+  assert.equal(receipt.reason, "grace_download");
+  assert.equal(receipt.action, "wallpaperDownload");
+  assert.equal(store.get(USER)?.coins, 100);
+});
+
+test("spendCoins: pass and premium bypasses replay from their receipt after the pass or premium ends", async (t) => {
+  const store = installFakeDb(t, {
+    [USER]: {coins: 100, premium: true},
+    [PRIVATE]: {passes: {premiumPassUntil: Date.now() + 3_600_000}},
+  });
+  const pass = await v2Spend({action: "premiumPreview24h", requestId: "pass_request_1"});
+  const bypass = await v2Spend({action: "premiumFilter", allowPremiumBypass: true, requestId: "bypass_request_1"});
+  assert.equal(pass.reason, "premiumPreview24h_pass_bypass");
+  assert.equal(bypass.reason, "premiumFilter_premium_bypass");
+  store.set(USER, {coins: 100, premium: false});
+  store.set(PRIVATE, {passes: {}});
+  const passReplay = await v2Spend({action: "premiumPreview24h", requestId: "pass_request_1"});
+  const bypassReplay = await v2Spend({action: "premiumFilter", allowPremiumBypass: true, requestId: "bypass_request_1"});
+  assert.equal(passReplay.bypassed, true);
+  assert.equal(passReplay.changed, false);
+  assert.equal(passReplay.reason, "premiumPreview24h_pass_bypass");
+  assert.equal(bypassReplay.bypassed, true);
+  assert.equal(bypassReplay.reason, "premiumFilter_premium_bypass");
+  assert.equal(store.get("coinTransactions/spend_user-1_bypass_request_1")?.delta, 0);
+  assert.equal(store.get(USER)?.coins, 100);
+});
+
+test("spendCoins: a paid replay returns the stored pass, style and AI fields without charging again", async (t) => {
+  const now = Date.now();
+  const setNow = clock(t, now);
+  const store = installFakeDb(t, {[USER]: {coins: 200}});
+  const pass = await v2Spend({action: "autoRotatePass7d", requestId: "rotate_request_1"});
+  const style = await v2Spend({action: "liveWallpaperStyle", styleId: "neon_wave", requestId: "style_request_1"});
+  const ai = await v2Spend({action: "aiGeneration", qualityTier: "fast", requestId: "ai_request_9"});
+  assert.equal(ai.qualityTier, "fast");
+  assert.equal(ai.basePrice, 10);
+  setNow(now + DAY_MS);
+  const passReplay = await v2Spend({action: "autoRotatePass7d", requestId: "rotate_request_1"});
+  const styleReplay = await v2Spend({action: "liveWallpaperStyle", styleId: "neon_wave", requestId: "style_request_1"});
+  const aiReplay = await v2Spend({action: "aiGeneration", qualityTier: "fast", requestId: "ai_request_9"});
+  assert.equal(passReplay.passUntil, now + 7 * DAY_MS);
+  assert.equal(passReplay.passUntil, pass.passUntil);
+  assert.equal(styleReplay.styleId, "neon_wave");
+  assert.equal(styleReplay.passUntil, style.passUntil);
+  assert.equal(aiReplay.qualityTier, "fast");
+  assert.equal(aiReplay.basePrice, 10);
+  assert.equal(aiReplay.delta, -10);
+  assert.equal(store.get(USER)?.coins, 120);
+  assert.equal((store.get(PRIVATE)?.passes as Record<string, number>).autoRotatePassUntil, now + 7 * DAY_MS);
+});
+
+test("unlockPremiumPreview: a legacy client pays the legacy 10 inside the window, v2 pays the config price", async (t) => {
+  const preview = (data: Record<string, unknown>) => unlockPremiumPreview.run({
+    auth: {uid: "user-1"}, data: {collectionKey: `key_${Object.keys(data).length}`, ...data},
+  } as unknown as Parameters<typeof unlockPremiumPreview.run>[0]);
+  const store = installFakeDb(t, {[USER]: {coins: 100}, [ECONOMY_CONFIG_DOC]: {spend: {premiumPreview24h: 15}}});
+  assert.equal((await preview({})).delta, -10);
+  assert.equal((await preview({pricingVersion: 2})).delta, -15);
+  assert.equal(store.get(USER)?.coins, 75);
+
+  t.mock.reset();
+  resetEconomyCache();
+  installFakeDb(t, {
+    [USER]: {coins: 100},
+    [ECONOMY_CONFIG_DOC]: {
+      spend: {premiumPreview24h: 15},
+      flags: {legacyPricingUntil: new Date(Date.now() - 1000).toISOString()},
+    },
+  });
+  assert.equal((await preview({})).delta, -15);
 });
 
 test("spendBasePrice: legacy table only for the four legacy actions and only inside the window", () => {

@@ -87,12 +87,19 @@ test("giftPremiumPass debits the sender, writes the recipient pass and notifies 
       title: "Asha sent you a 24-hour Pro pass",
       body: "Premium collections and premium walls are open until tomorrow.",
       data: {route: "rewards"},
-      modifier: "u2",
+      modifier: "friend@example.com",
       channelId: "gifts",
       docId: `gift_u1_${REQ}`,
     },
     recipient: {uid: "u2", email: "friend@example.com"},
   }]);
+});
+
+test("a gift to a recipient with no email falls back to the uid as the inbox modifier", async (t) => {
+  const {sent} = setup(t, {"usersv2/u2": {coins: 0}});
+  await run({recipientUid: "u2", requestId: REQ});
+  assert.equal((sent[0].payload as {modifier: string}).modifier, "u2");
+  assert.deepEqual(sent[0].recipient, {uid: "u2", email: ""});
 });
 
 test("a gift sets the pass to 24 h from now, never longer, and keeps the other passes and the rev", async (t) => {

@@ -183,6 +183,9 @@ export const unlockDrop = onCall(
         response = {
           ...skipped("duplicate", current),
           success: true,
+          previousBalance: int(stored.balanceBefore, balance),
+          currentBalance: int(stored.balanceAfter, balance),
+          delta: int(stored.delta, 0),
           transactionId: txId,
           unlocked: Array.isArray(stored.unlocked) ? stored.unlocked : [],
           weekKey: str(stored.weekKey) || dropKey,

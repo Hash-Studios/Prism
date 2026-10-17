@@ -175,7 +175,8 @@ export const giftPremiumPass = onCall(
           title: `${sent.senderName} sent you a 24-hour Pro pass`,
           body: "Premium collections and premium walls are open until tomorrow.",
           data: {route: "rewards"},
-          modifier: recipientUid,
+          // The in-app inbox lists personal notifications by the recipient's email.
+          modifier: sent.recipientEmail || recipientUid,
           channelId: "gifts",
           docId: `gift_${uid}_${requestId}`,
         }, {uid: recipientUid, email: sent.recipientEmail});
