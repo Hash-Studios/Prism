@@ -974,7 +974,7 @@ test('an old share link renders the new card once, as a JPEG with its public wal
   }
 });
 
-test('when the new card fails to render, an old link keeps its old image', async () => {
+test('when the new card fails to render, an old link keeps its old image with a short cache', async () => {
   const env = workerEnv({
     ...RENDER_ENV,
     LINKS_KV: new MemoryKv([
@@ -987,6 +987,7 @@ test('when the new card fails to render, an old link keeps its old image', async
     const response = await getOg(env, '/og/OldWall2.jpg');
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('content-type'), 'image/png');
+    assert.equal(response.headers.get('cache-control'), 'public, max-age=300');
     assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [0x89, 0x50]);
     assert.equal(JSON.parse(await env.LINKS_KV.get('OldWall2')).version, 1);
   } finally {

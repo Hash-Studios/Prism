@@ -381,11 +381,14 @@ async function getOgImage(pathname: string, method: string, env: Env): Promise<R
     }
   }
 
-  // The new card failed to render: an older card is still better than the fallback.
+  // The new card failed to render: an older card is still better than the fallback. Cache it only briefly,
+  // because the versioned URL gets the new card once a render succeeds.
   if (record.version !== OG_CARD_VERSION) {
     const legacy = await fetchOgImageFromStorage(code, record, env);
     if (legacy != null) {
-      return imageResponse(legacy, method);
+      const headers = new Headers(legacy.headers);
+      headers.set('cache-control', 'public, max-age=300');
+      return imageResponse(new Response(legacy.body, { status: legacy.status, headers }), method);
     }
   }
 
