@@ -1,5 +1,17 @@
 ## Changelog
 
+### v3.6.0
+- Daily quests with a chest to open, and a bigger quest each week
+- A new Shop: themes, app icons, profile frames and name glows
+- Drops: a weekly pack of exclusive wallpapers to unlock with coins
+- Earn XP and climb ranks, and see how you compare on a weekly leaderboard with friends or everyone
+- Boost your approved wallpapers on Trending, and gift a friend a 24 hour pass
+- Use auto-rotate or paid live wallpaper styles with a 7 day coin pass, free with Pro
+- Pro gets a daily coin spin and pays half for AI and Drops
+- New coin prices: a download costs 10 coins and your first 3 are free, and the first ad each day pays 20
+- New previews when you share a wallpaper or profile link
+- Security and stability fixes
+
 ### v3.5.0
 - On iPhone, a new "Get Prism Wallpaper" action for Shortcuts: pick Wall of the Day or a random favourite, then add Set Wallpaper to change your wallpaper on a schedule
 - A short guide in Settings, "Change automatically", shows how to make that automation
