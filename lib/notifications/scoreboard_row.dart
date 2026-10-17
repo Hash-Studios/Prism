@@ -5,11 +5,7 @@ const int notificationScoreboardWindowDays = 14;
 
 /// Inclusive start and exclusive end document ids for the last 14 UTC dates.
 class ScoreboardWindow {
-  const ScoreboardWindow({
-    required this.start,
-    required this.end,
-    required this.limit,
-  });
+  const ScoreboardWindow({required this.start, required this.end, required this.limit});
 
   final String start;
   final String end;
@@ -18,20 +14,12 @@ class ScoreboardWindow {
 
 ScoreboardWindow scoreboardWindow(DateTime utcNow) {
   final DateTime today = DateTime.utc(utcNow.year, utcNow.month, utcNow.day);
-  final DateTime oldest = today.subtract(
-    const Duration(days: notificationScoreboardWindowDays - 1),
-  );
-  final DateTime tomorrow = DateTime.utc(
-    today.year,
-    today.month,
-    today.day + 1,
-  );
+  final DateTime oldest = today.subtract(const Duration(days: notificationScoreboardWindowDays - 1));
+  final DateTime tomorrow = DateTime.utc(today.year, today.month, today.day + 1);
   return ScoreboardWindow(
     start: _dayId(oldest),
     end: _dayId(tomorrow),
-    limit:
-        notificationScoreboardWindowDays *
-        (notificationScoreboardShardCount + 1),
+    limit: notificationScoreboardWindowDays * (notificationScoreboardShardCount + 1),
   );
 }
 
@@ -138,9 +126,7 @@ String formatScoreboardLine(ScoreboardDay day) {
       if (_total(day, kind) > 0) _formatKindLine(day, kind),
   ];
   if (day.permissionGranted > 0 || day.permissionDeclined > 0) {
-    parts.add(
-      'permission ${day.permissionGranted} on, ${day.permissionDeclined} off',
-    );
+    parts.add('permission ${day.permissionGranted} on, ${day.permissionDeclined} off');
   }
   if (parts.isEmpty) return day.day;
   return '${day.day}  ${parts.join(' · ')}';

@@ -12,12 +12,10 @@ class NotificationScoreboardCard extends StatefulWidget {
   const NotificationScoreboardCard({super.key});
 
   @override
-  State<NotificationScoreboardCard> createState() =>
-      _NotificationScoreboardCardState();
+  State<NotificationScoreboardCard> createState() => _NotificationScoreboardCardState();
 }
 
-class _NotificationScoreboardCardState
-    extends State<NotificationScoreboardCard> {
+class _NotificationScoreboardCardState extends State<NotificationScoreboardCard> {
   List<ScoreboardDay>? _days;
   String? _error;
 
@@ -40,19 +38,12 @@ class _NotificationScoreboardCardState
               op: FirestoreFilterOp.isGreaterThanOrEqualTo,
               value: window.start,
             ),
-            FirestoreFilter(
-              field: firestoreDocumentIdField,
-              op: FirestoreFilterOp.isLessThan,
-              value: window.end,
-            ),
+            FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.isLessThan, value: window.end),
           ],
-          orderBy: const <FirestoreOrderBy>[
-            FirestoreOrderBy(field: firestoreDocumentIdField, descending: true),
-          ],
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: firestoreDocumentIdField, descending: true)],
           limit: window.limit,
         ),
-        (Map<String, dynamic> data, String id) =>
-            ScoreboardDay.fromMap(id, data),
+        (Map<String, dynamic> data, String id) => ScoreboardDay.fromMap(id, data),
       );
       final List<ScoreboardDay> days = combineScoreboardShards(shards);
       if (!mounted) return;
@@ -61,12 +52,7 @@ class _NotificationScoreboardCardState
         _error = null;
       });
     } catch (error, stackTrace) {
-      logger.w(
-        'Notification scoreboard failed to load.',
-        tag: 'AdminReview',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      logger.w('Notification scoreboard failed to load.', tag: 'AdminReview', error: error, stackTrace: stackTrace);
       if (!mounted) return;
       setState(() => _error = 'Could not load notification counts.');
     }
@@ -89,21 +75,12 @@ class _NotificationScoreboardCardState
           if (_error != null)
             Text(_error!, style: PrismTextStyles.body(context))
           else if (days == null)
-            Text(
-              'Loading notification counts.',
-              style: PrismTextStyles.caption(context),
-            )
+            Text('Loading notification counts.', style: PrismTextStyles.caption(context))
           else if (days.isEmpty)
-            Text(
-              'No notification counts yet.',
-              style: PrismTextStyles.body(context),
-            )
+            Text('No notification counts yet.', style: PrismTextStyles.body(context))
           else
             for (final ScoreboardDay day in days) ...<Widget>[
-              Text(
-                formatScoreboardLine(day),
-                style: PrismTextStyles.caption(context),
-              ),
+              Text(formatScoreboardLine(day), style: PrismTextStyles.caption(context)),
               const SizedBox(height: PrismSpace.xxs),
             ],
         ],
