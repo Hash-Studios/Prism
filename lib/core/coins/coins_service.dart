@@ -239,6 +239,7 @@ class StreakClaimResult {
     required this.totalReward,
     required this.newBalance,
     this.milestone,
+    this.isChest = false,
   });
 
   /// Reads a claimDailyStreak payload. Fields an older backend does not send get safe defaults.
@@ -260,6 +261,7 @@ class StreakClaimResult {
       freezesLeft: max(0, parseIntOr(payload['freezesLeft'])),
       isWeekComplete: payload['isWeekComplete'] == null ? cycleDay == 7 : asBool(payload['isWeekComplete']),
       milestone: payload['milestone'] == null ? null : parseIntOr(payload['milestone']),
+      isChest: asBool(payload['isChest']),
       dailyReward: parseIntOr(payload['dailyReward']),
       streakBonusReward: parseIntOr(payload['streakBonusReward']),
       proBonusReward: parseIntOr(payload['proBonusReward']),
@@ -278,6 +280,7 @@ class StreakClaimResult {
   final int freezesUsed;
   final int freezesLeft;
   final bool isWeekComplete;
+  final bool isChest;
   final int? milestone;
   final int dailyReward;
   final int streakBonusReward;

@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -20,6 +22,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
@@ -170,6 +173,27 @@ void main() {
         ),
       );
     }
+
+    testWidgets('a tap on the card reports the view_wotd quest event', (tester) async {
+      final CoinsTestBackend backend = CoinsTestBackend();
+      await backend.install();
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+      final List<String> events = <String>[];
+      backend.onCall = (String name, Map<String, dynamic> params) async {
+        if (name == 'progressQuest') events.add(params['event'] as String);
+        return <String, Object?>{'success': true, 'rev': 1};
+      };
+      await pumpCard(
+        tester,
+        const WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana'),
+      );
+
+      await tester.tap(find.text('by Ana'));
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+
+      expect(events, <String>['view_wotd']);
+    });
 
     testWidgets('a tap opens the loaded wall, with no second fetch', (tester) async {
       const wallpaper = PrismWallpaper(

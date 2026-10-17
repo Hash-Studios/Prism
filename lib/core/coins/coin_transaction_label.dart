@@ -45,6 +45,9 @@ String coinTransactionLabel(CoinTransactionEntry e) {
     }
     return 'Daily streak';
   }
+  if (e.action == 'streakBonus' && reason == 'streak_day_7_chest') {
+    return 'Day 7 chest';
+  }
   if (e.action == 'shopItem') {
     final String name = e.description.trim();
     return name.isEmpty ? 'Shop' : name;

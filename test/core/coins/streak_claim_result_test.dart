@@ -19,6 +19,12 @@ void main() {
     expect(r.freezesLeft, 0);
     expect(r.isWeekComplete, isTrue);
     expect(r.milestone, isNull);
+    expect(r.isChest, isFalse);
+  });
+
+  test('isChest is read from the payload', () {
+    expect(StreakClaimResult.fromPayload(<String, dynamic>{'isChest': true}).isChest, isTrue);
+    expect(StreakClaimResult.fromPayload(<String, dynamic>{'isChest': false, 'streakDay': 7}).isChest, isFalse);
   });
 
   test('a new backend payload is read as sent', () {

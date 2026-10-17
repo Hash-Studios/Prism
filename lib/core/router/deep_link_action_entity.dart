@@ -44,6 +44,14 @@ final class ShortCodeIntent extends DeepLinkActionEntity {
   final String code;
 }
 
+enum DeepLinkScreen { shop, drops, leaderboard, draw }
+
+final class ScreenLinkIntent extends DeepLinkActionEntity {
+  const ScreenLinkIntent({required this.screen, required super.rawUri});
+
+  final DeepLinkScreen screen;
+}
+
 final class UnknownIntent extends DeepLinkActionEntity {
   const UnknownIntent({required super.rawUri});
 }

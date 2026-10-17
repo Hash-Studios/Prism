@@ -62,6 +62,11 @@ void main() {
     expect(route, isA<RewardsTabRoute>());
   });
 
+  test('maps rewards to the rewards tab and drops to the drops page', () async {
+    expect(await mapper.fromRoute(route: 'rewards', sourceTag: 'test'), isA<RewardsTabRoute>());
+    expect(await mapper.fromPayload(<String, dynamic>{'route': 'drops'}, sourceTag: 'test'), isA<DropsRoute>());
+  });
+
   test('maps follower to profile route when identifier is present', () async {
     final route = await mapper.fromRoute(
       route: 'follower',

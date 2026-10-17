@@ -101,6 +101,10 @@
                 <data android:pathPrefix="/user" />
                 <data android:pathPrefix="/setup" />
                 <data android:pathPrefix="/refer" />
+                <data android:pathPrefix="/shop" />
+                <data android:pathPrefix="/drops" />
+                <data android:pathPrefix="/leaderboard" />
+                <data android:pathPrefix="/draw" />
                 <data android:pathPrefix="/l" />
             </intent-filter>
             <intent-filter>
@@ -143,6 +147,10 @@
                 <data android:pathPrefix="/user" />
                 <data android:pathPrefix="/setup" />
                 <data android:pathPrefix="/refer" />
+                <data android:pathPrefix="/shop" />
+                <data android:pathPrefix="/drops" />
+                <data android:pathPrefix="/leaderboard" />
+                <data android:pathPrefix="/draw" />
                 <data android:pathPrefix="/l" />
             </intent-filter>
             <intent-filter>
@@ -174,6 +182,10 @@
                 <data android:pathPrefix="/user" />
                 <data android:pathPrefix="/setup" />
                 <data android:pathPrefix="/refer" />
+                <data android:pathPrefix="/shop" />
+                <data android:pathPrefix="/drops" />
+                <data android:pathPrefix="/leaderboard" />
+                <data android:pathPrefix="/draw" />
                 <data android:pathPrefix="/l" />
             </intent-filter>
             <intent-filter>
@@ -205,6 +217,10 @@
                 <data android:pathPrefix="/user" />
                 <data android:pathPrefix="/setup" />
                 <data android:pathPrefix="/refer" />
+                <data android:pathPrefix="/shop" />
+                <data android:pathPrefix="/drops" />
+                <data android:pathPrefix="/leaderboard" />
+                <data android:pathPrefix="/draw" />
                 <data android:pathPrefix="/l" />
             </intent-filter>
             <intent-filter>
@@ -236,6 +252,10 @@
                 <data android:pathPrefix="/user" />
                 <data android:pathPrefix="/setup" />
                 <data android:pathPrefix="/refer" />
+                <data android:pathPrefix="/shop" />
+                <data android:pathPrefix="/drops" />
+                <data android:pathPrefix="/leaderboard" />
+                <data android:pathPrefix="/draw" />
                 <data android:pathPrefix="/l" />
             </intent-filter>
             <intent-filter>

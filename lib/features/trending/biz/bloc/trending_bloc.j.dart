@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -18,7 +19,10 @@ part 'trending_bloc.j.freezed.dart';
 @injectable
 class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
   TrendingBloc(this._fetchTrendingUseCase, this._userBlockRepository) : super(TrendingState.initial()) {
-    on<_Started>((event, emit) => _load(TrendingRange.week, emit));
+    on<_Started>((event, emit) {
+      CoinsService.instance.reportQuestEvent(QuestEvent.viewTrending);
+      return _load(TrendingRange.week, emit);
+    });
     on<_RangeSelected>(_onRangeSelected);
     on<_RefreshRequested>((event, emit) => _load(state.range, emit));
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);

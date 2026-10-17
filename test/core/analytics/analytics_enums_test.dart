@@ -142,7 +142,7 @@ void main() {
       ],
       'SearchProviderValue': <String>['wallhaven', 'pexels', 'prism'],
       'ItemTypeValue': <String>['wallpaper', 'user'],
-      'TargetTypeValue': <String>['share', 'user', 'setup', 'refer', 'short_code', 'unknown'],
+      'TargetTypeValue': <String>['share', 'user', 'setup', 'refer', 'screen', 'short_code', 'unknown'],
       'EntryPointValue': <String>['bottom_nav'],
       'LaunchStateValue': <String>['initial_launch', 'foreground'],
       'ShareChannelValue': <String>['share_sheet', 'link'],

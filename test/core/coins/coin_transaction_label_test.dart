@@ -50,6 +50,11 @@ void main() {
     expected.forEach((action, label) => expect(coinTransactionLabel(_tx(action)), label));
   });
 
+  test('a legacy day 7 streak bonus reads as the chest', () {
+    expect(coinTransactionLabel(_tx('streakBonus', reason: 'streak_day_7_chest')), 'Day 7 chest');
+    expect(coinTransactionLabel(_tx('streakBonus')), 'Week bonus');
+  });
+
   test('shop purchases show the item name', () {
     expect(coinTransactionLabel(_tx('shopItem', description: 'Aurora frame')), 'Aurora frame');
   });

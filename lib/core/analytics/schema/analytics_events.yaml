@@ -163,6 +163,7 @@ enums:
       - user
       - setup
       - refer
+      - screen
       - short_code
       - unknown
   - name: entrypoint

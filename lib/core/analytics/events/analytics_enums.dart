@@ -169,6 +169,7 @@ enum TargetTypeValue {
   user,
   setup,
   refer,
+  screen,
   shortCode,
   unknown;
 

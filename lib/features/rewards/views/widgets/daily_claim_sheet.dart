@@ -162,7 +162,7 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
         showReward: true,
       );
     }
-    final bool chest = r.isWeekComplete && r.streakBonusReward > 0;
+    final bool chest = r.isChest;
     if (r.milestone != null) {
       return (title: '${r.milestone}-day streak!', sub: chest ? 'Day 7 chest' : null, showReward: true);
     }
