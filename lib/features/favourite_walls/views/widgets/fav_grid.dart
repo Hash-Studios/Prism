@@ -277,7 +277,13 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       final FavouriteWallEntity first = walls.first;
       String? link;
       if (walls.length == 1 && first is! LegacyFavouriteWall) {
-        link = await createDynamicLink(first.id, first.source, first.fullUrl, first.thumbnailUrl);
+        link = await createDynamicLink(
+          first.id,
+          first.source,
+          first.fullUrl,
+          first.thumbnailUrl,
+          core: first.toFeedItem().wallpaperCore,
+        );
       }
       if (!mounted) return;
       final String text = link ?? walls.map((wall) => wall.fullUrl).where((url) => url.isNotEmpty).join('\n');

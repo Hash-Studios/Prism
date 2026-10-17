@@ -7,6 +7,7 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/share/share_text.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/logger/logger.dart';
@@ -130,6 +131,18 @@ Future<String> _buildShareableLink({
   return resolved.toString();
 }
 
+/// Creator and size for the link preview card. The worker reads the view and download counts itself.
+Map<String, String> _wallpaperCardPreview(WallpaperCore? core) {
+  final String? creator = shareSafeText(core?.authorName);
+  final String photo = core?.authorPhoto?.trim() ?? '';
+  final String resolution = core?.resolution?.trim() ?? '';
+  return <String, String>{
+    if (creator != null) 'creator_name': creator,
+    if (photo.isNotEmpty) 'creator_photo_url': photo,
+    if (resolution.isNotEmpty) 'resolution': resolution,
+  };
+}
+
 /// Builds a share link for a wallpaper. It has no side effects besides analytics.
 /// Returns null when the link cannot be created, so callers choose how to tell the user.
 Future<String?> createDynamicLink(
@@ -138,6 +151,7 @@ Future<String?> createDynamicLink(
   String? url,
   String thumbUrl, {
   String? title,
+  WallpaperCore? core,
 }) async {
   try {
     final Uri canonical = _canonicalLinkBuilder.wallpaper(id: id, source: source, url: url, thumbUrl: thumbUrl);
@@ -157,6 +171,7 @@ Future<String?> createDynamicLink(
         'image_source_url': thumbUrl,
         'provider': source.legacyProviderString,
         'wall_id': id,
+        ..._wallpaperCardPreview(core),
       },
     );
     _trackDynamicLinkCreateResult(shareType: ShareTypeValue.wallpaper, result: EventResultValue.success);
@@ -173,8 +188,15 @@ Future<String?> createDynamicLink(
 }
 
 /// Creates the wallpaper link, copies it to the clipboard and shows a toast. Never throws.
-Future<bool> copyWallpaperLink(String id, WallpaperSource source, String? url, String thumbUrl, {String? title}) async {
-  final String? link = await createDynamicLink(id, source, url, thumbUrl, title: title);
+Future<bool> copyWallpaperLink(
+  String id,
+  WallpaperSource source,
+  String? url,
+  String thumbUrl, {
+  String? title,
+  WallpaperCore? core,
+}) async {
+  final String? link = await createDynamicLink(id, source, url, thumbUrl, title: title, core: core);
   if (link == null) {
     toasts.error("Couldn't create the share link. Try again.");
     return false;
@@ -191,7 +213,7 @@ Future<bool> copyWallpaperLink(String id, WallpaperSource source, String? url, S
 }
 
 /// Shares a link to the profile. [email] is unused: a link never holds an email address. Without a username it
-/// opens the edit panel instead.
+/// opens the edit panel instead. The counts and up to 4 [gallery] thumbnails go on the link preview card.
 Future<void> createUserDynamicLink(
   String name,
   String username,
@@ -199,6 +221,9 @@ Future<void> createUserDynamicLink(
   String bio,
   String userPhoto, {
   BuildContext? context,
+  int? followerCount,
+  int? wallpaperCount,
+  List<String> gallery = const <String>[],
 }) async {
   final String userIdentifier = username.trim();
   if (userIdentifier.isEmpty) {
@@ -208,15 +233,20 @@ Future<void> createUserDynamicLink(
   }
   try {
     final Uri canonical = _canonicalLinkBuilder.user(identifier: userIdentifier);
+    final String label = creatorLabel(name: name, username: userIdentifier);
     final String link = await _buildShareableLink(
       type: 'user',
       canonicalUri: canonical,
       payload: <String, dynamic>{'username': userIdentifier},
       preview: <String, dynamic>{
-        'title': '${creatorLabel(name: name, username: userIdentifier)} (@$userIdentifier)',
+        'title': '$label (@$userIdentifier)',
         'description': bio.isNotEmpty ? bio : 'Check out this creator profile on Prism.',
         'image_source_url': userPhoto,
         'username': userIdentifier,
+        'creator_name': label,
+        'follower_count': ?followerCount,
+        'wallpaper_count': ?wallpaperCount,
+        if (gallery.isNotEmpty) 'gallery': gallery.take(4).toList(),
       },
     );
 
@@ -250,6 +280,7 @@ Future<String> createSharingPrismLink(String userID, {String? inviterName, Strin
       preview: <String, dynamic>{
         'title': who == null ? 'Join Prism' : '$who invited you to Prism',
         'description': 'Download Prism to discover beautiful wallpapers.',
+        'creator_name': ?who,
         if (who != null && photo.isNotEmpty) 'image_source_url': photo,
       },
     );

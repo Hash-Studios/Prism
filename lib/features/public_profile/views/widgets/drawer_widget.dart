@@ -10,13 +10,16 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The end drawer of the signed-in user's own profile: Pro status, their content, account links and log out.
 class ProfileDrawer extends StatelessWidget {
@@ -44,6 +47,10 @@ class ProfileDrawer extends StatelessWidget {
   }
 
   Future<void> _shareProfile(BuildContext context) async {
+    // The drawer sits on the user's own profile, so its loaded walls feed the link preview card.
+    final PublicProfileState profile = context.read<PublicProfileBloc>().state;
+    final bool ownWalls =
+        profile.status == LoadStatus.success && profile.email.toLowerCase() == app_state.prismUser.email.toLowerCase();
     try {
       await createUserDynamicLink(
         app_state.prismUser.name,
@@ -52,6 +59,11 @@ class ProfileDrawer extends StatelessWidget {
         app_state.prismUser.bio,
         app_state.prismUser.profilePhoto,
         context: context,
+        followerCount: app_state.prismUser.followers.length,
+        wallpaperCount: ownWalls && !profile.hasMoreWalls ? profile.walls.length : null,
+        gallery: ownWalls
+            ? profile.walls.map((wall) => wall.wallpaperThumb ?? wall.wallpaperUrl).toList()
+            : const <String>[],
       );
     } catch (_) {
       toasts.error("Couldn't create the link. Try again.");
