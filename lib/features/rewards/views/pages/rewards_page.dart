@@ -114,7 +114,6 @@ class _RewardsPageState extends State<RewardsPage> {
                 KeyedSubtree(key: _spinKey, child: const ProSpinCard()),
                 gap,
                 const DropCard(),
-                gap,
                 FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),
                 gap,
                 BalanceCard(onSeeUses: () => _scrollTo(_spendKey)),

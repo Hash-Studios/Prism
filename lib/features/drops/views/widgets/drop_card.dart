@@ -58,36 +58,39 @@ class DropCardView extends StatelessWidget {
           child: cover.isEmpty ? ColoredBox(color: cs.surfaceContainerHigh) : PrismImageTile(url: cover),
         );
         if (none) image = ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), child: image);
-        return PrismCard(
-          semanticLabel:
-              'Weekly Drop, ${drop.endsInLabel(state.now)}, ${state.unlockedCount} of ${drop.count} unlocked',
-          onTap: () {
-            PrismHaptics.tap();
-            unawaited(context.router.push(const DropsRoute()));
-          },
-          child: Row(
-            children: <Widget>[
-              ClipRRect(borderRadius: BorderRadius.circular(PrismRadius.sm), child: image),
-              const SizedBox(width: PrismSpace.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      drop.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: PrismTextStyles.cardTitle(context),
-                    ),
-                    const SizedBox(height: PrismSpace.xxs),
-                    Text(drop.endsInLabel(state.now), style: PrismTextStyles.caption(context)),
-                    const SizedBox(height: PrismSpace.xxs),
-                    Text('${state.unlockedCount}/${drop.count} unlocked', style: PrismTextStyles.caption(context)),
-                  ],
+        return Padding(
+          padding: const EdgeInsets.only(bottom: PrismSpace.sm),
+          child: PrismCard(
+            semanticLabel:
+                'Weekly Drop, ${drop.endsInLabel(state.now)}, ${state.unlockedCount} of ${drop.count} unlocked',
+            onTap: () {
+              PrismHaptics.tap();
+              unawaited(context.router.push(const DropsRoute()));
+            },
+            child: Row(
+              children: <Widget>[
+                ClipRRect(borderRadius: BorderRadius.circular(PrismRadius.sm), child: image),
+                const SizedBox(width: PrismSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        drop.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: PrismTextStyles.cardTitle(context),
+                      ),
+                      const SizedBox(height: PrismSpace.xxs),
+                      Text(drop.endsInLabel(state.now), style: PrismTextStyles.caption(context)),
+                      const SizedBox(height: PrismSpace.xxs),
+                      Text('${state.unlockedCount}/${drop.count} unlocked', style: PrismTextStyles.caption(context)),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: cs.onSurface.withValues(alpha: 0.4)),
-            ],
+                Icon(Icons.chevron_right_rounded, color: cs.onSurface.withValues(alpha: 0.4)),
+              ],
+            ),
           ),
         );
       },
