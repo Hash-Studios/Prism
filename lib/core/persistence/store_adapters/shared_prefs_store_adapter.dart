@@ -34,12 +34,12 @@ class SharedPrefsStoreAdapter implements LocalStore {
 
   @override
   Future<void> set(String key, Object? value) {
-    return _requirePrefs.setString(key, StoreValueCodec.encode(value));
+    return _confirmWrite(_requirePrefs.setString(key, StoreValueCodec.encode(value)));
   }
 
   @override
   Future<void> delete(String key) {
-    return _requirePrefs.remove(key);
+    return _confirmWrite(_requirePrefs.remove(key));
   }
 
   @override
@@ -51,12 +51,19 @@ class SharedPrefsStoreAdapter implements LocalStore {
   Future<void> clearPrefix(String prefix) async {
     final keys = _requirePrefs.getKeys().where((key) => key.startsWith(prefix)).toList(growable: false);
     for (final key in keys) {
-      await _requirePrefs.remove(key);
+      await delete(key);
     }
   }
 
   @override
   Future<void> clearAll() {
-    return _requirePrefs.clear();
+    return _confirmWrite(_requirePrefs.clear());
+  }
+
+  Future<void> _confirmWrite(Future<bool> write) async {
+    if (!await write) {
+      await _requirePrefs.reload();
+      throw StateError('The device did not save the local data.');
+    }
   }
 }
