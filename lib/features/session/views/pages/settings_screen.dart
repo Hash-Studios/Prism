@@ -278,6 +278,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       subtitle: 'Light, dark and accent colour',
       onTap: () => context.router.push(const ThemeViewRoute()),
     ),
+    PrismRow(
+      icon: Icons.storefront_rounded,
+      title: 'Shop',
+      subtitle: 'Themes, icons, frames',
+      onTap: () {
+        _trackRow('shop');
+        context.router.push(const ShopRoute());
+      },
+    ),
     // Not a PrismSwitchRow: turning haptics off must stay silent, and turning them on plays one selection.
     MergeSemantics(
       child: PrismRow(
@@ -314,17 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.autorenew_rounded,
       title: 'Auto-rotate wallpapers',
       subtitle: 'Change your wallpaper on a timer',
-      onTap: () {
-        if (app_state.prismUser.premium) {
-          context.router.push(const AutoRotateRoute());
-        } else {
-          PaywallOrchestrator.instance.presentOrRequireSignIn(
-            context,
-            placement: PaywallPlacement.autoRotate,
-            source: 'settings_auto_rotate',
-          );
-        }
-      },
+      onTap: () => context.router.push(const AutoRotateRoute()),
     ),
     PrismRow(
       icon: Icons.motion_photos_on_outlined,

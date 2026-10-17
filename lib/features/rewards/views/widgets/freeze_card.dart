@@ -192,7 +192,7 @@ class _FreezeSheetState extends State<_FreezeSheet> {
   @override
   Widget build(BuildContext context) {
     final int balance = CoinsService.instance.balanceNotifier.value;
-    const int cost = CoinPolicy.streakFreezeCost;
+    final int cost = CoinPolicy.streakFreezeCost;
     return PopScope(
       canPop: !_busy,
       child: _short

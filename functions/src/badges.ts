@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, REGION} from "./common";
+import {grantXp, loadEconomy, xpForCoins} from "./economy";
 
 const USERS = "usersv2";
 const COOLDOWN_MS = 60_000;
@@ -151,6 +152,7 @@ export const checkBadges = onCall(
     if (isCooling) return skip();
 
     const facts = await gatherFacts(uid, existing, ownedIds(existing.badges), nowMs, email);
+    const config = await loadEconomy();
 
     let response = skip();
     await db.runTransaction(async (tx) => {
@@ -192,7 +194,8 @@ export const checkBadges = onCall(
         }));
         balance += b.coins;
       }
-      tx.update(userRef, balance === previous ? {badges} : {badges, coins: balance});
+      tx.update(userRef, balance === previous ? {badges} :
+        {badges, coins: balance, ...grantXp(data, xpForCoins(balance - previous, config), nowMs)});
       response = {newBadges: fresh.map((b) => ({id: b.id, coins: b.coins})), badges, currentBalance: balance};
     });
     return response;

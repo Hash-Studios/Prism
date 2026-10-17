@@ -41,7 +41,7 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       _openCollection(normalizedCollectionName);
       return;
     }
-    if (app_state.prismUser.premium) {
+    if (CoinsService.instance.premiumContentUnlocked) {
       _openCollection(normalizedCollectionName);
       return;
     }
@@ -93,10 +93,11 @@ class _CollectionsGridState extends State<CollectionsGrid> {
       message: (missing) => missing > 0
           ? 'A 24 hour preview costs ${CoinPolicy.premiumPreview24h} coins. You need $missing more.'
           : 'Preview this premium collection for 24 hours for ${CoinPolicy.premiumPreview24h} coins.',
-      options: const [
+      options: [
         CoinGateOption(label: 'Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})', value: CoinGateChoice.spend),
-        CoinGateOption(label: 'Watch an ad (+${CoinPolicy.rewardedAd}) and unlock', value: CoinGateChoice.watchAd),
-        CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+        if (prompt.missing > 0 && prompt.canWatchAd)
+          CoinGateOption(label: '${watchAdOptionLabel()} and unlock', value: CoinGateChoice.watchAd),
+        const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
       ],
     );
     return choice ?? CoinGateChoice.cancel;

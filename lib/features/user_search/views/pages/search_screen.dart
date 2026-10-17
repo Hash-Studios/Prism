@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -69,6 +70,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _triggerSearch(String query, {String? sourceContext, bool fromSuggestion = false}) {
     final String trimmed = query.trim();
     if (trimmed.isEmpty && _filters.color == null) return;
+    if (_filters.color != null) CoinsService.instance.reportQuestEvent(QuestEvent.colourSearch);
     final Future<WallpaperSearchPage> search = getIt<WallpaperSearchService>().search(trimmed, filters: _filters)
       ..ignore();
     setState(() {

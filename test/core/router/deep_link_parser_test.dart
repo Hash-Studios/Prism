@@ -45,6 +45,26 @@ void main() {
     expect((action as ReferLinkIntent).inviterId, 'u123');
   });
 
+  test('parses the economy screen links', () {
+    const Map<String, DeepLinkScreen> expected = <String, DeepLinkScreen>{
+      'shop': DeepLinkScreen.shop,
+      'drops': DeepLinkScreen.drops,
+      'leaderboard': DeepLinkScreen.leaderboard,
+      'draw': DeepLinkScreen.draw,
+    };
+    expected.forEach((String root, DeepLinkScreen screen) {
+      for (final String link in <String>[
+        'https://prismwalls.com/$root',
+        'prism://$root',
+        'https://prismwalls.com/${root.toUpperCase()}',
+      ]) {
+        final DeepLinkActionEntity action = parser.parse(parser.transform(Uri.parse(link)));
+        expect(action, isA<ScreenLinkIntent>(), reason: link);
+        expect((action as ScreenLinkIntent).screen, screen, reason: link);
+      }
+    });
+  });
+
   test('returns unknown intent for unsupported path', () {
     final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/something-else'));
 

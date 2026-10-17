@@ -32,6 +32,7 @@ import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
+import 'package:Prism/core/widgets/prism/prism_card.dart' show PrismGroup;
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -49,6 +50,7 @@ import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart'
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
@@ -1246,6 +1248,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             child: MakeItLiveButton(onPressed: () => _openMakeItLive(context, state)),
           ),
         ),
+      if (entity case PrismFeedItem(:final wallpaper) when canBoostWall(wallpaper))
+        padded(PrismGroup(children: <Widget>[BoostWallRow(wall: wallpaper)])),
       padded(
         SimilarWallpapersStrip(
           entity: entity,

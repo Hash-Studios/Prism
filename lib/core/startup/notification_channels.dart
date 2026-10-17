@@ -52,6 +52,8 @@ const List<NotificationChannelSpec> notificationChannelSpecs = <NotificationChan
     'Reports and review requests for Prism admins.',
     importance: Importance.high,
   ),
+  NotificationChannelSpec('gifts', 'Gifts', 'A friend sent you a Pro pass.', importance: Importance.high),
+  NotificationChannelSpec('draw', 'Prism Draw', 'Draw results and prizes.', importance: Importance.high),
 ];
 
 /// Creates the channels on Android. Android keeps the name and importance of a channel that exists, so a new

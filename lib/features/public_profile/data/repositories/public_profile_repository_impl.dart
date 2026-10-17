@@ -96,6 +96,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
               links: doc.links,
               coverPhoto: doc.coverPhoto,
               badges: doc.badges,
+              frameId: doc.cosmetics['frame'],
+              nameGlowId: doc.cosmetics['nameGlow'],
+              xp: doc.xp,
+              premium: doc.premium,
             );
           })
           .listen(remote.add, onError: remote.addError, onDone: remote.close);
@@ -148,6 +152,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     links: Map<String, String>.from(data['links'] as Map? ?? const <String, String>{}),
     coverPhoto: data['coverPhoto']?.toString() ?? '',
     badges: (data['badges'] as List? ?? const <Object?>[]).map((value) => value.toString()).toList(),
+    frameId: data['frameId']?.toString(),
+    nameGlowId: data['nameGlowId']?.toString(),
+    xp: data['xp'] is int ? data['xp']! as int : 0,
+    premium: data['premium'] is bool ? data['premium']! as bool : false,
   );
 
   Map<String, Object?> _profileToMap(PublicProfileEntity profile) => <String, Object?>{
@@ -162,6 +170,10 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     'links': profile.links,
     'coverPhoto': profile.coverPhoto,
     'badges': profile.badges,
+    'frameId': profile.frameId,
+    'nameGlowId': profile.nameGlowId,
+    'xp': profile.xp,
+    'premium': profile.premium,
   };
 
   Future<void> _writeSnapshot(String owner, String key, Map<String, Object?> value) =>

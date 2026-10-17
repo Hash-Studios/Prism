@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PublicUserDocDto {
 
-@FirestoreStringConverter() String get id;@FirestoreStringConverter() String get name;@FirestoreStringConverter() String get email;@FirestoreStringConverter() String get username;@FirestoreStringConverter() String get profilePhoto;@FirestoreStringConverter() String get bio;@FirestoreStringListConverter() List<String> get followers;@FirestoreStringListConverter() List<String> get following;@FirestoreStringMapConverter() Map<String, String> get links; bool get premium;@FirestoreStringConverter() String get coverPhoto;@FirestoreBadgeIdsConverter() List<String> get badges;
+@FirestoreStringConverter() String get id;@FirestoreStringConverter() String get name;@FirestoreStringConverter() String get email;@FirestoreStringConverter() String get username;@FirestoreStringConverter() String get profilePhoto;@FirestoreStringConverter() String get bio;@FirestoreStringListConverter() List<String> get followers;@FirestoreStringListConverter() List<String> get following;@FirestoreStringMapConverter() Map<String, String> get links; bool get premium;@FirestoreStringConverter() String get coverPhoto;@FirestoreBadgeIdsConverter() List<String> get badges; int get xp;@FirestoreStringMapConverter() Map<String, String> get cosmetics;
 /// Create a copy of PublicUserDocDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $PublicUserDocDtoCopyWith<PublicUserDocDto> get copyWith => _$PublicUserDocDtoCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicUserDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.profilePhoto, profilePhoto) || other.profilePhoto == profilePhoto)&&(identical(other.bio, bio) || other.bio == bio)&&const DeepCollectionEquality().equals(other.followers, followers)&&const DeepCollectionEquality().equals(other.following, following)&&const DeepCollectionEquality().equals(other.links, links)&&(identical(other.premium, premium) || other.premium == premium)&&(identical(other.coverPhoto, coverPhoto) || other.coverPhoto == coverPhoto)&&const DeepCollectionEquality().equals(other.badges, badges));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PublicUserDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.profilePhoto, profilePhoto) || other.profilePhoto == profilePhoto)&&(identical(other.bio, bio) || other.bio == bio)&&const DeepCollectionEquality().equals(other.followers, followers)&&const DeepCollectionEquality().equals(other.following, following)&&const DeepCollectionEquality().equals(other.links, links)&&(identical(other.premium, premium) || other.premium == premium)&&(identical(other.coverPhoto, coverPhoto) || other.coverPhoto == coverPhoto)&&const DeepCollectionEquality().equals(other.badges, badges)&&(identical(other.xp, xp) || other.xp == xp)&&const DeepCollectionEquality().equals(other.cosmetics, cosmetics));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,email,username,profilePhoto,bio,const DeepCollectionEquality().hash(followers),const DeepCollectionEquality().hash(following),const DeepCollectionEquality().hash(links),premium,coverPhoto,const DeepCollectionEquality().hash(badges));
+int get hashCode => Object.hash(runtimeType,id,name,email,username,profilePhoto,bio,const DeepCollectionEquality().hash(followers),const DeepCollectionEquality().hash(following),const DeepCollectionEquality().hash(links),premium,coverPhoto,const DeepCollectionEquality().hash(badges),xp,const DeepCollectionEquality().hash(cosmetics));
 
 @override
 String toString() {
-  return 'PublicUserDocDto(id: $id, name: $name, email: $email, username: $username, profilePhoto: $profilePhoto, bio: $bio, followers: $followers, following: $following, links: $links, premium: $premium, coverPhoto: $coverPhoto, badges: $badges)';
+  return 'PublicUserDocDto(id: $id, name: $name, email: $email, username: $username, profilePhoto: $profilePhoto, bio: $bio, followers: $followers, following: $following, links: $links, premium: $premium, coverPhoto: $coverPhoto, badges: $badges, xp: $xp, cosmetics: $cosmetics)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $PublicUserDocDtoCopyWith<$Res>  {
   factory $PublicUserDocDtoCopyWith(PublicUserDocDto value, $Res Function(PublicUserDocDto) _then) = _$PublicUserDocDtoCopyWithImpl;
 @useResult
 $Res call({
-@FirestoreStringConverter() String id,@FirestoreStringConverter() String name,@FirestoreStringConverter() String email,@FirestoreStringConverter() String username,@FirestoreStringConverter() String profilePhoto,@FirestoreStringConverter() String bio,@FirestoreStringListConverter() List<String> followers,@FirestoreStringListConverter() List<String> following,@FirestoreStringMapConverter() Map<String, String> links, bool premium,@FirestoreStringConverter() String coverPhoto,@FirestoreBadgeIdsConverter() List<String> badges
+@FirestoreStringConverter() String id,@FirestoreStringConverter() String name,@FirestoreStringConverter() String email,@FirestoreStringConverter() String username,@FirestoreStringConverter() String profilePhoto,@FirestoreStringConverter() String bio,@FirestoreStringListConverter() List<String> followers,@FirestoreStringListConverter() List<String> following,@FirestoreStringMapConverter() Map<String, String> links, bool premium,@FirestoreStringConverter() String coverPhoto,@FirestoreBadgeIdsConverter() List<String> badges, int xp,@FirestoreStringMapConverter() Map<String, String> cosmetics
 });
 
 
@@ -65,7 +65,7 @@ class _$PublicUserDocDtoCopyWithImpl<$Res>
 
 /// Create a copy of PublicUserDocDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? email = null,Object? username = null,Object? profilePhoto = null,Object? bio = null,Object? followers = null,Object? following = null,Object? links = null,Object? premium = null,Object? coverPhoto = null,Object? badges = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? email = null,Object? username = null,Object? profilePhoto = null,Object? bio = null,Object? followers = null,Object? following = null,Object? links = null,Object? premium = null,Object? coverPhoto = null,Object? badges = null,Object? xp = null,Object? cosmetics = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -79,7 +79,9 @@ as List<String>,links: null == links ? _self.links : links // ignore: cast_nulla
 as Map<String, String>,premium: null == premium ? _self.premium : premium // ignore: cast_nullable_to_non_nullable
 as bool,coverPhoto: null == coverPhoto ? _self.coverPhoto : coverPhoto // ignore: cast_nullable_to_non_nullable
 as String,badges: null == badges ? _self.badges : badges // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<String>,xp: null == xp ? _self.xp : xp // ignore: cast_nullable_to_non_nullable
+as int,cosmetics: null == cosmetics ? _self.cosmetics : cosmetics // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
   ));
 }
 
@@ -164,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String name, @FirestoreStringConverter()  String email, @FirestoreStringConverter()  String username, @FirestoreStringConverter()  String profilePhoto, @FirestoreStringConverter()  String bio, @FirestoreStringListConverter()  List<String> followers, @FirestoreStringListConverter()  List<String> following, @FirestoreStringMapConverter()  Map<String, String> links,  bool premium, @FirestoreStringConverter()  String coverPhoto, @FirestoreBadgeIdsConverter()  List<String> badges)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String name, @FirestoreStringConverter()  String email, @FirestoreStringConverter()  String username, @FirestoreStringConverter()  String profilePhoto, @FirestoreStringConverter()  String bio, @FirestoreStringListConverter()  List<String> followers, @FirestoreStringListConverter()  List<String> following, @FirestoreStringMapConverter()  Map<String, String> links,  bool premium, @FirestoreStringConverter()  String coverPhoto, @FirestoreBadgeIdsConverter()  List<String> badges,  int xp, @FirestoreStringMapConverter()  Map<String, String> cosmetics)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PublicUserDocDto() when $default != null:
-return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhoto,_that.bio,_that.followers,_that.following,_that.links,_that.premium,_that.coverPhoto,_that.badges);case _:
+return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhoto,_that.bio,_that.followers,_that.following,_that.links,_that.premium,_that.coverPhoto,_that.badges,_that.xp,_that.cosmetics);case _:
   return orElse();
 
 }
@@ -185,10 +187,10 @@ return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhot
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String name, @FirestoreStringConverter()  String email, @FirestoreStringConverter()  String username, @FirestoreStringConverter()  String profilePhoto, @FirestoreStringConverter()  String bio, @FirestoreStringListConverter()  List<String> followers, @FirestoreStringListConverter()  List<String> following, @FirestoreStringMapConverter()  Map<String, String> links,  bool premium, @FirestoreStringConverter()  String coverPhoto, @FirestoreBadgeIdsConverter()  List<String> badges)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String name, @FirestoreStringConverter()  String email, @FirestoreStringConverter()  String username, @FirestoreStringConverter()  String profilePhoto, @FirestoreStringConverter()  String bio, @FirestoreStringListConverter()  List<String> followers, @FirestoreStringListConverter()  List<String> following, @FirestoreStringMapConverter()  Map<String, String> links,  bool premium, @FirestoreStringConverter()  String coverPhoto, @FirestoreBadgeIdsConverter()  List<String> badges,  int xp, @FirestoreStringMapConverter()  Map<String, String> cosmetics)  $default,) {final _that = this;
 switch (_that) {
 case _PublicUserDocDto():
-return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhoto,_that.bio,_that.followers,_that.following,_that.links,_that.premium,_that.coverPhoto,_that.badges);case _:
+return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhoto,_that.bio,_that.followers,_that.following,_that.links,_that.premium,_that.coverPhoto,_that.badges,_that.xp,_that.cosmetics);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,10 +207,10 @@ return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhot
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String name, @FirestoreStringConverter()  String email, @FirestoreStringConverter()  String username, @FirestoreStringConverter()  String profilePhoto, @FirestoreStringConverter()  String bio, @FirestoreStringListConverter()  List<String> followers, @FirestoreStringListConverter()  List<String> following, @FirestoreStringMapConverter()  Map<String, String> links,  bool premium, @FirestoreStringConverter()  String coverPhoto, @FirestoreBadgeIdsConverter()  List<String> badges)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@FirestoreStringConverter()  String id, @FirestoreStringConverter()  String name, @FirestoreStringConverter()  String email, @FirestoreStringConverter()  String username, @FirestoreStringConverter()  String profilePhoto, @FirestoreStringConverter()  String bio, @FirestoreStringListConverter()  List<String> followers, @FirestoreStringListConverter()  List<String> following, @FirestoreStringMapConverter()  Map<String, String> links,  bool premium, @FirestoreStringConverter()  String coverPhoto, @FirestoreBadgeIdsConverter()  List<String> badges,  int xp, @FirestoreStringMapConverter()  Map<String, String> cosmetics)?  $default,) {final _that = this;
 switch (_that) {
 case _PublicUserDocDto() when $default != null:
-return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhoto,_that.bio,_that.followers,_that.following,_that.links,_that.premium,_that.coverPhoto,_that.badges);case _:
+return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhoto,_that.bio,_that.followers,_that.following,_that.links,_that.premium,_that.coverPhoto,_that.badges,_that.xp,_that.cosmetics);case _:
   return null;
 
 }
@@ -220,7 +222,7 @@ return $default(_that.id,_that.name,_that.email,_that.username,_that.profilePhot
 @JsonSerializable()
 
 class _PublicUserDocDto implements PublicUserDocDto {
-  const _PublicUserDocDto({@FirestoreStringConverter() this.id = '', @FirestoreStringConverter() this.name = '', @FirestoreStringConverter() this.email = '', @FirestoreStringConverter() this.username = '', @FirestoreStringConverter() this.profilePhoto = '', @FirestoreStringConverter() this.bio = '', @FirestoreStringListConverter() final  List<String> followers = const <String>[], @FirestoreStringListConverter() final  List<String> following = const <String>[], @FirestoreStringMapConverter() final  Map<String, String> links = const <String, String>{}, this.premium = false, @FirestoreStringConverter() this.coverPhoto = '', @FirestoreBadgeIdsConverter() final  List<String> badges = const <String>[]}): _followers = followers,_following = following,_links = links,_badges = badges;
+  const _PublicUserDocDto({@FirestoreStringConverter() this.id = '', @FirestoreStringConverter() this.name = '', @FirestoreStringConverter() this.email = '', @FirestoreStringConverter() this.username = '', @FirestoreStringConverter() this.profilePhoto = '', @FirestoreStringConverter() this.bio = '', @FirestoreStringListConverter() final  List<String> followers = const <String>[], @FirestoreStringListConverter() final  List<String> following = const <String>[], @FirestoreStringMapConverter() final  Map<String, String> links = const <String, String>{}, this.premium = false, @FirestoreStringConverter() this.coverPhoto = '', @FirestoreBadgeIdsConverter() final  List<String> badges = const <String>[], this.xp = 0, @FirestoreStringMapConverter() final  Map<String, String> cosmetics = const <String, String>{}}): _followers = followers,_following = following,_links = links,_badges = badges,_cosmetics = cosmetics;
   factory _PublicUserDocDto.fromJson(Map<String, dynamic> json) => _$PublicUserDocDtoFromJson(json);
 
 @override@JsonKey()@FirestoreStringConverter() final  String id;
@@ -259,6 +261,14 @@ class _PublicUserDocDto implements PublicUserDocDto {
   return EqualUnmodifiableListView(_badges);
 }
 
+@override@JsonKey() final  int xp;
+ final  Map<String, String> _cosmetics;
+@override@JsonKey()@FirestoreStringMapConverter() Map<String, String> get cosmetics {
+  if (_cosmetics is EqualUnmodifiableMapView) return _cosmetics;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_cosmetics);
+}
+
 
 /// Create a copy of PublicUserDocDto
 /// with the given fields replaced by the non-null parameter values.
@@ -273,16 +283,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicUserDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.profilePhoto, profilePhoto) || other.profilePhoto == profilePhoto)&&(identical(other.bio, bio) || other.bio == bio)&&const DeepCollectionEquality().equals(other._followers, _followers)&&const DeepCollectionEquality().equals(other._following, _following)&&const DeepCollectionEquality().equals(other._links, _links)&&(identical(other.premium, premium) || other.premium == premium)&&(identical(other.coverPhoto, coverPhoto) || other.coverPhoto == coverPhoto)&&const DeepCollectionEquality().equals(other._badges, _badges));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PublicUserDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.profilePhoto, profilePhoto) || other.profilePhoto == profilePhoto)&&(identical(other.bio, bio) || other.bio == bio)&&const DeepCollectionEquality().equals(other._followers, _followers)&&const DeepCollectionEquality().equals(other._following, _following)&&const DeepCollectionEquality().equals(other._links, _links)&&(identical(other.premium, premium) || other.premium == premium)&&(identical(other.coverPhoto, coverPhoto) || other.coverPhoto == coverPhoto)&&const DeepCollectionEquality().equals(other._badges, _badges)&&(identical(other.xp, xp) || other.xp == xp)&&const DeepCollectionEquality().equals(other._cosmetics, _cosmetics));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,email,username,profilePhoto,bio,const DeepCollectionEquality().hash(_followers),const DeepCollectionEquality().hash(_following),const DeepCollectionEquality().hash(_links),premium,coverPhoto,const DeepCollectionEquality().hash(_badges));
+int get hashCode => Object.hash(runtimeType,id,name,email,username,profilePhoto,bio,const DeepCollectionEquality().hash(_followers),const DeepCollectionEquality().hash(_following),const DeepCollectionEquality().hash(_links),premium,coverPhoto,const DeepCollectionEquality().hash(_badges),xp,const DeepCollectionEquality().hash(_cosmetics));
 
 @override
 String toString() {
-  return 'PublicUserDocDto(id: $id, name: $name, email: $email, username: $username, profilePhoto: $profilePhoto, bio: $bio, followers: $followers, following: $following, links: $links, premium: $premium, coverPhoto: $coverPhoto, badges: $badges)';
+  return 'PublicUserDocDto(id: $id, name: $name, email: $email, username: $username, profilePhoto: $profilePhoto, bio: $bio, followers: $followers, following: $following, links: $links, premium: $premium, coverPhoto: $coverPhoto, badges: $badges, xp: $xp, cosmetics: $cosmetics)';
 }
 
 
@@ -293,7 +303,7 @@ abstract mixin class _$PublicUserDocDtoCopyWith<$Res> implements $PublicUserDocD
   factory _$PublicUserDocDtoCopyWith(_PublicUserDocDto value, $Res Function(_PublicUserDocDto) _then) = __$PublicUserDocDtoCopyWithImpl;
 @override @useResult
 $Res call({
-@FirestoreStringConverter() String id,@FirestoreStringConverter() String name,@FirestoreStringConverter() String email,@FirestoreStringConverter() String username,@FirestoreStringConverter() String profilePhoto,@FirestoreStringConverter() String bio,@FirestoreStringListConverter() List<String> followers,@FirestoreStringListConverter() List<String> following,@FirestoreStringMapConverter() Map<String, String> links, bool premium,@FirestoreStringConverter() String coverPhoto,@FirestoreBadgeIdsConverter() List<String> badges
+@FirestoreStringConverter() String id,@FirestoreStringConverter() String name,@FirestoreStringConverter() String email,@FirestoreStringConverter() String username,@FirestoreStringConverter() String profilePhoto,@FirestoreStringConverter() String bio,@FirestoreStringListConverter() List<String> followers,@FirestoreStringListConverter() List<String> following,@FirestoreStringMapConverter() Map<String, String> links, bool premium,@FirestoreStringConverter() String coverPhoto,@FirestoreBadgeIdsConverter() List<String> badges, int xp,@FirestoreStringMapConverter() Map<String, String> cosmetics
 });
 
 
@@ -310,7 +320,7 @@ class __$PublicUserDocDtoCopyWithImpl<$Res>
 
 /// Create a copy of PublicUserDocDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? email = null,Object? username = null,Object? profilePhoto = null,Object? bio = null,Object? followers = null,Object? following = null,Object? links = null,Object? premium = null,Object? coverPhoto = null,Object? badges = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? email = null,Object? username = null,Object? profilePhoto = null,Object? bio = null,Object? followers = null,Object? following = null,Object? links = null,Object? premium = null,Object? coverPhoto = null,Object? badges = null,Object? xp = null,Object? cosmetics = null,}) {
   return _then(_PublicUserDocDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -324,7 +334,9 @@ as List<String>,links: null == links ? _self._links : links // ignore: cast_null
 as Map<String, String>,premium: null == premium ? _self.premium : premium // ignore: cast_nullable_to_non_nullable
 as bool,coverPhoto: null == coverPhoto ? _self.coverPhoto : coverPhoto // ignore: cast_nullable_to_non_nullable
 as String,badges: null == badges ? _self._badges : badges // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<String>,xp: null == xp ? _self.xp : xp // ignore: cast_nullable_to_non_nullable
+as int,cosmetics: null == cosmetics ? _self._cosmetics : cosmetics // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
   ));
 }
 

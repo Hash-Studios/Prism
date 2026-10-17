@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
@@ -97,9 +98,22 @@ class StartupRepositoryImpl implements StartupRepository {
   @override
   Future<Result<StartupConfigEntity>> bootstrap() async {
     // Wait for Firebase (started in background from main()) before touching RemoteConfig.
-    await FirebaseInit.waitUntilReady();
+    final bool firebaseReady = await FirebaseInit.waitUntilReady();
 
-    final FirebaseRemoteConfig? remoteConfig = FirebaseInit.remoteConfigIfInitialized;
+    final FirebaseRemoteConfig? remoteConfig = firebaseReady ? FirebaseInit.remoteConfigIfInitialized : null;
+
+    // Runs beside Remote Config. Its own 3 s budget keeps a slow read from holding the splash any longer.
+    final Future<void> economyConfig;
+    if (firebaseReady) {
+      economyConfig = EconomyConfig.load();
+    } else {
+      economyConfig = Future<void>.value();
+      unawaited(
+        FirebaseInit.readyFuture.then<void>((bool becameReady) {
+          if (becameReady) return EconomyConfig.load();
+        }),
+      );
+    }
 
     try {
       if (remoteConfig != null) {
@@ -152,6 +166,7 @@ class StartupRepositoryImpl implements StartupRepository {
       );
 
       _currentConfig = entity;
+      await economyConfig;
 
       unawaited(syncInAppNotificationsFromRemote());
       if (getIt.isRegistered<InAppNotificationsBloc>()) {

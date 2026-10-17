@@ -109,6 +109,15 @@ void main() {
     expect(await repository.loadConfig(), config);
   });
 
+  test('saves the pass end with the config and clears it again', () async {
+    final DateTime until = DateTime.utc(2026, 10, 24, 12);
+    await repository.saveConfig(AutoRotateConfig(enabled: true, passUntil: until));
+    expect((await repository.loadConfig()).passUntil, until);
+
+    await repository.saveConfig(const AutoRotateConfig(enabled: true));
+    expect((await repository.loadConfig()).passUntil, isNull);
+  });
+
   test('maps the options to plugin triggers', () {
     expect(AutoRotateRepositoryImpl.triggersFor(const AutoRotateConfig()), <aw.WallpaperRotationTrigger>{
       aw.WallpaperRotationTrigger.interval,

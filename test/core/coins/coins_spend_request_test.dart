@@ -395,15 +395,18 @@ void main() {
     expect(settings.get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
   });
 
-  test('reserveForAiGeneration charges the tier it is given', () async {
+  test('reserveForAiGeneration sends the tier and records the charge the server made', () async {
     final calls = <Map<String, dynamic>>[];
     backend.onCall = (name, parameters) async {
       calls.add(parameters);
-      return _spent;
+      return <String, Object>{..._spent, 'currentBalance': 50, 'delta': -50};
     };
 
-    await service.reserveForAiGeneration(qualityTier: AiQualityTier.quality);
+    final reservation = await service.reserveForAiGeneration(qualityTier: AiQualityTier.quality);
 
-    expect(calls.single['amount'], AiQualityTier.quality.coinCost);
+    expect(calls.single['qualityTier'], 'quality');
+    expect(calls.single.containsKey('amount'), isFalse);
+    expect(calls.single['pricingVersion'], 2);
+    expect(reservation.coinsSpent, 50);
   });
 }

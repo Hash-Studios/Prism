@@ -276,7 +276,8 @@ internal class WotdWidgetProvider : AppWidgetProvider() {
         setViewVisibility(R.id.wotd_label, withImage)
         setViewVisibility(R.id.wotd_set, withImage)
         setViewVisibility(R.id.wotd_empty, empty)
-        val launch = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        val launch = (context.packageManager.getLaunchIntentForPackage(context.packageName) ?: Intent(context, MainActivity::class.java))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         shown?.wall?.let(::wotdShareLink)?.let { link ->
             launch.action = Intent.ACTION_VIEW
             launch.data = Uri.parse(link)

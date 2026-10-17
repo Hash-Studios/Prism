@@ -104,6 +104,14 @@ void main() {
     client.close();
   });
 
+  test('economy screen links open their routes', () async {
+    const DeepLinkNavigation navigation = DeepLinkNavigation();
+    expect(await navigation.mapUriToRoute(Uri.parse('https://prismwalls.com/shop')), isA<ShopRoute>());
+    expect(await navigation.mapUriToRoute(Uri.parse('prism://drops')), isA<DropsRoute>());
+    expect(await navigation.mapUriToRoute(Uri.parse('prism://leaderboard')), isA<LeaderboardRoute>());
+    expect(await navigation.mapUriToRoute(Uri.parse('https://prismwalls.com/draw')), isA<DrawRoute>());
+  });
+
   test('a referral link keeps the inviter and opens Rewards instead of Not found', () async {
     final List<String> inviters = <String>[];
     final DeepLinkNavigation navigation = DeepLinkNavigation(onReferral: (String id) async => inviters.add(id));

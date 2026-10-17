@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, {beforeEach, mock} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {
   awardCoins,
   buyStreakFreeze,
+  claimProSpin,
   duplicateSpendResponse,
   processReferral,
   isValidRequestId,
@@ -12,9 +13,20 @@ import {
   refundableDelta,
   restoreStreak,
   rewardedAdAllowed,
+  spendBasePrice,
   spendCoins,
   STREAK_RESCUE_COST,
+  unlockPremiumPreview,
 } from "../coinsCallables";
+import {DEFAULT_ECONOMY, ECONOMY_CONFIG_DOC, parseEconomy, resetEconomyCache, weekKey} from "../economy";
+import {buildQuestState} from "../questCatalog";
+import {installFakeDb} from "./fakeDb";
+
+// No economy config doc unless a test seeds one: callables run on DEFAULT_ECONOMY.
+const realDoc = db.doc.bind(db);
+mock.method(db, "doc", (path: string) =>
+  path === ECONOMY_CONFIG_DOC ? {get: async () => ({exists: false, data: (): undefined => undefined})} : realDoc(path));
+beforeEach(() => resetEconomyCache());
 
 const NOW = 1_700_000_000_000;
 
@@ -245,7 +257,7 @@ function mockSpendTransactions(t: test.TestContext, harness: SpendHarness): void
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
     await callback({
       get: async (ref: admin.firestore.DocumentReference) => {
-        if (ref.path.startsWith("usersv2/")) {
+        if (ref.path === "usersv2/user-1") {
           return {exists: true, data: () => ({coins: harness.coins, premium: harness.premium})};
         }
         const doc = harness.ledger.get(ref.id);
@@ -261,10 +273,11 @@ function mockSpendTransactions(t: test.TestContext, harness: SpendHarness): void
   });
 }
 
+// premiumFilter costs 5 at legacy and v2 prices and has no grace, so these tests hold on either side of the window.
 function spendRequest(data: Record<string, unknown>): Parameters<typeof spendCoins.run>[0] {
   return {
     auth: {uid: "user-1"},
-    data: {action: "wallpaperDownload", sourceTag: "test", ...data},
+    data: {action: "premiumFilter", sourceTag: "test", ...data},
   } as unknown as Parameters<typeof spendCoins.run>[0];
 }
 
@@ -369,7 +382,7 @@ test("spendCoins: a replay of a refunded requestId is refused and never debits a
   assert.equal(harness.coins, 100);
 });
 
-test("spendCoins: a premium member skips the cost of a download only when asking to bypass", async (t) => {
+test("spendCoins: a premium member skips the cost of a filter only when asking to bypass", async (t) => {
   const harness: SpendHarness = {coins: 100, premium: true, ledger: new Map()};
   mockSpendTransactions(t, harness);
   const bypassed = await spendCoins.run(spendRequest({allowPremiumBypass: true}));
@@ -392,14 +405,14 @@ test("spendCoins: a caller who is not premium is charged even with allowPremiumB
   assert.equal(harness.ledger.size, 1);
 });
 
-test("spendCoins: allowPremiumBypass is ignored for aiGeneration, so a premium member is debited", async (t) => {
+test("spendCoins: allowPremiumBypass is ignored for aiGeneration, so a premium member pays half", async (t) => {
   const harness: SpendHarness = {coins: 200, premium: true, ledger: new Map()};
   mockSpendTransactions(t, harness);
   const result = await spendCoins.run(spendRequest({action: "aiGeneration", amount: 75, allowPremiumBypass: true}));
   assert.equal(result.success, true);
   assert.equal(result.bypassed, false);
-  assert.equal(result.delta, -75);
-  assert.equal(harness.coins, 125);
+  assert.equal(result.delta, -38);
+  assert.equal(harness.coins, 162);
   assert.equal(harness.ledger.size, 1);
 });
 
@@ -551,17 +564,17 @@ test("awardCoins firstWallpaperUpload: an unverified origin-studio claim qualifi
   assert.equal(store.get("usersv2/user-1")?.coins, 50);
 });
 
-test("awardCoins proDailyBonus: premium gets 50 once a day, others and repeats get nothing", async (t) => {
+test("awardCoins proDailyBonus: premium gets the lowest spin value once a day, others and repeats get nothing", async (t) => {
   const store: Store = new Map([["usersv2/user-1", userDoc({premium: true})]]);
   mockStore(t, store);
   const first = await awardCoins.run(awardRequest({action: "proDailyBonus"}));
   assert.equal(first.success, true);
-  assert.equal(first.delta, 50);
-  assert.equal(store.get("usersv2/user-1")?.coins, 50);
+  assert.equal(first.delta, 20);
+  assert.equal(store.get("usersv2/user-1")?.coins, 20);
   const again = await awardCoins.run(awardRequest({action: "proDailyBonus"}));
   assert.equal(again.success, false);
   assert.equal(again.reason, "pro_bonus_already_claimed");
-  assert.equal(store.get("usersv2/user-1")?.coins, 50);
+  assert.equal(store.get("usersv2/user-1")?.coins, 20);
 
   const freeStore: Store = new Map([["usersv2/user-1", userDoc({premium: false})]]);
   t.mock.reset();
@@ -572,21 +585,21 @@ test("awardCoins proDailyBonus: premium gets 50 once a day, others and repeats g
   assert.equal(freeStore.get("usersv2/user-1")?.coins, 0);
 });
 
-test("awardCoins rewardedAd: two calls with one requestId credit 10 once and count once", async (t) => {
+test("awardCoins rewardedAd: two calls with one requestId credit the first-ad 20 once and count once", async (t) => {
   const store: Store = new Map([["usersv2/user-1", userDoc()]]);
   mockStore(t, store);
   const first = await awardCoins.run(awardRequest({action: "rewardedAd", requestId: "request_123"}));
   assert.equal(first.success, true);
-  assert.equal(first.delta, 10);
-  assert.equal(first.currentBalance, 10);
+  assert.equal(first.delta, 20);
+  assert.equal(first.currentBalance, 20);
   assert.equal(first.adsRemaining, 19);
   const replay = await awardCoins.run(awardRequest({action: "rewardedAd", requestId: "request_123"}));
   assert.equal(replay.success, true);
-  assert.equal(replay.delta, 10);
+  assert.equal(replay.delta, 20);
   assert.equal(replay.previousBalance, 0);
-  assert.equal(replay.currentBalance, 10);
+  assert.equal(replay.currentBalance, 20);
   assert.equal(replay.adsRemaining, 19);
-  assert.equal(store.get("usersv2/user-1")?.coins, 10);
+  assert.equal(store.get("usersv2/user-1")?.coins, 20);
   const rateDocs = [...store].filter(([path]) => path.startsWith("coinAdRateDaily/"));
   assert.equal(rateDocs.length, 1);
   assert.equal(rateDocs[0][1].count, 1);
@@ -940,4 +953,440 @@ test("processReferral: a valid referral pays both sides 100", async (t) => {
   assert.equal(result.success, true);
   assert.equal(store.get("usersv2/user-1")?.coins, 100);
   assert.equal(store.get("usersv2/inviter-1")?.coins, 105);
+});
+
+// Economy v2 on the in-memory Firestore
+
+type FakeStore = ReturnType<typeof installFakeDb>;
+const USER = "usersv2/user-1";
+const PRIVATE = `${USER}/private/economy`;
+const DAY_MS = 86_400_000;
+
+const v2Spend = (data: Record<string, unknown>) => spendCoins.run({
+  auth: {uid: "user-1"}, data: {sourceTag: "test", pricingVersion: 2, ...data},
+} as unknown as Parameters<typeof spendCoins.run>[0]);
+
+const legacySpend = (data: Record<string, unknown>) => spendCoins.run({
+  auth: {uid: "user-1"}, data: {sourceTag: "test", ...data},
+} as unknown as Parameters<typeof spendCoins.run>[0]);
+
+const spinRequest = (requestId = "spin_request_1") => ({
+  auth: {uid: "user-1"}, data: {requestId},
+}) as unknown as Parameters<typeof claimProSpin.run>[0];
+
+/** Pins Date.now so tests can step past the 20 second ad gap. Returns a setter. */
+function clock(t: test.TestContext, start = Date.now()): (ms: number) => void {
+  let now = start;
+  t.mock.method(Date, "now", () => now);
+  return (ms) => {
+    now = ms;
+  };
+}
+
+const ledgerFor = (store: FakeStore, prefix: string) =>
+  [...store].filter(([path]) => path.startsWith(`coinTransactions/${prefix}`)).map(([, doc]) => doc);
+
+test("rewardedAd: the first ad of the day pays 20, the next pays 10, both count for XP and adsToday", async (t) => {
+  const start = Date.now();
+  const setNow = clock(t, start);
+  const store = installFakeDb(t, {[USER]: {coins: 0}});
+  const first = await awardCoins.run(awardRequest({action: "rewardedAd", requestId: "ad_request_1"}));
+  assert.equal(first.delta, 20);
+  assert.equal(first.adsRemaining, 19);
+  setNow(start + 21_000);
+  const second = await awardCoins.run(awardRequest({action: "rewardedAd", requestId: "ad_request_2"}));
+  assert.equal(second.delta, 10);
+  assert.equal(second.adsRemaining, 18);
+  const user = store.get(USER) ?? {};
+  assert.equal(user.coins, 30);
+  assert.equal(user.xp, 30);
+  assert.deepEqual(user.xpWeek, {weekKey: weekKey(start), xp: 30});
+  assert.deepEqual((user.coinState as Record<string, unknown>).adsToday,
+    {day: new Date(start).toISOString().slice(0, 10), count: 2});
+});
+
+test("rewardedAd: only the first 3 ads of a day grant XP", async (t) => {
+  const now = Date.now();
+  const day = new Date(now).toISOString().slice(0, 10);
+  const store = installFakeDb(t, {
+    [USER]: {coins: 0, xp: 7},
+    [`coinAdRateDaily/user-1_${day}`]: {count: 3, lastAt: now - 60_000},
+  });
+  const result = await awardCoins.run(awardRequest({action: "rewardedAd"}));
+  assert.equal(result.delta, 10);
+  assert.equal(store.get(USER)?.coins, 10);
+  assert.equal(store.get(USER)?.xp, 7);
+});
+
+test("rewardedAd: the cap comes from award.rewardedAdMaxPerDay", async (t) => {
+  const now = Date.now();
+  const day = new Date(now).toISOString().slice(0, 10);
+  installFakeDb(t, {
+    [USER]: {coins: 0},
+    [ECONOMY_CONFIG_DOC]: {award: {rewardedAdMaxPerDay: 2}},
+    [`coinAdRateDaily/user-1_${day}`]: {count: 2, lastAt: now - 60_000},
+  });
+  const result = await awardCoins.run(awardRequest({action: "rewardedAd"}));
+  assert.equal(result.success, false);
+  assert.equal(result.reason, "rewarded_ad_limit");
+  assert.equal(result.adsRemaining, 0);
+});
+
+test("rewardedAd: completes today's watch_ad bonus quest and bumps rev", async (t) => {
+  const now = Date.now();
+  const quests = buildQuestState(undefined, now, false);
+  assert.equal(quests.bonus.event, "watch_ad");
+  const store = installFakeDb(t, {[USER]: {coins: 0}, [PRIVATE]: {rev: 4, quests}});
+  await awardCoins.run(awardRequest({action: "rewardedAd"}));
+  const priv = store.get(PRIVATE) ?? {};
+  assert.equal(priv.rev, 5);
+  const bonus = (priv.quests as {bonus: {progress: number; claimed: boolean}}).bonus;
+  assert.equal(bonus.claimed, true);
+  assert.equal(bonus.progress, 1);
+  assert.equal(store.get(USER)?.coins, 20);
+});
+
+test("refund: gives the coins back with no XP", async (t) => {
+  const store = installFakeDb(t, {
+    [USER]: {coins: 0, xp: 5},
+    "coinTransactions/tx1": {userId: "user-1", type: "debit", status: "completed", action: "wallpaperDownload",
+      delta: -10, createdAt: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000)},
+  });
+  const result = await awardCoins.run(awardRequest({action: "refund", transactionId: "tx1"}));
+  assert.equal(result.delta, 10);
+  assert.equal(store.get(USER)?.xp, 5);
+});
+
+test("spendCoins v2: the first 3 downloads ever are free, the 4th pays 10", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 100}});
+  for (const left of [2, 1, 0]) {
+    const free = await v2Spend({action: "wallpaperDownload"});
+    assert.equal(free.success, true);
+    assert.equal(free.changed, false);
+    assert.equal(free.bypassed, true);
+    assert.equal(free.reason, "grace_download");
+    assert.equal(free.graceDownloadsLeft, left);
+  }
+  assert.equal(store.get(PRIVATE)?.graceDownloadsUsed, 3);
+  assert.equal(store.get(PRIVATE)?.rev, 3);
+  const paid = await v2Spend({action: "wallpaperDownload"});
+  assert.equal(paid.changed, true);
+  assert.equal(paid.delta, -10);
+  assert.equal(store.get(USER)?.coins, 90);
+});
+
+test("spendCoins v2: grace covers wallpaperDownload only and premium walls cost 25", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 100}});
+  const result = await v2Spend({action: "premiumWallpaperDownload"});
+  assert.equal(result.delta, -25);
+  assert.equal(store.get(USER)?.coins, 75);
+  assert.equal(store.get(PRIVATE), undefined);
+});
+
+test("spendCoins legacy: no pricingVersion pays 5 with no grace while the legacy window is open", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 100}});
+  const result = await legacySpend({action: "wallpaperDownload"});
+  assert.equal(result.delta, -5);
+  assert.equal(store.get(USER)?.coins, 95);
+  assert.equal(store.get(PRIVATE), undefined);
+});
+
+test("spendCoins legacy: after flags.legacyPricingUntil a legacy client pays the v2 price", async (t) => {
+  const store = installFakeDb(t, {
+    [USER]: {coins: 100},
+    [ECONOMY_CONFIG_DOC]: {flags: {legacyPricingUntil: new Date(Date.now() - 1000).toISOString()}},
+  });
+  const result = await legacySpend({action: "premiumWallpaperDownload"});
+  assert.equal(result.delta, -25);
+  assert.equal(store.get(USER)?.coins, 75);
+});
+
+test("spendCoins: a price override in economyConfig is charged", async (t) => {
+  const store = installFakeDb(t, {
+    [USER]: {coins: 100},
+    [PRIVATE]: {graceDownloadsUsed: 3},
+    [ECONOMY_CONFIG_DOC]: {spend: {wallpaperDownload: 12}},
+  });
+  assert.equal((await v2Spend({action: "wallpaperDownload"})).delta, -12);
+  assert.equal(store.get(USER)?.coins, 88);
+});
+
+test("spendCoins aiGeneration: Pro pays half rounded up and the ledger records tier and base price", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 200, premium: true}});
+  const v2 = await v2Spend({action: "aiGeneration", qualityTier: "balanced", requestId: "ai_request_1"});
+  assert.equal(v2.delta, -38);
+  const ledger = store.get("coinTransactions/spend_user-1_ai_request_1") ?? {};
+  assert.equal(ledger.qualityTier, "balanced");
+  assert.equal(ledger.basePrice, 75);
+  assert.equal(ledger.delta, -38);
+  const legacy = await legacySpend({action: "aiGeneration", amount: 10});
+  assert.equal(legacy.delta, -5);
+  assert.equal(store.get(USER)?.coins, 157);
+});
+
+test("spendCoins aiGeneration: a free user pays the tier price; a bad tier is refused", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 200}});
+  assert.equal((await v2Spend({action: "aiGeneration", qualityTier: "quality"})).delta, -100);
+  for (const data of [{qualityTier: "ultra"}, {qualityTier: "fast ", amount: 10}, {qualityTier: 10}]) {
+    await assert.rejects(() => v2Spend({action: "aiGeneration", ...data}), {code: "invalid-argument"});
+  }
+  assert.equal(store.get(USER)?.coins, 100);
+});
+
+test("spendCoins: an active premium pass opens premium walls and previews without allowPremiumBypass", async (t) => {
+  const store = installFakeDb(t, {
+    [USER]: {coins: 100},
+    [PRIVATE]: {passes: {premiumPassUntil: Date.now() + 3_600_000}},
+  });
+  for (const action of ["premiumWallpaperDownload", "premiumPreview24h"]) {
+    const result = await v2Spend({action});
+    assert.equal(result.bypassed, true, action);
+    assert.equal(result.reason, `${action}_pass_bypass`);
+  }
+  assert.equal((await v2Spend({action: "premiumFilter"})).delta, -5);
+  assert.equal(store.get(USER)?.coins, 95);
+});
+
+test("spendCoins: an expired premium pass pays", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 100}, [PRIVATE]: {passes: {premiumPassUntil: Date.now() - 1}}});
+  assert.equal((await v2Spend({action: "premiumWallpaperDownload"})).delta, -25);
+  assert.equal(store.get(USER)?.coins, 75);
+});
+
+test("spendCoins autoRotatePass7d: charges 50 and extends the pass from the later of now and its end", async (t) => {
+  const now = Date.now();
+  clock(t, now);
+  const store = installFakeDb(t, {[USER]: {coins: 120}, [PRIVATE]: {rev: 2, passes: {premiumPassUntil: 5}}});
+  const first = await v2Spend({action: "autoRotatePass7d"});
+  assert.equal(first.delta, -50);
+  assert.equal(first.passUntil, now + 7 * DAY_MS);
+  const second = await v2Spend({action: "autoRotatePass7d"});
+  assert.equal(second.passUntil, now + 14 * DAY_MS);
+  const priv = store.get(PRIVATE) ?? {};
+  assert.deepEqual(priv.passes, {premiumPassUntil: 5, autoRotatePassUntil: now + 14 * DAY_MS});
+  assert.equal(priv.rev, 4);
+  assert.equal(store.get(USER)?.coins, 20);
+  const broke = await v2Spend({action: "autoRotatePass7d"});
+  assert.equal(broke.insufficientBalance, true);
+  assert.equal((store.get(PRIVATE)?.passes as Record<string, number>).autoRotatePassUntil, now + 14 * DAY_MS);
+});
+
+test("spendCoins liveWallpaperStyle: unlocks one style for 7 days and a second apply is free", async (t) => {
+  const now = Date.now();
+  clock(t, now);
+  const store = installFakeDb(t, {[USER]: {coins: 50}});
+  const paid = await v2Spend({action: "liveWallpaperStyle", styleId: "neon_wave"});
+  assert.equal(paid.delta, -20);
+  assert.equal(paid.passUntil, now + 7 * DAY_MS);
+  const again = await v2Spend({action: "liveWallpaperStyle", styleId: "neon_wave"});
+  assert.equal(again.bypassed, true);
+  assert.equal(again.reason, "liveWallpaperStyle_already_unlocked");
+  assert.equal(again.passUntil, now + 7 * DAY_MS);
+  assert.equal((await v2Spend({action: "liveWallpaperStyle", styleId: "aurora"})).delta, -20);
+  assert.deepEqual((store.get(PRIVATE)?.passes as Record<string, unknown>).liveStyles,
+    {neon_wave: now + 7 * DAY_MS, aurora: now + 7 * DAY_MS});
+  assert.equal(store.get(USER)?.coins, 10);
+});
+
+test("spendCoins liveWallpaperStyle: needs a valid styleId; Pro with bypass pays nothing", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 50, premium: true}});
+  for (const styleId of [undefined, "", "a", "Neon", "__proto__", "x".repeat(41), "bad-id"]) {
+    await assert.rejects(() => v2Spend({action: "liveWallpaperStyle", styleId}), {code: "invalid-argument"}, String(styleId));
+  }
+  const pro = await v2Spend({action: "liveWallpaperStyle", styleId: "neon", allowPremiumBypass: true});
+  assert.equal(pro.reason, "liveWallpaperStyle_premium_bypass");
+  assert.equal(store.get(USER)?.coins, 50);
+});
+
+test("spendCoins: a grace download with a requestId writes a zero receipt and a replay uses no more grace", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 100}});
+  const first = await v2Spend({action: "wallpaperDownload", requestId: "grace_request_1"});
+  const replay = await v2Spend({action: "wallpaperDownload", requestId: "grace_request_1"});
+  for (const result of [first, replay]) {
+    assert.equal(result.success, true);
+    assert.equal(result.changed, false);
+    assert.equal(result.bypassed, true);
+    assert.equal(result.reason, "grace_download");
+    assert.equal(result.graceDownloadsLeft, 2);
+    assert.equal(result.delta, 0);
+  }
+  assert.equal(store.get(PRIVATE)?.graceDownloadsUsed, 1);
+  const receipt = store.get("coinTransactions/spend_user-1_grace_request_1") ?? {};
+  assert.equal(receipt.status, "completed");
+  assert.equal(receipt.delta, 0);
+  assert.equal(receipt.reason, "grace_download");
+  assert.equal(receipt.action, "wallpaperDownload");
+  assert.equal(store.get(USER)?.coins, 100);
+});
+
+test("spendCoins: pass and premium bypasses replay from their receipt after the pass or premium ends", async (t) => {
+  const store = installFakeDb(t, {
+    [USER]: {coins: 100, premium: true},
+    [PRIVATE]: {passes: {premiumPassUntil: Date.now() + 3_600_000}},
+  });
+  const pass = await v2Spend({action: "premiumPreview24h", requestId: "pass_request_1"});
+  const bypass = await v2Spend({action: "premiumFilter", allowPremiumBypass: true, requestId: "bypass_request_1"});
+  assert.equal(pass.reason, "premiumPreview24h_pass_bypass");
+  assert.equal(bypass.reason, "premiumFilter_premium_bypass");
+  store.set(USER, {coins: 100, premium: false});
+  store.set(PRIVATE, {passes: {}});
+  const passReplay = await v2Spend({action: "premiumPreview24h", requestId: "pass_request_1"});
+  const bypassReplay = await v2Spend({action: "premiumFilter", allowPremiumBypass: true, requestId: "bypass_request_1"});
+  assert.equal(passReplay.bypassed, true);
+  assert.equal(passReplay.changed, false);
+  assert.equal(passReplay.reason, "premiumPreview24h_pass_bypass");
+  assert.equal(bypassReplay.bypassed, true);
+  assert.equal(bypassReplay.reason, "premiumFilter_premium_bypass");
+  assert.equal(store.get("coinTransactions/spend_user-1_bypass_request_1")?.delta, 0);
+  assert.equal(store.get(USER)?.coins, 100);
+});
+
+test("spendCoins: a paid replay returns the stored pass, style and AI fields without charging again", async (t) => {
+  const now = Date.now();
+  const setNow = clock(t, now);
+  const store = installFakeDb(t, {[USER]: {coins: 200}});
+  const pass = await v2Spend({action: "autoRotatePass7d", requestId: "rotate_request_1"});
+  const style = await v2Spend({action: "liveWallpaperStyle", styleId: "neon_wave", requestId: "style_request_1"});
+  const ai = await v2Spend({action: "aiGeneration", qualityTier: "fast", requestId: "ai_request_9"});
+  assert.equal(ai.qualityTier, "fast");
+  assert.equal(ai.basePrice, 10);
+  setNow(now + DAY_MS);
+  const passReplay = await v2Spend({action: "autoRotatePass7d", requestId: "rotate_request_1"});
+  const styleReplay = await v2Spend({action: "liveWallpaperStyle", styleId: "neon_wave", requestId: "style_request_1"});
+  const aiReplay = await v2Spend({action: "aiGeneration", qualityTier: "fast", requestId: "ai_request_9"});
+  assert.equal(passReplay.passUntil, now + 7 * DAY_MS);
+  assert.equal(passReplay.passUntil, pass.passUntil);
+  assert.equal(styleReplay.styleId, "neon_wave");
+  assert.equal(styleReplay.passUntil, style.passUntil);
+  assert.equal(aiReplay.qualityTier, "fast");
+  assert.equal(aiReplay.basePrice, 10);
+  assert.equal(aiReplay.delta, -10);
+  assert.equal(store.get(USER)?.coins, 120);
+  assert.equal((store.get(PRIVATE)?.passes as Record<string, number>).autoRotatePassUntil, now + 7 * DAY_MS);
+});
+
+test("unlockPremiumPreview: a legacy client pays the legacy 10 inside the window, v2 pays the config price", async (t) => {
+  const preview = (data: Record<string, unknown>) => unlockPremiumPreview.run({
+    auth: {uid: "user-1"}, data: {collectionKey: `key_${Object.keys(data).length}`, ...data},
+  } as unknown as Parameters<typeof unlockPremiumPreview.run>[0]);
+  const store = installFakeDb(t, {[USER]: {coins: 100}, [ECONOMY_CONFIG_DOC]: {spend: {premiumPreview24h: 15}}});
+  assert.equal((await preview({})).delta, -10);
+  assert.equal((await preview({pricingVersion: 2})).delta, -15);
+  assert.equal(store.get(USER)?.coins, 75);
+
+  t.mock.reset();
+  resetEconomyCache();
+  installFakeDb(t, {
+    [USER]: {coins: 100},
+    [ECONOMY_CONFIG_DOC]: {
+      spend: {premiumPreview24h: 15},
+      flags: {legacyPricingUntil: new Date(Date.now() - 1000).toISOString()},
+    },
+  });
+  assert.equal((await preview({})).delta, -15);
+});
+
+test("spendBasePrice: legacy table only for the four legacy actions and only inside the window", () => {
+  const now = Date.parse("2026-10-17T00:00:00Z");
+  const config = parseEconomy(null);
+  assert.equal(spendBasePrice("premiumFilter", {}, config, now).basePrice, 5);
+  assert.equal(spendBasePrice("premiumPreview24h", {}, config, now).basePrice, 10);
+  assert.equal(spendBasePrice("wallpaperDownload", {pricingVersion: 2}, config, now).basePrice, 10);
+  assert.equal(spendBasePrice("wallpaperDownload", {pricingVersion: 1}, config, now).basePrice, 5);
+  assert.equal(spendBasePrice("liveWallpaperStyle", {}, config, now).basePrice, 20);
+  assert.equal(spendBasePrice("wallpaperDownload", {}, config, Date.parse("2027-02-01T00:00:00Z")).basePrice, 10);
+  assert.deepEqual(spendBasePrice("aiGeneration", {amount: 100}, config, now), {basePrice: 100, qualityTier: "quality"});
+  for (const action of ["streakFreeze", "dropWall", "constructor", "toString"]) {
+    assert.throws(() => spendBasePrice(action, {}, config, now), {code: "invalid-argument"}, action);
+  }
+});
+
+test("claimProSpin: Pro spins once a UTC day, earns coins and XP, and a replay returns the stored result", async (t) => {
+  const now = Date.now();
+  clock(t, now);
+  t.mock.method(Math, "random", () => 0.7);
+  const store = installFakeDb(t, {[USER]: {coins: 10, premium: true}});
+  const spin = await claimProSpin.run(spinRequest());
+  assert.equal(spin.success, true);
+  assert.equal(spin.segment, 2);
+  assert.equal(spin.coins, 50);
+  assert.equal(spin.delta, 50);
+  assert.equal(spin.currentBalance, 60);
+  assert.equal(spin.transactionId, "ctx_proSpin_user-1_spin_request_1");
+  const user = store.get(USER) ?? {};
+  const today = new Date(now).toISOString().slice(0, 10);
+  assert.equal((user.coinState as Record<string, unknown>).proSpinDate, today);
+  assert.equal((user.coinState as Record<string, unknown>).proDailyBonusDate, today);
+  assert.equal(user.xp, 50);
+  const ledger = store.get("coinTransactions/ctx_proSpin_user-1_spin_request_1") ?? {};
+  assert.equal(ledger.action, "proSpin");
+  assert.equal(ledger.segment, 2);
+  assert.equal(ledger.coins, 50);
+
+  t.mock.method(Math, "random", () => 0.99);
+  const replay = await claimProSpin.run(spinRequest());
+  assert.equal(replay.success, true);
+  assert.equal(replay.coins, 50);
+  assert.equal(replay.segment, 2);
+  assert.equal(replay.currentBalance, 60);
+  const again = await claimProSpin.run(spinRequest("spin_request_2"));
+  assert.equal(again.success, false);
+  assert.equal(again.reason, "pro_spin_already_claimed");
+  assert.equal(store.get(USER)?.coins, 60);
+  assert.equal(ledgerFor(store, "ctx_proSpin_").length, 1);
+});
+
+test("claimProSpin: free users are refused and the requestId is validated first", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 10}});
+  const result = await claimProSpin.run(spinRequest());
+  assert.equal(result.success, false);
+  assert.equal(result.reason, "pro_spin_requires_premium");
+  assert.equal(store.get(USER)?.coins, 10);
+  for (const requestId of [undefined, "short", "bad/path_123"]) {
+    await assert.rejects(() => claimProSpin.run({auth: {uid: "user-1"}, data: {requestId}} as
+      Parameters<typeof claimProSpin.run>[0]), {code: "invalid-argument"});
+  }
+});
+
+test("claimProSpin and proDailyBonus share one receipt a day in both orders", async (t) => {
+  const store = installFakeDb(t, {[USER]: {coins: 0, premium: true}});
+  await claimProSpin.run(spinRequest());
+  const bonus = await awardCoins.run(awardRequest({action: "proDailyBonus"}));
+  assert.equal(bonus.success, false);
+  assert.equal(bonus.reason, "pro_bonus_already_claimed");
+
+  t.mock.reset();
+  resetEconomyCache();
+  const other = installFakeDb(t, {[USER]: {coins: 0, premium: true}});
+  const legacy = await awardCoins.run(awardRequest({action: "proDailyBonus"}));
+  assert.equal(legacy.delta, 20);
+  const coinState = other.get(USER)?.coinState as Record<string, unknown>;
+  assert.equal(coinState.proSpinDate, coinState.proDailyBonusDate);
+  assert.equal((await claimProSpin.run(spinRequest())).reason, "pro_spin_already_claimed");
+  assert.equal(other.get(USER)?.coins, 20);
+  assert.ok((store.get(USER)?.coins as number) >= 20);
+});
+
+test("claimProSpin: completes today's pro_spin bonus quest", async (t) => {
+  const quests = buildQuestState(undefined, Date.now(), true);
+  assert.equal(quests.bonus.event, "pro_spin");
+  const store = installFakeDb(t, {[USER]: {coins: 0, premium: true}, [PRIVATE]: {rev: 1, quests}});
+  await claimProSpin.run(spinRequest());
+  const priv = store.get(PRIVATE) ?? {};
+  assert.equal(priv.rev, 2);
+  assert.equal((priv.quests as {bonus: {claimed: boolean}}).bonus.claimed, true);
+});
+
+test("buyStreakFreeze and restoreStreak: prices come from the config", async (t) => {
+  const store = installFakeDb(t, {
+    [USER]: {coins: 100, coinState: {streakCount: 1, rescue: {count: 9, expiresAtMs: Date.now() + 3_600_000}}},
+    [ECONOMY_CONFIG_DOC]: {spend: {streakFreeze: 30, streakRescue: 60}},
+  });
+  const freeze = await buyStreakFreeze.run({auth: {uid: "user-1"}, data: {requestId: "freeze_request"}} as
+    Parameters<typeof buyStreakFreeze.run>[0]);
+  assert.equal(freeze.delta, -30);
+  const rescue = await restoreStreak.run(rescueRequest("rescue_request"));
+  assert.equal(rescue.delta, -60);
+  assert.equal(store.get(USER)?.coins, 10);
+  assert.equal(DEFAULT_ECONOMY.spend.streakFreeze, 50);
 });

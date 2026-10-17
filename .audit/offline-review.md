@@ -213,6 +213,12 @@ Full gate 65 passed static checks and reached 506 Flutter test passes without a 
 
 The new base changes 315 files since `48ac7cb1a`, including startup, coins, entitlements, wallpaper detail, and native entry points. The current repair delta is preserved in a commit before a normal merge. Three Luna reviewers inspect disjoint economy, native, and catalog overlaps. The merged tree requires fresh generation and verification. Hosted CI and the user's device round remain pending.
 
+The three text conflicts preserve offline download acquisition checks, cancellation-safe cached profiles with the new cosmetic fields, and both AI fixture changes. The parent also found an undefined startup readiness variable from the automatic merge. Its owner restored the bounded readiness result and deferred economy-config loading when Firebase completes later.
+
+The native review found an ownerless persisted auto-rotate pass. The catalog review found that the new Draw, Drops, and Leaderboard repositories depend on opportunistic SDK cache and lack app-owned deadlines and saved snapshots. These are integration work, not verified offline journeys yet. Separate Luna owners implement pass isolation and bounded saved reads without replaying purchases.
+
+Native Android gate 66 passed JVM tests, lint, and instrumentation compilation on the merged native files. Supported Swift core build, strict fallback typecheck, and project-file lint also passed. Logs are `/tmp/prism-offline-android-native-66.log` and `/tmp/prism-offline-swift-66.log`. Device discovery reported no available simulator or emulator, so no device runtime result is claimed.
+
 ## Evidence limits
 
 The inherited trail contains estimated timestamps, with append-only correction rows. Several early rows name local `/tmp` logs that are not portable PR artifacts. Later committed tests and hosted checks must carry the final proof. The foundation commit proves its six files only. The later implementation commit and master merge preserve the wider integration tree but do not replace its full verification.

@@ -77,10 +77,12 @@ test("favouriteDelta is +1 on create, -1 on delete and 0 on update", () => {
   assert.equal(favouriteDelta(undefined, undefined), 0);
 });
 
-const favEvent = (before: unknown, after: unknown, wallId = "w1") => onFavouriteWritten.run({
-  params: {uid: "u1", wallId},
-  data: {before: {data: () => before}, after: {data: () => after}},
-} as unknown as Parameters<typeof onFavouriteWritten.run>[0]);
+const favEvent = (before: unknown, after: unknown, wallId = "w1", id = `event_${wallId}_${Math.random()}`) =>
+  onFavouriteWritten.run({
+    id,
+    params: {uid: "u1", wallId},
+    data: {before: {data: () => before}, after: {data: () => after}},
+  } as unknown as Parameters<typeof onFavouriteWritten.run>[0]);
 
 test("favourites add to favs, never take it below 0, and ignore other providers", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: NOW});
@@ -106,4 +108,67 @@ test("a favourite for a wall with no stats doc starts the counter, and a delete 
   assert.equal(store.get("wallpaper_stats/NEW1")?.favs, 1);
   await favEvent({provider: "Prism"}, undefined, "other9");
   assert.equal(store.get("wallpaper_stats/OTHER9")?.favs, 0);
+});
+
+const quests = (store: Map<string, Record<string, unknown>>) =>
+  (store.get("usersv2/u1/private/economy") as {quests: {items: Array<{event: string; progress: number}>; weekly: {progress: number}}}).quests;
+
+test("a counted download feeds the set and download quests, a repeat does not", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  await call({wallId: "w1", action: "download"});
+  assert.equal(quests(store).weekly.progress, 1);
+  await call({wallId: "w1", action: "download"});
+  assert.equal(quests(store).weekly.progress, 1);
+  await call({wallId: "w2", action: "set"});
+  assert.equal(quests(store).weekly.progress, 2);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_download")?.count, 1);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_set_wallpaper")?.count, 2);
+});
+
+test("a set and a download of one wall on one day count once for the set quest", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  await call({wallId: "w1", action: "set"});
+  await call({wallId: "w1", action: "download"});
+  assert.equal(quests(store).weekly.progress, 1);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_set_wallpaper")?.count, 1);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_download")?.count, 1);
+});
+
+test("a retried favourite trigger counts the quest once", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  const fav = {id: "w1", provider: "Prism"};
+  await favEvent(undefined, fav, "w1", "event_retry_1");
+  await favEvent(undefined, fav, "w1", "event_retry_1");
+  assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 1);
+  await favEvent(undefined, {id: "w2", provider: "Prism"}, "w2", "event_retry_2");
+  assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 2);
+});
+
+test("a counted share feeds the share quest only", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  await call({wallId: "w1", action: "share"});
+  assert.equal(store.get("questEventRate/u1_2026-01-02_share")?.count, 1);
+  assert.equal(quests(store).weekly.progress, 0);
+});
+
+test("a quest failure does not fail the action", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  installFakeDb(t);
+  assert.deepEqual(await call({wallId: "w1", action: "set"}), {counted: true});
+});
+
+test("adding a favourite feeds the favourite quest, removing one does not", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: NOW});
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  const fav = {id: "w1", provider: "Prism"};
+  await favEvent(fav, undefined);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_favourite"), undefined);
+  await favEvent(undefined, fav);
+  assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 1);
+  await favEvent(undefined, {id: "w1", provider: "WallHaven"});
+  assert.equal(store.get("questEventRate/u1_2026-01-02_favourite")?.count, 1);
 });

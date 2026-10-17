@@ -599,7 +599,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       await CoinsService.instance.bootstrapForCurrentUser();
       // Skip redundant refreshBalance: bootstrap already reads usersv2 and applies balance locally.
       await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
-      await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
       await getIt<BadgeRepository>().check();
     } catch (error, stackTrace) {
@@ -636,6 +635,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       UserLinkIntent() => TargetTypeValue.user,
       SetupLinkIntent() => TargetTypeValue.setup,
       ReferLinkIntent() => TargetTypeValue.refer,
+      ScreenLinkIntent() => TargetTypeValue.screen,
       ShortCodeIntent() => TargetTypeValue.shortCode,
       UnknownIntent() => TargetTypeValue.unknown,
     };
@@ -697,6 +697,18 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         unawaited(
           analytics.track(
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
+          ),
+        );
+      case ScreenLinkIntent():
+        _appRouter.push(switch (action.screen) {
+          DeepLinkScreen.shop => const ShopRoute(),
+          DeepLinkScreen.drops => const DropsRoute(),
+          DeepLinkScreen.leaderboard => const LeaderboardRoute(),
+          DeepLinkScreen.draw => const DrawRoute(),
+        });
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.screen, result: EventResultValue.navigated),
           ),
         );
       case ShortCodeIntent():

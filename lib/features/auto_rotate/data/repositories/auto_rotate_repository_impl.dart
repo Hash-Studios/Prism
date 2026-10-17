@@ -24,6 +24,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   static const String _categoryKey = 'autoRotate.category';
   static const int _categoryLimit = 40;
   static const String _appliedSourcesKey = 'autoRotate.appliedSources';
+  static const String _passUntilKey = 'autoRotate.passUntilMs';
 
   final SettingsLocalDataSource _settings;
   final PrismWallpaperRepository _wallpapers;
@@ -50,6 +51,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
       defaultValue: defaults.target.name,
     );
     final String sourceName = _settings.get<String>(_sourceKey, defaultValue: defaults.source.name);
+    final int passUntilMs = _settings.get<int>(_passUntilKey, defaultValue: 0);
     return AutoRotateConfig(
       enabled: _settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: defaults.enabled),
       intervalMinutes: AutoRotateConfig.intervalOptions.contains(interval) ? interval : defaults.intervalMinutes,
@@ -58,6 +60,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
       source: AutoRotateSource.values.asNameMap()[sourceName] ?? defaults.source,
       categoryName: _settings.get<String>(_categoryKey, defaultValue: defaults.categoryName),
       chargingOnly: _settings.get<bool>(PersistenceKeys.autoRotateChargingOnly, defaultValue: defaults.chargingOnly),
+      passUntil: passUntilMs > 0 ? DateTime.fromMillisecondsSinceEpoch(passUntilMs, isUtc: true) : null,
     );
   }
 
@@ -70,6 +73,12 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     await _settings.set(_sourceKey, config.source.name);
     await _settings.set(_categoryKey, config.categoryName);
     await _settings.set(PersistenceKeys.autoRotateChargingOnly, config.chargingOnly);
+    final DateTime? passUntil = config.passUntil;
+    if (passUntil == null) {
+      await _settings.delete(_passUntilKey);
+    } else {
+      await _settings.set(_passUntilKey, passUntil.millisecondsSinceEpoch);
+    }
   }
 
   @override

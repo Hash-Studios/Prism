@@ -620,4 +620,72 @@ void main() {
       expect(recordingAnalytics.events.whereType<AutoRotateDisabledEvent>(), hasLength(1));
     },
   );
+
+  group('auto-rotate pass', () {
+    test('the rotation stops the moment the pass ends', () async {
+      final DateTime until = DateTime.now().add(const Duration(milliseconds: 300));
+      final AutoRotateBloc bloc = build()
+        ..add(AutoRotateEvent.started(favouriteUrls: urls, isPro: true, passUntil: until))
+        ..add(AutoRotateEvent.entitlementChanged(isPro: true, userId: 'u1', passUntil: until));
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const AutoRotateEvent.toggled(true));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(bloc.state.status.isRunning, isTrue);
+      expect(repo.config.passUntil, until);
+
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+
+      expect(repo.stops, 1);
+      expect(bloc.state.isPro, isFalse);
+      expect(bloc.state.proLapsed, isTrue);
+      expect(repo.config.enabled, isFalse);
+      expect(repo.config.passUntil, isNull);
+      await bloc.close();
+    });
+
+    test('a stored pass that has ended does not count at launch', () async {
+      repo
+        ..config = AutoRotateConfig(enabled: true, passUntil: DateTime.now().subtract(const Duration(minutes: 1)))
+        ..running = true
+        ..applied = urls;
+      final AutoRotateBloc bloc = build()..add(const AutoRotateEvent.started(favouriteUrls: urls, isPro: false));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(bloc.state.isPro, isFalse);
+      expect(repo.stops, 1);
+      expect(repo.config.passUntil, isNull);
+      await bloc.close();
+    });
+
+    test('a stored pass still counts while the live passes are not loaded', () async {
+      repo
+        ..config = AutoRotateConfig(enabled: true, passUntil: DateTime.now().add(const Duration(days: 2)))
+        ..running = true
+        ..applied = urls;
+      final AutoRotateBloc bloc = build()
+        ..add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'u1'))
+        ..add(const AutoRotateEvent.favouritesChanged(urls));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(bloc.state.isPro, isTrue);
+      expect(repo.stops, 0);
+      await bloc.close();
+    });
+
+    test('a stored pass does not carry over to another account', () async {
+      repo
+        ..config = AutoRotateConfig(enabled: true, passUntil: DateTime.now().add(const Duration(days: 2)))
+        ..running = true
+        ..applied = urls;
+      final AutoRotateBloc bloc = build()..add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'u1'));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      bloc.add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'u2'));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(bloc.state.isPro, isFalse);
+      expect(repo.config.passUntil, isNull);
+      expect(repo.stops, 1);
+      await bloc.close();
+    });
+  });
 }

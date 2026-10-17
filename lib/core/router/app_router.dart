@@ -18,9 +18,13 @@ import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
+import 'package:Prism/features/draw/draw.dart';
+import 'package:Prism/features/drops/views/pages/drop_detail_page.dart';
+import 'package:Prism/features/drops/views/pages/drops_page.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
+import 'package:Prism/features/leaderboard/leaderboard.dart';
 import 'package:Prism/features/library/views/pages/library_screen.dart';
 import 'package:Prism/features/live_wallpaper/views/pages/live_wallpaper_screen.dart';
 import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
@@ -37,6 +41,7 @@ import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
+import 'package:Prism/features/shop/shop.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/trending/views/pages/trending_page.dart';
@@ -162,6 +167,11 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),
     AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page),
+    AutoRoute(path: '/shop', page: ShopRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/drops', page: DropsRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/drops/:weekKey', page: DropDetailRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/leaderboard', page: LeaderboardRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/draw', page: DrawRoute.page, guards: [_signedInGuard]),
     RedirectRoute(path: '/streak', redirectTo: '/rewards'),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),
     RedirectRoute(path: '*', redirectTo: '/not-found'),

@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -26,6 +28,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 
@@ -499,6 +502,30 @@ void main() {
       expect(find.byType(SearchGrid), findsOneWidget);
       expect(find.widgetWithText(PrismChip, 'Red'), findsOneWidget);
       expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    });
+
+    testWidgets('a colour search reports the colour_search quest event, a text search does not', (tester) async {
+      final CoinsTestBackend backend = CoinsTestBackend();
+      await backend.install();
+      addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+      final List<String> events = <String>[];
+      backend.onCall = (String name, Map<String, dynamic> params) async {
+        if (name == 'progressQuest') events.add(params['event'] as String);
+        return <String, Object?>{'success': true, 'rev': 1};
+      };
+      answerWith(<FeedItemEntity>[_wallpaper('wh-1')]);
+
+      await submit(tester, 'forest');
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      expect(events, isEmpty);
+
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel('Red'));
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+
+      expect(events, <String>['colour_search']);
     });
 
     testWidgets('a colour-only search is not saved as a recent search', (tester) async {

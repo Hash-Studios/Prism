@@ -10,6 +10,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/entities/trending_range.dart';
+import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -111,6 +112,7 @@ class _TrendingGrid extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             quickActions: true,
             sourceContext: 'trending_grid',
+            overlay: boostedTagFor(wall),
           ),
         );
       },

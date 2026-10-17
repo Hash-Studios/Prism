@@ -463,7 +463,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pump(const Duration(milliseconds: 1400));
 
-    expect(spends.single['amount'], AiQualityTier.fast.coinCost);
+    expect(spends.single['qualityTier'], AiQualityTier.fast.apiValue);
     expect(repository.requests.single, (style: AiStylePreset.abstract, quality: AiQualityTier.fast, coinsSpent: 10));
     final started = analytics.events.whereType<AiGenerateStartedEvent>().single;
     expect(started.quality, 'fast');
@@ -866,7 +866,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1400));
 
     expect(spends, hasLength(1));
-    expect(spends.single['amount'], AiQualityTier.fast.coinCost);
+    expect(spends.single['qualityTier'], AiQualityTier.fast.apiValue);
   });
 
   testWidgets('generate and Try another send the charge transaction id to the repository', (tester) async {
