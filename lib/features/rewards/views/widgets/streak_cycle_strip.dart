@@ -6,18 +6,21 @@ import 'package:flutter/material.dart';
 /// The 7-day streak cycle: one circle per day. Done days fill with the accent one after another. It plays again
 /// when [cycleDay] changes, for example when a claim lands while the page is open.
 ///
-/// [todayDay] marks the day to claim next. [showRewards] adds the coin reward under each day.
+/// [streakCount] is the full streak length. It labels the cells with the real streak days, so day 13 shows
+/// Day 8 to Day 14. [todayDay] marks the day to claim next. [showRewards] adds the coin reward under each day.
 /// [startDelay] holds the fill back, so a sheet can land its headline first.
 class StreakCycleStrip extends StatefulWidget {
   const StreakCycleStrip({
     super.key,
     required this.cycleDay,
+    this.streakCount = 0,
     this.todayDay,
     this.showRewards = true,
     this.startDelay = Duration.zero,
   });
 
   final int cycleDay;
+  final int streakCount;
   final int? todayDay;
   final bool showRewards;
   final Duration startDelay;
@@ -59,6 +62,7 @@ class _StreakCycleStripState extends State<StreakCycleStrip> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     final double total = _total.inMilliseconds.toDouble();
+    final int weekStart = widget.streakCount > widget.cycleDay ? widget.streakCount - widget.cycleDay + 1 : 1;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) => Row(
@@ -67,6 +71,7 @@ class _StreakCycleStripState extends State<StreakCycleStrip> with SingleTickerPr
             Expanded(
               child: _DayCell(
                 day: day,
+                label: weekStart + day - 1,
                 done: day <= widget.cycleDay,
                 today: day == widget.todayDay,
                 showReward: widget.showRewards,
@@ -90,6 +95,7 @@ class _StreakCycleStripState extends State<StreakCycleStrip> with SingleTickerPr
 class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
+    required this.label,
     required this.done,
     required this.today,
     required this.showReward,
@@ -97,6 +103,7 @@ class _DayCell extends StatelessWidget {
   });
 
   final int day;
+  final int label;
   final bool done;
   final bool today;
   final bool showReward;
@@ -115,14 +122,14 @@ class _DayCell extends StatelessWidget {
         ? ', today'
         : '';
     return Semantics(
-      label: showReward ? 'Day $day, plus $reward coins$state' : 'Day $day$state',
+      label: showReward ? 'Day $label, plus $reward coins$state' : 'Day $label$state',
       excludeSemantics: true,
       child: Column(
         children: <Widget>[
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              'Day $day',
+              'Day $label',
               maxLines: 1,
               softWrap: false,
               style: (done || today ? strong : caption).copyWith(fontSize: 11),
