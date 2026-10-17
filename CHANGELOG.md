@@ -10,6 +10,7 @@
 - Pro gets a daily coin spin and pays half for AI and Drops
 - New coin prices: a download costs 10 coins and your first 3 are free, and the first ad each day pays 20
 - New previews when you share a wallpaper or profile link
+- Prism opens with your saved wallpapers, favourites, searches and inbox when you are offline, and syncs your changes when you reconnect
 - Security and stability fixes
 
 ### v3.5.0
