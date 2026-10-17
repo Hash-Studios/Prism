@@ -11,7 +11,7 @@ PODS:
     - PromisesObjC (~> 2.4)
     - PromisesSwift (~> 2.4)
     - RecaptchaInterop (~> 101.0)
-  - async_wallpaper (3.3.0):
+  - async_wallpaper (3.5.0):
     - Flutter
   - audioplayers_darwin (0.0.1):
     - Flutter
@@ -497,7 +497,7 @@ CHECKOUT OPTIONS:
 SPEC CHECKSUMS:
   AppAuth: ef4da5a3fc2e10b90c09a0a94a9baeaedc0341d5
   AppCheckCore: be8fce5469f68d7f6a29aa94b25f097409ff7fdc
-  async_wallpaper: 993e2bb017589f73097b81c77cbb016ce45a9800
+  async_wallpaper: 4d6ba19b9b3a242304836e47e7727a9a644e90c8
   audioplayers_darwin: 835ced6edd4c9fc8ebb0a7cc9e294a91d99917d5
   cloud_firestore: 4102ac8059de4e35f2c6d950ed59526fbd4f81f5
   cloud_functions: 905f2759ad7872bf4fc6b8a633ec63670e36484f
