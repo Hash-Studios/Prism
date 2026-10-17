@@ -19,6 +19,8 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		A11A00012F00000100A1A1A1 /* PrismMediaApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */; };
 		A11A00022F00000100A1A1A1 /* PrismMediaHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */; };
+		A33C00012F00000300C3C3C3 /* PrismAppIconApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */; };
+		A33C00022F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33C00042F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift */; };
 		AB12CD352F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB12CD342F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy */; };
 		BDEF4D482F75E279000D5834 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = BDEF4D472F75E279000D5834 /* AppIcon.icon */; };
 		C15845A222C3C334C3EA4BB9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 5B930EBC7C844BB5EBE88886 /* GoogleService-Info.plist */; };
@@ -84,6 +86,8 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismMediaApi.swift; sourceTree = "<group>"; };
 		A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismMediaHostApiImpl.swift; sourceTree = "<group>"; };
+		A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAppIconApi.swift; sourceTree = "<group>"; };
+		A33C00042F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAppIconHostApiImpl.swift; sourceTree = "<group>"; };
 		AA15469276B281169B70FCEB /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		AB12CD342F00FEED00A1B2C3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BDEF4D472F75E279000D5834 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
@@ -185,6 +189,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				A11A00042F00000100A1A1A1 /* PrismMediaHostApiImpl.swift */,
+				A33C00042F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift */,
 				A11A00122F00000100A1A1A1 /* PrismMediaFiles.swift */,
 				A11A00052F00000100A1A1A1 /* Pigeon */,
 				A22B000F2F00000200B2B2B2 /* Shortcuts */,
@@ -197,6 +202,7 @@
 			isa = PBXGroup;
 			children = (
 				A11A00032F00000100A1A1A1 /* PrismMediaApi.swift */,
+				A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */,
 			);
 			path = Pigeon;
 			sourceTree = "<group>";
@@ -473,6 +479,8 @@
 			files = (
 				A11A00012F00000100A1A1A1 /* PrismMediaApi.swift in Sources */,
 				A11A00022F00000100A1A1A1 /* PrismMediaHostApiImpl.swift in Sources */,
+				A33C00012F00000300C3C3C3 /* PrismAppIconApi.swift in Sources */,
+				A33C00022F00000300C3C3C3 /* PrismAppIconHostApiImpl.swift in Sources */,
 				A11A00112F00000100A1A1A1 /* PrismMediaFiles.swift in Sources */,
 				A22B00012F00000200B2B2B2 /* PrismShortcutFavourites.swift in Sources */,
 				A22B00032F00000200B2B2B2 /* PrismShortcutImageKind.swift in Sources */,
@@ -571,6 +579,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconNoir AppIconGlass AppIconSunset AppIconMono";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
@@ -767,6 +776,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconNoir AppIconGlass AppIconSunset AppIconMono";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
@@ -794,6 +804,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconNoir AppIconGlass AppIconSunset AppIconMono";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;

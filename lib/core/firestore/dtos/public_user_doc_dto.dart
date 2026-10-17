@@ -19,6 +19,8 @@ abstract class PublicUserDocDto with _$PublicUserDocDto {
     @Default(false) bool premium,
     @FirestoreStringConverter() @Default('') String coverPhoto,
     @FirestoreBadgeIdsConverter() @Default(<String>[]) List<String> badges,
+    @Default(0) int xp,
+    @FirestoreStringMapConverter() @Default(<String, String>{}) Map<String, String> cosmetics,
   }) = _PublicUserDocDto;
 
   factory PublicUserDocDto.fromJson(Map<String, dynamic> json) => _$PublicUserDocDtoFromJson(json);

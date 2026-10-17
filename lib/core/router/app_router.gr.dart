@@ -427,7 +427,7 @@ class DrawRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const DrawPage();
+      return WrappedRoute(child: const DrawPage());
     },
   );
 }
@@ -743,7 +743,7 @@ class LeaderboardRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const LeaderboardPage();
+      return WrappedRoute(child: const LeaderboardPage());
     },
   );
 }

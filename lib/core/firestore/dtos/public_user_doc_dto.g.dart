@@ -23,6 +23,10 @@ _PublicUserDocDto _$PublicUserDocDtoFromJson(Map<String, dynamic> json) => _Publ
   premium: json['premium'] as bool? ?? false,
   coverPhoto: json['coverPhoto'] == null ? '' : const FirestoreStringConverter().fromJson(json['coverPhoto']),
   badges: json['badges'] == null ? const <String>[] : const FirestoreBadgeIdsConverter().fromJson(json['badges']),
+  xp: (json['xp'] as num?)?.toInt() ?? 0,
+  cosmetics: json['cosmetics'] == null
+      ? const <String, String>{}
+      : const FirestoreStringMapConverter().fromJson(json['cosmetics']),
 );
 
 Map<String, dynamic> _$PublicUserDocDtoToJson(_PublicUserDocDto instance) => <String, dynamic>{
@@ -38,4 +42,6 @@ Map<String, dynamic> _$PublicUserDocDtoToJson(_PublicUserDocDto instance) => <St
   'premium': instance.premium,
   'coverPhoto': const FirestoreStringConverter().toJson(instance.coverPhoto),
   'badges': const FirestoreBadgeIdsConverter().toJson(instance.badges),
+  'xp': instance.xp,
+  'cosmetics': const FirestoreStringMapConverter().toJson(instance.cosmetics),
 };

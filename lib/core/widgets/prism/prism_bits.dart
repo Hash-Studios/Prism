@@ -1,5 +1,6 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -99,11 +100,17 @@ class PrismTag extends StatelessWidget {
 
 /// A round profile picture with a hairline ring. Shows the first letter of [name] when there is no image.
 class PrismAvatar extends StatelessWidget {
-  const PrismAvatar({super.key, this.url, this.name, this.size = 44});
+  const PrismAvatar({super.key, this.url, this.name, this.size = 44, this.frameId, this.premium = false});
 
   final String? url;
   final String? name;
   final double size;
+
+  /// The equipped frame id. [size] stays the whole footprint, ring included.
+  final String? frameId;
+
+  /// A Pro frame draws only while this is true.
+  final bool premium;
 
   @override
   Widget build(BuildContext context) {
@@ -118,9 +125,7 @@ class PrismAvatar extends StatelessWidget {
       ),
     );
     final String? src = url?.trim();
-    return Container(
-      width: size,
-      height: size,
+    final Widget avatar = Container(
       foregroundDecoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: cs.onSurface.withValues(alpha: 0.1)),
@@ -137,6 +142,7 @@ class PrismAvatar extends StatelessWidget {
               ),
       ),
     );
+    return ProfileFrame(frameId: frameId, premium: premium, size: size, child: avatar);
   }
 }
 

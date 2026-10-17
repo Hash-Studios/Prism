@@ -15,7 +15,8 @@ class _MockReviewBatchBloc extends MockBloc<ReviewBatchEvent, ReviewBatchState> 
 
 class _FakeEvent extends Fake implements ReviewBatchEvent {}
 
-FirestoreDocument _wall(String id, String title) => FirestoreDocument(id, <String, dynamic>{
+FirestoreDocument _wall(String id, String title, {String? origin}) => FirestoreDocument(id, <String, dynamic>{
+  'origin': ?origin,
   'title': title,
   'category': 'Nature',
   'by': 'Ann',
@@ -199,5 +200,37 @@ void main() {
     await tester.tap(find.text('Load next batch'));
     await tester.pump();
     verify(() => bloc.add(any(that: isA<ReviewBatchNextBatchRequested>()))).called(1);
+  });
+
+  testWidgets('a Studio wall offers Reserve for Drop and the button sends the event', (tester) async {
+    await pump(
+      tester,
+      ReviewBatchState(
+        status: ReviewBatchStatus.loaded,
+        walls: <FirestoreDocument>[_wall('a', 'Sunset', origin: 'studio')],
+        totalPending: 1,
+      ),
+    );
+
+    expect(find.text('Reserve'), findsOneWidget);
+    expect(find.bySemanticsLabel('Reserve for Drop'), findsOneWidget);
+
+    await tester.tap(find.text('Reserve'));
+    await tester.pump();
+    verify(() => bloc.add(any(that: isA<ReviewBatchSwipeReserved>()))).called(1);
+  });
+
+  testWidgets('a wall that is not from Studio has no Reserve action', (tester) async {
+    await pump(
+      tester,
+      ReviewBatchState(
+        status: ReviewBatchStatus.loaded,
+        walls: <FirestoreDocument>[_wall('a', 'Sunset')],
+        totalPending: 1,
+      ),
+    );
+
+    expect(find.text('Reserve'), findsNothing);
+    expect(find.text('Skip'), findsOneWidget);
   });
 }

@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -15,6 +17,8 @@ import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
+import 'package:Prism/core/widgets/cosmetics/glow_text.dart';
+import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
@@ -26,6 +30,7 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_ent
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
+import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
@@ -232,6 +237,20 @@ class _ProfileChildState extends State<_ProfileChild> {
 
   PublicProfileEntity get _profile => widget.profile;
 
+  /// Own profile reads what is equipped now, so equipping in the shop shows here at once.
+  ({String? frame, String? glow, int xp, bool premium}) get _cosmetics {
+    if (!widget.ownProfile) {
+      return (frame: _profile.frameId, glow: _profile.nameGlowId, xp: _profile.xp, premium: _profile.premium);
+    }
+    final Inventory inventory = CoinsService.instance.inventoryNotifier.value;
+    return (
+      frame: inventory.frame,
+      glow: inventory.nameGlow,
+      xp: CoinsService.instance.xpNotifier.value.xp,
+      premium: app_state.prismUser.premium,
+    );
+  }
+
   void _trackAction(AnalyticsActionValue action, {String sourceContext = 'profile_screen'}) {
     unawaited(
       analytics.track(
@@ -336,6 +355,17 @@ class _ProfileChildState extends State<_ProfileChild> {
     context.router.push(FollowersRoute(followers: _profile.followers));
   }
 
+  void _openGiftSheet() {
+    PrismHaptics.tap();
+    showPrismSheet<void>(
+      context: context,
+      builder: (BuildContext sheetContext) => GiftPassSheet(
+        recipientUid: _profile.id,
+        recipientName: creatorLabel(name: _profile.name, username: _profile.username),
+      ),
+    );
+  }
+
   Future<void> _onMenuSelected(_ProfileMenuAction action) async {
     final String uid = _profile.id.trim();
     switch (action) {
@@ -390,9 +420,21 @@ class _ProfileChildState extends State<_ProfileChild> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.ownProfile) return _buildProfile(context);
+    return ListenableBuilder(
+      listenable: Listenable.merge(<Listenable>[
+        CoinsService.instance.inventoryNotifier,
+        CoinsService.instance.xpNotifier,
+      ]),
+      builder: (BuildContext context, _) => _buildProfile(context),
+    );
+  }
+
+  Widget _buildProfile(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
     final Size screen = MediaQuery.sizeOf(context);
+    final cosmetics = _cosmetics;
     final String safeUserPhoto = _profile.profilePhoto.trim();
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
     final bool ownProfile = widget.ownProfile;
@@ -422,6 +464,18 @@ class _ProfileChildState extends State<_ProfileChild> {
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
     final bool showProfileCompletenessCard = ownProfile && !profileCompletenessStatus.isComplete;
+    final Widget photo = ClipOval(
+      child: hasUserPhoto
+          ? CachedNetworkImage(imageUrl: safeUserPhoto, width: 78, height: 78, fit: BoxFit.cover)
+          : SizedBox(
+              width: 78,
+              height: 78,
+              child: ColoredBox(
+                color: cs.surface,
+                child: Icon(JamIcons.user, color: cs.primary, size: 30),
+              ),
+            ),
+    );
 
     return Scaffold(
       key: _scaffoldKey,
@@ -458,6 +512,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
+                        _HeaderButton(tooltip: 'Gift a 24 h pass', icon: JamIcons.gift, onPressed: _openGiftSheet),
                         BlocConsumer<PublicProfileBloc, PublicProfileState>(
                           listenWhen: (prev, curr) =>
                               curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
@@ -532,31 +587,22 @@ class _ProfileChildState extends State<_ProfileChild> {
                           child: SizedBox(
                             width: screen.width,
                             child: Center(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  // The accent ring follows the theme, like the camera badge in the edit panel.
-                                  border: Border.all(color: cs.primary, width: 4),
-                                  color: cs.onSurface,
-                                ),
-                                child: ClipOval(
-                                  child: hasUserPhoto
-                                      ? CachedNetworkImage(
-                                          imageUrl: safeUserPhoto,
-                                          width: 78,
-                                          height: 78,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : SizedBox(
-                                          width: 78,
-                                          height: 78,
-                                          child: ColoredBox(
-                                            color: cs.surface,
-                                            child: Icon(JamIcons.user, color: cs.primary, size: 30),
-                                          ),
-                                        ),
-                                ),
-                              ),
+                              child: ProfileFrame.draws(cosmetics.frame, premium: cosmetics.premium)
+                                  ? ProfileFrame(
+                                      frameId: cosmetics.frame,
+                                      premium: cosmetics.premium,
+                                      size: 86,
+                                      child: photo,
+                                    )
+                                  : Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        // The accent ring follows the theme, like the camera badge in the edit panel.
+                                        border: Border.all(color: cs.primary, width: 4),
+                                        color: cs.onSurface,
+                                      ),
+                                      child: photo,
+                                    ),
                             ),
                           ),
                         ),
@@ -581,8 +627,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                     children: <Widget>[
                       SizedBox(
                         width: screen.width * 0.7,
-                        child: Text(
+                        child: GlowText(
                           creatorLabel(name: _profile.name, username: _profile.username),
+                          glowId: cosmetics.glow,
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -636,7 +683,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ProfileBadgeRow(badgeIds: _profile.badges),
                       const SizedBox(height: 8),
                       SizedBox(
-                        width: screen.width * 0.7,
+                        width: screen.width * 0.9,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
@@ -671,6 +718,16 @@ class _ProfileChildState extends State<_ProfileChild> {
                                   child: _StatPill(count: _profile.followers.length, label: 'Followers'),
                                 ),
                               ),
+                            ),
+                            Container(
+                              width: 1,
+                              height: 16,
+                              margin: const EdgeInsets.symmetric(horizontal: 16),
+                              color: cs.onSurface.withValues(alpha: 0.2),
+                            ),
+                            PrismTag(
+                              label: EconomyConfig.current.rankFor(cosmetics.xp).id.inCaps,
+                              tone: PrismTone.accent,
                             ),
                           ],
                         ),

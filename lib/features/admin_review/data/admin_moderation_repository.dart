@@ -3,6 +3,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
+import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
@@ -15,16 +16,18 @@ class AdminModerationRepository {
   static FirestoreDocument _toDocument(Map<String, dynamic> data, String id) => FirestoreDocument(id, data);
 
   Stream<List<FirestoreDocument>> watchPendingWalls() {
-    return _client.watchQuery<FirestoreDocument>(
-      const FirestoreQuerySpec(
-        collection: FirebaseCollections.walls,
-        sourceTag: 'admin_review.pending_walls',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
-        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-        isStream: true,
-      ),
-      _toDocument,
-    );
+    return _client
+        .watchQuery<FirestoreDocument>(
+          const FirestoreQuerySpec(
+            collection: FirebaseCollections.walls,
+            sourceTag: 'admin_review.pending_walls',
+            filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
+            orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+            isStream: true,
+          ),
+          _toDocument,
+        )
+        .map((List<FirestoreDocument> walls) => walls.where((wall) => !isInDrop(wall)).toList(growable: false));
   }
 
   Stream<List<FirestoreDocument>> watchOpenContentReports() {
@@ -129,6 +132,19 @@ class AdminModerationRepository {
       collection: FirebaseCollections.walls,
       docId: wall.id,
     );
+  }
+
+  /// Sets a Studio wall aside for the next weekly Drop. The planner picks it up on Monday.
+  Future<void> reserveWallForDrop(FirestoreDocument wall) {
+    return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
+      'dropReserved': true,
+    }, sourceTag: 'admin_review.reserve_wall_for_drop');
+  }
+
+  Future<void> undoReserveWallForDrop(FirestoreDocument wall) {
+    return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
+      'dropReserved': false,
+    }, sourceTag: 'admin_review.undo_reserve_wall_for_drop');
   }
 
   /// Sends an approved wall back to review with the values it had before approval.

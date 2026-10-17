@@ -3,6 +3,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:injectable/injectable.dart';
@@ -29,7 +30,7 @@ class ReviewBatchRepository {
     );
 
     final walls = await _firestoreClient.query(querySpec, (data, docId) => FirestoreDocument(docId, data));
-    return walls;
+    return walls.where((wall) => !isInDrop(wall)).toList(growable: false);
   }
 
   Future<void> categorizeWalls(List<FirestoreDocument> walls) async {
@@ -55,6 +56,6 @@ class ReviewBatchRepository {
       filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
     );
     final walls = await _firestoreClient.query(querySpec, (data, docId) => FirestoreDocument(docId, data));
-    return walls.length;
+    return walls.where((wall) => !isInDrop(wall)).length;
   }
 }

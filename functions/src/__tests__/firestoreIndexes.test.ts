@@ -46,6 +46,7 @@ test("economy v2 indexes: weekly xp leaderboard, drop reservation queue, active 
   assert.ok(hasIndex("usersv2", [["xpWeek.weekKey", "ASCENDING"], ["xpWeek.xp", "DESCENDING"]]));
   assert.ok(hasIndex("walls", [["dropReserved", "ASCENDING"], ["review", "ASCENDING"], ["createdAt", "ASCENDING"]]));
   assert.ok(hasIndex("boosts", [["endsAt", "ASCENDING"], ["startsAt", "DESCENDING"]]));
+  assert.ok(hasIndex("draws", [["status", "ASCENDING"], ["settledAt", "DESCENDING"]]));
 });
 
 test("quest event rate docs expire through a TTL policy on expireAt", () => {

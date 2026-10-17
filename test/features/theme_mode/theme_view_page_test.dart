@@ -22,10 +22,14 @@ void main() {
 
   setUpAll(() => registerFallbackValue(const ThemeEvent.started()));
 
-  setUp(() {
+  setUp(() async {
     themeBloc = _MockThemeBloc();
     when(() => themeBloc.state).thenReturn(ThemeState.initial());
+    await getIt.reset();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
   });
+
+  tearDown(() => getIt.reset());
 
   Future<void> pumpPage(WidgetTester tester, ThemeMode mode) async {
     tester.view.physicalSize = const Size(1000, 1400);

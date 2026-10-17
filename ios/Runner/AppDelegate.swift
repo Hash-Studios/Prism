@@ -10,6 +10,10 @@ import UserNotifications
       binaryMessenger: engineBridge.applicationRegistrar.messenger(),
       api: PrismMediaHostApiImpl()
     )
+    PrismAppIconHostApiSetup.setUp(
+      binaryMessenger: engineBridge.applicationRegistrar.messenger(),
+      api: PrismAppIconHostApiImpl()
+    )
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,
