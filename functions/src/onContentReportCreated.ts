@@ -144,6 +144,7 @@ export const onContentReportCreated = onDocumentCreated(
         ...(wallThumbUrl ? {imageUrl: wallThumbUrl} : {}),
         modifier: adminEmail,
         channelId: "moderation",
+        scoreKind: "moderation",
       }, adminEmail);
     }
 

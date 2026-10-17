@@ -16,9 +16,9 @@ class _MockFirestore extends Mock implements FirebaseFirestore {}
 
 class _MockCollection extends Mock implements CollectionReference<Map<String, dynamic>> {}
 
-class _MockDoc extends Mock implements DocumentReference<Map<String, dynamic>> {}
-
 class _MockQuery extends Mock implements Query<Map<String, dynamic>> {}
+
+class _MockDoc extends Mock implements DocumentReference<Map<String, dynamic>> {}
 
 class _MockSnapshot extends Mock implements DocumentSnapshot<Map<String, dynamic>> {}
 
@@ -40,6 +40,11 @@ class _RecordingSink implements FirestoreTelemetrySink {
 FirebaseException _permissionDenied() => FirebaseException(plugin: 'cloud_firestore', code: 'permission-denied');
 
 void main() {
+  test('a document id filter uses FieldPath.documentId', () {
+    expect(firestoreQueryField(firestoreDocumentIdField), FieldPath.documentId);
+    expect(firestoreQueryField('createdAt'), 'createdAt');
+  });
+
   late _MockFirestore firestore;
   late _MockCollection collection;
   late _MockDoc doc;
@@ -157,6 +162,44 @@ void main() {
     await expectation;
     verify(() => collection.snapshots(includeMetadataChanges: true)).called(1);
     expect(cancelled, isTrue);
+  });
+
+  test('query maps document id range filters and order without treating __name__ as a data field', () async {
+    final _MockQuery query = _MockQuery();
+    final _MockQuerySnapshot snapshot = _MockQuerySnapshot();
+    final DateTime rangeStart = DateTime.utc(2026);
+    when(() => collection.where(FieldPath.documentId, isGreaterThanOrEqualTo: 'a')).thenReturn(query);
+    when(() => query.where(FieldPath.documentId, isLessThanOrEqualTo: 'z')).thenReturn(query);
+    when(() => query.where('createdAt', isGreaterThan: rangeStart)).thenReturn(query);
+    when(() => query.orderBy(FieldPath.documentId, descending: true)).thenReturn(query);
+    when(() => query.get()).thenAnswer((_) async => snapshot);
+    when(() => snapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+
+    await client.query<String>(
+      FirestoreQuerySpec(
+        collection: 'walls',
+        sourceTag: 'test.document-id-range',
+        filters: <FirestoreFilter>[
+          const FirestoreFilter(
+            field: firestoreDocumentIdField,
+            op: FirestoreFilterOp.isGreaterThanOrEqualTo,
+            value: 'a',
+          ),
+          const FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.isLessThanOrEqualTo, value: 'z'),
+          FirestoreFilter(field: 'createdAt', op: FirestoreFilterOp.isGreaterThan, value: rangeStart),
+        ],
+        orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: firestoreDocumentIdField, descending: true)],
+      ),
+      (data, id) => id,
+    );
+
+    verify(() => collection.where(FieldPath.documentId, isGreaterThanOrEqualTo: 'a')).called(1);
+    verify(() => query.where(FieldPath.documentId, isLessThanOrEqualTo: 'z')).called(1);
+    verify(() => query.where('createdAt', isGreaterThan: rangeStart)).called(1);
+    verify(() => query.orderBy(FieldPath.documentId, descending: true)).called(1);
+    verifyNever(() => collection.where('__name__', isGreaterThanOrEqualTo: 'a'));
+    verifyNever(() => query.where('__name__', isLessThanOrEqualTo: 'z'));
+    verifyNever(() => query.orderBy('__name__', descending: true));
   });
 
   test('watchQuery surfaces a stream failure as FirestoreError and records it', () async {

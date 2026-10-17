@@ -10,6 +10,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 const _transientFirestoreCodes = {'unavailable', 'deadline-exceeded', 'internal', 'resource-exhausted'};
 
+/// Document-id filters and orders use [FieldPath.documentId]. The string `__name__` is not that field.
+Object firestoreQueryField(String field) => field == firestoreDocumentIdField ? FieldPath.documentId : field;
+
 bool _isTransientFirestoreError(FirestoreError e) => e.code != null && _transientFirestoreCodes.contains(e.code);
 
 class _RawQueryDoc {
@@ -106,7 +109,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   Query<Map<String, dynamic>> _applySpec(FirestoreQuerySpec spec) {
     Query<Map<String, dynamic>> query = _firestore.collection(spec.collection);
     for (final FirestoreFilter filter in spec.filters) {
-      final Object field = filter.field == firestoreDocumentIdField ? FieldPath.documentId : filter.field;
+      final Object field = firestoreQueryField(filter.field);
       switch (filter.op) {
         case FirestoreFilterOp.isEqualTo:
           query = query.where(field, isEqualTo: filter.value);

@@ -60,6 +60,7 @@ export const sweepOpenReports = onSchedule(
             {route: "content_report", report_id: report.id},
           modifier: adminEmail,
           channelId: "moderation",
+          scoreKind: "moderation",
         }, adminEmail);
       }
       await report.ref.update({escalatedAt: admin.firestore.FieldValue.serverTimestamp()});

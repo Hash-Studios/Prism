@@ -66,6 +66,7 @@ export const onWallApproved = onDocumentUpdated(
       imageUrl: wallThumb || undefined,
       modifier: artistEmail,
       channelId: "posts",
+      scoreKind: "post",
       collapseKey: `wall_${wallId}`,
     };
     const artistData = artist?.data();
@@ -91,6 +92,7 @@ export const onWallApproved = onDocumentUpdated(
         imageUrl: wallThumb || undefined,
         modifier: artistEmail,
         channelId: "posts",
+        scoreKind: "post",
         fcmTarget: {topic},
         pushOnly: true,
         collapseKey,
@@ -110,6 +112,7 @@ export const onWallApproved = onDocumentUpdated(
         imageUrl: wallThumb || undefined,
         modifier: email,
         channelId: "posts",
+        scoreKind: "moderation",
       }, email);
     }
   },

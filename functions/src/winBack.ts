@@ -2,54 +2,78 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {fcmMessage, userIdToTopic, userPushTokens} from "./notificationHelper";
+import {recordPushOutcome} from "./notificationScoreboard";
 import {db, REGION, str} from "./common";
 
-export const WIN_BACK_STEPS = [3, 7, 14, 30, 60];
+export const WIN_BACK_STEPS = [7, 14, 30, 60];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** Days a step stays open. A missed daily run gets a second chance; the dedupe stamp blocks repeats. */
+/** Days a step stays open. A missed evening still sends the next day; the dedupe stamp blocks repeats. */
 const WINDOW_DAYS = 2;
 const PAGE_SIZE = 300;
 const CHUNK_SIZE = 25;
-const FIELD = "coinState.streakLastClaimServerAt";
+const OPEN_FIELD = "lastAppOpenAt";
+const OFFSET_FIELD = "appOpenTimezoneOffsetMinutes";
+const EVENING_MINUTE = 18 * 60;
+const OFFSET_STEP = 15;
 
-const COPY: Record<number, {title: string; body: (wallTitle: string) => string}> = {
-  3: {title: "Today's Wall of the Day is up", body: (t) => `${t} is waiting for you.`},
-  7: {title: "Your feed has new walls", body: () => "Fresh wallpapers landed while you were away."},
-  14: {title: "New walls are waiting", body: () => "Come see what creators added this fortnight."},
-  30: {title: "New AI styles to try", body: () => "Make a wallpaper that feels like you."},
-  60: {title: "Prism misses you", body: () => "Your next favourite wall is a tap away."},
+const COPY: Record<number, {title: string; body: string}> = {
+  7: {title: "Your feed has new walls", body: "Fresh wallpapers landed while you were away."},
+  14: {title: "New walls are waiting", body: "Come see what creators added this fortnight."},
+  30: {title: "New AI styles to try", body: "Make a wallpaper that feels like you."},
+  60: {title: "Prism misses you", body: "Your next favourite wall is a tap away."},
 };
 
 interface WinBackState {
   step?: number;
-  claimAtMs?: number;
+  /** Milliseconds of the last app open this sequence was sent for. */
+  openAtMs?: number;
 }
 
 /**
  * Returns the step N whose window holds the inactivity (>= N days, < N + 2 days),
- * or null. Null also when this inactivity period already got step N or later.
+ * or null. Null also when this same last open already got step N or later.
  */
 export function winBackStepFor(
   nowMs: number,
-  lastActiveMs: number,
+  lastOpenMs: number,
   state: WinBackState | undefined,
 ): number | null {
-  const idle = nowMs - lastActiveMs;
+  const idle = nowMs - lastOpenMs;
   for (const n of WIN_BACK_STEPS) {
     if (idle >= n * DAY_MS && idle < (n + WINDOW_DAYS) * DAY_MS) {
-      if (state?.claimAtMs === lastActiveMs && (state.step ?? 0) >= n) return null;
+      if (state?.openAtMs === lastOpenMs && (state.step ?? 0) >= n) return null;
       return n;
     }
   }
   return null;
 }
 
+/** UTC offsets (minutes, in 15 minute steps, -12:00 to +14:00) where it is 18:00 local at `nowMs`. */
+export function offsetsAtEveningLocal(nowMs: number): number[] {
+  const utcMinutes = Math.round((nowMs / 60_000 % 1440) / OFFSET_STEP) * OFFSET_STEP;
+  const base = (((EVENING_MINUTE - utcMinutes) % 1440) + 1440) % 1440;
+  return [base, base - 1440].filter((offset) => offset >= -720 && offset <= 840);
+}
+
+function destination(step: number): string {
+  if (step === 30) return "ai";
+  if (step === 60) return "wall_of_the_day";
+  return "home";
+}
+
+/** The slot the scheduler meant to run. A late run still sends to that slot. */
+function scheduledAtMs(scheduleTime: string | undefined): number {
+  const ms = Date.parse(scheduleTime ?? "");
+  return Number.isFinite(ms) ? ms : Date.now();
+}
+
 function completedState(data: admin.firestore.DocumentData): WinBackState {
   const winBack = data.winBack;
+  const openAt = winBack?.openAt;
   return {
     step: Number.isFinite(winBack?.step) ? winBack.step : undefined,
-    claimAtMs: winBack?.claimAt instanceof admin.firestore.Timestamp ? winBack.claimAt.toMillis() : undefined,
+    openAtMs: openAt instanceof admin.firestore.Timestamp ? openAt.toMillis() : undefined,
   };
 }
 
@@ -80,83 +104,112 @@ async function todaysWall(): Promise<{title: string; wallId?: string; imageUrl?:
 
 export const sendWinBackPushes = onSchedule(
   {
-    schedule: "30 18 * * *",
-    timeZone: "Asia/Kolkata",
+    schedule: "*/15 * * * *",
+    timeZone: "UTC",
     region: REGION,
     timeoutSeconds: 540,
     memory: "512MiB",
     maxInstances: 1,
   },
-  async () => {
-    const nowMs = Date.now();
-    const wall = await todaysWall();
+  async (event) => {
+    const nowMs = scheduledAtMs(event.scheduleTime);
+    const offsets = offsetsAtEveningLocal(nowMs);
+    let wallPromise: ReturnType<typeof todaysWall> | undefined;
+    const wallForDay60 = () => (wallPromise ??= todaysWall());
     let sent = 0;
     let failed = 0;
 
-    for (const n of WIN_BACK_STEPS) {
-      const copy = COPY[n];
-      let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
-      while (true) {
-        let q = db
-          .collection("usersv2")
-          .where(FIELD, ">", admin.firestore.Timestamp.fromMillis(nowMs - (n + WINDOW_DAYS) * DAY_MS))
-          .where(FIELD, "<=", admin.firestore.Timestamp.fromMillis(nowMs - n * DAY_MS))
-          .orderBy(FIELD)
-          .limit(PAGE_SIZE);
-        if (cursor) q = q.startAfter(cursor);
-        const snap = await q.get();
-        if (snap.empty) break;
+    for (const offset of offsets) {
+      for (const n of WIN_BACK_STEPS) {
+        const copy = COPY[n];
+        let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
+        while (true) {
+          let q = db
+            .collection("usersv2")
+            .where(OFFSET_FIELD, "==", offset)
+            .where(OPEN_FIELD, ">", admin.firestore.Timestamp.fromMillis(nowMs - (n + WINDOW_DAYS) * DAY_MS))
+            .where(OPEN_FIELD, "<=", admin.firestore.Timestamp.fromMillis(nowMs - n * DAY_MS))
+            .orderBy(OPEN_FIELD)
+            .limit(PAGE_SIZE);
+          if (cursor) q = q.startAfter(cursor);
+          const snap = await q.get();
+          if (snap.empty) break;
 
-        for (let i = 0; i < snap.docs.length; i += CHUNK_SIZE) {
-          const results = await Promise.allSettled(
-            snap.docs.slice(i, i + CHUNK_SIZE).map(async (doc) => {
-              const data = doc.data();
-              const uid = doc.id;
-              const claimAt = data.coinState?.streakLastClaimServerAt;
-              if (data.deleted === true || data.loggedIn === false ||
-                  !(claimAt instanceof admin.firestore.Timestamp)) return false;
-              const step = winBackStepFor(nowMs, claimAt.toMillis(), completedState(data));
-              if (step !== n) return false;
-              if (await marketingPushesOff(uid)) return false;
+          for (let i = 0; i < snap.docs.length; i += CHUNK_SIZE) {
+            const results = await Promise.allSettled(
+              snap.docs.slice(i, i + CHUNK_SIZE).map(async (doc) => {
+                const data = doc.data();
+                const uid = doc.id;
+                const lastOpen = data.lastAppOpenAt;
+                if (data.deleted === true || data.loggedIn === false ||
+                    !(lastOpen instanceof admin.firestore.Timestamp)) return false;
+                const step = winBackStepFor(nowMs, lastOpen.toMillis(), completedState(data));
+                if (step !== n) return false;
+                if (await marketingPushesOff(uid)) return false;
 
-              const targets = [
-                {topic: userIdToTopic(uid)},
-                ...(await userPushTokens(uid, data.fcmToken)).map((token) => ({token})),
-              ];
-              const deliveries = await Promise.allSettled(targets.map((fcmTarget) => admin.messaging().send(fcmMessage({
-                title: copy.title,
-                body: copy.body(wall.title),
-                data: {route: "wall_of_the_day", ...(wall.wallId ? {wall_id: wall.wallId} : {})},
-                imageUrl: wall.imageUrl,
-                modifier: uid,
-                channelId: "wall_of_the_day",
-                pushOnly: true,
-                collapseKey: `win_back_${n}`,
-                fcmTarget,
-              }))));
-              if (deliveries.every((d) => d.status === "rejected")) {
-                throw (deliveries[0] as PromiseRejectedResult).reason;
+                const wall = n === 60 ? await wallForDay60() : undefined;
+                const targets = [
+                  {topic: userIdToTopic(uid)},
+                  ...(await userPushTokens(uid, data.fcmToken)).map((token) => ({token})),
+                ];
+                // The query snapshot can age while preferences and tokens are read. Recheck
+                // activity and dedupe state immediately before sending.
+                const current = (await doc.ref.get()).data();
+                if (!current || current.deleted === true || current.loggedIn === false ||
+                    current.appOpenTimezoneOffsetMinutes !== offset ||
+                    !(current.lastAppOpenAt instanceof admin.firestore.Timestamp) ||
+                    current.lastAppOpenAt.toMillis() !== lastOpen.toMillis() ||
+                    winBackStepFor(nowMs, lastOpen.toMillis(), completedState(current)) !== n) return false;
+                let accepted = 0;
+                for (const fcmTarget of targets) {
+                  await recordPushOutcome("win_back", "sends", new Date(nowMs));
+                  try {
+                    await admin.messaging().send(fcmMessage({
+                      title: copy.title,
+                      body: copy.body,
+                      data: {
+                        route: destination(n),
+                        push_kind: "win_back",
+                        step: String(n),
+                        ...(wall?.wallId ? {wall_id: wall.wallId} : {}),
+                      },
+                      imageUrl: wall?.imageUrl,
+                      modifier: uid,
+                      channelId: "recommendations",
+                      scoreKind: "win_back",
+                      pushOnly: true,
+                      collapseKey: `win_back_${n}`,
+                      fcmTarget,
+                    }));
+                    accepted += 1;
+                    await recordPushOutcome("win_back", "accepts", new Date(nowMs));
+                  } catch (err) {
+                    await recordPushOutcome("win_back", "fails", new Date(nowMs));
+                    logger.warn("winBack: one target failed.", {uid, err});
+                  }
+                }
+                if (accepted === 0) throw new Error("win-back push failed");
+                await doc.ref.update({
+                  winBack: {step: n, openAt: lastOpen, sentAt: admin.firestore.FieldValue.serverTimestamp()},
+                });
+                return true;
+              }),
+            );
+            for (const r of results) {
+              if (r.status === "fulfilled") {
+                if (r.value) sent += 1;
+              } else {
+                failed += 1;
+                logger.error("winBack: user failed.", {err: r.reason});
               }
-              await doc.ref.update({
-                winBack: {step: n, claimAt, sentAt: admin.firestore.FieldValue.serverTimestamp()},
-              });
-              return true;
-            }),
-          );
-          for (const r of results) {
-            if (r.status === "fulfilled") {
-              if (r.value) sent += 1;
-            } else {
-              failed += 1;
-              logger.error("winBack: user failed.", {err: r.reason});
             }
           }
-        }
 
-        if (snap.size < PAGE_SIZE) break;
-        cursor = snap.docs[snap.docs.length - 1];
+          if (snap.size < PAGE_SIZE) break;
+          cursor = snap.docs[snap.docs.length - 1];
+        }
       }
     }
-    logger.info("sendWinBackPushes: done", {sent, failed});
+    logger.info("sendWinBackPushes: done", {sent, failed, offsets});
   },
 );

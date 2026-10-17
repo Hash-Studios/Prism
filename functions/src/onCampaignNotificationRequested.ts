@@ -59,7 +59,7 @@ export const onCampaignNotificationRequested = onDocumentCreated(
 
     if (modifier.includes("@")) {
       await sendToUserByEmail(
-        {title, body, data: {route}, imageUrl: imageUrl || undefined, modifier, channelId},
+        {title, body, data: {route}, imageUrl: imageUrl || undefined, modifier, channelId, scoreKind: "campaign"},
         modifier,
       );
       await markProcessed(requestId, {fcmTopic: "user"});
@@ -84,6 +84,7 @@ export const onCampaignNotificationRequested = onDocumentCreated(
       imageUrl: imageUrl || undefined,
       modifier,
       channelId,
+      scoreKind: "campaign",
       fcmTarget: {topic: fcmTopic},
     });
 

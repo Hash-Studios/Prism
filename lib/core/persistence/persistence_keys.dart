@@ -50,6 +50,12 @@ class PersistenceKeys {
   // Notification ids the user deleted, so a remote sync does not restore them.
   static const String notificationsDeletedIds = 'notifications.deleted_ids';
 
+  // Last time this install wrote lastAppOpenAt, and the push tap waiting for a next-day return.
+  static const String appOpenStampedAtUtc = 'retention.appOpenStampedAtUtc';
+  static const String pushReturnPending = 'retention.pushReturnPending';
+  static const String notificationInstallId = 'retention.notificationInstallId';
+  static const String notificationSignalUserId = 'retention.notificationSignalUserId';
+
   // Download quality: 'original' | 'compressed'
   static const String downloadQuality = 'downloadQuality';
 
