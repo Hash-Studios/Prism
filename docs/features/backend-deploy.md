@@ -357,10 +357,10 @@ Automated tests:
 
 ## Coin economy v2
 
-Spec: `docs/features/coin-economy-v2.md`. Each step needs the human owner's yes. Do the steps in this order. Old clients keep working at legacy prices until they update.
+Spec: `docs/features/coin-economy-v2.md`. Each step needs the human owner's yes. Do the steps in this order. Old clients (no `pricingVersion`) keep legacy prices until `flags.legacyPricingUntil` (default 2027-01-31); after that date everyone pays v2 prices, so move the date or release before it.
 
 1. Indexes: `firebase deploy --only firestore:indexes --project prism-wallpapers`. Wait until the new `usersv2`, `walls` and `boosts` indexes show `READY`. Check that the TTL policy on `questEventRate.expireAt` shows in the console.
-2. Rules: `firebase deploy --only firestore:rules --project prism-wallpapers`. The rules remove `premiumPreviewUnlocks` from the owner allow list. Installed clients that write it will get a refusal. Plan this with client adoption.
+2. Rules: `firebase deploy --only firestore:rules --project prism-wallpapers`. `premiumPreviewUnlocks` stays in the owner allow list for clients below 3.4.1. The new root fields (`xp`, `xpWeek`, `cosmetics`) and `private/economy` are server-only; `economyConfig` is readable by guests.
 3. Functions: `make functions-deploy`. Deploy the AI worker with the functions (`infra/cloudflare/worker/src/ai.ts`).
 4. Config: `cd functions && npm run economy:config -- --init --apply`. Without `--apply` the command is a dry run. To tune a value later: `npm run economy:config -- --set spend.wallpaperDownload=8 --apply`.
 5. Client release. Use the `prism-release` skill.
