@@ -48,4 +48,47 @@ void main() {
       expect(strings, contains('name="$name"'));
     }
   });
+
+  group('launcher icons', () {
+    const List<String> aliases = <String>['.IconNoir', '.IconGlass', '.IconSunset', '.IconMono'];
+
+    String element(String tag, String name) {
+      final RegExpMatch? match = RegExp(
+        '<$tag\\s[^>]*?android:name="${RegExp.escape(name)}".*?</$tag>',
+        dotAll: true,
+      ).firstMatch(manifest);
+      expect(match, isNotNull, reason: '$tag $name');
+      return match!.group(0)!;
+    }
+
+    void expectLauncher(String body) {
+      expect(body, contains('android.intent.action.MAIN'));
+      expect(body, contains('android.intent.category.LAUNCHER'));
+    }
+
+    void expectDeepLinks(String body) {
+      expect(body, contains('android:autoVerify="true"'));
+      expect(body, contains('android:host="prismwalls.com"'));
+      expect(body, contains('android:scheme="prism"'));
+    }
+
+    test('MainActivity is the default launcher icon and keeps the deep links', () {
+      final String main = element('activity', '.MainActivity');
+      expectLauncher(main);
+      expectDeepLinks(main);
+      expect(main, isNot(contains('android:enabled="false"')));
+      expect(manifest, isNot(contains('.IconDefault')));
+    });
+
+    test('each alternate icon alias is off by default and carries the launcher and deep-link filters', () {
+      for (final String name in aliases) {
+        final String alias = element('activity-alias', name);
+        expect(alias, contains('android:enabled="false"'), reason: name);
+        expect(alias, contains('android:exported="true"'), reason: name);
+        expect(alias, contains('android:targetActivity=".MainActivity"'), reason: name);
+        expectLauncher(alias);
+        expectDeepLinks(alias);
+      }
+    });
+  });
 }

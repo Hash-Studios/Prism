@@ -51,4 +51,26 @@ void main() {
       expect(PrismWallDocDto.fromJson(<String, dynamic>{'wallpaper_url': 'https://x/y.jpg'}).colors, isEmpty);
     });
   });
+
+  group('boostedUntil', () {
+    test('is read from a millisecond timestamp', () {
+      final parsed = PrismWallDocDto.fromJson(<String, dynamic>{
+        'wallpaper_url': 'https://x/y.jpg',
+        'boostedUntil': DateTime.utc(2030).millisecondsSinceEpoch,
+      });
+
+      expect(parsed.toDomain(docId: 'a').boostedUntil, DateTime.utc(2030));
+    });
+
+    test('is null when the wall was never boosted, and isBoostedAt follows the clock', () {
+      expect(dto().toDomain(docId: 'a').boostedUntil, isNull);
+      final wall = PrismWallDocDto(
+        wallpaperUrl: 'https://x/y.jpg',
+        boostedUntil: DateTime.utc(2030),
+      ).toDomain(docId: 'a');
+      expect(wall.isBoostedAt(DateTime.utc(2029)), isTrue);
+      expect(wall.isBoostedAt(DateTime.utc(2031)), isFalse);
+      expect(dto().toDomain(docId: 'a').isBoostedAt(DateTime.utc(2029)), isFalse);
+    });
+  });
 }

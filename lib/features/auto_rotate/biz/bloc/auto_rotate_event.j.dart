@@ -2,8 +2,14 @@ part of 'auto_rotate_bloc.j.dart';
 
 @freezed
 abstract class AutoRotateEvent with _$AutoRotateEvent {
-  const factory AutoRotateEvent.started({required List<String> favouriteUrls, required bool isPro}) = _Started;
-  const factory AutoRotateEvent.entitlementChanged({required bool isPro, required String userId}) = _EntitlementChanged;
+  /// [isPro] is true for Pro and for an active auto-rotate pass; [passUntil] is the pass end, null for Pro.
+  const factory AutoRotateEvent.started({
+    required List<String> favouriteUrls,
+    required bool isPro,
+    DateTime? passUntil,
+  }) = _Started;
+  const factory AutoRotateEvent.entitlementChanged({required bool isPro, required String userId, DateTime? passUntil}) =
+      _EntitlementChanged;
   const factory AutoRotateEvent.favouritesChanged(List<String> favouriteUrls) = _FavouritesChanged;
   const factory AutoRotateEvent.toggled(bool enabled) = _Toggled;
   const factory AutoRotateEvent.intervalChanged(int minutes) = _IntervalChanged;

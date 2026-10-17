@@ -1,4 +1,5 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/data/review_batch_repository.dart';
 import 'package:equatable/equatable.dart';
@@ -8,7 +9,7 @@ import 'package:injectable/injectable.dart';
 part 'review_batch_event.dart';
 part 'review_batch_state.dart';
 
-enum ReviewAction { approve, reject }
+enum ReviewAction { approve, reject, reserve }
 
 class UndoableAction {
   final FirestoreDocument wall;
@@ -28,6 +29,7 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     on<ReviewBatchLoadRequested>(_onLoadRequested);
     on<ReviewBatchSwipeApproved>(_onSwipeApproved);
     on<ReviewBatchSwipeRejected>(_onSwipeRejected);
+    on<ReviewBatchSwipeReserved>(_onSwipeReserved);
     on<ReviewBatchSwipeSkipped>(_onSwipeSkipped);
     on<ReviewBatchUndoRequested>(_onUndoRequested);
     on<ReviewBatchNextBatchRequested>(_onNextBatchRequested);
@@ -111,6 +113,33 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     }
   }
 
+  Future<void> _onSwipeReserved(ReviewBatchSwipeReserved event, Emitter<ReviewBatchState> emit) async {
+    if (state.currentIndex >= state.walls.length) return;
+
+    final currentWall = state.walls[state.currentIndex];
+    if (!canReserveForDrop(currentWall)) return;
+    final undoStack = List<UndoableAction>.from(state.undoStack);
+
+    if (undoStack.length >= _maxUndoStack) {
+      undoStack.removeAt(0);
+    }
+    undoStack.add(UndoableAction(wall: currentWall, action: ReviewAction.reserve));
+
+    try {
+      await _moderation.reserveWallForDrop(currentWall);
+      emit(
+        state.copyWith(
+          status: ReviewBatchStatus.loaded,
+          currentIndex: state.currentIndex + 1,
+          undoStack: undoStack,
+          totalPending: state.totalPending - 1,
+        ),
+      );
+    } catch (e) {
+      emit(state.copyWith(status: ReviewBatchStatus.error, errorMessage: 'Failed to reserve: $e'));
+    }
+  }
+
   Future<void> _onSwipeSkipped(ReviewBatchSwipeSkipped event, Emitter<ReviewBatchState> emit) async {
     if (state.currentIndex >= state.walls.length) return;
 
@@ -124,10 +153,13 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     final lastAction = undoStack.removeLast();
 
     try {
-      if (lastAction.action == ReviewAction.approve) {
-        await _moderation.undoApproveWall(lastAction.wall);
-      } else {
-        await _moderation.undoRejectWall(lastAction.wall);
+      switch (lastAction.action) {
+        case ReviewAction.approve:
+          await _moderation.undoApproveWall(lastAction.wall);
+        case ReviewAction.reject:
+          await _moderation.undoRejectWall(lastAction.wall);
+        case ReviewAction.reserve:
+          await _moderation.undoReserveWallForDrop(lastAction.wall);
       }
 
       final restoredIndex = state.walls.indexWhere((wall) => wall.id == lastAction.wall.id);

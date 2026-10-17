@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -37,7 +38,14 @@ class ThemeRepositoryImpl implements ThemeRepository {
     return corrected;
   }
 
+  void _rememberLegacyThemes() => rememberLegacyThemes(
+    _settingsLocal,
+    lightId: _settingsLocal.get<String>('lightThemeID', defaultValue: prismDefaultLightThemeId),
+    darkId: _settingsLocal.get<String>('darkThemeID', defaultValue: prismDefaultDarkThemeId),
+  );
+
   ThemePreferences _read() {
+    _rememberLegacyThemes();
     return ThemePreferences(
       light: ThemeSelection(
         themeId: _settingsLocal.get<String>('lightThemeID', defaultValue: prismDefaultLightThemeId),
@@ -95,6 +103,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
     ThemeMode? mode,
   }) async {
     try {
+      _rememberLegacyThemes();
       if (lightThemeId != null) {
         await _applyThemeChange(
           themeKey: 'lightThemeID',

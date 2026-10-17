@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, {beforeEach, mock} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
+import {DEFAULT_ECONOMY, ECONOMY_CONFIG_DOC, resetEconomyCache, weekKey} from "../economy";
 
 import {
   claimDailyStreak,
@@ -15,6 +16,12 @@ import {
   shouldRelockTimezone,
   streakMilestone,
 } from "../streak";
+
+// No economy config doc: the claim runs on DEFAULT_ECONOMY.
+const realDoc = db.doc.bind(db);
+mock.method(db, "doc", (path: string) =>
+  path === ECONOMY_CONFIG_DOC ? {get: async () => ({exists: false, data: (): undefined => undefined})} : realDoc(path));
+beforeEach(() => resetEconomyCache());
 
 test("streak reminders use the session token, then the legacy field", () => {
   assert.equal(pickFcmToken("session-token", "legacy-token"), "session-token");
@@ -181,19 +188,51 @@ test("gap 1 continues; count 7 to 8 wraps to cycle day 1 with the base reward", 
   const p = planStreakClaim(st({streakCount: 7, streakDay: 7, lastKey: "2026-01-01"}), "2026-01-02", false);
   assert.equal(p.count, 8);
   assert.equal(p.cycleDay, 1);
-  assert.equal(p.dailyReward, 5);
+  assert.equal(p.dailyReward, 3);
   assert.equal(p.streakBonusReward, 0);
   assert.equal(p.freezesUsed, 0);
 });
 
-test("count 14 pays cycle day 7 rewards; Pro adds 20", () => {
+test("days 1 to 6 pay the config table, no chest; Pro gets ceil(x 1.5)", () => {
+  const expected = [3, 3, 5, 5, 8, 8];
+  for (let day = 1; day <= 6; day++) {
+    const s = st({streakCount: day - 1 || 0, streakDay: day - 1, lastKey: day === 1 ? "" : "2026-01-01"});
+    const p = planStreakClaim(s, "2026-01-02", false);
+    assert.equal(p.cycleDay, day);
+    assert.equal(p.dailyReward, expected[day - 1]);
+    assert.equal(p.streakBonusReward, 0);
+    assert.equal(p.proBonusReward, 0);
+    const pro = planStreakClaim(s, "2026-01-02", true);
+    assert.equal(pro.dailyReward + pro.proBonusReward, Math.ceil(expected[day - 1] * 1.5));
+  }
+});
+
+test("count 14 pays day 7: 10 plus a chest in [15, 40]; Pro gets ceil((daily + chest) x 1.5)", () => {
   const s = st({streakCount: 13, streakDay: 6});
-  const p = planStreakClaim(s, "2026-01-02", false);
-  assert.equal(p.cycleDay, 7);
-  assert.equal(p.dailyReward, 15);
-  assert.equal(p.streakBonusReward, 40);
-  assert.equal(p.proBonusReward, 0);
-  assert.equal(planStreakClaim(s, "2026-01-02", true).proBonusReward, 20);
+  const low = planStreakClaim(s, "2026-01-02", false, DEFAULT_ECONOMY.award, () => 0);
+  assert.equal(low.cycleDay, 7);
+  assert.equal(low.dailyReward, 10);
+  assert.equal(low.streakBonusReward, 15);
+  assert.equal(low.proBonusReward, 0);
+  const high = planStreakClaim(s, "2026-01-02", false, DEFAULT_ECONOMY.award, () => 0.9999);
+  assert.equal(high.streakBonusReward, 40);
+  for (let i = 0; i < 200; i++) {
+    const chest = planStreakClaim(s, "2026-01-02", false).streakBonusReward;
+    assert.ok(chest >= 15 && chest <= 40, String(chest));
+  }
+  const pro = planStreakClaim(s, "2026-01-02", true, DEFAULT_ECONOMY.award, () => 0);
+  assert.equal(pro.streakBonusReward, 15);
+  assert.equal(pro.dailyReward + pro.streakBonusReward + pro.proBonusReward, Math.ceil(25 * 1.5));
+  assert.equal(pro.proBonusReward, 13);
+});
+
+test("planStreakClaim reads the table, chest range and multiplier it is given", () => {
+  const award = {...DEFAULT_ECONOMY.award, streakDaily: [1, 2, 3, 4, 5, 6, 7], streakChestMin: 2, streakChestMax: 2,
+    proStreakMultiplier: 2};
+  const p = planStreakClaim(st({streakCount: 6, streakDay: 6}), "2026-01-02", true, award);
+  assert.equal(p.dailyReward, 7);
+  assert.equal(p.streakBonusReward, 2);
+  assert.equal(p.proBonusReward, 9);
 });
 
 test("gap 2 with 1 freeze saves the streak and pays nothing for the missed day", () => {
@@ -202,7 +241,7 @@ test("gap 2 with 1 freeze saves the streak and pays nothing for the missed day",
   assert.equal(p.freezesUsed, 1);
   assert.equal(p.freezesLeft, 0);
   assert.equal(p.streakBroken, false);
-  assert.equal(p.dailyReward, 8);
+  assert.equal(p.dailyReward, 5);
   assert.equal(p.cycleDay, 4);
 });
 
@@ -684,4 +723,60 @@ test("a failed push does not roll back a marker that another run claimed", async
   await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
   assert.equal(coinState.streakReminderClaimId, "other-run");
   assert.equal(coinState.streakReminderLastSentDate, "2026-01-02");
+});
+
+test("claimDailyStreak: day 7 credits the chest and XP in one update and reports isChest", async (t) => {
+  const now = Date.now();
+  const yesterday = localDateKeyFromUtc(new Date(now - 86_400_000), 330);
+  let update: Record<string, unknown> = {};
+  const ledger: Array<Record<string, unknown>> = [];
+  t.mock.method(Math, "random", () => 0);
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    await callback({
+      get: async () => ({exists: true, data: () => ({coins: 100, premium: true, xp: 40, coinState: {
+        lastDailyClaimDate: yesterday, streakDay: 6, streakCount: 6,
+        streakTimezoneOffsetMinutes: 330, streakClaimTimezoneOffsetMinutes: 330,
+      }})}),
+      update: (_ref: unknown, data: Record<string, unknown>) => {
+        update = data;
+      },
+      set: (_ref: unknown, data: Record<string, unknown>) => {
+        ledger.push(data);
+      },
+    } as unknown as admin.firestore.Transaction);
+  });
+  const result = await claimDailyStreak.run({
+    auth: {uid: "user-1"}, data: {timezoneOffsetMinutes: 330, reminderEnabled: false},
+  } as Parameters<typeof claimDailyStreak.run>[0]);
+  assert.equal(result.claimed, true);
+  assert.equal(result.isChest, true);
+  assert.equal(result.dailyReward, 10);
+  assert.equal(result.streakBonusReward, 15);
+  assert.equal(result.proBonusReward, 13);
+  assert.equal(result.totalReward, 38);
+  assert.equal(result.newBalance, 138);
+  assert.equal(update.coins, 138);
+  assert.equal(update.xp, 78);
+  assert.deepEqual(update.xpWeek, {weekKey: weekKey(now), xp: 38});
+  assert.deepEqual(ledger.map((entry) => [entry.action, entry.delta]),
+    [["dailyLogin", 10], ["streakChest", 15], ["proStreakBonus", 13]]);
+});
+
+test("claimDailyStreak: a mid-cycle day is not a chest", async (t) => {
+  const yesterday = localDateKeyFromUtc(new Date(Date.now() - 86_400_000), 330);
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    await callback({
+      get: async () => ({exists: true, data: () => ({coins: 0, coinState: {
+        lastDailyClaimDate: yesterday, streakDay: 2, streakCount: 2,
+        streakTimezoneOffsetMinutes: 330, streakClaimTimezoneOffsetMinutes: 330,
+      }})}),
+      update: () => undefined,
+      set: () => undefined,
+    } as unknown as admin.firestore.Transaction);
+  });
+  const result = await claimDailyStreak.run({
+    auth: {uid: "user-1"}, data: {timezoneOffsetMinutes: 330, reminderEnabled: false},
+  } as Parameters<typeof claimDailyStreak.run>[0]);
+  assert.equal(result.isChest, false);
+  assert.equal(result.totalReward, 5);
 });

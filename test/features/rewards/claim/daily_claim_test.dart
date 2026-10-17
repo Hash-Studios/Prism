@@ -20,6 +20,7 @@ StreakClaimResult _r({
   int? milestone,
   int daily = 8,
   int bonus = 0,
+  bool? chest,
 }) => StreakClaimResult(
   claimed: true,
   alreadyClaimedToday: false,
@@ -37,6 +38,7 @@ StreakClaimResult _r({
   totalReward: daily + bonus,
   newBalance: 100,
   milestone: milestone,
+  isChest: chest ?? (week && bonus > 0),
 );
 
 Widget _app(ThemeData theme, Widget home) => MaterialApp(
@@ -186,9 +188,18 @@ void main() {
       expect(find.text('See rewards'), findsOneWidget);
 
       await close();
-      await open(_r(day: 7, count: 14, week: true, daily: 15, bonus: 40));
+      await open(_r(day: 7, count: 14, week: true, daily: 10, bonus: 30));
+      expect(find.text('Day 7 chest'), findsOneWidget);
+      expect(find.text('+10 today · +30 Day 7 chest'), findsOneWidget);
+
+      await close();
+      await open(_r(day: 7, count: 14, week: true, daily: 10));
       expect(find.text('Week complete!'), findsOneWidget);
-      expect(find.text('+15 today · +40 week bonus'), findsOneWidget);
+
+      await close();
+      await open(_r(day: 7, count: 14, week: true, daily: 10, bonus: 30, chest: false));
+      expect(find.text('Week complete!'), findsOneWidget);
+      expect(find.text('Day 7 chest'), findsNothing);
 
       await close();
       await open(_r(broken: true, daily: 5));

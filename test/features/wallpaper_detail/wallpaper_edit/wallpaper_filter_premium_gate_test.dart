@@ -516,7 +516,7 @@ void main() {
     await _tapInvert(tester);
     await tester.tap(_iconButton('Download'));
     await _waitForText(tester, 'Need coins for premium filter');
-    await tester.tap(find.text('Watch ad (+10)'));
+    await tester.tap(find.textContaining('Watch a video'));
     await _waitForCount(tester, () => spendTags.length, 2, 'retry spend');
     await _waitForText(tester, 'Need coins for premium filter');
 

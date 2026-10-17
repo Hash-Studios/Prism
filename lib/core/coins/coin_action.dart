@@ -9,6 +9,10 @@ enum CoinEarnAction {
   profileCompletion,
   proDailyBonus,
   refund,
+  proSpin,
+  quest,
+  questChest,
+  streakChest,
 }
 
 enum CoinSpendAction {
@@ -18,9 +22,18 @@ enum CoinSpendAction {
   premiumFilter,
   premiumPreview24h,
   streakFreeze,
+  liveWallpaperStyle,
+  autoRotatePass7d,
+  dropWall,
+  dropPack,
+  boostWall,
+  giftPremiumPass,
+  drawTicket,
+  shopItem,
 }
 
 extension CoinEarnActionX on CoinEarnAction {
+  /// The amount shown before the server answers. Server-rolled rewards (spin, chests) show their minimum.
   int defaultAmount() {
     switch (this) {
       case CoinEarnAction.rewardedAd:
@@ -28,6 +41,7 @@ extension CoinEarnActionX on CoinEarnAction {
       case CoinEarnAction.dailyLogin:
         return CoinPolicy.dailyLogin;
       case CoinEarnAction.streakBonus:
+      case CoinEarnAction.streakChest:
         return CoinPolicy.streak7Bonus;
       case CoinEarnAction.firstWallpaperUpload:
         return CoinPolicy.firstWallpaperUpload;
@@ -36,7 +50,12 @@ extension CoinEarnActionX on CoinEarnAction {
       case CoinEarnAction.profileCompletion:
         return CoinPolicy.profileCompletion;
       case CoinEarnAction.proDailyBonus:
+      case CoinEarnAction.proSpin:
         return CoinPolicy.proDailyBonus;
+      case CoinEarnAction.quest:
+        return CoinPolicy.questCoins;
+      case CoinEarnAction.questChest:
+        return CoinPolicy.questChestMin;
       case CoinEarnAction.refund:
         return 0;
     }
@@ -44,6 +63,7 @@ extension CoinEarnActionX on CoinEarnAction {
 }
 
 extension CoinSpendActionX on CoinSpendAction {
+  /// The list price. Shop items return 0: the caller resolves the item price.
   int cost() {
     switch (this) {
       case CoinSpendAction.wallpaperDownload:
@@ -58,6 +78,22 @@ extension CoinSpendActionX on CoinSpendAction {
         return CoinPolicy.premiumPreview24h;
       case CoinSpendAction.streakFreeze:
         return CoinPolicy.streakFreezeCost;
+      case CoinSpendAction.liveWallpaperStyle:
+        return CoinPolicy.liveWallpaperStyle;
+      case CoinSpendAction.autoRotatePass7d:
+        return CoinPolicy.autoRotatePass7d;
+      case CoinSpendAction.dropWall:
+        return CoinPolicy.dropWall;
+      case CoinSpendAction.dropPack:
+        return CoinPolicy.dropPack;
+      case CoinSpendAction.boostWall:
+        return CoinPolicy.boostWall;
+      case CoinSpendAction.giftPremiumPass:
+        return CoinPolicy.giftPremiumPass;
+      case CoinSpendAction.drawTicket:
+        return CoinPolicy.drawTicket;
+      case CoinSpendAction.shopItem:
+        return 0;
     }
   }
 }

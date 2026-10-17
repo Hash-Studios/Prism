@@ -15,6 +15,7 @@ class AutoRotateConfig {
     this.source = AutoRotateSource.favourites,
     this.categoryName = 'Nature',
     this.chargingOnly = false,
+    this.passUntil,
   });
 
   static const List<int> intervalOptions = <int>[15, 30, 60, 180, 360, 720, 1440, 4320, 10080];
@@ -27,6 +28,12 @@ class AutoRotateConfig {
   final String categoryName;
   final bool chargingOnly;
 
+  /// End of the coin pass that allows the rotation. Null for Pro, or when no pass is known.
+  final DateTime? passUntil;
+
+  /// The pass that allowed the rotation has ended.
+  bool passExpired(DateTime now) => passUntil != null && !passUntil!.isAfter(now);
+
   AutoRotateConfig copyWith({
     bool? enabled,
     int? intervalMinutes,
@@ -35,6 +42,7 @@ class AutoRotateConfig {
     AutoRotateSource? source,
     String? categoryName,
     bool? chargingOnly,
+    DateTime? Function()? passUntil,
   }) {
     return AutoRotateConfig(
       enabled: enabled ?? this.enabled,
@@ -44,6 +52,7 @@ class AutoRotateConfig {
       source: source ?? this.source,
       categoryName: categoryName ?? this.categoryName,
       chargingOnly: chargingOnly ?? this.chargingOnly,
+      passUntil: passUntil == null ? this.passUntil : passUntil(),
     );
   }
 
@@ -56,10 +65,12 @@ class AutoRotateConfig {
       other.shuffle == shuffle &&
       other.source == source &&
       other.categoryName == categoryName &&
-      other.chargingOnly == chargingOnly;
+      other.chargingOnly == chargingOnly &&
+      other.passUntil == passUntil;
 
   @override
-  int get hashCode => Object.hash(enabled, intervalMinutes, target, shuffle, source, categoryName, chargingOnly);
+  int get hashCode =>
+      Object.hash(enabled, intervalMinutes, target, shuffle, source, categoryName, chargingOnly, passUntil);
 }
 
 class AutoRotateStatus {

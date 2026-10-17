@@ -12,6 +12,9 @@ abstract class LiveWallpaperState with _$LiveWallpaperState {
     required GradientStyle gradientStyle,
     required bool batterySaver,
     required bool applying,
+
+    /// Paid style id to the end of its coin unlock, as the server stored it.
+    @Default(<String, DateTime>{}) Map<String, DateTime> unlockedStyles,
     String? videoPath,
     LiveApplyOutcome? outcome,
   }) = _LiveWallpaperState;
@@ -25,4 +28,10 @@ abstract class LiveWallpaperState with _$LiveWallpaperState {
     batterySaver: false,
     applying: false,
   );
+}
+
+extension LiveWallpaperStateLocks on LiveWallpaperState {
+  /// A paid style is open for Pro users and until the end of its coin unlock.
+  bool isLocked(String styleId, {required bool isFree, DateTime? now}) =>
+      !isPro && !isFree && !(unlockedStyles[styleId]?.isAfter(now ?? DateTime.now()) ?? false);
 }

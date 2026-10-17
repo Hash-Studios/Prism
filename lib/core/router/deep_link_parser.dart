@@ -8,6 +8,12 @@ class DeepLinkParser {
   static const Set<String> _userRoots = <String>{'user', 'fprofile', 'follower-profile', 'profile'};
   static const Set<String> _setupRoots = <String>{'setup', 'share-setup'};
   static const Set<String> _referRoots = <String>{'refer', 'referral'};
+  static const Map<String, DeepLinkScreen> _screenRoots = <String, DeepLinkScreen>{
+    'shop': DeepLinkScreen.shop,
+    'drops': DeepLinkScreen.drops,
+    'leaderboard': DeepLinkScreen.leaderboard,
+    'draw': DeepLinkScreen.draw,
+  };
   static const Set<String> _shortCodeRoots = <String>{'l'};
 
   Uri transform(Uri uri) {
@@ -117,6 +123,11 @@ class DeepLinkParser {
         return UnknownIntent(rawUri: uri.toString());
       }
       return ShortCodeIntent(code: code, rawUri: uri.toString());
+    }
+
+    final DeepLinkScreen? screen = _screenRoots[root];
+    if (screen != null) {
+      return ScreenLinkIntent(screen: screen, rawUri: uri.toString());
     }
 
     return UnknownIntent(rawUri: uri.toString());

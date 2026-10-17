@@ -26,7 +26,7 @@ class _MockStackRouter extends Mock implements StackRouter {}
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
-PrismWallpaper _wall(String id, {String thumbnailUrl = ''}) => PrismWallpaper(
+PrismWallpaper _wall(String id, {String thumbnailUrl = '', DateTime? boostedUntil}) => PrismWallpaper(
   core: WallpaperCore(
     id: id,
     source: WallpaperSource.prism,
@@ -35,6 +35,7 @@ PrismWallpaper _wall(String id, {String thumbnailUrl = ''}) => PrismWallpaper(
     authorName: 'Ana',
   ),
   review: true,
+  boostedUntil: boostedUntil,
 );
 
 TrendingState _week(LoadStatus status, {List<PrismWallpaper> walls = const <PrismWallpaper>[], Failure? failure}) =>
@@ -161,5 +162,21 @@ void main() {
 
     verify(() => cache.removeFile('https://example.test/a-thumb.jpg')).called(1);
     verifyNever(() => router.push(any()));
+  });
+
+  testWidgets('a wall with a live boost shows the Boosted tag and an expired boost does not', (tester) async {
+    await pumpStrip(
+      tester,
+      _week(
+        LoadStatus.success,
+        walls: <PrismWallpaper>[
+          _wall('a', boostedUntil: DateTime.now().add(const Duration(hours: 3))),
+          _wall('b', boostedUntil: DateTime.now().subtract(const Duration(hours: 1))),
+          _wall('c'),
+        ],
+      ),
+    );
+
+    expect(find.text('Boosted'), findsOneWidget);
   });
 }

@@ -18,6 +18,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       (event, emit) => event.map<Future<void>>(
         started: (event) => _onStarted(event, emit),
         proChanged: (event) async => emit(state.copyWith(isPro: event.isPro)),
+        unlockedStylesChanged: (event) async => emit(state.copyWith(unlockedStyles: event.unlockedStyles)),
         motionSelected: (event) async => emit(state.copyWith(motionStyle: event.style)),
         gradientSelected: (event) async => emit(state.copyWith(gradientStyle: event.style)),
         batterySaverChanged: (event) async => emit(state.copyWith(batterySaver: event.enabled)),
@@ -35,7 +36,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
   final String? imageUrl;
 
   Future<void> _onStarted(_Started event, Emitter<LiveWallpaperState> emit) async {
-    emit(state.copyWith(isPro: event.isPro, status: LiveWallpaperStatus.loading));
+    emit(state.copyWith(isPro: event.isPro, unlockedStyles: event.unlockedStyles, status: LiveWallpaperStatus.loading));
     LiveCapabilities capabilities;
     try {
       capabilities = await _repository.getCapabilities();
@@ -53,7 +54,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
   Future<void> _onMotionApplied(_MotionApplied event, Emitter<LiveWallpaperState> emit) async {
     final String? url = imageUrl;
     if (state.applying || url == null) return;
-    if (!state.isPro && !state.motionStyle.isFree) {
+    if (state.isLocked(state.motionStyle.name, isFree: state.motionStyle.isFree)) {
       emit(state.copyWith(outcome: const LiveApplyOutcome.proRequired()));
       return;
     }
@@ -75,7 +76,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
 
   Future<void> _onGradientApplied(_GradientApplied event, Emitter<LiveWallpaperState> emit) async {
     if (state.applying) return;
-    if (!state.isPro && !state.gradientStyle.isFree) {
+    if (state.isLocked(state.gradientStyle.name, isFree: state.gradientStyle.isFree)) {
       emit(state.copyWith(outcome: const LiveApplyOutcome.proRequired()));
       return;
     }

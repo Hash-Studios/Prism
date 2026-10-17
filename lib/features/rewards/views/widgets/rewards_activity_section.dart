@@ -67,7 +67,7 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
         fresh: true,
       );
       if (!mounted || !identical(user, app_state.prismUser)) return;
-      setState(() => _items = rows);
+      setState(() => _items = rows.where((CoinTransactionEntry e) => e.delta != 0).toList(growable: false));
     } catch (_) {
       if (!mounted) return;
       setState(() => _failed = true);

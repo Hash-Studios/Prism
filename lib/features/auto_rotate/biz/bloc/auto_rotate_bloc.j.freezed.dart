@@ -167,11 +167,11 @@ return proLapseAcknowledged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro)?  started,TResult Function( bool isPro,  String userId)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function( AutoRotateSource source)?  sourceChanged,TResult Function( String category)?  categoryChanged,TResult Function( bool chargingOnly)?  chargingOnlyChanged,TResult Function()?  rotateNowPressed,TResult Function()?  favouritesSettled,TResult Function()?  statusRefreshed,TResult Function()?  batteryTipDismissed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)?  started,TResult Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function( AutoRotateSource source)?  sourceChanged,TResult Function( String category)?  categoryChanged,TResult Function( bool chargingOnly)?  chargingOnlyChanged,TResult Function()?  rotateNowPressed,TResult Function()?  favouritesSettled,TResult Function()?  statusRefreshed,TResult Function()?  batteryTipDismissed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged() when entitlementChanged != null:
-return entitlementChanged(_that.isPro,_that.userId);case _FavouritesChanged() when favouritesChanged != null:
+return started(_that.favouriteUrls,_that.isPro,_that.passUntil);case _EntitlementChanged() when entitlementChanged != null:
+return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _FavouritesChanged() when favouritesChanged != null:
 return favouritesChanged(_that.favouriteUrls);case _Toggled() when toggled != null:
 return toggled(_that.enabled);case _IntervalChanged() when intervalChanged != null:
 return intervalChanged(_that.minutes);case _TargetChanged() when targetChanged != null:
@@ -202,11 +202,11 @@ return proLapseAcknowledged();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro)  started,required TResult Function( bool isPro,  String userId)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function( AutoRotateSource source)  sourceChanged,required TResult Function( String category)  categoryChanged,required TResult Function( bool chargingOnly)  chargingOnlyChanged,required TResult Function()  rotateNowPressed,required TResult Function()  favouritesSettled,required TResult Function()  statusRefreshed,required TResult Function()  batteryTipDismissed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)  started,required TResult Function( bool isPro,  String userId,  DateTime? passUntil)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function( AutoRotateSource source)  sourceChanged,required TResult Function( String category)  categoryChanged,required TResult Function( bool chargingOnly)  chargingOnlyChanged,required TResult Function()  rotateNowPressed,required TResult Function()  favouritesSettled,required TResult Function()  statusRefreshed,required TResult Function()  batteryTipDismissed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged():
-return entitlementChanged(_that.isPro,_that.userId);case _FavouritesChanged():
+return started(_that.favouriteUrls,_that.isPro,_that.passUntil);case _EntitlementChanged():
+return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _FavouritesChanged():
 return favouritesChanged(_that.favouriteUrls);case _Toggled():
 return toggled(_that.enabled);case _IntervalChanged():
 return intervalChanged(_that.minutes);case _TargetChanged():
@@ -236,11 +236,11 @@ return proLapseAcknowledged();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro)?  started,TResult? Function( bool isPro,  String userId)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function( AutoRotateSource source)?  sourceChanged,TResult? Function( String category)?  categoryChanged,TResult? Function( bool chargingOnly)?  chargingOnlyChanged,TResult? Function()?  rotateNowPressed,TResult? Function()?  favouritesSettled,TResult? Function()?  statusRefreshed,TResult? Function()?  batteryTipDismissed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro,  DateTime? passUntil)?  started,TResult? Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function( AutoRotateSource source)?  sourceChanged,TResult? Function( String category)?  categoryChanged,TResult? Function( bool chargingOnly)?  chargingOnlyChanged,TResult? Function()?  rotateNowPressed,TResult? Function()?  favouritesSettled,TResult? Function()?  statusRefreshed,TResult? Function()?  batteryTipDismissed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged() when entitlementChanged != null:
-return entitlementChanged(_that.isPro,_that.userId);case _FavouritesChanged() when favouritesChanged != null:
+return started(_that.favouriteUrls,_that.isPro,_that.passUntil);case _EntitlementChanged() when entitlementChanged != null:
+return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _FavouritesChanged() when favouritesChanged != null:
 return favouritesChanged(_that.favouriteUrls);case _Toggled() when toggled != null:
 return toggled(_that.enabled);case _IntervalChanged() when intervalChanged != null:
 return intervalChanged(_that.minutes);case _TargetChanged() when targetChanged != null:
@@ -265,7 +265,7 @@ return proLapseAcknowledged();case _:
 
 
 class _Started with DiagnosticableTreeMixin implements AutoRotateEvent {
-  const _Started({required final  List<String> favouriteUrls, required this.isPro}): _favouriteUrls = favouriteUrls;
+  const _Started({required final  List<String> favouriteUrls, required this.isPro, this.passUntil}): _favouriteUrls = favouriteUrls;
   
 
  final  List<String> _favouriteUrls;
@@ -276,6 +276,7 @@ class _Started with DiagnosticableTreeMixin implements AutoRotateEvent {
 }
 
  final  bool isPro;
+ final  DateTime? passUntil;
 
 /// Create a copy of AutoRotateEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -288,21 +289,21 @@ _$StartedCopyWith<_Started> get copyWith => __$StartedCopyWithImpl<_Started>(thi
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'AutoRotateEvent.started'))
-    ..add(DiagnosticsProperty('favouriteUrls', favouriteUrls))..add(DiagnosticsProperty('isPro', isPro));
+    ..add(DiagnosticsProperty('favouriteUrls', favouriteUrls))..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('passUntil', passUntil));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Started&&const DeepCollectionEquality().equals(other._favouriteUrls, _favouriteUrls)&&(identical(other.isPro, isPro) || other.isPro == isPro));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Started&&const DeepCollectionEquality().equals(other._favouriteUrls, _favouriteUrls)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.passUntil, passUntil) || other.passUntil == passUntil));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_favouriteUrls),isPro);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_favouriteUrls),isPro,passUntil);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AutoRotateEvent.started(favouriteUrls: $favouriteUrls, isPro: $isPro)';
+  return 'AutoRotateEvent.started(favouriteUrls: $favouriteUrls, isPro: $isPro, passUntil: $passUntil)';
 }
 
 
@@ -313,7 +314,7 @@ abstract mixin class _$StartedCopyWith<$Res> implements $AutoRotateEventCopyWith
   factory _$StartedCopyWith(_Started value, $Res Function(_Started) _then) = __$StartedCopyWithImpl;
 @useResult
 $Res call({
- List<String> favouriteUrls, bool isPro
+ List<String> favouriteUrls, bool isPro, DateTime? passUntil
 });
 
 
@@ -330,11 +331,12 @@ class __$StartedCopyWithImpl<$Res>
 
 /// Create a copy of AutoRotateEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? favouriteUrls = null,Object? isPro = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? favouriteUrls = null,Object? isPro = null,Object? passUntil = freezed,}) {
   return _then(_Started(
 favouriteUrls: null == favouriteUrls ? _self._favouriteUrls : favouriteUrls // ignore: cast_nullable_to_non_nullable
 as List<String>,isPro: null == isPro ? _self.isPro : isPro // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,passUntil: freezed == passUntil ? _self.passUntil : passUntil // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -345,11 +347,12 @@ as bool,
 
 
 class _EntitlementChanged with DiagnosticableTreeMixin implements AutoRotateEvent {
-  const _EntitlementChanged({required this.isPro, required this.userId});
+  const _EntitlementChanged({required this.isPro, required this.userId, this.passUntil});
   
 
  final  bool isPro;
  final  String userId;
+ final  DateTime? passUntil;
 
 /// Create a copy of AutoRotateEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -362,21 +365,21 @@ _$EntitlementChangedCopyWith<_EntitlementChanged> get copyWith => __$Entitlement
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'AutoRotateEvent.entitlementChanged'))
-    ..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('userId', userId));
+    ..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('userId', userId))..add(DiagnosticsProperty('passUntil', passUntil));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EntitlementChanged&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.userId, userId) || other.userId == userId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EntitlementChanged&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.passUntil, passUntil) || other.passUntil == passUntil));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isPro,userId);
+int get hashCode => Object.hash(runtimeType,isPro,userId,passUntil);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'AutoRotateEvent.entitlementChanged(isPro: $isPro, userId: $userId)';
+  return 'AutoRotateEvent.entitlementChanged(isPro: $isPro, userId: $userId, passUntil: $passUntil)';
 }
 
 
@@ -387,7 +390,7 @@ abstract mixin class _$EntitlementChangedCopyWith<$Res> implements $AutoRotateEv
   factory _$EntitlementChangedCopyWith(_EntitlementChanged value, $Res Function(_EntitlementChanged) _then) = __$EntitlementChangedCopyWithImpl;
 @useResult
 $Res call({
- bool isPro, String userId
+ bool isPro, String userId, DateTime? passUntil
 });
 
 
@@ -404,11 +407,12 @@ class __$EntitlementChangedCopyWithImpl<$Res>
 
 /// Create a copy of AutoRotateEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? isPro = null,Object? userId = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? isPro = null,Object? userId = null,Object? passUntil = freezed,}) {
   return _then(_EntitlementChanged(
 isPro: null == isPro ? _self.isPro : isPro // ignore: cast_nullable_to_non_nullable
 as bool,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,
+as String,passUntil: freezed == passUntil ? _self.passUntil : passUntil // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

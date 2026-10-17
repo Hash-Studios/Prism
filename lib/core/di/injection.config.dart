@@ -49,6 +49,14 @@ import '../../features/category_feed/domain/repositories/category_feed_repositor
     as _i563;
 import '../../features/category_feed/domain/usecases/category_feed_usecases.dart'
     as _i301;
+import '../../features/draw/biz/bloc/draw_bloc.j.dart' as _i269;
+import '../../features/draw/data/repositories/draw_repository_impl.dart'
+    as _i342;
+import '../../features/draw/domain/repositories/draw_repository.dart' as _i253;
+import '../../features/drops/biz/bloc/drops_bloc.j.dart' as _i849;
+import '../../features/drops/data/repositories/drops_repository_impl.dart'
+    as _i591;
+import '../../features/drops/domain/repositories/drops_repository.dart' as _i96;
 import '../../features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart'
     as _i782;
 import '../../features/favourite_walls/data/favourites_sync_service.dart'
@@ -71,6 +79,11 @@ import '../../features/in_app_notifications/domain/repositories/notifications_re
     as _i366;
 import '../../features/in_app_notifications/domain/usecases/notifications_usecases.dart'
     as _i474;
+import '../../features/leaderboard/biz/bloc/leaderboard_bloc.j.dart' as _i688;
+import '../../features/leaderboard/data/repositories/leaderboard_repository_impl.dart'
+    as _i1008;
+import '../../features/leaderboard/domain/repositories/leaderboard_repository.dart'
+    as _i655;
 import '../../features/live_wallpaper/data/live_texture_preparer.dart'
     as _i1003;
 import '../../features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart'
@@ -125,12 +138,18 @@ import '../../features/public_profile/domain/repositories/public_profile_reposit
     as _i817;
 import '../../features/public_profile/domain/usecases/public_profile_usecases.dart'
     as _i446;
+import '../../features/quests/biz/bloc/quests_bloc.j.dart' as _i896;
+import '../../features/quests/data/repositories/quests_repository_impl.dart'
+    as _i419;
+import '../../features/quests/domain/repositories/quests_repository.dart'
+    as _i651;
 import '../../features/session/biz/bloc/session_bloc.j.dart' as _i364;
 import '../../features/session/data/repositories/session_repository_impl.dart'
     as _i1021;
 import '../../features/session/domain/repositories/session_repository.dart'
     as _i738;
 import '../../features/session/domain/usecases/session_usecases.dart' as _i986;
+import '../../features/shop/biz/bloc/shop_bloc.j.dart' as _i693;
 import '../../features/startup/biz/bloc/startup_bloc.j.dart' as _i313;
 import '../../features/startup/data/repositories/startup_repository_impl.dart'
     as _i152;
@@ -323,11 +342,15 @@ _i174.GetIt initGetIt(
     () =>
         _i474.RestoreNotificationsUseCase(gh<_i366.NotificationsRepository>()),
   );
+  gh.lazySingleton<_i651.QuestsRepository>(() => _i419.QuestsRepositoryImpl());
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(
       gh<_i974.FirebaseFirestore>(),
       gh<_i393.FirestoreTelemetrySink>(),
     ),
+  );
+  gh.lazySingleton<_i253.DrawRepository>(
+    () => _i342.DrawRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
   gh.lazySingleton<_i602.ViewStatsRepository>(
     () => _i818.FirebaseViewStatsRepository(gh<_i349.FirestoreClient>()),
@@ -362,6 +385,7 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i321.ShowRewardedAdUseCase>(
     () => _i321.ShowRewardedAdUseCase(gh<_i1055.AdsRepository>()),
   );
+  gh.factory<_i269.DrawBloc>(() => _i269.DrawBloc(gh<_i253.DrawRepository>()));
   gh.lazySingleton<_i649.GuestFavouritesMerger>(
     () => _i649.GuestFavouritesMerger(
       gh<_i349.FirestoreClient>(),
@@ -374,6 +398,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i937.UpdateThemeUseCase>(
     () => _i937.UpdateThemeUseCase(gh<_i428.ThemeRepository>()),
+  );
+  gh.factory<_i693.ShopBloc>(
+    () => _i693.ShopBloc(gh<_i1073.SettingsLocalDataSource>()),
   );
   gh.lazySingleton<_i121.WallpaperHistoryStore>(
     () => _i121.WallpaperHistoryStore(gh<_i1073.SettingsLocalDataSource>()),
@@ -401,6 +428,15 @@ _i174.GetIt initGetIt(
       gh<_i321.ShowRewardedAdUseCase>(),
     ),
   );
+  gh.lazySingleton<_i96.DropsRepository>(
+    () => _i591.DropsRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
+  gh.lazySingleton<_i655.LeaderboardRepository>(
+    () => _i1008.LeaderboardRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
+  gh.factory<_i688.LeaderboardBloc>(
+    () => _i688.LeaderboardBloc(gh<_i655.LeaderboardRepository>()),
+  );
   gh.factory<_i313.StartupBloc>(
     () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
   );
@@ -427,6 +463,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i25.AdminModerationRepository>(
     () => _i25.AdminModerationRepository(gh<_i349.FirestoreClient>()),
+  );
+  gh.factory<_i896.QuestsBloc>(
+    () => _i896.QuestsBloc(gh<_i651.QuestsRepository>()),
   );
   gh.lazySingleton<_i643.FavouriteWallsRepository>(
     () => _i176.FavouriteWallsRepositoryImpl(
@@ -547,6 +586,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i886.FetchTrendingUseCase>(
     () => _i886.FetchTrendingUseCase(gh<_i72.TrendingRepository>()),
+  );
+  gh.factory<_i849.DropsBloc>(
+    () => _i849.DropsBloc(gh<_i96.DropsRepository>()),
   );
   gh.lazySingleton<_i563.CategoryFeedRepository>(
     () => _i307.CategoryFeedRepositoryImpl(

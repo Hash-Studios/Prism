@@ -36,12 +36,16 @@ class CoinHistoryPage extends StatefulWidget {
 }
 
 class _CoinHistoryPageState extends State<CoinHistoryPage> {
+  /// Pages one pull may read while every row it got is hidden or filtered out.
+  static const int _maxPagesPerPull = 5;
+
   final CoinHistoryRepository _repository = CoinHistoryRepository();
   final List<CoinTransactionEntry> _items = <CoinTransactionEntry>[];
   bool _loading = true;
   bool _loadingMore = false;
   bool _failed = false;
   bool _hasMore = false;
+  String? _cursor;
   _HistoryFilter? _filter;
 
   @override
@@ -52,7 +56,7 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
   }
 
   Future<void> _load() async {
-    final bool first = _items.isEmpty;
+    final bool first = _cursor == null;
     setState(() {
       _failed = false;
       if (first) {
@@ -62,11 +66,21 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
       }
     });
     try {
-      final CoinHistoryBatch batch = await _repository.fetchPage(startAfterDocId: first ? null : _items.last.id);
+      final List<CoinTransactionEntry> fetched = <CoinTransactionEntry>[];
+      String? cursor = first ? null : _cursor;
+      CoinHistoryBatch batch;
+      int pages = 0;
+      do {
+        batch = await _repository.fetchPage(startAfterDocId: cursor);
+        fetched.addAll(batch.items);
+        cursor = batch.cursor ?? cursor;
+        pages++;
+      } while (batch.hasMore && pages < _maxPagesPerPull && _visible(fetched).isEmpty);
       if (!mounted) return;
       setState(() {
-        _items.addAll(batch.items);
+        _items.addAll(fetched);
         _hasMore = batch.hasMore;
+        _cursor = cursor;
       });
     } catch (_) {
       if (!mounted) return;
@@ -81,13 +95,16 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
     }
   }
 
+  List<CoinTransactionEntry> _visible(List<CoinTransactionEntry> rows) {
+    final _HistoryFilter? filter = _filter;
+    return filter == null ? rows : rows.where(filter.matches).toList(growable: false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final _HistoryFilter? filter = _filter;
-    final List<CoinTransactionEntry> shown = filter == null
-        ? _items
-        : _items.where(filter.matches).toList(growable: false);
+    final List<CoinTransactionEntry> shown = _visible(_items);
     return Scaffold(
       backgroundColor: scheme.surface,
       appBar: AppBar(
@@ -124,7 +141,7 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
               SliverToBoxAdapter(
                 child: _Message(text: "Couldn't load your coin history.", onRetry: _load),
               )
-            else if (_items.isEmpty)
+            else if (_items.isEmpty && !_hasMore)
               const SliverToBoxAdapter(child: _Message(text: 'No coin activity yet.'))
             else ...<Widget>[
               if (shown.isEmpty)

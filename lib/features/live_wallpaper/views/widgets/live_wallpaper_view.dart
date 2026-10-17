@@ -1,6 +1,10 @@
+import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
@@ -8,6 +12,7 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart'
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_preview.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +28,11 @@ enum _LiveMode {
 
   final String label;
 }
+
+enum _UnlockChoice { coins, pro }
+
+/// The paid styles the signed-in user unlocked with coins, each with the end of its unlock.
+Map<String, DateTime> liveStyleUnlocks() => CoinsService.instance.currentPasses.liveStyles;
 
 typedef VideoPicker = Future<String?> Function();
 
@@ -44,9 +54,30 @@ class LiveWallpaperView extends StatefulWidget {
   State<LiveWallpaperView> createState() => _LiveWallpaperViewState();
 }
 
-class _LiveWallpaperViewState extends State<LiveWallpaperView> {
+class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindingObserver {
   late _LiveMode _mode = widget.imageUrl == null ? _LiveMode.gradients : _LiveMode.photo;
   int _seedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// An unlock may have ended, or been bought on another device, while the app was away.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    context.read<LiveWallpaperBloc>()
+      ..add(LiveWallpaperEvent.proChanged(app_state.prismUser.premium))
+      ..add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()));
+  }
 
   List<_LiveMode> get _modes => <_LiveMode>[
     if (widget.imageUrl != null) _LiveMode.photo,
@@ -67,12 +98,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
       case LiveApplyStatus.cancelled:
         return;
       case LiveApplyStatus.proRequired:
-        await PaywallOrchestrator.instance.presentOrRequireSignIn(
-          context,
-          placement: PaywallPlacement.mainUpsell,
-          source: 'live_wallpaper_screen',
-        );
-        bloc.add(LiveWallpaperEvent.proChanged(app_state.prismUser.premium));
+        await _offerUnlock(bloc);
         return;
       case LiveApplyStatus.applied:
       case LiveApplyStatus.confirmInPreview:
@@ -87,6 +113,68 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
               backgroundColor: outcome.isError ? scheme.error : null,
             ),
           );
+    }
+  }
+
+  /// The style the user tried to apply: its id, its name and its price are what the unlock sheet shows.
+  (String id, String label) get _lockedStyle {
+    final LiveWallpaperState state = context.read<LiveWallpaperBloc>().state;
+    return _mode == _LiveMode.photo
+        ? (state.motionStyle.name, state.motionStyle.label)
+        : (state.gradientStyle.name, state.gradientStyle.label);
+  }
+
+  Future<void> _offerUnlock(LiveWallpaperBloc bloc) async {
+    final (String id, String label) = _lockedStyle;
+    final _UnlockChoice? choice = await showPrismSheet<_UnlockChoice>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => PrismSheetBody(
+        title: '$label is a paid style',
+        message: 'Unlock it for 7 days with coins, or get Prism Pro for every style.',
+        actions: <Widget>[
+          PrismButton(
+            label: 'Unlock $label for 7 days · ${CoinPolicy.liveWallpaperStyle} coins',
+            expand: true,
+            onPressed: () => Navigator.of(sheetContext).pop(_UnlockChoice.coins),
+          ),
+          PrismButton(
+            label: 'See Prism Pro',
+            expand: true,
+            variant: PrismButtonVariant.ghost,
+            onPressed: () => Navigator.of(sheetContext).pop(_UnlockChoice.pro),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || choice == null) return;
+    switch (choice) {
+      case _UnlockChoice.coins:
+        if (!app_state.prismUser.loggedIn) {
+          googleSignInPopUp(context, () {});
+          return;
+        }
+        final CoinMutationResult result = await CoinsService.instance.spend(
+          CoinSpendAction.liveWallpaperStyle,
+          styleId: id,
+          sourceTag: 'live_wallpaper.style',
+        );
+        if (!mounted) return;
+        if (result.success) {
+          bloc.add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()));
+          toasts.success('$label is unlocked for 7 days.');
+        } else if (result.insufficientBalance) {
+          toasts.error('Not enough coins. Earn coins in Rewards.');
+        } else {
+          toasts.error("Couldn't unlock $label. Try again.");
+        }
+      case _UnlockChoice.pro:
+        await PaywallOrchestrator.instance.presentOrRequireSignIn(
+          context,
+          placement: PaywallPlacement.mainUpsell,
+          source: 'live_wallpaper_screen',
+        );
+        bloc.add(LiveWallpaperEvent.proChanged(app_state.prismUser.premium));
     }
   }
 
@@ -212,11 +300,11 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> {
 
   String _applyLabel(LiveWallpaperState state) {
     final bool locked = switch (_mode) {
-      _LiveMode.photo => !state.isPro && !state.motionStyle.isFree,
-      _LiveMode.gradients => !state.isPro && !state.gradientStyle.isFree,
+      _LiveMode.photo => state.isLocked(state.motionStyle.name, isFree: state.motionStyle.isFree),
+      _LiveMode.gradients => state.isLocked(state.gradientStyle.name, isFree: state.gradientStyle.isFree),
       _LiveMode.video => false,
     };
-    return locked ? 'Unlock with Prism Pro' : 'Set live wallpaper';
+    return locked ? 'Unlock · ${CoinPolicy.liveWallpaperStyle} coins' : 'Set live wallpaper';
   }
 }
 
@@ -245,7 +333,7 @@ class _PhotoSection extends StatelessWidget {
           values: MotionStyle.values,
           selected: state.motionStyle,
           label: (style) => style.label,
-          isLocked: (style) => !state.isPro && !style.isFree,
+          isLocked: (style) => state.isLocked(style.name, isFree: style.isFree),
           onSelected: (style) => bloc.add(LiveWallpaperEvent.motionSelected(style)),
         ),
         const SizedBox(height: 8),
@@ -285,7 +373,7 @@ class _GradientSection extends StatelessWidget {
           values: GradientStyle.values,
           selected: state.gradientStyle,
           label: (style) => style.label,
-          isLocked: (style) => !state.isPro && !style.isFree,
+          isLocked: (style) => state.isLocked(style.name, isFree: style.isFree),
           onSelected: (style) => bloc.add(LiveWallpaperEvent.gradientSelected(style)),
         ),
         const SizedBox(height: 8),

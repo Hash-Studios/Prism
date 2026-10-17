@@ -50,6 +50,8 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   Duration favouritesDebounce = const Duration(seconds: 2);
   @visibleForTesting
   Duration statusPollInterval = const Duration(seconds: 3);
+  @visibleForTesting
+  DateTime Function() clock = DateTime.now;
 
   final AutoRotateRepository _repository;
   List<String> _favouriteUrls = const <String>[];
@@ -64,6 +66,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   String? _userId;
   Timer? _favouritesTimer;
   Timer? _pollTimer;
+  Timer? _passTimer;
   int _pollsLeft = _maxStatusPolls;
 
   Set<WallpaperTarget> _supportedTargets = const <WallpaperTarget>{
@@ -149,7 +152,37 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
 
   bool _sameUrls(List<String> previous, List<String> next) => const ListEquality<String>().equals(previous, next);
 
-  bool get _canRotate => state.isPro && _activeUrls(state.config).length >= minWallpapers;
+  bool get _canRotate =>
+      state.isPro && !state.config.passExpired(clock()) && _activeUrls(state.config).length >= minWallpapers;
+
+  /// The entitlement and pass end to act on. A pass the app already stored still counts while the live passes are
+  /// unknown, for example before they load at launch, but never for another account.
+  (bool, DateTime?) _entitlement(
+    bool isPro,
+    DateTime? passUntil,
+    AutoRotateConfig stored, {
+    required bool trustStored,
+  }) {
+    final DateTime? until = isPro ? passUntil : (trustStored ? stored.passUntil : null);
+    final bool entitled = isPro ? until == null || until.isAfter(clock()) : until?.isAfter(clock()) ?? false;
+    return (entitled, entitled ? until : null);
+  }
+
+  /// Stores the pass end with the config and turns the rotation off the moment the pass ends.
+  Future<AutoRotateConfig> _applyPass(AutoRotateConfig config, DateTime? passUntil) async {
+    _passTimer?.cancel();
+    _passTimer = null;
+    if (passUntil != null) {
+      _passTimer = Timer(passUntil.difference(clock()), () {
+        _passTimer = null;
+        if (!isClosed) add(AutoRotateEvent.entitlementChanged(isPro: false, userId: _userId ?? ''));
+      });
+    }
+    if (config.passUntil == passUntil) return config;
+    final AutoRotateConfig next = config.copyWith(passUntil: () => passUntil);
+    await _repository.saveConfig(next);
+    return next;
+  }
 
   bool _urlsMatchApplied(AutoRotateConfig config) => _sameUrls(_appliedUrls ?? const <String>[], _activeUrls(config));
 
@@ -206,11 +239,16 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
   Future<void> close() {
     _favouritesTimer?.cancel();
     _pollTimer?.cancel();
+    _passTimer?.cancel();
     return super.close();
   }
 
   Future<void> _onStarted(_Started event, Emitter<AutoRotateState> emit) async {
-    final bool isPro = _entitlementKnown ? state.isPro : event.isPro;
+    final AutoRotateConfig stored = await _repository.loadConfig();
+    final (bool entitled, DateTime? passUntil) = _entitlementKnown
+        ? _entitlement(state.isPro, stored.passUntil, stored, trustStored: false)
+        : _entitlement(event.isPro, event.passUntil, stored, trustStored: true);
+    final bool isPro = entitled;
     if (_entitlementKnown && !isPro) {
       _favouriteUrls = const <String>[];
       _favouritesCapped = false;
@@ -218,7 +256,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       _setFavourites(event.favouriteUrls);
     }
     _favouritesKnown = true;
-    final AutoRotateConfig config = await _repository.loadConfig();
+    final AutoRotateConfig config = await _applyPass(stored, passUntil);
     await _loadSupportedTargets();
     if (isPro || config.source == AutoRotateSource.downloads) await _refreshSource(config);
     await _loadApplied();
@@ -253,18 +291,25 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
       _favouritesCapped = false;
       _favouritesKnown = false;
     }
-    final AutoRotateConfig config = await _repository.loadConfig();
+    final AutoRotateConfig stored = await _repository.loadConfig();
+    final (bool isPro, DateTime? passUntil) = _entitlement(
+      event.isPro,
+      event.passUntil,
+      stored,
+      trustStored: !accountChanged && event.userId.isNotEmpty,
+    );
+    final AutoRotateConfig config = await _applyPass(stored, passUntil);
     if (config.source == AutoRotateSource.downloads) await _refreshDownloads();
     await _loadApplied();
     final AutoRotateStatus status = await _status();
-    if (event.isPro && config.enabled && !status.isRunning && _isRemote(config.source)) {
+    if (isPro && config.enabled && !status.isRunning && _isRemote(config.source)) {
       _remoteFailed = !await _refreshRemote(config);
     }
-    emit(_snapshot(config, status: status, isPro: event.isPro, loaded: true));
+    emit(_snapshot(config, status: status, isPro: isPro, loaded: true));
     final bool somethingToStop = config.enabled || status.isRunning || status.lastError != null;
-    if (!event.isPro || accountChanged) {
+    if (!isPro || accountChanged) {
       if (somethingToStop) await _disable(emit);
-      if (!event.isPro && !accountChanged && event.userId.isNotEmpty && (config.enabled || status.isRunning)) {
+      if (!isPro && !accountChanged && event.userId.isNotEmpty && (config.enabled || status.isRunning)) {
         emit(state.copyWith(proLapsed: true));
       }
     } else if (!config.enabled && somethingToStop) {

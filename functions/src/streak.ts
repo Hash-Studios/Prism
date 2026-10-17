@@ -5,14 +5,10 @@ import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/ht
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {isLoggedOut, pickFcmToken, sendNotification, userPushTokens} from "./notificationHelper";
 import {coinTransactionDoc, db, int, REGION, str} from "./common";
+import {DEFAULT_ECONOMY, type EconomyConfig, grantXp, loadEconomy, randomInt, xpForCoins} from "./economy";
 
 const USERS_COLLECTION = "usersv2";
 const COIN_TX_COLLECTION = "coinTransactions";
-
-const STREAK_REWARD_DAY_7_DAILY = 15;
-const STREAK_DAY7_BONUS = 40;
-const PRO_STREAK_DAILY_BONUS = 5;
-const PRO_STREAK_7_BONUS = 20;
 
 const DEFAULT_TZ_OFFSET_MINUTES = 330;
 const REMINDER_HOUR_LOCAL = 20;
@@ -50,6 +46,7 @@ interface ClaimDailyStreakResponse {
   streakBonusReward: number;
   proBonusReward: number;
   totalReward: number;
+  isChest: boolean;
   newBalance: number;
   todayLocalKey: string;
   timezoneOffsetMinutes: number;
@@ -99,6 +96,7 @@ export const claimDailyStreak = onCall(
     const requestOffset = requestedOffset ?? DEFAULT_TZ_OFFSET_MINUTES;
     const reminderEnabledRequest = reminderEnabled ?? true;
 
+    const config = await loadEconomy();
     const userRef = db.collection(USERS_COLLECTION).doc(uid);
 
     let claimed = false;
@@ -167,6 +165,7 @@ export const claimDailyStreak = onCall(
         },
         todayLocalKey,
         asBool(userData.premium, false),
+        config.award,
       );
       alreadyClaimedToday = plan.alreadyClaimed;
       streakCount = plan.count;
@@ -212,9 +211,9 @@ export const claimDailyStreak = onCall(
           {
             idPrefix: "ctx_streak_bonus",
             delta: streakBonusReward,
-            action: "streakBonus",
-            description: `7-day streak bonus (+${streakBonusReward})`,
-            reason: "streak_day_7_bonus",
+            action: "streakChest",
+            description: `Day 7 chest (+${streakBonusReward})`,
+            reason: "streak_day_7_chest",
           },
           {
             idPrefix: "ctx_pro_streak_bonus",
@@ -257,6 +256,7 @@ export const claimDailyStreak = onCall(
       tx.update(userRef, {
         coins: newBalance,
         coinState,
+        ...(claimed ? grantXp(userData, xpForCoins(totalReward, config), now.getTime()) : {}),
       });
     });
 
@@ -276,6 +276,7 @@ export const claimDailyStreak = onCall(
       streakBonusReward,
       proBonusReward,
       totalReward,
+      isChest: claimed && streakDay === 7,
       newBalance,
       todayLocalKey,
       timezoneOffsetMinutes: effectiveTimezoneOffsetMinutes,
@@ -597,7 +598,17 @@ export interface StreakClaimPlan {
   proBonusReward: number;
 }
 
-export function planStreakClaim(state: StreakClaimState, todayKey: string, isPro: boolean): StreakClaimPlan {
+/**
+ * Day 7 adds a chest in [streakChestMin, streakChestMax]. Pro gets `ceil(total * proStreakMultiplier)`, and the
+ * extra is reported as `proBonusReward` so clients that sum the parts still show the right total.
+ */
+export function planStreakClaim(
+  state: StreakClaimState,
+  todayKey: string,
+  isPro: boolean,
+  award: EconomyConfig["award"] = DEFAULT_ECONOMY.award,
+  random: () => number = Math.random,
+): StreakClaimPlan {
   const freezes = Math.max(0, Math.min(MAX_STREAK_FREEZES, Math.trunc(state.freezes || 0)));
   const storedCount = Math.max(0, Math.trunc(state.streakCount || 0));
   const prev = storedCount > 0 ? storedCount : clampStreakDay(state.streakDay);
@@ -630,7 +641,9 @@ export function planStreakClaim(state: StreakClaimState, todayKey: string, isPro
   }
   const streakBroken = lastKey.length > 0 && count === 1 && prev > 0;
   const cycleDay = streakCycleDay(count);
-  const rewardParts = rewardForStreakDay(cycleDay);
+  const dailyReward = award.streakDaily[cycleDay - 1] ?? 0;
+  const chest = cycleDay === 7 ? randomInt(award.streakChestMin, award.streakChestMax, random) : 0;
+  const earned = dailyReward + chest;
   return {
     ...base,
     alreadyClaimed: false,
@@ -640,17 +653,10 @@ export function planStreakClaim(state: StreakClaimState, todayKey: string, isPro
     freezesUsed: used,
     freezesLeft: freezes - used,
     cycleDay,
-    dailyReward: rewardParts.dailyReward,
-    streakBonusReward: rewardParts.streakBonusReward,
-    proBonusReward: isPro ? (cycleDay === 7 ? PRO_STREAK_7_BONUS : PRO_STREAK_DAILY_BONUS) : 0,
+    dailyReward,
+    streakBonusReward: chest,
+    proBonusReward: isPro ? Math.ceil(earned * award.proStreakMultiplier) - earned : 0,
   };
-}
-
-function rewardForStreakDay(streakDay: number): {dailyReward: number; streakBonusReward: number} {
-  if (streakDay >= 7) {
-    return {dailyReward: STREAK_REWARD_DAY_7_DAILY, streakBonusReward: STREAK_DAY7_BONUS};
-  }
-  return {dailyReward: streakDay >= 5 ? 12 : streakDay >= 3 ? 8 : 5, streakBonusReward: 0};
 }
 
 export function localDateKeyFromUtc(utcDate: Date, offsetMinutes: number): string {

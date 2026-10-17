@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import test, {type TestContext} from "node:test";
+import test, {beforeEach, mock, type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
+import {ECONOMY_CONFIG_DOC, resetEconomyCache} from "../economy";
 import {awardCoins, processReferral, referralSkipReason, spendCoins, unlockPremiumPreview} from "../coinsCallables";
 import {
   base64DecodedBytes,
@@ -14,6 +15,12 @@ import {
 import {claimSyncSlot, syncSubscription} from "../syncSubscription";
 
 type Doc = Record<string, unknown>;
+
+// No economy config doc: every callable runs on DEFAULT_ECONOMY.
+const realDoc = db.doc.bind(db);
+mock.method(db, "doc", (path: string) =>
+  path === ECONOMY_CONFIG_DOC ? {get: async () => ({exists: false, data: (): undefined => undefined})} : realDoc(path));
+beforeEach(() => resetEconomyCache());
 
 function referralLedgerQuery(snapshot: Record<string, Doc> | Map<string, Doc>) {
   const entries = snapshot instanceof Map ? [...snapshot.entries()] : Object.entries(snapshot);
@@ -171,14 +178,23 @@ test("referralSkipReason: inviter must be older than the caller", () => {
   assert.equal(referralSkipReason(iso(NOW - 2 * DAY), undefined, {}, "d", NOW), "referral_inviter_not_older");
 });
 
-test("referralSkipReason: caps inviter rewards at 10 a day and 100 in total", () => {
+test("referralSkipReason: caps inviter rewards at 3 a day and 20 in total", () => {
   const caller = iso(NOW - DAY);
   const inviter = iso(NOW - 30 * DAY);
-  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 9, total: 9}, "d", NOW), null);
-  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 10, total: 10}, "d", NOW), "referral_inviter_daily_limit");
-  assert.equal(referralSkipReason(caller, inviter, {day: "old", count: 10, total: 50}, "d", NOW), null);
-  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 0, total: 100}, "d", NOW), "referral_inviter_lifetime_limit");
-  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 10, total: 100}, "d", NOW), "referral_inviter_lifetime_limit");
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 2, total: 2}, "d", NOW), null);
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 3, total: 3}, "d", NOW), "referral_inviter_daily_limit");
+  assert.equal(referralSkipReason(caller, inviter, {day: "old", count: 3, total: 19}, "d", NOW), null);
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 0, total: 20}, "d", NOW), "referral_inviter_lifetime_limit");
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 3, total: 20}, "d", NOW), "referral_inviter_lifetime_limit");
+});
+
+test("referralSkipReason: takes the caps it is given", () => {
+  const caps = {maxPerDay: 10, maxLifetime: 100};
+  const caller = iso(NOW - DAY);
+  const inviter = iso(NOW - 30 * DAY);
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 9, total: 99}, "d", NOW, caps), null);
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 10, total: 10}, "d", NOW, caps),
+    "referral_inviter_daily_limit");
 });
 
 test("processReferral: pays both users once and counts it against the inviter", async (t) => {
@@ -192,6 +208,9 @@ test("processReferral: pays both users once and counts it against the inviter", 
   assert.equal(store.get("usersv2/caller")?.coins, 100);
   assert.equal(store.get("usersv2/inviter")?.coins, 105);
   assert.equal(store.get("referralStats/inviter")?.total, 1);
+  // Referrals pay coins but no XP.
+  assert.equal(store.get("usersv2/caller")?.xp, undefined);
+  assert.equal(store.get("usersv2/inviter")?.xp, undefined);
 });
 
 test("processReferral: an old caller gets nothing and nobody is paid", async (t) => {
@@ -227,13 +246,13 @@ test("processReferral: rejects an inviter value that is not a document ID", asyn
   );
 });
 
-test("processReferral: the inviter's 11th reward of the day is skipped", async (t) => {
+test("processReferral: the inviter's 4th reward of the day is skipped", async (t) => {
   mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - 40 * DAY});
   const day = new Date(NOW).toISOString().slice(0, 10);
   const store = fakeStore(t, {
     "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
     "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
-    "referralStats/inviter": {day, count: 10, total: 10},
+    "referralStats/inviter": {day, count: 3, total: 3},
   });
   const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
   assert.equal(result.reason, "referral_inviter_daily_limit");
@@ -248,7 +267,7 @@ test("processReferral: a permanent lifetime cap takes precedence over the daily 
   const store = fakeStore(t, {
     "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
     "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
-    "referralStats/inviter": {day, count: 10, total: 100},
+    "referralStats/inviter": {day, count: 3, total: 20},
   });
   const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
   assert.equal(result.reason, "referral_inviter_lifetime_limit");
@@ -285,11 +304,11 @@ test("processReferral: a retry at the daily cap returns the skip result", async 
   fakeRetriedStore(t, {
     "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
     "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
-    "referralStats/inviter": {day, count: 9, total: 9},
+    "referralStats/inviter": {day, count: 2, total: 2},
   }, {
     "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
     "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
-    "referralStats/inviter": {day, count: 10, total: 10},
+    "referralStats/inviter": {day, count: 3, total: 3},
   });
   const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
   assert.equal(result.success, false);
@@ -298,15 +317,15 @@ test("processReferral: a retry at the daily cap returns the skip result", async 
   assert.equal(result.reason, "referral_inviter_daily_limit");
 });
 
-test("processReferral: bootstraps the lifetime cap from 100 historical inviter rewards", async (t) => {
+test("processReferral: bootstraps the lifetime cap from 20 historical inviter rewards", async (t) => {
   mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - 400 * DAY});
   const store = fakeStore(t, {
     "usersv2/caller": {coins: 0}, "usersv2/inviter": {coins: 10},
-    ...inviterHistory("inviter", Array.from({length: 100}, (_, index) => NOW - (index + 2) * DAY)),
+    ...inviterHistory("inviter", Array.from({length: 20}, (_, index) => NOW - (index + 2) * DAY)),
   });
   const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
   assert.equal(result.reason, "referral_inviter_lifetime_limit");
-  assert.equal(store.get("referralStats/inviter")?.total, 100);
+  assert.equal(store.get("referralStats/inviter")?.total, 20);
   assert.equal((store.get("usersv2/caller")?.coinState as Doc).referralRewarded, true);
   assert.equal(store.get("usersv2/inviter")?.coins, 10);
 });
@@ -316,30 +335,30 @@ test("processReferral: bootstraps the current UTC daily cap and leaves the calle
   const day = new Date(NOW).toISOString().slice(0, 10);
   const store = fakeStore(t, {
     "usersv2/caller": {coins: 0}, "usersv2/inviter": {coins: 10},
-    ...inviterHistory("inviter", Array.from({length: 10}, () => NOW - 60_000)),
+    ...inviterHistory("inviter", Array.from({length: 3}, () => NOW - 60_000)),
   });
   const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
   assert.equal(result.reason, "referral_inviter_daily_limit");
-  assert.deepEqual(store.get("referralStats/inviter"), {day, count: 10, total: 10});
+  assert.deepEqual(store.get("referralStats/inviter"), {day, count: 3, total: 3});
   assert.notEqual((store.get("usersv2/caller")?.coinState as Doc | undefined)?.referralRewarded, true);
 });
 
-test("processReferral: excludes prior-day history, reaches 100, then stops a concurrent retry", async (t) => {
+test("processReferral: excludes prior-day history, reaches 20, then stops a concurrent retry", async (t) => {
   const day = new Date(NOW).toISOString().slice(0, 10);
   mockAuthCreationTimes(t, {caller: NOW - DAY, nextCaller: NOW - DAY, inviter: NOW - 400 * DAY});
   const seed = {
     "usersv2/caller": {coins: 0}, "usersv2/nextCaller": {coins: 0}, "usersv2/inviter": {coins: 10},
-    ...inviterHistory("inviter", Array.from({length: 99}, (_, index) => NOW - (index + 2) * DAY)),
+    ...inviterHistory("inviter", Array.from({length: 19}, (_, index) => NOW - (index + 2) * DAY)),
   };
   const store = fakeStore(t, seed);
   const paid = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
   assert.equal(paid.changed, true);
-  assert.deepEqual(store.get("referralStats/inviter"), {day, count: 1, total: 100});
+  assert.deepEqual(store.get("referralStats/inviter"), {day, count: 1, total: 20});
 
   const replayStore = {
     ...seed,
     "usersv2/nextCaller": {coins: 0},
-    "referralStats/inviter": {day, count: 1, total: 100},
+    "referralStats/inviter": {day, count: 1, total: 20},
   };
   fakeRetriedStore(t, seed, replayStore);
   const replay = await run(processReferral, {auth: {uid: "nextCaller"}, data: {inviterUserId: "inviter"}});
@@ -580,6 +599,24 @@ test("unlockPremiumPreview: premium users unlock without a charge", async (t) =>
   assert.equal(result.bypassed, true);
   assert.equal(result.changed, false);
   assert.equal(store.get("usersv2/u")?.coins, 0);
+});
+
+test("unlockPremiumPreview: an active premium pass unlocks without a charge; an expired one pays", async (t) => {
+  const store = fakeStore(t, {
+    "usersv2/u": {coins: 30},
+    "usersv2/u/private/economy": {passes: {premiumPassUntil: Date.now() + 3_600_000}},
+  });
+  const result = await run(unlockPremiumPreview, unlockReq);
+  assert.equal(result.bypassed, true);
+  assert.equal(result.reason, "premiumPreview24h_pass_bypass");
+  assert.equal(store.get("usersv2/u")?.coins, 30);
+  t.mock.reset();
+  const expired = fakeStore(t, {
+    "usersv2/u": {coins: 30},
+    "usersv2/u/private/economy": {passes: {premiumPassUntil: Date.now() - 1}},
+  });
+  assert.equal((await run(unlockPremiumPreview, unlockReq)).delta, -10);
+  assert.equal(expired.get("usersv2/u")?.coins, 20);
 });
 
 test("unlockPremiumPreview: needs sign-in and a key", async (t) => {

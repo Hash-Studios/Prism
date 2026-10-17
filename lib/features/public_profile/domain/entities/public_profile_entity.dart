@@ -11,6 +11,10 @@ class PublicProfileEntity {
     required this.links,
     required this.coverPhoto,
     this.badges = const <String>[],
+    this.frameId,
+    this.nameGlowId,
+    this.xp = 0,
+    this.premium = false,
   });
 
   final String id;
@@ -26,4 +30,10 @@ class PublicProfileEntity {
 
   /// Earned badge ids.
   final List<String> badges;
+
+  /// Equipped cosmetics, from `cosmetics.frame` and `cosmetics.nameGlow`.
+  final String? frameId;
+  final String? nameGlowId;
+  final int xp;
+  final bool premium;
 }

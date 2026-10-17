@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
-import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -161,6 +160,10 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
   }
 
+  /// Free for a signed-in user without Pro: an active pass on a premium wall, or a grace download on a standard one.
+  bool _downloadIsFree(bool premiumContent) =>
+      premiumContent ? CoinsService.instance.premiumContentUnlocked : CoinsService.instance.graceDownloadsLeft > 0;
+
   bool get _isGuest => !app_state.prismUser.premium && !app_state.prismUser.loggedIn;
 
   @override
@@ -189,6 +192,10 @@ class _DownloadButtonState extends State<DownloadButton> {
     } else if (_isGuest) {
       text = label;
       semantics = label;
+    } else if (_downloadIsFree(widget.isPremiumContent)) {
+      final int left = CoinsService.instance.graceDownloadsLeft;
+      text = widget.isPremiumContent ? '$label · Free' : '$label · Free · $left left';
+      semantics = widget.isPremiumContent ? '$label. Free with your pass' : '$label. Free, $left free downloads left';
     } else {
       final int cost = _downloadSpendAction.cost();
       text = '$label · $cost';
@@ -300,7 +307,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   /// Asks what to do when the wallpaper is already in Downloads. Returns true to go on with a new download.
   Future<bool> _confirmDownloadAgain(String identity) async {
     if (!_isSaved(identity) || !await _fileStillInDownloads(identity) || !mounted) return true;
-    final bool free = app_state.prismUser.premium || _isGuest;
+    final bool free = app_state.prismUser.premium || _isGuest || _downloadIsFree(_tap.isPremiumContent);
     final int cost = _tapSpendAction.cost();
     final _SavedChoice? choice = await showCoinGateSheet<_SavedChoice>(
       context,
@@ -423,15 +430,14 @@ class _DownloadButtonState extends State<DownloadButton> {
       cost: prompt.cost,
       message: (int sheetMissing) {
         final String need = 'You need ${sheetMissing > 0 ? sheetMissing : missing} more coins to save this wallpaper.';
-        final String perAd = sheetMissing > CoinPolicy.rewardedAd && prompt.canWatchAd
-            ? ' Each ad adds ${CoinPolicy.rewardedAd}.'
-            : '';
+        final int adReward = CoinsService.instance.adsRewardNow;
+        final String perAd = sheetMissing > adReward && prompt.canWatchAd ? ' Each ad adds $adReward.' : '';
         return '$need$perAd$adNote';
       },
       options: <CoinGateOption<CoinGateChoice>>[
         if (prompt.canWatchAd)
           CoinGateOption(
-            label: 'Watch ad (+${CoinPolicy.rewardedAd})${adsLeft == null ? '' : ' · $adsLeft left today'}',
+            label: '${watchAdOptionLabel()}${adsLeft == null ? '' : ' · $adsLeft left today'}',
             value: CoinGateChoice.watchAd,
           ),
         const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
@@ -463,7 +469,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         ),
         upsellSource: 'download_watch_and_download_rewarded_ad',
         upgradeSource: 'download_low_balance_upgrade',
-        precheckBalance: true,
+        precheckBalance: !_downloadIsFree(_tap.isPremiumContent),
         repromptOnNudgeSpendInsufficient: false,
         onPaid: (String txId) => _paidTxId = txId,
         isMounted: () => mounted,

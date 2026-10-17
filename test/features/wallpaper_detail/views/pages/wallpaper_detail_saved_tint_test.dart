@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/downloaded_link_lookup.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -113,6 +115,17 @@ void main() {
     messenger.setMockMethodCallHandler(toastChannel, (_) async => true);
     AnalyticsRuntime.instance = FakeAppAnalytics();
     CoinsService.instance.isLinkDownloaded = isLinkInDownloadedIndex;
+    final charged = backend.onCall;
+    backend.onCall = (name, parameters) async => <String, Object>{
+      'success': true,
+      'changed': false,
+      'bypassed': true,
+      'currentBalance': 100,
+      'graceDownloadsLeft': 0,
+      'reason': 'grace_download',
+    };
+    await CoinsService.instance.spend(CoinSpendAction.wallpaperDownload);
+    backend.onCall = charged;
     final settings = getIt<SettingsLocalDataSource>();
     await settings.set('notificationPermissionPromptedV2', true);
     getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
@@ -194,7 +207,7 @@ void main() {
       expect(spent, isEmpty);
       expect(enqueued, isEmpty);
 
-      await tester.tap(find.text('Download again (-5 coins)'));
+      await tester.tap(find.text('Download again (-${CoinPolicy.wallpaperDownload} coins)'));
       await settle(tester);
 
       expect(spent, <String>['spendCoins']);
@@ -230,7 +243,7 @@ void main() {
 
       expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).variant!.key, 'tint-00ff00');
       expect(find.text('Saved'), findsNothing);
-      expect(find.text('Save · 5'), findsOneWidget);
+      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 

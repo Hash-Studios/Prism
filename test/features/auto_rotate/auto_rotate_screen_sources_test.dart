@@ -293,7 +293,7 @@ void main() {
     expect(shown, hasLength(1));
     expect(
       (shown.single.arguments as Map<Object?, Object?>)['msg'],
-      'Auto-rotate is off because your Prism Pro plan ended.',
+      'Auto-rotate is off because your Prism Pro plan or pass ended.',
     );
     verify(() => autoRotateBloc.add(const AutoRotateEvent.proLapseAcknowledged())).called(1);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));

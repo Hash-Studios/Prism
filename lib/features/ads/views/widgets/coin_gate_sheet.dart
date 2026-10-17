@@ -12,6 +12,9 @@ class CoinGateOption<T> {
   final bool outlined;
 }
 
+/// Label of the watch-ad option, with what the next ad really pays (more for the first ad of the day).
+String watchAdOptionLabel() => 'Watch a video (+${CoinsService.instance.adsRewardNow})';
+
 /// Bottom sheet for a coin-gated action. Pops with the chosen option's value.
 Future<T?> showCoinGateSheet<T>(
   BuildContext context, {

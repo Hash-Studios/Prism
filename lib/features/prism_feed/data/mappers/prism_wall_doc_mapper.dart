@@ -45,6 +45,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
       requiredStreakDays: requiredStreakDays,
       streakShopCoinCost: streakShopCoinCost,
       firestoreDocumentId: docId,
+      boostedUntil: boostedUntil,
     );
   }
 }

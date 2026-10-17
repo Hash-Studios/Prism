@@ -112,9 +112,15 @@ class _FirebaseCoreTestCodec extends StandardMessageCodec {
 
 class CoinsTestFirestore extends Fake implements FirestoreClient {
   Map<String, dynamic> userData = <String, dynamic>{};
+
+  /// Docs other than the user doc, keyed `collection/id`. A key missing here reads [userData].
+  Map<String, Map<String, dynamic>> docs = <String, Map<String, dynamic>>{};
   Future<Map<String, dynamic>>? userResponse;
   List<Map<String, dynamic>> transactions = <Map<String, dynamic>>[];
   int getByIdCalls = 0;
+
+  /// Reads of the root user doc only, not the private economy doc.
+  int userDocReads = 0;
   int queries = 0;
   int? dedupeWindowMs;
 
@@ -127,6 +133,9 @@ class CoinsTestFirestore extends Fake implements FirestoreClient {
     bool preferCacheFirst = false,
   }) async {
     getByIdCalls++;
+    if (collection == 'usersv2') userDocReads++;
+    final Map<String, dynamic>? doc = docs['$collection/$id'];
+    if (doc != null) return map(doc, id);
     return map(userResponse == null ? userData : await userResponse!, id);
   }
 
