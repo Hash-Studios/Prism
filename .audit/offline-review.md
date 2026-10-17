@@ -255,6 +255,16 @@ Full local gate 94 passed formatting and early guards, then stopped at one analy
 
 Worker 95 added the missing no-op cleanup method to the render fake, without changing assertions or production behavior. Gate 97 passes analysis and guards and has reached the test suite. Independent Claude Sonnet 5.5 closure review 93 found no concrete blockers in the repaired economy paths and no added narration comments. Its live-read notes predate gate 94's failure and the later documentation updates. The final gate result below, once recorded, supersedes those interim notes.
 
+## Hosted iOS repair 98 through 100
+
+PR 495 opened ready on `e8826e6a2` after a normal merge of two web-footer files from master. This merge changed no app, native, test, or build-gate source under the running local gate 97. The PR has the Show Me before-and-after diagram and explicitly leaves device screenshots to the owner.
+
+Hosted iOS job 98 failed while compiling the standalone Swift package. Two tests in its shared test file referenced `Runner.AppDelegate` and `PrismShortcutWallpaperLoader`, neither of which belongs to the standalone core package. Worker 99 aligned these tests with the existing `canImport(Runner)` boundary. Both app-target tests and all their assertions remain. The package's core tests remain unchanged.
+
+Parent check 100 passed the Swift core target build and a Swift 6 typecheck of the shared test file against that core module. This verifies the package-side compile boundary on Linux. It does not prove the app target or the ImageIO suite on macOS. Hosted macOS must rerun on the corrected head. Gate 97 remains in progress at this checkpoint.
+
+CodeRabbit skipped its automated review because this PR exceeds its file limit. The independent Claude Sonnet 5.5 and Claude Opus 5.5 reviews recorded above are not replaced by that skipped check.
+
 ## Evidence limits
 
 The inherited trail contains estimated timestamps, with append-only correction rows. Several early rows name local `/tmp` logs that are not portable PR artifacts. Later committed tests and hosted checks must carry the final proof. The foundation commit proves its six files only. The later implementation commit and master merge preserve the wider integration tree but do not replace its full verification.

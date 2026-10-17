@@ -35,6 +35,7 @@ struct PrismShortcutsTests {
     }
   }
 
+#if canImport(Runner)
   @Test func offlineSupportRootIsCreatedAndExcludedFromBackupAtStartup() throws {
     let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
     defer { try? FileManager.default.removeItem(at: support) }
@@ -49,6 +50,7 @@ struct PrismShortcutsTests {
     #expect(PrismShortcutWallpaperLoader.imageSession.configuration.timeoutIntervalForResource == 60)
     #expect(PrismShortcutWallpaperLoader.metadataSession.configuration.timeoutIntervalForResource == 20)
   }
+#endif
 
   private enum TestFailure: Error, Equatable {
     case remote
