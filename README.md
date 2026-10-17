@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="demo/header.jpg" alt="Prism on iPhone: a wallpaper, the home feed with the Wall of the Day, and collections" width="100%">
+<img src="demo/header.jpg" alt="Prism on iPhone: a wallpaper, the home feed with the Wall of the Day, and colour search" width="100%">
 
 # Prism
 
@@ -86,47 +86,50 @@ See [docs/features](docs/features/README.md) for a short page on each feature.
 ## Screenshots
 
 <!--
-  Screenshots come from the redesign in PR #438 (iPhone, iOS Simulator), cropped to the "After" half.
-  Cells with demo/screens/placeholder.svg have no screenshot yet. Replace them after PR #438 merges.
+  Most screenshots come from the redesign in PR #438 (iPhone). Clock preview, Set wallpaper, Filter editor,
+  Favourites and Downloads come from later QA runs, and Live wallpaper, Auto-rotate and Pro wallpaper are widget renders.
+  All sources are on the qa/screenshots branch.
 -->
 
-A dashed frame marks a screen that gets its screenshot soon.
+**Get started**
+
+| <img src="demo/screens/onboarding-welcome.jpg" alt="Welcome screen with sign in" width="180"> | <img src="demo/screens/onboarding-interests.jpg" alt="Pick the wallpaper styles you like" width="180"> | <img src="demo/screens/onboarding-creators.jpg" alt="Follow suggested creators" width="180"> | <img src="demo/screens/tune-feed-sheet.jpg" alt="Tune your feed" width="180"> |
+| :---: | :---: | :---: | :---: |
+| Welcome | Pick your vibe | Find your people | Tune your feed |
 
 **Discover**
 
-| <img src="demo/screens/home.jpg" alt="Home feed with the Wall of the Day" width="180"> | <img src="demo/screens/search-tab.jpg" alt="Search" width="180"> | <img src="demo/screens/collections-tab.jpg" alt="Collections" width="180"> | <img src="demo/screens/tune-feed-sheet.jpg" alt="Tune your feed" width="180"> |
+| <img src="demo/screens/home.jpg" alt="Home feed with the Wall of the Day and trending wallpapers" width="180"> | <img src="demo/screens/search.jpg" alt="Search with recent searches and colours" width="180"> | <img src="demo/screens/search-colour-results.jpg" alt="Search results for a colour" width="180"> | <img src="demo/screens/collections-tab.jpg" alt="Collections" width="180"> |
 | :---: | :---: | :---: | :---: |
-| Home and Wall of the Day | Search | Collections | Tune your feed |
-| <img src="demo/screens/placeholder.svg" alt="Trending: screenshot coming soon" width="180"> | <img src="demo/screens/placeholder.svg" alt="Colour results: screenshot coming soon" width="180"> | <img src="demo/screens/placeholder.svg" alt="Onboarding: screenshot coming soon" width="180"> | <img src="demo/screens/placeholder.svg" alt="Notifications: screenshot coming soon" width="180"> |
-| Trending | Colour results | Onboarding | Notifications |
+| Home and trending | Search | Colour results | Collections |
 
 **Preview, set, and edit**
 
-| <img src="demo/screens/wallpaper-detail.jpg" alt="Wallpaper" width="180"> | <img src="demo/screens/wallpaper-detail-info-panel.jpg" alt="Wallpaper details and colours" width="180"> | <img src="demo/screens/placeholder.svg" alt="Clock preview: screenshot coming soon" width="180"> | <img src="demo/screens/placeholder.svg" alt="Set wallpaper: screenshot coming soon" width="180"> |
+| <img src="demo/screens/wallpaper-detail.jpg" alt="Wallpaper" width="180"> | <img src="demo/screens/wallpaper-detail-info-panel.jpg" alt="Wallpaper details and colours" width="180"> | <img src="demo/screens/clock-preview.jpg" alt="Lock screen clock preview" width="180"> | <img src="demo/screens/set-wallpaper.jpg" alt="Wallpaper set, with Match accent and Undo" width="180"> |
 | :---: | :---: | :---: | :---: |
 | Wallpaper | Details and colours | Clock preview | Set wallpaper |
-| <img src="demo/screens/placeholder.svg" alt="Filter editor: screenshot coming soon" width="180"> | <img src="demo/screens/placeholder.svg" alt="Live wallpaper: screenshot coming soon" width="180"> | <img src="demo/screens/placeholder.svg" alt="Auto-rotate: screenshot coming soon" width="180"> | <img src="demo/screens/placeholder.svg" alt="iOS Shortcuts: screenshot coming soon" width="180"> |
+| <img src="demo/screens/filter-editor.jpg" alt="Filter editor" width="180"> | <img src="demo/screens/live-wallpaper.jpg" alt="Live wallpapers" width="180"> | <img src="demo/screens/auto-rotate.jpg" alt="Auto-rotate settings" width="180"> | <img src="demo/screens/ios-shortcuts.jpg" alt="Change the wallpaper automatically with iOS Shortcuts" width="180"> |
 | Filter editor | Live wallpaper | Auto-rotate | iOS Shortcuts |
 
 **Create and collect**
 
-| <img src="demo/screens/ai-wallpaper.jpg" alt="AI wallpaper" width="180"> | <img src="demo/screens/upload-wall-ready.jpg" alt="Upload a wallpaper" width="180"> | <img src="demo/screens/favourites.jpg" alt="Favourites" width="180"> | <img src="demo/screens/downloads-list.jpg" alt="Downloads" width="180"> |
+| <img src="demo/screens/ai-wallpaper.jpg" alt="AI wallpaper" width="180"> | <img src="demo/screens/upload-wall-ready.jpg" alt="Upload a wallpaper" width="180"> | <img src="demo/screens/favourites.jpg" alt="Library: favourites" width="180"> | <img src="demo/screens/downloads-list.jpg" alt="Library: downloads" width="180"> |
 | :---: | :---: | :---: | :---: |
 | AI wallpaper | Upload | Favourites | Downloads |
 
 **Profile and rewards**
 
-| <img src="demo/screens/profile-own.jpg" alt="Profile" width="180"> | <img src="demo/screens/edit-profile.jpg" alt="Edit profile" width="180"> | <img src="demo/screens/rewards-tab.jpg" alt="Rewards" width="180"> | <img src="demo/screens/daily-claim-sheet.jpg" alt="Daily streak reward" width="180"> |
+| <img src="demo/screens/profile-own.jpg" alt="Your profile" width="180"> | <img src="demo/screens/edit-profile.jpg" alt="Edit profile" width="180"> | <img src="demo/screens/rewards-tab.jpg" alt="Rewards" width="180"> | <img src="demo/screens/daily-claim-sheet.jpg" alt="Daily streak reward" width="180"> |
 | :---: | :---: | :---: | :---: |
 | Profile | Edit profile | Rewards | Daily streak |
-| <img src="demo/screens/share-prism-referral.jpg" alt="Invite friends" width="180"> | <img src="demo/screens/placeholder.svg" alt="Prism Pro: screenshot coming soon" width="180"> | <img src="demo/screens/sign-in-popup.jpg" alt="Sign in" width="180"> | <img src="demo/screens/theme-manager.jpg" alt="Themes and accent colour" width="180"> |
-| Invite friends | Prism Pro | Sign in | Themes and accent |
+| <img src="demo/screens/share-prism-referral.jpg" alt="Invite friends" width="180"> | <img src="demo/screens/pro-wallpaper.jpg" alt="Pro wallpaper: save with coins or get Prism Pro" width="180"> | <img src="demo/screens/notifications.jpg" alt="Notifications" width="180"> | <img src="demo/screens/theme-manager.jpg" alt="Themes and accent colour" width="180"> |
+| Invite friends | Pro wallpaper | Notifications | Themes and accent |
 
 **Light theme (Frost White)**
 
-| <img src="demo/screens/light-home.jpg" alt="Home in the Frost White theme" width="180"> | <img src="demo/screens/light-detail.jpg" alt="Wallpaper details in the Frost White theme" width="180"> | <img src="demo/screens/light-profile.jpg" alt="Profile in the Frost White theme" width="180"> | <img src="demo/screens/light-settings.jpg" alt="Settings in the Frost White theme" width="180"> |
+| <img src="demo/screens/light-home.jpg" alt="Home in the Frost White theme" width="180"> | <img src="demo/screens/light-detail.jpg" alt="Wallpaper details in the Frost White theme" width="180"> | <img src="demo/screens/light-profile.jpg" alt="Creator profile in the Frost White theme" width="180"> | <img src="demo/screens/light-theme-manager.jpg" alt="Themes in the Frost White theme" width="180"> |
 | :---: | :---: | :---: | :---: |
-| Home | Wallpaper | Profile | Settings |
+| Home | Wallpaper | Creator profile | Themes |
 
 ## Download
 
