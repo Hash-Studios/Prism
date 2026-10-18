@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="78%">
+      <stop offset="0" stop-color="#2B1F4D"/>
+      <stop offset="0.45" stop-color="#120D22"/>
+      <stop offset="1" stop-color="#040306"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="fanFade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.7" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.35"/>
+    </linearGradient>
+    <mask id="fanMask" maskUnits="userSpaceOnUse" x="-512" y="-512" width="2048" height="2048">
+      <rect x="560" y="200" width="1000" height="900" fill="url(#fanFade)"/>
+    </mask>
+    <linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="80" y1="25.7" x2="113.26" y2="63.98"><stop offset="0" stop-color="#B65CF0"/><stop offset="1" stop-color="#9FA6F5"/></linearGradient>
+    <linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="113.26" y1="63.98" x2="134.69" y2="105.16"><stop offset="0" stop-color="#9FA6F5"/><stop offset="1" stop-color="#4FE3EE"/></linearGradient>
+    <linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="134.69" y1="105.16" x2="107.47" y2="124.58"><stop offset="0" stop-color="#4FE3EE"/><stop offset="1" stop-color="#7CF0C0"/></linearGradient>
+    <linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="107.47" y1="124.58" x2="80" y2="137.5"><stop offset="0" stop-color="#7CF0C0"/><stop offset="1" stop-color="#EDE84E"/></linearGradient>
+    <linearGradient id="g4" gradientUnits="userSpaceOnUse" x1="80" y1="137.5" x2="52.53" y2="124.58"><stop offset="0" stop-color="#EDE84E"/><stop offset="1" stop-color="#F9A24E"/></linearGradient>
+    <linearGradient id="g5" gradientUnits="userSpaceOnUse" x1="52.53" y1="124.58" x2="25.31" y2="105.16"><stop offset="0" stop-color="#F9A24E"/><stop offset="1" stop-color="#F77E7E"/></linearGradient>
+    <linearGradient id="g6" gradientUnits="userSpaceOnUse" x1="25.31" y1="105.16" x2="46.74" y2="63.98"><stop offset="0" stop-color="#F77E7E"/><stop offset="1" stop-color="#E45BD6"/></linearGradient>
+    <linearGradient id="g7" gradientUnits="userSpaceOnUse" x1="46.74" y1="63.98" x2="80" y2="25.7"><stop offset="0" stop-color="#E45BD6"/><stop offset="1" stop-color="#B65CF0"/></linearGradient>
+    <path id="ringPath" d="M80 25.7A16 16 0 0 1 93.48 33.07L133.05 94.89A13 13 0 0 1 128.28 113.34L86.65 135.82A14 14 0 0 1 73.35 135.82L31.72 113.34A13 13 0 0 1 26.95 94.89L66.52 33.07A16 16 0 0 1 80 25.7Z"/>
+    <path id="crystalPath" d="M77.4 50.5A3 3 0 0 1 82.6 50.5L111.6 100.76A3 3 0 0 1 110.18 105.02L81.17 117.3A3 3 0 0 1 78.83 117.3L49.82 105.02A3 3 0 0 1 48.4 100.76Z"/>
+    <g id="ringColor" fill="none" stroke-width="11" stroke-linejoin="round" stroke-linecap="round">
+      <path stroke="url(#g0)" d="M80 25.7A16 16 0 0 1 93.48 33.07L113.53 64.4"/>
+      <path stroke="url(#g1)" d="M113.26 63.98L133.05 94.89A13 13 0 0 1 134.55 105.64"/>
+      <path stroke="url(#g2)" d="M134.69 105.16A13 13 0 0 1 128.28 113.34L107.03 124.82"/>
+      <path stroke="url(#g3)" d="M107.47 124.58L86.65 135.82A14 14 0 0 1 79.5 137.49"/>
+      <path stroke="url(#g4)" d="M80 137.5A14 14 0 0 1 73.35 135.82L52.09 124.34"/>
+      <path stroke="url(#g5)" d="M52.53 124.58L31.72 113.34A13 13 0 0 1 25.2 104.67"/>
+      <path stroke="url(#g6)" d="M25.31 105.16A13 13 0 0 1 26.95 94.89L47.01 63.56"/>
+      <path stroke="url(#g7)" d="M46.74 63.98L66.52 33.07A16 16 0 0 1 80.5 25.71"/>
+    </g>
+    <mask id="ringMask" maskUnits="userSpaceOnUse" x="0" y="0" width="160" height="160">
+      <use href="#ringPath" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linejoin="round"/>
+    </mask>
+    <linearGradient id="crystalLeft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E6E7F0"/>
+    </linearGradient>
+    <linearGradient id="crystalRight" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#E4E6F2"/>
+      <stop offset="1" stop-color="#A9AEC9"/>
+    </linearGradient>
+    <clipPath id="crystalClip"><use href="#crystalPath"/></clipPath>
+    <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="blurBig" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="28"/></filter>
+    <filter id="blurBeam" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="darken"><feColorMatrix type="matrix" values="0.42 0 0 0 0  0 0.38 0 0 0  0 0 0.5 0 0  0 0 0 1 0"/></filter>
+    <path id="spark" d="M0 -1C0.09 -0.09 0.09 -0.09 1 0C0.09 0.09 0.09 0.09 0 1C-0.09 0.09 -0.09 0.09 -1 0C-0.09 -0.09 -0.09 -0.09 0 -1Z"/>
+  </defs>
+
+  <rect x="-512" y="-512" width="2048" height="2048" fill="url(#bg)"/>
+
+  <g fill="#FFFFFF">
+    <circle cx="170" cy="190" r="3" opacity="0.7"/>
+    <circle cx="262" cy="120" r="2" opacity="0.5"/>
+    <circle cx="840" cy="160" r="2.5" opacity="0.6"/>
+    <circle cx="905" cy="300" r="1.8" opacity="0.4"/>
+    <circle cx="120" cy="820" r="2.2" opacity="0.4"/>
+    <circle cx="300" cy="900" r="1.6" opacity="0.35"/>
+    <circle cx="760" cy="90" r="1.6" opacity="0.45"/>
+    <circle cx="60" cy="420" r="1.8" opacity="0.4"/>
+  </g>
+
+  <g mask="url(#fanMask)">
+    <g filter="url(#blur2)" opacity="0.95">
+      <polygon points="668,430 1560,300 1560,415 668,446" fill="#F77E7E"/>
+      <polygon points="668,446 1560,415 1560,530 668,462" fill="#F9A24E"/>
+      <polygon points="668,462 1560,530 1560,645 668,478" fill="#EDE84E"/>
+      <polygon points="668,478 1560,645 1560,760 668,494" fill="#7CF0C0"/>
+      <polygon points="668,494 1560,760 1560,875 668,510" fill="#4FE3EE"/>
+      <polygon points="668,510 1560,875 1560,990 668,526" fill="#B65CF0"/>
+    </g>
+    <polygon points="668,430 1560,990 1560,300 668,526" fill="#FFFFFF" opacity="0.18" filter="url(#blurBig)"/>
+  </g>
+
+  <polygon points="-520,690 -520,722 362,480 360,464" fill="#FFFFFF" opacity="0.55" filter="url(#blurBeam)"/>
+  <polygon points="-520,698 -520,714 361,474 360,468" fill="url(#beam)"/>
+
+  <g transform="translate(512 528) scale(4.6) translate(-80 -81.6)">
+    <use href="#ringColor" opacity="0.55" filter="url(#blur6)"/>
+    <ellipse cx="80" cy="146" rx="46" ry="5" fill="#000000" opacity="0.55" filter="url(#blur2)"/>
+    <g filter="url(#darken)">
+      <use href="#ringColor" transform="translate(0 5)"/>
+      <use href="#ringColor" transform="translate(0 4)"/>
+      <use href="#ringColor" transform="translate(0 3)"/>
+      <use href="#ringColor" transform="translate(0 2)"/>
+      <use href="#ringColor" transform="translate(0 1)"/>
+    </g>
+    <use href="#ringColor"/>
+    <g mask="url(#ringMask)">
+      <use href="#ringPath" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round" opacity="0.55" transform="translate(0 -4)" filter="url(#blur2)"/>
+      <use href="#ringPath" fill="none" stroke="#000000" stroke-width="4" stroke-linejoin="round" opacity="0.18" transform="translate(0 5)" filter="url(#blur2)"/>
+    </g>
+
+    <use href="#crystalPath" fill="#3A3F66" transform="translate(0 3.5)"/>
+    <use href="#crystalPath" fill="url(#crystalRight)"/>
+    <g clip-path="url(#crystalClip)">
+      <rect x="40" y="40" width="40" height="85" fill="url(#crystalLeft)"/>
+      <polygon points="70,40 82,40 64,125 52,125" fill="#BFE6FF" opacity="0.55"/>
+      <polygon points="74.5,40 77.5,40 59.5,125 56.5,125" fill="#FFFFFF" opacity="0.9"/>
+      <polygon points="80,50 112,104 80,118" fill="#7A5CF0" opacity="0.10"/>
+    </g>
+    <line x1="77.9" y1="54" x2="52.6" y2="97.9" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/>
+    <use href="#crystalPath" fill="none" stroke="#C4C7D6" stroke-width="0.8"/>
+  </g>
+
+  <g transform="translate(742 268)">
+    <use href="#spark" fill="#FFFFFF" transform="scale(120)" opacity="0.35" filter="url(#blur2)"/>
+    <use href="#spark" fill="#FFFFFF" transform="scale(78)"/>
+    <circle r="16" fill="#FFFFFF" filter="url(#blur2)"/>
+  </g>
+  <use href="#spark" fill="#FFFFFF" transform="translate(822 372) scale(26)" opacity="0.9"/>
+  <use href="#spark" fill="#EDE84E" transform="translate(236 300) scale(22)" opacity="0.85"/>
+</svg>

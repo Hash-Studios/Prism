@@ -173,7 +173,10 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              ShopItemPreview(item: item, size: 112),
+              if (item.kind == ShopItemKind.appIcon)
+                ShopItemPreview(item: item, size: 168, sheen: true)
+              else
+                ShopItemPreview(item: item, size: 112),
               if (!owned && availability != ShopAvailability.soldOut) ...<Widget>[
                 const SizedBox(height: PrismSpace.md),
                 Semantics(

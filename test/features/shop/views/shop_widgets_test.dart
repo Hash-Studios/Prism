@@ -7,6 +7,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/shop.dart';
+import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,6 +43,12 @@ void main() {
     theme: ThemeData.light(),
     home: Scaffold(body: child),
   );
+
+  bool Function(Widget) isIconArt(String asset) => (Widget w) {
+    if (w is! Image) return false;
+    final ImageProvider<Object> provider = w.image is ResizeImage ? (w.image as ResizeImage).imageProvider : w.image;
+    return provider is AssetImage && provider.assetName == asset;
+  };
 
   group('ShopItemTile', () {
     Future<void> pumpTile(
@@ -95,6 +102,19 @@ void main() {
       await pumpTile(tester, 'frame_founders', availability: ShopAvailability.soldOut);
       expect(find.text('Sold out'), findsOneWidget);
       expect(find.text('1000'), findsNothing);
+    });
+
+    testWidgets('an app icon tile draws the real icon art', (tester) async {
+      await pumpTile(tester, 'icon_noir');
+
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.jpg')), findsOneWidget);
+    });
+
+    testWidgets('an app icon tile with no room still builds', (tester) async {
+      await tester.pumpWidget(host(ShopItemPreview(item: shopItem('icon_noir')!, size: 0)));
+
+      expect(tester.takeException(), isNull);
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.jpg')), findsOneWidget);
     });
 
     testWidgets('a limited item shows when it ends', (tester) async {
@@ -172,6 +192,25 @@ void main() {
       await tester.pumpAndSettle();
       await openSheet(tester, 'icon_noir');
       expect(find.text('Use icon'), findsOneWidget);
+    });
+
+    testWidgets('an app icon sheet shows the real art and settles', (tester) async {
+      await openSheet(tester, 'icon_noir');
+
+      expect(find.text('Use icon'), findsNothing);
+      expect(find.text('Buy for 200'), findsOneWidget);
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.jpg')), findsOneWidget);
+    });
+
+    testWidgets('an app icon sheet skips the sweep when animations are off', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        disableAnimations: true,
+      );
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await openSheet(tester, 'icon_noir');
+
+      expect(find.text('Buy for 200'), findsOneWidget);
+      expect(find.byType(TweenAnimationBuilder<double>), findsNothing);
     });
 
     testWidgets('a grandfathered theme counts as owned', (tester) async {
