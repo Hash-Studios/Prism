@@ -64,6 +64,7 @@ void main() {
   late OnboardingV2RepositoryImpl repository;
 
   setUp(() {
+    AnalyticsRuntime.reset();
     firestore = _MockFirebaseFirestore();
     users = _MockCollectionReference();
     user = _MockDocumentReference();
@@ -87,6 +88,8 @@ void main() {
       remoteConfig: remoteConfig,
     );
   });
+
+  tearDown(AnalyticsRuntime.reset);
 
   test('saveInterests preserves the Firebase update error code', () async {
     when(
@@ -153,7 +156,6 @@ void main() {
   test('a failed batch can be retried and only records local completion after success', () async {
     final FakeAppAnalytics recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    addTearDown(AnalyticsRuntime.reset);
     int commitAttempts = 0;
     when(() => batch.commit()).thenAnswer((_) async {
       commitAttempts++;

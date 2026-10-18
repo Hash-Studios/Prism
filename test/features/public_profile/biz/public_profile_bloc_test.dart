@@ -62,12 +62,15 @@ void main() {
   late _MockSearch search;
 
   setUp(() {
+    AnalyticsRuntime.reset();
     walls = _MockWalls();
     follow = _MockFollow();
     unfollow = _MockUnfollow();
     summaries = _MockSummaries();
     search = _MockSearch();
   });
+
+  tearDown(AnalyticsRuntime.reset);
 
   PublicProfileBloc buildBloc() => PublicProfileBloc(walls, follow, unfollow, summaries, search);
 
@@ -396,8 +399,6 @@ void main() {
       AnalyticsRuntime.instance = recorder;
       app_state.prismUser = profileUser();
     });
-
-    tearDown(AnalyticsRuntime.reset);
 
     List<(String, String)> results() =>
         recorder.events.whereType<FollowResultEvent>().map((e) => (e.action, e.result)).toList();
