@@ -97,8 +97,10 @@ void main() {
   late List<(String, Map<String, dynamic>)> calls;
   late FakeAppAnalytics analytics;
 
+  /// Every XP grant also asks the server for rank rewards. Answer that apart, so [calls] holds only the chest calls.
   void reply(Object? Function(String name, Map<String, dynamic> params) answer) {
     backend.onCall = (String name, Map<String, dynamic> params) async {
+      if (name == 'reconcileRankRewards') return <String, Object?>{};
       calls.add((name, params));
       return answer(name, params);
     };
@@ -267,6 +269,7 @@ void main() {
     test('a paid coin win logs the open, the price and the prize', () async {
       reply((_, _) => _opened(slot: 6, coins: 100));
       await openWon();
+      await pumpEventQueue();
       expect(logged(), <Map<String, Object?>>[
         <String, Object?>{
           'event': 'daily_chest_opened',
@@ -299,6 +302,7 @@ void main() {
     test('an XP win logs no coin earned, a free chest logs no coin spent', () async {
       reply((_, _) => _opened(slot: 2, kind: 'xp', xp: 50, doubled: true));
       await openWon();
+      await pumpEventQueue();
       expect(names(), <String>['daily_chest_opened', 'coin_spent']);
       expect(logged().first, <String, Object?>{
         'event': 'daily_chest_opened',
@@ -315,6 +319,7 @@ void main() {
       analytics.events.clear();
       reply((_, _) => _opened(coins: 5, free: true));
       await openWon(maxCost: 0);
+      await pumpEventQueue();
       expect(names(), <String>['daily_chest_opened', 'coin_earned']);
       expect((logged().first['free'], logged().first['cost'], logged().first['tier']), (1, 0, 'common'));
     });
@@ -322,8 +327,10 @@ void main() {
     test('a cosmetic and its coin fallback both log the prize as a cosmetic', () async {
       reply((_, _) => _opened(slot: 4, kind: 'cosmetic', itemId: 'frame_ring'));
       await openWon();
+      await pumpEventQueue();
       reply((_, _) => _opened(slot: 4, kind: 'cosmetic', coins: 25));
       await openWon();
+      await pumpEventQueue();
       final List<List<Object?>> opens = <List<Object?>>[
         for (final Map<String, Object?> e in logged())
           if (e['event'] == 'daily_chest_opened') <Object?>[e['prize'], e['tier'], e['coins'], e['xp']],
@@ -337,6 +344,7 @@ void main() {
     test('a refusal logs nothing', () async {
       reply((_, _) => _refused('daily_chest_already_opened'));
       await service.openDailyChest(maxCost: 8);
+      await pumpEventQueue();
       expect(analytics.events, isEmpty);
     });
   });
@@ -447,6 +455,7 @@ void main() {
   group('request ids', () {
     test('a lost reply keeps the request id for the next tap, a definite reply clears it', () async {
       backend.onCall = (String name, Map<String, dynamic> params) async {
+        if (name == 'reconcileRankRewards') return <String, Object?>{};
         calls.add((name, params));
         if (calls.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
         if (calls.length == 3) return _refused('daily_chest_already_opened');
@@ -485,6 +494,7 @@ void main() {
 
     test('an error the server meant is a failure and clears the request id too', () async {
       backend.onCall = (String name, Map<String, dynamic> params) async {
+        if (name == 'reconcileRankRewards') return <String, Object?>{};
         calls.add((name, params));
         if (calls.length == 1) throw FirebaseFunctionsException(code: 'permission-denied', message: 'no');
         return _opened(coins: 10);
