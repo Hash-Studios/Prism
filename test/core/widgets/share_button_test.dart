@@ -13,6 +13,9 @@ import '../../support/fake_app_analytics.dart';
 import '../../support/wait_for_real_io.dart';
 
 void main() {
+  setUp(AnalyticsRuntime.reset);
+  tearDown(AnalyticsRuntime.reset);
+
   testWidgets('share calls the card share with the full image and context line, and tracks the format', (tester) async {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
@@ -21,7 +24,6 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
 
     final List<String?> calls = <String?>[];
     await tester.pumpWidget(
@@ -60,7 +62,6 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -133,7 +134,6 @@ void main() {
     final Completer<String> link = Completer<String>();
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     final List<String?> firstShare = <String?>[];
     final List<String?> secondShare = <String?>[];
     final Key buttonKey = UniqueKey();
@@ -193,7 +193,6 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     final Completer<ShareCardResult> share = Completer<ShareCardResult>();
 
     await tester.pumpWidget(
@@ -255,7 +254,6 @@ void main() {
   testWidgets('a failed short link shares the canonical wallpaper URL', (tester) async {
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     String? sharedLink;
 
     await tester.pumpWidget(
@@ -317,7 +315,6 @@ void main() {
   testWidgets('a bundled starter shares its local image without inventing a public wallpaper link', (tester) async {
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     var createLinkCalls = 0;
     String? sharedImageUrl;
     String? sharedLink;
