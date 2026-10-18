@@ -12,7 +12,7 @@ import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
-import 'package:Prism/features/rewards/views/widgets/pro_spin_card.dart';
+import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -82,9 +82,9 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
       if (isPro)
         _EarnRow(
           icon: Icons.workspace_premium_outlined,
-          title: 'Pro spin',
+          title: 'Free daily spin',
           subtitle: 'Once a day',
-          reward: '+${proSpinRange().low} to +${proSpinRange().high}',
+          reward: 'Up to +${maxWheelCoins(CoinPolicy.spinWheel)}',
         ),
       _EarnRow(
         icon: Icons.play_circle_outline_rounded,
