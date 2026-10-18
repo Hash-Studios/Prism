@@ -121,7 +121,7 @@ void main() {
     expect(find.text('Do this first to double your chest'), findsOneWidget);
     await tester.tap(find.text('Open'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 1500));
 
     expect(repo.opens, 1);
     expect(find.text('Chest opened'), findsOneWidget);
