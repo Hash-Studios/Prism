@@ -68,12 +68,14 @@ class _SearchGridState extends State<SearchGrid> {
 
   int get _queryLength => widget.query.trim().length;
 
+  int get _resultCount => _results.length + widget.prismResults.length;
+
   void _trackResultsLoaded({required int page, required EventResultValue result, String? reason}) {
     analytics.track(
       SearchResultsLoadedEvent(
         provider: widget.provider,
         queryLength: _queryLength,
-        resultCount: result == EventResultValue.cancelled ? 0 : _results.length,
+        resultCount: result == EventResultValue.cancelled ? 0 : _resultCount,
         page: page,
         result: result,
         searchId: widget.searchId,
@@ -82,7 +84,7 @@ class _SearchGridState extends State<SearchGrid> {
     );
   }
 
-  EventResultValue get _loadedResult => _results.isNotEmpty ? EventResultValue.success : EventResultValue.empty;
+  EventResultValue get _loadedResult => _resultCount > 0 ? EventResultValue.success : EventResultValue.empty;
 
   Future<void> _requestNextPage() async {
     if (seeMoreLoader || !_hasMore) {

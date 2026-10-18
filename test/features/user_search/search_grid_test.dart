@@ -128,10 +128,9 @@ void main() {
     expect(find.bySemanticsLabel('Wallpaper by Author 100'), findsOneWidget);
     expect(find.bySemanticsLabel('Wallpaper by Author 200'), findsNothing);
     final FakeAppAnalytics recorder = AnalyticsRuntime.changes.value as FakeAppAnalytics;
-    expect(
-      recorder.events.whereType<SearchResultsLoadedEvent>().where((event) => event.page == 2).single.result,
-      EventResultValue.cancelled,
-    );
+    final cancelled = recorder.events.whereType<SearchResultsLoadedEvent>().where((event) => event.page == 2).single;
+    expect(cancelled.result, EventResultValue.cancelled);
+    expect(cancelled.resultCount, 0);
   });
 
   testWidgets('failed refresh retains impression deduplication for the same search request', (tester) async {
@@ -238,6 +237,44 @@ void main() {
     expect(find.text('From Prism'), findsOneWidget);
   });
 
+  testWidgets('initial, paginated and refreshed counts include the Prism row', (tester) async {
+    tester.view.physicalSize = const Size(400, 3200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    when(
+      () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: false, filters: any(named: 'filters')),
+    ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(100)]);
+    when(
+      () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: true, filters: any(named: 'filters')),
+    ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(200), _wallpaper(201)]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchGrid(
+            query: 'landscape',
+            provider: SearchProviderValue.pexels,
+            initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+            prismResults: <FeedItemEntity>[_wallpaper(50)],
+          ),
+        ),
+      ),
+    );
+    final recorder = AnalyticsRuntime.changes.value as FakeAppAnalytics;
+    expect(recorder.events.whereType<SearchResultsLoadedEvent>().single.resultCount, 25);
+
+    await tester.tap(find.byType(SeeMoreButton));
+    await tester.pump();
+    expect(recorder.events.whereType<SearchResultsLoadedEvent>().last.resultCount, 26);
+    expect(recorder.events.whereType<SearchResultsLoadedEvent>().last.page, 2);
+
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    final loaded = recorder.events.whereType<SearchResultsLoadedEvent>().last;
+    expect(loaded.resultCount, 3);
+    expect(loaded.page, 1);
+    expect(loaded.result, EventResultValue.success);
+  });
+
   testWidgets('a Prism-only page never asks the external providers for more or a refresh', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -252,6 +289,10 @@ void main() {
       ),
     );
 
+    final recorder = AnalyticsRuntime.changes.value as FakeAppAnalytics;
+    final loaded = recorder.events.whereType<SearchResultsLoadedEvent>().single;
+    expect(loaded.resultCount, 1);
+    expect(loaded.result, EventResultValue.success);
     expect(find.text('From Prism'), findsOneWidget);
     await tester.drag(find.text('From Prism'), const Offset(0, -400));
     await tester.pump(const Duration(seconds: 1));

@@ -276,6 +276,27 @@ void main() {
 
     expect(find.byType(SearchGrid), findsOneWidget);
     expect(find.text('From Prism'), findsOneWidget);
+    final loaded = analytics.events.whereType<SearchResultsLoadedEvent>().single;
+    expect(loaded.resultCount, 2);
+    expect(loaded.result, EventResultValue.success);
+  });
+
+  testWidgets('a Prism-only search reports its displayed row as a successful result', (tester) async {
+    when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
+      (_) async => _page(
+        const <FeedItemEntity>[],
+        provider: SearchProviderValue.prism,
+        prismResults: <FeedItemEntity>[_wallpaper('prism-1')],
+      ),
+    );
+
+    await submit(tester, 'forest');
+    await tester.pump();
+
+    expect(find.text('From Prism'), findsOneWidget);
+    final loaded = analytics.events.whereType<SearchResultsLoadedEvent>().single;
+    expect(loaded.resultCount, 1);
+    expect(loaded.result, EventResultValue.success);
   });
 
   testWidgets('a search is saved as a recent search and listed after the clear button is used', (tester) async {

@@ -110,7 +110,9 @@ class _TrendingGridState extends State<_TrendingGrid> {
   @override
   void didUpdateWidget(_TrendingGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.request, widget.request)) _impressions = WallpaperImpressionSession();
+    if (oldWidget.request.status != LoadStatus.success && widget.request.status == LoadStatus.success) {
+      _impressions = WallpaperImpressionSession();
+    }
   }
 
   @override

@@ -60,15 +60,10 @@ class BufferedAppAnalytics implements AppAnalytics {
     }
     final List<_BufferedCall> calls = List<_BufferedCall>.of(_calls);
     _calls.clear();
-    if (calls.isNotEmpty && DateTime.now().difference(calls.first.createdAt) > maxAge) {
-      final String? userId = _userId;
-      if (_hasIdentity) _replay((AppAnalytics analytics) => analytics.setUserId(userId));
-      for (final MapEntry<String, String?> entry in _properties.entries) {
-        _replay((AppAnalytics analytics) => analytics.setUserProperty(name: entry.key, value: entry.value));
-      }
-      return;
-    }
+    final DateTime now = DateTime.now();
     for (final _BufferedCall call in calls) {
+      // State changes must retain their order around surviving events, even when older than maxAge.
+      if (call.expires && now.difference(call.createdAt) > maxAge) continue;
       _replay(call.apply);
     }
   }
@@ -77,21 +72,26 @@ class BufferedAppAnalytics implements AppAnalytics {
     unawaited(_enqueue(apply).catchError((Object _) {}));
   }
 
-  Future<void> _enqueue(Future<void> Function(AppAnalytics) apply) {
+  Future<void> _enqueue(Future<void> Function(AppAnalytics) apply, {bool expires = true}) {
     if (_disposed) return Future<void>.value();
     final AppAnalytics? target = _target;
     if (target == null) {
       if (_calls.length >= capacity) {
         _calls.clear();
         final String? userId = _userId;
-        if (_hasIdentity) _calls.add(_BufferedCall((AppAnalytics analytics) => analytics.setUserId(userId)));
+        if (_hasIdentity) {
+          _calls.add(_BufferedCall((AppAnalytics analytics) => analytics.setUserId(userId), expires: false));
+        }
         for (final MapEntry<String, String?> entry in _properties.entries) {
           _calls.add(
-            _BufferedCall((AppAnalytics analytics) => analytics.setUserProperty(name: entry.key, value: entry.value)),
+            _BufferedCall(
+              (AppAnalytics analytics) => analytics.setUserProperty(name: entry.key, value: entry.value),
+              expires: false,
+            ),
           );
         }
       }
-      _calls.add(_BufferedCall(apply));
+      _calls.add(_BufferedCall(apply, expires: expires));
       return Future<void>.value();
     }
     Future<void> dispatch() => _disposed ? Future<void>.value() : apply(target);
@@ -113,14 +113,14 @@ class BufferedAppAnalytics implements AppAnalytics {
   Future<void> setUserId(String? userId) {
     _userId = userId;
     _hasIdentity = true;
-    return _enqueue((AppAnalytics analytics) => analytics.setUserId(userId));
+    return _enqueue((AppAnalytics analytics) => analytics.setUserId(userId), expires: false);
   }
 
   @override
   Future<void> setUserProperty({required String name, String? value}) {
-    if (!_properties.containsKey(name) && _properties.length >= 16) return Future<void>.value();
+    if (!_properties.containsKey(name) && _properties.length >= 16) _properties.remove(_properties.keys.first);
     _properties[name] = value;
-    return _enqueue((AppAnalytics analytics) => analytics.setUserProperty(name: name, value: value));
+    return _enqueue((AppAnalytics analytics) => analytics.setUserProperty(name: name, value: value), expires: false);
   }
 
   @override
@@ -137,8 +137,9 @@ class BufferedAppAnalytics implements AppAnalytics {
 }
 
 class _BufferedCall {
-  _BufferedCall(this.apply) : createdAt = DateTime.now();
+  _BufferedCall(this.apply, {this.expires = true}) : createdAt = DateTime.now();
 
   final Future<void> Function(AppAnalytics) apply;
   final DateTime createdAt;
+  final bool expires;
 }
