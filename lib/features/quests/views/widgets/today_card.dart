@@ -1,20 +1,21 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/daily_chest/daily_chest.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/domain/quest_catalog.dart';
-import 'package:Prism/features/quests/views/widgets/chest_sheet.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Today's quests: three daily items, the bonus item, the chest and the weekly quest.
-/// [onOpenSpin] opens the spin machine. Pro users tap it from the bonus row.
+/// [onOpenSpin] opens the spin machine. Pro users tap it from the bonus row. The chest row opens the daily chest.
 class TodayCard extends StatefulWidget {
   const TodayCard({super.key, this.onOpenSpin});
 
@@ -60,59 +61,34 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return BlocProvider<QuestsBloc>.value(
       value: _bloc,
-      child: MultiBlocListener(
-        listeners: <BlocListener<QuestsBloc, QuestsState>>[
-          BlocListener<QuestsBloc, QuestsState>(
-            listenWhen: (before, after) => after.awards.isNotEmpty && before.awards != after.awards,
-            listener: (context, state) {
-              final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
-              final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
-              final String reward = <String>[if (coins > 0) '+$coins coins', if (xp > 0) '+$xp XP'].join(' · ');
-              toasts.success(reward.isEmpty ? 'Quest done' : 'Quest done: $reward');
-              context.read<QuestsBloc>().add(const QuestsEvent.awardsShown());
-            },
-          ),
-          BlocListener<QuestsBloc, QuestsState>(
-            listenWhen: (before, after) => after.chest != null && before.chest != after.chest,
-            listener: _onChest,
-          ),
-        ],
+      child: BlocListener<QuestsBloc, QuestsState>(
+        listenWhen: (before, after) => after.awards.isNotEmpty && before.awards != after.awards,
+        listener: (context, state) {
+          final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
+          final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
+          final String reward = <String>[if (coins > 0) '+$coins coins', if (xp > 0) '+$xp XP'].join(' · ');
+          toasts.success(reward.isEmpty ? 'Quest done' : 'Quest done: $reward');
+          context.read<QuestsBloc>().add(const QuestsEvent.awardsShown());
+        },
         child: BlocBuilder<QuestsBloc, QuestsState>(
           builder: (context, state) {
             final QuestState? quests = state.quests;
             if (quests == null) return const SizedBox.shrink();
             return ValueListenableBuilder<EconomyConfig>(
               valueListenable: EconomyConfig.notifier,
-              builder: (context, _, _) =>
-                  _TodayView(quests: quests, opening: state.opening, onOpenSpin: widget.onOpenSpin),
+              builder: (context, _, _) => _TodayView(quests: quests, onOpenSpin: widget.onOpenSpin),
             );
           },
         ),
       ),
     );
   }
-
-  Future<void> _onChest(BuildContext context, QuestsState state) async {
-    final ChestResult chest = state.chest!;
-    switch (chest.outcome) {
-      case ChestOutcome.opened:
-        final bool openShop = await showChestSheet(context, chest);
-        if (openShop && context.mounted) await context.router.root.push(const ShopRoute());
-      case ChestOutcome.locked:
-        toasts.info('Finish your 3 quests to open the chest.');
-      case ChestOutcome.alreadyOpened:
-        break;
-      case ChestOutcome.failed:
-        toasts.error("Couldn't open the chest. Try again.");
-    }
-  }
 }
 
 class _TodayView extends StatelessWidget {
-  const _TodayView({required this.quests, required this.opening, required this.onOpenSpin});
+  const _TodayView({required this.quests, required this.onOpenSpin});
 
   final QuestState quests;
-  final bool opening;
   final VoidCallback? onOpenSpin;
 
   @override
@@ -142,7 +118,7 @@ class _TodayView extends StatelessWidget {
           for (final QuestItem item in quests.items) _QuestRow(item: item),
           if (bonus != null) ...<Widget>[divider, _BonusRow(item: bonus, onOpenSpin: onOpenSpin)],
           divider,
-          _ChestRow(quests: quests, done: done, opening: opening),
+          _ChestRow(quests: quests),
           if (weekly != null) ...<Widget>[divider, _QuestRow(item: weekly, weekly: true)],
         ],
       ),
@@ -152,15 +128,19 @@ class _TodayView extends StatelessWidget {
 
 class _ItemRow extends StatelessWidget {
   const _ItemRow({
-    required this.icon,
+    this.icon,
+    this.leading,
     required this.title,
     required this.semanticLabel,
     this.subtitle,
     this.progress,
     this.trailing,
-  });
+  }) : assert(icon != null || leading != null, 'A row needs an icon or a leading widget');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// Replaces the icon tile, for the chest.
+  final Widget? leading;
   final String title;
   final String semanticLabel;
   final String? subtitle;
@@ -186,15 +166,16 @@ class _ItemRow extends StatelessWidget {
                 excludeSemantics: true,
                 child: Row(
                   children: <Widget>[
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: cs.onSurface.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(PrismRadius.xs + 2),
-                      ),
-                      child: Icon(icon, size: 18, color: cs.onSurface),
-                    ),
+                    leading ??
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: cs.onSurface.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(PrismRadius.xs + 2),
+                          ),
+                          child: Icon(icon, size: 18, color: cs.onSurface),
+                        ),
                     const SizedBox(width: PrismSpace.sm),
                     Expanded(
                       child: Column(
@@ -324,47 +305,41 @@ class _BonusRowState extends State<_BonusRow> {
   }
 }
 
+/// The way into the daily chest: a still box, what it costs today and an Open button.
 class _ChestRow extends StatelessWidget {
-  const _ChestRow({required this.quests, required this.done, required this.opening});
+  const _ChestRow({required this.quests});
 
   final QuestState quests;
-  final int done;
-  final bool opening;
 
   @override
   Widget build(BuildContext context) {
-    final bool ready = quests.chestReady;
-    final (String subtitle, Widget trailing) = quests.chestOpened
-        ? (quests.chestDoubled ? 'Opened and doubled' : 'Opened. A new one tomorrow.', const _Done())
-        : ready
-        ? (
-            '${CoinPolicy.questChestMin} to ${CoinPolicy.questChestMax} coins',
-            PrismButton(
-              label: 'Open',
-              size: PrismButtonSize.compact,
-              loading: opening,
-              onPressed: () => context.read<QuestsBloc>().add(const QuestsEvent.chestOpened()),
-            ),
-          )
-        : (
-            'Finish ${quests.items.length} quests · ${CoinPolicy.questChestMin} to ${CoinPolicy.questChestMax} coins',
-            Text('$done of ${quests.items.length}', style: PrismTextStyles.caption(context)),
-          );
+    final DailyChestStatus? status = DailyChestStatus.fromQuests(
+      quests,
+      today: quests.dayKey,
+      price: CoinPolicy.dailyChestPrice,
+    );
+    if (status == null) return const SizedBox.shrink();
+    final String subtitle = chestRowSubtitle(status);
     return _ItemRow(
-      icon: quests.chestOpened
-          ? Icons.inventory_2_outlined
-          : ready
-          ? Icons.redeem_rounded
-          : Icons.lock_outline_rounded,
+      // The art has margins: a 44 box reads as a 32 tile and the text lines up with the other rows.
+      leading: SizedBox.square(
+        dimension: 32,
+        child: OverflowBox(
+          maxWidth: 44,
+          maxHeight: 44,
+          child: ChestBox(phase: status.opened ? ChestPhase.spent : ChestPhase.ready, still: true, size: 44),
+        ),
+      ),
       title: 'Daily chest',
       subtitle: subtitle,
-      semanticLabel:
-          'Daily chest, ${quests.chestOpened
-              ? 'opened'
-              : ready
-              ? 'ready to open'
-              : 'locked'}. $subtitle',
-      trailing: trailing,
+      semanticLabel: 'Daily chest, ${status.opened ? 'opened' : 'ready to open'}. $subtitle',
+      trailing: status.opened
+          ? const _Done()
+          : PrismButton(
+              label: 'Open',
+              size: PrismButtonSize.compact,
+              onPressed: () => unawaited(showDailyChest(context)),
+            ),
     );
   }
 }

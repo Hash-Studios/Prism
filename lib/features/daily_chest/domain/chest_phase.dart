@@ -32,8 +32,6 @@ class ChestMarker {
   final int? burstFrame;
 
   int get frames => endFrame - startFrame;
-
-  bool get loops => playback == ChestPlayback.loop;
 }
 
 /// The frame rate and the length of `assets/lottie/daily_chest.json`, as `docs/features/daily-chest.md` fixes them.
@@ -61,5 +59,3 @@ ChestPhase chestStillPhase(ChestPhase phase) => switch (phase) {
   ChestPhase.opening || ChestPhase.revealed => ChestPhase.revealed,
   ChestPhase.spent => ChestPhase.spent,
 };
-
-int chestStillFrame(ChestPhase phase) => chestMarkers[chestStillPhase(phase)]!.startFrame;

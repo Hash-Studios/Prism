@@ -258,24 +258,6 @@ void main() {
       },
     );
 
-    // 4. Chest sheet
-    qaScreen('chest_sheet', (QaShot shot) async {
-      await shot.pump(
-        Scaffold(
-          body: Builder(
-            builder: (BuildContext context) => TextButton(
-              onPressed: () =>
-                  showChestSheet(context, const ChestResult(ChestOutcome.opened, coins: 12, itemId: 'frame_ring')),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      );
-      await shot.tester.tap(find.text('open'));
-      await shot.settle(frames: 8);
-      await shot.save('chest_sheet');
-    });
-
     // 5. Shop
     qaScreen('shop_frames', setUpExtra: registerShopBloc, (QaShot shot) async {
       await shot.pump(const ShopPage());

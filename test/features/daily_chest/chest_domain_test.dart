@@ -28,11 +28,16 @@ void main() {
     });
 
     test('charge and idle loop, open plays once, spent holds', () {
-      expect(chestMarkers[ChestPhase.ready]!.loops, isTrue);
-      expect(chestMarkers[ChestPhase.charging]!.loops, isTrue);
-      expect(chestMarkers[ChestPhase.opening]!.playback, ChestPlayback.once);
-      expect(chestMarkers[ChestPhase.revealed]!.loops, isTrue);
-      expect(chestMarkers[ChestPhase.spent]!.playback, ChestPlayback.hold);
+      expect(
+        <ChestPlayback>[for (final ChestPhase phase in ChestPhase.values) chestMarkers[phase]!.playback],
+        <ChestPlayback>[
+          ChestPlayback.loop,
+          ChestPlayback.loop,
+          ChestPlayback.once,
+          ChestPlayback.loop,
+          ChestPlayback.hold,
+        ],
+      );
     });
 
     test('only the open span has a burst frame, and it sits inside the span', () {
@@ -45,11 +50,13 @@ void main() {
     });
 
     test('a still box shows the first frame of the span it stands for', () {
-      expect(chestStillFrame(ChestPhase.ready), 0);
-      expect(chestStillFrame(ChestPhase.charging), 0);
-      expect(chestStillFrame(ChestPhase.opening), chestMarkers[ChestPhase.revealed]!.startFrame);
-      expect(chestStillFrame(ChestPhase.revealed), chestMarkers[ChestPhase.revealed]!.startFrame);
-      expect(chestStillFrame(ChestPhase.spent), chestMarkers[ChestPhase.spent]!.startFrame);
+      int firstFrame(ChestPhase phase) => chestMarkers[chestStillPhase(phase)]!.startFrame;
+
+      expect(firstFrame(ChestPhase.ready), 0);
+      expect(firstFrame(ChestPhase.charging), 0);
+      expect(firstFrame(ChestPhase.opening), 270);
+      expect(firstFrame(ChestPhase.revealed), 270);
+      expect(firstFrame(ChestPhase.spent), 390);
     });
   });
 

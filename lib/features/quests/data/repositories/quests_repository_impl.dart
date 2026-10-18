@@ -19,9 +19,6 @@ class QuestsRepositoryImpl implements QuestsRepository {
   Future<void> refresh() => _coins.progressQuest(null);
 
   @override
-  Future<ChestResult> openChest() => _coins.openQuestChest();
-
-  @override
   void consumeAwards() => _coins.consumeQuestAwards();
 
   Stream<T> _watch<T>(ValueListenable<T> source) {
