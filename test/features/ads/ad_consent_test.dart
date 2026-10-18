@@ -8,6 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_app_analytics.dart';
 
 void main() {
+  setUp(AnalyticsRuntime.reset);
+  tearDown(AnalyticsRuntime.reset);
+
   test('asks for an update, shows the form if required, then reports canRequestAds', () async {
     final steps = <String>[];
     final consent = AdConsent(
@@ -110,7 +113,6 @@ void main() {
       fakeAnalytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = fakeAnalytics;
     });
-    tearDown(AnalyticsRuntime.reset);
 
     Future<List<String>> statuses(bool canRequest) async {
       final consent = AdConsent(
