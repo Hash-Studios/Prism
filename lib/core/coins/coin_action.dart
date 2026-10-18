@@ -1,7 +1,4 @@
-import 'dart:math';
-
 import 'package:Prism/core/coins/coin_policy.dart';
-import 'package:Prism/core/coins/spin_wheel.dart';
 
 enum CoinEarnAction {
   rewardedAd,
@@ -37,14 +34,8 @@ enum CoinSpendAction {
   questChest,
 }
 
-/// 0 when the table pays no coins at all.
-int _smallestCoinsPrize(List<WheelSegment> table) {
-  final Iterable<int> coins = table.map((WheelSegment s) => s.prize).whereType<CoinsPrize>().map((p) => p.coins);
-  return coins.isEmpty ? 0 : coins.reduce(min);
-}
-
 extension CoinEarnActionX on CoinEarnAction {
-  /// The amount shown before the server answers. Server-rolled rewards (spin, chests) show their minimum.
+  /// The amount shown before the server answers. Server-rolled rewards (spin, chest) are 0: the reply names the prize.
   int defaultAmount() {
     switch (this) {
       case CoinEarnAction.rewardedAd:
@@ -64,10 +55,9 @@ extension CoinEarnActionX on CoinEarnAction {
         return CoinPolicy.proDailyBonus;
       case CoinEarnAction.quest:
         return CoinPolicy.questCoins;
-      case CoinEarnAction.questChest:
-        return _smallestCoinsPrize(CoinPolicy.dailyChest);
       case CoinEarnAction.refund:
       case CoinEarnAction.spinWheel:
+      case CoinEarnAction.questChest:
         return 0;
     }
   }

@@ -187,7 +187,10 @@ void main() {
           theme: kLightTheme,
           builder: (BuildContext context, Widget? child) => DefaultAssetBundle(bundle: bundle, child: child!),
           home: DailyChestPage(
-            open: ({required int maxCost}) => reply.future,
+            open: ({required int maxCost}) => reply.future.then((DailyChestResult result) {
+              if (result is ChestWon) balance.value += result.win.coins - result.cost;
+              return result;
+            }),
             quests: quests,
             balance: balance,
             now: () => DateTime.utc(2026, 10, 18, 18, 48),
@@ -204,6 +207,7 @@ void main() {
       expect(find.byType(ChestRevealCard), findsOneWidget, reason: 'the first burst raised the card');
       expect(tester.widget<ChestBox>(find.byType(ChestBox)).phase, ChestPhase.opening);
       expect(haptics, <String>['tap', 'success']);
+      expect(find.text('352'), findsOneWidget);
 
       bundle.release();
       await _waitForFile(tester);

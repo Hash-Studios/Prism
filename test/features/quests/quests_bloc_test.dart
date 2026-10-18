@@ -20,7 +20,7 @@ void main() {
     repo.awards.value = const <QuestAward>[QuestAward(id: 'set_wall', coins: 2, xp: 25)];
     await pumpEventQueue();
 
-    expect(bloc.state.quests?.chestReady, isTrue);
+    expect(bloc.state.quests?.items.every((QuestItem q) => q.claimed), isTrue);
     expect(bloc.state.awards.single.id, 'set_wall');
     await bloc.close();
   });

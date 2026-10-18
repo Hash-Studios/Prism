@@ -87,11 +87,15 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
+  /// Like the coins service, a win moves the balance before the reply reaches the page.
   Future<DailyChestResult> open({required int maxCost}) {
     maxCosts.add(maxCost);
     final Completer<DailyChestResult> reply = Completer<DailyChestResult>();
     replies.add(reply);
-    return reply.future;
+    return reply.future.then((DailyChestResult result) {
+      if (result is ChestWon) balance.value += result.win.coins - result.cost;
+      return result;
+    });
   }
 
   DailyChestPage page() => DailyChestPage(
@@ -346,7 +350,7 @@ void main() {
       final NavigatorState navigator = await pumpRouted(tester);
       final Finder close = find.byTooltip('Close');
       Matcher closeSemantics({required bool enabled}) =>
-          containsSemantics(isButton: true, hasEnabledState: true, isEnabled: enabled);
+          isSemantics(isButton: true, hasEnabledState: true, isEnabled: enabled);
 
       expect(tester.getSemantics(close), closeSemantics(enabled: true));
 

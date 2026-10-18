@@ -119,15 +119,6 @@ void main() {
       final DailyChestStatus paid = statusOf(_quests(claimed: const <bool>[true, false, true], chestOpened: true))!;
       expect((paid.opened, paid.questsLeft), (true, 1));
     });
-
-    test('equal fields are equal', () {
-      final DailyChestStatus a = statusOf(_quests())!;
-      expect(a, statusOf(_quests()));
-      expect(a.hashCode, statusOf(_quests())!.hashCode);
-      expect(a, isNot(statusOf(_quests(), price: 9)));
-      expect(a, isNot(statusOf(_quests(chestOpened: true))));
-      expect(a, isNot(statusOf(_quests(claimed: const <bool>[true, true, false]))));
-    });
   });
 
   group('ChestWon', () {

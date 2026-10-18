@@ -89,10 +89,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   Timer? _deltaTimer;
   Timer? _clockTimer;
 
-  /// The balance before the tap that is opening, and what it should be once the prize has paid.
-  int _balanceBefore = 0;
-  int _expectedBalance = 0;
-
   late ChestPhase _phase;
   ChestWon? _won;
 
@@ -223,7 +219,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     if (!mounted) return;
     switch (result) {
       case final ChestWon won:
-        _onWon(won, before);
+        _onWon(won);
       case final ChestRefused refused:
         _onRefused(refused);
       case ChestFailed():
@@ -239,9 +235,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     }
   }
 
-  void _onWon(ChestWon won, int before) {
-    _expectedBalance = before - won.cost + won.win.coins;
-    _balanceBefore = before;
+  void _onWon(ChestWon won) {
     setState(() {
       _won = won;
       _phase = ChestPhase.opening;
@@ -257,14 +251,12 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   void _onBurst() {
     final ChestWon? won = _won;
     if (!mounted || won == null || _cardUp) return;
-    // The service moves the balance when the reply arrives, long before the box opens. Trust it if it moved.
-    final int actual = _balanceSource.value;
-    final int shown = actual != _balanceBefore ? actual : _expectedBalance;
     PrismHaptics.success();
     if (!context.reduceMotion && won.win.coins > 0 && won.prize is! XpPrize) _burst.forward(from: 0);
     setState(() {
       _cardUp = true;
-      _balance = shown;
+      // The service moves the balance when the reply arrives, long before the box opens, so the pill waits for here.
+      _balance = _balanceSource.value;
       _delta = won.win.coins - won.cost;
       _shortOverride = false;
     });

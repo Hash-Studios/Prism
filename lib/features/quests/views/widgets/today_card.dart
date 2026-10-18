@@ -315,7 +315,7 @@ class _ChestRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final DailyChestStatus? status = DailyChestStatus.fromQuests(
       quests,
-      today: quests.dayKey,
+      today: economyDayKey(DateTime.now()),
       price: CoinPolicy.dailyChestPrice,
     );
     if (status == null) return const SizedBox.shrink();

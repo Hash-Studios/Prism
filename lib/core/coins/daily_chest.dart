@@ -62,13 +62,6 @@ class DailyChestStatus {
 
   /// What opening costs now. The client sends it as `maxCost`, so the server never charges more than this.
   int get nextCost => free ? 0 : price;
-
-  @override
-  bool operator ==(Object other) =>
-      other is DailyChestStatus && other.opened == opened && other.questsLeft == questsLeft && other.price == price;
-
-  @override
-  int get hashCode => Object.hash(opened, questsLeft, price);
 }
 
 /// What the chest held. Cosmetic fallback coins arrive as [coins] with a null [itemId]. [coins] and [xp] are already

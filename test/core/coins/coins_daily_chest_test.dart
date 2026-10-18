@@ -192,7 +192,6 @@ void main() {
       await openWon();
       final QuestState quests = service.questsNotifier.value!;
       expect((quests.chestOpened, quests.chestDoubled, quests.items.length), (true, false, 3));
-      expect(quests.chestReady, isFalse);
     });
 
     test("the reply's table beats the cached config, and a reply without one falls back to the config", () async {

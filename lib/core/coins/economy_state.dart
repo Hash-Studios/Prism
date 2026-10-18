@@ -141,9 +141,6 @@ class QuestState {
     weekKey: weekKey,
     weekly: weekly,
   );
-
-  /// Every daily item is claimed and the chest is still closed.
-  bool get chestReady => items.isNotEmpty && items.every((QuestItem q) => q.claimed) && !chestOpened;
 }
 
 /// Coins and XP one quest item paid.
