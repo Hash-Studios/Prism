@@ -31,6 +31,8 @@ COLLAR_S, COLLAR_C = 72, 8
 OPEN_S, OPEN_DEPTH = 54, 46
 LID_S, LID_C, LID_TOP = 82, 10, 165
 BRACKET_H, BRACKET_T = 30, 9
+TINT_ACCENT, TINT_BODY = 65, 45
+LID_RISE = 520
 OPENING = (0, -BODY_H)
 
 COS30 = math.cos(math.radians(30))
@@ -115,7 +117,7 @@ def rounded_outline(pts, radius, steps=5):
     return out
 
 
-EASES = {"lin": None, "io": (0.37, 0, 0.63, 1), "out": (0.22, 1, 0.36, 1), "in": (0.64, 0, 0.78, 0)}
+EASES = {"lin": None, "io": (0.37, 0, 0.63, 1), "out": (0.22, 1, 0.36, 1), "in": (0.64, 0, 0.78, 0), "launch": (0.35, 0.55, 0.7, 0.85)}
 
 
 def ease_y(ease, x):
@@ -284,10 +286,24 @@ def layer(ind, name, shapes=(), parent=None, ip=0, op=END, **tr):
     return out
 
 
-def soft(name, color, center, big, small, steps, alpha, power=1.0):
-    """Stacked ellipses with a low alpha each. They fake a radial falloff that one colour delegate can tint."""
-    sizes = [tuple(b + (s - b) * (i / (steps - 1)) ** power for b, s in zip(big, small)) for i in range(steps)]
-    return [shape(f"{name}_{i}", color, [ellipse(center[0], center[1], *size)], opacity=alpha) for i, size in enumerate(sizes)]
+def soft(name, color, center, big, small, steps, peak, curve=1.5):
+    """Stacked solid ellipses whose composited alpha follows an eased falloff, so one colour delegate can tint them.
+
+    Alpha is 0 at the big rim and `peak` percent inside the small ellipse. Each ring adds only the alpha that is still
+    missing, so the steps stay thin and no ring edge shows. `curve` above 1 pulls the light toward the centre.
+    A ring that would add less than one alpha byte (0.4 %) is left out and its alpha goes to the next ring.
+    """
+    out, covered = [], 0.0
+    for i in range(steps):
+        u = (i + 1) / steps
+        target = peak / 100 * (u * u * (3 - 2 * u)) ** curve
+        alpha = 100 * (1 - (1 - target) / (1 - covered))
+        if alpha < 0.4:
+            continue
+        covered = target
+        size = tuple(b + (s - b) * i / (steps - 1) for b, s in zip(big, small))
+        out.append(shape(f"{name}_{i}", color, [ellipse(center[0], center[1], *size)], opacity=alpha))
+    return out
 
 
 def octagon(s, c):
@@ -354,13 +370,13 @@ class Surfaces:
     def __init__(self):
         self.base, self.tint, self.dim = [], [], []
 
-    def add(self, name, paths, color, rule=1):
+    def add(self, name, paths, color, rule=1, tint=TINT_ACCENT):
         self.base.append(shape(name, color, paths, rule=rule))
-        self.tint.append(shape(name + "_tint", "glow", paths, rule=rule))
+        self.tint.append(shape(name + "_tint", "glow", paths, opacity=tint, rule=rule))
         self.dim.append(shape(name + "_dim", SHADE, paths, rule=rule))
 
-    def poly(self, name, pts, color, grow=0.45, radius=0.0):
-        self.add(name, [path(inflate(pts, grow), radius)], color)
+    def poly(self, name, pts, color, grow=0.45, radius=0.0, tint=TINT_ACCENT):
+        self.add(name, [path(inflate(pts, grow), radius)], color, tint=tint)
 
 
 def collar_contours():
@@ -374,12 +390,12 @@ def lid_contours():
 def build_base():
     st = Surfaces()
     body = Prism(BODY_S, BODY_C)
-    st.poly("body_left", strip(body.left, ((0, 0), (body.span, 0)), BODY_H), GRAPHITE_L)
-    st.poly("body_right", strip(body.right, ((0, 0), (body.span, 0)), BODY_H), GRAPHITE_R)
-    st.poly("body_edge", strip(body.bevel, ((0, 0), (1, 0)), BODY_H), GRAPHITE_HI)
+    st.poly("body_left", strip(body.left, ((0, 0), (body.span, 0)), BODY_H), GRAPHITE_L, tint=TINT_BODY)
+    st.poly("body_right", strip(body.right, ((0, 0), (body.span, 0)), BODY_H), GRAPHITE_R, tint=TINT_BODY)
+    st.poly("body_edge", strip(body.bevel, ((0, 0), (1, 0)), BODY_H), GRAPHITE_HI, tint=TINT_BODY)
     collar = Prism(COLLAR_S, COLLAR_C)
     for name, pts, color, kw in skirt_parts("collar", collar, collar_contours(), BODY_H, ("accent_mid", "accent_dark", "accent_light"), (125, 134)):
-        st.poly(name, pts, color, **kw)
+        st.poly(name, pts, color, tint=TINT_BODY if color == NAVY else TINT_ACCENT, **kw)
     hole = proj([(x, y, BODY_H) for x, y in ((-OPEN_S, -OPEN_S), (OPEN_S, -OPEN_S), (OPEN_S, OPEN_S), (-OPEN_S, OPEN_S))])
     outer = proj([(x, y, BODY_H) for x, y in octagon(COLLAR_S, COLLAR_C)])
     st.add("rim", [path(inflate(outer, 0.3)), path(hole)], "accent_light", rule=2)
@@ -468,7 +484,7 @@ def build_brackets():
         for tag, p0, p1, color, slotted in faces:
             if slotted:
                 a, b = (tuple(p0[j] + (p1[j] - p0[j]) * f for j in (0, 1)) for f in (0.14, 0.86))
-                st.poly(f"{name}_{tag}_slot", proj([(*a, h - 8), (*b, h - 8), (*b, 8), (*a, 8)]), NAVY, grow=0, radius=3)
+                st.poly(f"{name}_{tag}_slot", proj([(*a, h - 8), (*b, h - 8), (*b, 8), (*a, 8)]), NAVY, grow=0, radius=3, tint=TINT_BODY)
                 st.base.append(poly(f"{name}_{tag}_glint", glint((*p0, h), (*p1, h)), WHITE, opacity=55))
     return st
 
@@ -498,15 +514,17 @@ def build_shade_and_seams():
 
 def build_bloom():
     cx, cy = OPENING
-    beam = soft("beam", "glow", (cx, cy - 110), (130, 340), (60, 200), 6, 3)
-    halo = soft("halo", "glow", (cx, cy), (400, 260), (110, 72), 14, 3)
+    beam = soft("beam", "glow", (cx, cy - 110), (130, 340), (60, 200), 24, 17)
+    halo = soft("halo", "glow", (cx, cy), (400, 260), (110, 72), 44, 35)
     core = [shape("core_halo", WHITE, [ellipse(cx, cy, 112, 64)], opacity=26), shape("core", WHITE, [ellipse(cx, cy, 70, 40)], opacity=92)]
     return beam + halo + core
 
 
 def build_flash():
-    core = [shape(f"flash_core_{i}", WHITE, [ellipse(*OPENING, w, h)], opacity=a) for i, (w, h, a) in enumerate(((210, 150, 24), (130, 90, 40)))]
-    return soft("flash", WHITE, OPENING, (340, 280), (150, 100), 12, 2, power=0.7) + core
+    """A burst of light out of the open top: a soft glow-coloured bloom with a white-hot heart, no hard edge."""
+    bloom = soft("flash_glow", "glow", OPENING, (440, 340), (170, 110), 20, 80)
+    heart = soft("flash_heart", WHITE, OPENING, (240, 160), (80, 52), 16, 90)
+    return bloom + heart
 
 
 RAYS = ((-72, 170, 3.5), (-54, 215, 4.5), (-37, 250, 3.0), (-20, 230, 5.0), (-6, 270, 3.5), (9, 255, 4.2), (24, 235, 3.0), (40, 245, 4.6), (57, 215, 3.5), (73, 165, 4.0))
@@ -594,7 +612,7 @@ def build_tracks():
     )
     pulse = lambda hi, lo: [(270, hi, "io"), (330, lo, "io"), (390, hi, "lin")]
     off = [(391, 0, "lin")]
-    lid_end = 230
+    lid_end = 224
     return {
         "float_y": float_y,
         "shake_x": Track(charge(lambda tau: 2.6 * env(tau) * math.sin(2 * math.pi * tau / 10)), [(180, 0, "lin")]),
@@ -608,20 +626,18 @@ def build_tracks():
         ),
         "shadow_s": float_y.map(lambda y: [100 - 0.7 * (6 - y)] * 2),
         "shadow_o": float_y.map(lambda y: 100 - 1.1 * (6 - y)),
-        "lid_x": Track([(192, 0, "out"), (lid_end, 45, "lin")]),
-        "lid_y": Track([(192, 0, "out"), (lid_end, -82, "lin")]),
-        "lid_r": Track([(192, 0, "lin"), (199, 0, "io"), (lid_end, 270, "lin")]),
-        "lid_s": Track([(192, [100, 100], "io"), (lid_end, [108, 108], "lin")]),
-        "lid_o": Track([(216, 100, "io"), (lid_end, 0, "lin")]),
+        "lid_x": Track([(194, 0, "launch"), (lid_end, 34, "lin")]),
+        "lid_y": Track([(194, 0, "launch"), (lid_end, -LID_RISE, "lin")]),
+        "lid_r": Track([(194, 0, "out"), (lid_end, 14, "lin")]),
+        "lid_s": Track([(194, [100, 100], "out"), (lid_end, [115, 115], "lin")]),
         "bloom_o": Track([(192, 0, "out"), (206, 100, "io"), (238, 100, "io")], pulse(92, 100), off),
         "bloom_s": Track([(192, [40, 40], "out"), (214, [112, 112], "io"), (244, [100, 100], "io"), (270, [100, 100], "io"), (330, [105, 105], "io"), (390, [100, 100], "lin")]),
-        "flash_o": Track([(192, 0, "out"), (195, 95, "io"), (214, 0, "lin")]),
-        "flash_s": Track([(192, [55, 55], "out"), (214, [150, 150], "lin")]),
+        "flash_o": Track([(193, 0, "out"), (198, 100, "io"), (208, 0, "lin")]),
+        "flash_s": Track([(193, [60, 60], "out"), (208, [135, 135], "lin")]),
         "rays_o": Track([(193, 0, "out"), (216, 100, "io")], pulse(86, 100), off),
         "rays_r": Track(swing(0, 8, 1, 0, 192)),
         "rays_s": Track([(192, [45, 45], "out"), (232, [100, 100], "lin")]),
-        "tint_o": Track([(194, 0, "io"), (236, 35, "out")], pulse(35, 40), off),
-        "bracket_tint_o": Track([(194, 0, "io"), (236, 55, "out")], pulse(55, 60), off),
+        "tint_o": Track([(194, 0, "io"), (236, 94, "out")], pulse(94, 100), off),
         "floor_o": Track([(192, 0, "out"), (206, 100, "io")], pulse(100, 88), off),
         "slot_o": Track(
             [(0, 100, "io"), (60, 72, "io"), (120, 100, "lin")],
@@ -635,7 +651,7 @@ def build_tracks():
             charge(lambda tau: 25 + 75 * math.sin(math.pi * tau / 30) ** 2),
             [(180, 25, "lin"), (192, 100, "out"), (214, 0, "io")],
         ),
-        "shade_o": Track([(196, 100, "io"), (216, 0, "lin")]),
+        "shade_o": Track([(196, 100, "io"), (206, 0, "lin")]),
         "ground_o": Track([(192, 0, "out"), (240, 100, "io")], pulse(92, 100), off),
         "dim_o": Track([(390, 0, "lin"), (391, 28, "lin")]),
     }
@@ -649,20 +665,20 @@ def build():
     brackets = build_brackets()
     slot_dark, slot_lights = build_slots()
     shade, seams = build_shade_and_seams()
-    shadow = soft("shadow", SHADE, (0, 0), (340, 178), (250, 130), 5, 6)
-    ground = soft("ground_glow", "glow", (0, 0), (440, 240), (220, 125), 10, 3)
+    shadow = soft("shadow", SHADE, (0, 0), (340, 178), (250, 130), 10, 26)
+    ground = soft("ground_glow", "glow", (0, 0), (440, 240), (220, 125), 36, 26)
 
     anchor = (0, -150)
     ground_xy = (GROUND[0], GROUND[1] + 10)
     layers = [
         layer(1, "sparkles", build_sparkles(rng), ip=190, op=272),
         layer(2, "sparks", build_sparks(), ip=120, op=182),
-        layer(3, "lid", build_lid(), parent=21, op=231, a=anchor, p=(tk["lid_x"].map(lambda v: anchor[0] + v), tk["lid_y"].map(lambda v: anchor[1] + v)), r=tk["lid_r"], s=tk["lid_s"], o=tk["lid_o"]),
-        layer(4, "flash", build_flash(), parent=21, ip=190, op=216, a=OPENING, p=OPENING, s=tk["flash_s"], o=tk["flash_o"]),
+        layer(3, "lid", build_lid(), parent=21, op=226, a=anchor, p=(tk["lid_x"].map(lambda v: anchor[0] + v), tk["lid_y"].map(lambda v: anchor[1] + v)), r=tk["lid_r"], s=tk["lid_s"]),
+        layer(4, "flash", build_flash(), parent=21, ip=192, op=210, a=OPENING, p=OPENING, s=tk["flash_s"], o=tk["flash_o"]),
         layer(5, "bloom", build_bloom(), parent=21, a=OPENING, p=OPENING, s=tk["bloom_s"], o=tk["bloom_o"]),
         layer(6, "rays", build_rays(), parent=21, p=OPENING, r=tk["rays_r"], s=tk["rays_s"], o=tk["rays_o"]),
         layer(7, "bracket_dim", brackets.dim, parent=21, o=tk["dim_o"]),
-        layer(8, "bracket_tint", brackets.tint, parent=21, o=tk["bracket_tint_o"]),
+        layer(8, "bracket_tint", brackets.tint, parent=21, o=tk["tint_o"]),
         layer(9, "brackets", brackets.base, parent=21),
         layer(10, "seams", seams, parent=21, o=tk["seam_o"]),
         layer(11, "slot_lights", slot_lights, parent=21, o=tk["slot_o"]),

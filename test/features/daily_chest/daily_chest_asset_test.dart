@@ -50,10 +50,10 @@ Future<ByteData> _render(
   return data;
 }
 
-int _countRed(ByteData data) {
+int _countRed(ByteData data, {int rows = _size, int minRed = 120}) {
   int count = 0;
-  for (int i = 0; i < data.lengthInBytes; i += 4) {
-    if (data.getUint8(i) > 120 &&
+  for (int i = 0; i < rows * _size * 4; i += 4) {
+    if (data.getUint8(i) > minRed &&
         data.getUint8(i + 1) < 70 &&
         data.getUint8(i + 2) < 70 &&
         data.getUint8(i + 3) > 200) {
@@ -128,6 +128,19 @@ void main() {
       expect(_maxDelta(first, last), lessThanOrEqualTo(32), reason: 'frames ${loop.$1} and ${loop.$2}');
     }
     expect(_maxDelta(await _render(composition, 0), await _render(composition, 60)), greaterThan(100));
+  });
+
+  test('the lid launches solid and is out of the top edge by frame 224', () async {
+    final List<ValueDelegate> red = <ValueDelegate>[
+      for (final String name in <String>['accent_light', 'accent_mid', 'accent_dark'])
+        ValueDelegate.color(<String>['**', name], value: const Color(0xFFFF0000)),
+    ];
+    // The rows above the box collar hold the lid while it flies and nothing else that takes the accent.
+    const int aboveBox = 70;
+    final int flying = _countRed(await _render(composition, 198, red), rows: aboveBox, minRed: 245);
+    final int gone = _countRed(await _render(composition, 224, red), rows: aboveBox);
+    expect(flying, greaterThan(1500), reason: 'frame 198 shows a solid lid');
+    expect(gone, 0, reason: 'frame 224 has no lid left');
   });
 
   test('the opened box has a bright core and the spent box does not', () async {

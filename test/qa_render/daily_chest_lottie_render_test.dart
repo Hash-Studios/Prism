@@ -132,11 +132,15 @@ void main() {
       for (int i = 0; i < 24; i++) (composition.durationFrames * i / 24).roundToDouble(),
     ]);
     await _writeSheet(tester, composition, 'open_sheet', <double>[for (int f = 180; f <= 270; f += 6) f.toDouble()]);
+    await _writeSheet(tester, composition, 'lid_exit_sheet', <double>[
+      for (int f = 194; f <= 226; f += 2) f.toDouble(),
+    ]);
 
     final List<(String, List<ValueDelegate>)> variants = <(String, List<ValueDelegate>)>[
       ('glow_green', _glow(const Color(0xFF34D399))),
-      ('glow_gold', _glow(const Color(0xFFF5B83D))),
+      ('glow_sky', _glow(const Color(0xFF38BDF8))),
       ('glow_violet', _glow(const Color(0xFFA78BFA))),
+      ('glow_gold', _glow(const Color(0xFFF5B83D))),
       ('accent_purple', _accent(const Color(0xFFB7A4FF), const Color(0xFF7C5CFF), const Color(0xFF4B30C9))),
       ('accent_teal', _accent(const Color(0xFF5EEAD4), const Color(0xFF14B8A6), const Color(0xFF0B766B))),
     ];
