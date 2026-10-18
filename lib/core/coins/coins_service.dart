@@ -2641,13 +2641,20 @@ class CoinsService with WidgetsBindingObserver {
     );
     if (!_isCurrentOwner(userId, generation) || reply == null) return const ChestFailed('session_changed');
     if (reply.errorCode != null) return ChestFailed(reply.reason);
+    // Every reply the server sends carries the quests, a refusal included. A stale cache is what got the user refused.
+    _applyQuestReply(reply.data);
     if (!reply.success) {
+      unawaited(
+        _persistEconomy(userId, <String, dynamic>{
+          'rev': _economyRev,
+          if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
+        }),
+      );
       switch (reply.reason) {
         case 'daily_chest_price_changed':
           unawaited(EconomyConfig.load());
           return ChestRefused(ChestRefusal.priceChanged, price: parseInt(toJsonMap(reply.data['status'])['price']));
         case 'daily_chest_already_opened':
-          unawaited(progressQuest(null));
           return const ChestRefused(ChestRefusal.alreadyOpened);
         case 'daily_chest_insufficient_balance':
           return const ChestRefused(ChestRefusal.insufficientBalance);
@@ -2675,7 +2682,6 @@ class CoinsService with WidgetsBindingObserver {
         Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
       );
     }
-    _applyQuestReply(reply.data);
     if (reply.changed) {
       _grantLocalXp(win.xp + _xpForCoins(win.coins));
       analytics.track(

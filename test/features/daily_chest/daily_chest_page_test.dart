@@ -20,16 +20,17 @@ import '../quests/fake_quests_repository.dart';
 final DateTime _now = DateTime.utc(2026, 10, 18, 18, 48);
 const String _today = '2026-10-18';
 
-QuestState _quests({int claimed = 0, bool bonusDone = false, bool opened = false}) => questState(
-  dayKey: _today,
-  items: <QuestItem>[
-    questItem('set_wall', QuestEvent.setWallpaper, claimed: claimed > 0),
-    questItem('fav_3', QuestEvent.favourite, target: 3, claimed: claimed > 1),
-    questItem('wotd_view', QuestEvent.viewWotd, claimed: claimed > 2),
-  ],
-  bonus: questItem('watch_ad', QuestEvent.watchAd, claimed: bonusDone),
-  chestOpened: opened,
-);
+QuestState _quests({int claimed = 0, bool bonusDone = false, bool opened = false, String dayKey = _today}) =>
+    questState(
+      dayKey: dayKey,
+      items: <QuestItem>[
+        questItem('set_wall', QuestEvent.setWallpaper, claimed: claimed > 0),
+        questItem('fav_3', QuestEvent.favourite, target: 3, claimed: claimed > 1),
+        questItem('wotd_view', QuestEvent.viewWotd, claimed: claimed > 2),
+      ],
+      bonus: questItem('watch_ad', QuestEvent.watchAd, claimed: bonusDone),
+      chestOpened: opened,
+    );
 
 ChestWon _won(int slot, {int coins = 0, int xp = 0, String? itemId, int cost = 8, bool doubled = false}) => ChestWon(
   win: ChestWin(slot: slot, coins: coins, xp: xp, itemId: itemId),
@@ -51,6 +52,7 @@ void main() {
   late List<Completer<DailyChestResult>> replies;
   late int refreshes;
   late int shopOpens;
+  late DateTime clock;
 
   setUpAll(loadFonts);
 
@@ -63,6 +65,7 @@ void main() {
     replies = <Completer<DailyChestResult>>[];
     refreshes = 0;
     shopOpens = 0;
+    clock = _now;
     PrismHaptics.enabled = true;
     final TestDefaultBinaryMessengerBinding binding = TestDefaultBinaryMessengerBinding.instance;
     binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (MethodCall call) async {
@@ -95,7 +98,7 @@ void main() {
     open: open,
     quests: quests,
     balance: balance,
-    now: () => _now,
+    now: () => clock,
     refresh: () async => refreshes++,
     onOpenShop: () => shopOpens++,
   );
@@ -509,19 +512,63 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 2));
     });
 
-    testWidgets('a chest that is open already turns the page to spent and syncs the quests', (tester) async {
+    testWidgets('a chest that is open already turns the page to spent through the quests the refusal brought', (
+      tester,
+    ) async {
       await pumpPage(tester);
 
       await tester.tap(find.text('Open'));
       await tester.pump();
+      quests.value = _quests(opened: true);
       replies.single.complete(const ChestRefused(ChestRefusal.alreadyOpened));
       await pumpFor(tester, const Duration(seconds: 1));
 
       expect(phase(tester), ChestPhase.spent);
       expect(find.text('Back tomorrow'), findsOneWidget);
       expect(find.text('Opened. A new chest in 5h 12m.'), findsOneWidget);
-      expect(refreshes, 1);
+      expect(refreshes, 0);
       expect(find.text('340'), findsOneWidget);
+    });
+
+    testWidgets('a free chest the server prices after all becomes a paid chest, so the next tap sends the price', (
+      tester,
+    ) async {
+      quests.value = _quests(claimed: 3);
+      await pumpPage(tester);
+      expect(find.text('Open free'), findsOneWidget);
+
+      await tester.tap(find.text('Open free'));
+      await tester.pump();
+      quests.value = _quests();
+      replies.single.complete(const ChestRefused(ChestRefusal.priceChanged, price: 8));
+      await pumpFor(tester, const Duration(seconds: 1));
+
+      expect(find.text('Open free'), findsNothing);
+      expect(find.bySemanticsLabel('Open the chest, 8 coins'), findsOneWidget);
+      expect(find.text('Open it for 8 coins, or finish 3 more quests to open it free.'), findsOneWidget);
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      expect(maxCosts, <int>[0, 8]);
+      replies.last.complete(const ChestFailed('timeout'));
+      await pumpFor(tester, const Duration(seconds: 2));
+    });
+
+    testWidgets('a price the server named lasts until the UTC day changes', (tester) async {
+      await pumpPage(tester);
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      replies.single.complete(const ChestRefused(ChestRefusal.priceChanged, price: 12));
+      await pumpFor(tester, const Duration(seconds: 1));
+      expect(find.text('Open it for 12 coins, or finish 3 more quests to open it free.'), findsOneWidget);
+
+      clock = DateTime.utc(2026, 10, 19, 0, 5);
+      quests.value = _quests(dayKey: '2026-10-19');
+      await pumpFor(tester, const Duration(milliseconds: 500));
+
+      expect(find.text('Open it for 8 coins, or finish 3 more quests to open it free.'), findsOneWidget);
+      await pumpFor(tester, const Duration(seconds: 2));
     });
 
     testWidgets('a failure shows the error toast, restores the balance and lets the user try again', (tester) async {
@@ -543,6 +590,21 @@ void main() {
       await tester.pump();
       expect(maxCosts, <int>[8, 8]);
       replies.last.complete(const ChestFailed('unavailable'));
+      await pumpFor(tester, const Duration(seconds: 2));
+    });
+
+    testWidgets('a failure shows the quests that arrived while the box charged', (tester) async {
+      quests.value = _quests(claimed: 3);
+      await pumpPage(tester);
+
+      await tester.tap(find.text('Open free'));
+      await tester.pump();
+      quests.value = _quests();
+      replies.single.complete(const ChestFailed('unavailable'));
+      await pumpFor(tester, const Duration(seconds: 1));
+
+      expect(find.text('Open'), findsOneWidget);
+      expect(find.text('Open free'), findsNothing);
       await pumpFor(tester, const Duration(seconds: 2));
     });
 
@@ -596,6 +658,7 @@ void main() {
 
       await tester.tap(find.text('Open'));
       await tester.pump();
+      quests.value = _quests(opened: true);
       replies.single.complete(const ChestRefused(ChestRefusal.alreadyOpened));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 20));

@@ -102,8 +102,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   /// The server said the balance is short, whatever the page shows, until the balance changes.
   bool _shortOverride = false;
 
-  /// What the server said when it refused, which the cached quests and config cannot know yet.
-  bool _knownOpened = false;
+  /// The price the server named when it refused, which the cached config cannot know yet. It is for one UTC day.
   int? _priceOverride;
 
   OpenChestFunction get _open => widget.open ?? CoinsService.instance.openDailyChest;
@@ -142,11 +141,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       price: CoinPolicy.dailyChestPrice,
     );
     if (base == null) return null;
-    return DailyChestStatus(
-      opened: base.opened || _knownOpened,
-      questsLeft: base.questsLeft,
-      price: _priceOverride ?? base.price,
-    );
+    return DailyChestStatus(opened: base.opened, questsLeft: base.questsLeft, price: _priceOverride ?? base.price);
   }
 
   /// The phase of a chest nobody is opening: ready, or spent when it was opened today.
@@ -161,10 +156,16 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
 
   Future<void> _refresh() => (widget.refresh ?? () => CoinsService.instance.progressQuest(null))();
 
+  void _readQuests() {
+    final QuestState? next = _questsSource.value;
+    if (next?.dayKey != _quests?.dayKey) _priceOverride = null;
+    _quests = next;
+  }
+
   void _onQuestsChanged() {
     if (_busy) return;
     setState(() {
-      _quests = _questsSource.value;
+      _readQuests();
       if (_phase == ChestPhase.ready || _phase == ChestPhase.spent) _phase = _idlePhase();
     });
   }
@@ -233,7 +234,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     _balanceBefore = before;
     setState(() {
       _won = won;
-      _knownOpened = true;
       _phase = ChestPhase.opening;
     });
     // Under reduced motion the box never ticks, so the prize shows at once.
@@ -267,32 +267,26 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     if (!mounted || _phase != ChestPhase.opening) return;
     if (!_cardUp) _onBurst();
     setState(() {
-      _quests = _questsSource.value;
+      _readQuests();
       _phase = ChestPhase.revealed;
     });
   }
 
   void _onRefused(ChestRefused refused) {
     setState(() {
+      _readQuests();
       _balance = _balanceSource.value;
       _delta = 0;
       _shortOverride = refused.refusal == ChestRefusal.insufficientBalance;
-      _knownOpened = _knownOpened || refused.refusal == ChestRefusal.alreadyOpened;
       _priceOverride = refused.price ?? _priceOverride;
       _phase = _idlePhase();
     });
-    switch (refused.refusal) {
-      case ChestRefusal.priceChanged:
-        toasts.info('The price changed. Check it and open again.');
-      case ChestRefusal.alreadyOpened:
-        unawaited(_refresh());
-      case ChestRefusal.insufficientBalance:
-        break;
-    }
+    if (refused.refusal == ChestRefusal.priceChanged) toasts.info('The price changed. Check it and open again.');
   }
 
   void _onFailed(int before) {
     setState(() {
+      _readQuests();
       _phase = ChestPhase.ready;
       _balance = before;
       _delta = 0;

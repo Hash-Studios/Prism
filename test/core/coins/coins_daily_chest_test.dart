@@ -17,17 +17,24 @@ import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import 'spin_wheel_test_helpers.dart';
 
-Map<String, Object?> _quests({required bool chestOpened, bool doubled = false}) => <String, Object?>{
-  'dayKey': economyDayKey(DateTime.now()),
-  'items': <Map<String, Object?>>[
-    <String, Object?>{'id': 'wotd_view', 'event': 'view_wotd', 'target': 1, 'progress': 1, 'claimed': true},
-    <String, Object?>{'id': 'fav_3', 'event': 'favourite', 'target': 3, 'progress': 3, 'claimed': true},
-    <String, Object?>{'id': 'share_1', 'event': 'share', 'target': 1, 'progress': 1, 'claimed': true},
-  ],
-  'chestOpened': chestOpened,
-  'chestDoubled': doubled,
-  'weekKey': '2026-W42',
-};
+Map<String, Object?> _quests({required bool chestOpened, bool doubled = false, bool allClaimed = true}) =>
+    <String, Object?>{
+      'dayKey': economyDayKey(DateTime.now()),
+      'items': <Map<String, Object?>>[
+        <String, Object?>{'id': 'wotd_view', 'event': 'view_wotd', 'target': 1, 'progress': 1, 'claimed': true},
+        <String, Object?>{'id': 'fav_3', 'event': 'favourite', 'target': 3, 'progress': 3, 'claimed': true},
+        <String, Object?>{
+          'id': 'share_1',
+          'event': 'share',
+          'target': 1,
+          'progress': allClaimed ? 1 : 0,
+          'claimed': allClaimed,
+        },
+      ],
+      'chestOpened': chestOpened,
+      'chestDoubled': doubled,
+      'weekKey': '2026-W42',
+    };
 
 /// An opened chest the way the server replies, for a user with 100 coins before the open.
 Map<String, Object?> _opened({
@@ -64,17 +71,23 @@ Map<String, Object?> _opened({
   };
 }
 
-Map<String, Object?> _refused(String reason, {Map<String, Object>? status, bool insufficient = false}) =>
-    <String, Object?>{
-      'success': false,
-      'changed': false,
-      'previousBalance': 100,
-      'currentBalance': 100,
-      'delta': 0,
-      'reason': reason,
-      if (insufficient) 'insufficientBalance': true,
-      if (status != null) 'status': status,
-    };
+Map<String, Object?> _refused(
+  String reason, {
+  Map<String, Object>? status,
+  bool insufficient = false,
+  Map<String, Object?>? quests,
+  int rev = 5,
+}) => <String, Object?>{
+  'success': false,
+  'changed': false,
+  'previousBalance': 100,
+  'currentBalance': 100,
+  'delta': 0,
+  'reason': reason,
+  if (insufficient) 'insufficientBalance': true,
+  if (status != null) 'status': status,
+  if (quests != null) ...<String, Object?>{'quests': quests, 'rev': rev},
+};
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -338,13 +351,11 @@ void main() {
       };
       for (final MapEntry<String, (ChestRefusal, int?)> c in cases.entries) {
         reply(
-          (name, _) => name == 'progressQuest'
-              ? <String, Object?>{'success': true}
-              : _refused(
-                  c.key,
-                  status: <String, Object>{'opened': false, 'free': false, 'price': 12},
-                  insufficient: c.key == 'daily_chest_insufficient_balance',
-                ),
+          (_, _) => _refused(
+            c.key,
+            status: <String, Object>{'opened': false, 'free': false, 'price': 12},
+            insufficient: c.key == 'daily_chest_insufficient_balance',
+          ),
         );
         final DailyChestResult result = await service.openDailyChest(maxCost: 8);
         expect(result, isA<ChestRefused>(), reason: c.key);
@@ -379,22 +390,46 @@ void main() {
       expect(CoinPolicy.dailyChestPrice, 12);
     });
 
-    test('a chest another device already opened syncs the quests', () async {
-      expect(service.questsNotifier.value, isNull);
-      reply(
-        (name, _) => name == 'progressQuest'
-            ? <String, Object?>{'success': true, 'rev': 6, 'quests': _quests(chestOpened: true)}
-            : _refused(
-                'daily_chest_already_opened',
-                status: <String, Object>{'opened': true, 'free': true, 'price': 8},
-              ),
-      );
-      final DailyChestResult result = await service.openDailyChest(maxCost: 0);
+    test('every refusal adopts the quests of its reply and makes no other call', () async {
+      const List<String> reasons = <String>[
+        'daily_chest_price_changed',
+        'daily_chest_already_opened',
+        'daily_chest_insufficient_balance',
+      ];
+      for (final (int index, String reason) in reasons.indexed) {
+        service.questsNotifier.value = QuestState.fromMap(_quests(chestOpened: false));
+        reply(
+          (_, _) => _refused(
+            reason,
+            quests: _quests(chestOpened: reason == 'daily_chest_already_opened', allClaimed: false),
+            rev: 6 + index,
+            insufficient: reason == 'daily_chest_insufficient_balance',
+          ),
+        );
+        calls.clear();
+        await service.openDailyChest(maxCost: 0);
+        await pumpEventQueue();
+
+        final QuestState quests = service.questsNotifier.value!;
+        expect(
+          (quests.items.where((q) => !q.claimed).length, quests.chestOpened),
+          (1, reason == 'daily_chest_already_opened'),
+          reason: reason,
+        );
+        expect(calls.map((c) => c.$1), <String>['openDailyChest'], reason: reason);
+      }
+    });
+
+    test('the quests of a refusal are still there after a restart', () async {
+      reply((_, _) => _refused('daily_chest_price_changed', quests: _quests(chestOpened: false, allClaimed: false)));
+      await service.openDailyChest(maxCost: 0);
       await pumpEventQueue();
-      expect((result as ChestRefused).refusal, ChestRefusal.alreadyOpened);
-      expect(calls.map((c) => c.$1), <String>['openDailyChest', 'progressQuest']);
-      expect(calls.last.$2.containsKey('event'), isFalse);
-      expect(service.questsNotifier.value?.chestOpened, isTrue);
+
+      service.resetSession();
+      expect(service.questsNotifier.value, isNull);
+      await service.restoreLocalEconomyForCurrentUser();
+
+      expect(service.questsNotifier.value?.items.where((q) => !q.claimed).length, 1);
     });
 
     test('the insufficient flag alone is enough for an insufficient refusal', () async {
@@ -416,7 +451,6 @@ void main() {
         calls.add((name, params));
         if (calls.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
         if (calls.length == 3) return _refused('daily_chest_already_opened');
-        if (name == 'progressQuest') return <String, Object?>{'success': true};
         return _opened(coins: 10);
       };
       final DailyChestResult lost = await service.openDailyChest(maxCost: 8);
@@ -425,7 +459,6 @@ void main() {
       expect(service.balanceNotifier.value, 100);
       expect(await service.openDailyChest(maxCost: 8), isA<ChestWon>());
       expect(await service.openDailyChest(maxCost: 8), isA<ChestRefused>());
-      await pumpEventQueue();
       await service.openDailyChest(maxCost: 8);
       final List<String> ids = <String>[
         for (final (String name, Map<String, dynamic> params) in calls)
