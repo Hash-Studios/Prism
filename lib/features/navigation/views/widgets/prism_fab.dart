@@ -1,19 +1,15 @@
-import 'dart:math' as math;
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/press_scale.dart';
-import 'package:Prism/core/widgets/glint/glint_data.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
-import 'package:Prism/features/navigation/views/widgets/nav_bar_surface.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:flutter/material.dart';
 
-/// The round create button: a "+" inside a static rainbow ring. The ring turns a quarter once per tap.
+/// The round create button: four layered rainbow rings, the middle and the top ones turning slowly.
 class PrismFab extends StatefulWidget {
   const PrismFab({super.key});
 
@@ -21,10 +17,32 @@ class PrismFab extends StatefulWidget {
   State<PrismFab> createState() => _PrismFabState();
 }
 
-class _PrismFabState extends State<PrismFab> {
-  static const double _size = 60;
+class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin {
+  late final AnimationController _rotationController;
 
-  int _quarterTurns = 0;
+  @override
+  void initState() {
+    super.initState();
+    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 5));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Spin only while the tab is visible (TickerMode) and motion is allowed.
+    final bool spin = TickerMode.valuesOf(context).enabled && !context.reduceMotion;
+    if (spin && !_rotationController.isAnimating) {
+      _rotationController.repeat();
+    } else if (!spin && _rotationController.isAnimating) {
+      _rotationController.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    super.dispose();
+  }
 
   void _openUploadSheet() {
     if (!mounted) return;
@@ -33,7 +51,6 @@ class _PrismFabState extends State<PrismFab> {
 
   void _onPressed() {
     PrismHaptics.tap();
-    if (!context.reduceMotion) setState(() => _quarterTurns++);
     analytics.track(
       const UploadActionSelectedEvent(
         action: AnalyticsActionValue.uploadSheetOpened,
@@ -51,7 +68,6 @@ class _PrismFabState extends State<PrismFab> {
 
   @override
   Widget build(BuildContext context) {
-    final Color ink = Theme.of(context).colorScheme.onSurface;
     return Semantics(
       button: true,
       label: 'Upload',
@@ -61,48 +77,27 @@ class _PrismFabState extends State<PrismFab> {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: _onPressed,
-          child: DecoratedBox(
-            decoration: navBarDecoration(context, circle: true),
-            child: SizedBox.square(
-              dimension: _size,
-              child: Stack(
-                alignment: Alignment.center,
-                children: <Widget>[
-                  AnimatedRotation(
-                    turns: _quarterTurns / 4,
-                    duration: context.motion(PrismDurations.slow),
-                    curve: PrismCurves.move,
-                    child: const CustomPaint(size: Size.square(_size), painter: _RainbowRingPainter()),
-                  ),
-                  Icon(Icons.add_rounded, size: 28, color: ink),
-                ],
-              ),
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                Image.asset('assets/images/button_bottom_layer.webp'),
+                RotationTransition(
+                  turns: _rotationController,
+                  child: Image.asset('assets/images/button_middle_layer.webp'),
+                ),
+                Image.asset('assets/images/button_top_layer.webp'),
+                RotationTransition(
+                  turns: _rotationController,
+                  child: Image.asset('assets/images/button_topmost_layer.webp'),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
-}
-
-/// The logo's rainbow ring, in Glint's own colours.
-class _RainbowRingPainter extends CustomPainter {
-  const _RainbowRingPainter();
-
-  static const double _width = 2.5;
-  // Glint's ring colours, closed back to the first so the sweep has no seam.
-  static const List<Color> _colors = <Color>[...glintRingNodeColors, glintPurple];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Rect rect = (Offset.zero & size).deflate(_width / 2 + 1);
-    final Paint paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _width
-      ..shader = const SweepGradient(colors: _colors, transform: GradientRotation(-math.pi / 2)).createShader(rect);
-    canvas.drawOval(rect, paint);
-  }
-
-  @override
-  bool shouldRepaint(_RainbowRingPainter oldDelegate) => false;
 }

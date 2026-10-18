@@ -3,13 +3,12 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
-import 'package:Prism/features/navigation/views/widgets/nav_bar_surface.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// The floating pill with the four tab destinations. A circle slides behind the active one. The icons are the
-/// current app's JamIcons.
+/// The floating pill with the four tab destinations. A filled circle sits behind the active one.
 class PrismBottomNav extends StatefulWidget {
   const PrismBottomNav({super.key});
 
@@ -19,8 +18,6 @@ class PrismBottomNav extends StatefulWidget {
 
 class _PrismBottomNavState extends State<PrismBottomNav> {
   static const double _slot = 48;
-  static const double _indicator = 44;
-  static const double _height = 60;
 
   static const List<_NavTabConfig> _tabs = <_NavTabConfig>[
     _NavTabConfig(label: 'Home', icon: JamIcons.home_f, value: NavTabValue.home),
@@ -76,49 +73,27 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   @override
   Widget build(BuildContext context) {
     final int activeIndex = _tabsRouter?.activeIndex ?? 0;
-    final Color indicator = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1);
-    final double x = -1 + 2 * activeIndex / (_tabs.length - 1);
 
-    return DecoratedBox(
-      decoration: navBarDecoration(context),
-      child: SizedBox(
-        height: _height,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: (_height - _slot) / 2),
-          child: SizedBox(
-            width: _slot * 4,
-            child: Stack(
-              alignment: Alignment.center,
-              children: <Widget>[
-                AnimatedAlign(
-                  alignment: Alignment(x, 0),
-                  duration: context.motion(PrismDurations.base),
-                  curve: PrismCurves.move,
-                  child: SizedBox.square(
-                    dimension: _slot,
-                    child: Center(
-                      child: Container(
-                        width: _indicator,
-                        height: _indicator,
-                        decoration: BoxDecoration(color: indicator, shape: BoxShape.circle),
-                      ),
-                    ),
-                  ),
-                ),
-                Row(
-                  children: <Widget>[
-                    for (var i = 0; i < _tabs.length; i++)
-                      _TabButton(
-                        config: _tabs[i],
-                        isActive: activeIndex == i,
-                        onPressed: () => _switchTab(toIndex: i),
-                      ),
-                  ],
-                ),
-              ],
+    return Container(
+      padding: const EdgeInsets.all(4),
+      height: 56,
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        boxShadow: <BoxShadow>[
+          BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 4, offset: const Offset(0, 4)),
+        ],
+        borderRadius: BorderRadius.circular(PrismRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (var i = 0; i < _tabs.length; i++)
+            _TabButton(
+              config: _tabs[i],
+              isActive: activeIndex == i,
+              onPressed: () => _switchTab(toIndex: i),
             ),
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -133,7 +108,9 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color ink = Theme.of(context).colorScheme.onSurface;
+    final ThemeData theme = Theme.of(context);
+    final Color secondary = theme.colorScheme.secondary;
+    final Duration duration = context.motion(PrismDurations.fast);
     return SizedBox(
       width: _PrismBottomNavState._slot,
       height: _PrismBottomNavState._slot,
@@ -151,17 +128,21 @@ class _TabButton extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: onPressed,
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: context.motion(PrismDurations.fast),
-                  switchInCurve: PrismCurves.enter,
-                  switchOutCurve: PrismCurves.enter,
-                  child: Icon(
-                    config.icon,
-                    key: ValueKey<bool>(isActive),
-                    size: 22,
-                    color: isActive ? ink : ink.withValues(alpha: 0.7),
-                  ),
+              child: AnimatedContainer(
+                duration: duration,
+                curve: PrismCurves.enter,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? Color.alphaBlend(secondary.withValues(alpha: 0.15), theme.primaryColor)
+                      : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+                child: TweenAnimationBuilder<Color?>(
+                  tween: ColorTween(end: isActive ? secondary : secondary.withValues(alpha: 0.4)),
+                  duration: duration,
+                  curve: PrismCurves.enter,
+                  builder: (BuildContext context, Color? color, Widget? _) => Icon(config.icon, size: 19, color: color),
                 ),
               ),
             ),
