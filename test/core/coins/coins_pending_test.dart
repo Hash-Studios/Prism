@@ -204,6 +204,7 @@ void main() {
     test('a rewarded ad award carries a requestId and is retried once with the same id', () async {
       final requestIds = <String>[];
       backend.onCall = (name, parameters) async {
+        if (name == 'reconcileRankRewards') return <String, Object>{};
         requestIds.add(parameters['requestId'] as String);
         if (requestIds.length == 1) throw FirebaseFunctionsException(code: 'deadline-exceeded', message: 'slow');
         return <String, Object>{
@@ -230,6 +231,7 @@ void main() {
     test('other awards do not carry a requestId', () async {
       final calls = <Map<String, dynamic>>[];
       backend.onCall = (name, parameters) async {
+        if (name == 'reconcileRankRewards') return <String, Object>{};
         calls.add(parameters);
         return _refunded;
       };
@@ -256,6 +258,7 @@ void main() {
 
       final retried = <String>[];
       backend.onCall = (name, parameters) async {
+        if (name == 'reconcileRankRewards') return <String, Object>{};
         retried.add(parameters['requestId'] as String);
         return <String, Object>{
           'success': true,
@@ -381,6 +384,7 @@ void main() {
     List<Map<String, dynamic>> recordRefunds() {
       final refunds = <Map<String, dynamic>>[];
       backend.onCall = (name, parameters) async {
+        if (name == 'reconcileRankRewards') return <String, Object>{};
         refunds.add(parameters);
         return _refunded;
       };

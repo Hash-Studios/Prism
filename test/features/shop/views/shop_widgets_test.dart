@@ -9,6 +9,7 @@ import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/shop.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_tile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/coins_test_backend.dart';
@@ -90,7 +91,8 @@ void main() {
       expect(find.text('Pro'), findsOneWidget);
 
       await pumpTile(tester, 'frame_gold', availability: ShopAvailability.rankLocked);
-      expect(find.text('Gold rank'), findsOneWidget);
+      expect(find.text('Earned at Gold'), findsOneWidget);
+      expect(find.text('250'), findsNothing);
 
       await pumpTile(tester, 'frame_founders', availability: ShopAvailability.soldOut);
       expect(find.text('Sold out'), findsOneWidget);
@@ -190,12 +192,52 @@ void main() {
       expect(find.text('Only Pro members can buy this.'), findsOneWidget);
     });
 
-    testWidgets('a rank item below the rank points to Earn coins', (tester) async {
+    testWidgets('a rank reward below its rank points to XP without selling it', (tester) async {
       await openSheet(tester, 'frame_gold');
 
-      expect(find.text('Reach Gold rank to buy this.'), findsOneWidget);
-      expect(find.text('Earn coins'), findsOneWidget);
+      expect(find.text('Earned at Gold rank with lifetime XP.'), findsOneWidget);
+      expect(find.text('Earn XP'), findsOneWidget);
+      expect(find.text('250'), findsNothing);
       expect(find.textContaining('Buy for'), findsNothing);
+    });
+
+    testWidgets('an eligible unconfirmed reward stays syncing until ownership is confirmed', (tester) async {
+      coins.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 2500});
+      await openSheet(tester, 'frame_gold');
+
+      expect(find.text('Rank reached. Your reward is syncing.'), findsOneWidget);
+      expect(find.text('Equip'), findsNothing);
+      expect(find.textContaining('Buy for'), findsNothing);
+
+      backend.onCall = (String name, Map<String, dynamic> params) async {
+        calls.add(name);
+        expect(name, 'purchaseShopItem');
+        expect(params['itemId'], 'frame_gold');
+        return <String, Object?>{
+          'success': false,
+          'reason': 'shop_item_owned',
+          'rev': 8,
+          'inventoryChanged': true,
+          'owned': <String>['frame_gold'],
+        };
+      };
+      final ShopBloc bloc = tester.element(find.byType(ShopItemSheet)).read<ShopBloc>();
+      final Future<ShopState> confirmed = bloc.stream.firstWhere(
+        (state) => state.owned.contains('frame_gold') && state.loadingItemId == null,
+      );
+      await tester.tap(find.text('Sync reward'));
+      // The platform reply and the serialized in-memory write cross the test clock's async boundary.
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+      expect(bloc.state.owned, contains('frame_gold'), reason: 'calls=$calls state=${bloc.state}');
+      await confirmed;
+      await tester.pump();
+      expect(find.text('Equip'), findsOneWidget);
+      expect(calls, contains('purchaseShopItem'));
+      expect(find.text('Sync reward'), findsNothing);
     });
 
     testWidgets('a sold out limited item has no action', (tester) async {

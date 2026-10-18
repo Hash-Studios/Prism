@@ -23,10 +23,11 @@ class ShopItemTile extends StatelessWidget {
 
   (String, PrismTone)? get _tag {
     if (owned) return equipped ? ('Equipped', PrismTone.accent) : ('Owned', PrismTone.success);
+    if (item.rankReward != null) return ('Earned at ${shopRankName(item.rankReward!)}', PrismTone.accent);
     return switch (availability) {
       ShopAvailability.soldOut => ('Sold out', PrismTone.neutral),
       ShopAvailability.proOnly => ('Pro', PrismTone.accent),
-      ShopAvailability.rankLocked => ('${shopRankName(item.minRank ?? '')} rank', PrismTone.warning),
+      ShopAvailability.rankLocked => ('${shopRankName(item.requiredRank ?? '')} rank', PrismTone.warning),
       ShopAvailability.available => item.founders ? ('Until ${shopUntilLabel() ?? 'soon'}', PrismTone.warning) : null,
     };
   }
@@ -34,7 +35,7 @@ class ShopItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (String, PrismTone)? tag = _tag;
-    final bool showPrice = !owned && availability != ShopAvailability.soldOut;
+    final bool showPrice = !owned && item.rankReward == null && availability != ShopAvailability.soldOut;
     final int price = shopPriceFor(item);
     return PrismCard(
       padding: const EdgeInsets.all(PrismSpace.sm),

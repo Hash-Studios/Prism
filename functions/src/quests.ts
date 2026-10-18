@@ -14,6 +14,7 @@ import {
   type QuestState,
 } from "./questCatalog";
 import {pickChestCosmetic} from "./shopCatalog";
+import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -94,10 +95,18 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
     const currentBalance = previousBalance + totalCoins;
     const rev = int(privateData.rev, 0);
     const stateChanged = !privateSnap.exists || !isDeepStrictEqual(privateData.quests, state);
+    const nextXp = awarded.length > 0 ? grantXp(userData, totalXp, nowMs) : null;
+    const rewards = nextXp ? rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs) : null;
+    const privateChanged = stateChanged || (rewards?.added.length ?? 0) > 0;
 
-    if (stateChanged) writePrivate(tx, privateRef, rev + 1, {quests: state});
+    if (privateChanged) {
+      writePrivate(tx, privateRef, rev + 1, {
+        ...(stateChanged ? {quests: state} : {}),
+        ...(rewards && rewards.added.length > 0 ? {inventory: {owned: rewards.owned}} : {}),
+      });
+    }
     if (awarded.length > 0) {
-      tx.update(userRef, {coins: currentBalance, ...grantXp(userData, totalXp, nowMs)});
+      tx.update(userRef, {coins: currentBalance, ...nextXp});
       const at = admin.firestore.Timestamp.fromMillis(nowMs);
       let balanceBefore = previousBalance;
       for (const award of awarded) {
@@ -127,7 +136,7 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
       currentBalance,
       delta: totalCoins,
       reason,
-      rev: stateChanged ? rev + 1 : rev,
+      rev: privateChanged ? rev + 1 : rev,
     };
   });
 }
@@ -232,18 +241,21 @@ export const openQuestChest = onCall(
       const doubled = state.bonus.claimed;
       const base = randomInt(config.award.questChestMin, config.award.questChestMax);
       const coins = doubled ? base * 2 : base;
-      const rawInventory = privateData.inventory as {owned?: Record<string, unknown>} | undefined;
-      const owned = rawInventory?.owned ?? {};
+      const nextXp = grantXp(userData, xpForCoins(coins, config), nowMs);
+      const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs);
+      const owned = rewards.owned;
       const cosmetic = Math.random() < config.award.questChestCosmeticChance ?
         pickChestCosmetic(Object.keys(owned)) : null;
       const currentBalance = balance + coins;
       const nextState: QuestState = {...state, chestOpened: true, chestDoubled: doubled};
       const at = admin.firestore.Timestamp.fromMillis(nowMs);
 
-      tx.update(userRef, {coins: currentBalance, ...grantXp(userData, xpForCoins(coins, config), nowMs)});
+      tx.update(userRef, {coins: currentBalance, ...nextXp});
       writePrivate(tx, privateRef, rev + 1, {
         quests: nextState,
-        ...(cosmetic ? {inventory: {...rawInventory, owned: {...owned, [cosmetic.id]: nowMs}}} : {}),
+        ...(cosmetic || rewards.added.length > 0 ? {
+          inventory: {owned: {...owned, ...(cosmetic ? {[cosmetic.id]: nowMs} : {})}},
+        } : {}),
       });
       tx.set(chestRef, {
         ...coinTransactionDoc({

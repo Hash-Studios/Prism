@@ -152,4 +152,16 @@ void main() {
     expect(passes.autoRotatePassActive(DateTime.utc(2026, 10, 16)), isTrue);
     expect(passes.autoRotatePassActive(DateTime.utc(2026, 10, 17)), isFalse);
   });
+
+  test('root XP patches preserve cosmetics while full root snapshots replace omitted fields', () async {
+    await snapshots.writeRoot('owner-a', <String, dynamic>{
+      'xp': 450,
+      'cosmetics': <String, Object?>{'frame': 'frame-a'},
+    });
+    await snapshots.writeRoot('owner-a', <String, dynamic>{'xp': 650}, merge: true);
+    expect((await snapshots.readRoot('owner-a'))?['cosmetics'], <String, Object?>{'frame': 'frame-a'});
+
+    await snapshots.writeRoot('owner-a', <String, dynamic>{'xp': 700});
+    expect(await snapshots.readRoot('owner-a'), <String, dynamic>{'xp': 700});
+  });
 }

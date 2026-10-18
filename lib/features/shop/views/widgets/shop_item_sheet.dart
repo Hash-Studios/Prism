@@ -94,10 +94,15 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     if (owned) {
       return item.proOnly && item.slot != null && !state.premium ? 'Wearing this needs Pro.' : null;
     }
+    if (item.rankReward != null) {
+      return availability == ShopAvailability.rankLocked
+          ? 'Earned at ${shopRankName(item.rankReward!)} rank with lifetime XP.'
+          : 'Rank reached. Your reward is syncing.';
+    }
     return switch (availability) {
       ShopAvailability.soldOut => 'This limited item is sold out.',
       ShopAvailability.proOnly => 'Only Pro members can buy this.',
-      ShopAvailability.rankLocked => 'Reach ${shopRankName(item.minRank ?? '')} rank to buy this.',
+      ShopAvailability.rankLocked => 'Reach ${shopRankName(item.requiredRank ?? '')} rank to buy this.',
       ShopAvailability.available when missing > 0 => 'You need $missing more coins.',
       ShopAvailability.available when item.founders => 'Limited. On sale until ${shopUntilLabel() ?? 'soon'}.',
       ShopAvailability.available => null,
@@ -128,6 +133,19 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
             ),
         ],
       };
+    }
+    if (item.rankReward != null) {
+      return <Widget>[
+        PrismButton(
+          label: availability == ShopAvailability.rankLocked ? 'Earn XP' : 'Sync reward',
+          expand: true,
+          variant: PrismButtonVariant.tonal,
+          loading: loading,
+          onPressed: availability == ShopAvailability.rankLocked
+              ? _earnCoins
+              : () => context.read<ShopBloc>().add(ShopEvent.purchaseRequested(item.id)),
+        ),
+      ];
     }
     return switch (availability) {
       ShopAvailability.soldOut => const <Widget>[],
@@ -174,7 +192,7 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               ShopItemPreview(item: item, size: 112),
-              if (!owned && availability != ShopAvailability.soldOut) ...<Widget>[
+              if (!owned && item.rankReward == null && availability != ShopAvailability.soldOut) ...<Widget>[
                 const SizedBox(height: PrismSpace.md),
                 Semantics(
                   label: '$price coins',

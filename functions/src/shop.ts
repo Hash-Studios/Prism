@@ -2,7 +2,8 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isValidRequestId} from "./coinsCallables";
 import {coinTransactionDoc, db, REGION} from "./common";
-import {type EconomyConfig, loadEconomy, rankFor} from "./economy";
+import {type EconomyConfig, loadEconomy} from "./economy";
+import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 import {type CosmeticSlot, shopItem, type ShopItem, shopPrice, slotFor} from "./shopCatalog";
 
 const USERS = "usersv2";
@@ -21,9 +22,10 @@ export interface ShopBuyer {
 export function shopRefusal(item: ShopItem, user: ShopBuyer, config: EconomyConfig, nowMs: number): ShopRefusal | null {
   if (user.owned.includes(item.id)) return "shop_item_owned";
   if (item.proOnly && !user.premium) return "shop_item_pro_only";
-  if (item.minRank) {
-    const needed = config.xp.ranks.find((r) => r.id === item.minRank);
-    if (!needed || rankFor(user.xp, config).min < needed.min) return "shop_item_rank_locked";
+  const requiredRank = item.rankReward ?? item.minRank;
+  if (requiredRank) {
+    const needed = config.xp.ranks.find((r) => r.id === requiredRank);
+    if (!needed || user.xp < needed.min) return "shop_item_rank_locked";
   }
   if (item.founders && !(nowMs < Date.parse(config.flags.foundersUntil))) return "shop_item_expired";
   return null;
@@ -37,15 +39,6 @@ function uid(request: CallableRequest<unknown>): string {
 
 function record(raw: unknown): Record<string, unknown> {
   return raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
-}
-
-function ownedMap(privateData: Record<string, unknown> | undefined): Record<string, number> {
-  const raw = record(record(privateData?.inventory).owned);
-  const owned: Record<string, number> = {};
-  for (const [id, at] of Object.entries(raw)) {
-    if (typeof at === "number") owned[id] = at;
-  }
-  return owned;
 }
 
 function balanceOf(data: Record<string, unknown>): number {
@@ -69,6 +62,7 @@ export const purchaseShopItem = onCall(
     const item = typeof itemId === "string" ? shopItem(itemId) : undefined;
     if (!item) throw new HttpsError("invalid-argument", "Unknown shop item.");
     const config = await loadEconomy();
+    const nowMs = Date.now();
     const price = shopPrice(item, config);
     const userRef = db.collection(USERS).doc(callerUid);
     const privateRef = userRef.collection("private").doc("economy");
@@ -85,6 +79,8 @@ export const purchaseShopItem = onCall(
       transactionId: "",
       itemId: item.id,
       owned: [] as string[],
+      rev: 0,
+      inventoryChanged: false,
     };
     let response = emptyResponse;
 
@@ -95,10 +91,12 @@ export const purchaseShopItem = onCall(
       const privateSnap = await tx.get(privateRef);
       const txSnap = await tx.get(txRef);
       const data = userSnap.data() ?? {};
-      const privateData = privateSnap.data();
-      const owned = ownedMap(privateData);
+      const privateData = privateSnap.data() ?? {};
+      const owned = inventoryOwned(privateData);
+      const privateRev = typeof privateData.rev === "number" ? privateData.rev : 0;
       const balance = balanceOf(data);
-      const current = {previousBalance: balance, currentBalance: balance, owned: Object.keys(owned)};
+      let current = {previousBalance: balance, currentBalance: balance, owned: Object.keys(owned),
+        rev: privateRev, inventoryChanged: false};
       if (txSnap.exists) {
         const original = txSnap.data() ?? {};
         if (original.itemId !== item.id) {
@@ -116,21 +114,29 @@ export const purchaseShopItem = onCall(
         };
         return;
       }
-      const nowMs = Date.now();
-      const xp = typeof data.xp === "number" ? data.xp : 0;
+      const xp = typeof data.xp === "number" && Number.isFinite(data.xp) ? data.xp : 0;
+      const rewards = rankRewardsFor(xp, owned, config, nowMs);
+      current = {...current, owned: Object.keys(rewards.owned),
+        rev: privateRev + (rewards.added.length > 0 ? 1 : 0), inventoryChanged: rewards.added.length > 0};
+      const persistRewards = () => {
+        if (current.inventoryChanged) {
+          tx.set(privateRef, {rev: current.rev, inventory: {owned: rewards.owned}}, {merge: true});
+        }
+      };
       const refusal = shopRefusal(item, {premium: data.premium === true, xp, owned: current.owned}, config, nowMs);
       if (refusal) {
+        persistRewards();
         response = {...response, ...current, reason: refusal};
         return;
       }
       if (balance < price) {
+        persistRewards();
         response = {...response, ...current, insufficientBalance: true, reason: "shopItem_insufficient_balance"};
         return;
       }
-      const nextOwned = {...owned, [item.id]: nowMs};
-      const rev = typeof privateData?.rev === "number" ? privateData.rev : 0;
+      const nextOwned = {...rewards.owned, [item.id]: nowMs};
       tx.update(userRef, {coins: balance - price});
-      tx.set(privateRef, {rev: rev + 1, inventory: {owned: nextOwned}}, {merge: true});
+      tx.set(privateRef, {rev: privateRev + 1, inventory: {owned: nextOwned}}, {merge: true});
       tx.set(txRef, {
         ...coinTransactionDoc({
           id: txId,
@@ -155,6 +161,8 @@ export const purchaseShopItem = onCall(
         reason: `shop_${item.id}`,
         transactionId: txId,
         owned: Object.keys(nextOwned),
+        rev: privateRev + 1,
+        inventoryChanged: true,
       };
     });
     return response;
@@ -174,8 +182,11 @@ export const equipCosmetic = onCall(
     }
     const userRef = db.collection(USERS).doc(callerUid);
     const privateRef = userRef.collection("private").doc("economy");
-    let response: {success: boolean; reason: string; cosmetics: Partial<Record<CosmeticSlot, string>>} = {
-      success: false, reason: "", cosmetics: {},
+    const config = await loadEconomy();
+    const nowMs = Date.now();
+    let response = {
+      success: false, reason: "", cosmetics: {} as Partial<Record<CosmeticSlot, string>>,
+      owned: [] as string[], rev: 0, inventoryChanged: false,
     };
 
     await db.runTransaction(async (tx) => {
@@ -184,13 +195,19 @@ export const equipCosmetic = onCall(
       const privateSnap = await tx.get(privateRef);
       const data = userSnap.data() ?? {};
       const equipped = equippedOf(data);
+      const privateData = privateSnap.data() ?? {};
+      const rewards = rankRewardsFor(typeof data.xp === "number" ? data.xp : 0, inventoryOwned(privateData), config, nowMs);
+      const inventoryChanged = rewards.added.length > 0;
+      const rev = (typeof privateData.rev === "number" ? privateData.rev : 0) + (inventoryChanged ? 1 : 0);
+      const inventory = {owned: Object.keys(rewards.owned), rev, inventoryChanged};
+      if (inventoryChanged) tx.set(privateRef, {rev, inventory: {owned: rewards.owned}}, {merge: true});
       if (item) {
-        if (!(item.id in ownedMap(privateSnap.data()))) {
-          response = {success: false, reason: "equip_not_owned", cosmetics: equipped};
+        if (!Object.prototype.hasOwnProperty.call(rewards.owned, item.id)) {
+          response = {success: false, reason: "equip_not_owned", cosmetics: equipped, ...inventory};
           return;
         }
         if (item.proOnly && data.premium !== true) {
-          response = {success: false, reason: "equip_pro_required", cosmetics: equipped};
+          response = {success: false, reason: "equip_pro_required", cosmetics: equipped, ...inventory};
           return;
         }
       }
@@ -198,7 +215,7 @@ export const equipCosmetic = onCall(
       if (item) next[slot] = item.id;
       else delete next[slot];
       tx.update(userRef, {[`cosmetics.${slot}`]: item ? item.id : admin.firestore.FieldValue.delete()});
-      response = {success: true, reason: item ? "equipped" : "cleared", cosmetics: next};
+      response = {success: true, reason: item ? "equipped" : "cleared", cosmetics: next, ...inventory};
     });
     return response;
   },

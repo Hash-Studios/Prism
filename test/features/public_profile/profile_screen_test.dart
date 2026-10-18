@@ -15,6 +15,7 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_wal
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
+import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -503,6 +504,19 @@ void main() {
     tearDown(() {
       CoinsService.instance.inventoryNotifier.value = Inventory.empty;
       CoinsService.instance.balanceNotifier.value = 0;
+      CoinsService.instance.xpNotifier.value = XpStatus.empty();
+    });
+
+    testWidgets('own profile shows full lifetime XP progress and confirmed reward state', (tester) async {
+      CoinsService.instance.xpNotifier.value = XpStatus.empty().plus(1240);
+      CoinsService.instance.inventoryNotifier.value = const Inventory(owned: <String>{'glow_aurora'});
+      await pumpScreen(tester);
+
+      expect(find.byType(RankProgressCard), findsOneWidget);
+      expect(find.text('1\u00A0240 lifetime XP'), findsOneWidget);
+      expect(find.text('760 XP to Gold'), findsOneWidget);
+      expect(find.text('Next reward: Gold frame'), findsOneWidget);
+      expect(find.byType(RankInfoChip), findsNothing);
     });
 
     testWidgets('another profile shows the rank tag, the frame and the glowing name', (tester) async {
@@ -511,8 +525,14 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('Silver'), findsOneWidget);
+      expect(find.byType(RankProgressCard), findsNothing);
+      expect(find.byType(RankInfoChip), findsOneWidget);
       expect(find.byKey(ProfileFrame.ringKey), findsOneWidget);
       expect(find.ancestor(of: find.text('Ana Rivera'), matching: find.byType(ShaderMask)), findsOneWidget);
+
+      await tester.tap(find.text('Silver'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('XP, ranks & rewards'), findsOneWidget);
     });
 
     testWidgets('a profile with no cosmetics keeps the plain ring and name', (tester) async {

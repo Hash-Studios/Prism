@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, REGION} from "./common";
 import {grantXp, loadEconomy, xpForCoins} from "./economy";
+import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
 const USERS = "usersv2";
 const COOLDOWN_MS = 60_000;
@@ -155,8 +156,10 @@ export const checkBadges = onCall(
     const config = await loadEconomy();
 
     let response = skip();
+    const privateRef = userRef.collection("private").doc("economy");
     await db.runTransaction(async (tx) => {
       const userTx = await tx.get(userRef);
+      const privateSnap = await tx.get(privateRef);
       if (!userTx.exists) throw new HttpsError("not-found", "User profile was not found.");
       const data = userTx.data() ?? {};
       const badges: Record<string, unknown>[] = Array.isArray(data.badges) ? [...data.badges] : [];
@@ -194,8 +197,16 @@ export const checkBadges = onCall(
         }));
         balance += b.coins;
       }
-      tx.update(userRef, balance === previous ? {badges} :
-        {badges, coins: balance, ...grantXp(data, xpForCoins(balance - previous, config), nowMs)});
+      if (balance === previous) tx.update(userRef, {badges});
+      else {
+        const nextXp = grantXp(data, xpForCoins(balance - previous, config), nowMs);
+        const privateData = privateSnap.data() ?? {};
+        const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs);
+        tx.update(userRef, {badges, coins: balance, ...nextXp});
+        if (rewards.added.length > 0) {
+          tx.set(privateRef, {rev: int(privateData.rev, 0) + 1, inventory: {owned: rewards.owned}}, {merge: true});
+        }
+      }
       response = {newBadges: fresh.map((b) => ({id: b.id, coins: b.coins})), badges, currentBalance: balance};
     });
     return response;

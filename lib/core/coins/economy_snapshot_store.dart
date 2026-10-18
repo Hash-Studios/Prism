@@ -24,7 +24,7 @@ class EconomySnapshotStore {
     return _jsonMap(record['data']);
   }
 
-  Future<void> writeRoot(String ownerId, Map<String, dynamic> data) {
+  Future<void> writeRoot(String ownerId, Map<String, dynamic> data, {bool merge = false}) {
     if (ownerId.isEmpty) return Future<void>.value();
     final int generation = _generations[ownerId] ?? 0;
     final Map<String, dynamic> safeData = <String, dynamic>{
@@ -33,7 +33,12 @@ class EconomySnapshotStore {
     };
     return _serialize(() async {
       if ((_generations[ownerId] ?? 0) != generation) return;
-      await _store.write(_rootKey(ownerId), <String, Object?>{'ownerId': ownerId, 'data': safeData});
+      final Map<String, dynamic>? previous = merge ? await readRoot(ownerId) : null;
+      if ((_generations[ownerId] ?? 0) != generation) return;
+      await _store.write(_rootKey(ownerId), <String, Object?>{
+        'ownerId': ownerId,
+        'data': <String, dynamic>{...?previous, ...safeData},
+      });
     });
   }
 

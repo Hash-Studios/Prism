@@ -66,7 +66,7 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     ShopPurchaseOutcome.owned => const ShopNotice('You already own this', success: true),
     ShopPurchaseOutcome.proOnly => const ShopNotice('This item is for Pro members', success: false),
     ShopPurchaseOutcome.rankLocked => ShopNotice(
-      'Reach ${shopRankName(item.minRank ?? '')} rank to unlock this',
+      'Reach ${shopRankName(item.requiredRank ?? '')} rank to unlock this',
       success: false,
     ),
     ShopPurchaseOutcome.expired => const ShopNotice('This limited item is sold out', success: false),
