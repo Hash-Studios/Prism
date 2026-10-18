@@ -26,6 +26,7 @@ extension CoinSpendActionWire on CoinSpendAction {
     CoinSpendAction.giftPremiumPass => 'gift_premium_pass',
     CoinSpendAction.drawTicket => 'draw_ticket',
     CoinSpendAction.shopItem => 'shop_item',
+    CoinSpendAction.spinWheel => 'spin_wheel',
   };
 }
 

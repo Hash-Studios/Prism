@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test, {beforeEach} from "node:test";
 import {badgeIo, checkBadges} from "../badges";
-import {awardCoins, claimProSpin} from "../coinsCallables";
+import {awardCoins, claimProSpin, spinWheel} from "../coinsCallables";
 import {DEFAULT_ECONOMY, resetEconomyCache, weekKey} from "../economy";
 import {buildQuestState} from "../questCatalog";
 import {openQuestChest, progressQuest} from "../quests";
@@ -142,7 +142,7 @@ test("equip reconciles a rank reward, preserves the other slot, and keeps Pro fr
 });
 
 test("all XP award transaction paths persist newly crossed rank rewards with their existing state", async (t) => {
-  for (const path of ["award", "ad", "spin", "streak", "badge", "quest", "chest"] as const) {
+  for (const path of ["award", "ad", "spin", "wheel", "streak", "badge", "quest", "chest"] as const) {
     await t.test(path, async (sub) => {
       resetEconomyCache();
       sub.mock.timers.enable({apis: ["Date"], now: NOW});
@@ -166,6 +166,7 @@ test("all XP award transaction paths persist newly crossed rank rewards with the
         });
       }
       if (path === "spin") await call(claimProSpin, {requestId: "spin-request-1"});
+      if (path === "wheel") await call(spinWheel, {requestId: "wheel-request-1", maxCost: 10});
       if (path === "streak") await call(claimDailyStreak, {timezoneOffsetMinutes: 0, reminderEnabled: false});
       if (path === "badge") await call(checkBadges);
       if (path === "quest") await call(progressQuest, {event: "view_wotd", eventId: "quest-event-1"});

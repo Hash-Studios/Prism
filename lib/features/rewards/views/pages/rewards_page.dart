@@ -12,7 +12,6 @@ import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/quests/quests.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
-import 'package:Prism/features/rewards/views/widgets/pro_spin_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
@@ -20,6 +19,7 @@ import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_links_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
+import 'package:Prism/features/spin_wheel/spin_wheel.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -40,7 +40,6 @@ class RewardsPage extends StatefulWidget {
 class _RewardsPageState extends State<RewardsPage> {
   final GlobalKey _spendKey = GlobalKey();
   final GlobalKey _earnKey = GlobalKey();
-  final GlobalKey _spinKey = GlobalKey();
 
   final ScrollController _scroll = ScrollController();
 
@@ -48,6 +47,8 @@ class _RewardsPageState extends State<RewardsPage> {
   void initState() {
     super.initState();
     unawaited(EconomyConfig.refreshIfStale());
+    // Post-frame: a day rollover changes the status, and listeners must not rebuild mid-build.
+    WidgetsBinding.instance.addPostFrameCallback((_) => CoinsService.instance.refreshSpinWheelStatus());
     if (widget.scrollToEarn) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTo(_earnKey));
     }
@@ -113,9 +114,9 @@ class _RewardsPageState extends State<RewardsPage> {
                 gap,
                 RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
                 gap,
-                TodayCard(onOpenProSpin: () => _scrollTo(_spinKey)),
+                TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
                 gap,
-                KeyedSubtree(key: _spinKey, child: const ProSpinCard()),
+                const SpinWheelCard(),
                 gap,
                 const DropCard(),
                 FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),

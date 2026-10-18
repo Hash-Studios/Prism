@@ -7,6 +7,10 @@ const CACHE_MS = 60_000;
 const DAY_MS = 86_400_000;
 
 export interface SpinSegment { coins: number; weight: number }
+/** One slice of the spin wheel. Mirrored by `WheelSegment` in lib/core/coins/spin_wheel.dart. */
+export type WheelSegment =
+  ({kind: "coins"; coins: number} | {kind: "xp"; xp: number} | {kind: "cosmetic"; fallbackCoins: number}) &
+  {weight: number};
 export interface RankDef { id: string; min: number }
 
 export interface EconomyConfig {
@@ -28,6 +32,7 @@ export interface EconomyConfig {
     boostWall: number;
     giftPremiumPass: number;
     drawTicket: number;
+    spinWheel: number;
   };
   proDiscountActions: string[];
   proBypassActions: string[];
@@ -45,6 +50,9 @@ export interface EconomyConfig {
     streakChestMax: number;
     proStreakMultiplier: number;
     proSpin: SpinSegment[];
+    spinWheelMaxPerDay: number;
+    /** Wheel order, clockwise. Index 0 sits under the pointer at rest. */
+    spinWheel: WheelSegment[];
     questCoins: number;
     questXp: number;
     questChestMin: number;
@@ -88,6 +96,7 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     boostWall: 100,
     giftPremiumPass: 50,
     drawTicket: 20,
+    spinWheel: 10,
   },
   proDiscountActions: ["aiGeneration", "dropWall", "dropPack"],
   proBypassActions: [
@@ -113,6 +122,17 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
       {coins: 50, weight: 20},
       {coins: 75, weight: 10},
       {coins: 100, weight: 5},
+    ],
+    spinWheelMaxPerDay: 5,
+    spinWheel: [
+      {kind: "coins", coins: 10, weight: 18},
+      {kind: "xp", xp: 25, weight: 22},
+      {kind: "coins", coins: 5, weight: 30},
+      {kind: "coins", coins: 100, weight: 1},
+      {kind: "coins", coins: 20, weight: 8},
+      {kind: "xp", xp: 50, weight: 12},
+      {kind: "coins", coins: 50, weight: 3},
+      {kind: "cosmetic", fallbackCoins: 50, weight: 6},
     ],
     questCoins: 2,
     questXp: 25,
@@ -151,10 +171,38 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isIntIn = (value: unknown, max: number): value is number =>
   typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= max;
-const isPrice = (value: unknown): value is number => isIntIn(value, MAX_PRICE);
+export const isPrice = (value: unknown): value is number => isIntIn(value, MAX_PRICE);
 const isAward = (value: unknown): value is number => isIntIn(value, MAX_AWARD);
 const isNumberIn = (value: unknown, min: number, max: number): value is number =>
   typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+
+const MIN_WHEEL_SEGMENTS = 2;
+const MAX_WHEEL_SEGMENTS = 12;
+
+function parseWheelSegment(raw: unknown): WheelSegment | null {
+  if (!isRecord(raw) || !isNumberIn(raw.weight, 0, MAX_AWARD)) return null;
+  const weight = raw.weight;
+  switch (raw.kind) {
+  case "coins": return isIntIn(raw.coins, MAX_AWARD) && raw.coins >= 1 ? {kind: "coins", coins: raw.coins, weight} : null;
+  case "xp": return isIntIn(raw.xp, MAX_AWARD) && raw.xp >= 1 ? {kind: "xp", xp: raw.xp, weight} : null;
+  case "cosmetic":
+    return isIntIn(raw.fallbackCoins, MAX_AWARD) && raw.fallbackCoins >= 1 ?
+      {kind: "cosmetic", fallbackCoins: raw.fallbackCoins, weight} : null;
+  default: return null;
+  }
+}
+
+/** A clean wheel table, or null when it is not an array of 2..12 valid segments with a positive weight sum. */
+function parseWheel(raw: unknown): WheelSegment[] | null {
+  if (!Array.isArray(raw) || raw.length < MIN_WHEEL_SEGMENTS || raw.length > MAX_WHEEL_SEGMENTS) return null;
+  const segments: WheelSegment[] = [];
+  for (const entry of raw) {
+    const segment = parseWheelSegment(entry);
+    if (segment === null) return null;
+    segments.push(segment);
+  }
+  return segments.reduce((sum, s) => sum + s.weight, 0) > 0 ? segments : null;
+}
 
 /** Deep merge of `raw` onto `base`. Only keys that exist in `base` with the same shape are taken. */
 function mergeOnto<T>(base: T, raw: unknown): T {
@@ -224,6 +272,7 @@ export function parseEconomy(raw: unknown): EconomyConfig {
       award.proSpin.reduce((sum, s) => sum + s.weight, 0) <= 0) {
     award.proSpin = defaults.award.proSpin;
   }
+  award.spinWheel = parseWheel(award.spinWheel) ?? defaults.award.spinWheel;
   merged.award = award;
   merged.proDiscountActions = merged.proDiscountActions.filter((a) => typeof a === "string");
   merged.proBypassActions = merged.proBypassActions.filter((a) => typeof a === "string" && !NEVER_BYPASSED.has(a));

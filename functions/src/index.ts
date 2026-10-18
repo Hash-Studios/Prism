@@ -14,7 +14,7 @@ export {submitContentReport} from "./submitContentReport";
 export {onContentReportCreated} from "./onContentReportCreated";
 export {blockUser, unblockUser} from "./userBlockCallables";
 export {githubPutFile, githubDeleteFile} from "./githubContent";
-export {awardCoins, spendCoins, processReferral, buyStreakFreeze, unlockPremiumPreview, restoreStreak, claimProSpin} from "./coinsCallables";
+export {awardCoins, spendCoins, processReferral, buyStreakFreeze, unlockPremiumPreview, restoreStreak, claimProSpin, spinWheel} from "./coinsCallables";
 export {progressQuest, openQuestChest} from "./quests";
 export {purchaseShopItem, equipCosmetic} from "./shop";
 export {reconcileRankRewards} from "./rankRewards";

@@ -14,11 +14,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Today's quests: three daily items, the bonus item, the chest and the weekly quest.
-/// [onOpenProSpin] scrolls to the Pro spin card. Pro users tap it from the bonus row.
+/// [onOpenSpin] opens the spin machine. Pro users tap it from the bonus row.
 class TodayCard extends StatefulWidget {
-  const TodayCard({super.key, this.onOpenProSpin});
+  const TodayCard({super.key, this.onOpenSpin});
 
-  final VoidCallback? onOpenProSpin;
+  final VoidCallback? onOpenSpin;
 
   @override
   State<TodayCard> createState() => _TodayCardState();
@@ -84,7 +84,7 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
             return ValueListenableBuilder<EconomyConfig>(
               valueListenable: EconomyConfig.notifier,
               builder: (context, _, _) =>
-                  _TodayView(quests: quests, opening: state.opening, onOpenProSpin: widget.onOpenProSpin),
+                  _TodayView(quests: quests, opening: state.opening, onOpenSpin: widget.onOpenSpin),
             );
           },
         ),
@@ -109,11 +109,11 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
 }
 
 class _TodayView extends StatelessWidget {
-  const _TodayView({required this.quests, required this.opening, required this.onOpenProSpin});
+  const _TodayView({required this.quests, required this.opening, required this.onOpenSpin});
 
   final QuestState quests;
   final bool opening;
-  final VoidCallback? onOpenProSpin;
+  final VoidCallback? onOpenSpin;
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +140,7 @@ class _TodayView extends StatelessWidget {
             ),
           ),
           for (final QuestItem item in quests.items) _QuestRow(item: item),
-          if (bonus != null) ...<Widget>[divider, _BonusRow(item: bonus, onOpenProSpin: onOpenProSpin)],
+          if (bonus != null) ...<Widget>[divider, _BonusRow(item: bonus, onOpenSpin: onOpenSpin)],
           divider,
           _ChestRow(quests: quests, done: done, opening: opening),
           if (weekly != null) ...<Widget>[divider, _QuestRow(item: weekly, weekly: true)],
@@ -270,10 +270,10 @@ class _QuestRow extends StatelessWidget {
 }
 
 class _BonusRow extends StatefulWidget {
-  const _BonusRow({required this.item, required this.onOpenProSpin});
+  const _BonusRow({required this.item, required this.onOpenSpin});
 
   final QuestItem item;
-  final VoidCallback? onOpenProSpin;
+  final VoidCallback? onOpenSpin;
 
   @override
   State<_BonusRow> createState() => _BonusRowState();
@@ -318,7 +318,7 @@ class _BonusRowState extends State<_BonusRow> {
               variant: PrismButtonVariant.tonal,
               size: PrismButtonSize.compact,
               loading: _loading,
-              onPressed: pro ? widget.onOpenProSpin : _watchAd,
+              onPressed: pro ? widget.onOpenSpin : _watchAd,
             ),
     );
   }

@@ -48,10 +48,10 @@ enums:
       - profile_completion
       - pro_daily_bonus
       - refund
-      - pro_spin
       - quest
       - quest_chest
       - streak_chest
+      - spin_wheel
   - name: coin_spend_action
     dart_type: CoinSpendAction
     import: package:Prism/core/coins/coin_action.dart
@@ -70,6 +70,7 @@ enums:
       - gift_premium_pass
       - draw_ticket
       - shop_item
+      - spin_wheel
   - name: ai_charge_mode
     dart_type: AiChargeMode
     import: package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart
@@ -1789,13 +1790,25 @@ events:
         key: result
         type: enum
         enum: BinaryResultValue
-  - id: pro_spin_claimed
+  - id: spin_wheel_spun
     fields:
-      - name: coins
-        key: coins
+      - name: free
+        key: free
+        type: bool
+      - name: cost
+        key: cost
         type: int
       - name: segment
         key: segment
+        type: int
+      - name: prize
+        key: prize
+        type: string
+      - name: coins
+        key: coins
+        type: int
+      - name: xp
+        key: xp
         type: int
   - id: quest_progressed
     fields:

@@ -2,9 +2,11 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, readDailyCount, REGION, str, utcDateString} from "./common";
 import {
-  DEFAULT_ECONOMY, type EconomyConfig, grantXp, loadEconomy, proPrice, weightedPick, xpForCoins,
+  DEFAULT_ECONOMY, type EconomyConfig, grantXp, isPrice, loadEconomy, proPrice, type WheelSegment, weightedPick,
+  xpForCoins,
 } from "./economy";
 import {applyQuestEvent, buildQuestState, type QuestState} from "./questCatalog";
+import {pickChestCosmetic} from "./shopCatalog";
 import {STREAK_RESCUE_MIN_COUNT, streakCycleDay} from "./streak";
 import {isStudioWall} from "./studio/process";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
@@ -640,6 +642,212 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
   });
   return response;
 });
+
+/** `private/economy.spinWheel`: the paid spins of one UTC day and whether its free Pro spin is used. */
+export interface WheelDay { dayKey: string; paid: number; freeUsed: boolean }
+
+export interface WheelStatus { freeSpinAvailable: boolean; paidSpinsLeft: number; price: number }
+
+export type WheelRefusal =
+  "spin_wheel_daily_limit" | "spin_wheel_price_changed" | "spin_wheel_insufficient_balance";
+
+export type WheelPlan =
+  | {ok: false; reason: WheelRefusal}
+  | {ok: true; free: boolean; cost: number; next: WheelDay};
+
+export interface WheelPrize { kind: WheelSegment["kind"]; coins: number; xp: number; itemId: string | null }
+
+interface WheelDayInput {
+  isPro: boolean;
+  today: string;
+  coinState: Record<string, unknown>;
+  wheelState: WheelDay;
+  config: EconomyConfig;
+}
+
+/** The stored `spinWheel` field, read defensively. */
+export function readWheelDay(raw: unknown): WheelDay {
+  const stored = coinState(raw);
+  return {
+    dayKey: typeof stored.dayKey === "string" ? stored.dayKey : "",
+    paid: Math.max(0, int(stored.paid, 0)),
+    freeUsed: stored.freeUsed === true,
+  };
+}
+
+/** Counts from another day are void. */
+const wheelDayFor = (wheel: WheelDay, today: string): WheelDay =>
+  wheel.dayKey === today ? wheel : {dayKey: today, paid: 0, freeUsed: false};
+
+// The free spin shares its receipt with claimProSpin and proDailyBonus, so one Pro user gets one on any client.
+function freeSpinAvailable({isPro, today, coinState: state, wheelState}: WheelDayInput): boolean {
+  return isPro && state.proSpinDate !== today && state.proDailyBonusDate !== today &&
+    !wheelDayFor(wheelState, today).freeUsed;
+}
+
+export function wheelStatus(input: WheelDayInput): WheelStatus {
+  const {config, today, wheelState} = input;
+  return {
+    freeSpinAvailable: freeSpinAvailable(input),
+    paidSpinsLeft: Math.max(0, config.award.spinWheelMaxPerDay - wheelDayFor(wheelState, today).paid),
+    price: config.spend.spinWheel,
+  };
+}
+
+/** Whether the spin may happen, what it costs and the state to store after it. The cost never exceeds `maxCost`. */
+export function planWheelSpin(input: WheelDayInput & {balance: number; maxCost: number}): WheelPlan {
+  const {today, config, wheelState, balance, maxCost} = input;
+  const day = wheelDayFor(wheelState, today);
+  const free = freeSpinAvailable(input);
+  if (!free && day.paid >= config.award.spinWheelMaxPerDay) return {ok: false, reason: "spin_wheel_daily_limit"};
+  const cost = free ? 0 : config.spend.spinWheel;
+  if (cost > maxCost) return {ok: false, reason: "spin_wheel_price_changed"};
+  if (balance < cost) return {ok: false, reason: "spin_wheel_insufficient_balance"};
+  return {ok: true, free, cost, next: {dayKey: today, paid: day.paid + (free ? 0 : 1), freeUsed: day.freeUsed || free}};
+}
+
+/** What a slice pays. A cosmetic slice gives a random unowned common item, or its fallback coins when none is left. */
+export function resolveWheelPrize(
+  segment: WheelSegment,
+  owned: readonly string[],
+  random: () => number = Math.random,
+): WheelPrize {
+  switch (segment.kind) {
+  case "coins": return {kind: "coins", coins: segment.coins, xp: 0, itemId: null};
+  case "xp": return {kind: "xp", coins: 0, xp: segment.xp, itemId: null};
+  case "cosmetic": {
+    const item = pickChestCosmetic(owned, random);
+    return {kind: "cosmetic", coins: item ? 0 : segment.fallbackCoins, xp: 0, itemId: item?.id ?? null};
+  }
+  }
+}
+
+interface SpinWheelReplyBase {
+  previousBalance: number;
+  currentBalance: number;
+  delta: number;
+  reason: string;
+  transactionId: string;
+  insufficientBalance: boolean;
+  status: WheelStatus;
+}
+
+export type SpinWheelReply =
+  | (SpinWheelReplyBase & {success: false; changed: false})
+  | (SpinWheelReplyBase & {
+    success: true;
+    changed: true;
+    cost: number;
+    free: boolean;
+    segment: number;
+    prize: WheelPrize;
+    segments: WheelSegment[];
+  });
+
+export const spinWheel = onCall(
+  CALLABLE_OPTIONS,
+  async (request: CallableRequest<{requestId?: unknown; maxCost?: unknown; sourceTag?: unknown}>) => {
+    const callerUid = uid(request);
+    const requestId = request.data?.requestId;
+    if (!isValidRequestId(requestId)) throw new HttpsError("invalid-argument", "requestId is invalid.");
+    const maxCost = request.data?.maxCost;
+    if (!isPrice(maxCost)) throw new HttpsError("invalid-argument", "maxCost is invalid.");
+    const sourceTag = optionalLabel(request.data?.sourceTag) ?? "coins.spin_wheel.callable";
+    const config = await loadEconomy();
+    const userRef = db.collection(USERS).doc(callerUid);
+    const privateRef = privateEconomyRef(callerUid);
+    const txId = `ctx_spinWheel_${callerUid}_${requestId}`;
+    const txRef = db.collection(TRANSACTIONS).doc(txId);
+    const nowMs = Date.now();
+    const today = utcDateString(new Date(nowMs));
+
+    return db.runTransaction<SpinWheelReply>(async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
+      const txSnap = await tx.get(txRef);
+      const privateSnap = await tx.get(privateRef);
+      const data = snap.data() ?? {};
+      const privateData = privateSnap.data() ?? {};
+      const balance = int(data.coins, 0);
+      const dayInput = {
+        isPro: data.premium === true,
+        today,
+        coinState: coinState(data.coinState),
+        wheelState: readWheelDay(privateData.spinWheel),
+        config,
+      };
+      // The stored outcome with the live balance and today's status: other spends or a new day may have come between.
+      if (txSnap.exists) {
+        const stored = (txSnap.data() ?? {}).replay as SpinWheelReply;
+        return {...stored, previousBalance: balance, currentBalance: balance, delta: 0, status: wheelStatus(dayInput)};
+      }
+      const plan = planWheelSpin({...dayInput, balance, maxCost});
+      if (!plan.ok) {
+        return {
+          success: false,
+          changed: false,
+          previousBalance: balance,
+          currentBalance: balance,
+          delta: 0,
+          reason: plan.reason,
+          transactionId: "",
+          insufficientBalance: plan.reason === "spin_wheel_insufficient_balance",
+          status: wheelStatus(dayInput),
+        };
+      }
+
+      const segments = config.award.spinWheel;
+      const segment = weightedPick(segments);
+      const rawInventory = coinState(privateData.inventory);
+      const owned = coinState(rawInventory.owned);
+      const prize = resolveWheelPrize(segments[segment], Object.keys(owned));
+      const current = balance - plan.cost + prize.coins;
+      const delta = prize.coins - plan.cost;
+      const nextXp = grantXp(data, prize.xp + xpForCoins(prize.coins, config), nowMs);
+      tx.update(userRef, {
+        coins: current,
+        ...(plan.free ? {"coinState.proSpinDate": today, "coinState.proDailyBonusDate": today} : {}),
+        ...nextXp,
+      });
+      const ownedAfterPrize = prize.itemId ? {...inventoryOwned(privateData), [prize.itemId]: nowMs} : null;
+      const rewards = rankRewardsFor(nextXp.xp, ownedAfterPrize ?? inventoryOwned(privateData), config, nowMs);
+      const nextOwned = rewards.added.length > 0 ? rewards.owned : ownedAfterPrize;
+      writePrivate(tx, privateRef, privateData, {
+        spinWheel: plan.next,
+        ...(plan.free ? questsAfter(privateData, "pro_spin", nowMs, true, config) : {}),
+        ...(nextOwned ? {inventory: {...rawInventory, owned: nextOwned}} : {}),
+      });
+      const reply: SpinWheelReply = {
+        success: true,
+        changed: true,
+        previousBalance: balance,
+        currentBalance: current,
+        delta,
+        reason: "spin_wheel",
+        transactionId: txId,
+        insufficientBalance: false,
+        status: wheelStatus({...dayInput, wheelState: plan.next}),
+        cost: plan.cost,
+        free: plan.free,
+        segment,
+        prize,
+        segments,
+      };
+      writeTx(tx, {
+        userId: callerUid,
+        delta,
+        previous: balance,
+        action: "spinWheel",
+        sourceTag,
+        reason: "spin_wheel",
+        description: `Wheel spin (${delta >= 0 ? "+" : ""}${delta})`,
+        fixedId: txId,
+        extra: {cost: plan.cost, free: plan.free, segment, prize, replay: reply},
+      });
+      return reply;
+    });
+  },
+);
 
 export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<Record<string, unknown>>) => {
   const callerUid = uid(request);

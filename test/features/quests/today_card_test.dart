@@ -35,7 +35,7 @@ void main() {
   Future<FakeQuestsRepository> pumpCard(
     WidgetTester tester,
     QuestState? quests, {
-    VoidCallback? onOpenProSpin,
+    VoidCallback? onOpenSpin,
     Brightness brightness = Brightness.light,
   }) async {
     final FakeQuestsRepository repo = FakeQuestsRepository(quests: quests);
@@ -44,7 +44,7 @@ void main() {
       MaterialApp(
         theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
         home: Scaffold(
-          body: SingleChildScrollView(child: TodayCard(onOpenProSpin: onOpenProSpin)),
+          body: SingleChildScrollView(child: TodayCard(onOpenSpin: onOpenSpin)),
         ),
       ),
     );
@@ -121,11 +121,11 @@ void main() {
     expect(find.text('Watch'), findsNothing);
   });
 
-  testWidgets('a Pro bonus row opens the Pro spin card through the callback', (tester) async {
+  testWidgets('a Pro bonus row opens the spin machine through the callback', (tester) async {
     int taps = 0;
-    await pumpCard(tester, questState(bonus: questItem('pro_spin', QuestEvent.proSpin)), onOpenProSpin: () => taps++);
+    await pumpCard(tester, questState(bonus: questItem('pro_spin', QuestEvent.proSpin)), onOpenSpin: () => taps++);
 
-    expect(find.text('Open your Pro spin'), findsOneWidget);
+    expect(find.text('Take your free spin'), findsOneWidget);
     await tester.tap(find.text('Spin'));
     expect(taps, 1);
   });

@@ -193,47 +193,6 @@ void main() {
     });
   });
 
-  group('claimProSpin', () {
-    test('a win credits the coins and XP', () async {
-      reply((_, _) => _paid(after: 150, extra: <String, Object?>{'coins': 50, 'segment': 2}));
-      final ProSpinResult result = await service.claimProSpin();
-      expect((result.outcome, result.coins, result.segment), (ProSpinOutcome.won, 50, 2));
-      expect(service.balanceNotifier.value, 150);
-      expect(service.xpNotifier.value.xp, 50);
-      expect(calls.first.$2['requestId'], matches(idPattern));
-      expect(calls.last.$1, 'reconcileRankRewards');
-    });
-
-    test('refusals map to outcomes', () async {
-      reply((_, _) => _refused('pro_spin_already_claimed'));
-      expect((await service.claimProSpin()).outcome, ProSpinOutcome.alreadyClaimed);
-      reply((_, _) => _refused('pro_spin_requires_premium'));
-      expect((await service.claimProSpin()).outcome, ProSpinOutcome.notPro);
-    });
-
-    test('a lost reply keeps the request id for the next try, a reply clears it', () async {
-      backend.onCall = (String name, Map<String, dynamic> params) async {
-        calls.add((name, params));
-        if (calls.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
-        return _paid(extra: <String, Object?>{'coins': 20, 'segment': 0});
-      };
-      expect((await service.claimProSpin()).outcome, ProSpinOutcome.failed);
-      await service.claimProSpin();
-      backend.onCall = (String name, Map<String, dynamic> params) async {
-        calls.add((name, params));
-        return _refused('pro_spin_already_claimed');
-      };
-      await service.claimProSpin();
-      final List<String> ids = <String>[
-        for (final (String name, Map<String, dynamic> params) in calls)
-          if (name == 'claimProSpin') params['requestId'] as String,
-      ];
-      expect(ids, hasLength(3));
-      expect(ids[0], ids[1]);
-      expect(ids[2], isNot(ids[1]));
-    });
-  });
-
   group('progressQuest', () {
     test('client events are sent with an event id and awards land in the notifier', () async {
       reply(
@@ -502,7 +461,6 @@ void main() {
 
   test('signed-out calls fail without a request', () async {
     app_state.prismUser = app_constants.createGuestPrismUser();
-    expect((await service.claimProSpin()).outcome, ProSpinOutcome.failed);
     expect((await service.purchaseShopItem('frame_ring')).outcome, ShopPurchaseOutcome.failed);
     expect((await service.buyDrawTicket()).outcome, DrawTicketOutcome.failed);
     expect(calls, isEmpty);
