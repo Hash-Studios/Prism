@@ -82,10 +82,11 @@ test("computeTrending keeps active boosts, newest first, ahead of the scored lis
     "wallpaper_stats_daily/20260110_B": {wallId: "B", day: "20260110", sets: 1},
     "boosts/B": {wallId: "B", uid: "u1", startsAt: ms - 1000, endsAt: ms + 1000},
     "boosts/n": {wallId: "n", uid: "u2", startsAt: ms - 500, endsAt: ms + 2000},
+    "boosts/docId": {wallId: "docId", trendingId: "LEGACY", uid: "u4", startsAt: ms - 200, endsAt: ms + 3000},
     "boosts/OLD": {wallId: "OLD", uid: "u3", startsAt: ms - 9000, endsAt: ms - 1},
   });
   await computeTrending.run({jobName: "t", scheduleTime: NOW.toISOString()});
-  assert.deepEqual(store.get("trending/current")?.wallIds, ["N", "B", "A"]);
+  assert.deepEqual(store.get("trending/current")?.wallIds, ["LEGACY", "N", "B", "A"]);
 });
 
 test("computeTrending keeps a boost bought while the job reads the stats", async (t) => {

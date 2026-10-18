@@ -69,7 +69,7 @@ async function activeBoostIds(tx: admin.firestore.Transaction, nowMs: number): P
   return snap.docs
     .map((doc) => doc.data())
     .sort((a, b) => count(b.startsAt) - count(a.startsAt))
-    .map((boost) => String(boost.wallId ?? ""))
+    .map((boost) => String(boost.trendingId ?? boost.wallId ?? ""))
     .filter((id) => id !== "");
 }
 
