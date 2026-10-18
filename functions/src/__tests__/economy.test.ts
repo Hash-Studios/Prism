@@ -106,6 +106,83 @@ test("parseEconomy: malformed arrays fall back to the defaults", () => {
   assert.deepEqual(parseEconomy({xp: {ranks: [{id: "x"}]}}).xp.ranks, DEFAULT_ECONOMY.xp.ranks);
 });
 
+const SPEC_WHEEL = [
+  {kind: "coins", coins: 10, weight: 18},
+  {kind: "xp", xp: 25, weight: 22},
+  {kind: "coins", coins: 5, weight: 30},
+  {kind: "coins", coins: 100, weight: 1},
+  {kind: "coins", coins: 20, weight: 8},
+  {kind: "xp", xp: 50, weight: 12},
+  {kind: "coins", coins: 50, weight: 3},
+  {kind: "cosmetic", fallbackCoins: 50, weight: 6},
+];
+
+test("parseEconomy: the default wheel is the spec table and survives a Firestore round trip", () => {
+  assert.deepEqual(DEFAULT_ECONOMY.award.spinWheel, SPEC_WHEEL);
+  const stored = JSON.parse(JSON.stringify({award: {spinWheel: SPEC_WHEEL}, spend: {spinWheel: 10}}));
+  const config = parseEconomy(stored);
+  assert.deepEqual(config.award.spinWheel, SPEC_WHEEL);
+  assert.equal(config.spend.spinWheel, 10);
+  assert.equal(config.award.spinWheelMaxPerDay, 5);
+});
+
+test("parseEconomy: a valid custom wheel is kept in order with unknown keys dropped", () => {
+  const config = parseEconomy({award: {spinWheel: [
+    {kind: "xp", xp: 1000, weight: 0, junk: true},
+    {kind: "cosmetic", fallbackCoins: 0, weight: 1000},
+  ]}});
+  assert.deepEqual(config.award.spinWheel, [
+    {kind: "xp", xp: 1000, weight: 0},
+    {kind: "cosmetic", fallbackCoins: 0, weight: 1000},
+  ]);
+  const twelve = Array.from({length: 12}, (_, i) => ({kind: "coins", coins: i + 1, weight: 1}));
+  assert.equal(parseEconomy({award: {spinWheel: twelve}}).award.spinWheel.length, 12);
+});
+
+test("parseEconomy: a malformed wheel falls back to the whole default table", () => {
+  const coins = (n: number) => ({kind: "coins", coins: n, weight: 1});
+  const bad: unknown[] = [
+    [coins(1), {kind: "jackpot", coins: 5, weight: 1}],
+    [coins(1), {coins: 5, weight: 1}],
+    [coins(1), coins(0)],
+    [coins(1), coins(5000)],
+    [coins(1), coins(1.5)],
+    [coins(1), {kind: "coins", coins: "5", weight: 1}],
+    [coins(1), {kind: "xp", xp: 0, weight: 1}],
+    [coins(1), {kind: "xp", coins: 5, weight: 1}],
+    [coins(1), {kind: "cosmetic", fallbackCoins: -1, weight: 1}],
+    [coins(1), {kind: "cosmetic", fallbackCoins: 1001, weight: 1}],
+    [coins(1), {kind: "coins", coins: 5, weight: 1001}],
+    [coins(1), {kind: "coins", coins: 5, weight: -1}],
+    [coins(1), {kind: "coins", coins: 5}],
+    [coins(1), null],
+    [coins(1)],
+    [],
+    Array.from({length: 13}, (_, i) => coins(i + 1)),
+    [{...coins(1), weight: 0}, {...coins(2), weight: 0}],
+    "nope",
+    {kind: "coins", coins: 5, weight: 1},
+    7,
+  ];
+  for (const spinWheel of bad) {
+    const config = parseEconomy({award: {spinWheel}});
+    assert.deepEqual(config.award.spinWheel, SPEC_WHEEL, JSON.stringify(spinWheel));
+  }
+});
+
+test("parseEconomy: spend.spinWheel is an integer in 0..10000 and the daily cap an integer in 0..1000", () => {
+  const price = (spinWheel: unknown) => parseEconomy({spend: {spinWheel}}).spend.spinWheel;
+  assert.equal(price(0), 0);
+  assert.equal(price(25), 25);
+  assert.equal(price(10_000), 10_000);
+  for (const bad of [-1, 10_001, 2.5, "12", null]) assert.equal(price(bad), 10, String(bad));
+  const cap = (spinWheelMaxPerDay: unknown) => parseEconomy({award: {spinWheelMaxPerDay}}).award.spinWheelMaxPerDay;
+  assert.equal(cap(0), 0);
+  assert.equal(cap(3), 3);
+  assert.equal(cap(1000), 1000);
+  for (const bad of [-1, 1001, 1.5, "3"]) assert.equal(cap(bad), 5, String(bad));
+});
+
 test("parseEconomy: ranks are sorted by min", () => {
   const config = parseEconomy({xp: {ranks: [{id: "gold", min: 100}, {id: "bronze", min: 0}]}});
   assert.deepEqual(config.xp.ranks.map((r) => r.id), ["bronze", "gold"]);
