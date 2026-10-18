@@ -5,7 +5,7 @@ const double wheelTurn = 2 * math.pi;
 
 /// How long the final ease-out lasts before the extra distance to the target. The curve is a quartic ease-out, so the
 /// last third of it is a slow crawl.
-const double wheelLandingSeconds = 4.2;
+const double wheelLandingSeconds = 3.4;
 
 /// The shortest landing distance, in full turns. A slow wheel still turns twice before it stops.
 const double wheelMinLandingTurns = 2;

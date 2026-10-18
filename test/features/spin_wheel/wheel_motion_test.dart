@@ -57,9 +57,9 @@ void main() {
       }
     });
 
-    test('the base distance is the speed times 4.2 s over 4, plus less than a turn', () {
+    test('the base distance is the speed times 3.4 s over 4, plus less than a turn', () {
       final double end = landingAngle(0, 16.34, 3, 8, 0.5);
-      const double base = 16.34 * 4.2 / 4;
+      const double base = 16.34 * 3.4 / 4;
       expect(end, greaterThanOrEqualTo(base));
       expect(end, lessThan(base + twoPi));
     });
@@ -87,7 +87,7 @@ void main() {
       expect(landing.thetaAt(landing.duration), landing.endTheta);
       expect(landing.velocityAt(landing.duration), 0);
       expect(landing.duration, closeTo(4 * landing.distance / speed, 1e-12));
-      expect(landing.duration, inInclusiveRange(4.2, 4.2 + 4 * twoPi / speed));
+      expect(landing.duration, inInclusiveRange(3.4, 3.4 + 4 * twoPi / speed));
       double previous = landing.thetaAt(0);
       for (double t = 0.05; t < landing.duration; t += 0.05) {
         final double now = landing.thetaAt(t);
