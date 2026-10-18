@@ -1,0 +1,1 @@
+Flutter widget renders for the XP progress and rank rewards changes. These are test renders, not simulator or emulator screenshots. Light and dark themes are included. Run the qa_render tests with --dart-define=QA_RENDER=1 to reproduce.
