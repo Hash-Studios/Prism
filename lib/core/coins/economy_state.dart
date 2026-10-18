@@ -226,20 +226,6 @@ class Passes {
       );
 }
 
-enum ChestOutcome { opened, locked, alreadyOpened, failed }
-
-class ChestResult {
-  const ChestResult(this.outcome, {this.coins = 0, this.doubled = false, this.itemId, this.reason = ''});
-
-  final ChestOutcome outcome;
-  final int coins;
-  final bool doubled;
-
-  /// A cosmetic the chest added to the inventory, if any.
-  final String? itemId;
-  final String reason;
-}
-
 enum ShopPurchaseOutcome { purchased, owned, proOnly, rankLocked, expired, insufficient, failed }
 
 class ShopPurchaseResult {

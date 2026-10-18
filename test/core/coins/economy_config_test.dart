@@ -12,8 +12,6 @@ void main() {
     expect(c.spend.giftPremiumPass, 50);
     expect(c.award.rewardedAdFirstOfDay, 20);
     expect(c.award.streakDaily, <int>[3, 3, 5, 5, 8, 8, 10]);
-    expect(c.award.questChestMin, 5);
-    expect(c.award.questChestMax, 15);
     expect(c.award.weeklyQuestCoins, 30);
     expect(c.award.proSpin.map((SpinSegment s) => s.coins), <int>[20, 30, 50, 75, 100]);
     expect(c.spend.spinWheel, 10);
@@ -56,8 +54,8 @@ void main() {
         'streakDaily': <int>[1, 2, 3],
         'proSpin': <Object>[],
         'rewardedAd': 5000,
-        'questChestMin': 30,
-        'questChestMax': 10,
+        'streakChestMin': 50,
+        'streakChestMax': 20,
       },
       'xp': <String, dynamic>{'ranks': 'none'},
       'flags': 'off',
@@ -69,7 +67,7 @@ void main() {
     expect(c.award.streakDaily, <int>[3, 3, 5, 5, 8, 8, 10]);
     expect(c.award.proSpin, hasLength(5));
     expect(c.award.rewardedAd, 10);
-    expect((c.award.questChestMin, c.award.questChestMax), (5, 15));
+    expect((c.award.streakChestMin, c.award.streakChestMax), (15, 40));
     expect(c.xp.ranks, hasLength(4));
     expect(c.flags.drawEnabled, isFalse);
     expect(c.proBypassActions, EconomyConfig.defaults.proBypassActions);

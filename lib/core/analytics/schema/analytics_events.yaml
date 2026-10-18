@@ -1861,15 +1861,6 @@ events:
       - name: xp
         key: xp
         type: int
-  - id: quest_chest_opened
-    fields:
-      - name: coins
-        key: coins
-        type: int
-      - name: item_id
-        key: item_id
-        type: string
-        required: false
   - id: shop_item_purchased
     fields:
       - name: item_id

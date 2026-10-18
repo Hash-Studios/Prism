@@ -35,8 +35,6 @@ class CoinPolicy {
   static List<WheelSegment> get dailyChest => _award.dailyChest;
   static int get graceDownloads => _award.graceDownloads;
   static int get questCoins => _award.questCoins;
-  static int get questChestMin => _award.questChestMin;
-  static int get questChestMax => _award.questChestMax;
 
   // Spend
   static int get wallpaperDownload => _spend.wallpaperDownload;

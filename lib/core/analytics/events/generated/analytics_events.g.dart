@@ -2564,21 +2564,6 @@ class QuestCompletedEvent extends AnalyticsEvent {
   }
 }
 
-class QuestChestOpenedEvent extends AnalyticsEvent {
-  const QuestChestOpenedEvent({required this.coins, this.itemId});
-
-  final int coins;
-  final String? itemId;
-
-  @override
-  String get eventName => 'quest_chest_opened';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'coins': coins, if (itemId != null) 'item_id': itemId!};
-  }
-}
-
 class ShopItemPurchasedEvent extends AnalyticsEvent {
   const ShopItemPurchasedEvent({required this.itemId, required this.price});
 

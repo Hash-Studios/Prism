@@ -145,9 +145,6 @@ class EconomyAward {
     this.dailyChest = defaultChest,
     this.questCoins = 2,
     this.questXp = 25,
-    this.questChestMin = 5,
-    this.questChestMax = 15,
-    this.questChestCosmeticChance = 0.1,
     this.weeklyQuestCoins = 30,
     this.weeklyQuestXp = 150,
     this.graceDownloads = 3,
@@ -170,9 +167,6 @@ class EconomyAward {
     int streakChestMin = award('streakChestMin', d.streakChestMin);
     int streakChestMax = award('streakChestMax', d.streakChestMax);
     if (streakChestMin > streakChestMax) (streakChestMin, streakChestMax) = (d.streakChestMin, d.streakChestMax);
-    int questChestMin = award('questChestMin', d.questChestMin);
-    int questChestMax = award('questChestMax', d.questChestMax);
-    if (questChestMin > questChestMax) (questChestMin, questChestMax) = (d.questChestMin, d.questChestMax);
     return EconomyAward(
       rewardedAd: award('rewardedAd', d.rewardedAd),
       rewardedAdFirstOfDay: award('rewardedAdFirstOfDay', d.rewardedAdFirstOfDay),
@@ -199,9 +193,6 @@ class EconomyAward {
       dailyChest: parseWheel(m['dailyChest']) ?? d.dailyChest,
       questCoins: award('questCoins', d.questCoins),
       questXp: award('questXp', d.questXp),
-      questChestMin: questChestMin,
-      questChestMax: questChestMax,
-      questChestCosmeticChance: _double(m['questChestCosmeticChance'], d.questChestCosmeticChance),
       weeklyQuestCoins: award('weeklyQuestCoins', d.weeklyQuestCoins),
       weeklyQuestXp: award('weeklyQuestXp', d.weeklyQuestXp),
       graceDownloads: award('graceDownloads', d.graceDownloads),
@@ -234,9 +225,6 @@ class EconomyAward {
   final List<WheelSegment> dailyChest;
   final int questCoins;
   final int questXp;
-  final int questChestMin;
-  final int questChestMax;
-  final double questChestCosmeticChance;
   final int weeklyQuestCoins;
   final int weeklyQuestXp;
   final int graceDownloads;

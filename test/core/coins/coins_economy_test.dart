@@ -249,36 +249,6 @@ void main() {
     });
   });
 
-  group('openQuestChest', () {
-    test('opened adds coins and a cosmetic', () async {
-      reply(
-        (_, _) => _paid(
-          after: 110,
-          extra: <String, Object?>{
-            'coins': 10,
-            'doubled': true,
-            'itemId': 'glow_ember',
-            'quests': _quests(chestOpened: true),
-          },
-        ),
-      );
-      final ChestResult result = await service.openQuestChest();
-      expect(
-        (result.outcome, result.coins, result.doubled, result.itemId),
-        (ChestOutcome.opened, 10, true, 'glow_ember'),
-      );
-      expect(service.inventoryNotifier.value.owns('glow_ember'), isTrue);
-      expect(service.questsNotifier.value?.chestOpened, isTrue);
-    });
-
-    test('refusals map to outcomes', () async {
-      reply((_, _) => _refused('quest_chest_locked'));
-      expect((await service.openQuestChest()).outcome, ChestOutcome.locked);
-      reply((_, _) => _refused('quest_chest_already_opened'));
-      expect((await service.openQuestChest()).outcome, ChestOutcome.alreadyOpened);
-    });
-  });
-
   group('purchaseShopItem', () {
     test('purchased stores the owned list', () async {
       reply(

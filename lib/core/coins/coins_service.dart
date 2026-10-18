@@ -2710,61 +2710,6 @@ class CoinsService with WidgetsBindingObserver {
     return won;
   }
 
-  /// Opens today's quest chest once the three daily items are claimed.
-  Future<ChestResult> openQuestChest() async {
-    if (!_canMutateCoins()) return const ChestResult(ChestOutcome.failed, reason: 'not_logged_in');
-    final String userId = app_state.prismUser.id;
-    final int generation = _economySessionGeneration;
-    final String dayKey = questsNotifier.value?.dayKey ?? economyDayKey(DateTime.now());
-    final _EconomyReply? reply = await _economyPurchase(
-      'openQuestChest',
-      dayKey,
-      const <String, Object?>{},
-      sourceTag: 'coins.quests.chest',
-    );
-    if (!_isCurrentOwner(userId, generation) || reply == null) {
-      return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
-    }
-    final String reason = reply.reason;
-    if (!reply.success) {
-      return ChestResult(switch (reason) {
-        'quest_chest_locked' => ChestOutcome.locked,
-        'quest_chest_already_opened' => ChestOutcome.alreadyOpened,
-        _ => ChestOutcome.failed,
-      }, reason: reason);
-    }
-    if (!reply.stale) _applyQuestReply(reply.data);
-    final int coins = parseIntOr(reply.data['coins']);
-    final String? itemId = _optionalString(reply.data['itemId']);
-    if (!reply.stale && itemId != null) {
-      inventoryNotifier.value = inventoryNotifier.value.withOwned(
-        Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
-      );
-    }
-    if (!reply.stale) {
-      await _persistEconomy(userId, <String, dynamic>{
-        'rev': _economyRev,
-        if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
-        'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
-      });
-    }
-    if (!_isCurrentOwner(userId, generation)) {
-      return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
-    }
-    if (reply.changed) {
-      analytics.track(QuestChestOpenedEvent(coins: coins, itemId: itemId));
-      _logEarn(action: CoinEarnAction.questChest, amount: coins, sourceTag: 'coins.quests.chest');
-      unawaited(reconcileRankRewards());
-    }
-    return ChestResult(
-      ChestOutcome.opened,
-      coins: coins,
-      doubled: reply.data['doubled'] == true,
-      itemId: itemId,
-      reason: reason,
-    );
-  }
-
   Future<ShopPurchaseResult> purchaseShopItem(String itemId) async {
     if (!_canMutateCoins()) return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'not_logged_in');
     final String userId = app_state.prismUser.id;
