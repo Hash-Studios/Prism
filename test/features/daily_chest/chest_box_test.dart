@@ -10,8 +10,8 @@ import 'package:lottie/lottie.dart';
 const double _frames = 393;
 
 void main() {
-  /// A box on a theme with [primary] as the accent. The file never loads under fake time, so the contract timeline
-  /// plays: 60 fps, `open` from frame 180 to 270.
+  /// A box on a theme with [primary] as the accent. The real file loads on the first frame and has the contract's
+  /// frames: 60 fps, `open` from frame 180 to 270. `chest_asset_load_test.dart` covers a file that arrives late.
   Future<void> pumpBox(
     WidgetTester tester, {
     required ChestPhase phase,
