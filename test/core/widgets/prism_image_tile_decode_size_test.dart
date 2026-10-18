@@ -43,6 +43,28 @@ void main() {
     expect(tester.widget<Hero>(find.byType(Hero)).tag, 'wall');
   });
 
+  testWidgets('a decode width alone keeps the aspect ratio, so no height is added', (tester) async {
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    // A landscape box, as on the Wall of the Day card. Both sizes would squash a portrait wallpaper into it.
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 360,
+            height: 200,
+            child: PrismImageTile(url: 'https://example.test/wall.jpg', memCacheWidth: 720),
+          ),
+        ),
+      ),
+    );
+
+    final CachedNetworkImage image = tester.widget(find.byType(CachedNetworkImage));
+    expect(image.memCacheWidth, 720);
+    expect(image.memCacheHeight, isNull);
+  });
+
   testWidgets('WallpaperTile forwards its retained decode-height argument', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
