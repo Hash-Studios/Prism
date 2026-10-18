@@ -149,6 +149,8 @@ void main() {
       expect(chestRowSubtitle(_status(questsLeft: 0)), 'Free today');
       expect(chestRowSubtitle(_status(questsLeft: 3)), '8 coins, or free after 3 more quests');
       expect(chestRowSubtitle(_status(questsLeft: 1)), '8 coins, or free after 1 more quest');
+      expect(chestRowSubtitle(_status(opened: true), doubled: true), 'Opened and doubled. A new one tomorrow.');
+      expect(chestRowSubtitle(_status(questsLeft: 3), doubled: true), '8 coins, or free after 3 more quests');
     });
   });
 

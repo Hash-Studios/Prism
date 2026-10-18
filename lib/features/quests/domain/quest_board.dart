@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/features/quests/domain/quest_catalog.dart';
@@ -49,7 +50,8 @@ class QuestTileModel {
   double get fraction => done ? 1 : (progress / target).clamp(0.0, 1.0);
 }
 
-enum ChestStage { locked, ready, opened }
+/// Where today's chest is. It is never locked: it costs coins until the quests are done, then it is free.
+enum ChestStage { paid, free, opened }
 
 /// The bonus item that doubles the chest: a video for free users, the free spin for Pro.
 enum BoosterKind { watchAd, proSpin }
@@ -68,16 +70,16 @@ class ChestBooster {
 class QuestBoard {
   const QuestBoard({required this.daily, required this.chest, required this.doubled, this.booster, this.weekly});
 
-  factory QuestBoard.of(QuestState quests, EconomyAward award) {
+  /// Null when [quests] is not for [today], or has no daily quest: there is no board to show then.
+  /// [price] is what the chest costs before the quests are done.
+  static QuestBoard? of(QuestState quests, EconomyAward award, {required String today, required int price}) {
+    final DailyChestStatus? chest = DailyChestStatus.fromQuests(quests, today: today, price: price);
+    if (chest == null) return null;
     final QuestItem? bonus = quests.bonus;
     final QuestItem? weekly = quests.weekly;
     return QuestBoard(
       daily: <QuestTileModel>[for (final QuestItem q in quests.items) QuestTileModel.of(q, QuestScope.daily, award)],
-      chest: quests.chestOpened
-          ? ChestStage.opened
-          : quests.chestReady
-          ? ChestStage.ready
-          : ChestStage.locked,
+      chest: chest,
       doubled: quests.chestDoubled,
       booster: bonus == null ? null : ChestBooster.of(bonus),
       weekly: weekly == null ? null : QuestTileModel.of(weekly, QuestScope.weekly, award),
@@ -85,7 +87,7 @@ class QuestBoard {
   }
 
   final List<QuestTileModel> daily;
-  final ChestStage chest;
+  final DailyChestStatus chest;
 
   /// The opened chest paid double.
   final bool doubled;
@@ -93,6 +95,12 @@ class QuestBoard {
   final QuestTileModel? weekly;
 
   int get doneCount => daily.where((QuestTileModel q) => q.done).length;
+
+  ChestStage get stage => chest.opened
+      ? ChestStage.opened
+      : chest.free
+      ? ChestStage.free
+      : ChestStage.paid;
 }
 
 /// The next UTC midnight, when the daily quests and the chest reset.

@@ -88,7 +88,10 @@ table the server rolled). `prize.xp` is always 0.
   reconcile instead of an estimate. A stale reply is not adopted, and a changed one starts the same reconcile.
 - The reveal card shows the prize and, under it, a small `+10 XP` caption when `xpAwarded` is above 0. A replay reports
   0, so it shows no caption.
-- Feature `lib/features/daily_chest/`: a full-screen page from the Today card's chest row.
+- Feature `lib/features/daily_chest/`: a full-screen page. The chest banner on the quest board (`ChestBanner`) opens it
+  with an Open button. The banner shows the box, the price or "Free today", the chest XP and the key pips, which count
+  the quests done towards a free chest. `QuestBoard.chest` is the `DailyChestStatus`; `QuestBoard.stage` (`paid`, `free`,
+  `opened`) is the one place the views read. The chest is never locked.
 - The box is a Lottie, `assets/lottie/daily_chest.json`, made by `tool/daily_chest_lottie.py`. A designer can replace
   the file if it keeps the markers and keypaths below; `test/features/daily_chest/daily_chest_asset_test.dart` checks them.
 

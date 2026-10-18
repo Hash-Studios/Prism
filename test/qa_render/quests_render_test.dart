@@ -21,7 +21,15 @@ const double _boardHeight = 1300;
 void Function() _withQuests(QuestState quests) =>
     () => getIt.registerFactory<QuestsBloc>(() => QuestsBloc(FakeQuestsRepository(quests: quests)));
 
-QuestState _proReady() => questState(items: allDone().items, bonus: questItem('pro_spin', QuestEvent.proSpin));
+QuestState _paid() => questState(
+  items: <QuestItem>[
+    questItem('set_wall', QuestEvent.setWallpaper, claimed: true, progress: 1),
+    questItem('fav_3', QuestEvent.favourite, target: 3, progress: 1),
+    questItem('wotd_view', QuestEvent.viewWotd),
+  ],
+);
+
+QuestState _proFree() => questState(items: allDone().items, bonus: questItem('pro_spin', QuestEvent.proSpin));
 
 Future<void> _board(QaShot shot, String name) async {
   await shot.pump(
@@ -43,12 +51,18 @@ void main() {
   setUpAll(loadFonts);
 
   group('quests render', () {
-    qaScreen('quests_locked', height: _boardHeight, setUpExtra: _withQuests(questState()), (QaShot shot) async {
-      await _board(shot, 'quests_locked');
+    qaScreen('quests_paid', height: _boardHeight, setUpExtra: _withQuests(_paid()), (QaShot shot) async {
+      await _board(shot, 'quests_paid');
     });
 
-    qaScreen('quests_ready', height: _boardHeight, setUpExtra: _withQuests(allDone()), (QaShot shot) async {
-      await _board(shot, 'quests_ready');
+    qaScreen('quests_free', height: _boardHeight, setUpExtra: _withQuests(allDone()), (QaShot shot) async {
+      await _board(shot, 'quests_free');
+    });
+
+    qaScreen('quests_opened', height: _boardHeight, setUpExtra: _withQuests(allDone(chestOpened: true)), (
+      QaShot shot,
+    ) async {
+      await _board(shot, 'quests_opened');
     });
 
     qaScreen(
@@ -60,10 +74,10 @@ void main() {
       },
     );
 
-    qaScreen('quests_pro_ready', pro: true, height: _boardHeight, setUpExtra: _withQuests(_proReady()), (
+    qaScreen('quests_pro_free', pro: true, height: _boardHeight, setUpExtra: _withQuests(_proFree()), (
       QaShot shot,
     ) async {
-      await _board(shot, 'quests_pro_ready');
+      await _board(shot, 'quests_pro_free');
     });
 
     qaScreen('rewards_quests', height: _boardHeight, setUpExtra: () => registerRewardsDeps(quests: allDone()), (

@@ -25,9 +25,9 @@ String chestCostLine(DailyChestStatus status, {required DateTime now}) {
 String chestBonusLine({required bool bonusDone}) =>
     bonusDone ? 'Bonus quest done: your coins are doubled.' : "Do today's bonus quest first to double your coins.";
 
-/// The subtitle of the chest row on the Today card.
-String chestRowSubtitle(DailyChestStatus status) {
-  if (status.opened) return 'Opened. A new one tomorrow.';
+/// The subtitle of the chest row on the Today card. [doubled] is for a chest the bonus quest doubled.
+String chestRowSubtitle(DailyChestStatus status, {bool doubled = false}) {
+  if (status.opened) return doubled ? 'Opened and doubled. A new one tomorrow.' : 'Opened. A new one tomorrow.';
   if (status.free) return 'Free today';
   return '${status.price} coins, or free after ${_moreQuests(status.questsLeft)}';
 }
