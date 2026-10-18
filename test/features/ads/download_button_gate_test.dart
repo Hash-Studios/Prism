@@ -447,6 +447,8 @@ void main() {
       await pump(tester, contentId: 'starter-sunset', link: '/starter-sunset.jpg', requestId: 'browse-request');
 
       await tapSave(tester);
+      await pumpUntil(tester, () => results().isNotEmpty);
+      await settle(tester);
 
       expect(spendCalls, isEmpty);
       expect(enqueued, hasLength(1));
@@ -1076,13 +1078,24 @@ void main() {
       expect(spendCalls, isEmpty);
       expect(saved, isEmpty);
       expect(enqueued, isEmpty);
-      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
+      final DownloadAttemptEvent failedAttempt = fakeAnalytics.events.whereType<DownloadAttemptEvent>().single;
+      expect(results(), hasLength(1));
+      expect(results().single.operationId, failedAttempt.operationId);
+      expect(results().single.result, 'failed');
+      expect(results().single.reason, 'preparation_failed');
+      expect(results().single.stage, 'prepare');
 
       fail = false;
       await tapSave(tester);
 
       expect(spendCalls, hasLength(1));
       expect((enqueued.single! as DownloadRequest).link, tinted);
+      final List<DownloadAttemptEvent> attempts = fakeAnalytics.events.whereType<DownloadAttemptEvent>().toList();
+      expect(attempts, hasLength(2));
+      expect(attempts.last.operationId, isNot(failedAttempt.operationId));
+      expect(results(), hasLength(2));
+      expect(results().last.operationId, attempts.last.operationId);
+      expect(results().last.result, 'success');
     });
 
     testWidgets('a variant save reads Saved for that variation only', (tester) async {
@@ -1194,7 +1207,8 @@ void main() {
       await pump(tester, onDownloaded: () => order.add('follow-up:${savedFlags()}'));
       await tapSave(tester);
 
-      expect(order, <String>['save:false', 'analytics:true', 'follow-up:true']);
+      expect(order.first, 'save:false');
+      expect(order.skip(1), unorderedEquals(<String>['analytics:true', 'follow-up:true']));
       expect(ledger(), isEmpty);
     });
 

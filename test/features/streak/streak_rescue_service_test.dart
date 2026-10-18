@@ -48,7 +48,8 @@ void main() {
       ..loggedIn = true;
   });
 
-  tearDown(() {
+  tearDown(() async {
+    await AnalyticsRuntime.instance.flush();
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
@@ -86,6 +87,7 @@ void main() {
       expect(result.streakCount, 10);
       expect(refreshes, 1);
       expect(calls.single, <String, dynamic>{'requestId': 'request-1-abcdefgh'});
+      await AnalyticsRuntime.instance.flush();
       expect(analytics.events.whereType<StreakRescueUsedEvent>().single.result, 'restored');
     });
 
@@ -103,6 +105,7 @@ void main() {
 
       await svc.restore();
       expect(calls.last['requestId'], 'request-2-abcdefgh');
+      await AnalyticsRuntime.instance.flush();
       expect(analytics.events.whereType<StreakRescueUsedEvent>().map((e) => e.result), <String>[
         'failed',
         'restored',
@@ -132,6 +135,7 @@ void main() {
 
       expect(result.outcome, StreakRescueOutcome.unavailable);
       expect(result.reason, 'streak_rescue_cooldown');
+      await AnalyticsRuntime.instance.flush();
       expect(analytics.events.whereType<StreakRescueUsedEvent>().single.result, 'unavailable');
     });
 

@@ -74,6 +74,14 @@ void main() {
 
   Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 40));
 
+  Future<void> waitForLookup() async {
+    bool completed(WallpaperDetailState state) =>
+        state is WallpaperDetailError ||
+        (state is WallpaperDetailLoaded && !state.paletteLoading && !state.viewsLoading);
+    if (completed(bloc.state)) return;
+    await bloc.stream.firstWhere(completed).timeout(const Duration(seconds: 10));
+  }
+
   test('a failed fetch never shows the raw failure text and keeps the thumbnail for the error screen', () async {
     when(() => prism.fetchById('abc')).thenAnswer(
       (_) async =>
@@ -81,7 +89,7 @@ void main() {
     );
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism, thumbnailUrl: 'https://img/t.jpg'));
-    await settle();
+    await waitForLookup();
 
     expect(
       bloc.state,
@@ -93,7 +101,7 @@ void main() {
     when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.error(const NetworkFailure('No connection')));
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
-    await settle();
+    await waitForLookup();
 
     expect(bloc.state, const WallpaperDetailError(message: 'Check your connection and try again.'));
   });
@@ -102,7 +110,7 @@ void main() {
     when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
-    await settle();
+    await waitForLookup();
 
     expect(bloc.state, const WallpaperDetailError(message: 'Wallpaper not found'));
   });
@@ -117,7 +125,7 @@ void main() {
     addTearDown(bloc.close);
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
-    await settle();
+    await waitForLookup();
 
     expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
     verify(() => prism.fetchById('abc')).called(1);
@@ -130,7 +138,7 @@ void main() {
     });
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
-    await Future<void>.delayed(const Duration(seconds: 3, milliseconds: 100));
+    await waitForLookup();
 
     expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
     verify(() => prism.fetchById('abc')).called(1);
@@ -150,7 +158,7 @@ void main() {
 
     final Stopwatch stopwatch = Stopwatch()..start();
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
-    await Future<void>.delayed(const Duration(seconds: 2, milliseconds: 100));
+    await waitForLookup();
 
     expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 3)));
@@ -167,7 +175,7 @@ void main() {
     when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
-    await settle();
+    await waitForLookup();
 
     expect(bloc.state, const WallpaperDetailError(message: 'Wallpaper not found'));
     verify(() => prism.fetchById('abc')).called(1);
@@ -388,7 +396,7 @@ void main() {
     );
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism, localFilePath: '/tmp/download.jpg'));
-    await settle();
+    await waitForLookup();
 
     final state = bloc.state as WallpaperDetailLoaded;
     expect(state.paletteLoading, isFalse);
