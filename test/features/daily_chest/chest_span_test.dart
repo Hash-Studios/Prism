@@ -68,15 +68,15 @@ void main() {
   test('without a file the span comes from the contract frames at 60 fps', () {
     final ChestSpan span = ChestSpan.of(open, null);
 
-    expect(span.from, closeTo(180 / 392, 1e-9));
-    expect(span.to, closeTo(270 / 392, 1e-9));
+    expect(span.from, closeTo(180 / 393, 1e-9));
+    expect(span.to, closeTo(270 / 393, 1e-9));
     expect(span.duration, const Duration(milliseconds: 1500));
   });
 
   test('the burst sits 16 frames into the open span', () {
     final ChestSpan span = ChestSpan.of(open, null);
 
-    expect(span.at(open, open.burstFrame!), closeTo(196 / 392, 1e-9));
+    expect(span.at(open, open.burstFrame!), closeTo(196 / 393, 1e-9));
   });
 
   test('with a file the span is read from its marker and its frame rate', () async {
@@ -114,7 +114,7 @@ void main() {
     );
     final ChestSpan span = ChestSpan.of(open, bare);
 
-    expect(span.from, closeTo(180 / 392, 1e-9));
+    expect(span.from, closeTo(180 / 393, 1e-9));
     expect(span.duration, const Duration(milliseconds: 1500));
   });
 }

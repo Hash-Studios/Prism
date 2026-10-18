@@ -82,7 +82,8 @@ class _ChestBoxState extends State<ChestBox> with SingleTickerProviderStateMixin
     _burstFired = false;
     final ChestMarker marker = chestMarkers[widget.phase]!;
     if (still || marker.playback == ChestPlayback.hold) {
-      _controller.value = ChestSpan.of(chestMarkers[chestStillPhase(widget.phase)]!, _composition).from;
+      final ChestMarker stillMarker = chestMarkers[chestStillPhase(widget.phase)]!;
+      _controller.value = ChestSpan.of(stillMarker, _composition).at(stillMarker, stillMarker.stillFrame);
       return;
     }
     final ChestSpan span = ChestSpan.of(marker, _composition);

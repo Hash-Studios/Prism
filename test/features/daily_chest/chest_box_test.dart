@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lottie/lottie.dart';
 
-const double _frames = 392;
+const double _frames = 393;
 
 void main() {
   /// A box on a theme with [primary] as the accent. The file never loads under fake time, so the contract timeline
@@ -97,7 +97,7 @@ void main() {
       await pumpBox(tester, phase: ChestPhase.spent);
       await tester.pumpAndSettle();
 
-      expect(progress(tester), closeTo(390 / _frames, 1e-3));
+      expect(progress(tester), closeTo(392 / _frames, 1e-3));
     });
   });
 
@@ -113,7 +113,7 @@ void main() {
       await pumpBox(tester, phase: ChestPhase.spent, still: true);
       await tester.pumpAndSettle();
 
-      expect(progress(tester), closeTo(390 / _frames, 1e-3));
+      expect(progress(tester), closeTo(392 / _frames, 1e-3));
     });
   });
 
@@ -124,7 +124,7 @@ void main() {
         ChestPhase.charging: 0,
         ChestPhase.opening: 270,
         ChestPhase.revealed: 270,
-        ChestPhase.spent: 390,
+        ChestPhase.spent: 392,
       };
       for (final MapEntry<ChestPhase, int> e in expected.entries) {
         await pumpBox(tester, phase: e.key, reduceMotion: true);

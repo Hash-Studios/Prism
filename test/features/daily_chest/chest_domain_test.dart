@@ -24,7 +24,7 @@ void main() {
       for (int i = 1; i < markers.length; i++) {
         expect(markers[i].startFrame, markers[i - 1].endFrame, reason: '${markers[i].name} starts where it should');
       }
-      expect(markers.last.endFrame, chestTotalFrames);
+      expect(markers.last.endFrame, chestTotalFrames - 1, reason: 'the file ends one frame after the last marker');
     });
 
     test('charge and idle loop, open plays once, spent holds', () {
@@ -49,14 +49,14 @@ void main() {
       );
     });
 
-    test('a still box shows the first frame of the span it stands for', () {
-      int firstFrame(ChestPhase phase) => chestMarkers[chestStillPhase(phase)]!.startFrame;
+    test('a still box shows the first frame of the span it stands for, and the emptied box when spent', () {
+      int stillFrame(ChestPhase phase) => chestMarkers[chestStillPhase(phase)]!.stillFrame;
 
-      expect(firstFrame(ChestPhase.ready), 0);
-      expect(firstFrame(ChestPhase.charging), 0);
-      expect(firstFrame(ChestPhase.opening), 270);
-      expect(firstFrame(ChestPhase.revealed), 270);
-      expect(firstFrame(ChestPhase.spent), 390);
+      expect(stillFrame(ChestPhase.ready), 0);
+      expect(stillFrame(ChestPhase.charging), 0);
+      expect(stillFrame(ChestPhase.opening), 270);
+      expect(stillFrame(ChestPhase.revealed), 270);
+      expect(stillFrame(ChestPhase.spent), 392, reason: 'the file holds the emptied box from frame 391');
     });
   });
 

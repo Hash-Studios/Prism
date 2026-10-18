@@ -464,7 +464,9 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
             right: 0,
             top: 0,
             height: _ChestLayout.headerHeight,
-            child: Center(
+            child: Align(
+              // Low in the slot, so the title sits close to the box it names.
+              alignment: const Alignment(0, 0.4),
               child: AnimatedOpacity(
                 opacity: _cardUp ? 0 : 1,
                 duration: fade,
@@ -529,8 +531,9 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
         AnimatedOpacity(
           opacity: _busy ? 0 : 1,
           duration: fade,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xl),
+          child: ConstrainedBox(
+            // Two even lines, not one long line and a lone word.
+            constraints: const BoxConstraints(maxWidth: 300),
             child: status == null
                 ? const SizedBox(height: 44)
                 : Column(
