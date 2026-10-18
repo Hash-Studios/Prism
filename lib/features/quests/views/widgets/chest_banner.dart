@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
@@ -52,6 +53,7 @@ class _ChestRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final int total = board.daily.length;
     final int done = board.doneCount;
+    final int chestXp = EconomyConfig.current.xp.activities.questChest;
     final (String caption, String state, Widget trailing) = switch (board.chest) {
       ChestStage.locked => (
         'Finish $total quests to open it',
@@ -59,7 +61,8 @@ class _ChestRow extends StatelessWidget {
         ExcludeSemantics(child: Text('$done of $total', style: PrismTextStyles.caption(context))),
       ),
       ChestStage.ready => (
-        '${CoinPolicy.questChestMin} to ${CoinPolicy.questChestMax} coins, maybe a cosmetic',
+        '${CoinPolicy.questChestMin} to ${CoinPolicy.questChestMax} coins${chestXp > 0 ? ' and $chestXp XP' : ''}, '
+            'maybe a cosmetic',
         'ready to open',
         PrismButton(
           label: 'Open',

@@ -122,7 +122,7 @@ void main() {
     final FakeQuestsRepository repo = await pumpCard(tester, allClaimed());
     repo.chest = const ChestResult(ChestOutcome.opened, coins: 12);
 
-    expect(find.text('5 to 15 coins, maybe a cosmetic'), findsOneWidget);
+    expect(find.text('5 to 15 coins and 10 XP, maybe a cosmetic'), findsOneWidget);
     expect(find.text('Do this first to double your chest'), findsOneWidget);
     await tester.tap(find.text('Open'));
     await tester.pump();
@@ -338,7 +338,10 @@ void main() {
     await pumpCard(tester, allClaimed());
 
     expect(find.bySemanticsLabel('Set or save a wallpaper, done. Pays 2 coins and 25 XP'), findsOneWidget);
-    expect(find.bySemanticsLabel('Daily chest, ready to open. 5 to 15 coins, maybe a cosmetic'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Daily chest, ready to open. 5 to 15 coins and 10 XP, maybe a cosmetic'),
+      findsOneWidget,
+    );
     expect(find.bySemanticsLabel('Open'), findsOneWidget);
     handle.dispose();
   });
