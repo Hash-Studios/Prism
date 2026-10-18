@@ -947,12 +947,20 @@ test("processReferral: a daily-limit skip stays retryable", async (t) => {
 });
 
 test("processReferral: a valid referral pays both sides 100", async (t) => {
-  const store: Store = new Map([["usersv2/user-1", userDoc()], ["usersv2/inviter-1", userDoc({coins: 5})]]);
+  const store: Store = new Map([["usersv2/user-1", userDoc({xp: 1000})],
+    ["usersv2/inviter-1", userDoc({coins: 5, xp: 2000})]]);
   mockReferral(t, store, {"user-1": authUser(1000), "inviter-1": authUser(86_400_000)});
   const result = await processReferral.run(referralRequest());
   assert.equal(result.success, true);
   assert.equal(store.get("usersv2/user-1")?.coins, 100);
   assert.equal(store.get("usersv2/inviter-1")?.coins, 105);
+  assert.equal(result.xpPolicyVersion, 1);
+  assert.equal(result.xpAwarded, 0);
+  assert.equal(result.xp, 1000);
+  const replay = await processReferral.run(referralRequest());
+  assert.equal(replay.xpAwarded, 0);
+  assert.equal(replay.xp, 1000);
+  assert.equal(store.get("usersv2/inviter-1")?.xp, 2000);
 });
 
 // Economy v2 on the in-memory Firestore
@@ -986,7 +994,7 @@ function clock(t: test.TestContext, start = Date.now()): (ms: number) => void {
 const ledgerFor = (store: FakeStore, prefix: string) =>
   [...store].filter(([path]) => path.startsWith(`coinTransactions/${prefix}`)).map(([, doc]) => doc);
 
-test("rewardedAd: the first ad of the day pays 20, the next pays 10, both count for XP and adsToday", async (t) => {
+test("rewardedAd: the first ad pays 20, the next pays 10, neither grants XP", async (t) => {
   const start = Date.now();
   const setNow = clock(t, start);
   const store = installFakeDb(t, {[USER]: {coins: 0}});
@@ -999,13 +1007,19 @@ test("rewardedAd: the first ad of the day pays 20, the next pays 10, both count 
   assert.equal(second.adsRemaining, 18);
   const user = store.get(USER) ?? {};
   assert.equal(user.coins, 30);
-  assert.equal(user.xp, 30);
-  assert.deepEqual(user.xpWeek, {weekKey: weekKey(start), xp: 30});
+  assert.equal(user.xp, undefined);
+  assert.equal(user.xpWeek, undefined);
+  for (const result of [first, second]) {
+    assert.equal(result.xpPolicyVersion, 1);
+    assert.equal(result.xpAwarded, 0);
+    assert.equal(result.xp, 0);
+    assert.deepEqual(result.xpWeek, {weekKey: weekKey(start), xp: 0});
+  }
   assert.deepEqual((user.coinState as Record<string, unknown>).adsToday,
     {day: new Date(start).toISOString().slice(0, 10), count: 2});
 });
 
-test("rewardedAd: only the first 3 ads of a day grant XP", async (t) => {
+test("rewardedAd: later ads also preserve historical XP", async (t) => {
   const now = Date.now();
   const day = new Date(now).toISOString().slice(0, 10);
   const store = installFakeDb(t, {
@@ -1301,7 +1315,7 @@ test("spendBasePrice: legacy table only for the four legacy actions and only ins
   }
 });
 
-test("claimProSpin: Pro spins once a UTC day, earns coins and XP, and a replay returns the stored result", async (t) => {
+test("claimProSpin: Pro spins once a UTC day, earns coins only, and replays the coin result", async (t) => {
   const now = Date.now();
   clock(t, now);
   t.mock.method(Math, "random", () => 0.7);
@@ -1317,7 +1331,9 @@ test("claimProSpin: Pro spins once a UTC day, earns coins and XP, and a replay r
   const today = new Date(now).toISOString().slice(0, 10);
   assert.equal((user.coinState as Record<string, unknown>).proSpinDate, today);
   assert.equal((user.coinState as Record<string, unknown>).proDailyBonusDate, today);
-  assert.equal(user.xp, 50);
+  assert.equal(user.xp, undefined);
+  assert.equal(spin.xpAwarded, 0);
+  assert.equal(spin.xp, 0);
   const ledger = store.get("coinTransactions/ctx_proSpin_user-1_spin_request_1") ?? {};
   assert.equal(ledger.action, "proSpin");
   assert.equal(ledger.segment, 2);
@@ -1375,6 +1391,100 @@ test("claimProSpin: completes today's pro_spin bonus quest", async (t) => {
   const priv = store.get(PRIVATE) ?? {};
   assert.equal(priv.rev, 2);
   assert.equal((priv.quests as {bonus: {claimed: boolean}}).bonus.claimed, true);
+});
+
+test("ad ordinals and every spin segment preserve XP and rank ownership", async (t) => {
+  const now = Date.parse("2026-10-18T12:00:00Z");
+  const today = "2026-10-18";
+  const historical = {xp: 6001, xpWeek: {weekKey: weekKey(now), xp: 400}};
+  const inventory = {owned: {theme_rose: 123, frame_silver: 456}};
+  const activities = [
+    ...[0, 2, 3].map((count) => ({kind: "ad", count, random: 0})),
+    ...[0, 0.4, 0.65, 0.85, 0.95].map((random) => ({kind: "spin", count: 0, random})),
+    {kind: "legacy", count: 0, random: 0},
+  ];
+  for (const [index, activity] of activities.entries()) {
+    await t.test(`${activity.kind}/${index}`, async (sub) => {
+      resetEconomyCache();
+      clock(sub, now);
+      sub.mock.method(Math, "random", () => activity.random);
+      const store = installFakeDb(sub, {
+        [USER]: {coins: 100, premium: true, ...historical},
+        [PRIVATE]: {rev: 5, inventory},
+        [ECONOMY_CONFIG_DOC]: {xp: {perCoinEarned: 10}},
+        [`coinAdRateDaily/user-1_${today}`]: {count: activity.count, lastAt: now - 60_000},
+      });
+      const result = activity.kind === "spin" ? await claimProSpin.run(spinRequest()) :
+        await awardCoins.run(awardRequest({action: activity.kind === "ad" ? "rewardedAd" : "proDailyBonus",
+          requestId: "fixed_xp_request"}));
+      const expectedCoins = activity.kind === "spin" ? DEFAULT_ECONOMY.award.proSpin[index - 3].coins :
+        activity.kind === "ad" && activity.count > 0 ? 10 : 20;
+      assert.equal(result.delta, expectedCoins);
+      assert.equal(store.get(USER)?.coins, 100 + expectedCoins);
+      assert.equal(result.xpPolicyVersion, 1);
+      assert.equal(result.xpAwarded, 0);
+      assert.equal(result.xp, historical.xp);
+      assert.deepEqual(result.xpWeek, historical.xpWeek);
+      assert.deepEqual(store.get(PRIVATE)?.inventory, inventory);
+      assert.equal(store.get(USER)?.xp, historical.xp);
+      assert.deepEqual(store.get(USER)?.xpWeek, historical.xpWeek);
+    });
+  }
+});
+
+test("routine one-time XP ignores coin prices, Pro and legacy conversion, preserves rank ownership", async (t) => {
+  for (const premium of [false, true]) {
+    for (const coins of [1, 999]) {
+      await t.test(`${premium}/${coins}`, async (sub) => {
+        resetEconomyCache();
+        const now = Date.parse("2026-10-18T12:00:00Z");
+        clock(sub, now);
+        const store = installFakeDb(sub, {
+          [USER]: {coins: 100, premium, xp: 490, username: "artist", bio: "bio", links: {site: "https://test"},
+            profilePhoto: "photo", xpWeek: {weekKey: weekKey(now), xp: 10}},
+          [PRIVATE]: {rev: 2, inventory: {owned: {theme_rose: 123}}},
+          [ECONOMY_CONFIG_DOC]: {award: {firstWallpaperUpload: coins, profileCompletion: coins}, xp: {perCoinEarned: 10}},
+          "walls/approved": {email: "artist@example.com", review: true},
+        });
+        const profile = await awardCoins.run(awardRequest({action: "profileCompletion"}));
+        assert.equal(profile.delta, coins);
+        assert.equal(profile.xpAwarded, 25);
+        assert.equal(profile.xp, 515);
+        const upload = await awardCoins.run(firstUploadRequest("artist@example.com"));
+        assert.equal(upload.delta, coins);
+        assert.equal(upload.xpAwarded, 50);
+        assert.equal(upload.xp, 565);
+        assert.deepEqual(upload.xpWeek, {weekKey: weekKey(now), xp: 85});
+        const owned = (store.get(PRIVATE)?.inventory as {owned: Record<string, number>}).owned;
+        assert.equal(owned.theme_rose, 123);
+        assert.ok(Object.keys(owned).length > 1);
+        store.set(USER, {...store.get(USER), xp: 900, xpWeek: {weekKey: weekKey(now), xp: 300}});
+        for (const response of [await awardCoins.run(awardRequest({action: "profileCompletion"})),
+          await awardCoins.run(firstUploadRequest("artist@example.com"))]) {
+          assert.equal(response.xpAwarded, 0);
+          assert.equal(response.xp, 900);
+          assert.deepEqual(response.xpWeek, {weekKey: weekKey(now), xp: 300});
+        }
+        assert.equal(store.get(USER)?.coins, 100 + 2 * coins);
+      });
+    }
+  }
+});
+
+test("ad and spin replays report the current XP snapshot, never stored receipt totals", async (t) => {
+  const now = Date.parse("2026-10-18T12:00:00Z");
+  clock(t, now);
+  const store = installFakeDb(t, {[USER]: {coins: 100, premium: true, xp: 10}});
+  const adRequest = awardRequest({action: "rewardedAd", requestId: "fixed_xp_replay"});
+  await awardCoins.run(adRequest);
+  await claimProSpin.run(spinRequest());
+  store.set(USER, {...store.get(USER), xp: 1000, xpWeek: {weekKey: weekKey(now), xp: 200}});
+  for (const result of [await awardCoins.run(adRequest), await claimProSpin.run(spinRequest()),
+    await claimProSpin.run(spinRequest("different_request"))]) {
+    assert.equal(result.xpAwarded, 0);
+    assert.equal(result.xp, 1000);
+    assert.deepEqual(result.xpWeek, {weekKey: weekKey(now), xp: 200});
+  }
 });
 
 test("buyStreakFreeze and restoreStreak: prices come from the config", async (t) => {

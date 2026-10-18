@@ -551,6 +551,19 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "creatorMemberRateDaily",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "creatorMembers",
+      "fieldPath": "memberUid",
+      "indexes": [
+        {"order": "ASCENDING", "queryScope": "COLLECTION_GROUP"}
+      ]
+    },
+    {
       "collectionGroup": "viewRate",
       "fieldPath": "expireAt",
       "ttl": true,

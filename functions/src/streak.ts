@@ -5,7 +5,7 @@ import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/ht
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {isLoggedOut, pickFcmToken, sendNotification, userPushTokens} from "./notificationHelper";
 import {coinTransactionDoc, db, int, REGION, str} from "./common";
-import {DEFAULT_ECONOMY, type EconomyConfig, grantXp, loadEconomy, randomInt, xpForCoins} from "./economy";
+import {DEFAULT_ECONOMY, type EconomyConfig, grantXp, loadEconomy, randomInt, xpReceipt, type XpReceipt} from "./economy";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
 const USERS_COLLECTION = "usersv2";
@@ -31,7 +31,7 @@ interface ClaimDailyStreakRequest {
   reminderEnabled?: boolean;
 }
 
-interface ClaimDailyStreakResponse {
+interface ClaimDailyStreakResponse extends XpReceipt {
   claimed: boolean;
   alreadyClaimedToday: boolean;
   streakDay: number;
@@ -118,6 +118,7 @@ export const claimDailyStreak = onCall(
     let todayLocalKey = "";
     let effectiveTimezoneOffsetMinutes = requestOffset;
     let nextReminderAtUtcMillis: number | undefined;
+    let receipt = xpReceipt({}, now.getTime());
 
     await db.runTransaction(async (tx) => {
       claimed = false;
@@ -256,7 +257,10 @@ export const claimDailyStreak = onCall(
         delete coinState.streakReminderNextAtUtc;
       }
 
-      const nextXp = claimed ? grantXp(userData, xpForCoins(totalReward, config), now.getTime()) : null;
+      const xpAwarded = claimed ? config.xp.activities.dailyStreak +
+        (streakDay === 7 ? config.xp.activities.streakWeek : 0) : 0;
+      const nextXp = claimed ? grantXp(userData, xpAwarded, now.getTime()) : null;
+      receipt = xpReceipt(nextXp ?? userData, now.getTime(), xpAwarded);
       if (nextXp) {
         const privateData = privateSnap.data() ?? {};
         const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, now.getTime());
@@ -272,6 +276,7 @@ export const claimDailyStreak = onCall(
     });
 
     return {
+      ...receipt,
       claimed,
       alreadyClaimedToday,
       streakDay,

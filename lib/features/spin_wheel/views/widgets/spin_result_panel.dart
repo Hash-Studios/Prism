@@ -50,7 +50,7 @@ class SpinResultPanel extends StatelessWidget {
       return item == null ? 'You won ${cosmeticName(id)}' : 'You won a new ${_kind(item.kind)}: ${item.name}';
     }
     if (prize is XpPrize) return 'You won ${win.xp} XP';
-    return 'You won ${win.coins} coins';
+    return 'You won ${win.coins} ${win.coins == 1 ? 'coin' : 'coins'}';
   }
 
   String get _caption {

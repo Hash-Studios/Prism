@@ -205,6 +205,10 @@ void main() {
           ],
           'currentBalance': 102,
           'delta': 2,
+          'xpPolicyVersion': 1,
+          'xp': 25,
+          'xpAwarded': 25,
+          'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 25},
         },
       );
       final QuestState? state = await service.progressQuest(QuestEvent.viewWotd);

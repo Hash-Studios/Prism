@@ -104,6 +104,9 @@ test("progressQuest auto-claims once and pays coins, xp and the ledger", async (
   assert.equal(first.previousBalance, 100);
   assert.equal(first.currentBalance, 100 + DEFAULT_ECONOMY.award.questCoins);
   assert.equal(first.rev, 5);
+  assert.equal(first.xpPolicyVersion, 1);
+  assert.equal(first.xpAwarded, 25);
+  assert.equal(first.xp, 25);
   const user = store.get(USER) as Doc;
   assert.equal(user.coins, first.currentBalance);
   assert.equal(user.xp, DEFAULT_ECONOMY.award.questXp);
@@ -117,6 +120,8 @@ test("progressQuest auto-claims once and pays coins, xp and the ledger", async (
   assert.deepEqual(second.awarded, []);
   assert.equal(second.currentBalance, first.currentBalance);
   assert.equal(second.rev, 5);
+  assert.equal(second.xpAwarded, 0);
+  assert.equal(second.xp, 25);
   assert.equal((store.get(USER) as Doc).coins, first.currentBalance);
 });
 
@@ -207,11 +212,12 @@ test("the chest pays once, replays the same result, and refuses a new request", 
   assert.equal(opened.coins, 10);
   assert.equal(opened.itemId, null);
   assert.equal(opened.currentBalance, 110);
+  assert.equal(opened.xpAwarded, 10);
   assert.equal((store.get(PRIVATE) as {quests: QuestState}).quests.chestOpened, true);
   const txDoc = store.get(`coinTransactions/ctx_questChest_${UID}_${dayKey(NOW)}`) as Doc;
   assert.equal(txDoc.coins, 10);
 
-  store.set(USER, {...store.get(USER), coins: 150});
+  store.set(USER, {...store.get(USER), coins: 150, xp: 900, xpWeek: {weekKey: weekKey(NOW), xp: 300}});
   const replay = await chest();
   assert.equal(replay.success, true);
   assert.equal(replay.coins, 10);
@@ -220,10 +226,15 @@ test("the chest pays once, replays the same result, and refuses a new request", 
   assert.equal(replay.previousBalance, 100);
   assert.equal(replay.currentBalance, 110);
   assert.equal((store.get(USER) as Doc).coins, 150);
+  assert.equal(replay.xpAwarded, 0);
+  assert.equal(replay.xp, 900);
+  assert.deepEqual(replay.xpWeek, {weekKey: weekKey(NOW), xp: 300});
 
   const other = await chest({requestId: "chest-req-2"});
   assert.equal(other.success, false);
   assert.equal(other.reason, "quest_chest_already_opened");
+  assert.equal(other.xpAwarded, 0);
+  assert.equal(other.xp, 900);
 });
 
 test("a claimed bonus doubles the chest", async (t) => {
@@ -238,6 +249,56 @@ test("a claimed bonus doubles the chest", async (t) => {
   assert.equal(opened.coins, 20);
   assert.equal(opened.doubled, true);
   assert.equal(opened.quests.chestDoubled, true);
+  assert.equal(opened.xpAwarded, 10);
+  assert.equal(opened.xp, 10);
+});
+
+test("quest chest XP is fixed across random coins and ad/Pro doubled chests", async (t) => {
+  for (const premium of [false, true]) {
+    for (const doubled of [false, true]) {
+      for (const random of [0, 0.999]) {
+        await t.test(`${premium}/${doubled}/${random}`, async (sub) => {
+          resetEconomyCache();
+          sub.mock.method(Date, "now", () => NOW);
+          sub.mock.method(Math, "random", () => random);
+          const state = buildQuestState(null, NOW, premium);
+          const store = installFakeDb(sub, {
+            [USER]: userDoc({premium, xp: 499, xpWeek: {weekKey: weekKey(NOW), xp: 30}}),
+            [PRIVATE]: {rev: 4, quests: {...state, items: doneItems(), bonus: {
+              ...state.bonus, claimed: doubled, progress: doubled ? 1 : 0,
+            }}, inventory: {owned: {theme_rose: 123}}},
+            "economyConfig/current": {award: {questChestMin: 1, questChestMax: 100, questChestCosmeticChance: 0},
+              xp: {perCoinEarned: 10}},
+          });
+          const result = await chest();
+          const coins = (random === 0 ? 1 : 100) * (doubled ? 2 : 1);
+          assert.equal(result.coins, coins);
+          assert.equal(result.currentBalance, 100 + coins);
+          assert.equal(result.xpPolicyVersion, 1);
+          assert.equal(result.xpAwarded, 10);
+          assert.equal(result.xp, 509);
+          assert.deepEqual(result.xpWeek, {weekKey: weekKey(NOW), xp: 40});
+          const inventory = store.get(PRIVATE)?.inventory as {owned: Record<string, number>};
+          assert.equal(inventory.owned.theme_rose, 123);
+          assert.ok(Object.keys(inventory.owned).length > 1);
+          assert.equal(store.get(PRIVATE)?.rev, 5);
+        });
+      }
+    }
+  }
+});
+
+test("quest sync, ignored events and locked chest return current-week no-op XP without rewriting history", async (t) => {
+  const oldWeek = {weekKey: "2026-W41", xp: 300};
+  const store = installFakeDb(t, {[USER]: userDoc({xp: 6000, xpWeek: oldWeek})});
+  t.mock.method(Date, "now", () => NOW);
+  for (const result of [await progress({}), await progress(event("watch_ad", 1)), await chest()]) {
+    assert.equal(result.xpPolicyVersion, 1);
+    assert.equal(result.xpAwarded, 0);
+    assert.equal(result.xp, 6000);
+    assert.deepEqual(result.xpWeek, {weekKey: weekKey(NOW), xp: 0});
+  }
+  assert.deepEqual(store.get(USER)?.xpWeek, oldWeek);
 });
 
 test("a cosmetic drop writes inventory.owned and keeps existing items", async (t) => {

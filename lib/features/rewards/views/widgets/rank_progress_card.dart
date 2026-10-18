@@ -199,6 +199,7 @@ class XpExplanationSheet extends StatelessWidget {
     final RankProgress milestones =
         progress ?? RankProgress(xp: 0, owned: const <String>{}, config: EconomyConfig.current);
     final EconomyAward awards = milestones.config.award;
+    final EconomyXpActivities activities = milestones.config.xp.activities;
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -225,7 +226,12 @@ class XpExplanationSheet extends StatelessWidget {
             _Explanation(
               title: 'Earn XP as you go',
               text:
-                  'Earn XP from daily streaks, chests, badges and Pro spins, plus your first upload and profile completion. The first three rewarded ads each day also earn XP. Referrals and refunds do not. Daily quests award ${awards.questXp} XP each; the weekly quest awards ${awards.weeklyQuestXp} XP.',
+                  'Daily streaks earn ${activities.dailyStreak} XP, plus ${activities.streakWeek} XP for completing a seven-day cycle. Quest chests earn ${activities.questChest} XP. Your first valid upload earns ${activities.firstWallpaperUpload} XP; profile completion earns ${activities.profileCompletion} XP. Daily quests award ${awards.questXp} XP each; the weekly quest awards ${awards.weeklyQuestXp} XP. Some badges and creator milestones also earn XP.',
+            ),
+            const _Explanation(
+              title: 'The same activity earns the same XP',
+              text:
+                  'Ads, Pro spins, Pro daily bonuses, referrals and refunds earn no XP. Pro and coin multipliers do not increase XP. Coin rewards stay separate.',
             ),
             const _Explanation(
               title: 'Lifetime progress, permanent rewards',

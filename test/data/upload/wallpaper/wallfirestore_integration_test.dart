@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -12,6 +13,7 @@ import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' show FirebaseFirestore;
 import 'package:cloud_firestore_platform_interface/cloud_firestore_platform_interface.dart';
@@ -69,7 +71,7 @@ class _FakeDocumentReference extends DocumentReferencePlatform {
 class _FakeFunctionsPlatform extends FirebaseFunctionsPlatform {
   _FakeFunctionsPlatform(super.app, super.region, this.onCall);
 
-  final void Function() onCall;
+  final Object? Function(String? name, Object? parameters) onCall;
 
   @override
   FirebaseFunctionsPlatform delegateFor({FirebaseApp? app, required String region}) =>
@@ -87,19 +89,16 @@ class _FakeFunctionsPlatform extends FirebaseFunctionsPlatform {
 class _FakeHttpsCallable extends HttpsCallablePlatform {
   _FakeHttpsCallable(super.functions, super.origin, super.name, super.options, super.uri, this.onCall);
 
-  final void Function() onCall;
+  final Object? Function(String? name, Object? parameters) onCall;
 
   @override
-  Future<dynamic> call([dynamic parameters]) async {
-    onCall();
-    return const <String, Object>{'success': true, 'changed': false};
-  }
+  Future<dynamic> call([dynamic parameters]) async => onCall(name, parameters);
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late _FakeFirestorePlatform firestore;
-  var rewardCalls = 0;
+  final List<(String?, Map<String, dynamic>)> callableCalls = <(String?, Map<String, dynamic>)>[];
   late PrismUsersV2 originalUser;
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
@@ -109,7 +108,15 @@ void main() {
     await Firebase.initializeApp();
     firestore = _FakeFirestorePlatform();
     FirebaseFirestorePlatform.instance = firestore;
-    FirebaseFunctionsPlatform.instance = _FakeFunctionsPlatform(null, 'asia-south1', () => rewardCalls++);
+    FirebaseFunctionsPlatform.instance = _FakeFunctionsPlatform(null, 'asia-south1', (name, parameters) {
+      callableCalls.add((name, toJsonMap(parameters)));
+      return switch (name) {
+        // A deployed older award reply requests XP reconciliation even when this reward was already claimed.
+        'awardCoins' => const <String, Object>{'success': true, 'changed': false},
+        'reconcileRankRewards' => const <String, Object>{'success': true, 'inventoryChanged': false},
+        _ => throw StateError('Unexpected callable: $name'),
+      };
+    });
     await getIt.reset();
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
     getIt.registerSingleton<FirestoreClient>(
@@ -131,15 +138,18 @@ void main() {
       ..id = 'uploader'
       ..loggedIn = true;
     app_state.prismUser = user;
+    CoinsService.instance.resetSession();
     firestore.updatedPaths.clear();
     firestore.failUserUpdate = false;
     firestore.wallWriteStarted = null;
     firestore.allowWallWrite = null;
     firestore.userUpdateAttempted = null;
-    rewardCalls = 0;
+    callableCalls.clear();
   });
 
-  tearDown(() {
+  tearDown(() async {
+    await pumpEventQueue();
+    CoinsService.instance.resetSession();
     app_state.prismUser = originalUser;
   });
 
@@ -157,10 +167,23 @@ void main() {
     firestore.userUpdateAttempted = Completer<void>();
     final result = await createRecord('wall-id', null, null, null, null, null, null, null, null, false);
     await firestore.userUpdateAttempted!.future;
+    await pumpEventQueue();
 
     expect(result, WallSubmissionResult.submitted);
     expect(firestore.updatedPaths, contains('usersv2/uploader'));
-    expect(rewardCalls, 1);
+    final List<Map<String, dynamic>> awards = <Map<String, dynamic>>[
+      for (final (name, parameters) in callableCalls)
+        if (name == 'awardCoins') parameters,
+    ];
+    expect(awards, hasLength(1));
+    expect(awards.single['action'], 'firstWallpaperUpload');
+    expect(awards.single['sourceTag'], 'coins.first_wallpaper_upload');
+    final List<Map<String, dynamic>> reconciliations = <Map<String, dynamic>>[
+      for (final (name, parameters) in callableCalls)
+        if (name == 'reconcileRankRewards') parameters,
+    ];
+    expect(reconciliations, hasLength(1));
+    expect(reconciliations.single['sourceTag'], 'coins.rank_rewards.reconcile');
   });
 
   test('quota sync and reward stay with the submitting account after an account switch', () async {
@@ -185,9 +208,10 @@ void main() {
     firestore.allowWallWrite!.complete();
 
     expect(await submission, WallSubmissionResult.submitted);
+    await pumpEventQueue();
     expect(firestore.updatedPaths, contains('usersv2/uploader'));
     expect(firestore.updatedPaths, isNot(contains('usersv2/other-account')));
-    expect(rewardCalls, 0);
+    expect(callableCalls, isEmpty);
     expect(app_state.prismUser.uploadsThisWeek, 0);
   });
 }

@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, REGION} from "./common";
-import {dayKey, grantXp, loadEconomy, randomInt, weekKey, xpForCoins} from "./economy";
+import {dayKey, grantXp, loadEconomy, randomInt, weekKey, xpReceipt} from "./economy";
 import {
   applyQuestEvent,
   buildQuestState,
@@ -137,6 +137,7 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
       delta: totalCoins,
       reason,
       rev: privateChanged ? rev + 1 : rev,
+      ...xpReceipt(nextXp ?? userData, nowMs, totalXp),
     };
   });
 }
@@ -215,6 +216,7 @@ export const openQuestChest = onCall(
         delta: 0,
         reason,
         rev,
+        ...xpReceipt(userData, nowMs),
       });
 
       if (chestSnap.exists) {
@@ -233,6 +235,7 @@ export const openQuestChest = onCall(
           reason: "quest_chest_replay",
           transactionId: chestRef.id,
           rev,
+          ...xpReceipt(userData, nowMs),
         };
       }
       if (state.chestOpened) return refused("quest_chest_already_opened");
@@ -241,7 +244,7 @@ export const openQuestChest = onCall(
       const doubled = state.bonus.claimed;
       const base = randomInt(config.award.questChestMin, config.award.questChestMax);
       const coins = doubled ? base * 2 : base;
-      const nextXp = grantXp(userData, xpForCoins(coins, config), nowMs);
+      const nextXp = grantXp(userData, config.xp.activities.questChest, nowMs);
       const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs);
       const owned = rewards.owned;
       const cosmetic = Math.random() < config.award.questChestCosmeticChance ?
@@ -288,6 +291,7 @@ export const openQuestChest = onCall(
         reason: "quest_chest",
         transactionId: chestRef.id,
         rev: rev + 1,
+        ...xpReceipt(nextXp, nowMs, config.xp.activities.questChest),
       };
     });
   },

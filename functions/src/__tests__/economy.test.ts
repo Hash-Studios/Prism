@@ -12,6 +12,7 @@ import {
   seededPick,
   weekKey,
   weightedPick,
+  xpReceipt,
 } from "../economy";
 import {installFakeDb} from "./fakeDb";
 
@@ -37,6 +38,28 @@ test("parseEconomy: does not change DEFAULT_ECONOMY", () => {
   parseEconomy(null);
   parseEconomy({spend: {aiFast: -1}, xp: {ranks: [{id: "b", min: 5}, {id: "a", min: 0}]}});
   assert.equal(JSON.stringify(DEFAULT_ECONOMY), before);
+});
+
+test("parseEconomy: activity XP defaults and each override are bounded independently", () => {
+  assert.deepEqual(DEFAULT_ECONOMY.xp.activities, {
+    dailyStreak: 5, streakWeek: 25, questChest: 10, firstWallpaperUpload: 50, profileCompletion: 25,
+  });
+  for (const invalid of [-1, 1.5, 1001, "5", null, [], {}, Number.NaN, Number.POSITIVE_INFINITY]) {
+    const config = parseEconomy({xp: {activities: {dailyStreak: invalid, questChest: 0, streakWeek: 1000}}});
+    assert.equal(config.xp.activities.dailyStreak, 5);
+    assert.equal(config.xp.activities.questChest, 0);
+    assert.equal(config.xp.activities.streakWeek, 1000);
+    assert.equal(config.xp.activities.firstWallpaperUpload, 50);
+  }
+});
+
+test("xpReceipt: no-op snapshots normalize the current week without mutating history", () => {
+  const nowMs = at("2026-10-19T00:00:00Z");
+  const user = {xp: 900, xpWeek: {weekKey: "2026-W42", xp: 120}};
+  assert.deepEqual(xpReceipt(user, nowMs), {
+    xpPolicyVersion: 1, xp: 900, xpWeek: {weekKey: "2026-W43", xp: 0}, xpAwarded: 0,
+  });
+  assert.deepEqual(user, {xp: 900, xpWeek: {weekKey: "2026-W42", xp: 120}});
 });
 
 test("parseEconomy: spend and shop prices are integers in 0..10000", () => {
@@ -108,11 +131,11 @@ test("parseEconomy: malformed arrays fall back to the defaults", () => {
 
 const SPEC_WHEEL = [
   {kind: "coins", coins: 10, weight: 18},
-  {kind: "xp", xp: 25, weight: 22},
+  {kind: "coins", coins: 1, weight: 22},
   {kind: "coins", coins: 5, weight: 30},
   {kind: "coins", coins: 100, weight: 1},
   {kind: "coins", coins: 20, weight: 8},
-  {kind: "xp", xp: 50, weight: 12},
+  {kind: "coins", coins: 2, weight: 12},
   {kind: "coins", coins: 50, weight: 3},
   {kind: "cosmetic", fallbackCoins: 50, weight: 6},
 ];
@@ -128,11 +151,11 @@ test("parseEconomy: the default wheel is the spec table and survives a Firestore
 
 test("parseEconomy: a valid custom wheel is kept in order with unknown keys dropped", () => {
   const config = parseEconomy({award: {spinWheel: [
-    {kind: "xp", xp: 1000, weight: 0, junk: true},
+    {kind: "coins", coins: 1000, weight: 0, junk: true},
     {kind: "cosmetic", fallbackCoins: 1, weight: 1000},
   ]}});
   assert.deepEqual(config.award.spinWheel, [
-    {kind: "xp", xp: 1000, weight: 0},
+    {kind: "coins", coins: 1000, weight: 0},
     {kind: "cosmetic", fallbackCoins: 1, weight: 1000},
   ]);
   const twelve = Array.from({length: 12}, (_, i) => ({kind: "coins", coins: i + 1, weight: 1}));
@@ -149,6 +172,7 @@ test("parseEconomy: a malformed wheel falls back to the whole default table", ()
     [coins(1), coins(1.5)],
     [coins(1), {kind: "coins", coins: "5", weight: 1}],
     [coins(1), {kind: "xp", xp: 0, weight: 1}],
+    [coins(1), {kind: "xp", xp: 25, weight: 1}],
     [coins(1), {kind: "xp", coins: 5, weight: 1}],
     [coins(1), {kind: "cosmetic", fallbackCoins: 0, weight: 1}],
     [coins(1), {kind: "cosmetic", fallbackCoins: 1001, weight: 1}],

@@ -36,7 +36,7 @@ class SpinWheelCard extends StatelessWidget {
             ? 'Back tomorrow'
             : status.freeSpinAvailable
             ? 'Your free spin is ready'
-            : '${status.price} coins a spin. Win up to ${maxWheelCoins(wheel)} coins, XP or a cosmetic';
+            : '${status.price} coins a spin. Win up to ${maxWheelCoins(wheel)} coins or a cosmetic';
         return PrismCard(
           onTap: open,
           semanticLabel: 'Spin the wheel. $caption',

@@ -114,10 +114,11 @@ class _PrismImageTileState extends State<PrismImageTile> {
     }
   }
 
-  /// Decodes at the tile's own size so a grid does not hold full wallpapers in memory.
+  /// Decodes at the tile's own size so a grid does not hold full wallpapers in memory. A caller's width is used alone:
+  /// a width and a height together decode to exactly that box and squash the image.
   int? _decodeHeight(BuildContext context, BoxConstraints constraints) =>
       widget.memCacheHeight ??
-      (constraints.hasBoundedHeight
+      (widget.memCacheWidth == null && constraints.hasBoundedHeight
           ? (constraints.maxHeight * MediaQuery.devicePixelRatioOf(context)).round().clamp(1, 4096)
           : null);
 

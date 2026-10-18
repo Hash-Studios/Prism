@@ -10,6 +10,7 @@ class EconomySnapshotStore {
     'passes',
     'graceDownloadsUsed',
     'spinWheel',
+    'creator',
   ];
 
   final DurableJsonStore _store;
