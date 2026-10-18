@@ -55,5 +55,31 @@ void main() {
     expect(r.claimed, isFalse);
     expect(r.streakCount, 0);
     expect(r.previousStreakCount, 0);
+    expect(r.lifecycleEvents, isEmpty);
+  });
+
+  test('milestones come from server awards rather than weekly arithmetic', () {
+    final weekly = StreakClaimResult.fromPayload(<String, dynamic>{'claimed': true, 'streakCount': 7});
+    expect(weekly.lifecycleEvents.map((event) => event.action), <String>['increment']);
+    final awarded = StreakClaimResult.fromPayload(<String, dynamic>{
+      'claimed': true,
+      'streakCount': 30,
+      'milestone': 30,
+      'freezesUsed': 1,
+      'freezesLeft': 1,
+    });
+    expect(awarded.lifecycleEvents.map((event) => event.action), <String>['increment', 'freeze_used', 'milestone']);
+    expect(awarded.lifecycleEvents.last.milestone, 30);
+  });
+
+  test('a server-confirmed break emits the prior count then a new start', () {
+    final result = StreakClaimResult.fromPayload(<String, dynamic>{
+      'claimed': true,
+      'streakCount': 1,
+      'previousStreakCount': 40,
+      'streakBroken': true,
+    });
+    expect(result.lifecycleEvents.map((event) => event.action), <String>['break', 'start']);
+    expect(result.lifecycleEvents.first.previousCount, 40);
   });
 }

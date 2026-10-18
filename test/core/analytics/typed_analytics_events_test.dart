@@ -69,7 +69,14 @@ void main() {
       await analytics.track(const CollectionsCheckedEvent());
 
       expect(provider.events.single.name, 'collections_checked');
-      expect(provider.events.single.parameters, <String, Object>{});
+      final Map<String, Object> parameters = provider.events.single.parameters;
+      expect(parameters['analytics_session_id'], isA<String>().having((String id) => id.isNotEmpty, 'nonempty', true));
+      expect(parameters['analytics_schema_version'], 2);
+      await analytics.logScreenView(screenName: 'home');
+      expect(provider.screenViews.single.parameters['analytics_session_id'], parameters['analytics_session_id']);
+      final ProviderBackedAppAnalytics next = ProviderBackedAppAnalytics(provider: provider);
+      await next.track(const CollectionsCheckedEvent());
+      expect(provider.events.last.parameters['analytics_session_id'], isNot(parameters['analytics_session_id']));
     });
 
     test('normalizes screen views before dispatch', () async {

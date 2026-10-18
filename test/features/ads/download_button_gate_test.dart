@@ -210,6 +210,7 @@ void main() {
     String? creator,
     String contentId = 'wall-1',
     String sourceContext = 'detail',
+    String? requestId,
     VoidCallback? onOpen,
     VoidCallback? onDownloaded,
     DownloadVariant? variant,
@@ -225,6 +226,7 @@ void main() {
             contentId: contentId,
             wallpaperSource: WallpaperSource.prism,
             sourceContext: sourceContext,
+            requestId: requestId,
             wallpaperTitle: title,
             creatorName: creator,
             onOpenDownloads: onOpen,
@@ -442,15 +444,29 @@ void main() {
       final _RecordingStats stats = _RecordingStats();
       getIt.registerSingleton<RecordWallpaperActionUseCase>(RecordWallpaperActionUseCase(stats));
       addTearDown(() => getIt.unregister<RecordWallpaperActionUseCase>());
-      await pump(tester, contentId: 'starter-sunset', link: '/starter-sunset.jpg');
+      await pump(tester, contentId: 'starter-sunset', link: '/starter-sunset.jpg', requestId: 'browse-request');
 
       await tapSave(tester);
+      await pumpUntil(tester, () => results().isNotEmpty);
+      await settle(tester);
 
       expect(spendCalls, isEmpty);
       expect(enqueued, hasLength(1));
       final DownloadRequest request = enqueued.single! as DownloadRequest;
       expect(request.isLocalFile, isTrue);
       expect(request.filenameWithoutExtension, 'starter-sunset');
+      final DownloadAttemptEvent attempt = fakeAnalytics.events.whereType<DownloadAttemptEvent>().single;
+      final DownloadResultEvent result = results().single;
+      final DownloadWallpaperEvent saved = fakeAnalytics.events.whereType<DownloadWallpaperEvent>().single;
+      expect(attempt.operationId, isNotEmpty);
+      expect(result.operationId, attempt.operationId);
+      expect(saved.operationId, attempt.operationId);
+      expect(attempt.requestId, 'browse-request');
+      expect(result.requestId, attempt.requestId);
+      expect(saved.requestId, attempt.requestId);
+      expect(result.itemId, 'starter-sunset');
+      expect(result.provider, WallpaperSource.prism.name);
+      expect(fakeAnalytics.events.indexOf(attempt), lessThan(fakeAnalytics.events.indexOf(saved)));
       expect(stats.actions, isEmpty);
       expect(ledger(), isEmpty);
     });
@@ -476,6 +492,20 @@ void main() {
       expect(request.isLocalFile, isTrue);
       expect(request.filenameWithoutExtension, 'starter-sunset_tint-ff8800');
       expect(ledger(), isEmpty);
+    });
+
+    testWidgets('failed variant preparation closes the attempt once without saving', (tester) async {
+      await pump(
+        tester,
+        variant: DownloadVariant(key: 'failed', prepare: () async => throw StateError('prepare failed')),
+      );
+      await tapSave(tester);
+      final DownloadAttemptEvent attempt = fakeAnalytics.events.whereType<DownloadAttemptEvent>().single;
+      expect(results(), hasLength(1));
+      expect(results().single.result, 'failed');
+      expect(results().single.operationId, attempt.operationId);
+      expect(enqueued, isEmpty);
+      expect(spendCalls, isEmpty);
     });
 
     testWidgets('spends without a sheet, names the ledger row and leaves no download entry behind', (tester) async {
@@ -1048,13 +1078,24 @@ void main() {
       expect(spendCalls, isEmpty);
       expect(saved, isEmpty);
       expect(enqueued, isEmpty);
-      expect(fakeAnalytics.events.whereType<DownloadAttemptEvent>(), isEmpty);
+      final DownloadAttemptEvent failedAttempt = fakeAnalytics.events.whereType<DownloadAttemptEvent>().single;
+      expect(results(), hasLength(1));
+      expect(results().single.operationId, failedAttempt.operationId);
+      expect(results().single.result, 'failed');
+      expect(results().single.reason, 'preparation_failed');
+      expect(results().single.stage, 'prepare');
 
       fail = false;
       await tapSave(tester);
 
       expect(spendCalls, hasLength(1));
       expect((enqueued.single! as DownloadRequest).link, tinted);
+      final List<DownloadAttemptEvent> attempts = fakeAnalytics.events.whereType<DownloadAttemptEvent>().toList();
+      expect(attempts, hasLength(2));
+      expect(attempts.last.operationId, isNot(failedAttempt.operationId));
+      expect(results(), hasLength(2));
+      expect(results().last.operationId, attempts.last.operationId);
+      expect(results().last.result, 'success');
     });
 
     testWidgets('a variant save reads Saved for that variation only', (tester) async {
@@ -1166,7 +1207,8 @@ void main() {
       await pump(tester, onDownloaded: () => order.add('follow-up:${savedFlags()}'));
       await tapSave(tester);
 
-      expect(order, <String>['save:false', 'analytics:true', 'follow-up:true']);
+      expect(order.first, 'save:false');
+      expect(order.skip(1), unorderedEquals(<String>['analytics:true', 'follow-up:true']));
       expect(ledger(), isEmpty);
     });
 

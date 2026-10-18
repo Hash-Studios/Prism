@@ -202,6 +202,8 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         FollowResultEvent(
           action: event.follow ? 'follow' : 'unfollow',
           result: result.isSuccess ? 'success' : 'failure',
+          creatorId: event.targetUserId,
+          source: 'public_profile',
         ),
       ),
     );

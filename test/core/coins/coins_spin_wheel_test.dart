@@ -112,12 +112,17 @@ void main() {
   late List<(String, Map<String, dynamic>)> calls;
   late FakeAppAnalytics analytics;
 
-  void reply(Object? Function(String name, Map<String, dynamic> params) answer) {
+  /// Every XP grant also asks the server for rank rewards. Answer that apart, so [calls] holds only the spins.
+  void onCall(Future<Object?> Function(String name, Map<String, dynamic> params) answer) {
     backend.onCall = (String name, Map<String, dynamic> params) async {
+      if (name == 'reconcileRankRewards') return <String, Object?>{};
       calls.add((name, params));
       return answer(name, params);
     };
   }
+
+  void reply(Object? Function(String name, Map<String, dynamic> params) answer) =>
+      onCall((String name, Map<String, dynamic> params) async => answer(name, params));
 
   Future<SpinWon> spinWon({int maxCost = 10}) async {
     final SpinWheelResult result = await service.spinWheel(maxCost: maxCost);
@@ -266,6 +271,7 @@ void main() {
     test('a paid coin win logs the spin, the price and the prize', () async {
       reply((_, _) => _spun(segment: 3, coins: 100));
       await spinWon();
+      await pumpEventQueue();
       expect(logged(), <Map<String, Object?>>[
         <String, Object?>{
           'event': 'spin_wheel_spun',
@@ -296,6 +302,7 @@ void main() {
     test('an XP win logs no coin earned, a free spin logs no coin spent', () async {
       reply((_, _) => _spun(segment: 5, kind: 'xp', xp: 50));
       await spinWon();
+      await pumpEventQueue();
       expect(names(), <String>['spin_wheel_spun', 'coin_spent']);
       expect(logged().first, <String, Object?>{
         'event': 'spin_wheel_spun',
@@ -310,6 +317,7 @@ void main() {
       analytics.events.clear();
       reply((_, _) => _spun(segment: 2, coins: 5, free: true));
       await spinWon(maxCost: 0);
+      await pumpEventQueue();
       expect(names(), <String>['spin_wheel_spun', 'coin_earned']);
       expect(logged().first['free'], 1);
     });
@@ -319,6 +327,7 @@ void main() {
       await spinWon();
       reply((_, _) => _spun(segment: 7, kind: 'cosmetic', coins: 50));
       await spinWon();
+      await pumpEventQueue();
       final List<List<Object?>> spins = <List<Object?>>[
         for (final Map<String, Object?> e in logged())
           if (e['event'] == 'spin_wheel_spun') <Object?>[e['prize'], e['coins'], e['xp']],
@@ -390,12 +399,11 @@ void main() {
 
   group('request ids', () {
     test('a lost reply keeps the request id for the next tap, a definite reply clears it', () async {
-      backend.onCall = (String name, Map<String, dynamic> params) async {
-        calls.add((name, params));
+      onCall((String name, Map<String, dynamic> params) async {
         if (calls.length == 1) throw FirebaseFunctionsException(code: 'unavailable', message: 'lost');
         if (calls.length == 3) return _refused('spin_wheel_daily_limit', _afterPaidSpin);
         return _spun(coins: 10);
-      };
+      });
       final SpinWheelResult lost = await service.spinWheel(maxCost: 10);
       expect(lost, isA<SpinFailed>());
       expect((lost as SpinFailed).reason, 'unavailable');
@@ -413,11 +421,10 @@ void main() {
     });
 
     test('an error the server meant clears the request id too', () async {
-      backend.onCall = (String name, Map<String, dynamic> params) async {
-        calls.add((name, params));
+      onCall((String name, Map<String, dynamic> params) async {
         if (calls.length == 1) throw FirebaseFunctionsException(code: 'permission-denied', message: 'no');
         return _spun(coins: 10);
-      };
+      });
       final SpinWheelResult denied = await service.spinWheel(maxCost: 10);
       expect((denied as SpinFailed).reason, 'permission-denied');
       await service.spinWheel(maxCost: 10);

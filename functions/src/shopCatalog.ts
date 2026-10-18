@@ -12,6 +12,7 @@ export interface ShopItem {
   proOnly?: boolean;
   /** Rank id required to buy it. */
   minRank?: string;
+  rankReward?: string;
   /** Limited drop: sold only until `flags.foundersUntil`. */
   founders?: boolean;
   /** Eligible for the quest chest bonus. */
@@ -37,11 +38,12 @@ export const SHOP_CATALOG: readonly ShopItem[] = [
   {id: "frame_ring", kind: "frame", name: "Ring", price: 120, common: true},
   {id: "frame_aurora", kind: "frame", name: "Aurora", price: 200},
   {id: "frame_prism", kind: "frame", name: "Prism", price: 300, proOnly: true},
-  {id: "frame_gold", kind: "frame", name: "Gold", price: 250, minRank: "gold"},
+  {id: "frame_gold", kind: "frame", name: "Gold", price: 250, rankReward: "gold"},
   {id: "frame_founders", kind: "frame", name: "Founders", price: 1000, founders: true},
   {id: "glow_ember", kind: "nameGlow", name: "Ember", price: 100, common: true},
   {id: "glow_ocean", kind: "nameGlow", name: "Ocean", price: 100, common: true},
-  {id: "glow_aurora", kind: "nameGlow", name: "Aurora", price: 200, minRank: "silver"},
+  {id: "glow_aurora", kind: "nameGlow", name: "Aurora", price: 200, rankReward: "silver"},
+  {id: "glow_prism", kind: "nameGlow", name: "Prism", price: 0, rankReward: "prism"},
   {id: "glow_founders", kind: "nameGlow", name: "Founders", price: 1000, founders: true},
 ];
 

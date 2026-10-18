@@ -34,6 +34,11 @@ void main() {
         expect(item.founders, rest.contains('founders: true'), reason: '${item.id} founders');
         expect(item.common, rest.contains('common: true'), reason: '${item.id} common');
         expect(item.minRank, RegExp('minRank: "(\\w+)"').firstMatch(rest)?.group(1), reason: '${item.id} minRank');
+        expect(
+          item.rankReward,
+          RegExp('rankReward: "(\\w+)"').firstMatch(rest)?.group(1),
+          reason: '${item.id} rankReward',
+        );
         expect(item.themeId, RegExp('themeId: "([^"]+)"').firstMatch(rest)?.group(1), reason: '${item.id} themeId');
       }
     });
@@ -89,6 +94,23 @@ void main() {
       expect(check('frame_gold', rank: 'prism'), ShopAvailability.available);
       expect(check('glow_aurora'), ShopAvailability.rankLocked);
       expect(check('glow_aurora', rank: 'silver'), ShopAvailability.available);
+      expect(check('glow_prism', rank: 'gold'), ShopAvailability.rankLocked);
+      expect(check('glow_prism', rank: 'prism'), ShopAvailability.available);
+    });
+
+    test('a missing reward rank stays locked even above every configured threshold', () {
+      final EconomyConfig custom = EconomyConfig.fromMap(<String, dynamic>{
+        'xp': <String, Object?>{
+          'ranks': <Object?>[
+            <String, Object?>{'id': 'bronze', 'min': 0},
+            <String, Object?>{'id': 'legend', 'min': 2000000000},
+          ],
+        },
+      });
+      expect(
+        shopAvailability(shopItem('frame_gold')!, premium: true, rankId: 'legend', now: now, config: custom),
+        ShopAvailability.rankLocked,
+      );
     });
 
     test('a founders item sells until the config date', () {
@@ -128,6 +150,7 @@ void main() {
 
     test('the prism frame carries the Glint ring colours', () {
       expect(frameStyle('frame_prism').colors.length, 9);
+      expect(glowStyle('glow_prism').colors.length, 8);
     });
   });
 
@@ -139,5 +162,9 @@ void main() {
     });
     expect(shopFromPrice(now, config: cheapFounders), 50);
     expect(shopFromPrice(DateTime.utc(2027), config: cheapFounders), 100);
+    final EconomyConfig freeRankRewards = EconomyConfig.fromMap(<String, dynamic>{
+      'shopPrices': <String, int>{'frame_gold': 0, 'glow_aurora': 0, 'glow_prism': 0},
+    });
+    expect(shopFromPrice(now, config: freeRankRewards), 100);
   });
 }

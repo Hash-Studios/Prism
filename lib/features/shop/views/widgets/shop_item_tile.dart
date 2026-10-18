@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
@@ -23,10 +25,11 @@ class ShopItemTile extends StatelessWidget {
 
   (String, PrismTone)? get _tag {
     if (owned) return equipped ? ('Equipped', PrismTone.accent) : ('Owned', PrismTone.success);
+    if (item.rankReward != null) return ('Earned at ${shopRankName(item.rankReward!)}', PrismTone.accent);
     return switch (availability) {
       ShopAvailability.soldOut => ('Sold out', PrismTone.neutral),
       ShopAvailability.proOnly => ('Pro', PrismTone.accent),
-      ShopAvailability.rankLocked => ('${shopRankName(item.minRank ?? '')} rank', PrismTone.warning),
+      ShopAvailability.rankLocked => ('${shopRankName(item.requiredRank ?? '')} rank', PrismTone.warning),
       ShopAvailability.available => item.founders ? ('Until ${shopUntilLabel() ?? 'soon'}', PrismTone.warning) : null,
     };
   }
@@ -34,7 +37,7 @@ class ShopItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (String, PrismTone)? tag = _tag;
-    final bool showPrice = !owned && availability != ShopAvailability.soldOut;
+    final bool showPrice = !owned && item.rankReward == null && availability != ShopAvailability.soldOut;
     final int price = shopPriceFor(item);
     return PrismCard(
       padding: const EdgeInsets.all(PrismSpace.sm),
@@ -44,7 +47,13 @@ class ShopItemTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
-            child: Center(child: ShopItemPreview(item: item, size: 80)),
+            child: item.kind == ShopItemKind.appIcon
+                ? LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints box) => Center(
+                      child: ShopItemPreview(item: item, size: math.min(box.maxWidth, box.maxHeight)),
+                    ),
+                  )
+                : Center(child: ShopItemPreview(item: item, size: 80)),
           ),
           const SizedBox(height: PrismSpace.xs),
           Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),

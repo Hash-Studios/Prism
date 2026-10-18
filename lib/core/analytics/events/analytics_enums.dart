@@ -151,6 +151,7 @@ enum AnalyticsReasonValue {
 }
 
 enum SearchProviderValue {
+  auto,
   wallhaven,
   pexels,
   prism;

@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -174,6 +177,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
     required String currentUserEmail,
     required List<OnboardingStarterCreatorEntity> creators,
   }) async {
+    bool followedOnServer = false;
     try {
       await _firestoreClient.runBatch((batch) async {
         batch.updateDoc(FirebaseCollections.usersV2, currentUserId, <String, dynamic>{
@@ -188,11 +192,30 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
           });
         }
       }, sourceTag: 'onboarding_v2.follow_creators');
+      followedOnServer = true;
+      _trackCreatorFollows(creators, 'success');
       final followed = creators.map((c) => c.email).join(',');
       await _settingsLocal.set(OnboardingV2Keys.followedCreators, followed);
       return Result.success(null);
     } catch (error) {
+      if (!followedOnServer) _trackCreatorFollows(creators, 'failure');
       return Result.error(ServerFailure('Failed to follow creators: $error', code: mapFirestoreError(error).code));
+    }
+  }
+
+  void _trackCreatorFollows(List<OnboardingStarterCreatorEntity> creators, String result) {
+    for (final creator in creators) {
+      if (creator.userId.isEmpty) continue;
+      unawaited(
+        analytics.track(
+          FollowResultEvent(
+            action: 'follow',
+            result: result,
+            creatorId: creator.userId,
+            source: 'onboarding_starter_pack',
+          ),
+        ),
+      );
     }
   }
 

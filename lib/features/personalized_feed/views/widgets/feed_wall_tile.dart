@@ -21,12 +21,14 @@ class FeedWallTile extends StatelessWidget {
     required this.crossAxisCount,
     required this.memCacheHeight,
     this.onShowLessLikeThis,
+    this.onVisible,
   });
 
   final FeedItemEntity item;
   final int index;
   final int crossAxisCount;
   final int memCacheHeight;
+  final VoidCallback? onVisible;
 
   /// Adds "Show less like this" to the quick actions sheet.
   final VoidCallback? onShowLessLikeThis;
@@ -40,6 +42,7 @@ class FeedWallTile extends StatelessWidget {
       memCacheHeight: memCacheHeight,
       quickActions: true,
       onShowLessLikeThis: onShowLessLikeThis,
+      onVisible: onVisible,
     );
     if (!isPremiumFeedItem(item)) return tile;
     return Stack(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -45,6 +46,7 @@ class DownloadButton extends StatefulWidget {
     this.contentId,
     this.wallpaperSource,
     this.sourceContext,
+    this.requestId,
     this.onDownloaded,
     this.label,
     this.wallpaperTitle,
@@ -61,6 +63,7 @@ class DownloadButton extends StatefulWidget {
   final String? contentId;
   final WallpaperSource? wallpaperSource;
   final String? sourceContext;
+  final String? requestId;
   final VoidCallback? onDownloaded;
 
   /// Text shown beside the circle. It sits inside the same tap target, so tapping it starts the download.
@@ -98,6 +101,8 @@ typedef _DownloadConfirmation = ({bool proceed, File? freeLocalCopy});
 
 class _DownloadTap {
   const _DownloadTap({
+    required this.requestId,
+    required this.operationId,
     required this.link,
     required this.identity,
     required this.isPremiumContent,
@@ -112,6 +117,8 @@ class _DownloadTap {
   });
 
   final String link;
+  final String operationId;
+  final String? requestId;
   final String identity;
   final bool isPremiumContent;
   final String? contentId;
@@ -130,6 +137,8 @@ class _DownloadButtonState extends State<DownloadButton> {
   late String _savedOwner;
   String? _preparedSource;
   late _DownloadTap _activeTap;
+  bool _attemptStarted = false;
+  bool _resultTracked = false;
 
   /// The ledger id of the payment this tap made, or null when it paid nothing. Only a tap that paid marks an entry,
   /// and only its own, so no other tap or button of the same wallpaper can settle it. The coin gate settles the entry
@@ -267,6 +276,8 @@ class _DownloadButtonState extends State<DownloadButton> {
       _preparedSource = null;
       final DownloadVariant? variant = widget.variant;
       final _DownloadTap tap = _DownloadTap(
+        requestId: widget.requestId,
+        operationId: AnalyticsCorrelation.newId(),
         link: link,
         identity: variant?.identityOf(link) ?? link,
         isPremiumContent: widget.isPremiumContent,
@@ -280,6 +291,8 @@ class _DownloadButtonState extends State<DownloadButton> {
         isGuest: _isGuest,
       );
       _activeTap = tap;
+      _attemptStarted = false;
+      _resultTracked = false;
       _paidTxId = null;
       final _DownloadConfirmation confirmation = await _confirmDownloadAgain(tap);
       if (!confirmation.proceed) return;
@@ -289,9 +302,29 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
       _failureReason = null;
       _failureStage = 'download';
+      _attemptStarted = true;
+      _track(
+        DownloadAttemptEvent(
+          source: _sourceLabel,
+          premium: tap.isPremiumContent,
+          operationId: tap.operationId,
+          itemId: tap.contentId,
+          provider: tap.wallpaperSource?.name,
+          requestId: tap.requestId,
+        ),
+      );
       if (variant != null) {
         _preparedSource = await runPrepareSource(variant.prepare);
-        if (_preparedSource == null || !mounted) return;
+        if (_preparedSource == null || !mounted) {
+          _track(
+            DownloadResultEvent(
+              result: _preparedSource == null ? 'failed' : 'cancelled',
+              reason: _preparedSource == null ? 'preparation_failed' : 'screen_disposed',
+              stage: 'prepare',
+            ),
+          );
+          return;
+        }
       }
       if (!_ownerStillMatches(tap)) {
         _cancelAfterAccountSwitch();
@@ -308,10 +341,12 @@ class _DownloadButtonState extends State<DownloadButton> {
           starter = await BundledWallpapers.localFileForStarter(contentId, wallpaperSource);
         } catch (error, stackTrace) {
           logger.w('Could not resolve bundled starter wallpaper', error: error, stackTrace: stackTrace);
+          _track(const DownloadResultEvent(result: 'failed', reason: 'starter_source_failed', stage: 'prepare'));
           toasts.error("Couldn't download! Please retry.");
           return;
         }
         if (starter == null) {
+          _track(const DownloadResultEvent(result: 'failed', reason: 'starter_source_unavailable', stage: 'prepare'));
           toasts.error("Couldn't download! Please retry.");
           return;
         }
@@ -329,7 +364,6 @@ class _DownloadButtonState extends State<DownloadButton> {
         );
         return;
       }
-      _track(DownloadAttemptEvent(source: _sourceLabel, premium: tap.isPremiumContent));
       if (_isGuest) {
         await _runGuestFlow();
         return;
@@ -353,6 +387,11 @@ class _DownloadButtonState extends State<DownloadButton> {
       final CoinGateResult result = await _gatedDownload();
       _trackGateResult(result);
     } finally {
+      if (_attemptStarted && !_resultTracked) {
+        _track(
+          DownloadResultEvent(result: 'failed', reason: _failureReason ?? 'preparation_failed', stage: _failureStage),
+        );
+      }
       if (mounted) {
         setState(() => isLoading = false);
       }
@@ -365,6 +404,20 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   void _track(AnalyticsEvent event) {
+    if (event is DownloadResultEvent) {
+      if (!_attemptStarted || _resultTracked) return;
+      _resultTracked = true;
+      event = DownloadResultEvent(
+        result: event.result,
+        reason: event.reason,
+        stage: event.stage,
+        operationId: _tap.operationId,
+        requestId: _tap.requestId,
+        itemId: _tap.contentId,
+        provider: _tap.wallpaperSource?.name,
+        source: _sourceLabel,
+      );
+    }
     try {
       unawaited(analytics.track(event));
     } catch (error, stackTrace) {
@@ -706,6 +759,11 @@ class _DownloadButtonState extends State<DownloadButton> {
           link: link,
           sourceContext: (sourceContext ?? '').trim().isEmpty ? null : sourceContext,
           premiumContent: premiumContent,
+          operationId: tap.operationId,
+          requestId: tap.requestId,
+          itemId: tap.contentId,
+          provider: tap.wallpaperSource?.name,
+          source: tap.sourceContext,
         ),
       );
     } catch (e, stackTrace) {

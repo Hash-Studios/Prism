@@ -55,23 +55,30 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     if (item == null || state.loadingItemId != null) return;
     emit(state.copyWith(loadingItemId: item.id));
     final ShopPurchaseResult result = await _coins.purchaseShopItem(item.id);
-    if (result.outcome == ShopPurchaseOutcome.purchased) {
+    if (result.outcome == ShopPurchaseOutcome.purchased && item.rankReward == null) {
       analytics.track(ShopItemPurchasedEvent(itemId: item.id, price: shopPriceFor(item)));
     }
     emit(_snapshot().copyWith(loadingItemId: null, notice: _purchaseNotice(item, result.outcome)));
   }
 
   ShopNotice _purchaseNotice(ShopItem item, ShopPurchaseOutcome outcome) => switch (outcome) {
+    ShopPurchaseOutcome.purchased || ShopPurchaseOutcome.owned when item.rankReward != null => ShopNotice(
+      '${item.name} rank reward synced',
+      success: true,
+    ),
     ShopPurchaseOutcome.purchased => ShopNotice('${item.name} is yours', success: true),
     ShopPurchaseOutcome.owned => const ShopNotice('You already own this', success: true),
     ShopPurchaseOutcome.proOnly => const ShopNotice('This item is for Pro members', success: false),
     ShopPurchaseOutcome.rankLocked => ShopNotice(
-      'Reach ${shopRankName(item.minRank ?? '')} rank to unlock this',
+      'Reach ${shopRankName(item.requiredRank ?? '')} rank to unlock this',
       success: false,
     ),
     ShopPurchaseOutcome.expired => const ShopNotice('This limited item is sold out', success: false),
     ShopPurchaseOutcome.insufficient => const ShopNotice('You need more coins for this', success: false),
-    ShopPurchaseOutcome.failed => const ShopNotice('Could not buy this. Try again.', success: false),
+    ShopPurchaseOutcome.failed => ShopNotice(
+      item.rankReward != null ? 'Could not sync this reward. Try again.' : 'Could not buy this. Try again.',
+      success: false,
+    ),
   };
 
   Future<void> _onEquip(_EquipRequested event, Emitter<ShopState> emit) async {

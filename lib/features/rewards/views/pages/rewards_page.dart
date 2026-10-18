@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/quests/quests.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
+import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
@@ -109,6 +111,8 @@ class _RewardsPageState extends State<RewardsPage> {
             sliver: SliverList.list(
               children: <Widget>[
                 const RewardsHero(),
+                gap,
+                RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
                 gap,
                 TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
                 gap,

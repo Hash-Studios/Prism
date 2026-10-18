@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/views/widgets/today_card.dart';
@@ -28,6 +29,7 @@ void main() {
   tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
     await getIt.reset();
+    EconomyConfig.resetForTest();
   });
 
   Future<FakeQuestsRepository> pumpCard(
@@ -75,15 +77,15 @@ void main() {
     expect(find.text('0 of 3 done'), findsOneWidget);
     expect(find.text('Set or save a wallpaper'), findsOneWidget);
     expect(find.text('Favourite 3 walls'), findsOneWidget);
-    expect(find.text('1 of 3'), findsOneWidget);
-    expect(find.text('+${CoinPolicy.questCoins}'), findsNWidgets(3));
+    expect(find.textContaining('1 of 3'), findsOneWidget);
+    expect(find.textContaining('+${CoinPolicy.questCoins} coins · +25 XP'), findsNWidgets(3));
     expect(find.text('Watch a video (+${CoinsService.instance.adsRewardNow})'), findsOneWidget);
     expect(find.text('Doubles your chest'), findsOneWidget);
     expect(find.text('Daily chest'), findsOneWidget);
     expect(find.textContaining('Finish 3 quests'), findsOneWidget);
     expect(find.text('Open'), findsNothing);
     expect(find.text('Save or set 5 walls'), findsOneWidget);
-    expect(find.text('This week · 2 of 5'), findsOneWidget);
+    expect(find.textContaining('This week · 2 of 5'), findsOneWidget);
     expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -135,7 +137,7 @@ void main() {
     await tester.pump();
 
     expect(repo.consumed, 1);
-    expect(toasts, <String>['Quest done: +2 coins']);
+    expect(toasts, <String>['Quest done: +2 coins · +25 XP']);
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -147,6 +149,36 @@ void main() {
     await tester.pump();
 
     expect(toasts, <String>["Couldn't open the chest. Try again."]);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('quest rows use configured coins and XP without a standalone bonus XP award', (tester) async {
+    await pumpCard(tester, questState());
+    EconomyConfig.current = const EconomyConfig(
+      award: EconomyAward(questCoins: 7, questXp: 41, weeklyQuestCoins: 90, weeklyQuestXp: 305),
+    );
+    await tester.pump();
+    expect(find.textContaining('+7 coins · +41 XP'), findsNWidgets(3));
+    expect(find.textContaining('+90 coins · +305 XP'), findsOneWidget);
+    expect(find.text('Doubles your chest'), findsOneWidget);
+    expect(find.textContaining('+0 XP'), findsNothing);
+  });
+
+  testWidgets('completion feedback sums actual server awards, including XP-only rewards', (tester) async {
+    final FakeQuestsRepository repo = await pumpCard(tester, questState());
+    repo.awards.value = const <QuestAward>[
+      QuestAward(id: 'set_wall', coins: 4, xp: 17),
+      QuestAward(id: 'weekly_set_5', coins: 18, xp: 81),
+      QuestAward(id: 'watch_ad', coins: 0, xp: 0),
+    ];
+    await tester.pump();
+    await tester.pump();
+    expect(toasts, <String>['Quest done: +22 coins · +98 XP']);
+
+    repo.awards.value = const <QuestAward>[QuestAward(id: 'set_wall', coins: 0, xp: 43)];
+    await tester.pump();
+    await tester.pump();
+    expect(toasts.last, 'Quest done: +43 XP');
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -195,7 +227,7 @@ void main() {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed());
 
-    expect(find.bySemanticsLabel('Set or save a wallpaper, done'), findsOneWidget);
+    expect(find.bySemanticsLabel('Set or save a wallpaper, done. +2 coins · +25 XP'), findsOneWidget);
     expect(find.bySemanticsLabel('Open'), findsOneWidget);
     handle.dispose();
   });

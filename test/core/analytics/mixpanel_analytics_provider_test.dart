@@ -15,17 +15,17 @@ class _FakeMixpanelClient implements MixpanelClient {
   final Map<String, Object> userProperties = <String, Object>{};
 
   @override
-  void identify(String userId) {
+  Future<void> identify(String userId) async {
     identifiedUsers.add(userId);
   }
 
   @override
-  void reset() {
+  Future<void> reset() async {
     resetCount += 1;
   }
 
   @override
-  void setUserProperty({required String name, required Object value}) {
+  Future<void> setUserProperty({required String name, required Object value}) async {
     userProperties[name] = value;
   }
 
@@ -33,13 +33,48 @@ class _FakeMixpanelClient implements MixpanelClient {
   Future<void> flush() async {}
 
   @override
-  void track(String eventName, {Map<String, Object>? properties}) {
+  Future<void> track(String eventName, {Map<String, Object>? properties}) async {
     tracks.add(_TrackCall(eventName, properties));
   }
 }
 
 void main() {
   group('MixpanelAnalyticsProvider', () {
+    test('cold guest preserves anonymous identity and clears persisted signed identity once', () async {
+      final _FakeMixpanelClient anonymous = _FakeMixpanelClient();
+      await MixpanelAnalyticsProvider.forClient(anonymous).setUserId(null);
+      expect(anonymous.resetCount, 0);
+      final _FakeMixpanelClient signed = _FakeMixpanelClient();
+      final MixpanelAnalyticsProvider provider = MixpanelAnalyticsProvider.forClient(signed, hasIdentifiedUser: true);
+      await provider.setUserId(null);
+      await provider.setUserId(null);
+      expect(signed.resetCount, 1);
+    });
+
+    test('signed startup retains identity until logout', () async {
+      final _FakeMixpanelClient client = _FakeMixpanelClient();
+      final MixpanelAnalyticsProvider provider = MixpanelAnalyticsProvider.forClient(
+        client,
+        hasIdentifiedUser: true,
+        identifiedUserId: 'same_user',
+      );
+      await provider.setUserId('same_user');
+      expect(client.resetCount, 0);
+      await provider.setUserId(null);
+      expect(client.resetCount, 1);
+    });
+
+    test('cold account switch resets persisted account before identification', () async {
+      final _FakeMixpanelClient client = _FakeMixpanelClient();
+      final MixpanelAnalyticsProvider provider = MixpanelAnalyticsProvider.forClient(
+        client,
+        hasIdentifiedUser: true,
+        identifiedUserId: 'account_a',
+      );
+      await provider.setUserId('account_b');
+      expect(client.resetCount, 1);
+      expect(client.identifiedUsers, <String>['account_b']);
+    });
     test('tracks raw event payloads', () async {
       final _FakeMixpanelClient client = _FakeMixpanelClient();
       final MixpanelAnalyticsProvider provider = MixpanelAnalyticsProvider.forClient(client);
@@ -78,7 +113,7 @@ void main() {
       await provider.setUserId(null);
 
       expect(client.identifiedUsers, <String>['user_123']);
-      expect(client.resetCount, 2);
+      expect(client.resetCount, 1);
     });
 
     test('ignores empty user properties and sets valid ones', () async {

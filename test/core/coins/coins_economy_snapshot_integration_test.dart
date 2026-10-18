@@ -25,6 +25,7 @@ void main() {
   setUp(() async {
     await getIt.reset();
     await backend.install();
+    backend.onCall = (_, _) async => <String, Object?>{};
     getIt.registerSingleton<FirestoreClient>(CoinsTestFirestore());
     directory = await Directory.systemTemp.createTemp('coins-economy-integration-');
     service.resetSession();

@@ -24,6 +24,7 @@ Future<void> showWallpaperQuickActions(
   BuildContext context,
   FeedItemEntity item, {
   VoidCallback? onShowLessLikeThis,
+  String? requestId,
 }) async {
   final bool isFavourite = getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id);
   final _QuickAction? action = await showPrismSheet<_QuickAction>(
@@ -77,7 +78,15 @@ Future<void> showWallpaperQuickActions(
       );
     case _QuickAction.set:
       try {
-        await SetWallpaperFlow.run(context, url: item.fullUrl, thumbnailUrl: item.thumbnailUrl);
+        await SetWallpaperFlow.run(
+          context,
+          url: item.fullUrl,
+          thumbnailUrl: item.thumbnailUrl,
+          wallpaperId: item.id,
+          wallpaperSource: item.source,
+          entryPoint: 'wallpaper_quick_actions',
+          requestId: requestId,
+        );
       } catch (error, stackTrace) {
         logger.e('Set wallpaper from the tile menu failed', error: error, stackTrace: stackTrace);
       }

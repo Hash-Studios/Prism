@@ -245,5 +245,16 @@ void main() {
       expect(app_state.prismUser.premium, isTrue);
       expect(conversions(), 0);
     });
+
+    test('repeated entitlement refreshes cannot fabricate a purchase or revenue', () async {
+      final PurchasesService service = buildService(getCustomerInfo: () async => _proCustomer);
+      await service.checkAndPersistPremium();
+      await service.checkAndPersistPremium();
+
+      expect(app_state.prismUser.premium, isTrue);
+      expect(fakeAnalytics.events.whereType<SubscriptionConversionEvent>(), isEmpty);
+      expect(fakeAnalytics.events.whereType<PurchaseVerifiedEvent>(), isEmpty);
+      expect(fakeAnalytics.events.whereType<RevenueRecordedEvent>(), isEmpty);
+    });
   });
 }

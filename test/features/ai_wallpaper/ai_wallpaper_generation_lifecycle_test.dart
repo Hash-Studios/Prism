@@ -403,6 +403,8 @@ void main() {
   });
 
   testWidgets('offline connectivity completing after disposal has no toast or charge', (tester) async {
+    final recorder = _RecordingAnalytics();
+    AnalyticsRuntime.instance = recorder;
     final connection = Completer<bool>();
     var connectionCalls = 0;
     var spendCalls = 0;
@@ -430,6 +432,7 @@ void main() {
 
     expect(toasts, isEmpty);
     expect(spendCalls, 0);
+    expect(recorder.events.whereType<AiGenerateFailedEvent>().single.refundResult, 'not_required');
     expect(tester.takeException(), isNull);
   });
 
@@ -468,6 +471,16 @@ void main() {
     final started = analytics.events.whereType<AiGenerateStartedEvent>().single;
     expect(started.quality, 'fast');
     expect(started.style, 'abstract');
+    final reserved = analytics.events.whereType<AiChargeReservedEvent>().single;
+    final committed = analytics.events.whereType<AiChargeCommittedEvent>().single;
+    final success = analytics.events.whereType<AiGenerateSuccessEvent>().single;
+    expect(started.operationId, isNotEmpty);
+    expect(reserved.operationId, started.operationId);
+    expect(committed.operationId, started.operationId);
+    expect(success.operationId, started.operationId);
+    expect(success.generationId, 'generated-1');
+    expect(success.chargeTransactionId, 'reservation-1');
+    expect(success.durationMs, greaterThanOrEqualTo(0));
   });
 
   testWidgets('failed generation after disposal refunds its debit once without a toast', (tester) async {
@@ -504,6 +517,13 @@ void main() {
     expect(refunds.single['transactionId'], 'reservation-1');
     expect(refunds.single.containsKey('amount'), isFalse);
     expect(analytics.events.whereType<AiGenerateFailedEvent>(), hasLength(1));
+    final failure = analytics.events.whereType<AiGenerateFailedEvent>().single;
+    final rollback = analytics.events.whereType<AiChargeRolledBackEvent>().single;
+    expect(failure.error, 'generation_failed');
+    expect(failure.errorCategory, 'generation_failed');
+    expect(failure.refundResult, 'refunded');
+    expect(failure.chargeTransactionId, 'reservation-1');
+    expect(failure.operationId, rollback.operationId);
     expect(analytics.events.whereType<AiChargeCommittedEvent>(), isEmpty);
     expect(toasts, isEmpty);
     expect(tester.takeException(), isNull);
@@ -677,7 +697,7 @@ void main() {
     expect(app_state.prismUser.coins, 100);
   });
 
-  testWidgets('a started-event failure rolls back the reservation and releases loading', (tester) async {
+  testWidgets('a started-event failure cannot cancel a paid generation', (tester) async {
     final recorder = _RecordingAnalytics(throwOn: (event) => event is AiGenerateStartedEvent);
     AnalyticsRuntime.instance = recorder;
     var requests = 0;
@@ -686,9 +706,9 @@ void main() {
       return _record(id: 'generated-1');
     });
 
-    expect(refunds, 1);
-    expect(requests, 0);
-    expect(recorder.events.whereType<AiGenerateFailedEvent>(), hasLength(1));
+    expect(refunds, 0);
+    expect(requests, 1);
+    expect(recorder.events.whereType<AiGenerateFailedEvent>(), isEmpty);
     expect(find.text('Generate'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -735,6 +755,8 @@ void main() {
   });
 
   testWidgets('a failed generation whose refund did not land says the refund is pending and keeps it', (tester) async {
+    final recorder = _RecordingAnalytics();
+    AnalyticsRuntime.instance = recorder;
     final toastCalls = <MethodCall>[];
     await setUpPage(
       tester,
@@ -753,6 +775,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1400));
 
     expect(toastMessages(toastCalls), contains('Something went wrong. Try again. Refund pending.'));
+    expect(recorder.events.whereType<AiGenerateFailedEvent>().single.refundResult, 'pending');
     expect(
       getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''),
       contains('reservation-1'),
@@ -762,7 +785,25 @@ void main() {
     await tester.pump(const Duration(seconds: 31));
   });
 
+  testWidgets('a terminal refund denial is not reported or retained as pending', (tester) async {
+    final recorder = _RecordingAnalytics();
+    AnalyticsRuntime.instance = recorder;
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'awardCoins') throw FirebaseFunctionsException(code: 'permission-denied', message: 'denied');
+      return coinReply(name);
+    }, repository: _FakeAiGenerationRepository(_record(), generation: () async => throw StateError('provider failed')));
+    final generate = find.text('Generate');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpAndSettle();
+    expect(recorder.events.whereType<AiGenerateFailedEvent>().single.refundResult, 'denied');
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+    await tester.pump(const Duration(milliseconds: 1400));
+  });
+
   testWidgets('a failed generation that charged no coins does not mention a refund', (tester) async {
+    final recorder = _RecordingAnalytics();
+    AnalyticsRuntime.instance = recorder;
     final toastCalls = <MethodCall>[];
     await setUpPage(
       tester,
@@ -785,6 +826,7 @@ void main() {
 
     expect(toastMessages(toastCalls), contains('Something went wrong. Try again.'));
     expect(getIt<SettingsLocalDataSource>().get<String>('pendingAiRefunds', defaultValue: ''), isEmpty);
+    expect(recorder.events.whereType<AiGenerateFailedEvent>().single.refundResult, 'not_required');
   });
 
   testWidgets('a charge with no reply queues a refund and tells the user', (tester) async {

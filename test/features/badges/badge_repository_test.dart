@@ -52,18 +52,21 @@ void main() {
   late int calls;
 
   setUp(() async {
+    AnalyticsRuntime.reset();
     await backend.install();
     calls = 0;
     repo = BadgeRepositoryImpl();
   });
 
   tearDown(() async {
+    AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
   });
 
   test('success updates session badges and balance and queues new badges', () async {
     backend.onCall = (name, _) async {
+      if (name == 'reconcileRankRewards') return <String, Object>{};
       calls++;
       expect(name, 'checkBadges');
       return <String, Object>{
@@ -148,7 +151,8 @@ void main() {
     final Completer<dynamic> response = Completer<dynamic>();
     final CoinsTestFirestore firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 175};
     getIt.registerSingleton<FirestoreClient>(firestore);
-    backend.onCall = (_, _) {
+    backend.onCall = (name, _) {
+      if (name == 'reconcileRankRewards') return Future<dynamic>.value(<String, Object>{});
       started.complete();
       return response.future;
     };
@@ -169,7 +173,8 @@ void main() {
     final Completer<dynamic> response = Completer<dynamic>();
     final CoinsTestFirestore firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 100};
     getIt.registerSingleton<FirestoreClient>(firestore);
-    backend.onCall = (_, _) {
+    backend.onCall = (name, _) {
+      if (name == 'reconcileRankRewards') return Future<dynamic>.value(<String, Object>{});
       started.complete();
       return response.future;
     };
@@ -191,10 +196,10 @@ void main() {
     final Completer<dynamic> response = Completer<dynamic>();
     final FakeAppAnalytics recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    addTearDown(AnalyticsRuntime.reset);
     final _FailingRefreshFirestore firestore = _FailingRefreshFirestore();
     getIt.registerSingleton<FirestoreClient>(firestore);
-    backend.onCall = (_, _) {
+    backend.onCall = (name, _) {
+      if (name == 'reconcileRankRewards') return Future<dynamic>.value(<String, Object>{});
       started.complete();
       return response.future;
     };
@@ -221,7 +226,6 @@ void main() {
   test('duplicate badge ids in one response queue and track only once', () async {
     final FakeAppAnalytics recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    addTearDown(AnalyticsRuntime.reset);
     backend.onCall = (_, _) async => <String, Object>{
       'newBadges': <Object>[
         <String, Object>{'id': 'creator', 'coins': 50},

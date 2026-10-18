@@ -9,6 +9,7 @@ import {applyQuestEvent, buildQuestState, type QuestState} from "./questCatalog"
 import {pickChestCosmetic} from "./shopCatalog";
 import {STREAK_RESCUE_MIN_COUNT, streakCycleDay} from "./streak";
 import {isStudioWall} from "./studio/process";
+import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -419,7 +420,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
     const adRateSnap = action === "rewardedAd" ? await tx.get(adRateRef) : null;
     const adAwardSnap = adAwardRef ? await tx.get(adAwardRef) : null;
-    const privateSnap = action === "rewardedAd" ? await tx.get(privateRef) : null;
+    const privateSnap = action !== "refund" ? await tx.get(privateRef) : null;
     const debitSnap = debitRef ? await tx.get(debitRef) : null;
     const refundDailySnap = debitRef ? await tx.get(refundDailyRef) : null;
 
@@ -516,17 +517,24 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     if (action === "rewardedAd") {
       tx.set(adRateRef, {count: adCountToday + 1, lastAt: nowMs});
       state.adsToday = {day: today, count: adCountToday + 1};
-      const privateData = privateSnap?.data() ?? {};
-      writePrivate(tx, privateRef, privateData, questsAfter(privateData, "watch_ad", nowMs, data.premium === true, config));
     }
     // Refunds give back coins, not progress; only the first few ads of a day count for XP.
     const earnsXp = action !== "refund" && (action !== "rewardedAd" || adCountToday < AD_XP_MAX_PER_DAY);
+    const nextXp = earnsXp ? grantXp(data, xpForCoins(delta, config), nowMs) : null;
+    const privateData = privateSnap?.data() ?? {};
+    const rewards = nextXp ? rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs) : null;
+    if (action === "rewardedAd" || (rewards?.added.length ?? 0) > 0) {
+      writePrivate(tx, privateRef, privateData, {
+        ...(action === "rewardedAd" ? questsAfter(privateData, "watch_ad", nowMs, data.premium === true, config) : {}),
+        ...(rewards && rewards.added.length > 0 ? {inventory: {owned: rewards.owned}} : {}),
+      });
+    }
 
     const current = previous + delta;
     tx.update(userRef, {
       coins: current,
       coinState: state,
-      ...(earnsXp ? grantXp(data, xpForCoins(delta, config), nowMs) : {}),
+      ...nextXp,
     });
     writeTx(tx, {userId: callerUid, delta, previous, action, sourceTag, reason, fixedId: adAwardRef?.id});
     response = {
@@ -596,11 +604,12 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
     const segment = weightedPick(config.award.proSpin);
     const coins = config.award.proSpin[segment].coins;
     const balance = previous + coins;
+    const nextXp = grantXp(data, xpForCoins(coins, config), nowMs);
     tx.update(userRef, {
       "coins": balance,
       "coinState.proSpinDate": today,
       "coinState.proDailyBonusDate": today,
-      ...grantXp(data, xpForCoins(coins, config), nowMs),
+      ...nextXp,
     });
     writeTx(tx, {
       userId: callerUid,
@@ -614,7 +623,11 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
       extra: {coins, segment},
     });
     const privateData = privateSnap.data() ?? {};
-    writePrivate(tx, privateRef, privateData, questsAfter(privateData, "pro_spin", nowMs, true, config));
+    const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs);
+    writePrivate(tx, privateRef, privateData, {
+      ...questsAfter(privateData, "pro_spin", nowMs, true, config),
+      ...(rewards.added.length > 0 ? {inventory: {owned: rewards.owned}} : {}),
+    });
     response = {
       ...response,
       success: true,
@@ -790,15 +803,19 @@ export const spinWheel = onCall(
       const prize = resolveWheelPrize(segments[segment], Object.keys(owned));
       const current = balance - plan.cost + prize.coins;
       const delta = prize.coins - plan.cost;
+      const nextXp = grantXp(data, prize.xp + xpForCoins(prize.coins, config), nowMs);
       tx.update(userRef, {
         coins: current,
         ...(plan.free ? {"coinState.proSpinDate": today, "coinState.proDailyBonusDate": today} : {}),
-        ...grantXp(data, prize.xp + xpForCoins(prize.coins, config), nowMs),
+        ...nextXp,
       });
+      const ownedAfterPrize = prize.itemId ? {...inventoryOwned(privateData), [prize.itemId]: nowMs} : null;
+      const rewards = rankRewardsFor(nextXp.xp, ownedAfterPrize ?? inventoryOwned(privateData), config, nowMs);
+      const nextOwned = rewards.added.length > 0 ? rewards.owned : ownedAfterPrize;
       writePrivate(tx, privateRef, privateData, {
         spinWheel: plan.next,
         ...(plan.free ? questsAfter(privateData, "pro_spin", nowMs, true, config) : {}),
-        ...(prize.itemId ? {inventory: {...rawInventory, owned: {...owned, [prize.itemId]: nowMs}}} : {}),
+        ...(nextOwned ? {inventory: {...rawInventory, owned: nextOwned}} : {}),
       });
       const reply: SpinWheelReply = {
         success: true,

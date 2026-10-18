@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/features/shop/domain/cosmetic_styles.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -6,10 +8,13 @@ import 'package:flutter/material.dart';
 
 /// What a shop item looks like: a theme swatch, an icon tile, a profile ring or a glowing name.
 class ShopItemPreview extends StatelessWidget {
-  const ShopItemPreview({super.key, required this.item, this.size = 72});
+  const ShopItemPreview({super.key, required this.item, this.size = 72, this.sheen = false});
 
   final ShopItem item;
   final double size;
+
+  /// Sweeps a glint across an app icon once, unless animations are off.
+  final bool sheen;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,7 @@ class ShopItemPreview extends StatelessWidget {
         height: size,
         child: switch (item.kind) {
           ShopItemKind.theme => _ThemeSwatch(item: item, size: size),
-          ShopItemKind.appIcon => _IconTile(item: item, size: size),
+          ShopItemKind.appIcon => _IconTile(item: item, size: size, sheen: sheen),
           ShopItemKind.frame => _FramePreview(item: item, size: size),
           ShopItemKind.nameGlow => _GlowPreview(item: item, size: size),
         },
@@ -79,20 +84,64 @@ class _Bar extends StatelessWidget {
 }
 
 class _IconTile extends StatelessWidget {
-  const _IconTile({required this.item, required this.size});
+  const _IconTile({required this.item, required this.size, required this.sheen});
 
   final ShopItem item;
   final double size;
+  final bool sheen;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: appIconColors(item.id)),
-        borderRadius: BorderRadius.circular(size * 0.23),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12)),
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final BorderRadius radius = BorderRadius.circular(size * 0.225);
+    final int cacheWidth = math.max(1, (size * MediaQuery.devicePixelRatioOf(context)).ceil());
+    return ClipRSuperellipse(
+      borderRadius: radius,
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Image.asset(appIconAsset(item.id), fit: BoxFit.cover, cacheWidth: cacheWidth),
+          if (sheen && !MediaQuery.disableAnimationsOf(context)) const _Sheen(),
+          DecoratedBox(
+            decoration: ShapeDecoration(
+              shape: RoundedSuperellipseBorder(
+                borderRadius: radius,
+                side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.10), width: 0.5),
+              ),
+            ),
+          ),
+        ],
       ),
-      child: Icon(Icons.auto_awesome_rounded, size: size * 0.42, color: Colors.white.withValues(alpha: 0.9)),
+    );
+  }
+}
+
+/// One diagonal white glint that crosses the icon and stops.
+class _Sheen extends StatelessWidget {
+  const _Sheen();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: -3, end: 3),
+        duration: const Duration(milliseconds: 900),
+        curve: Curves.easeInOut,
+        builder: (BuildContext context, double dx, Widget? _) => DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment(dx - 1, -1),
+              end: Alignment(dx + 1, 1),
+              colors: <Color>[
+                Colors.white.withValues(alpha: 0),
+                Colors.white.withValues(alpha: 0.5),
+                Colors.white.withValues(alpha: 0),
+              ],
+              stops: const <double>[0.4, 0.5, 0.6],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

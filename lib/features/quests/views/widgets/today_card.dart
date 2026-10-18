@@ -3,7 +3,6 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
@@ -67,7 +66,9 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
             listenWhen: (before, after) => after.awards.isNotEmpty && before.awards != after.awards,
             listener: (context, state) {
               final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
-              toasts.success(coins > 0 ? 'Quest done: +$coins coins' : 'Quest done');
+              final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
+              final String reward = <String>[if (coins > 0) '+$coins coins', if (xp > 0) '+$xp XP'].join(' · ');
+              toasts.success(reward.isEmpty ? 'Quest done' : 'Quest done: $reward');
               context.read<QuestsBloc>().add(const QuestsEvent.awardsShown());
             },
           ),
@@ -80,7 +81,11 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
           builder: (context, state) {
             final QuestState? quests = state.quests;
             if (quests == null) return const SizedBox.shrink();
-            return _TodayView(quests: quests, opening: state.opening, onOpenSpin: widget.onOpenSpin);
+            return ValueListenableBuilder<EconomyConfig>(
+              valueListenable: EconomyConfig.notifier,
+              builder: (context, _, _) =>
+                  _TodayView(quests: quests, opening: state.opening, onOpenSpin: widget.onOpenSpin),
+            );
           },
         ),
       ),
@@ -134,14 +139,11 @@ class _TodayView extends StatelessWidget {
               ],
             ),
           ),
-          for (final QuestItem item in quests.items) _QuestRow(item: item, reward: '+${CoinPolicy.questCoins}'),
+          for (final QuestItem item in quests.items) _QuestRow(item: item),
           if (bonus != null) ...<Widget>[divider, _BonusRow(item: bonus, onOpenSpin: onOpenSpin)],
           divider,
           _ChestRow(quests: quests, done: done, opening: opening),
-          if (weekly != null) ...<Widget>[
-            divider,
-            _QuestRow(item: weekly, reward: '+${EconomyConfig.current.award.weeklyQuestCoins}', weekly: true),
-          ],
+          if (weekly != null) ...<Widget>[divider, _QuestRow(item: weekly, weekly: true)],
         ],
       ),
     );
@@ -233,24 +235,6 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-class _Reward extends StatelessWidget {
-  const _Reward(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        const PrismCoinIcon(size: 14),
-        const SizedBox(width: 5),
-        Text(label, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
-      ],
-    );
-  }
-}
-
 class _Done extends StatelessWidget {
   const _Done();
 
@@ -259,10 +243,9 @@ class _Done extends StatelessWidget {
 }
 
 class _QuestRow extends StatelessWidget {
-  const _QuestRow({required this.item, required this.reward, this.weekly = false});
+  const _QuestRow({required this.item, this.weekly = false});
 
   final QuestItem item;
-  final String reward;
   final bool weekly;
 
   @override
@@ -270,13 +253,18 @@ class _QuestRow extends StatelessWidget {
     final QuestInfo info = questInfo(item.id);
     final bool done = item.claimed;
     final String count = '${item.progress} of ${item.target}';
+    final EconomyAward awards = EconomyConfig.current.award;
+    final int coins = weekly ? awards.weeklyQuestCoins : awards.questCoins;
+    final int xp = weekly ? awards.weeklyQuestXp : awards.questXp;
+    final String reward = '+$coins coins · +$xp XP';
+    final String? progress = weekly ? 'This week · $count' : (item.target > 1 && !done ? count : null);
     return _ItemRow(
       icon: info.icon,
       title: info.title,
-      subtitle: weekly ? 'This week · $count' : (item.target > 1 && !done ? count : null),
-      semanticLabel: done ? '${info.title}, done' : '${info.title}, $count',
+      subtitle: <String>[if (progress != null) progress, reward].join('\n'),
+      semanticLabel: '${info.title}, ${done ? 'done' : count}. $reward',
       progress: done ? 1 : item.progress / item.target,
-      trailing: done ? const _Done() : _Reward(reward),
+      trailing: done ? const _Done() : null,
     );
   }
 }

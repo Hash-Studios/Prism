@@ -121,6 +121,7 @@ flutter:
   assets:
     - assets/images/
     - assets/sounds/
+    - assets/app_icons/
 
   shaders:
     - shaders/convolve3x3.frag

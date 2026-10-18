@@ -299,6 +299,27 @@ class StreakClaimResult {
   final int proBonusReward;
   final int totalReward;
   final int newBalance;
+
+  List<StreakLifecycleEvent> get lifecycleEvents => !claimed
+      ? const <StreakLifecycleEvent>[]
+      : <StreakLifecycleEvent>[
+          if (streakBroken)
+            StreakLifecycleEvent(action: 'break', streakCount: streakCount, previousCount: previousStreakCount),
+          StreakLifecycleEvent(
+            action: streakCount == 1 ? 'start' : 'increment',
+            streakCount: streakCount,
+            previousCount: previousStreakCount,
+          ),
+          if (freezesUsed > 0)
+            StreakLifecycleEvent(
+              action: 'freeze_used',
+              streakCount: streakCount,
+              freezesUsed: freezesUsed,
+              freezesLeft: freezesLeft,
+            ),
+          if (milestone != null && milestone! > 0)
+            StreakLifecycleEvent(action: 'milestone', streakCount: streakCount, milestone: milestone),
+        ];
 }
 
 enum StreakFreezeOutcome { success, insufficientBalance, atCap, unavailable, failed }
@@ -425,6 +446,9 @@ class CoinsService with WidgetsBindingObserver {
 
   /// The user whose root XP was read, so a later rise can be announced as a rank up.
   String _xpUserId = '';
+  XpStatus _confirmedXp = XpStatus.empty();
+  String _confirmedXpWeek = '';
+  int _xpMutationGeneration = 0;
   int _economyRev = -1;
   int _economyMutationGeneration = 0;
   int _graceDownloadsUsed = 0;
@@ -432,6 +456,8 @@ class CoinsService with WidgetsBindingObserver {
   int _adsTodayCount = 0;
   final Map<String, String> _pendingEconomyRequests = <String, String>{};
   final Set<String> _spendRequestsInFlight = <String>{};
+  final Map<(String, int), Future<void>> _rankRewardSyncs = <(String, int), Future<void>>{};
+  final Set<(String, int)> _rankRewardSyncRequested = <(String, int)>{};
 
   /// The cached economy state belongs to the signed-in user.
   bool get _ownsEconomyState => _canMutateCoins() && _economyUserId == app_state.prismUser.id;
@@ -578,10 +604,11 @@ class CoinsService with WidgetsBindingObserver {
     _watchSessionForSpinWheel();
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
+    final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
     if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
-      _syncRootProjection(userId, rootSnapshot);
+      _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
     }
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
@@ -613,34 +640,42 @@ class CoinsService with WidgetsBindingObserver {
       await _persistEconomy(userId, privateData, authoritative: true);
       if (!_isCurrentOwner(userId, generation)) return;
     } else if (privateRead.authoritativeMissing && _economyMutationGeneration == mutationGeneration) {
-      _resetEconomy(userId);
-      if (rootSnapshot != null) _syncRootProjection(userId, rootSnapshot);
+      _resetEconomy(userId, resetXp: false);
+      if (rootSnapshot != null) {
+        _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
+      }
       await _invalidateEconomySnapshot(userId);
       if (!_isCurrentOwner(userId, generation)) return;
     }
     if (_pendingClaimUserId != userId) consumeLastClaim();
     if (data == null) {
+      await reconcileRankRewards();
       return;
     }
     _applyLocalBalance(parseIntOr(data['coins']), delta: 0);
     if (_economyMutationGeneration == mutationGeneration) {
-      _syncStreakFromUserData(data);
-      await _persistRootEconomySnapshot(userId, data);
+      final bool syncXp = _xpMutationGeneration == xpGeneration;
+      _syncStreakFromUserData(data, syncXp: syncXp);
+      await _persistRootEconomySnapshot(userId, data, includeXp: syncXp, merge: !syncXp);
+      if (!_isCurrentOwner(userId, generation)) return;
     }
     await retryPendingRefunds();
+    if (!_isCurrentOwner(userId, generation)) return;
+    await reconcileRankRewards();
   }
 
   Future<void> restoreLocalEconomyForCurrentUser() async {
     final String userId = app_state.prismUser.id;
     if (!_canMutateCoins() || userId.trim().isEmpty) return;
+    _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
-    _ensureEconomyUser(userId);
     _watchSessionForSpinWheel();
+    final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
     if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
-      _syncRootProjection(userId, rootSnapshot);
+      _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
     }
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
@@ -691,13 +726,18 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _persistRootEconomySnapshot(String userId, Map<String, dynamic> userData) async {
+  Future<void> _persistRootEconomySnapshot(
+    String userId,
+    Map<String, dynamic> userData, {
+    bool merge = false,
+    bool includeXp = true,
+  }) async {
     try {
       await _economySnapshots.writeRoot(userId, <String, dynamic>{
-        if (userData.containsKey('xp')) 'xp': userData['xp'],
-        if (userData.containsKey('xpWeek')) 'xpWeek': userData['xpWeek'],
-        if (userData.containsKey('cosmetics')) 'cosmetics': userData['cosmetics'],
-      });
+        if (includeXp && userData.containsKey('xp')) 'xp': userData['xp'],
+        if (includeXp && userData.containsKey('xpWeek')) 'xpWeek': userData['xpWeek'],
+        if (!includeXp || userData.containsKey('cosmetics')) 'cosmetics': userData['cosmetics'],
+      }, merge: merge);
     } catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.root_economy.persist', error: error, stackTrace: stackTrace);
     }
@@ -725,12 +765,14 @@ class CoinsService with WidgetsBindingObserver {
       return app_state.prismUser.coins;
     }
     final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
+    final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
-      _syncRootProjection(userId, rootSnapshot);
+      _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
     }
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
@@ -760,20 +802,27 @@ class CoinsService with WidgetsBindingObserver {
       await _persistEconomy(userId, privateData, authoritative: true);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     } else if (privateRead.authoritativeMissing && _economyMutationGeneration == mutationGeneration) {
-      _resetEconomy(userId);
-      if (rootSnapshot != null) _syncRootProjection(userId, rootSnapshot);
+      _resetEconomy(userId, resetXp: false);
+      if (rootSnapshot != null) {
+        _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
+      }
       await _invalidateEconomySnapshot(userId);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
     if (userData == null) {
+      await reconcileRankRewards();
       return app_state.prismUser.coins;
     }
     final int coins = parseIntOr(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
     if (_economyMutationGeneration == mutationGeneration) {
-      _syncStreakFromUserData(userData);
-      await _persistRootEconomySnapshot(userId, userData);
+      final bool syncXp = _xpMutationGeneration == xpGeneration;
+      _syncStreakFromUserData(userData, syncXp: syncXp);
+      await _persistRootEconomySnapshot(userId, userData, includeXp: syncXp, merge: !syncXp);
+      if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
+    await reconcileRankRewards();
+    if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     return coins;
   }
 
@@ -848,6 +897,7 @@ class CoinsService with WidgetsBindingObserver {
       return _notLoggedIn;
     }
     final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final bool isRefund = action == CoinEarnAction.refund;
     // Refunds are keyed by the debit's transactionId; the server ignores amount for them.
     final int? amount = isRefund ? null : (amountOverride ?? action.defaultAmount());
@@ -864,16 +914,19 @@ class CoinsService with WidgetsBindingObserver {
       transactionId: transactionId,
       requestId: requestId,
     );
+    if (action == CoinEarnAction.rewardedAd) {
+      final String prefix = '$_awardTransactionPrefix${userId}_';
+      if (result.unknownOutcomeTransactionId.startsWith(prefix)) {
+        await _rememberPendingReward(result.unknownOutcomeTransactionId.substring(prefix.length), userId: userId);
+      }
+    }
+    if (!_isCurrentOwner(userId, generation)) return _notLoggedIn;
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (action == CoinEarnAction.rewardedAd) {
       _noteAdsRemaining(result.adsRemaining);
       if (result.changed) {
         _noteAdWatched();
         _markBonusQuestDone(QuestEvent.watchAd);
-      }
-      final String prefix = '$_awardTransactionPrefix${userId}_';
-      if (result.unknownOutcomeTransactionId.startsWith(prefix)) {
-        await _rememberPendingReward(result.unknownOutcomeTransactionId.substring(prefix.length), userId: userId);
       }
     }
     if (result.changed) {
@@ -883,6 +936,7 @@ class CoinsService with WidgetsBindingObserver {
         sourceTag: sourceTag,
         reason: reason,
       );
+      if (!isRefund) unawaited(reconcileRankRewards());
     }
     return result;
   }
@@ -1093,6 +1147,7 @@ class CoinsService with WidgetsBindingObserver {
 
   Future<_AiGenerationReservationResult> reserveForAiGeneration({
     required AiQualityTier qualityTier,
+    String? operationId,
     String sourceTag = 'coins.reserve.ai_generation',
   }) async {
     if (!_canMutateCoins()) {
@@ -1134,6 +1189,8 @@ class CoinsService with WidgetsBindingObserver {
     }
     analytics.track(
       AiChargeReservedEvent(
+        operationId: operationId,
+        chargeTransactionId: result.transactionId,
         mode: result.mode,
         coinsSpent: result.coinsSpent,
         balance: app_state.prismUser.coins,
@@ -1147,6 +1204,7 @@ class CoinsService with WidgetsBindingObserver {
     AiChargeMode mode, {
     String sourceTag = 'coins.rollback.ai_generation',
     String? reservationTransactionId,
+    String? operationId,
   }) async {
     if (mode == AiChargeMode.insufficient) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
@@ -1162,6 +1220,8 @@ class CoinsService with WidgetsBindingObserver {
       if (refund.changed) {
         analytics.track(
           AiChargeRolledBackEvent(
+            operationId: operationId,
+            chargeTransactionId: reservationTransactionId,
             mode: mode,
             coinsRefunded: refund.delta,
             balance: app_state.prismUser.coins,
@@ -1177,16 +1237,24 @@ class CoinsService with WidgetsBindingObserver {
     return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
   }
 
-  bool _isRetryableRefundFailure(CoinMutationResult refund) =>
-      !refund.success &&
-      !const <String>{
-        'failed-precondition',
-        'invalid-argument',
-        'permission-denied',
-        'refund_daily_limit',
-        'missing_transaction_id',
-        'not_logged_in',
-      }.contains(refund.reason);
+  static String aiRefundOutcome(CoinMutationResult refund, {bool charged = true}) {
+    if (!charged || refund.reason == 'no_reservation_to_rollback') return 'not_required';
+    if (refund.changed) return 'refunded';
+    if (refund.reason == 'already_refunded') return 'already_refunded';
+    if (const <String>{
+      'failed-precondition',
+      'invalid-argument',
+      'permission-denied',
+      'refund_daily_limit',
+      'missing_transaction_id',
+      'not_logged_in',
+      'refund_denied_generation_succeeded',
+    }.contains(refund.reason))
+      return 'denied';
+    return refund.success ? 'failed' : 'pending';
+  }
+
+  bool _isRetryableRefundFailure(CoinMutationResult refund) => aiRefundOutcome(refund) == 'pending';
 
   List<Map<String, dynamic>> _readPendingEntries() {
     if (!_settings.isOpen) return <Map<String, dynamic>>[];
@@ -1318,12 +1386,27 @@ class CoinsService with WidgetsBindingObserver {
         result = await award(CoinEarnAction.rewardedAd, sourceTag: 'coins.reward.retry', requestId: key);
         if (result.changed) toasts.success('Your ad reward was added.');
       } else {
+        final CoinSpendAction action =
+            CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration;
         result = await refundSpend(
-          CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration,
+          action,
           sourceTag: 'coins.rollback.retry',
           transactionId: key,
           reason: entry['reason']?.toString() ?? 'ai_generation_failed_refund',
         );
+        if (app_state.prismUser.id == userId &&
+            action == CoinSpendAction.aiGeneration &&
+            (result.changed || result.reason == 'already_refunded')) {
+          analytics.track(
+            AiChargeRolledBackEvent(
+              chargeTransactionId: key,
+              mode: AiChargeMode.coinSpend,
+              coinsRefunded: result.delta,
+              balance: app_state.prismUser.coins,
+              sourceTag: 'coins.rollback.retry',
+            ),
+          );
+        }
       }
       if (app_state.prismUser.id != userId) break;
       if (result.changed || !_isRetryableRefundFailure(result)) resolvedKeys.add(key);
@@ -1557,10 +1640,14 @@ class CoinsService with WidgetsBindingObserver {
   void commitAiGenerationReservation({
     required AiChargeMode mode,
     required int coinsSpent,
+    String? operationId,
+    String? chargeTransactionId,
     String sourceTag = 'coins.commit.ai_generation',
   }) {
     analytics.track(
       AiChargeCommittedEvent(
+        operationId: operationId,
+        chargeTransactionId: chargeTransactionId,
         mode: mode,
         coinsSpent: coinsSpent,
         balance: app_state.prismUser.coins,
@@ -1656,6 +1743,7 @@ class CoinsService with WidgetsBindingObserver {
     }
     final int previousBalance = app_state.prismUser.coins;
     final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final int timezoneOffsetMinutes = _deviceTimezoneOffsetMinutes();
     final bool reminderEnabled = _preferredStreakReminderEnabled();
     try {
@@ -1667,7 +1755,7 @@ class CoinsService with WidgetsBindingObserver {
         'timezoneOffsetMinutes': timezoneOffsetMinutes,
         'reminderEnabled': reminderEnabled,
       });
-      if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
+      if (!_isCurrentOwner(userId, generation)) return _notLoggedIn;
       final Map<String, dynamic> payload = toJsonMap(response.data);
       final StreakClaimResult result = StreakClaimResult.fromPayload(payload);
       final bool claimed = result.claimed;
@@ -1704,6 +1792,9 @@ class CoinsService with WidgetsBindingObserver {
       );
       if (claimed) _grantLocalXp(_xpForCoins(totalReward));
       if (claimed && _publishedClaimDays.add((userId, todayLocalKey))) {
+        for (final event in result.lifecycleEvents) {
+          analytics.track(event);
+        }
         _pendingClaimUserId = userId;
         lastClaimNotifier.value = result;
       }
@@ -1798,6 +1889,17 @@ class CoinsService with WidgetsBindingObserver {
             sourceTag: 'coins.buy_streak_freeze',
           );
         }
+        if (_asBool(data['changed'])) {
+          analytics.track(
+            StreakLifecycleEvent(
+              action: 'freeze_purchased',
+              streakCount: streakNotifier.value.count,
+              coins: CoinPolicy.streakFreezeCost,
+              freezesLeft: freezes,
+              result: 'success',
+            ),
+          );
+        }
         return StreakFreezePurchase(StreakFreezeOutcome.success, freezes: freezes);
       }
       return StreakFreezePurchase(
@@ -1860,6 +1962,9 @@ class CoinsService with WidgetsBindingObserver {
       await setPendingReferralInviterId(inviterUserId);
     }
     if (!_canMutateCoins()) {
+      if (pendingReferralInviterId?.isNotEmpty ?? false) {
+        analytics.track(const ReferralResultEvent(outcome: 'ineligible', role: 'referee', reason: 'not_logged_in'));
+      }
       return _notLoggedIn;
     }
     final String currentUserId = app_state.prismUser.id;
@@ -1868,6 +1973,7 @@ class CoinsService with WidgetsBindingObserver {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_pending_referral');
     }
     if (pendingInviter == currentUserId) {
+      analytics.track(const ReferralResultEvent(outcome: 'skipped', role: 'referee', reason: 'self_referral'));
       await clearPendingReferralInviterId();
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'self_referral');
     }
@@ -1879,6 +1985,42 @@ class CoinsService with WidgetsBindingObserver {
       logReason: 'referee_reward',
       callableName: 'processReferral',
       inviterUserId: pendingInviter,
+    );
+    analytics.track(
+      ReferralResultEvent(
+        operationId: _newRequestId(),
+        outcome: result.changed
+            ? 'success'
+            : result.reason == 'referral_inviter_daily_limit'
+            ? 'retry_pending'
+            : result.success
+            ? 'skipped'
+            : 'retry_pending',
+        role: 'referee',
+        reason:
+            const <String>{
+              'referral_already_processed',
+              'referral_caller_not_new',
+              'referral_inviter_not_older',
+              'referral_inviter_lifetime_limit',
+              'referral_inviter_daily_limit',
+              'referral_inviter_not_found',
+              'not_logged_in',
+              'unauthenticated',
+              'permission-denied',
+              'unavailable',
+              'deadline-exceeded',
+              'resource-exhausted',
+              'callable_failed',
+            }.contains(result.reason)
+            ? result.reason
+            : result.changed
+            ? 'confirmed'
+            : 'unknown',
+        referralId: result.transactionId.isEmpty ? null : result.transactionId,
+        referrerId: pendingInviter.contains('@') ? null : pendingInviter,
+        refereeId: currentUserId.contains('@') ? null : currentUserId,
+      ),
     );
     if (result.changed ||
         const <String>{
@@ -1904,6 +2046,7 @@ class CoinsService with WidgetsBindingObserver {
       return _notLoggedIn;
     }
     final String userId = app_state.prismUser.id;
+    final int generation = _economySessionGeneration;
     final CoinMutationResult result = await _callCoinMutation(
       userId: userId,
       callableName: callableName,
@@ -1913,7 +2056,7 @@ class CoinsService with WidgetsBindingObserver {
       reason: reason,
       inviterUserId: inviterUserId,
     );
-    if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
+    if (!_isCurrentOwner(userId, generation)) return _notLoggedIn;
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {
       final CoinEarnFlags flags = earnFlagsNotifier.value;
@@ -1929,6 +2072,7 @@ class CoinsService with WidgetsBindingObserver {
         );
       }
       _logEarn(action: action, amount: result.delta, sourceTag: sourceTag, reason: logReason);
+      unawaited(reconcileRankRewards());
     }
     return result;
   }
@@ -1953,15 +2097,20 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  void _resetEconomy(String userId) {
+  void _resetEconomy(String userId, {bool resetXp = true}) {
     _economyUserId = userId;
-    _xpUserId = '';
+    if (resetXp) {
+      _xpUserId = '';
+      _confirmedXp = XpStatus.empty();
+      _confirmedXpWeek = '';
+      _xpMutationGeneration++;
+      xpNotifier.value = XpStatus.empty();
+    }
     _economyRev = -1;
     _spinDay = SpinDay.none;
     _graceDownloadsUsed = 0;
     _adsTodayDay = null;
     _adsTodayCount = 0;
-    xpNotifier.value = XpStatus.empty();
     questsNotifier.value = null;
     questAwardsNotifier.value = const <QuestAward>[];
     inventoryNotifier.value = Inventory.empty;
@@ -1975,9 +2124,9 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Social fields on the root doc: XP, equipped cosmetics, today's ad count.
-  void _syncRootEconomy(Map<String, dynamic> userData, Map<String, dynamic> coinState) {
+  void _syncRootEconomy(Map<String, dynamic> userData, Map<String, dynamic> coinState, {bool syncXp = true}) {
     final String userId = app_state.prismUser.id;
-    _syncRootProjection(userId, userData);
+    _syncRootProjection(userId, userData, syncXp: syncXp);
     final Map<String, dynamic> adsToday = toJsonMap(coinState['adsToday']);
     final String? day = _optionalString(adsToday['day']);
     if (day != null) {
@@ -1986,10 +2135,12 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  void _syncRootProjection(String userId, Map<String, dynamic> userData) {
+  void _syncRootProjection(String userId, Map<String, dynamic> userData, {bool syncXp = true}) {
     _ensureEconomyUser(userId);
-    _setXp(XpStatus.fromUserData(userData), announce: _xpUserId == userId);
-    _xpUserId = userId;
+    if (syncXp) {
+      _confirmXp(userData, announce: _xpUserId == userId);
+      _xpUserId = userId;
+    }
     final Map<String, dynamic> cosmetics = toJsonMap(userData['cosmetics']);
     inventoryNotifier.value = inventoryNotifier.value.withEquipped(
       frame: _optionalString(cosmetics['frame']),
@@ -2038,7 +2189,92 @@ class CoinsService with WidgetsBindingObserver {
     if (xp <= 0) return;
     final String userId = app_state.prismUser.id;
     _ensureEconomyUser(userId);
+    _xpMutationGeneration++;
+    _economyMutationGeneration++;
     _setXp(xpNotifier.value.plus(xp), announce: _xpUserId == userId);
+    unawaited(reconcileRankRewards());
+  }
+
+  /// Repairs rank ownership on normal refresh and after XP awards. Concurrent requests for this session share a
+  /// call; work that arrives while it runs requests another pass so a later XP award cannot be missed.
+  Future<void> reconcileRankRewards() {
+    if (!_canMutateCoins()) return Future<void>.value();
+    final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
+    final int generation = _economySessionGeneration;
+    final (String, int) key = (userId, generation);
+    _rankRewardSyncRequested.add(key);
+    final Future<void>? running = _rankRewardSyncs[key];
+    if (running != null) return running;
+    final Future<void> request = _reconcileRankRewards(userId, generation, key);
+    _rankRewardSyncs[key] = request;
+    return request;
+  }
+
+  Future<void> _reconcileRankRewards(String userId, int generation, (String, int) key) async {
+    try {
+      do {
+        _rankRewardSyncRequested.remove(key);
+        final int xpGeneration = _xpMutationGeneration;
+        final _EconomyReply? reply = await _callEconomy(
+          'reconcileRankRewards',
+          const <String, Object?>{},
+          userId: userId,
+          sourceTag: 'coins.rank_rewards.reconcile',
+          timeout: const Duration(seconds: 10),
+        );
+        if (!_isCurrentOwner(userId, generation)) return;
+        if (reply != null && reply.success && !reply.stale && reply.data['xp'] is num) {
+          if (_xpMutationGeneration == xpGeneration) {
+            _confirmXp(reply.data, announce: false, protectReads: true);
+            final XpStatus xp = xpNotifier.value;
+            await _persistRootEconomySnapshot(userId, <String, dynamic>{
+              'xp': xp.xp,
+              'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': xp.weekXp},
+            }, merge: true);
+            if (!_isCurrentOwner(userId, generation)) return;
+          } else {
+            _rankRewardSyncRequested.add(key);
+          }
+        }
+      } while (_rankRewardSyncRequested.contains(key));
+    } finally {
+      _rankRewardSyncRequested.remove(key);
+      _rankRewardSyncs.remove(key);
+    }
+  }
+
+  bool _staleEconomyReply(Map<String, dynamic> data) {
+    final int? revision = parseInt(data['rev']);
+    return revision != null && revision < _economyRev;
+  }
+
+  void _confirmXp(Map<String, dynamic> data, {required bool announce, bool protectReads = false}) {
+    final XpStatus received = XpStatus.fromUserData(data);
+    final String week = economyWeekKey(DateTime.now());
+    final int xp = max(_confirmedXp.xp, received.xp);
+    final int weekXp = max(_confirmedXpWeek == week ? _confirmedXp.weekXp : 0, received.weekXp);
+    _confirmedXp = XpStatus(xp: xp, weekXp: weekXp, rank: EconomyConfig.current.rankFor(xp));
+    _confirmedXpWeek = week;
+    final XpStatus previous = xpNotifier.value;
+    if (protectReads && (previous.xp != xp || previous.weekXp != weekXp)) _xpMutationGeneration++;
+    _setXp(_confirmedXp, announce: announce);
+  }
+
+  Future<void> _patchInventoryReply(String userId, Map<String, dynamic> data) async {
+    final Object? rawOwned = data['owned'];
+    if (rawOwned is! List || _staleEconomyReply(data)) return;
+    final Set<String> owned = Set<String>.unmodifiable(rawOwned.whereType<String>());
+    final Set<String> previous = inventoryNotifier.value.owned;
+    final bool changed = owned.length != previous.length || !owned.containsAll(previous);
+    final int? revision = parseInt(data['rev']);
+    if (revision != null) _economyRev = revision;
+    if (changed || data['inventoryChanged'] == true) _economyMutationGeneration++;
+    inventoryNotifier.value = inventoryNotifier.value.withOwned(owned);
+    await _persistEconomy(userId, <String, dynamic>{
+      'rev': max(0, _economyRev),
+      'inventory': <String, Object?>{'owned': owned.toList()},
+    });
   }
 
   int _xpForCoins(int coins) => max(0, (coins * EconomyConfig.current.xp.perCoinEarned).round());
@@ -2113,6 +2349,7 @@ class CoinsService with WidgetsBindingObserver {
     required String sourceTag,
     Duration? timeout,
   }) async {
+    _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
     try {
       final HttpsCallable callable = appFunctions.httpsCallable(
@@ -2125,10 +2362,20 @@ class CoinsService with WidgetsBindingObserver {
       });
       if (!_isCurrentOwner(userId, generation)) return null;
       final Map<String, dynamic> data = toJsonMap(response.data);
-      if (data['currentBalance'] is num) {
+      final bool shopSuccess = name == 'purchaseShopItem' && data['success'] == true;
+      if (_staleEconomyReply(data)) {
+        if (shopSuccess) unawaited(_refreshShopBalance(userId, generation));
+        return _EconomyReply(data, stale: true);
+      }
+      final bool shopReplay = shopSuccess && data['reason'] == 'duplicate';
+      if (!shopReplay && data['currentBalance'] is num) {
         _applyLocalBalance(parseIntOr(data['currentBalance']), delta: parseIntOr(data['delta']));
       }
-      return _EconomyReply(data);
+      if (!_isCurrentOwner(userId, generation)) return null;
+      await _patchInventoryReply(userId, data);
+      if (!_isCurrentOwner(userId, generation)) return null;
+      if (shopReplay) unawaited(_refreshShopBalance(userId, generation));
+      return _EconomyReply(data, stale: _staleEconomyReply(data));
     } on FirebaseFunctionsException catch (error, stackTrace) {
       logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
       if (!_isCurrentOwner(userId, generation)) return null;
@@ -2137,6 +2384,15 @@ class CoinsService with WidgetsBindingObserver {
       logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
       if (!_isCurrentOwner(userId, generation)) return null;
       return const _EconomyReply(<String, dynamic>{'success': false, 'reason': 'unknown'}, errorCode: 'unknown');
+    }
+  }
+
+  Future<void> _refreshShopBalance(String userId, int generation) async {
+    if (!_isCurrentOwner(userId, generation)) return;
+    try {
+      await refreshBalance();
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.shop.balance_refresh', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -2156,22 +2412,26 @@ class CoinsService with WidgetsBindingObserver {
     final String requestId = _pendingEconomyRequests[key] ??= stored.isNotEmpty ? stored : _newRequestId();
     if (settings.isOpen) await settings.set(key, requestId);
     if (!_isCurrentOwner(userId, generation)) return null;
-    final _EconomyReply? reply = await _callEconomy(
+    _EconomyReply? reply = await _callEconomy(
       name,
       <String, Object?>{...params, 'requestId': requestId},
       userId: userId,
       sourceTag: sourceTag,
     );
     if (!_isCurrentOwner(userId, generation)) return null;
+    if (reply != null && _staleEconomyReply(reply.data)) reply = _EconomyReply(reply.data, stale: true);
     final int? revision = parseInt(reply?.data['rev']);
     if (revision != null && revision > _economyRev) _economyRev = revision;
-    if (reply?.success == true && reply?.changed == true) _economyMutationGeneration++;
+    if (reply?.success == true && reply?.changed == true && reply?.stale == false) _economyMutationGeneration++;
     if (reply != null && reply.definite) {
       if (_pendingEconomyRequests[key] == requestId) _pendingEconomyRequests.remove(key);
       if (settings.isOpen && settings.get<String>(key, defaultValue: '') == requestId) {
         await settings.delete(key);
         if (!_isCurrentOwner(userId, generation)) return null;
       }
+    }
+    if (reply != null && _staleEconomyReply(reply.data)) {
+      return _EconomyReply(reply.data, stale: true);
     }
     return reply;
   }
@@ -2200,13 +2460,13 @@ class CoinsService with WidgetsBindingObserver {
     );
     if (!_isCurrentOwner(userId, generation)) return null;
     if (reply == null || reply.errorCode != null) return questsNotifier.value;
-    if (reply.success && reply.data.containsKey('quests')) _economyMutationGeneration++;
-    final int? rev = parseInt(reply.data['rev']);
-    if (rev != null && rev < _economyRev) return questsNotifier.value;
-    _applyQuestReply(reply.data);
-    if (reply.data.containsKey('quests')) {
+    bool stale = reply.stale || _staleEconomyReply(reply.data);
+    if (!stale && reply.success && reply.data.containsKey('quests')) _economyMutationGeneration++;
+    if (!stale) _applyQuestReply(reply.data);
+    if (!stale && reply.data.containsKey('quests')) {
       await _persistEconomy(userId, <String, dynamic>{'rev': _economyRev, 'quests': reply.data['quests']});
       if (!_isCurrentOwner(userId, generation)) return null;
+      stale = _staleEconomyReply(reply.data);
     }
     final Object? rawAwards = reply.data['awarded'];
     final List<QuestAward> awards = <QuestAward>[
@@ -2224,7 +2484,8 @@ class CoinsService with WidgetsBindingObserver {
       for (final QuestAward award in awards) {
         analytics.track(QuestCompletedEvent(questId: award.id, coins: award.coins, xp: award.xp));
       }
-      _grantLocalXp(awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp));
+      if (!stale) _grantLocalXp(awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp));
+      if (stale) unawaited(reconcileRankRewards());
     }
     return questsNotifier.value;
   }
@@ -2300,13 +2561,14 @@ class CoinsService with WidgetsBindingObserver {
     final int cost = max(0, parseIntOr(reply.data['cost']));
     final bool free = reply.data['free'] == true;
     final String? itemId = win.itemId;
-    if (itemId != null) {
+    if (!reply.stale && itemId != null) {
       inventoryNotifier.value = inventoryNotifier.value.withOwned(
         Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
       );
     }
     if (reply.changed) {
-      _grantLocalXp(win.xp + _xpForCoins(win.coins));
+      if (!reply.stale) _grantLocalXp(win.xp + _xpForCoins(win.coins));
+      if (reply.stale) unawaited(reconcileRankRewards());
       analytics.track(
         SpinWheelSpunEvent(
           free: free,
@@ -2324,15 +2586,17 @@ class CoinsService with WidgetsBindingObserver {
       if (cost > 0) _logSpend(action: CoinSpendAction.spinWheel, amount: cost, sourceTag: 'coins.spin_wheel');
       if (win.coins > 0) _logEarn(action: CoinEarnAction.spinWheel, amount: win.coins, sourceTag: 'coins.spin_wheel');
     }
-    if (free) _markBonusQuestDone(QuestEvent.proSpin);
+    if (free && !reply.stale) _markBonusQuestDone(QuestEvent.proSpin);
     _adoptSpinWheelStatus(status);
-    unawaited(
-      _persistEconomy(userId, <String, dynamic>{
-        'rev': _economyRev,
-        'spinWheel': _spinDay.toMap(),
-        if (itemId != null) 'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
-      }),
-    );
+    if (!reply.stale) {
+      unawaited(
+        _persistEconomy(userId, <String, dynamic>{
+          'rev': _economyRev,
+          'spinWheel': _spinDay.toMap(),
+          if (itemId != null) 'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
+        }),
+      );
+    }
     return SpinWon(
       win: win,
       cost: cost,
@@ -2379,25 +2643,28 @@ class CoinsService with WidgetsBindingObserver {
         _ => ChestOutcome.failed,
       }, reason: reason);
     }
-    _applyQuestReply(reply.data);
+    if (!reply.stale) _applyQuestReply(reply.data);
     final int coins = parseIntOr(reply.data['coins']);
     final String? itemId = _optionalString(reply.data['itemId']);
-    if (itemId != null) {
+    if (!reply.stale && itemId != null) {
       inventoryNotifier.value = inventoryNotifier.value.withOwned(
         Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
       );
     }
-    await _persistEconomy(userId, <String, dynamic>{
-      'rev': _economyRev,
-      if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
-      'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
-    });
+    if (!reply.stale) {
+      await _persistEconomy(userId, <String, dynamic>{
+        'rev': _economyRev,
+        if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
+        'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
+      });
+    }
     if (!_isCurrentOwner(userId, generation)) {
       return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
     }
     if (reply.changed) {
       analytics.track(QuestChestOpenedEvent(coins: coins, itemId: itemId));
       _logEarn(action: CoinEarnAction.questChest, amount: coins, sourceTag: 'coins.quests.chest');
+      unawaited(reconcileRankRewards());
     }
     return ChestResult(
       ChestOutcome.opened,
@@ -2418,26 +2685,15 @@ class CoinsService with WidgetsBindingObserver {
     if (!_isCurrentOwner(userId, generation) || reply == null) {
       return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'session_changed');
     }
-    final Object? rawOwned = reply.data['owned'];
-    if (rawOwned is List) {
-      inventoryNotifier.value = inventoryNotifier.value.withOwned(
-        Set<String>.unmodifiable(rawOwned.whereType<String>()),
-      );
-    } else if (reply.success) {
-      inventoryNotifier.value = inventoryNotifier.value.withOwned(
-        Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
-      );
-    }
-    final Set<String> owned = inventoryNotifier.value.owned;
-    if (reply.success) {
-      await _persistEconomy(userId, <String, dynamic>{
-        'rev': _economyRev,
-        'inventory': <String, Object?>{'owned': owned.toList()},
+    if (reply.success && !reply.stale && reply.data['owned'] is! List) {
+      await _patchInventoryReply(userId, <String, dynamic>{
+        'owned': <String>{...inventoryNotifier.value.owned, itemId}.toList(),
       });
       if (!_isCurrentOwner(userId, generation)) {
         return const ShopPurchaseResult(ShopPurchaseOutcome.failed, reason: 'session_changed');
       }
     }
+    final Set<String> owned = inventoryNotifier.value.owned;
     final String reason = reply.reason;
     if (reply.success) {
       if (reply.changed) {
@@ -2476,7 +2732,9 @@ class CoinsService with WidgetsBindingObserver {
       userId: userId,
       sourceTag: 'coins.shop.equip',
     );
-    if (!_isCurrentOwner(userId, generation) || reply == null || !reply.success) return false;
+    if (!_isCurrentOwner(userId, generation) || reply == null || !reply.success || _staleEconomyReply(reply.data)) {
+      return false;
+    }
     _economyMutationGeneration++;
     final Map<String, dynamic> cosmetics = reply.data.containsKey('cosmetics')
         ? toJsonMap(reply.data['cosmetics'])
@@ -2517,13 +2775,13 @@ class CoinsService with WidgetsBindingObserver {
               url: toJsonMap(raw)['url']?.toString() ?? '',
             ),
     ];
-    if (unlocked.isNotEmpty) {
+    if (!reply.stale && unlocked.isNotEmpty) {
       dropsUnlockedNotifier.value = Map<String, DropUnlock>.unmodifiable(<String, DropUnlock>{
         ...dropsUnlockedNotifier.value,
         for (final DropUnlock u in unlocked) u.wallId: u,
       });
     }
-    if (reply.success) {
+    if (reply.success && !reply.stale) {
       await _persistEconomy(userId, <String, dynamic>{
         'rev': _economyRev,
         'drops': <String, Object?>{
@@ -2681,6 +2939,7 @@ class CoinsService with WidgetsBindingObserver {
     String? requestId,
     Map<String, Object?> extra = const <String, Object?>{},
   }) async {
+    final int generation = _economySessionGeneration;
     final bool idempotent = callableName == 'spendCoins' || (callableName == 'awardCoins' && action == 'rewardedAd');
     final String transactionPrefix = callableName == 'spendCoins' ? _spendTransactionPrefix : _awardTransactionPrefix;
     final String? effectiveRequestId = idempotent ? (requestId ?? _newRequestId()) : null;
@@ -2710,12 +2969,12 @@ class CoinsService with WidgetsBindingObserver {
           )
         : _notLoggedIn;
     for (int attempt = 1; attempt <= attempts; attempt++) {
-      if (!_canMutateCoins() || userId != app_state.prismUser.id) return signedOut(mayHaveDebited: mayHaveCommitted);
+      if (!_isCurrentOwner(userId, generation)) return signedOut(mayHaveDebited: mayHaveCommitted);
       try {
         final HttpsCallable callable = appFunctions.httpsCallable(callableName);
         final HttpsCallableResult<dynamic> response = await callable.call(payload);
         final Map<String, dynamic> data = toJsonMap(response.data);
-        if (!_canMutateCoins() || userId != app_state.prismUser.id) {
+        if (!_isCurrentOwner(userId, generation)) {
           return signedOut(mayHaveDebited: data['changed'] == true);
         }
         final int balance = parseIntOr(data['currentBalance']);
@@ -2831,10 +3090,10 @@ class CoinsService with WidgetsBindingObserver {
     return localReminder.subtract(Duration(minutes: timezoneOffsetMinutes)).toUtc();
   }
 
-  StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData) {
+  StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData, {bool syncXp = true}) {
     final Map<String, dynamic> coinState = toJsonMap(userData[_coinStateField]);
     earnFlagsNotifier.value = CoinEarnFlags.fromCoinState(coinState);
-    _syncRootEconomy(userData, coinState);
+    _syncRootEconomy(userData, coinState, syncXp: syncXp);
     final int timezoneOffsetMinutes =
         parseInt(coinState['streakClaimTimezoneOffsetMinutes']) ??
         parseInt(coinState[_streakTimezoneOffsetMinutesField]) ??
@@ -2897,6 +3156,7 @@ class CoinsService with WidgetsBindingObserver {
       return;
     }
     _applyLocalBalance(balance, delta: balance - app_state.prismUser.coins);
+    unawaited(reconcileRankRewards());
   }
 
   void _applyLocalBalance(int newBalance, {required int delta}) {
@@ -2969,12 +3229,14 @@ class CoinsService with WidgetsBindingObserver {
 }
 
 class _EconomyReply {
-  const _EconomyReply(this.data, {this.errorCode});
+  const _EconomyReply(this.data, {this.errorCode, this.stale = false});
 
   final Map<String, dynamic> data;
 
   /// Set when the callable threw. Null for any reply the server sent.
   final String? errorCode;
+
+  final bool stale;
 
   /// The server answered for sure, so a stored request id can go. A lost or failed call may still have committed.
   bool get definite =>
