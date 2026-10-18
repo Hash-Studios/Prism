@@ -1,5 +1,16 @@
 ## Changelog
 
+### v3.7.0
+- A new home: tabs for For you, Following, Trending, Latest and Popular, and bigger wallpapers
+- The floating bar and plus button are back
+- Daily quests are now a game board, and the daily chest is a box you open for coins or a cosmetic
+- A new spin wheel for coins that anyone can play, with a free spin a day for Pro
+- Reach a new rank to unlock a permanent name glow or frame
+- Creators earn XP when their uploads are approved and when people favourite their work
+- The leaderboard explains weekly XP, and Friends is now Following
+- New art for the Shop app icons, with real previews
+- Security and stability fixes
+
 ### v3.6.0
 - Daily quests with a chest to open, and a bigger quest each week
 - A new Shop: themes, app icons, profile frames and name glows
