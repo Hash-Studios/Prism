@@ -52,12 +52,14 @@ void main() {
   late int calls;
 
   setUp(() async {
+    AnalyticsRuntime.reset();
     await backend.install();
     calls = 0;
     repo = BadgeRepositoryImpl();
   });
 
   tearDown(() async {
+    AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
   });
@@ -191,7 +193,6 @@ void main() {
     final Completer<dynamic> response = Completer<dynamic>();
     final FakeAppAnalytics recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    addTearDown(AnalyticsRuntime.reset);
     final _FailingRefreshFirestore firestore = _FailingRefreshFirestore();
     getIt.registerSingleton<FirestoreClient>(firestore);
     backend.onCall = (_, _) {
@@ -221,7 +222,6 @@ void main() {
   test('duplicate badge ids in one response queue and track only once', () async {
     final FakeAppAnalytics recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    addTearDown(AnalyticsRuntime.reset);
     backend.onCall = (_, _) async => <String, Object>{
       'newBadges': <Object>[
         <String, Object>{'id': 'creator', 'coins': 50},
