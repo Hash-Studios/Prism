@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/features/shop/domain/cosmetic_styles.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -92,7 +94,7 @@ class _IconTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final BorderRadius radius = BorderRadius.circular(size * 0.225);
-    final int cacheWidth = (size * MediaQuery.devicePixelRatioOf(context)).ceil();
+    final int cacheWidth = math.max(1, (size * MediaQuery.devicePixelRatioOf(context)).ceil());
     return ClipRSuperellipse(
       borderRadius: radius,
       child: Stack(

@@ -7,6 +7,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/shop.dart';
+import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -106,6 +107,13 @@ void main() {
     testWidgets('an app icon tile draws the real icon art', (tester) async {
       await pumpTile(tester, 'icon_noir');
 
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.jpg')), findsOneWidget);
+    });
+
+    testWidgets('an app icon tile with no room still builds', (tester) async {
+      await tester.pumpWidget(host(ShopItemPreview(item: shopItem('icon_noir')!, size: 0)));
+
+      expect(tester.takeException(), isNull);
       expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.jpg')), findsOneWidget);
     });
 
