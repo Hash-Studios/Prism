@@ -53,7 +53,6 @@ class WheelFacePainter extends CustomPainter {
       );
     }
 
-    // Separators and the soft shade at the rim.
     final Paint separator = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = math.max(1.2, geometry.diameter * 0.009)
@@ -85,7 +84,6 @@ class WheelFacePainter extends CustomPainter {
     final WheelGold gold = palette.gold;
     final int? win = winner;
     if (win != null && dim > 0) {
-      // A gold line along the rim of the winning slice.
       canvas.drawArc(
         rect.deflate(geometry.diameter * 0.006),
         -math.pi / 2 + win * s + 0.02,
@@ -99,7 +97,6 @@ class WheelFacePainter extends CustomPainter {
       );
     }
 
-    // Pegs.
     final double pr = geometry.pegRadius;
     for (int i = 0; i < n; i++) {
       final double a = -math.pi / 2 + i * s;
@@ -244,7 +241,6 @@ class _SliceLabelStrip extends StatelessWidget {
   }
 }
 
-/// Digits in the number a prize shows.
 int _digits(WheelPrize prize) => switch (prize) {
   CoinsPrize(:final int coins) => '$coins'.length,
   XpPrize(:final int xp) => '$xp'.length,

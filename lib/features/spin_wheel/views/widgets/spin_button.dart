@@ -71,7 +71,6 @@ class _SpinButtonState extends State<SpinButton> {
     final bool flat = !_enabled && !widget.pressed;
     final bool sunk = _down || widget.pressed;
     final Duration duration = context.motion(PrismDurations.press);
-    // A disabled button sits on the plinth as a flat, quiet slab in the plinth's own ink.
     final Color plinthInk = palette.plinthInk;
     final Color faceTop = flat ? plinthInk.withValues(alpha: 0.16) : gold.highlight;
     final Color faceMid = flat ? plinthInk.withValues(alpha: 0.13) : gold.light;
@@ -140,7 +139,6 @@ class _SpinButtonState extends State<SpinButton> {
       ),
       child: Stack(
         children: <Widget>[
-          // The gloss on the top half.
           if (!flat)
             Positioned(
               left: 3,

@@ -14,7 +14,6 @@ void main() {
       expect(sliceUnderPointer(0.01, 8), 7);
       expect(sliceUnderPointer(twoPi / 8 + 0.01, 8), 6);
       expect(sliceUnderPointer(7 * twoPi / 8 + 0.01, 8), 0);
-      // Turning it back brings slice 1 under the pointer.
       expect(sliceUnderPointer(-twoPi / 8 - 0.01, 8), 1);
     });
 
@@ -45,7 +44,6 @@ void main() {
                   target,
                   reason: 'n=$n target=$target offset=$offset start=$start speed=$speed',
                 );
-                // The stop sits at the asked offset inside the slice.
                 final double inside = (normalizeAngle(-end) / sliceWidth(n)) - target;
                 expect(inside, closeTo(offset, 1e-9));
                 expect(end - start, greaterThanOrEqualTo(2 * twoPi));

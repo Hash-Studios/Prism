@@ -87,7 +87,6 @@ class WheelMachineController {
     spinner.stop();
   }
 
-  /// Advances every part to [elapsed].
   void tick(Duration elapsed) {
     final double seconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
     // A ticker that was stopped and started again counts from 0. The controller's clock only moves forward.

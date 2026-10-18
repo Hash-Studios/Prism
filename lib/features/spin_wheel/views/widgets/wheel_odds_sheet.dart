@@ -4,7 +4,6 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:flutter/material.dart';
 
-/// Lists every slice of the wheel with its odds in percent.
 Future<void> showWheelOdds(BuildContext context, List<WheelSegment> segments) {
   final List<WheelOdds> odds = wheelOdds(segments);
   return showPrismSheet<void>(

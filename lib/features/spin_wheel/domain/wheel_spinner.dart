@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:Prism/features/spin_wheel/domain/wheel_motion.dart';
 
 enum WheelPhase {
-  /// At rest before a spin.
   idle,
 
   /// A short wind back against the spin direction.
@@ -33,7 +32,6 @@ enum WheelPhase {
 class WheelSpinner {
   WheelSpinner({this.theta = 0, this.cruiseSpeed = defaultCruiseSpeed});
 
-  /// 2.6 turns a second.
   static const double defaultCruiseSpeed = 2.6 * wheelTurn;
   static const double windUpAngle = 0.12;
   static const double windUpSeconds = 0.16;

@@ -2326,7 +2326,6 @@ class CoinsService with WidgetsBindingObserver {
     }
     if (free) _markBonusQuestDone(QuestEvent.proSpin);
     _adoptSpinWheelStatus(status);
-    // The wheel waits for this reply, so the snapshot write must not hold it back.
     unawaited(
       _persistEconomy(userId, <String, dynamic>{
         'rev': _economyRev,

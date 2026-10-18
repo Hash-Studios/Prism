@@ -12,7 +12,6 @@ enum BulbMode {
   landed,
 }
 
-/// The state of every bulb at one frame.
 class BulbFrame {
   const BulbFrame({this.mode = BulbMode.idle, this.time = 0, this.chase = 0, this.flash = 0});
 
@@ -36,7 +35,6 @@ class BulbFrame {
 const double bulbFlashCycle = 0.4;
 const int bulbFlashCount = 3;
 
-/// How long the landing flashes last.
 const double bulbFlashSeconds = bulbFlashCycle * bulbFlashCount;
 
 /// Brightness of bulb [index] from 0 (dim) to 1 (full).

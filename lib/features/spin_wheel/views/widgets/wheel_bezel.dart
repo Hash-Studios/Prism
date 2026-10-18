@@ -6,14 +6,12 @@ import 'package:Prism/features/spin_wheel/views/widgets/wheel_palette.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Bulbs on the bezel. Sixteen, evenly spaced.
 const int wheelBulbCount = 16;
 
 /// Paints one bulb at [center]. [lit] runs from 0 (dim gold) to 1 (a near white core with a soft glow).
 void paintBulb(Canvas canvas, Offset center, double radius, double lit, WheelGold gold) {
   final Color unlit = Color.lerp(gold.deep, gold.dark, 0.7)!;
   final Color core = gold.glint;
-  // The socket: a dark gold well the bulb sits in.
   canvas.drawCircle(center, radius * 1.38, Paint()..color = Color.lerp(gold.dark, gold.ink, 0.5)!);
   canvas.drawCircle(
     center,
@@ -44,7 +42,6 @@ void paintBulb(Canvas canvas, Offset center, double radius, double lit, WheelGol
         colors: <Color>[Color.lerp(unlit, core, lit)!, Color.lerp(gold.dark, gold.base, lit)!],
       ).createShader(rect),
   );
-  // A small specular dot, so even a dim bulb reads as glass.
   canvas.drawCircle(
     center.translate(-radius * 0.3, -radius * 0.34),
     radius * 0.24,
@@ -69,7 +66,6 @@ class WheelBezelPainter extends CustomPainter {
     final WheelGold gold = palette.gold;
     final Rect bounds = Rect.fromCircle(center: c, radius: outer);
 
-    // Ground shadow.
     canvas.drawCircle(
       c.translate(0, geometry.diameter * 0.035),
       outer * 0.98,
@@ -78,7 +74,6 @@ class WheelBezelPainter extends CustomPainter {
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, geometry.diameter * 0.04),
     );
 
-    // The gold ring, brushed like metal: a sweep of light and dark.
     final Path ring = Path()
       ..fillType = PathFillType.evenOdd
       ..addOval(bounds)
@@ -91,7 +86,6 @@ class WheelBezelPainter extends CustomPainter {
           transform: const GradientRotation(-math.pi * 0.62),
         ).createShader(bounds),
     );
-    // Bevel: a dark outer edge, a bright line just inside it and a dark lip against the inner ring.
     canvas.drawCircle(
       c,
       outer - 0.6,
@@ -127,7 +121,6 @@ class WheelBezelPainter extends CustomPainter {
         ..color = gold.dark.withValues(alpha: 0.85),
     );
 
-    // The dark ring, glossy: a faint light on its upper left.
     final double ringOuter = inner;
     final Rect ringBounds = Rect.fromCircle(center: c, radius: ringOuter);
     canvas.drawCircle(
@@ -141,7 +134,6 @@ class WheelBezelPainter extends CustomPainter {
         ).createShader(ringBounds),
     );
 
-    // The bulbs.
     final BulbFrame bulbs = frame.value;
     const double step = 2 * math.pi / wheelBulbCount;
     for (int k = 0; k < wheelBulbCount; k++) {

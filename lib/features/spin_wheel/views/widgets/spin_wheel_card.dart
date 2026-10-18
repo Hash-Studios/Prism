@@ -101,7 +101,6 @@ class _MiniWheel extends StatelessWidget {
           geometry: const WheelGeometry(size),
           theta: _Still<double>(restAngle(segments.length)),
           flapper: const _Still<double>(0),
-          // The bulbs of the small wheel hold the idle twinkle at its first frame.
           bulbs: const _Still<BulbFrame>(BulbFrame()),
           showLabels: false,
         ),

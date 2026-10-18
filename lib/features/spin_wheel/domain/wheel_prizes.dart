@@ -30,7 +30,6 @@ SpinAction spinAction({required SpinWheelStatus status, required int balance}) {
   return SpinAction.spin;
 }
 
-/// One row of the odds sheet.
 class WheelOdds {
   const WheelOdds({required this.prize, required this.percent});
 

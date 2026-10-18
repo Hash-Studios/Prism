@@ -66,7 +66,6 @@ class PointerFlapper {
     angle = angle.clamp(-maxAngle, maxAngle);
   }
 
-  /// Back to rest.
   void reset() {
     angle = 0;
     _angularVelocity = 0;

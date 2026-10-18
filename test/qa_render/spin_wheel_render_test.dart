@@ -48,7 +48,6 @@ Future<Completer<SpinWheelResult>> _mount(QaShot shot, SpinWheelStatus status) a
   return reply;
 }
 
-/// Taps SPIN and runs [spinFrames] frames of the spin.
 Future<void> _tapSpin(QaShot shot, {int spinFrames = 0}) async {
   await shot.tester.tap(find.text('SPIN'));
   await shot.tester.pump();
@@ -82,7 +81,6 @@ void main() {
     await _mount(shot, _freeStatus);
     await _tapSpin(shot, spinFrames: 75);
     await shot.save('machine_midspin');
-    // Let the pending spin end so the test leaves no timers behind.
   });
 
   qaScreen('machine_landed_coin', pro: true, (QaShot shot) async {

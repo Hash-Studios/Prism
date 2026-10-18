@@ -204,7 +204,6 @@ void main() {
 
       replies.single.complete(_won(4, coins: 20));
       await pumpFor(tester, const Duration(seconds: 2));
-      // The reply is in, the wheel is still turning: no result and no new balance yet.
       expect(find.text('+20'), findsNothing);
       expect(find.text('Spin again'), findsNothing);
       expect(find.text('330'), findsOneWidget);
@@ -527,13 +526,12 @@ void main() {
 
       await tapSpin(tester);
       expect(haptics, <String>['tap']);
-      // One second of cruise at 16 ms frames passes about 21 pegs, but haptics are throttled to one every 50 ms.
       for (int i = 0; i < 125; i++) {
         await tester.pump(const Duration(milliseconds: 16));
       }
       final int selections = haptics.where((String h) => h == 'selection').length;
       expect(selections, greaterThan(5));
-      expect(selections, lessThanOrEqualTo(2000 ~/ 50));
+      expect(selections, lessThanOrEqualTo(2000 ~/ 50), reason: 'Two seconds hold at most one selection per 50 ms');
       for (int i = 1; i < selectionTimes.length; i++) {
         expect(
           selectionTimes[i] - selectionTimes[i - 1],

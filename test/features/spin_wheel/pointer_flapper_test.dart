@@ -27,7 +27,6 @@ void main() {
     // The peg is 0.035 rad before the axis: half way through the contact window of 0.14 rad.
     flapper.update(0.016, -0.04, -0.035, n);
     expect(flapper.angle, closeTo(PointerFlapper.maxAngle * (0.035 / 0.14), 1e-9));
-    // Past the release the spring takes over and the angle falls to rest.
     flapper.update(0.016, 0.06, 0.08, n);
     double now = flapper.angle;
     expect(now, greaterThan(0));
@@ -41,7 +40,6 @@ void main() {
   test('a fast wheel pushes the tip fully even when a peg crosses the window inside one frame', () {
     final PointerFlapper flapper = PointerFlapper();
     const double step = 2.6 * wheelTurn / 60;
-    // Land the frame just before the peg, then one frame across it.
     final int passes = flapper.update(1 / 60, -step * 0.5, step * 0.5, n);
     expect(passes, 1);
     expect(flapper.angle, greaterThan(PointerFlapper.maxAngle * 0.4));
@@ -94,7 +92,6 @@ void main() {
       expect(bulb(BulbMode.spinning, 4, chase: 5), closeTo(0.5686, 0.001));
       expect(bulb(BulbMode.spinning, 4, chase: 5), lessThan(bulb(BulbMode.spinning, 5, chase: 5)));
       expect(bulb(BulbMode.spinning, 6, chase: 5), lessThan(0.15));
-      // The comet moves on: the head follows the chase position.
       expect(bulb(BulbMode.spinning, 6, chase: 6), closeTo(1, 1e-9));
     });
 

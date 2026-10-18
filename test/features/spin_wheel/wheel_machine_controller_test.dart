@@ -64,7 +64,6 @@ void main() {
     expect(controller.busy, isFalse);
     expect(sliceUnderPointer(controller.theta.value, 8), 5);
     expect(controller.flapperAngle.value.abs(), lessThan(0.001));
-    // Bulbs went back to the idle twinkle after the flashes.
     expect(controller.bulbs.value.mode, BulbMode.idle);
   });
 

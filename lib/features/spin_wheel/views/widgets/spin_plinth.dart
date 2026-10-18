@@ -98,7 +98,6 @@ class _PlinthPainter extends CustomPainter {
 
     canvas.save();
     canvas.clipRRect(slab);
-    // The well the wheel sits in: a darker hollow with a lit lip on its lower edge.
     final Offset wheelCentre = Offset(size.width / 2, geometry.plinthOverlap - geometry.radius);
     final double well = geometry.radius + geometry.diameter * 0.022;
     canvas.drawCircle(
@@ -122,7 +121,6 @@ class _PlinthPainter extends CustomPainter {
     );
     canvas.restore();
 
-    // A soft highlight along the top edge, and a darker line along the bottom.
     canvas.drawRRect(
       slab.deflate(1),
       Paint()
@@ -140,7 +138,6 @@ class _PlinthPainter extends CustomPainter {
         ).createShader(Offset.zero & size),
     );
 
-    // The inner panel the button sits in.
     final Rect panel = Rect.fromLTRB(
       PlinthMetrics.panelInset,
       geometry.plinthOverlap + PlinthMetrics.panelGap,
@@ -161,7 +158,6 @@ class _PlinthPainter extends CustomPainter {
         ).createShader(panel),
     );
 
-    // Three lights on each side, running in step with the bulbs.
     final BulbFrame frame = bulbs.value;
     final double midY = panel.center.dy;
     for (int k = 0; k < 3; k++) {

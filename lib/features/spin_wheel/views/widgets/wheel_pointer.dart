@@ -62,7 +62,6 @@ class WheelPointerPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round
         ..color = gold.dark.withValues(alpha: 0.85),
     );
-    // A bright edge on the left, where the light falls.
     canvas.drawPath(
       Path()
         ..moveTo(-cap * 0.62, cap * 0.2)
@@ -73,7 +72,6 @@ class WheelPointerPainter extends CustomPainter {
         ..strokeWidth = math.max(1, d * 0.005)
         ..color = gold.glint.withValues(alpha: 0.8),
     );
-    // The pivot.
     final Offset hinge = Offset(0, cap * 0.05);
     canvas.drawCircle(hinge, cap * 0.46, Paint()..color = gold.dark);
     canvas.drawCircle(
@@ -134,7 +132,6 @@ class _HubPainter extends CustomPainter {
         ..color = palette.colorScheme.scrim.withValues(alpha: 0.5)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.22),
     );
-    // Gold collar.
     canvas.drawCircle(
       c,
       r,
@@ -152,7 +149,6 @@ class _HubPainter extends CustomPainter {
         ..strokeWidth = 1
         ..color = gold.dark.withValues(alpha: 0.8),
     );
-    // The raised disc.
     final double inner = r * 0.76;
     final Rect innerBounds = Rect.fromCircle(center: c, radius: inner);
     canvas.drawCircle(

@@ -100,7 +100,6 @@ class SpinWheelStatus {
   final bool freeSpinAvailable;
   final int paidSpinsLeft;
 
-  /// What a paid spin costs.
   final int price;
 
   /// What the next spin costs. The client sends it as `maxCost`, so the server never charges more than this.

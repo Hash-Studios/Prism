@@ -55,7 +55,6 @@ class WheelLanding {
     : assert(endTheta > startTheta, 'A landing moves clockwise'),
       assert(velocity > 0, 'A landing starts at speed');
 
-  /// The wheel's landing on slice [targetIndex].
   factory WheelLanding.on({
     required double startTheta,
     required double velocity,

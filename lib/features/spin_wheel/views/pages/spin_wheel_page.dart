@@ -61,7 +61,6 @@ class SpinWheelPage extends StatefulWidget {
   final SpinFunction? spin;
   final ValueListenable<SpinWheelStatus>? status;
 
-  /// The coin balance the page starts from.
   final ValueListenable<int>? balance;
 
   @override
@@ -335,7 +334,6 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     );
   }
 
-  /// The glow of the accent behind the wheel.
   Widget _aura(_StageLayout layout, ColorScheme cs) {
     final double size = layout.diameter * 2.5;
     final bool dark = cs.brightness == Brightness.dark;
@@ -574,7 +572,6 @@ class _ProRow extends StatelessWidget {
   }
 }
 
-/// A small outlined pill under the plinth.
 class _OddsPill extends StatelessWidget {
   const _OddsPill({required this.onTap});
 
