@@ -9,6 +9,7 @@ import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/shop.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_tile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,10 +19,19 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final CoinsTestBackend backend = CoinsTestBackend();
   final CoinsService coins = CoinsService.instance;
+  const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   late List<String> calls;
+  late List<MethodCall> toastCalls;
 
   setUp(() async {
     calls = <String>[];
+    toastCalls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
+      call,
+    ) async {
+      toastCalls.add(call);
+      return true;
+    });
     await backend.install();
     backend.onCall = (String name, Map<String, dynamic> params) async {
       calls.add(name);
@@ -37,6 +47,7 @@ void main() {
     coins.inventoryNotifier.value = Inventory.empty;
     EconomyConfig.resetForTest();
     await getIt.reset();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
   });
 
   Widget host(Widget child) => MaterialApp(
@@ -238,6 +249,12 @@ void main() {
       expect(find.text('Equip'), findsOneWidget);
       expect(calls, contains('purchaseShopItem'));
       expect(find.text('Sync reward'), findsNothing);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+      expect(toastCalls.map((call) => call.method), <String>['cancel', 'showToast']);
+      expect((toastCalls.last.arguments as Map<Object?, Object?>)['msg'], 'You already own this');
+      // Fluttertoast clears its Dart-side showing flag one second after the platform reply.
+      await tester.pump(const Duration(seconds: 1));
     });
 
     testWidgets('a sold out limited item has no action', (tester) async {
