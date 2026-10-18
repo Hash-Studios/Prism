@@ -10,15 +10,15 @@ void main() {
       expect(describeWheel(wheel!), defaultWheelLines);
     });
 
-    test('accepts the bounds: two slices, twelve slices, 1000 coins, zero fallback, zero weight', () {
+    test('accepts the bounds: two slices, twelve slices, 1000 coins, 1 fallback coin, zero weight', () {
       expect(
         describeWheel(
           parseWheel(<Map<String, Object>>[
             <String, Object>{'kind': 'coins', 'coins': 1000, 'weight': 1000},
-            <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 0, 'weight': 0},
+            <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 1, 'weight': 0},
           ])!,
         ),
-        <String>['coins 1000 x1000', 'cosmetic 0 x0'],
+        <String>['coins 1000 x1000', 'cosmetic 1 x0'],
       );
       final List<Map<String, Object>> twelve = List<Map<String, Object>>.filled(12, <String, Object>{
         'kind': 'xp',
@@ -60,10 +60,10 @@ void main() {
       expect(
         parseWheel(<Object>[
           ok,
-          <String, Object>{'kind': 'cosmetic', 'fallbackCoins': -1, 'weight': 1},
+          <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 0, 'weight': 1},
         ]),
         isNull,
-        reason: 'negative fallback',
+        reason: 'a fallback that pays nothing',
       );
     });
   });

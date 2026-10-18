@@ -100,12 +100,12 @@ void main() {
         wheel: <Map<String, Object>>[
           <String, Object>{'kind': 'coins', 'coins': 7, 'weight': 2},
           <String, Object>{'kind': 'xp', 'xp': 40, 'weight': 1.5},
-          <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 0, 'weight': 1},
+          <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 1, 'weight': 1},
         ],
       );
       expect(c.spend.spinWheel, 15);
       expect(c.award.spinWheelMaxPerDay, 3);
-      expect(describeWheel(c.award.spinWheel), <String>['coins 7 x2', 'xp 40 x1', 'cosmetic 0 x1']);
+      expect(describeWheel(c.award.spinWheel), <String>['coins 7 x2', 'xp 40 x1', 'cosmetic 1 x1']);
     });
 
     test('zero is a valid price and a valid cap', () {

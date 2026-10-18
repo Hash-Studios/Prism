@@ -45,7 +45,7 @@ class WheelSegment {
         final int xp => XpPrize(xp),
         _ => null,
       },
-      'cosmetic' => switch (_amount(m['fallbackCoins'], min: 0)) {
+      'cosmetic' => switch (_amount(m['fallbackCoins'], min: 1)) {
         final int c => CosmeticPrize(fallbackCoins: c),
         _ => null,
       },
