@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui' show FlutterView, PlatformDispatcher;
+import 'dart:ui' show Display, FlutterView, PlatformDispatcher;
 
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/services.dart';
@@ -16,11 +16,8 @@ List<DeviceOrientation>? _applied;
 /// metrics change, so a foldable that folds to phone size goes back to portrait.
 Future<void> applyAllowedOrientations({FlutterView? view}) async {
   final FlutterView? targetView = view ?? PlatformDispatcher.instance.implicitView;
-  final Size displaySize = targetView?.display.size ?? Size.zero;
-  final double? displayDevicePixelRatio = targetView?.display.devicePixelRatio;
-  if (displaySize.isEmpty || displayDevicePixelRatio == null || displayDevicePixelRatio <= 0) return;
-
-  final Size size = displaySize / displayDevicePixelRatio;
+  final Size? size = targetView == null ? null : _screenSize(targetView);
+  if (size == null) return;
   final List<DeviceOrientation> next = allowedOrientations(size);
   if (identical(next, _applied)) return;
   _applied = next;
@@ -32,6 +29,16 @@ Future<void> applyAllowedOrientations({FlutterView? view}) async {
   }
 }
 
+/// Logical size of the screen that shows [view], or null before it is known. The display comes first, because a
+/// letterboxed window on a tablet is phone-sized. Android reports no display size, so the window is the fallback there.
+Size? _screenSize(FlutterView view) {
+  final Display display = view.display;
+  if (!display.size.isEmpty && display.devicePixelRatio > 0) return display.size / display.devicePixelRatio;
+  if (!view.physicalSize.isEmpty && view.devicePixelRatio > 0) return view.physicalSize / view.devicePixelRatio;
+  return null;
+}
+
+/// Runs [applyAllowedOrientations] when it starts and on every metrics change.
 class OrientationPolicyObserver with WidgetsBindingObserver {
   OrientationPolicyObserver({FlutterView? view}) : _view = view;
 

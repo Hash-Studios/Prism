@@ -151,4 +151,32 @@ void main() {
     await tester.pump();
     expect(calls, hasLength(beforeDisposeResize), reason: 'disposed observers do not send orientation requests');
   });
+
+  testWidgets('uses the window size when the platform reports no display size, as Android does', (tester) async {
+    final List<Object?> calls = <Object?>[];
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'SystemChrome.setPreferredOrientations') calls.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    addTearDown(() {
+      tester.view.reset();
+      tester.view.display.reset();
+    });
+
+    tester.view.display.size = Size.zero;
+    tester.view.devicePixelRatio = 2;
+    tester.view.physicalSize = const Size(2560, 1600);
+    await applyAllowedOrientations(view: tester.view);
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(1206, 2622);
+    await applyAllowedOrientations(view: tester.view);
+    expect(calls.last, <String>['DeviceOrientation.portraitUp'], reason: 'an Android phone keeps the portrait lock');
+
+    tester.view.devicePixelRatio = 2;
+    tester.view.physicalSize = const Size(2560, 1600);
+    await applyAllowedOrientations(view: tester.view);
+    expect(calls.last, <String>[], reason: 'an Android tablet can turn');
+  });
 }
