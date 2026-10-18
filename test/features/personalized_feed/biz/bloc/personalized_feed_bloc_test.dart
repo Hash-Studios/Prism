@@ -59,6 +59,7 @@ void main() {
   late _MockPersonalizedFeedRepository repository;
 
   setUp(() {
+    AnalyticsRuntime.reset();
     fetchUseCase = _MockFetchPersonalizedFeedUseCase();
     repository = _MockPersonalizedFeedRepository();
     when(() => repository.lessLikeThis(any())).thenAnswer((_) async {});
@@ -66,6 +67,8 @@ void main() {
     when(() => repository.readCached()).thenAnswer((_) async => null);
     when(() => repository.recordShown(any())).thenAnswer((_) async {});
   });
+
+  tearDown(AnalyticsRuntime.reset);
 
   test('blocking a creator removes their items from the emitted state without a refetch', () async {
     when(() => fetchUseCase(any())).thenAnswer(
@@ -224,7 +227,6 @@ void main() {
   test('the first load and a refresh report their own source context', () async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     when(() => fetchUseCase(any())).thenAnswer(
       (_) async => Result.success(
         PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'kept@example.com')], hasMore: false),
@@ -246,7 +248,6 @@ void main() {
 
   test('fetching more advances the page and keeps one copy of a repeated wallpaper', () async {
     AnalyticsRuntime.instance = FakeAppAnalytics();
-    addTearDown(AnalyticsRuntime.reset);
     when(() => fetchUseCase(any())).thenAnswer((invocation) async {
       final request = invocation.positionalArguments.single as FetchPersonalizedFeedRequest;
       final ids = request.page == 1 ? <String>['1', '2'] : <String>['2', '3'];
@@ -305,7 +306,6 @@ void main() {
     test('paints the cached page first, then replaces it with the fresh page', () async {
       final analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
-      addTearDown(AnalyticsRuntime.reset);
       when(() => repository.readCached()).thenAnswer((_) async => cachedPage());
       final Completer<Result<PersonalizedFeedPage>> fresh = Completer<Result<PersonalizedFeedPage>>();
       when(() => fetchUseCase(any())).thenAnswer((_) => fresh.future);
@@ -343,7 +343,6 @@ void main() {
     test('tells a stale cache apart in the analytics context', () async {
       final analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
-      addTearDown(AnalyticsRuntime.reset);
       when(() => repository.readCached()).thenAnswer((_) async => cachedPage(isStale: true));
       when(
         () => fetchUseCase(any()),
@@ -433,7 +432,6 @@ void main() {
     test('selecting a chip keeps it in the state and reports the choice once', () async {
       final analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
-      addTearDown(AnalyticsRuntime.reset);
       final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
       addTearDown(bloc.close);
       expect(bloc.state.chip, HomeFeedChip.forYou);
