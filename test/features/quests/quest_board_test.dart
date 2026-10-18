@@ -1,0 +1,156 @@
+import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/coins/economy_state.dart';
+import 'package:Prism/features/quests/domain/quest_board.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'fake_quests_repository.dart';
+
+void main() {
+  const EconomyAward award = EconomyAward(questCoins: 3, questXp: 40, weeklyQuestCoins: 50, weeklyQuestXp: 200);
+
+  List<QuestItem> dailyItems({required int claimed}) => <QuestItem>[
+    questItem('set_wall', QuestEvent.setWallpaper, claimed: claimed > 0, progress: claimed > 0 ? 1 : 0),
+    questItem('fav_3', QuestEvent.favourite, target: 3, claimed: claimed > 1, progress: claimed > 1 ? 3 : 1),
+    questItem('wotd_view', QuestEvent.viewWotd, claimed: claimed > 2, progress: claimed > 2 ? 1 : 0),
+  ];
+
+  QuestBoard boardOf({int claimed = 0, bool chestOpened = false, QuestItem? bonus, bool chestDoubled = false}) =>
+      QuestBoard.of(
+        questState(
+          items: dailyItems(claimed: claimed),
+          bonus: bonus,
+          chestOpened: chestOpened,
+          chestDoubled: chestDoubled,
+        ),
+        award,
+      );
+
+  group('rewards', () {
+    test('daily tiles pay the daily award and the weekly tile pays the weekly award', () {
+      final QuestBoard board = boardOf();
+
+      expect(board.daily.map((QuestTileModel t) => (t.reward.coins, t.reward.xp)), <(int, int)>[
+        (3, 40),
+        (3, 40),
+        (3, 40),
+      ]);
+      expect(board.weekly!.reward.coins, 50);
+      expect(board.weekly!.reward.xp, 200);
+      expect(board.weekly!.scope, QuestScope.weekly);
+      expect(board.daily.map((QuestTileModel t) => t.scope).toSet(), <QuestScope>{QuestScope.daily});
+    });
+  });
+
+  group('chest stage', () {
+    test('is locked while a daily quest is unclaimed', () {
+      expect(boardOf(claimed: 2).chest, ChestStage.locked);
+    });
+
+    test('is ready once every daily quest is claimed', () {
+      expect(boardOf(claimed: 3).chest, ChestStage.ready);
+    });
+
+    test('is opened after the chest is opened', () {
+      expect(boardOf(claimed: 3, chestOpened: true).chest, ChestStage.opened);
+    });
+
+    test('reports whether the opened chest was doubled', () {
+      expect(boardOf(claimed: 3, chestOpened: true, chestDoubled: true).doubled, isTrue);
+      expect(boardOf(claimed: 3, chestOpened: true).doubled, isFalse);
+    });
+  });
+
+  group('progress', () {
+    test('doneCount counts the claimed daily quests', () {
+      expect(boardOf().doneCount, 0);
+      expect(boardOf(claimed: 2).doneCount, 2);
+      expect(boardOf(claimed: 3).doneCount, 3);
+    });
+
+    test('fraction is progress over target while a quest is open', () {
+      expect(boardOf().daily[1].fraction, closeTo(0.3333, 0.0001));
+    });
+
+    test('fraction is full once a quest is done', () {
+      expect(boardOf(claimed: 2).daily[1].fraction, 1);
+    });
+  });
+
+  group('booster', () {
+    test('a watch_ad bonus is a video booster', () {
+      final ChestBooster booster = boardOf(bonus: questItem('watch_ad', QuestEvent.watchAd)).booster!;
+
+      expect(booster.kind, BoosterKind.watchAd);
+      expect(booster.claimed, isFalse);
+    });
+
+    test('a pro_spin bonus is the free spin booster', () {
+      final ChestBooster booster = boardOf(bonus: questItem('pro_spin', QuestEvent.proSpin)).booster!;
+
+      expect(booster.kind, BoosterKind.proSpin);
+      expect(booster.claimed, isFalse);
+    });
+
+    test('a claimed bonus is a claimed booster', () {
+      final ChestBooster booster = boardOf(
+        bonus: questItem('watch_ad', QuestEvent.watchAd, progress: 1, claimed: true),
+      ).booster!;
+
+      expect(booster.claimed, isTrue);
+    });
+
+    test('there is no booster and no weekly tile when the state has none', () {
+      final QuestBoard board = QuestBoard.of(
+        QuestState(
+          dayKey: '2026-10-18',
+          items: dailyItems(claimed: 0),
+          chestOpened: false,
+          chestDoubled: false,
+          weekKey: '2026-W42',
+        ),
+        award,
+      );
+
+      expect(board.booster, isNull);
+      expect(board.weekly, isNull);
+    });
+  });
+
+  group('nextDailyReset', () {
+    test('is the next UTC midnight', () {
+      expect(nextDailyReset(DateTime.utc(2026, 10, 18, 10, 20)), DateTime.utc(2026, 10, 19));
+    });
+
+    test('rolls over the end of the month', () {
+      expect(nextDailyReset(DateTime.utc(2026, 10, 31, 23, 59)), DateTime.utc(2026, 11));
+    });
+  });
+
+  group('nextWeeklyReset', () {
+    test('is the next day when it is a Sunday', () {
+      expect(nextWeeklyReset(DateTime.utc(2026, 10, 18, 9)), DateTime.utc(2026, 10, 19));
+    });
+
+    test('is a full week away just after Monday starts', () {
+      expect(nextWeeklyReset(DateTime.utc(2026, 10, 19, 0, 1)), DateTime.utc(2026, 10, 26));
+    });
+  });
+
+  group('formatCountdown', () {
+    test('shows days and hours from one day up', () {
+      expect(formatCountdown(const Duration(days: 4, hours: 2, minutes: 5)), '4d 2h');
+    });
+
+    test('shows hours and minutes under a day', () {
+      expect(formatCountdown(const Duration(hours: 13, minutes: 40)), '13h 40m');
+    });
+
+    test('shows minutes under an hour', () {
+      expect(formatCountdown(const Duration(minutes: 40)), '40m');
+    });
+
+    test('never shows less than a minute', () {
+      expect(formatCountdown(const Duration(seconds: 20)), '1m');
+    });
+  });
+}
