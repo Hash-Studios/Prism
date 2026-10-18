@@ -185,6 +185,8 @@ class _Content extends StatelessWidget {
     Widget withCaption(Widget child) => RefreshIndicator(
       color: cs.primary,
       backgroundColor: cs.surfaceContainerHigh,
+      notificationPredicate: (notification) =>
+          status != LoadStatus.initial && status != LoadStatus.loading && notification.depth == 0,
       onRefresh: onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

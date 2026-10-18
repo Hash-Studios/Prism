@@ -237,6 +237,18 @@ void main() {
     expect(find.text('Try again'), findsOneWidget);
   });
 
+  for (final LoadStatus status in <LoadStatus>[LoadStatus.initial, LoadStatus.loading]) {
+    testWidgets('pulling the ${status.name} skeleton does not start an overlapping refresh', (tester) async {
+      await pumpPage(tester, loaded(global: const <LeaderboardEntry>[]).copyWith(globalStatus: status));
+      await tester.drag(find.text('Ranked by XP earned this week'), const Offset(0, 500));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      verifyNever(() => bloc.add(const LeaderboardEvent.refreshed()));
+      expect(find.byType(RefreshProgressIndicator), findsNothing);
+    });
+  }
+
   for (final LoadStatus status in <LoadStatus>[LoadStatus.success, LoadStatus.failure]) {
     testWidgets('pulling the caption refreshes a ${status.name} board and completes', (tester) async {
       final StreamController<LeaderboardState> states = StreamController<LeaderboardState>.broadcast(sync: true);
