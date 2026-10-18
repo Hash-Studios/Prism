@@ -9,13 +9,16 @@ const streakChestPerDay = (award.streakChestMin + award.streakChestMax) / 2 / 7;
 const questsPerDay = 3 * award.questCoins;
 const questChest = (award.questChestMin + award.questChestMax) / 2;
 const weeklyPerDay = award.weeklyQuestCoins / 7;
-const spinMean = award.proSpin.reduce((sum, s) => sum + s.coins * s.weight, 0) /
-  award.proSpin.reduce((sum, s) => sum + s.weight, 0);
+// Coins per spin of the wheel. A cosmetic or XP slice pays no coins, so it counts 0 (a cosmetic's fallback only
+// pays once every common item is owned).
+const wheelTotalWeight = award.spinWheel.reduce((sum, s) => sum + s.weight, 0);
+const wheelCoinEv = award.spinWheel.reduce((sum, s) => sum + (s.kind === "coins" ? s.coins * s.weight : 0), 0) /
+  wheelTotalWeight;
 
 const personas = {
   casual: streakDaily + streakChestPerDay,
   engagedFree: streakDaily + streakChestPerDay + questsPerDay + questChest + award.rewardedAdFirstOfDay + weeklyPerDay,
-  engagedPro: (streakDaily + streakChestPerDay) * award.proStreakMultiplier + questsPerDay + questChest + spinMean +
+  engagedPro: (streakDaily + streakChestPerDay) * award.proStreakMultiplier + questsPerDay + questChest + wheelCoinEv +
     weeklyPerDay,
 };
 
@@ -26,4 +29,11 @@ test("economy sim: coins a day per persona on DEFAULT_ECONOMY", () => {
   // Revision 3 defaults give about 50.2 a day (the spec cohort budget, about 350 a week), above the 45 target.
   assert.ok(personas.engagedFree <= 55, `engaged free ${personas.engagedFree}`);
   assert.ok(personas.engagedPro <= 75, `engaged Pro ${personas.engagedPro}`);
+});
+
+test("economy sim: a paid wheel spin pays back less than it costs, so the wheel is a sink", () => {
+  assert.equal(Number(wheelCoinEv.toFixed(2)), 7.4);
+  assert.ok(wheelCoinEv < DEFAULT_ECONOMY.spend.spinWheel, `wheel EV ${wheelCoinEv}`);
+  const maxNetPerDay = award.spinWheelMaxPerDay * (wheelCoinEv - DEFAULT_ECONOMY.spend.spinWheel);
+  assert.equal(Number(maxNetPerDay.toFixed(1)), -13);
 });

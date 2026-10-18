@@ -43,7 +43,8 @@ Shape (defaults):
     "premiumFilter": 5, "premiumPreview24h": 10, "autoRotatePass7d": 50,
     "streakFreeze": 50, "streakRescue": 100,
     "aiFast": 10, "aiBalanced": 75, "aiQuality": 100,
-    "dropWall": 30, "dropPack": 150, "boostWall": 100, "giftPremiumPass": 20, "drawTicket": 20
+    "dropWall": 30, "dropPack": 150, "boostWall": 100, "giftPremiumPass": 20, "drawTicket": 20,
+    "spinWheel": 10
   },
   "proDiscountActions": ["aiGeneration", "dropWall", "dropPack"],   // Pro pays ceil(price / 2)
   "proBypassActions": ["wallpaperDownload", "premiumWallpaperDownload", "liveWallpaperStyle", "premiumFilter", "premiumPreview24h", "autoRotatePass7d"],
@@ -53,7 +54,14 @@ Shape (defaults):
     "referral": 100, "referralMaxPerDay": 3, "referralMaxLifetime": 20,
     "streakDaily": [3, 3, 5, 5, 8, 8, 10], "streakChestMin": 15, "streakChestMax": 40,
     "proStreakMultiplier": 1.5,
-    "proSpin": [{"coins": 20, "weight": 40}, {"coins": 30, "weight": 25}, {"coins": 50, "weight": 20}, {"coins": 75, "weight": 10}, {"coins": 100, "weight": 5}],
+    "proSpin": [{"coins": 20, "weight": 40}, {"coins": 30, "weight": 25}, {"coins": 50, "weight": 20}, {"coins": 75, "weight": 10}, {"coins": 100, "weight": 5}],   // legacy, 3.6.0 and older only
+    "spinWheelMaxPerDay": 5,
+    "spinWheel": [
+      {"kind": "coins", "coins": 10, "weight": 18}, {"kind": "xp", "xp": 25, "weight": 22},
+      {"kind": "coins", "coins": 5, "weight": 30}, {"kind": "coins", "coins": 100, "weight": 1},
+      {"kind": "coins", "coins": 20, "weight": 8}, {"kind": "xp", "xp": 50, "weight": 12},
+      {"kind": "coins", "coins": 50, "weight": 3}, {"kind": "cosmetic", "fallbackCoins": 50, "weight": 6}
+    ],
     "questCoins": 2, "questXp": 25, "questChestMin": 5, "questChestMax": 20, "questChestCosmeticChance": 0.1,
     "weeklyQuestCoins": 50, "weeklyQuestXp": 150,
     "graceDownloads": 3
@@ -66,6 +74,11 @@ Shape (defaults):
 
 Rules: `economyConfig/{doc}` is readable by anyone signed in, write false. Admins change it with
 `npm run economy:config -- --set spend.wallpaperDownload=10 --apply`.
+
+`award.spinWheel` is the wheel table, in wheel order. A segment is `coins` (1..1000 coins), `xp` (1..1000 XP) or
+`cosmetic` (`fallbackCoins` 0..1000, paid when the user owns every common item). Each has a `weight` of 0..1000. The
+table needs 2 to 12 segments and a positive weight sum. If any part is wrong, the server uses the whole default table.
+The rules, the odds and the UI are in `docs/features/spin-wheel.md`.
 
 ### Pricing version and old clients
 
@@ -81,7 +94,7 @@ the server returns. The legacy `proDailyBonus` award keeps working and shares it
 |---|---|---|
 | Streak cycle | 5,5,8,8,12,12,15 + 40 | 3,3,5,5,8,8,10 + chest 15..40 |
 | Pro streak | +5 a day, +20 day 7 | 1.5x on the day's coins, chest included |
-| Pro daily | flat 50 | Pro spin, 20..100, mean 38 |
+| Pro daily | flat 50 | One free wheel spin a day: 7.4 coins on average, plus XP or a cosmetic. 3.6.0 and older keep the Pro spin, 20..100, mean 38. |
 | Download | 5 | 10, first 3 ever free (grace) |
 | Premium wall | 15 | 25 |
 | Live wallpaper paid style | Pro only | 20 per apply, Pro free |
@@ -186,7 +199,8 @@ grant none.
 
 | Callable | Input | Effect | Reply extras |
 |---|---|---|---|
-| `claimProSpin` | `{requestId}` | premium only, once per UTC day (refused when `proSpinDate` or `proDailyBonusDate` is today), weighted pick from `proSpin`, writes both dates | `{coins, segment}` |
+| `claimProSpin` | `{requestId}` | legacy, for 3.6.0 and older (newer clients use `spinWheel`). Premium only, once per UTC day (refused when `proSpinDate` or `proDailyBonusDate` is today), weighted pick from `proSpin`, writes both dates | `{coins, segment}` |
+| `spinWheel` | `{requestId, maxCost, sourceTag}` | everyone can spin. Pro members get one free spin per UTC day; it shares its receipt with `claimProSpin` and `proDailyBonus`. A paid spin costs `spend.spinWheel`, at most `spinWheelMaxPerDay` a day. Refused with `spin_wheel_price_changed` when the cost is above `maxCost`, `spin_wheel_daily_limit` at the cap, `spin_wheel_insufficient_balance` when short. Otherwise picks a slice of `award.spinWheel` and grants coins, XP, or a random unowned common cosmetic (fallback coins when all are owned). Ledger doc `ctx_spinWheel_{uid}_{requestId}` stores the reply, so a retry returns it unchanged. See `docs/features/spin-wheel.md` | `{status: {freeSpinAvailable, paidSpinsLeft, price}}` on every reply; a win adds `{cost, free, segment, prize: {kind, coins, xp, itemId}, segments}` |
 | `progressQuest` | `{event?, eventId?, requestId?}` | rebuilds `quests` for today if stale (daily items reset on `dayKey`, weekly on `weekKey`; the day's assignment is persisted and never reshuffled), bumps progress on every daily, bonus and weekly item with that event, grants coins + XP when an item reaches its target. `event` omitted = sync only. `questEventRate` caps an event at 2 × its largest target per day. Bumps `rev`. | `{quests, awarded: [{id, coins, xp}]}` |
 | `openQuestChest` | `{requestId}` | needs the three daily items claimed and `!chestOpened`; coins in `[questChestMin, questChestMax]`, doubled when the bonus item is claimed; 10 % chance of a random unowned `common` cosmetic; tx id `ctx_questChest_{uid}_{dayKey}` | `{coins, doubled, itemId?}` |
 | `purchaseShopItem` | `{itemId, requestId}` | catalog price (config can override by id), checks `proOnly`, `minRank`, `founders` window, not owned; writes `inventory.owned` | `{itemId, owned}` |
