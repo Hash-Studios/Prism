@@ -23,7 +23,7 @@ String chestCostLine(DailyChestStatus status, {required DateTime now}) {
 }
 
 String chestBonusLine({required bool bonusDone}) =>
-    bonusDone ? 'Bonus quest done: coins and XP are doubled.' : "Do today's bonus quest first to double it.";
+    bonusDone ? 'Bonus quest done: your coins are doubled.' : "Do today's bonus quest first to double your coins.";
 
 /// The subtitle of the chest row on the Today card.
 String chestRowSubtitle(DailyChestStatus status) {

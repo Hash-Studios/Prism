@@ -94,7 +94,7 @@ void main() {
 
       expect(groups.map((ChestOddsGroup g) => g.tier), ChestTier.values);
       expect(groups.map((ChestOddsGroup g) => g.rows.length), <int>[2, 2, 2, 1]);
-      expect(groups.map((ChestOddsGroup g) => g.percent.round()), <int>[58, 28, 12, 2]);
+      expect(groups.map((ChestOddsGroup g) => g.percent.round()), <int>[62, 26, 11, 1]);
       final CoinsPrize legendary = groups.last.rows.single.prize as CoinsPrize;
       expect(legendary.coins, 100);
       expect(groups[2].rows.map((WheelOdds o) => o.prize.runtimeType), <Type>[CosmeticPrize, CoinsPrize]);
@@ -104,7 +104,7 @@ void main() {
       const List<WheelSegment> table = <WheelSegment>[
         WheelSegment(CoinsPrize(7), weight: 30),
         WheelSegment(CoinsPrize(9), weight: 60),
-        WheelSegment(XpPrize(15), weight: 10),
+        WheelSegment(CosmeticPrize(fallbackCoins: 15), weight: 10),
       ];
       final List<ChestOddsGroup> groups = chestOddsByTier(table);
 
@@ -140,8 +140,8 @@ void main() {
     });
 
     test('the bonus line says whether the chest doubles', () {
-      expect(chestBonusLine(bonusDone: true), 'Bonus quest done: coins and XP are doubled.');
-      expect(chestBonusLine(bonusDone: false), "Do today's bonus quest first to double it.");
+      expect(chestBonusLine(bonusDone: true), 'Bonus quest done: your coins are doubled.');
+      expect(chestBonusLine(bonusDone: false), "Do today's bonus quest first to double your coins.");
     });
 
     test('the row subtitle follows the state', () {

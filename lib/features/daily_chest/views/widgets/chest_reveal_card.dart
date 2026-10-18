@@ -10,7 +10,7 @@ import 'package:Prism/features/spin_wheel/spin_wheel.dart';
 import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:flutter/material.dart';
 
-/// What the chest held: its rarity, the prize and a line that says how it was paid.
+/// What the chest held: its rarity, the prize, a line that says how it was paid and the XP the open granted.
 class ChestRevealCard extends StatelessWidget {
   const ChestRevealCard({super.key, required this.won});
 
@@ -24,18 +24,13 @@ class ChestRevealCard extends StatelessWidget {
 
   bool get _isCosmetic => won.prize is CosmeticPrize && won.win.itemId != null;
 
-  bool get _isXp => won.prize is XpPrize;
-
-  /// The cosmetic itself is not doubled, only coins and XP are.
+  /// The cosmetic itself is not doubled, only coins are.
   bool get _showsDouble => won.doubled && !_isCosmetic;
 
   String get _semanticLabel {
-    final String prize = switch (won.prize) {
-      _ when _isCosmetic => 'a new ${_kindLabel(_item)}: ${_itemName()}',
-      XpPrize() => '${won.win.xp} XP',
-      _ => '${won.win.coins} coins',
-    };
-    return '${won.tier.label}. You won $prize.${_showsDouble ? ' Doubled by your bonus quest.' : ''}';
+    final String prize = _isCosmetic ? 'a new ${_kindLabel(_item)}: ${_itemName()}' : '${won.win.coins} coins';
+    final String xp = won.win.xp > 0 ? ' Plus ${won.win.xp} XP.' : '';
+    return '${won.tier.label}. You won $prize.${_showsDouble ? ' Doubled by your bonus quest.' : ''}$xp';
   }
 
   String _itemName() {
@@ -75,6 +70,10 @@ class ChestRevealCard extends StatelessWidget {
                 const SizedBox(height: PrismSpace.xxs),
                 Text('Doubled by your bonus quest', style: caption),
               ],
+              if (won.win.xp > 0) ...<Widget>[
+                const SizedBox(height: PrismSpace.xxs),
+                Text('+${won.win.xp} XP', style: caption),
+              ],
             ],
           ),
         ),
@@ -88,9 +87,9 @@ class ChestRevealCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        if (_isXp) Icon(Icons.bolt_rounded, size: 38, color: cs.onSurface) else const PrismCoinIcon(size: 36),
+        const PrismCoinIcon(size: 36),
         const SizedBox(width: PrismSpace.xs),
-        CountUp(value: _isXp ? won.win.xp : won.win.coins, suffix: _isXp ? ' XP' : '', style: numeral),
+        CountUp(value: won.win.coins, style: numeral),
       ],
     );
   }

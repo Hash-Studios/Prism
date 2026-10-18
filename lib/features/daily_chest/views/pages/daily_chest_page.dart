@@ -242,7 +242,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     final ChestWon? won = _won;
     if (!mounted || won == null || _cardUp) return;
     PrismHaptics.success();
-    if (!context.reduceMotion && won.win.coins > 0 && won.prize is! XpPrize) _burst.forward(from: 0);
+    if (!context.reduceMotion && won.win.coins > 0) _burst.forward(from: 0);
     setState(() {
       _cardUp = true;
       // The service moves the balance when the reply arrives, long before the box opens, so the pill waits for here.

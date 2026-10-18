@@ -175,7 +175,7 @@ void main() {
       expect(find.text('Open'), findsOneWidget);
       expect(find.bySemanticsLabel('Open the chest, 8 coins'), findsOneWidget);
       expect(find.text('Open it for 8 coins, or finish 3 more quests to open it free.'), findsOneWidget);
-      expect(find.text("Do today's bonus quest first to double it."), findsOneWidget);
+      expect(find.text("Do today's bonus quest first to double your coins."), findsOneWidget);
       expect(find.text('340'), findsOneWidget);
       expect(find.text('See the odds'), findsOneWidget);
       expect(phase(tester), ChestPhase.ready);
@@ -187,7 +187,7 @@ void main() {
 
       expect(find.text('Open free'), findsOneWidget);
       expect(find.text('Your quests made it free today.'), findsOneWidget);
-      expect(find.text('Bonus quest done: coins and XP are doubled.'), findsOneWidget);
+      expect(find.text('Bonus quest done: your coins are doubled.'), findsOneWidget);
       expect(find.bySemanticsLabel('Open the chest, free'), findsOneWidget);
     });
 
@@ -264,10 +264,11 @@ void main() {
       for (final String tier in <String>['Common', 'Rare', 'Epic', 'Legendary']) {
         expect(find.text(tier), findsOneWidget);
       }
-      expect(find.text('58%'), findsOneWidget);
-      for (final String row in <String>['5 coins', '10 coins', '25 XP', '20 coins', '40 coins', '100 coins']) {
+      expect(find.text('62%'), findsOneWidget);
+      for (final String row in <String>['5 coins', '8 coins', '12 coins', '20 coins', '40 coins', '100 coins']) {
         expect(find.text(row), findsOneWidget);
       }
+      expect(find.textContaining('XP'), findsNothing);
       expect(find.text('Mystery cosmetic'), findsOneWidget);
       expect(find.text('Pays 25 coins if you own them all'), findsOneWidget);
     });
@@ -470,14 +471,50 @@ void main() {
       expect(tester.widget<ChestBox>(find.byType(ChestBox)).glow, const Color(0xFFF5B83D));
     });
 
-    testWidgets('XP shows +N XP and does not touch the balance beyond the price', (tester) async {
+    testWidgets('the XP the open granted shows as a caption under the coins and leaves the balance alone', (
+      tester,
+    ) async {
       await pumpPage(tester);
 
-      await openWith(tester, _won(2, xp: 25));
+      await openWith(tester, _won(2, coins: 12, xp: 10));
 
-      expect(find.text('+25 XP'), findsOneWidget);
+      expect(find.text('+12'), findsOneWidget);
+      expect(find.text('+10 XP'), findsOneWidget);
       expect(find.text('Rare'), findsOneWidget);
-      expect(find.text('332'), findsOneWidget);
+      expect(find.text('344'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('+10 XP')).dy,
+        greaterThan(tester.getBottomLeft(find.text('+12')).dy),
+        reason: 'the caption sits under the prize',
+      );
+      expect(find.bySemanticsLabel('Rare. You won 12 coins. Plus 10 XP.'), findsOneWidget);
+    });
+
+    testWidgets('a chest with no XP to report, such as a replay, shows no XP caption', (tester) async {
+      await pumpPage(tester);
+
+      await openWith(tester, _won(2, coins: 12));
+
+      expect(find.textContaining('XP'), findsNothing);
+      expect(find.bySemanticsLabel('Rare. You won 12 coins.'), findsOneWidget);
+    });
+
+    testWidgets('a cosmetic shows the XP caption too', (tester) async {
+      await pumpPage(tester);
+      await openWith(tester, _won(4, itemId: 'frame_ring', xp: 10));
+      expect(find.text('New frame'), findsOneWidget);
+      expect(find.text('+10 XP'), findsOneWidget);
+    });
+
+    testWidgets('a doubled chest shows the doubled coins next to the same 10 XP', (tester) async {
+      quests.value = _quests(claimed: 3, bonusDone: true);
+      await pumpPage(tester);
+
+      await openWith(tester, _won(3, coins: 40, cost: 0, doubled: true, xp: 10), label: 'Open free');
+
+      expect(find.text('+40'), findsOneWidget);
+      expect(find.text('Doubled by your bonus quest'), findsOneWidget);
+      expect(find.text('+10 XP'), findsOneWidget);
     });
 
     testWidgets('a cosmetic names the item and its kind, and offers the Shop', (tester) async {

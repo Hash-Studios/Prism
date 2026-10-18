@@ -42,7 +42,8 @@ QuestState _quests({int claimed = 0, bool bonusDone = false, bool opened = false
   chestDoubled: opened && bonusDone,
 );
 
-ChestWon _won(int slot, {int coins = 0, int xp = 0, String? itemId, int cost = 8, bool doubled = false}) => ChestWon(
+/// What the server replies with: every fresh open grants the chest's 10 XP (`xpAwarded`), whatever the prize.
+ChestWon _won(int slot, {int coins = 0, int xp = 10, String? itemId, int cost = 8, bool doubled = false}) => ChestWon(
   win: ChestWin(slot: slot, coins: coins, xp: xp, itemId: itemId),
   cost: cost,
   doubled: doubled,
@@ -207,12 +208,6 @@ void main() {
     await shot.save('chest_revealed_legendary');
   });
 
-  qaScreen('chest_revealed_xp', (QaShot shot) async {
-    final Completer<DailyChestResult> reply = await _mount(shot);
-    await _open(shot, reply, _won(2, xp: 25));
-    await shot.save('chest_revealed_xp');
-  });
-
   qaScreen('chest_revealed_fallback', (QaShot shot) async {
     final Completer<DailyChestResult> reply = await _mount(shot);
     await _open(shot, reply, _won(4, coins: 25));
@@ -300,6 +295,7 @@ void main() {
         });
         final int frames = await _film(QaShot(tester, Brightness.dark, kDarkTheme, backend), name, won);
         expect(find.text('$balance'), findsOneWidget, reason: 'the pill shows the balance with the prize');
+        expect(find.text('+10 XP'), findsOneWidget, reason: 'the card shows the XP the open granted');
         debugPrint('chest open flow $name: $frames frames at 30 fps');
         expect(tester.takeException(), isNull);
       });
