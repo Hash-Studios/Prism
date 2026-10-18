@@ -6,7 +6,7 @@ Trending shows the Prism wallpapers that people use most. It has two lists: **Th
 
 - The **Trending** tab on the Home screen. It sits between **Following** and **Latest**. It has two segments at the top, **This week** and **All time**.
 - The tab replaces the old home strip and the old Trending page. The `/trending` route is gone.
-- Boosted walls also lead the carousel at the top of the **For you** tab. See [Boosted walls](#boosted-walls).
+- Boosted walls also show in the carousel at the top of the **For you** tab, right after the Wall of the Day. See [Boosted walls](#boosted-walls).
 
 ## Platforms and plans
 
@@ -20,7 +20,7 @@ Trending shows the Prism wallpapers that people use most. It has two lists: **Th
 | `lib/features/trending/data/repositories/trending_repository_impl.dart` | Reads the id list, loads the walls, and keeps the offline copy. |
 | `lib/features/trending/biz/bloc/trending_bloc.j.dart` | Holds both lists. Events: `started`, `rangeSelected`, `refreshRequested`. |
 | `lib/features/personalized_feed/views/widgets/trending_chip_sliver.dart` | The Trending tab on Home: the segments, then the grid. |
-| `lib/features/personalized_feed/views/widgets/feed_carousel.dart` | Shows the boosted walls as the first pages of the home carousel. |
+| `lib/features/personalized_feed/views/widgets/feed_carousel.dart` | Shows the boosted walls in the home carousel, after the Wall of the Day. |
 | `lib/features/trending/views/widgets/boosted_tag.dart` | `BoostedTag`: the "Boosted" pill on a grid tile and on a carousel page. |
 | `lib/features/personalized_feed/views/pages/personalized_feed_screen.dart` | Creates the bloc when the Home opens and keeps it. Reports the `viewTrending` quest event. |
 | `functions/src/trending.ts` | Writes `trending/current` and `popular/current`. See [popular-and-trending.md](popular-and-trending.md). |
@@ -43,7 +43,7 @@ After a good load, the repository saves the list in the feed cache. It saves an 
 
 A boost puts an approved wall at the front of `trending/current.wallIds` for 24 hours (see [coin-economy-v2.md](coin-economy-v2.md)). The server keeps up to 10 live boosts, so the front of the list holds the boosted walls. A boosted wall shows in two places on the Home:
 
-1. First in the carousel on the **For you** tab, before the Wall of the Day. The page has the "Boosted" tag and no caption. A tap opens the wallpaper detail screen.
+1. In the carousel on the **For you** tab, right after the Wall of the Day. The page has the "Boosted" tag and no caption. A tap opens the wallpaper detail screen.
 2. First in the **Trending** tab, with the "Boosted" tag on its tile.
 
 The app finds the boosted walls in the **This week** list. A boosted wall is a wall of that list with `boostedUntil` in the future. The app keeps the order of the list and takes at most 10. The carousel and the For you grid show a boosted wall once: the grid skips it.
@@ -76,5 +76,5 @@ The app finds the boosted walls in the **This week** list. A boosted wall is a w
 3. Tap **All time**. Check that a new list loads. Pull down to refresh. Check that the list on screen reloads.
 4. Turn on airplane mode after one good load. Close and open the app. Open the **Trending** tab. Check that it shows the saved list.
 5. Block a creator that has a trending wall. Check that the wall is gone from the tab.
-6. Boost an approved wall. Open the **For you** tab. Check that the wall is the first carousel page, with the "Boosted" tag and no caption, and that the Wall of the Day is the next page. Check that the wall is not in the For you grid. Tap **Trending**. Check that the wall is the first tile, with the "Boosted" tag.
+6. Boost an approved wall. Open the **For you** tab. Check that the Wall of the Day is the first carousel page and that the wall is the next page, with the "Boosted" tag and no caption. Check that the wall is not in the For you grid. Tap **Trending**. Check that the wall is the first tile, with the "Boosted" tag.
 7. Open **Trending**, then **Latest**, then **Trending** again. Check that each visit to **Trending** reports the `view_trending` quest event. Open the Home and stay on **For you**. Check that the app reports no `view_trending` event.

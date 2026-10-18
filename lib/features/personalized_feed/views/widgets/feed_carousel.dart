@@ -26,7 +26,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 double feedCarouselCardHeight(BuildContext context) =>
     (MediaQuery.sizeOf(context).width - 2 * PrismFeedLayout.gridSpacing) * 0.6;
 
-/// The home carousel: boosted walls, Wall of the Day, the promo banner and the first wallpapers as rounded pages, with
+/// The home carousel: Wall of the Day, boosted walls, the promo banner and the first wallpapers as rounded pages, with
 /// page dots over the bottom of the image.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({
@@ -38,7 +38,7 @@ class FeedCarousel extends StatefulWidget {
 
   final List<PrismFeedItem> previewWalls;
 
-  /// Walls with a live boost. They lead the carousel, so a boost buys the first view of the home.
+  /// Walls with a live boost. They follow the Wall of the Day, so a boost buys one of the first views of the home.
   final List<PrismWallpaper> boostedWalls;
 
   /// Called after a preview wallpaper meets the visibility and dwell threshold.
@@ -94,8 +94,8 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final double height = feedCarouselCardHeight(context);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
     final List<Widget> pages = <Widget>[
-      for (int i = 0; i < widget.boostedWalls.length; i++) _boostedCard(widget.boostedWalls[i], i, memCacheHeight),
       if (hasWotd) const WallOfTheDayCard(),
+      for (int i = 0; i < widget.boostedWalls.length; i++) _boostedCard(widget.boostedWalls[i], i, memCacheHeight),
       if (bannerImage.trim().isNotEmpty)
         FeedHeroCard(
           image: PrismImageTile(url: bannerImage, memCacheHeight: memCacheHeight),

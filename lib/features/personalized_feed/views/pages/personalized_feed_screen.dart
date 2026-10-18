@@ -401,8 +401,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     }
   }
 
-  /// The For you tab: the carousel, then the grid. Active boosted walls lead the carousel and are left out of the
-  /// grid, so a wall shows once.
+  /// The For you tab: the carousel, then the grid. Active boosted walls follow the Wall of the Day in the carousel and
+  /// are left out of the grid, so a wall shows once.
   Widget _forYouSliver(
     BuildContext context,
     PersonalizedFeedState state,

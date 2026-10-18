@@ -10,6 +10,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
+import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -68,13 +69,19 @@ void main() {
     WidgetTester tester,
     List<PrismFeedItem> walls, {
     List<PrismWallpaper> boosted = const <PrismWallpaper>[],
+    WallOfTheDayEntity? wotdEntity,
     StackRouter? router,
   }) async {
     tester.view.physicalSize = screen;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final wotd = _MockWotdBloc();
-    when(() => wotd.state).thenReturn(WotdState.initial().copyWith(status: LoadStatus.initial));
+    when(() => wotd.state).thenReturn(
+      WotdState.initial().copyWith(
+        status: wotdEntity == null ? LoadStatus.initial : LoadStatus.success,
+        entity: wotdEntity,
+      ),
+    );
     await tester.pumpWidget(
       MaterialApp(
         builder: (context, child) =>
@@ -139,12 +146,21 @@ void main() {
   String shownWallId(WidgetTester tester) =>
       tester.widget<WallpaperImpression>(find.byType(WallpaperImpression)).itemId;
 
-  testWidgets('boosted walls lead the carousel with a Boosted tag and no caption, then the banner', (tester) async {
+  testWidgets('the Wall of the Day leads, then the boosted walls with a Boosted tag and no caption, then the banner', (
+    tester,
+  ) async {
     await pumpCarousel(
       tester,
       <PrismFeedItem>[_wall('a')],
       boosted: <PrismWallpaper>[_boosted('hot1'), _boosted('hot2')],
+      wotdEntity: const WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana'),
     );
+
+    expect(find.text('Wall of the day'), findsOneWidget);
+    expect(find.byType(WallpaperImpression), findsNothing);
+    expect(find.text('Boosted'), findsNothing);
+
+    await swipeToNextPage(tester);
 
     expect(shownWallId(tester), 'hot1');
     expect(find.text('Boosted'), findsOneWidget);
@@ -165,6 +181,29 @@ void main() {
 
     expect(shownWallId(tester), 'a');
     expect(find.text('Boosted'), findsNothing);
+  });
+
+  testWidgets('with no Wall of the Day the first boosted wall is the first page', (tester) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a')],
+      boosted: <PrismWallpaper>[_boosted('hot1'), _boosted('hot2')],
+    );
+
+    expect(find.text('Wall of the day'), findsNothing);
+    expect(shownWallId(tester), 'hot1');
+    expect(find.text('Boosted'), findsOneWidget);
+    expect(find.text('by Ana'), findsNothing);
+    expect(find.text('Landscapes'), findsNothing);
+
+    await swipeToNextPage(tester);
+
+    expect(shownWallId(tester), 'hot2');
+    expect(find.text('Boosted'), findsOneWidget);
+
+    await swipeToNextPage(tester);
+
+    expect(find.text('Join our Telegram'), findsOneWidget);
   });
 
   testWidgets('tapping a boosted page opens its wallpaper and reports the boosted carousel as the source', (

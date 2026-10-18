@@ -139,7 +139,7 @@ class _TabButton extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: TweenAnimationBuilder<Color?>(
-                  tween: ColorTween(end: isActive ? secondary : secondary.withValues(alpha: 0.4)),
+                  tween: ColorTween(end: isActive ? secondary : secondary.withValues(alpha: 0.6)),
                   duration: duration,
                   curve: PrismCurves.enter,
                   builder: (BuildContext context, Color? color, Widget? _) => Icon(config.icon, size: 19, color: color),

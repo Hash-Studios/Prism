@@ -71,12 +71,12 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 - The carousel shows on the For you tab only. It has a 4 px margin on each side (`PrismFeedLayout.gridSpacing`), so a card is as wide as the screen minus 8 px. A card is 0.6 times as tall as it is wide. It has rounded corners (`PrismRadius.lg`, 20 px) and a thin outline. The height is fixed, so pages that arrive late do not move the grid.
 - A 4 px gap separates the carousel from the first row of the grid.
 - The pages are, in this order:
-  1. The boosted walls, in the order of the Trending week list. There are at most 10.
-  2. The Wall of the Day (when there is one).
+  1. The Wall of the Day (when there is one).
+  2. The boosted walls, in the order of the Trending week list. There are at most 10.
   3. The promo banner (when one is set).
   4. The first 4 wallpapers of the feed.
-- A boost pays for the top of Trending for 24 hours. The boosted walls also lead the home carousel, so the user sees them first on the For you tab. A boosted page has the "Boosted" tag at the top left and no caption. A tap opens the wallpaper detail screen.
-- The app takes the boosted walls from the Trending week list: the walls of that list with a live boost (`boostedUntil` in the future). The Home screen holds the Trending bloc and loads the list when it opens. With no boosted wall, the carousel starts with the Wall of the Day.
+- A boost pays for the top of Trending for 24 hours. The boosted walls also show in the home carousel, right after the Wall of the Day, so the user sees them early on the For you tab. A boosted page has the "Boosted" tag at the top left and no caption. A tap opens the wallpaper detail screen.
+- The app takes the boosted walls from the Trending week list: the walls of that list with a live boost (`boostedUntil` in the future). The Home screen holds the Trending bloc and loads the list when it opens. With no boosted wall, the carousel goes from the Wall of the Day to the banner.
 - A wall shows once. The preview pages and the For you grid skip the walls that the boosted pages already show.
 - The page dots sit over the bottom of the image. They show when the carousel has more than one page.
 - A wallpaper page has no caption. The banner and the Wall of the Day keep their text.
@@ -157,7 +157,7 @@ The app counts a wallpaper as shown when its tile is first built, not when its p
 4. Make sure the grid has 3 columns, 4 px gaps, a 4 px side margin and rounded corners. Make sure a 4 px gap separates the carousel from the first row. Open Search. Make sure its grid keeps the 8 px gap, the 12 px side margin and rounded corners.
 5. Tap **Latest**, then **Popular**, then **For you**. Make sure each view shows wallpapers and the list starts at the top each time. Open another tab in the bottom bar and come back. Make sure the tab is still the one you chose.
 6. Tap **Trending**. Make sure the **This week | All time** switch shows above the grid. Tap **All time**. Make sure a new list loads. Pull down to refresh. Make sure the list on screen reloads. Make sure the boosted walls come first and have the "Boosted" tag.
-7. Boost an approved wall (the **Boost to Trending** button on its detail screen). Open the Home on **For you**. Make sure the boosted wall is the first carousel page, with the "Boosted" tag at the top left and no caption. Make sure the next page is the Wall of the Day. Tap the page. Make sure the wallpaper detail screen opens. Scroll down. Make sure the wall is not in the grid. With no live boost, make sure the carousel starts with the Wall of the Day.
+7. Boost an approved wall (the **Boost to Trending** button on its detail screen). Open the Home on **For you**. Make sure the Wall of the Day is the first carousel page and the boosted wall is the next page, with the "Boosted" tag at the top left and no caption. Tap the page. Make sure the wallpaper detail screen opens. Scroll down. Make sure the wall is not in the grid. With no live boost, make sure the carousel goes from the Wall of the Day to the banner. With no Wall of the Day, make sure a boosted wall is the first page.
 8. Tap the selected **For you** tab. Make sure the feed settings sheet opens.
 9. Sign in with an account that follows nobody. Tap **Following**. Make sure the empty text and **Find creators** show. Tap **Find creators**. Make sure user search opens.
 10. Follow a creator who has wallpapers. Make sure **Following** lists them.

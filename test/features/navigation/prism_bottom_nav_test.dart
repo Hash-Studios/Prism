@@ -250,7 +250,7 @@ void main() {
       );
 
       expect(contrastRatio(active.color!, pill), greaterThanOrEqualTo(4.5));
-      expect(contrastRatio(Color.alphaBlend(inactive.color!, pill), pill), greaterThanOrEqualTo(2));
+      expect(contrastRatio(Color.alphaBlend(inactive.color!, pill), pill), greaterThanOrEqualTo(3));
     });
   }
 }

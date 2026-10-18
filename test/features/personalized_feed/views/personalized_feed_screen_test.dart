@@ -868,7 +868,7 @@ void main() {
       photographer: 'Ana',
     );
 
-    testWidgets('lead the carousel in server order, each with a Boosted tag, before Wall of the Day', (tester) async {
+    testWidgets('follow the Wall of the Day in server order, each with a Boosted tag', (tester) async {
       when(() => fetchTrending(TrendingRange.week)).thenAnswer(
         (_) async => Result.success(<PrismWallpaper>[
           _wall('hot1', boostedUntil: inThreeHours()),
@@ -879,6 +879,15 @@ void main() {
 
       await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
 
+      expect(find.text('Wall of the day'), findsOneWidget);
+      expect(
+        find.descendant(of: find.byType(CarouselSlider), matching: find.byType(WallpaperImpression)),
+        findsNothing,
+      );
+      expect(find.text('Boosted'), findsNothing);
+
+      await nextPage(tester);
+
       expect(shownWallId(tester), 'hot1');
       expect(find.text('Boosted'), findsOneWidget);
       expect(find.text('Wall of the day'), findsNothing);
@@ -887,11 +896,6 @@ void main() {
 
       expect(shownWallId(tester), 'hot2');
       expect(find.text('Boosted'), findsOneWidget);
-
-      await nextPage(tester);
-
-      expect(find.text('Wall of the day'), findsOneWidget);
-      expect(find.text('Boosted'), findsNothing);
     });
 
     testWidgets('leave out a boost that has ended', (tester) async {
@@ -902,7 +906,7 @@ void main() {
         ]),
       );
 
-      await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
+      await pumpScreen(tester, disableAnimations: true);
 
       expect(shownWallId(tester), 'hot1');
       expect(tester.widget<FeedCarousel>(find.byType(FeedCarousel)).boostedWalls.map((wall) => wall.id), <String>[
@@ -941,7 +945,7 @@ void main() {
       expect(gridWallIds(tester), <String>['e', 'f', 'g', 'h']);
     });
 
-    testWidgets('that arrive after the feed take the first page and do not move the grid', (tester) async {
+    testWidgets('that arrive after the feed join after the Wall of the Day and do not move the grid', (tester) async {
       final Completer<Result<List<PrismWallpaper>>> late = Completer<Result<List<PrismWallpaper>>>();
       when(() => fetchTrending(TrendingRange.week)).thenAnswer((_) => late.future);
       await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
@@ -952,10 +956,15 @@ void main() {
       late.complete(Result.success(<PrismWallpaper>[_wall('hot1', boostedUntil: inThreeHours())]));
       await _settle(tester);
 
-      expect(shownWallId(tester), 'hot1');
-      expect(find.text('Boosted'), findsOneWidget);
+      expect(find.text('Wall of the day'), findsOneWidget);
+      expect(find.text('Boosted'), findsNothing);
       expect(tester.getRect(find.byType(CarouselSlider)), carouselBefore);
       expect(tester.getRect(find.byType(FeedWallTile).first).top, gridTopBefore);
+
+      await nextPage(tester);
+
+      expect(shownWallId(tester), 'hot1');
+      expect(find.text('Boosted'), findsOneWidget);
     });
 
     testWidgets('stay out of the other tabs, which have no carousel', (tester) async {

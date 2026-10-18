@@ -52,7 +52,7 @@ The Themes page lets the user choose the app theme mode (system, light or dark),
 
 - Caption and eyebrow text (`PrismTextStyles.caption`, `eyebrow`) use 72% of `onSurface`. At 55% Rose and Cotton Blue were below 4.5:1.
 - The top bar wordmark, logo and bell use `onSurface`. They read on all 12 themes.
-- The bottom bar marks the active tab as selected for screen readers. The active icon uses `secondary`, on a circle of `secondary` at 15% over `primaryColor`. The inactive icons use `secondary` at 40%.
+- The bottom bar marks the active tab as selected for screen readers. The active icon uses `secondary`, on a circle of `secondary` at 15% over `primaryColor`. The inactive icons use `secondary` at 60%.
 - The offline banner uses `errorContainer` and `onErrorContainer`. The text is 12 sp. The banner is a live region only while it shows. When the connection returns, it reads "Back online" for 2 seconds.
 - Plain `Text` on a light theme is white by default (`textTheme.bodyMedium`). The not found page, the startup failure screen, the update screen and the profile nudge sheet now set their own text style and background.
 - Toasts use darker green and red, so white text has at least 4.5:1. `toasts.info(msg)` shows a neutral toast. A new toast cancels the one on screen.
