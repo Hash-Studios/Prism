@@ -69,7 +69,7 @@ Every reply carries `status: {opened, free, price}` and the standard coin fields
   and the quests bloc chest event are deleted.
 - Feature `lib/features/daily_chest/`: a full-screen page from the Today card's chest row.
 - The box is a Lottie, `assets/lottie/daily_chest.json`, made by `tool/daily_chest_lottie.py`. A designer can replace
-  the file if it keeps the markers and keypaths below; `test/features/quests/daily_chest_asset_test.dart` checks them.
+  the file if it keeps the markers and keypaths below; `test/features/daily_chest/daily_chest_asset_test.dart` checks them.
 
 | Marker | Frames | Plays when |
 |---|---|---|
