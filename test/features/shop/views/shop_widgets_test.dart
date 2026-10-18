@@ -43,6 +43,12 @@ void main() {
     home: Scaffold(body: child),
   );
 
+  bool Function(Widget) isIconArt(String asset) => (Widget w) {
+    if (w is! Image) return false;
+    final ImageProvider<Object> provider = w.image is ResizeImage ? (w.image as ResizeImage).imageProvider : w.image;
+    return provider is AssetImage && provider.assetName == asset;
+  };
+
   group('ShopItemTile', () {
     Future<void> pumpTile(
       WidgetTester tester,
@@ -95,6 +101,12 @@ void main() {
       await pumpTile(tester, 'frame_founders', availability: ShopAvailability.soldOut);
       expect(find.text('Sold out'), findsOneWidget);
       expect(find.text('1000'), findsNothing);
+    });
+
+    testWidgets('an app icon tile draws the real icon art', (tester) async {
+      await pumpTile(tester, 'icon_noir');
+
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.png')), findsOneWidget);
     });
 
     testWidgets('a limited item shows when it ends', (tester) async {
@@ -172,6 +184,25 @@ void main() {
       await tester.pumpAndSettle();
       await openSheet(tester, 'icon_noir');
       expect(find.text('Use icon'), findsOneWidget);
+    });
+
+    testWidgets('an app icon sheet shows the real art and settles', (tester) async {
+      await openSheet(tester, 'icon_noir');
+
+      expect(find.text('Use icon'), findsNothing);
+      expect(find.text('Buy for 200'), findsOneWidget);
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.png')), findsOneWidget);
+    });
+
+    testWidgets('an app icon sheet skips the sweep when animations are off', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        disableAnimations: true,
+      );
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await openSheet(tester, 'icon_noir');
+
+      expect(find.text('Buy for 200'), findsOneWidget);
+      expect(find.byType(TweenAnimationBuilder<double>), findsNothing);
     });
 
     testWidgets('a grandfathered theme counts as owned', (tester) async {

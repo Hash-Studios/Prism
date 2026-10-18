@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="sky" gradientUnits="userSpaceOnUse" x1="0" y1="-512" x2="0" y2="720">
+      <stop offset="0" stop-color="#2A1460"/>
+      <stop offset="0.38" stop-color="#7B2D9B"/>
+      <stop offset="0.62" stop-color="#E8467E"/>
+      <stop offset="0.84" stop-color="#FF8A4C"/>
+      <stop offset="1" stop-color="#FFC266"/>
+    </linearGradient>
+    <linearGradient id="sea" gradientUnits="userSpaceOnUse" x1="0" y1="720" x2="0" y2="1536">
+      <stop offset="0" stop-color="#8E2F86"/>
+      <stop offset="0.35" stop-color="#4A1B6E"/>
+      <stop offset="1" stop-color="#1C0D3A"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD978"/>
+      <stop offset="0.5" stop-color="#FFA24E"/>
+      <stop offset="1" stop-color="#FF5A5F"/>
+    </linearGradient>
+    <mask id="sunStripes" maskUnits="userSpaceOnUse" x="-512" y="-512" width="2048" height="2048">
+      <rect x="-512" y="-512" width="2048" height="2048" fill="#FFFFFF"/>
+      <g fill="#000000">
+        <rect x="0" y="560" width="1024" height="10"/>
+        <rect x="0" y="600" width="1024" height="15"/>
+        <rect x="0" y="642" width="1024" height="21"/>
+        <rect x="0" y="688" width="1024" height="28"/>
+      </g>
+    </mask>
+    <linearGradient id="lens" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#2B1745"/>
+      <stop offset="1" stop-color="#120A22"/>
+    </linearGradient>
+    <linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="80" y1="25.7" x2="113.26" y2="63.98"><stop offset="0" stop-color="#B65CF0"/><stop offset="1" stop-color="#9FA6F5"/></linearGradient>
+    <linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="113.26" y1="63.98" x2="134.69" y2="105.16"><stop offset="0" stop-color="#9FA6F5"/><stop offset="1" stop-color="#4FE3EE"/></linearGradient>
+    <linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="134.69" y1="105.16" x2="107.47" y2="124.58"><stop offset="0" stop-color="#4FE3EE"/><stop offset="1" stop-color="#7CF0C0"/></linearGradient>
+    <linearGradient id="g3" gradientUnits="userSpaceOnUse" x1="107.47" y1="124.58" x2="80" y2="137.5"><stop offset="0" stop-color="#7CF0C0"/><stop offset="1" stop-color="#EDE84E"/></linearGradient>
+    <linearGradient id="g4" gradientUnits="userSpaceOnUse" x1="80" y1="137.5" x2="52.53" y2="124.58"><stop offset="0" stop-color="#EDE84E"/><stop offset="1" stop-color="#F9A24E"/></linearGradient>
+    <linearGradient id="g5" gradientUnits="userSpaceOnUse" x1="52.53" y1="124.58" x2="25.31" y2="105.16"><stop offset="0" stop-color="#F9A24E"/><stop offset="1" stop-color="#F77E7E"/></linearGradient>
+    <linearGradient id="g6" gradientUnits="userSpaceOnUse" x1="25.31" y1="105.16" x2="46.74" y2="63.98"><stop offset="0" stop-color="#F77E7E"/><stop offset="1" stop-color="#E45BD6"/></linearGradient>
+    <linearGradient id="g7" gradientUnits="userSpaceOnUse" x1="46.74" y1="63.98" x2="80" y2="25.7"><stop offset="0" stop-color="#E45BD6"/><stop offset="1" stop-color="#B65CF0"/></linearGradient>
+    <path id="ringPath" d="M80 25.7A16 16 0 0 1 93.48 33.07L133.05 94.89A13 13 0 0 1 128.28 113.34L86.65 135.82A14 14 0 0 1 73.35 135.82L31.72 113.34A13 13 0 0 1 26.95 94.89L66.52 33.07A16 16 0 0 1 80 25.7Z"/>
+    <path id="crystalPath" d="M77.4 50.5A3 3 0 0 1 82.6 50.5L111.6 100.76A3 3 0 0 1 110.18 105.02L81.17 117.3A3 3 0 0 1 78.83 117.3L49.82 105.02A3 3 0 0 1 48.4 100.76Z"/>
+    <g id="ringColor" fill="none" stroke-width="11" stroke-linejoin="round" stroke-linecap="round">
+      <path stroke="url(#g0)" d="M80 25.7A16 16 0 0 1 93.48 33.07L113.53 64.4"/>
+      <path stroke="url(#g1)" d="M113.26 63.98L133.05 94.89A13 13 0 0 1 134.55 105.64"/>
+      <path stroke="url(#g2)" d="M134.69 105.16A13 13 0 0 1 128.28 113.34L107.03 124.82"/>
+      <path stroke="url(#g3)" d="M107.47 124.58L86.65 135.82A14 14 0 0 1 79.5 137.49"/>
+      <path stroke="url(#g4)" d="M80 137.5A14 14 0 0 1 73.35 135.82L52.09 124.34"/>
+      <path stroke="url(#g5)" d="M52.53 124.58L31.72 113.34A13 13 0 0 1 25.2 104.67"/>
+      <path stroke="url(#g6)" d="M25.31 105.16A13 13 0 0 1 26.95 94.89L47.01 63.56"/>
+      <path stroke="url(#g7)" d="M46.74 63.98L66.52 33.07A16 16 0 0 1 80.5 25.71"/>
+    </g>
+    <mask id="ringMask" maskUnits="userSpaceOnUse" x="0" y="0" width="160" height="160">
+      <use href="#ringPath" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linejoin="round"/>
+    </mask>
+    <linearGradient id="crystalLeft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F1F1F6"/>
+    </linearGradient>
+    <linearGradient id="crystalRight" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#E6E8F4"/>
+      <stop offset="1" stop-color="#C7CBE2"/>
+    </linearGradient>
+    <clipPath id="crystalClip"><use href="#crystalPath"/></clipPath>
+    <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="blurSun" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+    <filter id="darken"><feColorMatrix type="matrix" values="0.5 0 0 0 0.05  0 0.35 0 0 0  0 0 0.55 0 0.08  0 0 0 1 0"/></filter>
+    <path id="spark" d="M0 -1C0.09 -0.09 0.09 -0.09 1 0C0.09 0.09 0.09 0.09 0 1C-0.09 0.09 -0.09 0.09 -1 0C-0.09 -0.09 -0.09 -0.09 0 -1Z"/>
+    <path id="lensLeft" d="M57.4 81.2L78.6 81.2Q80 81.2 79.7 82.8L78.2 90.2Q77.5 93.4 74.2 93.4L64.4 93.4Q60.7 93.4 59.7 90L57.4 82.6Q57.1 81.2 57.4 81.2Z"/>
+  </defs>
+
+  <rect x="-512" y="-512" width="2048" height="1232" fill="url(#sky)"/>
+  <circle cx="512" cy="560" r="330" fill="#FFB15C" opacity="0.6" filter="url(#blurSun)"/>
+  <circle cx="512" cy="560" r="290" fill="url(#sun)" mask="url(#sunStripes)"/>
+  <rect x="-512" y="720" width="2048" height="816" fill="url(#sea)"/>
+  <g fill="#FFC266">
+    <rect x="300" y="742" width="424" height="9" rx="4.5" opacity="0.85"/>
+    <rect x="352" y="772" width="320" height="8" rx="4" opacity="0.6"/>
+    <rect x="404" y="802" width="216" height="7" rx="3.5" opacity="0.45"/>
+    <rect x="452" y="832" width="120" height="6" rx="3" opacity="0.3"/>
+  </g>
+
+  <g transform="translate(512 452) scale(4.55) translate(-80 -81.6)">
+    <ellipse cx="80" cy="147" rx="44" ry="5" fill="#2A0E3A" opacity="0.55" filter="url(#blur2)"/>
+    <use href="#ringPath" fill="none" stroke="#3A0F4F" stroke-width="17" stroke-linejoin="round" opacity="0.4" transform="translate(0 3)" filter="url(#blur2)"/>
+    <g filter="url(#darken)">
+      <use href="#ringColor" transform="translate(0 5)"/>
+      <use href="#ringColor" transform="translate(0 4)"/>
+      <use href="#ringColor" transform="translate(0 3)"/>
+      <use href="#ringColor" transform="translate(0 2)"/>
+      <use href="#ringColor" transform="translate(0 1)"/>
+    </g>
+    <use href="#ringColor"/>
+    <g mask="url(#ringMask)">
+      <use href="#ringPath" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round" opacity="0.6" transform="translate(0 -4)" filter="url(#blur2)"/>
+    </g>
+
+    <use href="#crystalPath" fill="#4A2A6B" transform="translate(0 3.5)"/>
+    <use href="#crystalPath" fill="url(#crystalRight)"/>
+    <g clip-path="url(#crystalClip)">
+      <rect x="40" y="40" width="40" height="85" fill="url(#crystalLeft)"/>
+      <polygon points="80,50 112,104 80,118" fill="#FF8A4C" opacity="0.12"/>
+    </g>
+    <use href="#crystalPath" fill="none" stroke="#C4C7D6" stroke-width="0.8"/>
+
+    <ellipse cx="63" cy="97.5" rx="4" ry="2.3" fill="#F77E7E" opacity="0.55"/>
+    <ellipse cx="97" cy="97.5" rx="4" ry="2.3" fill="#F77E7E" opacity="0.55"/>
+    <path d="M72.5 97Q80 98.8 87.5 97Q86.6 107 80 107Q73.4 107 72.5 97Z" fill="#141418" stroke="#141418" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M76.2 104.6Q80 101.6 83.8 104.6Q80 107.4 76.2 104.6Z" fill="#F77E7E"/>
+
+    <path d="M56.8 81.8Q80 79 103.2 81.8" fill="none" stroke="#141418" stroke-width="2.4" stroke-linecap="round"/>
+    <use href="#lensLeft" fill="url(#lens)" stroke="#141418" stroke-width="1.6" stroke-linejoin="round"/>
+    <use href="#lensLeft" fill="url(#lens)" stroke="#141418" stroke-width="1.6" stroke-linejoin="round" transform="translate(160 0) scale(-1 1)"/>
+    <path d="M61.5 84.5L66 84.5L62.5 90.5L60.6 88Z" fill="#FFB15C" opacity="0.85"/>
+    <path d="M83.5 84.5L88 84.5L84.5 90.5L82.6 88Z" fill="#FFB15C" opacity="0.85"/>
+    <path d="M68 84.5L70 84.5L67 89.8L66 89Z" fill="#FFFFFF" opacity="0.6"/>
+    <path d="M90 84.5L92 84.5L89 89.8L88 89Z" fill="#FFFFFF" opacity="0.6"/>
+  </g>
+
+  <g transform="translate(790 205)">
+    <use href="#spark" fill="#FFFFFF" transform="scale(64)"/>
+    <circle r="10" fill="#FFFFFF" filter="url(#blur2)"/>
+  </g>
+  <use href="#spark" fill="#FFE27A" transform="translate(222 248) scale(30)"/>
+  <use href="#spark" fill="#FFFFFF" transform="translate(870 318) scale(18)" opacity="0.85"/>
+</svg>
