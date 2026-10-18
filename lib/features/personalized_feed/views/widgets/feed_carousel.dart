@@ -21,10 +21,16 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Height of one carousel page: the page is as wide as the screen less the [PrismFeedLayout.gridSpacing] margin on
-/// both sides, and 0.6 times as tall as it is wide.
-double feedCarouselCardHeight(BuildContext context) =>
-    (MediaQuery.sizeOf(context).width - 2 * PrismFeedLayout.gridSpacing) * 0.6;
+/// How many carousel cards sit side by side for a screen [width]: one on a phone, two on a tablet, so each card stays
+/// about 480 wide.
+int feedCarouselColumns(double width) => (width / 480).floor().clamp(1, 3);
+
+/// Height of one carousel page: the page is as wide as the screen divided by [feedCarouselColumns], less the
+/// [PrismFeedLayout.gridSpacing] margin on both sides, and 0.6 times as tall as it is wide.
+double feedCarouselCardHeight(BuildContext context) {
+  final double width = MediaQuery.sizeOf(context).width;
+  return (width / feedCarouselColumns(width) - 2 * PrismFeedLayout.gridSpacing) * 0.6;
+}
 
 /// The home carousel: Wall of the Day, boosted walls, the promo banner and the first wallpapers as rounded pages, with
 /// page dots over the bottom of the image.
@@ -92,6 +98,8 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final String bannerImage = app_state.topImageLink;
     final String bannerTitle = app_state.bannerTextOn ? app_state.bannerText : '';
     final double height = feedCarouselCardHeight(context);
+    final double width = MediaQuery.sizeOf(context).width;
+    final int columns = feedCarouselColumns(width);
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
     final List<Widget> pages = <Widget>[
       if (hasWotd) const WallOfTheDayCard(),
@@ -116,7 +124,8 @@ class _FeedCarouselState extends State<FeedCarousel> {
           itemCount: pages.length,
           options: CarouselOptions(
             height: height,
-            viewportFraction: 1.0,
+            viewportFraction: 1 / columns,
+            padEnds: columns == 1,
             autoPlay: moving && !context.reduceMotion && visible,
             autoPlayInterval: const Duration(seconds: 5),
             autoPlayCurve: PrismCurves.move,
@@ -131,7 +140,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
         if (moving)
           Positioned(
             left: 0,
-            right: 0,
+            right: width - width / columns,
             bottom: PrismSpace.sm,
             child: FeedCarouselDots(current: current, count: pages.length),
           ),
