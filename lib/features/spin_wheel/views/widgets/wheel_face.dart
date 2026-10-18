@@ -264,14 +264,9 @@ class WheelPrizeLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextStyle numeral = PrismTextStyles.numeral(context, size).copyWith(color: ink, fontWeight: FontWeight.w700);
-    final TextStyle word = TextStyle(
-      fontFamily: PrismFonts.proximaNova,
-      fontSize: size * 0.5,
-      fontWeight: FontWeight.w700,
-      color: ink,
-      height: 1,
-      letterSpacing: 0.4,
-    );
+    final TextStyle word = PrismTextStyles.cardTitle(
+      context,
+    ).copyWith(fontSize: size * 0.5, color: ink, height: 1, letterSpacing: 0.4);
     final double gap = size * 0.14;
     final List<Widget> parts = switch (prize) {
       CoinsPrize(:final int coins) => <Widget>[

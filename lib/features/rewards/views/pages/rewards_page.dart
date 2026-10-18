@@ -45,6 +45,8 @@ class _RewardsPageState extends State<RewardsPage> {
   void initState() {
     super.initState();
     unawaited(EconomyConfig.refreshIfStale());
+    // After the first frame: a UTC day rollover changes the status, and listeners must not rebuild mid-build.
+    WidgetsBinding.instance.addPostFrameCallback((_) => CoinsService.instance.refreshSpinWheelStatus());
     if (widget.scrollToEarn) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTo(_earnKey));
     }

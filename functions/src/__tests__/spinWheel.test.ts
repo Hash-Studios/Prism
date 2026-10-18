@@ -328,12 +328,27 @@ test("spinWheel: a retried request returns the original reply and charges once",
   const first = await spin();
   rolls(t, 0.99);
   const retry = await spin("spin_request_1", 0);
-  assert.deepEqual(retry, first);
+  assert.deepEqual(retry, {...first, previousBalance: 60, delta: 0});
   assert.equal(store.get(USER)?.coins, 60);
   assert.equal(store.get(USER)?.xp, 20);
   assert.equal(ledger(store).length, 1);
   assert.deepEqual(store.get(PRIVATE)?.spinWheel, {dayKey: TODAY, paid: 1, freeUsed: false});
   assert.equal(store.get(PRIVATE)?.rev, 2);
+});
+
+test("spinWheel: a replay after another spend reports the live balance, not the stored one", async (t) => {
+  rolls(t, ROLL.coins20);
+  const store = setup(t, {coins: 50}, {rev: 1});
+  const first = won(await spin());
+  assert.equal(first.currentBalance, 60);
+  store.set(USER, {...store.get(USER), coins: 55});
+  const retry = won(await spin());
+  assert.equal(retry.previousBalance, 55);
+  assert.equal(retry.currentBalance, 55);
+  assert.equal(retry.delta, 0);
+  assert.deepEqual(retry.prize, first.prize);
+  assert.equal(store.get(USER)?.coins, 55);
+  assert.equal(ledger(store).length, 1);
 });
 
 test("spinWheel: a replay on a later day returns the original outcome with today's status", async (t) => {

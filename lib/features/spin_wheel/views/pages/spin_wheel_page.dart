@@ -30,6 +30,7 @@ typedef SpinFunction = Future<SpinWheelResult> Function({required int maxCost});
 
 /// Opens the spin machine over everything, including the bottom bar. The route fades in and scales up from 0.96.
 Future<void> showSpinWheel(BuildContext context) {
+  CoinsService.instance.refreshSpinWheelStatus();
   final Duration duration = context.motion(PrismDurations.base);
   return Navigator.of(context, rootNavigator: true).push<void>(
     PageRouteBuilder<void>(
@@ -206,7 +207,6 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     setState(() {
       _segments = result.segments;
       _won = result;
-      _winner = index;
     });
     // The result lands at the end of the wheel's ease-out, or at once under reduced motion.
     _expectedBalance = before - result.cost + result.win.coins;
@@ -238,7 +238,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     });
   }
 
-  bool _isXp(SpinWon won) => won.segments[_winner ?? 0].prize is XpPrize;
+  bool _isXp(SpinWon won) => won.segments[won.win.segment.clamp(0, won.segments.length - 1)].prize is XpPrize;
 
   void _onStopped() {
     final VoidCallback? after = _afterStop;
@@ -322,21 +322,25 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool pro = app_state.prismUser.premium;
-    return Scaffold(
-      backgroundColor: cs.surface,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final _StageLayout layout = _StageLayout.fit(constraints.biggest, showProRow: !pro);
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: SizedBox(
-                height: math.max(constraints.maxHeight, layout.height),
-                width: constraints.maxWidth,
-                child: Stack(children: <Widget>[_aura(layout, cs), _content(context, layout, pro)]),
-              ),
-            );
-          },
+    // A paid spin finishes on screen: closing mid-spin would hide a prize the user already paid for.
+    return PopScope(
+      canPop: _stage != _Stage.spinning,
+      child: Scaffold(
+        backgroundColor: cs.surface,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final _StageLayout layout = _StageLayout.fit(constraints.biggest, showProRow: !pro);
+              return SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: SizedBox(
+                  height: math.max(constraints.maxHeight, layout.height),
+                  width: constraints.maxWidth,
+                  child: Stack(children: <Widget>[_aura(layout, cs), _content(context, layout, pro)]),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

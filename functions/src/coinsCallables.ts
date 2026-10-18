@@ -763,8 +763,11 @@ export const spinWheel = onCall(
         wheelState: readWheelDay(privateData.spinWheel),
         config,
       };
-      // The stored outcome with today's status, so a retry after midnight does not show yesterday's limits.
-      if (txSnap.exists) return {...(txSnap.data() ?? {}).replay as SpinWheelReply, status: wheelStatus(dayInput)};
+      // The stored outcome with the live balance and today's status: other spends or a new day may have come between.
+      if (txSnap.exists) {
+        const stored = (txSnap.data() ?? {}).replay as SpinWheelReply;
+        return {...stored, previousBalance: balance, currentBalance: balance, delta: 0, status: wheelStatus(dayInput)};
+      }
       const plan = planWheelSpin({...dayInput, balance, maxCost});
       if (!plan.ok) {
         return {

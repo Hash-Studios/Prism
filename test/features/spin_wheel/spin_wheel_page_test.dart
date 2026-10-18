@@ -215,6 +215,34 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 3));
     });
 
+    testWidgets('back does not close the machine while the wheel turns', (tester) async {
+      status.value = _paid;
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(theme: kLightTheme, home: const SizedBox()));
+      final NavigatorState navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      unawaited(
+        navigator.push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => SpinWheelPage(spin: spin, status: status, balance: balance),
+          ),
+        ),
+      );
+      await pumpFor(tester, const Duration(milliseconds: 500));
+
+      await tapSpin(tester);
+      expect(await navigator.maybePop(), isTrue);
+      await pumpFor(tester, const Duration(milliseconds: 500));
+      expect(find.byType(SpinWheelPage), findsOneWidget);
+
+      replies.single.complete(_won(4, coins: 20));
+      await pumpUntil(tester, find.text('Spin again'));
+      expect(await navigator.maybePop(), isTrue);
+      await pumpFor(tester, const Duration(seconds: 1));
+      expect(find.byType(SpinWheelPage), findsNothing);
+    });
+
     testWidgets('a free spin sends a max cost of 0 and does not touch the balance', (tester) async {
       await pumpPage(tester, pro: true);
 
