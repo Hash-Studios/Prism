@@ -39,6 +39,16 @@ ChestWon _won(int slot, {int coins = 0, int xp = 0, String? itemId, int cost = 8
   slots: defaultChest,
 );
 
+/// How visible [finder] is: the product of every fade above it, and 0 when it is not in the tree.
+double shown(Finder finder) {
+  if (finder.evaluate().isEmpty) return 0;
+  double opacity = 1;
+  for (final Element fade in find.ancestor(of: finder, matching: find.byType(FadeTransition)).evaluate()) {
+    opacity *= (fade.widget as FadeTransition).opacity.value;
+  }
+  return opacity;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
@@ -514,6 +524,71 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 1));
 
       expect(find.byType(DailyChestPage), findsNothing);
+    });
+  });
+
+  group('the open motion', () {
+    /// Taps Open, answers with a Rare win and calls [onFrame] after every 16 ms frame until Done is fully in.
+    Future<void> filmOpen(WidgetTester tester, VoidCallback onFrame) async {
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      replies.single.complete(_won(3, coins: 20));
+      for (int frames = 0; shown(find.text('Done')) < 1; frames++) {
+        expect(frames, lessThan(400), reason: 'Done never came in');
+        await tester.pump(const Duration(milliseconds: 16));
+        onFrame();
+      }
+      await pumpFor(tester, const Duration(seconds: 3));
+    }
+
+    testWidgets('Open is gone before Done fades in, and Done shows only once revealed', (tester) async {
+      await pumpPage(tester);
+      bool openSeen = false;
+      int framesSincePrize = 0;
+
+      await filmOpen(tester, () {
+        final double open = shown(find.text('Open'));
+        final double done = shown(find.text('Done'));
+        openSeen = openSeen || open == 1;
+        expect(open > 0 && done > 0, isFalse, reason: 'Open at $open and Done at $done in one frame');
+        if (find.text('Done').evaluate().isNotEmpty) expect(phase(tester), ChestPhase.revealed);
+        if (find.text('Rare').evaluate().isNotEmpty && ++framesSincePrize > 12) {
+          expect(open, 0, reason: 'Open still shows ${framesSincePrize * 16} ms after the prize came up');
+        }
+      });
+
+      expect(openSeen, isTrue);
+      expect(framesSincePrize, greaterThan(12));
+    });
+
+    testWidgets('the title is gone before the prize card rises', (tester) async {
+      await pumpPage(tester);
+      expect(shown(find.text('Daily chest')), 1);
+      bool cardSeen = false;
+
+      await filmOpen(tester, () {
+        if (cardSeen || find.text('Rare').evaluate().isEmpty) return;
+        cardSeen = true;
+        expect(shown(find.text('Daily chest')), 0, reason: 'the title is still on screen when the card rises');
+      });
+
+      expect(cardSeen, isTrue);
+    });
+
+    testWidgets('the aura goes from the accent to the Rare blue without a washed-out frame', (tester) async {
+      await pumpPage(tester);
+      HSVColor aura() {
+        final DecoratedBox box = tester.widget<DecoratedBox>(find.byKey(const ValueKey<String>('aura')));
+        return HSVColor.fromColor(((box.decoration as BoxDecoration).gradient! as RadialGradient).colors.first);
+      }
+
+      final List<HSVColor> frames = <HSVColor>[aura()];
+      await filmOpen(tester, () => frames.add(aura()));
+
+      // The accent is 0.48 saturated and Rare is 0.77.
+      final double least = frames.map((HSVColor c) => c.saturation).reduce((double a, double b) => a < b ? a : b);
+      expect(least, greaterThanOrEqualTo(0.48), reason: 'a frame of the aura is washed out');
+      expect(frames.last.hue, closeTo(198.4, 1));
     });
   });
 

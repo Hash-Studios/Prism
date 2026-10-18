@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -344,12 +345,13 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       height: size,
       child: IgnorePointer(
         child: TweenAnimationBuilder<Color?>(
-          tween: ColorTween(end: target),
+          tween: _HueTween(end: target),
           duration: context.motion(PrismDurations.slow),
           curve: PrismCurves.enter,
           builder: (BuildContext context, Color? colour, Widget? _) {
             final Color c = colour ?? target;
             return DecoratedBox(
+              key: const ValueKey<String>('aura'),
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: <Color>[
@@ -392,6 +394,8 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   Widget _stage(BuildContext context, _ChestLayout layout) {
     final ChestWon? won = _won;
     final Duration fade = context.motion(PrismDurations.fast);
+    // The title leaves when the box starts to open, a burst before the card rises into its slot.
+    final bool titleGone = _phase == ChestPhase.opening || _phase == ChestPhase.revealed;
     return SizedBox(
       width: layout.width,
       height: _ChestLayout.headerHeight + layout.box,
@@ -426,8 +430,9 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
               // Low in the slot, so the title sits close to the box it names.
               alignment: const Alignment(0, 0.4),
               child: AnimatedOpacity(
-                opacity: _cardUp ? 0 : 1,
+                opacity: titleGone ? 0 : 1,
                 duration: fade,
+                curve: PrismCurves.exit,
                 child: Semantics(header: true, child: Text('Daily chest', style: PrismTextStyles.display(context))),
               ),
             ),
@@ -471,25 +476,31 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     );
   }
 
+  /// Open leaves at the burst and Done arrives once revealed. The slot between them is empty, so the two never overlap,
+  /// and the minimum height keeps the odds pill where it is.
   Widget _actions(BuildContext context) {
     final ChestWon? won = _won;
     final bool revealed = _phase == ChestPhase.revealed && won != null;
-    final Duration slide = context.motion(PrismDurations.base);
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: _ChestLayout.actionsHeight),
       child: AnimatedSwitcher(
-        duration: slide,
+        duration: context.motion(PrismDurations.base),
+        reverseDuration: context.motion(PrismDurations.fast),
         switchInCurve: PrismCurves.enter,
-        switchOutCurve: PrismCurves.exit,
-        // One fades out in the first half, the other fades in during the second, so they never overlap.
+        // The switcher plays this curve while the value runs from 1 to 0, so an ease-out has to be flipped to start fast.
+        switchOutCurve: PrismCurves.exit.flipped,
         transitionBuilder: (Widget child, Animation<double> animation) => FadeTransition(
-          opacity: CurvedAnimation(parent: animation, curve: const Interval(0.5, 1)),
+          opacity: animation,
           child: SlideTransition(
             position: Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(animation),
             child: child,
           ),
         ),
-        child: revealed ? _revealedActions(won) : _openActions(context),
+        child: revealed
+            ? _revealedActions(won)
+            : _cardUp
+            ? const SizedBox.shrink(key: ValueKey<String>('none'))
+            : _openActions(context),
       ),
     );
   }
@@ -585,6 +596,30 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
         ),
       ),
     );
+  }
+}
+
+/// Blends two colours in HSV along the shorter way round the hue wheel. A straight RGB blend from the accent to a tier
+/// colour of another hue passes through grey. A grey end has no hue, so it takes the hue of the other end.
+class _HueTween extends Tween<Color?> {
+  _HueTween({super.end});
+
+  @override
+  Color? lerp(double t) {
+    final Color? from = begin;
+    final Color? to = end;
+    if (from == null || to == null) return Color.lerp(from, to, t);
+    final HSVColor a = HSVColor.fromColor(from);
+    final HSVColor b = HSVColor.fromColor(to);
+    final double hueA = a.saturation < 0.05 ? b.hue : a.hue;
+    final double hueB = b.saturation < 0.05 ? a.hue : b.hue;
+    final double turn = (hueB - hueA + 540) % 360 - 180;
+    return HSVColor.fromAHSV(
+      lerpDouble(a.alpha, b.alpha, t)!,
+      (hueA + turn * t) % 360,
+      lerpDouble(a.saturation, b.saturation, t)!,
+      lerpDouble(a.value, b.value, t)!,
+    ).toColor();
   }
 }
 
