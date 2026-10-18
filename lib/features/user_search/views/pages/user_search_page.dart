@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -28,6 +29,7 @@ class _UserSearchState extends State<UserSearch> {
   final TextEditingController searchController = TextEditingController();
   final UserSearchBloc _bloc = getIt<UserSearchBloc>();
   Timer? _debounce;
+  String? _searchId;
 
   void _search(String text, {required String sourceContext}) {
     _debounce?.cancel();
@@ -36,7 +38,12 @@ class _UserSearchState extends State<UserSearch> {
       _bloc.add(const UserSearchEvent.cleared());
       return;
     }
-    unawaited(analytics.track(UserSearchSubmittedEvent(queryLength: trimmed.length, sourceContext: sourceContext)));
+    setState(() => _searchId = AnalyticsCorrelation.newId());
+    unawaited(
+      analytics.track(
+        UserSearchSubmittedEvent(queryLength: trimmed.length, sourceContext: sourceContext, searchId: _searchId),
+      ),
+    );
     _bloc.add(UserSearchEvent.searchRequested(query: trimmed));
   }
 
@@ -79,14 +86,18 @@ class _UserSearchState extends State<UserSearch> {
             )
           : null,
       body: loggedIn
-          ? BlocProvider.value(value: _bloc, child: const _UserSearchLoader())
+          ? BlocProvider.value(
+              value: _bloc,
+              child: _UserSearchLoader(searchId: _searchId),
+            )
           : const SignInPrompt(feature: 'creator search'),
     );
   }
 }
 
 class _UserSearchLoader extends StatelessWidget {
-  const _UserSearchLoader();
+  const _UserSearchLoader({this.searchId});
+  final String? searchId;
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +125,7 @@ class _UserSearchLoader extends StatelessWidget {
             body: 'Check the spelling or try another name.',
           );
         }
-        return _CreatorList(users: state.users, queryLength: state.query.trim().length);
+        return _CreatorList(users: state.users, queryLength: state.query.trim().length, searchId: searchId);
       },
     );
   }
@@ -141,7 +152,8 @@ class _SearchHint extends StatelessWidget {
 }
 
 class _CreatorList extends StatelessWidget {
-  const _CreatorList({required this.users, required this.queryLength});
+  const _CreatorList({required this.users, required this.queryLength, this.searchId});
+  final String? searchId;
 
   final List<UserSearchUser> users;
   final int queryLength;
@@ -151,13 +163,15 @@ class _CreatorList extends StatelessWidget {
     return ListView.builder(
       padding: EdgeInsets.only(top: PrismSpace.xxs, bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md),
       itemCount: users.length,
-      itemBuilder: (context, index) => _CreatorRow(user: users[index], index: index, queryLength: queryLength),
+      itemBuilder: (context, index) =>
+          _CreatorRow(user: users[index], index: index, queryLength: queryLength, searchId: searchId),
     );
   }
 }
 
 class _CreatorRow extends StatelessWidget {
-  const _CreatorRow({required this.user, required this.index, required this.queryLength});
+  const _CreatorRow({required this.user, required this.index, required this.queryLength, this.searchId});
+  final String? searchId;
 
   final UserSearchUser user;
   final int index;
@@ -175,9 +189,10 @@ class _CreatorRow extends StatelessWidget {
         PrismHaptics.tap();
         analytics.track(
           UserSearchResultOpenedEvent(
-            resultUserId: user.id.trim().isNotEmpty ? user.id : user.email,
+            resultUserId: user.id.trim().isNotEmpty ? user.id : 'unknown',
             index: index,
             queryLength: queryLength,
+            searchId: searchId,
           ),
         );
         context.router.push(ProfileRoute(profileIdentifier: user.email));

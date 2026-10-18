@@ -10,7 +10,7 @@ class AnalyticsRouteObserver extends NavigatorObserver {
 
   final AnalyticsScreenViewCallback onScreenView;
 
-  String? _lastTrackedRouteName;
+  Route<dynamic>? _lastTrackedRoute;
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
@@ -35,10 +35,10 @@ class AnalyticsRouteObserver extends NavigatorObserver {
     if (routeName == null) {
       return;
     }
-    if (_lastTrackedRouteName == routeName) {
+    if (identical(_lastTrackedRoute, route)) {
       return;
     }
-    _lastTrackedRouteName = routeName;
+    _lastTrackedRoute = route;
     unawaited(onScreenView(screenName: routeName, screenClass: route.runtimeType.toString()));
   }
 

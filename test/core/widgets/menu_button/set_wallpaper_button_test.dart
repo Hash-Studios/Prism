@@ -579,10 +579,11 @@ void main() {
     testWidgets('keeps the original source identity while the position studio opens', (tester) async {
       final Completer<WallpaperSetResult?> studio = Completer<WallpaperSetResult?>();
       final List<String> opened = <String>[];
-      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
-        opened.add(url);
-        return studio.future;
-      };
+      SetWallpaperFlow.studioOpener =
+          (context, {required url, thumbnailUrl, entryPoint, requestId, wallpaperId, wallpaperSource}) async {
+            opened.add(url);
+            return studio.future;
+          };
       await pumpButton(tester, thumbnailUrl: thumbnailFilePath);
 
       await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
@@ -603,10 +604,11 @@ void main() {
       final _Client client = _Client();
       aw.AsyncWallpaper.debugSetClient(client);
       final List<(String, String?, String?)> opened = <(String, String?, String?)>[];
-      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
-        opened.add((url, thumbnailUrl, entryPoint));
-        return null;
-      };
+      SetWallpaperFlow.studioOpener =
+          (context, {required url, thumbnailUrl, entryPoint, requestId, wallpaperId, wallpaperSource}) async {
+            opened.add((url, thumbnailUrl, entryPoint));
+            return null;
+          };
       await pumpButton(tester, thumbnailUrl: thumbnailFilePath, entryPoint: 'wallpaper_detail');
 
       await tester.tap(find.bySemanticsLabel('Set as wallpaper'));
@@ -799,8 +801,9 @@ void main() {
 
   testWidgets('an unexpected error in the flow tells the user instead of failing silently', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client());
-    SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async =>
-        throw StateError('router gone');
+    SetWallpaperFlow.studioOpener =
+        (context, {required url, thumbnailUrl, entryPoint, requestId, wallpaperId, wallpaperSource}) async =>
+            throw StateError('router gone');
     final List<MethodCall> toasts = <MethodCall>[];
     await pumpButton(tester);
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (
@@ -865,10 +868,11 @@ void main() {
       aw.AsyncWallpaper.debugSetClient(_Client());
       String? studioUrl;
       final String preparedPath = assets.createImageSync('tinted.png').path;
-      SetWallpaperFlow.studioOpener = (context, {required url, thumbnailUrl, entryPoint}) async {
-        studioUrl = url;
-        return null;
-      };
+      SetWallpaperFlow.studioOpener =
+          (context, {required url, thumbnailUrl, entryPoint, requestId, wallpaperId, wallpaperSource}) async {
+            studioUrl = url;
+            return null;
+          };
       int prepared = 0;
       await pumpPrepared(tester, () async {
         prepared++;

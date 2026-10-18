@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -78,7 +79,11 @@ class TrendingPage extends StatelessWidget implements AutoRouteWrapper {
                   color: cs.primary,
                   backgroundColor: cs.surfaceContainerHigh,
                   onRefresh: () => _refresh(context),
-                  child: _TrendingGrid(key: ValueKey<TrendingRange>(state.range), walls: section.walls),
+                  child: _TrendingGrid(
+                    key: ValueKey<TrendingRange>(state.range),
+                    walls: section.walls,
+                    request: section,
+                  ),
                 );
               },
             ),
@@ -89,10 +94,24 @@ class TrendingPage extends StatelessWidget implements AutoRouteWrapper {
   }
 }
 
-class _TrendingGrid extends StatelessWidget {
-  const _TrendingGrid({super.key, required this.walls});
+class _TrendingGrid extends StatefulWidget {
+  const _TrendingGrid({super.key, required this.walls, required this.request});
 
   final List<PrismWallpaper> walls;
+  final TrendingSection request;
+
+  @override
+  State<_TrendingGrid> createState() => _TrendingGridState();
+}
+
+class _TrendingGridState extends State<_TrendingGrid> {
+  WallpaperImpressionSession _impressions = WallpaperImpressionSession();
+
+  @override
+  void didUpdateWidget(_TrendingGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.request, widget.request)) _impressions = WallpaperImpressionSession();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,10 +119,10 @@ class _TrendingGrid extends StatelessWidget {
     return GridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
-      itemCount: walls.length,
+      itemCount: widget.walls.length,
       gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount),
       itemBuilder: (context, index) {
-        final PrismWallpaper wall = walls[index];
+        final PrismWallpaper wall = widget.walls[index];
         return KeyedSubtree(
           key: ValueKey<String>(wall.id),
           child: WallpaperTile(
@@ -112,6 +131,7 @@ class _TrendingGrid extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             quickActions: true,
             sourceContext: 'trending_grid',
+            impressionSession: _impressions,
             overlay: boostedTagFor(wall),
           ),
         );

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_app_analytics.dart';
 
 void main() {
+  setUp(AnalyticsRuntime.reset);
   group('AnalyticsIdentitySync', () {
     test('identifies logged in users and sets canonical traits', () async {
       final FakeAppAnalytics analytics = FakeAppAnalytics();
@@ -28,7 +29,7 @@ void main() {
       ]);
     });
 
-    test('resets to anonymous defaults for logged-out state', () async {
+    test('delegates guest startup identity clearing to providers', () async {
       final FakeAppAnalytics analytics = FakeAppAnalytics();
       final AnalyticsIdentitySync sync = AnalyticsIdentitySync(analytics: analytics);
 
@@ -242,7 +243,7 @@ void main() {
       await Future.wait(<Future<void>>[first, second]);
 
       expect(oldRuntime.userIds, <String?>['old_user']);
-      expect(newRuntime.userIds, <String?>['new_user']);
+      expect(newRuntime.userIds, <String?>['old_user', null, 'new_user']);
       expect(newRuntime.userProperties.last.value, '1');
     });
 
@@ -306,6 +307,16 @@ class _BlockingIdentityAnalytics extends FakeAppAnalytics {
   final Completer<void> firstUserIdStarted = Completer<void>();
   final Completer<void> releaseFirstUserId = Completer<void>();
   bool _blockFirstUserId = true;
+
+  @override
+  Future<void> setUserProperty({required String name, String? value}) async {
+    if (_blockFirstUserId) {
+      _blockFirstUserId = false;
+      firstUserIdStarted.complete();
+      await releaseFirstUserId.future;
+    }
+    await super.setUserProperty(name: name, value: value);
+  }
 
   @override
   Future<void> setUserId(String? userId) async {

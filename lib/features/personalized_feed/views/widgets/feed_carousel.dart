@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -29,7 +30,7 @@ class FeedCarousel extends StatefulWidget {
 
   final List<PrismFeedItem> previewWalls;
 
-  /// Called when a preview wallpaper's page is built, so the feed can count it as seen.
+  /// Called after a preview wallpaper meets the visibility and dwell threshold.
   final ValueChanged<PrismFeedItem>? onWallShown;
 
   @override
@@ -64,10 +65,14 @@ class _FeedCarouselState extends State<FeedCarousel> {
           itemType: ItemTypeValue.wallpaper,
           itemId: wall.id,
           index: feedIndex,
+          requestId: WallpaperImpressionScope.maybeOf(context)?.requestId,
+          provider: wall.source.name,
         ),
       ),
     );
-    context.router.push(WallpaperDetailRoute(entity: wall));
+    context.router.push(
+      WallpaperDetailRoute(entity: wall, requestId: WallpaperImpressionScope.maybeOf(context)?.requestId),
+    );
   }
 
   @override
@@ -89,8 +94,6 @@ class _FeedCarouselState extends State<FeedCarousel> {
       for (int i = 0; i < widget.previewWalls.length; i++) _previewCard(widget.previewWalls[i], i, memCacheHeight),
     ];
     if (pages.isEmpty) return const SizedBox.shrink();
-    // The preview pages come last, so page `i` shows `previewWalls[i - firstPreviewPage]`.
-    final int firstPreviewPage = pages.length - widget.previewWalls.length;
     final int current = _current.clamp(0, pages.length - 1);
     final bool moving = pages.length > 1;
     // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see.
@@ -111,7 +114,6 @@ class _FeedCarouselState extends State<FeedCarousel> {
             },
           ),
           itemBuilder: (BuildContext context, int i, int realIndex) {
-            if (i >= firstPreviewPage) widget.onWallShown?.call(widget.previewWalls[i - firstPreviewPage]);
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: PrismWallGrid.margin),
               child: pages[i],
@@ -126,17 +128,25 @@ class _FeedCarouselState extends State<FeedCarousel> {
   Widget _previewCard(PrismFeedItem wall, int feedIndex, int memCacheHeight) {
     final String? author = wall.wallpaper.core.authorName?.trim();
     final String category = wall.wallpaper.core.category?.trim() ?? '';
-    return FeedHeroCard(
-      image: PrismImageTile(
-        url: wall.wallpaper.thumbnailUrl,
-        fallbackUrl: wall.wallpaper.fullUrl,
-        memCacheHeight: memCacheHeight,
+    return WallpaperImpression(
+      itemId: wall.id,
+      provider: wall.source.name,
+      surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+      source: 'personalized_feed_carousel',
+      index: feedIndex,
+      onVisible: () => widget.onWallShown?.call(wall),
+      child: FeedHeroCard(
+        image: PrismImageTile(
+          url: wall.wallpaper.thumbnailUrl,
+          fallbackUrl: wall.wallpaper.fullUrl,
+          memCacheHeight: memCacheHeight,
+        ),
+        semanticLabel: wall.semanticLabel,
+        title: category.isEmpty ? 'Wallpaper' : category,
+        subtitle: author == null || author.isEmpty ? null : 'by $author',
+        badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
+        onTap: () => _openWall(wall, feedIndex),
       ),
-      semanticLabel: wall.semanticLabel,
-      title: category.isEmpty ? 'Wallpaper' : category,
-      subtitle: author == null || author.isEmpty ? null : 'by $author',
-      badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
-      onTap: () => _openWall(wall, feedIndex),
     );
   }
 }

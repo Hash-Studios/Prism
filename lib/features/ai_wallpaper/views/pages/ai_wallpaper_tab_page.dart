@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -424,15 +425,29 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
     if (!_canStartGeneration()) return;
+    final String operationId = AnalyticsCorrelation.newId();
+    final Stopwatch elapsed = Stopwatch()..start();
     setState(() => _loadingGeneration = true);
     _scrollToTop();
-    if (!await _isOnlineForGeneration() || !mounted) {
+    final bool online = await _isOnlineForGeneration();
+    if (!online || !mounted) {
+      analytics.track(
+        AiGenerateFailedEvent(
+          error: online ? 'cancelled' : 'offline',
+          errorCategory: online ? 'cancelled' : 'offline',
+          refundResult: 'not_required',
+          mode: AiChargeMode.insufficient,
+          operationId: operationId,
+          durationMs: elapsed.elapsedMilliseconds,
+        ),
+      );
       if (mounted) setState(() => _loadingGeneration = false);
       return;
     }
 
     final reservation = await CoinsService.instance.reserveForAiGeneration(
       qualityTier: qualityTier,
+      operationId: operationId,
       sourceTag: 'coins.reserve.ai_screen',
     );
     if (!mounted) {
@@ -441,16 +456,39 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           reservation.mode,
           sourceTag: 'coins.rollback.ai_screen',
           reservationTransactionId: reservation.transactionId,
+          operationId: operationId,
         );
       }
       return;
     }
     if (reservation.refundPending) {
+      analytics.track(
+        AiGenerateFailedEvent(
+          error: 'charge_unconfirmed',
+          errorCategory: 'charge_unconfirmed',
+          mode: reservation.mode,
+          operationId: operationId,
+          durationMs: elapsed.elapsedMilliseconds,
+          chargeTransactionId: reservation.transactionId,
+          refundResult: 'pending',
+        ),
+      );
       toasts.error("Couldn't confirm the charge. Any coins taken will be refunded.");
       setState(() => _loadingGeneration = false);
       return;
     }
     if (!reservation.success || reservation.mode == AiChargeMode.insufficient) {
+      final String category = reservation.mutation.success ? 'insufficient_balance' : 'charge_failed';
+      analytics.track(
+        AiGenerateFailedEvent(
+          error: category,
+          errorCategory: category,
+          mode: reservation.mode,
+          refundResult: 'not_required',
+          operationId: operationId,
+          durationMs: elapsed.elapsedMilliseconds,
+        ),
+      );
       CoinsService.instance.logLowBalanceNudge(
         sourceTag: 'coins.ai_generation.low_balance',
         requiredCoins: qualityTier.costFor(isPro: app_state.prismUser.premium),
@@ -463,7 +501,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     bool generationSucceeded = false;
     try {
       analytics.track(
-        AiGenerateStartedEvent(style: style.apiValue, quality: qualityTier.apiValue, mode: reservation.mode),
+        AiGenerateStartedEvent(
+          style: style.apiValue,
+          quality: qualityTier.apiValue,
+          mode: reservation.mode,
+          operationId: operationId,
+          chargeTransactionId: reservation.transactionId,
+        ),
       );
       final AiGenerationRecord generated = await request(
         reservation.mode,
@@ -475,6 +519,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       CoinsService.instance.commitAiGenerationReservation(
         mode: reservation.mode,
         coinsSpent: reservation.coinsSpent,
+        operationId: operationId,
+        chargeTransactionId: reservation.transactionId,
         sourceTag: 'coins.commit.ai_screen',
       );
 
@@ -489,7 +535,28 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         PrismHaptics.success();
       }
 
-      analytics.track(successEvent(generated, reservation.mode, reservation.coinsSpent));
+      final AnalyticsEvent event = successEvent(generated, reservation.mode, reservation.coinsSpent);
+      analytics.track(
+        event is AiVariationUsedEvent
+            ? AiVariationUsedEvent(
+                provider: generated.provider,
+                mode: reservation.mode,
+                coinsSpent: reservation.coinsSpent,
+                operationId: operationId,
+                durationMs: elapsed.elapsedMilliseconds,
+                chargeTransactionId: reservation.transactionId,
+                generationId: generated.id,
+              )
+            : AiGenerateSuccessEvent(
+                provider: generated.provider,
+                mode: reservation.mode,
+                coinsSpent: reservation.coinsSpent,
+                operationId: operationId,
+                durationMs: elapsed.elapsedMilliseconds,
+                chargeTransactionId: reservation.transactionId,
+                generationId: generated.id,
+              ),
+      );
       if (mounted) {
         onSuccess(generated);
         showGlintToast(context);
@@ -509,15 +576,30 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         reservation.mode,
         sourceTag: 'coins.rollback.ai_screen',
         reservationTransactionId: reservation.transactionId,
+        operationId: operationId,
       );
-      analytics.track(AiGenerateFailedEvent(error: error.toString(), mode: reservation.mode));
+      final String category = isAiOfflineOrNetworkError(error) ? 'network' : 'generation_failed';
+      final String refundOutcome = CoinsService.aiRefundOutcome(refund, charged: reservation.coinsSpent > 0);
+      analytics.track(
+        AiGenerateFailedEvent(
+          error: category,
+          errorCategory: category,
+          mode: reservation.mode,
+          operationId: operationId,
+          durationMs: elapsed.elapsedMilliseconds,
+          chargeTransactionId: reservation.transactionId,
+          refundResult: refundOutcome,
+        ),
+      );
       if (mounted) {
         final String message = aiGenerateFailureMessage(error);
         final String refundNote = reservation.coinsSpent <= 0 || message.contains('coins')
             ? ''
-            : refund.changed
+            : refundOutcome == 'refunded' || refundOutcome == 'already_refunded'
             ? ' Coins refunded.'
-            : ' Refund pending.';
+            : refundOutcome == 'pending'
+            ? ' Refund pending.'
+            : ' Refund could not be completed.';
         toasts.error('$message$refundNote');
       }
     } finally {

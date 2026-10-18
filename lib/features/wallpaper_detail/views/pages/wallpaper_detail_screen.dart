@@ -84,6 +84,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
     this.localFile,
+    this.requestId,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -91,6 +92,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   final WallpaperSource? source;
   final String? thumbnailUrl;
   final AnalyticsSurfaceValue analyticsSurface;
+  final String? requestId;
 
   /// Set when opened from a grid tile, so the tile image flies into this screen.
   final String? heroTag;
@@ -183,6 +185,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           sourceContext: _getSourceContext(blocState),
           itemType: ItemTypeValue.wallpaper,
           itemId: itemId,
+          requestId: widget.requestId,
+          provider: blocState is WallpaperDetailLoaded ? blocState.entity.source.name : widget.source?.name,
         ),
       ),
     );
@@ -1092,6 +1096,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         contentId: entity.id,
         wallpaperSource: entity.source,
         sourceContext: _getSourceContext(state),
+        requestId: widget.requestId,
         onDownloaded: () {
           _recordTaste(TasteAction.download, entity);
         },
@@ -1116,6 +1121,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 thumbnailUrl: entity.thumbnailUrl,
                 promptNotificationPermissionOnSuccess: true,
                 entryPoint: 'wallpaper_detail',
+                requestId: widget.requestId,
                 notes: wallpaperResolutionNotes(entity.wallpaperCore, _screenPixels(context)),
                 onMatchAccent: _matchAccentAction(context, state),
                 onSet: () => _onWallpaperSet(entity),

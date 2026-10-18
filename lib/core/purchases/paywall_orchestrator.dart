@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -155,8 +156,36 @@ class PaywallOrchestrator {
         return PaywallResultValue.noOffering;
       }
 
+      Package? selectedPackage;
       final PaywallResult paywallResult = await RevenueCatUI.presentPaywall(
         offering: offering,
+        onPurchaseStarted: (package) => selectedPackage = package,
+        onPurchaseCompleted: (customerInfo, transaction) {
+          const String transactionKey = 'analytics_verified_purchase_transactions';
+          final List<String> recorded = List<String>.from(
+            _settings.get<List<Object?>>(transactionKey, defaultValue: const <Object?>[]),
+          );
+          final events = verifiedPurchaseEvents(
+            transaction: transaction,
+            selectedPackage: selectedPackage,
+            recordedTransactions: recorded,
+            source: source,
+            placement: placement,
+            subscriptionTier: PurchasesService.instance.tierFromCustomerInfo(customerInfo).name,
+          );
+          if (events.isEmpty) return;
+          _settings.set(transactionKey, recorded);
+          for (final event in events) {
+            analytics.track(event);
+          }
+        },
+        onRestoreCompleted: (customerInfo) {
+          for (final event in restoredPurchaseEvents(
+            customerInfo.entitlements.active.values.map((e) => e.productIdentifier),
+          )) {
+            analytics.track(event);
+          }
+        },
         customVariables: <String, CustomVariableValue>{
           'placement': CustomVariableValue.string(placement),
           'source': CustomVariableValue.string(source),
@@ -175,9 +204,7 @@ class PaywallOrchestrator {
         return paywallResultValueFromSdkName(paywallResult.name);
       }
 
-      final bool isPremium = await PurchasesService.instance.checkAndPersistPremium(
-        conversionContext: SubscriptionConversionContext(source: source, packageType: placement),
-      );
+      final bool isPremium = await PurchasesService.instance.checkAndPersistPremium();
       if (isPremium) {
         _resetAdWatchCounter();
       }

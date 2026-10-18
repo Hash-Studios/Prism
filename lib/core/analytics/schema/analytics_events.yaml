@@ -84,18 +84,21 @@ enums:
       - anime_wallpapers
       - sketchy_wallpapers
       - recommendations_notifications
+      - haptics
   - name: analytics_action
     dart_type: AnalyticsActionValue
     values:
       - buy_premium_tapped
       - clear_cache_tapped
       - restart_app_tapped
+      - restore_purchase_tapped
       - sign_in_tapped
       - logout_tapped
       - clear_favourite_walls_tapped
       - clear_favourite_walls_confirmed
       - upload_sheet_opened
       - upload_wallpaper_selected
+      - upload_ai_selected
       - notification_settings_opened
       - quick_action_follow_feed
       - quick_action_collections
@@ -148,6 +151,7 @@ enums:
   - name: search_provider
     dart_type: SearchProviderValue
     values:
+      - auto
       - wallhaven
       - pexels
       - prism
@@ -199,12 +203,14 @@ enums:
     dart_type: AuthMethodValue
     values:
       - google
+      - apple
   - name: nav_tab
     dart_type: NavTabValue
     values:
       - home
       - search
       - streak
+      - collection
   - name: notification_preference
     dart_type: NotificationPreferenceValue
     values:
@@ -278,7 +284,11 @@ enums:
       - follower
       - post
       - wotd
+      - wotd_creator
       - moderation
+      - campaign
+      - rejection
+      - win_back
 
 events:
   - id: content_report_submit
@@ -310,6 +320,10 @@ events:
         type: string
   - id: set_wall
     fields:
+      - name: request_id
+        key: request_id
+        type: string
+        required: false
       - name: wallpaper_target
         key: wallpaper_target
         type: enum
@@ -333,6 +347,22 @@ events:
       - name: used_default
         key: used_default
         type: bool
+        required: false
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: item_id
+        key: item_id
+        type: string
+        required: false
+      - name: provider
+        key: provider
+        type: string
+        required: false
+      - name: source
+        key: source
+        type: string
         required: false
   - id: coin_premium_filter_spend_attempt
     fields:
@@ -363,6 +393,10 @@ events:
         type: string
   - id: download_wallpaper
     fields:
+      - name: request_id
+        key: request_id
+        type: string
+        required: false
       - name: link
         key: link
         type: string
@@ -373,6 +407,22 @@ events:
       - name: premium_content
         key: premium_content
         type: bool
+        required: false
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: item_id
+        key: item_id
+        type: string
+        required: false
+      - name: provider
+        key: provider
+        type: string
+        required: false
+      - name: source
+        key: source
+        type: string
         required: false
   - id: upload_wallpaper
     fields:
@@ -487,6 +537,10 @@ events:
         required: false
   - id: subscription_conversion
     fields:
+      - name: price_type
+        key: price_type
+        type: string
+        required: false
       - name: source
         key: source
         type: string
@@ -505,6 +559,14 @@ events:
       - name: currency
         key: currency
         type: string
+      - name: transaction_id
+        key: transaction_id
+        type: string
+        required: false
+      - name: restored
+        key: restored
+        type: bool
+        required: false
   - id: ai_charge_reserved
     fields:
       - name: mode
@@ -520,6 +582,30 @@ events:
       - name: source_tag
         key: source_tag
         type: string
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: duration_ms
+        key: duration_ms
+        type: int
+        required: false
+      - name: charge_transaction_id
+        key: charge_transaction_id
+        type: string
+        required: false
+      - name: generation_id
+        key: generation_id
+        type: string
+        required: false
+      - name: error_category
+        key: error_category
+        type: string
+        required: false
+      - name: refund_result
+        key: refund_result
+        type: string
+        required: false
   - id: ai_charge_rolled_back
     fields:
       - name: mode
@@ -536,6 +622,30 @@ events:
         key: coins_refunded
         type: int
         required: false
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: duration_ms
+        key: duration_ms
+        type: int
+        required: false
+      - name: charge_transaction_id
+        key: charge_transaction_id
+        type: string
+        required: false
+      - name: generation_id
+        key: generation_id
+        type: string
+        required: false
+      - name: error_category
+        key: error_category
+        type: string
+        required: false
+      - name: refund_result
+        key: refund_result
+        type: string
+        required: false
   - id: ai_charge_committed
     fields:
       - name: mode
@@ -551,6 +661,30 @@ events:
       - name: source_tag
         key: source_tag
         type: string
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: duration_ms
+        key: duration_ms
+        type: int
+        required: false
+      - name: charge_transaction_id
+        key: charge_transaction_id
+        type: string
+        required: false
+      - name: generation_id
+        key: generation_id
+        type: string
+        required: false
+      - name: error_category
+        key: error_category
+        type: string
+        required: false
+      - name: refund_result
+        key: refund_result
+        type: string
+        required: false
   - id: coin_earned
     fields:
       - name: action
@@ -630,6 +764,30 @@ events:
         key: mode
         type: enum
         enum: AiChargeMode
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: duration_ms
+        key: duration_ms
+        type: int
+        required: false
+      - name: charge_transaction_id
+        key: charge_transaction_id
+        type: string
+        required: false
+      - name: generation_id
+        key: generation_id
+        type: string
+        required: false
+      - name: error_category
+        key: error_category
+        type: string
+        required: false
+      - name: refund_result
+        key: refund_result
+        type: string
+        required: false
   - id: ai_generate_success
     fields:
       - name: provider
@@ -642,6 +800,30 @@ events:
       - name: coins_spent
         key: coins_spent
         type: int
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: duration_ms
+        key: duration_ms
+        type: int
+        required: false
+      - name: charge_transaction_id
+        key: charge_transaction_id
+        type: string
+        required: false
+      - name: generation_id
+        key: generation_id
+        type: string
+        required: false
+      - name: error_category
+        key: error_category
+        type: string
+        required: false
+      - name: refund_result
+        key: refund_result
+        type: string
+        required: false
   - id: ai_variation_used
     fields:
       - name: provider
@@ -654,6 +836,30 @@ events:
       - name: coins_spent
         key: coins_spent
         type: int
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: duration_ms
+        key: duration_ms
+        type: int
+        required: false
+      - name: charge_transaction_id
+        key: charge_transaction_id
+        type: string
+        required: false
+      - name: generation_id
+        key: generation_id
+        type: string
+        required: false
+      - name: error_category
+        key: error_category
+        type: string
+        required: false
+      - name: refund_result
+        key: refund_result
+        type: string
+        required: false
   - id: ai_generate_failed
     fields:
       - name: error
@@ -663,6 +869,30 @@ events:
         key: mode
         type: enum
         enum: AiChargeMode
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: duration_ms
+        key: duration_ms
+        type: int
+        required: false
+      - name: charge_transaction_id
+        key: charge_transaction_id
+        type: string
+        required: false
+      - name: generation_id
+        key: generation_id
+        type: string
+        required: false
+      - name: error_category
+        key: error_category
+        type: string
+        required: false
+      - name: refund_result
+        key: refund_result
+        type: string
+        required: false
   - id: ai_submit_started
     fields:
       - name: generation_id
@@ -766,6 +996,10 @@ events:
       - name: from_suggestion
         key: from_suggestion
         type: bool
+      - name: search_id
+        key: search_id
+        type: string
+        required: false
   - id: search_tag_selected
     fields:
       - name: provider
@@ -777,6 +1011,10 @@ events:
         type: string
   - id: search_results_loaded
     fields:
+      - name: reason
+        key: reason
+        type: string
+        required: false
       - name: provider
         key: provider
         type: enum
@@ -794,6 +1032,10 @@ events:
         key: result
         type: enum
         enum: EventResultValue
+      - name: search_id
+        key: search_id
+        type: string
+        required: false
   - id: search_result_opened
     fields:
       - name: provider
@@ -813,6 +1055,10 @@ events:
       - name: query_length
         key: query_length
         type: int
+      - name: search_id
+        key: search_id
+        type: string
+        required: false
   - id: search_pagination_requested
     fields:
       - name: provider
@@ -825,6 +1071,10 @@ events:
       - name: page
         key: page
         type: int
+      - name: search_id
+        key: search_id
+        type: string
+        required: false
   - id: user_search_submitted
     fields:
       - name: query_length
@@ -833,6 +1083,10 @@ events:
       - name: source_context
         key: source_context
         type: string
+      - name: search_id
+        key: search_id
+        type: string
+        required: false
   - id: user_search_result_opened
     fields:
       - name: result_user_id
@@ -844,6 +1098,10 @@ events:
       - name: query_length
         key: query_length
         type: int
+      - name: search_id
+        key: search_id
+        type: string
+        required: false
   - id: notification_item_opened
     fields:
       - name: type
@@ -1129,6 +1387,14 @@ events:
         key: index
         type: int
         required: false
+      - name: request_id
+        key: request_id
+        type: string
+        required: false
+      - name: provider
+        key: provider
+        type: string
+        required: false
   - id: surface_content_loaded
     fields:
       - name: surface
@@ -1203,9 +1469,26 @@ events:
       - name: amount_usd
         key: amount_usd
         type: double
+        required: false
       - name: source
         key: source
         type: string
+      - name: amount
+        key: amount
+        type: num
+        required: false
+      - name: currency
+        key: currency
+        type: string
+        required: false
+      - name: product_id
+        key: product_id
+        type: string
+        required: false
+      - name: transaction_id
+        key: transaction_id
+        type: string
+        required: false
   - id: onboarding_v2_interests_completed
     fields:
       - name: selected_count
@@ -1337,14 +1620,34 @@ events:
         type: string
   - id: download_attempt
     fields:
+      - name: request_id
+        key: request_id
+        type: string
+        required: false
       - name: source
         key: source
         type: string
       - name: premium
         key: premium
         type: bool
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: item_id
+        key: item_id
+        type: string
+        required: false
+      - name: provider
+        key: provider
+        type: string
+        required: false
   - id: download_result
     fields:
+      - name: request_id
+        key: request_id
+        type: string
+        required: false
       - name: result
         key: result
         type: string
@@ -1355,6 +1658,22 @@ events:
       - name: stage
         key: stage
         type: string
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: item_id
+        key: item_id
+        type: string
+        required: false
+      - name: provider
+        key: provider
+        type: string
+        required: false
+      - name: source
+        key: source
+        type: string
+        required: false
   - id: upload_metadata_submitted
     fields:
       - name: has_title
@@ -1374,6 +1693,14 @@ events:
       - name: result
         key: result
         type: string
+      - name: creator_id
+        key: creator_id
+        type: string
+        required: false
+      - name: source
+        key: source
+        type: string
+        required: false
   - id: upload_stage
     fields:
       - name: stage
@@ -1571,3 +1898,115 @@ events:
       - name: xp
         key: xp
         type: int
+  - id: wallpaper_impression
+    fields:
+      - name: item_id
+        key: item_id
+        type: string
+      - name: provider
+        key: provider
+        type: string
+      - name: surface
+        key: surface
+        type: string
+      - name: request_id
+        key: request_id
+        type: string
+      - name: index
+        key: index
+        type: int
+      - name: source
+        key: source
+        type: string
+      - name: ranking_version
+        key: ranking_version
+        type: string
+        required: false
+  - id: purchase_verified
+    fields:
+      - name: source
+        key: source
+        type: string
+        required: false
+      - name: placement
+        key: placement
+        type: string
+        required: false
+      - name: product_id
+        key: product_id
+        type: string
+      - name: restored
+        key: restored
+        type: bool
+      - name: amount
+        key: amount
+        type: num
+        required: false
+      - name: currency
+        key: currency
+        type: string
+        required: false
+      - name: transaction_id
+        key: transaction_id
+        type: string
+        required: false
+  - id: referral_result
+    fields:
+      - name: outcome
+        key: outcome
+        type: string
+      - name: role
+        key: role
+        type: string
+      - name: operation_id
+        key: operation_id
+        type: string
+        required: false
+      - name: referral_id
+        key: referral_id
+        type: string
+        required: false
+      - name: reason
+        key: reason
+        type: string
+        required: false
+      - name: referrer_id
+        key: referrer_id
+        type: string
+        required: false
+      - name: referee_id
+        key: referee_id
+        type: string
+        required: false
+  - id: streak_lifecycle
+    fields:
+      - name: action
+        key: action
+        type: string
+      - name: streak_count
+        key: streak_count
+        type: int
+      - name: previous_count
+        key: previous_count
+        type: int
+        required: false
+      - name: coins
+        key: coins
+        type: int
+        required: false
+      - name: result
+        key: result
+        type: string
+        required: false
+      - name: freezes_used
+        key: freezes_used
+        type: int
+        required: false
+      - name: freezes_left
+        key: freezes_left
+        type: int
+        required: false
+      - name: milestone
+        key: milestone
+        type: int
+        required: false

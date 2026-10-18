@@ -269,9 +269,10 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - name: Install, typecheck and build
+      - name: Install, test, typecheck and build
         run: |
           npm ci
+          node --test test/analytics.test.cjs
           npx tsc --noEmit
           npm run build
 

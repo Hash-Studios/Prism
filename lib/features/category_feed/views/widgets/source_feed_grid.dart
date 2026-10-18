@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
@@ -45,6 +46,8 @@ class SourceFeedGrid<T extends FeedItemEntity> extends StatefulWidget {
 class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGrid<T>> {
   final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
+  WallpaperImpressionSession _impressions = WallpaperImpressionSession();
+  int _refreshVersion = 0;
 
   @override
   void initState() {
@@ -52,10 +55,21 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
     _contentLoadTracker.start();
   }
 
-  Future<void> _refresh() {
+  Future<void> _refresh() async {
+    final CategoryFeedBloc bloc = context.read<CategoryFeedBloc>();
+    final category = bloc.state.selectedCategory;
+    final int refreshVersion = ++_refreshVersion;
     _contentLoadTracker.start();
     _scrollMilestoneTracker.reset();
-    return refreshCategoryFeed(context.read<CategoryFeedBloc>());
+    await refreshCategoryFeed(bloc);
+    if (mounted &&
+        refreshVersion == _refreshVersion &&
+        category != null &&
+        bloc.state.selectedCategory == category &&
+        bloc.state.status == LoadStatus.success &&
+        bloc.state.actionStatus == ActionStatus.success) {
+      setState(() => _impressions = WallpaperImpressionSession());
+    }
   }
 
   void _loadMore() => context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.fetchMoreRequested());
@@ -165,6 +179,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
             final Widget tile = WallpaperTile(
               item: item,
               index: index,
+              impressionSession: _impressions,
               quickActions: true,
               sourceContext: widget.includePrism && item is PrismFeedItem ? 'category_prism_first' : null,
             );

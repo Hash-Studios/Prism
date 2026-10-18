@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_functions.dart';
+import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -13,24 +14,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-
-class SubscriptionConversionContext {
-  const SubscriptionConversionContext({
-    required this.source,
-    this.productId,
-    this.packageType,
-    this.subscriptionTier,
-    this.price,
-    this.currency,
-  });
-
-  final String source;
-  final String? productId;
-  final String? packageType;
-  final String? subscriptionTier;
-  final num? price;
-  final String? currency;
-}
 
 /// Singleton service that owns all RevenueCat SDK interactions.
 /// Use [checkAndPersistPremium] to sync premium status; use [prismUser.premium] as the single source of truth.
@@ -271,30 +254,9 @@ class PurchasesService {
     await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: isPremium ? '1' : '0');
   }
 
-  Future<void> _logSubscriptionConversion({
-    required SubscriptionTier tier,
-    required SubscriptionConversionContext context,
-  }) async {
-    await analytics.track(
-      SubscriptionConversionEvent(
-        source: context.source,
-        productId: context.productId ?? 'unknown_product',
-        packageType: context.packageType ?? 'unknown_package',
-        subscriptionTier: context.subscriptionTier ?? tier.name,
-        price: context.price ?? 0,
-        currency: context.currency ?? 'unknown_currency',
-      ),
-    );
-
-    final num price = context.price ?? 0;
-    if (price > 0) {
-      unawaited(analytics.track(RevenueRecordedEvent(amountUsd: price.toDouble(), source: 'revenuecat')));
-    }
-  }
-
   /// Checks canonical + grandfathered paid entitlements; updates local user state in local persistence.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
-  Future<bool> checkAndPersistPremium({SubscriptionConversionContext? conversionContext}) async {
+  Future<bool> checkAndPersistPremium() async {
     try {
       final String requestedUserId = app_state.prismUser.id.trim();
       await ensureConfigured(requestedUserId);
@@ -308,7 +270,7 @@ class PurchasesService {
           requestedUserId != app_state.prismUser.id.trim()) {
         return app_state.prismUser.premium;
       }
-      return await _applyCustomerInfo(info, conversionContext: conversionContext);
+      return await _applyCustomerInfo(info);
     } on PlatformException catch (e) {
       analytics.track(
         SubscriptionEntitlementRefreshEvent(
@@ -332,8 +294,7 @@ class PurchasesService {
     }
   }
 
-  Future<bool> _applyCustomerInfo(CustomerInfo info, {SubscriptionConversionContext? conversionContext}) async {
-    final bool wasPremium = app_state.prismUser.premium;
+  Future<bool> _applyCustomerInfo(CustomerInfo info) async {
     final SubscriptionTier tier = tierFromCustomerInfo(info);
     final bool isPremium = tier.isPaid;
 
@@ -342,9 +303,6 @@ class PurchasesService {
     app_state.persistPrismUser();
     await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
     await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
-    if (!wasPremium && isPremium && conversionContext != null) {
-      await _logSubscriptionConversion(tier: tier, context: conversionContext);
-    }
     analytics.track(
       SubscriptionEntitlementRefreshEvent(
         result: SubscriptionEntitlementRefreshResultValue.success,
@@ -363,7 +321,10 @@ class PurchasesService {
   Future<bool> restore() async {
     try {
       await ensureConfigured(app_state.prismUser.id);
-      await Purchases.restorePurchases();
+      final CustomerInfo info = await Purchases.restorePurchases();
+      for (final event in restoredPurchaseEvents(info.entitlements.active.values.map((e) => e.productIdentifier))) {
+        analytics.track(event);
+      }
     } catch (error, stackTrace) {
       // The caller tells the user; "no purchases found" would be wrong when the store call itself failed.
       logger.w('restorePurchases failed.', error: error, stackTrace: stackTrace);

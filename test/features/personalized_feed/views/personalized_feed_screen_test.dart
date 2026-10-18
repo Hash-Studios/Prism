@@ -3,6 +3,7 @@ import 'dart:io' show SocketException;
 
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -265,6 +266,31 @@ void main() {
     }
 
     verify(() => fetchTrending(TrendingRange.week)).called(1);
+  });
+
+  testWidgets('refresh preserves impression dedupe while pending and failed, then resets on success', (tester) async {
+    await pumpScreen(tester);
+    WallpaperImpressionSession session() =>
+        tester.widget<WallpaperImpressionScope>(find.byType(WallpaperImpressionScope).first).session;
+    expect(session().record('prism', 'probe'), isTrue);
+    final pending = Completer<Result<PersonalizedFeedPage>>();
+    when(() => fetchUseCase(any())).thenAnswer((_) => pending.future);
+    final Future<void> failedRefresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator).first).onRefresh();
+    await tester.pump();
+    expect(session().record('prism', 'probe'), isFalse);
+    pending.complete(Result.error(const NetworkFailure('offline')));
+    await tester.pump();
+    await failedRefresh;
+    await tester.pump();
+    expect(session().record('prism', 'probe'), isFalse);
+    when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(_page(<String>['a', 'b', 'c'])));
+    final Future<void> successfulRefresh = tester
+        .widget<RefreshIndicator>(find.byType(RefreshIndicator).first)
+        .onRefresh();
+    await tester.pump();
+    await successfulRefresh;
+    await tester.pump();
+    expect(session().record('prism', 'probe'), isTrue);
   });
 
   for (final String chip in <String>['Latest', 'Popular', 'Following']) {

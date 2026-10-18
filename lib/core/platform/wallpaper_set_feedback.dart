@@ -16,7 +16,22 @@ const Duration _successSnackBarDuration = Duration(seconds: 8);
 
 /// Why the set happened and how, for the `set_wall` event.
 class WallpaperSetContext {
-  const WallpaperSetContext({this.fit, this.entryPoint, this.usedDefault = false});
+  const WallpaperSetContext({
+    this.fit,
+    this.entryPoint,
+    this.usedDefault = false,
+    this.operationId,
+    this.itemId,
+    this.provider,
+    this.source,
+    this.requestId,
+  });
+
+  final String? operationId;
+  final String? itemId;
+  final String? provider;
+  final String? source;
+  final String? requestId;
 
   final String? fit;
   final String? entryPoint;
@@ -88,6 +103,11 @@ void _trackSetResult(WallpaperSetResult result, WallpaperTarget target, Wallpape
         fit: setContext.fit,
         entryPoint: setContext.entryPoint,
         usedDefault: setContext.usedDefault,
+        operationId: setContext.operationId,
+        itemId: setContext.itemId,
+        provider: setContext.provider,
+        source: setContext.source,
+        requestId: setContext.requestId,
       ),
     );
   } catch (error) {

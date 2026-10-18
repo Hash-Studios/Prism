@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -92,6 +94,70 @@ void main() {
     );
 
     expect(find.byType(SeeMoreButton), findsNothing);
+  });
+
+  testWidgets('a refresh discards the older in-flight pagination response', (tester) async {
+    tester.view.physicalSize = const Size(400, 2800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final Completer<List<FeedItemEntity>> nextPage = Completer<List<FeedItemEntity>>();
+    when(
+      () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: false, filters: any(named: 'filters')),
+    ).thenAnswer((_) => nextPage.future);
+    when(
+      () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: true, filters: any(named: 'filters')),
+    ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper(100)]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchGrid(
+            query: 'landscape',
+            searchId: 'search',
+            provider: SearchProviderValue.pexels,
+            initialResults: List<FeedItemEntity>.generate(24, _wallpaper),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byType(SeeMoreButton));
+    await tester.pump();
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    nextPage.complete(<FeedItemEntity>[_wallpaper(200)]);
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Wallpaper by Author 100'), findsOneWidget);
+    expect(find.bySemanticsLabel('Wallpaper by Author 200'), findsNothing);
+    final FakeAppAnalytics recorder = AnalyticsRuntime.changes.value as FakeAppAnalytics;
+    expect(
+      recorder.events.whereType<SearchResultsLoadedEvent>().where((event) => event.page == 2).single.result,
+      EventResultValue.cancelled,
+    );
+  });
+
+  testWidgets('failed refresh retains impression deduplication for the same search request', (tester) async {
+    when(
+      () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: true, filters: any(named: 'filters')),
+    ).thenThrow(StateError('offline'));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchGrid(
+            query: 'landscape',
+            searchId: 'same-search',
+            provider: SearchProviderValue.pexels,
+            initialResults: <FeedItemEntity>[_wallpaper(1)],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final FakeAppAnalytics recorder = AnalyticsRuntime.changes.value as FakeAppAnalytics;
+    expect(recorder.events.whereType<WallpaperImpressionEvent>(), hasLength(1));
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pumpAndSettle();
+    final List<WallpaperImpressionEvent> impressions = recorder.events.whereType<WallpaperImpressionEvent>().toList();
+    expect(impressions, hasLength(1));
+    expect(impressions.single.requestId, 'same-search');
   });
 
   testWidgets('labels local search results and does not offer remote pagination', (tester) async {
@@ -222,6 +288,7 @@ void main() {
               provider: SearchProviderValue.pexels,
               initialResults: <FeedItemEntity>[_wallpaper(1)],
               prismResults: prism,
+              searchId: 'search-request',
             ),
           ),
         ),
@@ -234,9 +301,11 @@ void main() {
     expect(event.provider, SearchProviderValue.prism);
     expect(event.index, 1);
     expect(event.itemId, 'wallpaper-11');
+    expect(event.searchId, 'search-request');
     final WallpaperDetailRoute route = verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
     expect(route.args!.heroTag, isNotNull);
     expect(route.args!.heroTag, contains('wallpaper-11'));
+    expect(route.args!.requestId, event.searchId);
   });
 
   testWidgets('swiping the From Prism row sideways never asks for the next results page', (tester) async {
@@ -332,6 +401,7 @@ void main() {
     );
 
     expect(find.byType(PulsePlaceholder), findsNothing);
+    await tester.pumpAndSettle();
     expect(tester.hasRunningAnimations, isFalse);
   });
 

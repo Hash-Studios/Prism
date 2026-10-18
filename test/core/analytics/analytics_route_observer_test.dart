@@ -32,7 +32,7 @@ void main() {
     expect(screens, <String>['/home', '/details', '/home']);
   });
 
-  testWidgets('does not emit duplicate entries for same route name', (WidgetTester tester) async {
+  testWidgets('counts distinct same-name routes while ignoring duplicate callbacks', (WidgetTester tester) async {
     final List<String> screens = <String>[];
     final AnalyticsRouteObserver observer = AnalyticsRouteObserver(
       onScreenView: ({required String screenName, String? screenClass, Map<String, Object?>? parameters}) async {
@@ -50,11 +50,14 @@ void main() {
     );
 
     observer.didPush(firstHome, null);
+    observer.didPush(firstHome, null);
     observer.didReplace(newRoute: replacementHome, oldRoute: firstHome);
+    observer.didReplace(newRoute: replacementHome, oldRoute: firstHome);
+    observer.didPop(replacementHome, firstHome);
 
     await tester.pump();
 
-    expect(screens, <String>['/home']);
+    expect(screens, <String>['/home', '/home', '/home']);
   });
 
   testWidgets('falls back to route type when route name is missing', (WidgetTester tester) async {

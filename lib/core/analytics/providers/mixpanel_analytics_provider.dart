@@ -3,13 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 
 abstract class MixpanelClient {
-  void track(String eventName, {Map<String, Object>? properties});
+  Future<void> track(String eventName, {Map<String, Object>? properties});
 
-  void identify(String userId);
+  Future<void> identify(String userId);
 
-  void reset();
+  Future<void> reset();
 
-  void setUserProperty({required String name, required Object value});
+  Future<void> setUserProperty({required String name, required Object value});
 
   Future<void> flush();
 }
@@ -20,23 +20,23 @@ class MixpanelFlutterClient implements MixpanelClient {
   final Mixpanel _mixpanel;
 
   @override
-  void track(String eventName, {Map<String, Object>? properties}) {
-    _mixpanel.track(eventName, properties: properties);
+  Future<void> track(String eventName, {Map<String, Object>? properties}) {
+    return _mixpanel.track(eventName, properties: properties);
   }
 
   @override
-  void identify(String userId) {
-    _mixpanel.identify(userId);
+  Future<void> identify(String userId) {
+    return _mixpanel.identify(userId);
   }
 
   @override
-  void reset() {
-    _mixpanel.reset();
+  Future<void> reset() {
+    return _mixpanel.reset();
   }
 
   @override
-  void setUserProperty({required String name, required Object value}) {
-    _mixpanel.registerSuperProperties(<String, Object>{name: value});
+  Future<void> setUserProperty({required String name, required Object value}) async {
+    await _mixpanel.registerSuperProperties(<String, Object>{name: value});
     _mixpanel.getPeople().set(name, value);
   }
 
@@ -47,33 +47,56 @@ class MixpanelFlutterClient implements MixpanelClient {
 }
 
 class MixpanelAnalyticsProvider implements AnalyticsProvider {
-  MixpanelAnalyticsProvider._(this._client);
+  MixpanelAnalyticsProvider._(this._client, {bool hasIdentifiedUser = false, String? identifiedUserId})
+    : _hasIdentifiedUser = hasIdentifiedUser,
+      _identifiedUserId = identifiedUserId;
 
   final MixpanelClient _client;
+  bool _hasIdentifiedUser;
+  String? _identifiedUserId;
 
   static Future<MixpanelAnalyticsProvider> create({required String token, bool trackAutomaticEvents = false}) async {
     final Mixpanel mixpanel = await Mixpanel.init(token, trackAutomaticEvents: trackAutomaticEvents);
-    return MixpanelAnalyticsProvider._(MixpanelFlutterClient(mixpanel));
+    final Map<Object?, Object?>? properties = await mixpanel.getSuperProperties();
+    final bool hasIdentifiedUser = properties?['logged_in']?.toString() == '1';
+    return MixpanelAnalyticsProvider._(
+      MixpanelFlutterClient(mixpanel),
+      hasIdentifiedUser: hasIdentifiedUser,
+      identifiedUserId: hasIdentifiedUser ? await mixpanel.getDistinctId() : null,
+    );
   }
 
   @visibleForTesting
-  factory MixpanelAnalyticsProvider.forClient(MixpanelClient client) {
-    return MixpanelAnalyticsProvider._(client);
+  factory MixpanelAnalyticsProvider.forClient(
+    MixpanelClient client, {
+    bool hasIdentifiedUser = false,
+    String? identifiedUserId,
+  }) {
+    return MixpanelAnalyticsProvider._(
+      client,
+      hasIdentifiedUser: hasIdentifiedUser,
+      identifiedUserId: identifiedUserId,
+    );
   }
 
   @override
   Future<void> logEvent({required String name, Map<String, Object> parameters = const <String, Object>{}}) async {
-    _client.track(name, properties: parameters.isEmpty ? null : parameters);
+    await _client.track(name, properties: parameters.isEmpty ? null : parameters);
   }
 
   @override
   Future<void> setUserId(String? userId) async {
     final String trimmed = userId?.trim() ?? '';
     if (trimmed.isEmpty) {
-      _client.reset();
+      if (_hasIdentifiedUser) await _client.reset();
+      _hasIdentifiedUser = false;
+      _identifiedUserId = null;
       return;
     }
-    _client.identify(trimmed);
+    if (_hasIdentifiedUser && _identifiedUserId != null && _identifiedUserId != trimmed) await _client.reset();
+    await _client.identify(trimmed);
+    _hasIdentifiedUser = true;
+    _identifiedUserId = trimmed;
   }
 
   @override
@@ -86,7 +109,7 @@ class MixpanelAnalyticsProvider implements AnalyticsProvider {
     if (propertyValue == null || propertyValue.isEmpty) {
       return;
     }
-    _client.setUserProperty(name: propertyName, value: propertyValue);
+    await _client.setUserProperty(name: propertyName, value: propertyValue);
   }
 
   @override
@@ -100,7 +123,7 @@ class MixpanelAnalyticsProvider implements AnalyticsProvider {
       if (screenClass != null && screenClass.trim().isNotEmpty) 'screen_class': screenClass,
       ...parameters,
     };
-    _client.track('screen_view', properties: properties);
+    await _client.track('screen_view', properties: properties);
   }
 
   @override

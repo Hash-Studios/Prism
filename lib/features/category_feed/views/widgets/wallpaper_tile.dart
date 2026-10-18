@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -28,10 +29,14 @@ class WallpaperTile extends StatelessWidget {
     this.onShowLessLikeThis,
     this.sourceContext,
     this.overlay,
+    this.impressionSession,
+    this.onVisible,
   });
 
   final FeedItemEntity item;
   final int index;
+  final WallpaperImpressionSession? impressionSession;
+  final VoidCallback? onVisible;
 
   /// Optional decode-height override in physical pixels.
   final int? memCacheHeight;
@@ -74,40 +79,59 @@ class WallpaperTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final WallpaperImpressionSession session = impressionSession ?? WallpaperImpressionSession.forContext(context);
     final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
     final int? columns = crossAxisCount;
     final int? decodeHeight =
         memCacheHeight ??
         (columns == null || columns <= 0 ? null : (MediaQuery.sizeOf(context).width / columns * 3).round());
-    return PrismWallTile(
-      url: item.thumbnailUrl,
-      fallbackUrl: item.fullUrl,
-      heroTag: heroTag,
-      semanticLabel: item.semanticLabel,
-      memCacheHeight: decodeHeight,
-      overlay: _overlay(),
-      onTap: () {
-        PrismHaptics.tap();
-        unawaited(
-          analytics.track(
-            SurfaceActionTappedEvent(
-              surface: _surface,
-              action: AnalyticsActionValue.tileOpened,
-              sourceContext: _sourceContext,
-              itemType: ItemTypeValue.wallpaper,
-              itemId: item.id,
-              index: index,
+    return WallpaperImpression(
+      itemId: item.id,
+      provider: item.source.name,
+      surface: _surface,
+      source: _sourceContext,
+      index: index,
+      session: session,
+      onVisible: onVisible,
+      child: PrismWallTile(
+        url: item.thumbnailUrl,
+        fallbackUrl: item.fullUrl,
+        heroTag: heroTag,
+        semanticLabel: item.semanticLabel,
+        memCacheHeight: decodeHeight,
+        overlay: _overlay(),
+        onTap: () {
+          PrismHaptics.tap();
+          unawaited(
+            analytics.track(
+              SurfaceActionTappedEvent(
+                surface: _surface,
+                action: AnalyticsActionValue.tileOpened,
+                sourceContext: _sourceContext,
+                itemType: ItemTypeValue.wallpaper,
+                itemId: item.id,
+                index: index,
+                requestId: session.requestId,
+                provider: item.source.name,
+              ),
             ),
-          ),
-        );
-        context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag));
-      },
-      onLongPress: quickActions
-          ? () {
-              PrismHaptics.impact();
-              unawaited(showWallpaperQuickActions(context, item, onShowLessLikeThis: onShowLessLikeThis));
-            }
-          : null,
+          );
+          context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag, requestId: session.requestId));
+        },
+        onLongPress: quickActions
+            ? () {
+                PrismHaptics.impact();
+                unawaited(
+                  showWallpaperQuickActions(
+                    context,
+                    item,
+                    onShowLessLikeThis: onShowLessLikeThis,
+                    requestId: session.requestId,
+                  ),
+                );
+              }
+            : null,
+      ),
     );
   }
 }

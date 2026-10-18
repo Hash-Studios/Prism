@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -50,6 +51,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   FollowingFeedBloc? _following;
   PopularFeedBloc? _popular;
   final Set<String> _knownItemIds = <String>{};
+  WallpaperImpressionSession _impressions = WallpaperImpressionSession();
+  int _refreshVersion = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -67,6 +70,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
   void _onFeedSettingsChanged() {
     if (mounted) {
+      setState(() => _impressions = WallpaperImpressionSession());
       _bloc.add(const PersonalizedFeedEvent.settingsChanged());
     }
   }
@@ -123,6 +127,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   /// Reloads the shown list and completes when the new items arrive, so the pull-to-refresh spinner lasts as long as
   /// the load.
   Future<void> _refresh() async {
+    final int refreshVersion = ++_refreshVersion;
+    final WallpaperImpressionSession impressions = _impressions;
     PrismHaptics.impact();
     final HomeFeedChip chip = _bloc.state.chip;
     _trendingStripKey.currentState?.refresh();
@@ -133,7 +139,15 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       final PagedFeedBloc bloc = _chipBloc(chip)!;
       final Future<PagedFeedState> settled = bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
       bloc.add(const PagedFeedEvent.refreshRequested());
-      await settled.timeout(const Duration(seconds: 30), onTimeout: () => bloc.state);
+      final PagedFeedState result = await settled.timeout(const Duration(seconds: 30), onTimeout: () => bloc.state);
+      if (mounted &&
+          refreshVersion == _refreshVersion &&
+          identical(impressions, _impressions) &&
+          _bloc.state.chip == chip &&
+          result.status == LoadStatus.success &&
+          result.actionStatus == ActionStatus.success) {
+        setState(() => _impressions = WallpaperImpressionSession());
+      }
       return;
     }
     final Future<PersonalizedFeedState> settled = _bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
@@ -142,8 +156,15 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       const Duration(seconds: 30),
       onTimeout: () => _bloc.state,
     );
-    if (mounted && result.refreshFailed) {
-      toasts.error("Couldn't refresh your feed.");
+    if (mounted &&
+        refreshVersion == _refreshVersion &&
+        identical(impressions, _impressions) &&
+        _bloc.state.chip == chip) {
+      if (result.refreshFailed) {
+        toasts.error("Couldn't refresh your feed.");
+      } else if (result.status == LoadStatus.success && !result.isRefreshing) {
+        setState(() => _impressions = WallpaperImpressionSession());
+      }
     }
   }
 
@@ -227,37 +248,43 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                   }
                   return false;
                 },
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
-                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: loadingFirstPage && state.chip == HomeFeedChip.forYou
-                          ? const _CarouselSkeleton()
-                          : FeedCarousel(
-                              previewWalls: previewWalls,
-                              onWallShown: (wall) => _bloc.add(
-                                PersonalizedFeedEvent.tilesSeen(<String>[
-                                  PersonalizedRankingService.canonicalKey(wall),
-                                ]),
+                child: WallpaperImpressionScope(
+                  session: _impressions,
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: loadingFirstPage && state.chip == HomeFeedChip.forYou
+                            ? const _CarouselSkeleton()
+                            : FeedCarousel(
+                                previewWalls: previewWalls,
+                                onWallShown: (wall) => _bloc.add(
+                                  PersonalizedFeedEvent.tilesSeen(<String>[
+                                    PersonalizedRankingService.canonicalKey(wall),
+                                  ]),
+                                ),
                               ),
-                            ),
-                    ),
-                    SliverToBoxAdapter(child: TrendingStripSection(key: _trendingStripKey)),
-                    SliverToBoxAdapter(
-                      child: _ForYouHeader(onTuneTap: widget.onTuneTap, isRefreshing: state.isRefreshing),
-                    ),
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: HomeChipRailDelegate(
-                        selected: state.chip,
-                        onSelected: (chip) => _bloc.add(PersonalizedFeedEvent.chipSelected(chip)),
                       ),
-                    ),
-                    ..._contentSlivers(context, state, visibleItems, crossAxisCount, tileMemCacheHeight),
-                    const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
-                  ],
+                      SliverToBoxAdapter(child: TrendingStripSection(key: _trendingStripKey)),
+                      SliverToBoxAdapter(
+                        child: _ForYouHeader(onTuneTap: widget.onTuneTap, isRefreshing: state.isRefreshing),
+                      ),
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: HomeChipRailDelegate(
+                          selected: state.chip,
+                          onSelected: (chip) {
+                            setState(() => _impressions = WallpaperImpressionSession());
+                            _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
+                          },
+                        ),
+                      ),
+                      ..._contentSlivers(context, state, visibleItems, crossAxisCount, tileMemCacheHeight),
+                      const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -349,7 +376,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
           gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount),
           delegate: SliverChildBuilderDelegate((context, index) {
             final FeedItemEntity item = visibleItems[index];
-            _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)]));
             return KeyedSubtree(
               key: ValueKey<String>(item.id),
               child: FeedWallTile(
@@ -358,6 +384,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                 crossAxisCount: crossAxisCount,
                 memCacheHeight: tileMemCacheHeight,
                 onShowLessLikeThis: () => _lessLikeThis(item),
+                onVisible: () =>
+                    _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
               ),
             );
           }, childCount: visibleItems.length),

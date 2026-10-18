@@ -358,7 +358,7 @@ void main() {
     expect(pendingTagSearch.value, isNull);
   });
 
-  testWidgets('the search event reports the provider that returned the results', (tester) async {
+  testWidgets('submission and results share an opaque ID across provider fallback', (tester) async {
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
@@ -374,8 +374,13 @@ void main() {
     await tester.pump();
 
     final SearchSubmittedEvent event = analytics.events.whereType<SearchSubmittedEvent>().single;
-    expect(event.provider, SearchProviderValue.pexels);
+    expect(event.provider, SearchProviderValue.auto);
     expect(event.sourceContext, 'search_textfield');
+    final SearchResultsLoadedEvent loaded = analytics.events.whereType<SearchResultsLoadedEvent>().single;
+    expect(loaded.provider, SearchProviderValue.pexels);
+    expect(loaded.searchId, event.searchId);
+    expect(event.searchId, isNotEmpty);
+    expect(event.toWireParameters().values, isNot(contains('forest')));
   });
 
   testWidgets('changing filters drops the old results while the new search runs', (tester) async {

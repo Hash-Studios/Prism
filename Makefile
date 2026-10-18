@@ -119,6 +119,7 @@ analytics-guard:
 	@./tool/analytics_raw_usage_guard.sh
 
 analytics-check: ensure-fvm analytics-guard
+	@$(FLUTTER) test test/core/analytics/analytics_schema_contract_test.dart
 	@$(DART) run tool/generate_analytics_schema.dart
 	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) lib/core/analytics/events/generated/analytics_events.g.dart
 	@git diff --exit-code -- lib/core/analytics/events/generated/analytics_events.g.dart

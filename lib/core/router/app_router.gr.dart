@@ -1428,6 +1428,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
         AnalyticsSurfaceValue.wallpaperScreen,
     String? heroTag,
     File? localFile,
+    String? requestId,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -1440,6 +1441,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            analyticsSurface: analyticsSurface,
            heroTag: heroTag,
            localFile: localFile,
+           requestId: requestId,
          ),
          initialChildren: children,
        );
@@ -1462,6 +1464,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
           analyticsSurface: args.analyticsSurface,
           heroTag: args.heroTag,
           localFile: args.localFile,
+          requestId: args.requestId,
         ),
       );
     },
@@ -1478,6 +1481,7 @@ class WallpaperDetailRouteArgs {
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
     this.heroTag,
     this.localFile,
+    this.requestId,
   });
 
   final Key? key;
@@ -1496,9 +1500,11 @@ class WallpaperDetailRouteArgs {
 
   final File? localFile;
 
+  final String? requestId;
+
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, requestId: $requestId}';
   }
 
   @override
@@ -1512,7 +1518,8 @@ class WallpaperDetailRouteArgs {
         thumbnailUrl == other.thumbnailUrl &&
         analyticsSurface == other.analyticsSurface &&
         heroTag == other.heroTag &&
-        localFile == other.localFile;
+        localFile == other.localFile &&
+        requestId == other.requestId;
   }
 
   @override
@@ -1524,7 +1531,8 @@ class WallpaperDetailRouteArgs {
       thumbnailUrl.hashCode ^
       analyticsSurface.hashCode ^
       heroTag.hashCode ^
-      localFile.hashCode;
+      localFile.hashCode ^
+      requestId.hashCode;
 }
 
 /// generated route for
@@ -1598,6 +1606,9 @@ class WallpaperPositionRoute extends PageRouteInfo<WallpaperPositionRouteArgs> {
     required String imageUrl,
     String? thumbnailUrl,
     String? entryPoint,
+    String? requestId,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperPositionRoute.name,
@@ -1606,6 +1617,9 @@ class WallpaperPositionRoute extends PageRouteInfo<WallpaperPositionRouteArgs> {
            imageUrl: imageUrl,
            thumbnailUrl: thumbnailUrl,
            entryPoint: entryPoint,
+           requestId: requestId,
+           wallpaperId: wallpaperId,
+           wallpaperSource: wallpaperSource,
          ),
          initialChildren: children,
        );
@@ -1621,6 +1635,9 @@ class WallpaperPositionRoute extends PageRouteInfo<WallpaperPositionRouteArgs> {
         imageUrl: args.imageUrl,
         thumbnailUrl: args.thumbnailUrl,
         entryPoint: args.entryPoint,
+        requestId: args.requestId,
+        wallpaperId: args.wallpaperId,
+        wallpaperSource: args.wallpaperSource,
       );
     },
   );
@@ -1632,6 +1649,9 @@ class WallpaperPositionRouteArgs {
     required this.imageUrl,
     this.thumbnailUrl,
     this.entryPoint,
+    this.requestId,
+    this.wallpaperId,
+    this.wallpaperSource,
   });
 
   final Key? key;
@@ -1642,9 +1662,15 @@ class WallpaperPositionRouteArgs {
 
   final String? entryPoint;
 
+  final String? requestId;
+
+  final String? wallpaperId;
+
+  final WallpaperSource? wallpaperSource;
+
   @override
   String toString() {
-    return 'WallpaperPositionRouteArgs{key: $key, imageUrl: $imageUrl, thumbnailUrl: $thumbnailUrl, entryPoint: $entryPoint}';
+    return 'WallpaperPositionRouteArgs{key: $key, imageUrl: $imageUrl, thumbnailUrl: $thumbnailUrl, entryPoint: $entryPoint, requestId: $requestId, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource}';
   }
 
   @override
@@ -1654,7 +1680,10 @@ class WallpaperPositionRouteArgs {
     return key == other.key &&
         imageUrl == other.imageUrl &&
         thumbnailUrl == other.thumbnailUrl &&
-        entryPoint == other.entryPoint;
+        entryPoint == other.entryPoint &&
+        requestId == other.requestId &&
+        wallpaperId == other.wallpaperId &&
+        wallpaperSource == other.wallpaperSource;
   }
 
   @override
@@ -1662,7 +1691,10 @@ class WallpaperPositionRouteArgs {
       key.hashCode ^
       imageUrl.hashCode ^
       thumbnailUrl.hashCode ^
-      entryPoint.hashCode;
+      entryPoint.hashCode ^
+      requestId.hashCode ^
+      wallpaperId.hashCode ^
+      wallpaperSource.hashCode;
 }
 
 /// generated route for

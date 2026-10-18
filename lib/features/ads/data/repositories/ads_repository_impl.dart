@@ -47,10 +47,19 @@ class AdsRepositoryImpl implements AdsRepository {
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
             logger.d('$ad loaded.');
-            ad.onPaidEvent = (Ad unusedAd, double valueMicros, PrecisionType unusedPrecision, String unusedCurrency) {
-              final double revenueUsd = valueMicros / 1e6;
-              if (revenueUsd > 0) {
-                unawaited(analytics.track(RevenueRecordedEvent(amountUsd: revenueUsd, source: 'admob')));
+            ad.onPaidEvent = (Ad unusedAd, double valueMicros, PrecisionType unusedPrecision, String currency) {
+              final double amount = valueMicros / 1e6;
+              if (amount > 0) {
+                unawaited(
+                  analytics.track(
+                    RevenueRecordedEvent(
+                      amountUsd: currency == 'USD' ? amount : null,
+                      amount: amount,
+                      currency: currency,
+                      source: 'admob',
+                    ),
+                  ),
+                );
               }
             };
             _rewardedAd = ad;
