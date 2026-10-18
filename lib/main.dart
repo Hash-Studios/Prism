@@ -468,6 +468,7 @@ class _MyApp extends StatefulWidget {
 
 class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
+  late final OrientationPolicyObserver _orientationPolicyObserver;
   final AnalyticsIdentitySync _analyticsIdentitySync = AnalyticsIdentitySync();
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
   final ShortLinkResolver _shortLinkResolver = ShortLinkResolver();
@@ -912,6 +913,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _orientationPolicyObserver = OrientationPolicyObserver();
+    unawaited(_orientationPolicyObserver.start());
     _appRouter = AppRouter();
     _startupGate = DeepLinkStartupGate(router: _appRouter, handle: _handleDeepLinkIntent, onError: _onDeepLinkError);
     _shortLinkRetry = ShortLinkRetryScheduler(
@@ -960,9 +963,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeMetrics() => unawaited(applyAllowedOrientations());
-
-  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       final now = DateTime.now();
@@ -996,6 +996,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     _shortLinkRetry.dispose();
     _sessionWatcher?.dispose();
     unawaited(analytics.flush());
+    _orientationPolicyObserver.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
