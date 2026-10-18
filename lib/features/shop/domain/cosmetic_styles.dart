@@ -43,4 +43,4 @@ NameGlowStyle glowStyle(String id) => switch (id) {
 };
 
 /// The real icon art for an app icon shop item.
-String appIconAsset(String id) => 'assets/app_icons/$id.png';
+String appIconAsset(String id) => 'assets/app_icons/$id.jpg';

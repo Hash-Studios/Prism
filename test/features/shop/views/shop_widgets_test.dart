@@ -106,7 +106,7 @@ void main() {
     testWidgets('an app icon tile draws the real icon art', (tester) async {
       await pumpTile(tester, 'icon_noir');
 
-      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.png')), findsOneWidget);
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.jpg')), findsOneWidget);
     });
 
     testWidgets('a limited item shows when it ends', (tester) async {
@@ -191,7 +191,7 @@ void main() {
 
       expect(find.text('Use icon'), findsNothing);
       expect(find.text('Buy for 200'), findsOneWidget);
-      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.png')), findsOneWidget);
+      expect(find.byWidgetPredicate(isIconArt('assets/app_icons/icon_noir.jpg')), findsOneWidget);
     });
 
     testWidgets('an app icon sheet skips the sweep when animations are off', (tester) async {

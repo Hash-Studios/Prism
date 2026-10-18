@@ -1,6 +1,7 @@
 #!/bin/bash
 # Renders the alternate app icons (noir, glass, sunset, mono) from tool/app_icons/<variant>.svg with headless Chrome.
 # Writes the iOS alternate icons, the Android adaptive and legacy launcher icons, and the shop previews.
+# Opaque art that only Android and Flutter read is JPEG to keep the APK small; iOS needs PNG.
 # Set CHROME to a Chrome or Chromium binary if none is found.
 set -e
 
@@ -71,12 +72,12 @@ HTML
 }
 JSON
 
-  shoot "file://$src" "assets/app_icons/icon_$variant.png" 512
+  shoot "file://$src" "assets/app_icons/icon_$variant.jpg" 512
 
   for density in $DENSITIES; do
     IFS=: read -r bucket legacy layer <<<"$density"
     mkdir -p "$RES/drawable-$bucket"
-    shoot "file://$WORK/$variant-bleed.svg" "$RES/drawable-$bucket/ic_launcher_${variant}_background.png" "$layer"
+    shoot "file://$WORK/$variant-bleed.svg" "$RES/drawable-$bucket/ic_launcher_${variant}_background.jpg" "$layer"
     shoot "file://$WORK/$variant-legacy.html" "$RES/mipmap-$bucket/ic_launcher_$variant.png" "$legacy"
   done
 
