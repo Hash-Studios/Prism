@@ -439,6 +439,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
     final bool ownProfile = widget.ownProfile;
     final List<String> linkKeys = _profile.links.keys.toList(growable: false);
+    final double headerWidth = math.min(screen.width, PrismLayout.readableWidth);
     final double coverHeight = screen.height * 0.19;
     final int badgeCount = _profile.badges.toSet().where((String id) => badgeInfo(id) != null).length;
     final int badgesPerRow = math.max(1, ((screen.width - 24 + 8) / 40).floor());
@@ -626,7 +627,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       SizedBox(
-                        width: screen.width * 0.7,
+                        width: headerWidth * 0.7,
                         child: GlowText(
                           creatorLabel(name: _profile.name, username: _profile.username),
                           glowId: cosmetics.glow,
@@ -644,7 +645,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ),
                       const SizedBox(height: 3),
                       SizedBox(
-                        width: screen.width * 0.7,
+                        width: headerWidth * 0.7,
                         child: Text(
                           '@${_profile.username}',
                           textAlign: TextAlign.center,
@@ -662,7 +663,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                       const SizedBox(height: 8),
                       if (_profile.bio.isNotEmpty) ...<Widget>[
                         SizedBox(
-                          width: screen.width * 0.72,
+                          width: headerWidth * 0.72,
                           child: Text(
                             _profile.bio,
                             textAlign: TextAlign.center,
@@ -683,7 +684,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ProfileBadgeRow(badgeIds: _profile.badges),
                       const SizedBox(height: 8),
                       SizedBox(
-                        width: screen.width * 0.9,
+                        width: headerWidth * 0.9,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[

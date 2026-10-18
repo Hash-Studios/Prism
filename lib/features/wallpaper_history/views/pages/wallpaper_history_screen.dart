@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -91,8 +92,8 @@ class _WallpaperHistoryView extends StatelessWidget {
             )
           : GridView.builder(
               padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: largeTileGridColumns(MediaQuery.sizeOf(context).width),
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
                 childAspectRatio: 0.52,

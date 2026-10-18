@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -126,7 +128,7 @@ class _SecondarySplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double size = MediaQuery.sizeOf(context).width * 0.29074074074;
+    final double size = math.min(MediaQuery.sizeOf(context).width * 0.29074074074, 140);
     return Container(
       width: double.infinity,
       height: double.infinity,

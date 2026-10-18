@@ -61,7 +61,7 @@ class DropWallGrid extends StatelessWidget {
     return SliverPadding(
       padding: PrismWallGrid.padding,
       sliver: SliverGrid.builder(
-        gridDelegate: PrismWallGrid.delegate(context, columns: 2),
+        gridDelegate: PrismWallGrid.delegate(context, columns: largeTileGridColumns(MediaQuery.sizeOf(context).width)),
         itemCount: drop.walls.length,
         itemBuilder: (context, index) {
           final DropWall wall = drop.walls[index];

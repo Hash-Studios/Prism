@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -358,7 +360,7 @@ class _ThemeChipRow extends StatelessWidget {
                 child: Stack(
                   children: [
                     Container(
-                      width: size.width * 0.3,
+                      width: math.min(size.width * 0.3, 150),
                       height: chipHeight,
                       decoration: BoxDecoration(
                         border: Border.all(color: option.theme.colorScheme.scrim.withValues(alpha: 0.12)),
@@ -389,7 +391,7 @@ class _ThemeChipRow extends StatelessWidget {
                     ),
                     if (option.id == selectedId)
                       Container(
-                        width: size.width * 0.3,
+                        width: math.min(size.width * 0.3, 150),
                         height: chipHeight,
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
