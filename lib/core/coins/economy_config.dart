@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
@@ -60,6 +61,7 @@ class EconomySpend {
     this.giftPremiumPass = 50,
     this.drawTicket = 20,
     this.spinWheel = 10,
+    this.dailyChest = 8,
   });
 
   factory EconomySpend.fromMap(Map<String, dynamic> m) {
@@ -82,6 +84,7 @@ class EconomySpend {
       giftPremiumPass: _int(m['giftPremiumPass'], d.giftPremiumPass),
       drawTicket: _int(m['drawTicket'], d.drawTicket),
       spinWheel: _int(m['spinWheel'], d.spinWheel),
+      dailyChest: _int(m['dailyChest'], d.dailyChest),
     );
   }
 
@@ -104,6 +107,9 @@ class EconomySpend {
 
   /// What a paid spin of the wheel costs.
   final int spinWheel;
+
+  /// What the daily chest costs before today's quests are done.
+  final int dailyChest;
 }
 
 class SpinSegment {
@@ -136,11 +142,9 @@ class EconomyAward {
     ],
     this.spinWheel = defaultWheel,
     this.spinWheelMaxPerDay = 5,
+    this.dailyChest = defaultChest,
     this.questCoins = 2,
     this.questXp = 25,
-    this.questChestMin = 5,
-    this.questChestMax = 15,
-    this.questChestCosmeticChance = 0.1,
     this.weeklyQuestCoins = 30,
     this.weeklyQuestXp = 150,
     this.graceDownloads = 3,
@@ -163,9 +167,6 @@ class EconomyAward {
     int streakChestMin = award('streakChestMin', d.streakChestMin);
     int streakChestMax = award('streakChestMax', d.streakChestMax);
     if (streakChestMin > streakChestMax) (streakChestMin, streakChestMax) = (d.streakChestMin, d.streakChestMax);
-    int questChestMin = award('questChestMin', d.questChestMin);
-    int questChestMax = award('questChestMax', d.questChestMax);
-    if (questChestMin > questChestMax) (questChestMin, questChestMax) = (d.questChestMin, d.questChestMax);
     return EconomyAward(
       rewardedAd: award('rewardedAd', d.rewardedAd),
       rewardedAdFirstOfDay: award('rewardedAdFirstOfDay', d.rewardedAdFirstOfDay),
@@ -189,11 +190,9 @@ class EconomyAward {
           : d.proSpin,
       spinWheel: parseWheel(m['spinWheel']) ?? d.spinWheel,
       spinWheelMaxPerDay: award('spinWheelMaxPerDay', d.spinWheelMaxPerDay),
+      dailyChest: parseWheel(m['dailyChest']) ?? d.dailyChest,
       questCoins: award('questCoins', d.questCoins),
       questXp: award('questXp', d.questXp),
-      questChestMin: questChestMin,
-      questChestMax: questChestMax,
-      questChestCosmeticChance: _double(m['questChestCosmeticChance'], d.questChestCosmeticChance),
       weeklyQuestCoins: award('weeklyQuestCoins', d.weeklyQuestCoins),
       weeklyQuestXp: award('weeklyQuestXp', d.weeklyQuestXp),
       graceDownloads: award('graceDownloads', d.graceDownloads),
@@ -221,11 +220,11 @@ class EconomyAward {
 
   /// Paid spins per UTC day. The free Pro spin does not count.
   final int spinWheelMaxPerDay;
+
+  /// The daily chest's slots, in the wheel table's shape.
+  final List<WheelSegment> dailyChest;
   final int questCoins;
   final int questXp;
-  final int questChestMin;
-  final int questChestMax;
-  final double questChestCosmeticChance;
   final int weeklyQuestCoins;
   final int weeklyQuestXp;
   final int graceDownloads;

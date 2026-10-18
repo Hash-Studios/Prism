@@ -137,9 +137,6 @@ class QuestState {
     weekKey: weekKey,
     weekly: weekly,
   );
-
-  /// Every daily item is claimed and the chest is still closed.
-  bool get chestReady => items.isNotEmpty && items.every((QuestItem q) => q.claimed) && !chestOpened;
 }
 
 /// Coins and XP one quest item paid.
@@ -220,20 +217,6 @@ class Passes {
         autoRotatePassUntil: autoRotatePassUntil ?? this.autoRotatePassUntil,
         liveStyles: liveStyles ?? this.liveStyles,
       );
-}
-
-enum ChestOutcome { opened, locked, alreadyOpened, failed }
-
-class ChestResult {
-  const ChestResult(this.outcome, {this.coins = 0, this.doubled = false, this.itemId, this.reason = ''});
-
-  final ChestOutcome outcome;
-  final int coins;
-  final bool doubled;
-
-  /// A cosmetic the chest added to the inventory, if any.
-  final String? itemId;
-  final String reason;
 }
 
 enum ShopPurchaseOutcome { purchased, owned, proOnly, rankLocked, expired, insufficient, failed }

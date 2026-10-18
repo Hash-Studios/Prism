@@ -1,17 +1,15 @@
 import 'dart:async';
 
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
 import 'package:Prism/features/quests/views/widgets/chest_banner.dart';
-import 'package:Prism/features/quests/views/widgets/chest_sheet.dart';
 import 'package:Prism/features/quests/views/widgets/quest_tile.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -73,64 +71,45 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return BlocProvider<QuestsBloc>.value(
       value: _bloc,
-      child: MultiBlocListener(
-        listeners: <BlocListener<QuestsBloc, QuestsState>>[
-          BlocListener<QuestsBloc, QuestsState>(
-            listenWhen: (before, after) => after.awards.isNotEmpty && before.awards != after.awards,
-            listener: (context, state) {
-              final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
-              final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
-              final String reward = <String>[if (coins > 0) '+$coins coins', if (xp > 0) '+$xp XP'].join(' · ');
-              toasts.success(reward.isEmpty ? 'Quest done' : 'Quest done: $reward');
-              context.read<QuestsBloc>().add(const QuestsEvent.awardsShown());
-            },
-          ),
-          BlocListener<QuestsBloc, QuestsState>(
-            listenWhen: (before, after) => after.chest != null && before.chest != after.chest,
-            listener: _onChest,
-          ),
-        ],
+      child: BlocListener<QuestsBloc, QuestsState>(
+        listenWhen: (before, after) => after.awards.isNotEmpty && before.awards != after.awards,
+        listener: (context, state) {
+          final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
+          final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
+          final String reward = <String>[if (coins > 0) '+$coins coins', if (xp > 0) '+$xp XP'].join(' · ');
+          toasts.success(reward.isEmpty ? 'Quest done' : 'Quest done: $reward');
+          context.read<QuestsBloc>().add(const QuestsEvent.awardsShown());
+        },
         child: BlocBuilder<QuestsBloc, QuestsState>(
           builder: (context, state) {
             final QuestState? quests = state.quests;
             if (quests == null) return const SizedBox.shrink();
             return ValueListenableBuilder<EconomyConfig>(
               valueListenable: EconomyConfig.notifier,
-              builder: (context, _, _) => _TodayView(
-                board: QuestBoard.of(quests, EconomyConfig.current.award),
-                now: DateTime.now(),
-                opening: state.opening,
-                onOpenSpin: widget.onOpenSpin,
-              ),
+              builder: (context, _, _) {
+                final DateTime now = DateTime.now();
+                final QuestBoard? board = QuestBoard.of(
+                  quests,
+                  EconomyConfig.current.award,
+                  today: economyDayKey(now),
+                  price: CoinPolicy.dailyChestPrice,
+                );
+                if (board == null) return const SizedBox.shrink();
+                return _TodayView(board: board, now: now, onOpenSpin: widget.onOpenSpin);
+              },
             );
           },
         ),
       ),
     );
   }
-
-  Future<void> _onChest(BuildContext context, QuestsState state) async {
-    final ChestResult chest = state.chest!;
-    switch (chest.outcome) {
-      case ChestOutcome.opened:
-        final bool openShop = await showChestSheet(context, chest);
-        if (openShop && context.mounted) await context.router.root.push(const ShopRoute());
-      case ChestOutcome.locked:
-        toasts.info('Finish your 3 quests to open the chest.');
-      case ChestOutcome.alreadyOpened:
-        break;
-      case ChestOutcome.failed:
-        toasts.error("Couldn't open the chest. Try again.");
-    }
-  }
 }
 
 class _TodayView extends StatelessWidget {
-  const _TodayView({required this.board, required this.now, required this.opening, required this.onOpenSpin});
+  const _TodayView({required this.board, required this.now, required this.onOpenSpin});
 
   final QuestBoard board;
   final DateTime now;
-  final bool opening;
   final VoidCallback? onOpenSpin;
 
   @override
@@ -145,7 +124,7 @@ class _TodayView extends StatelessWidget {
           QuestTile(key: ValueKey<String>(tile.id), quest: tile),
           const SizedBox(height: PrismSpace.sm),
         ],
-        ChestBanner(board: board, opening: opening, onOpenSpin: onOpenSpin),
+        ChestBanner(board: board, onOpenSpin: onOpenSpin),
         if (weekly != null) ...<Widget>[
           const SizedBox(height: PrismSpace.md),
           QuestTile(

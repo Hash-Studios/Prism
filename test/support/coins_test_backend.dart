@@ -21,6 +21,9 @@ class CoinsTestBackend {
   Future<dynamic> Function(String name, Map<String, dynamic> parameters) onCall = (_, _) async => claimPayload;
   Completer<void>? callStarted;
 
+  /// The timeout in milliseconds of the latest call of each function, as the plugin sent it.
+  final Map<String, int> timeoutsMs = <String, int>{};
+
   static const Map<String, Object> claimPayload = <String, Object>{
     'claimed': true,
     'alreadyClaimedToday': false,
@@ -78,6 +81,7 @@ class CoinsTestBackend {
         try {
           final Completer<void>? started = callStarted;
           if (started != null && !started.isCompleted) started.complete();
+          timeoutsMs[arguments['functionName'] as String] = arguments['timeout'] as int;
           return <Object?>[
             await onCall(
               arguments['functionName'] as String,

@@ -85,6 +85,7 @@ void main() {
         'draw_ticket',
         'shop_item',
         'spin_wheel',
+        'quest_chest',
       ],
       'AiChargeMode': <String>['free_trial', 'pro_included', 'coin_spend', 'insufficient'],
       'SettingValue': <String>['anime_wallpapers', 'sketchy_wallpapers', 'recommendations_notifications', 'haptics'],

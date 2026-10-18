@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
@@ -7,6 +8,8 @@ import 'fake_quests_repository.dart';
 
 void main() {
   const EconomyAward award = EconomyAward(questCoins: 3, questXp: 40, weeklyQuestCoins: 50, weeklyQuestXp: 200);
+  const String today = '2026-10-18';
+  const int price = 8;
 
   List<QuestItem> dailyItems({required int claimed}) => <QuestItem>[
     questItem('set_wall', QuestEvent.setWallpaper, claimed: claimed > 0, progress: claimed > 0 ? 1 : 0),
@@ -17,13 +20,16 @@ void main() {
   QuestBoard boardOf({int claimed = 0, bool chestOpened = false, QuestItem? bonus, bool chestDoubled = false}) =>
       QuestBoard.of(
         questState(
+          dayKey: today,
           items: dailyItems(claimed: claimed),
           bonus: bonus,
           chestOpened: chestOpened,
           chestDoubled: chestDoubled,
         ),
         award,
-      );
+        today: today,
+        price: price,
+      )!;
 
   group('rewards', () {
     test('daily tiles pay the daily award and the weekly tile pays the weekly award', () {
@@ -42,21 +48,67 @@ void main() {
   });
 
   group('chest stage', () {
-    test('is locked while a daily quest is unclaimed', () {
-      expect(boardOf(claimed: 2).chest, ChestStage.locked);
+    test('is paid while a daily quest is unclaimed, and it is never locked', () {
+      for (final int claimed in <int>[0, 1, 2]) {
+        expect(boardOf(claimed: claimed).stage, ChestStage.paid, reason: '$claimed quests claimed');
+      }
     });
 
-    test('is ready once every daily quest is claimed', () {
-      expect(boardOf(claimed: 3).chest, ChestStage.ready);
+    test('a paid chest costs the price and counts the quests left', () {
+      final DailyChestStatus chest = boardOf(claimed: 1).chest;
+
+      expect(chest.questsLeft, 2);
+      expect(chest.price, price);
+      expect(chest.nextCost, price);
     });
 
-    test('is opened after the chest is opened', () {
-      expect(boardOf(claimed: 3, chestOpened: true).chest, ChestStage.opened);
+    test('is free once every daily quest is claimed', () {
+      final QuestBoard board = boardOf(claimed: 3);
+
+      expect(board.stage, ChestStage.free);
+      expect(board.chest.nextCost, 0);
+    });
+
+    test('is opened after the chest is opened, paid or free', () {
+      expect(boardOf(claimed: 3, chestOpened: true).stage, ChestStage.opened);
+      expect(boardOf(claimed: 1, chestOpened: true).stage, ChestStage.opened);
     });
 
     test('reports whether the opened chest was doubled', () {
       expect(boardOf(claimed: 3, chestOpened: true, chestDoubled: true).doubled, isTrue);
       expect(boardOf(claimed: 3, chestOpened: true).doubled, isFalse);
+    });
+
+    test('takes the price it is given', () {
+      final QuestBoard board = QuestBoard.of(
+        questState(dayKey: today, items: dailyItems(claimed: 0)),
+        award,
+        today: today,
+        price: 12,
+      )!;
+
+      expect(board.chest.price, 12);
+    });
+
+    test('there is no board for quests of another day or without a daily quest', () {
+      expect(
+        QuestBoard.of(
+          questState(dayKey: '2026-10-17', items: dailyItems(claimed: 3)),
+          award,
+          today: today,
+          price: price,
+        ),
+        isNull,
+      );
+      expect(
+        QuestBoard.of(
+          questState(dayKey: today, items: <QuestItem>[]),
+          award,
+          today: today,
+          price: price,
+        ),
+        isNull,
+      );
     });
   });
 
@@ -109,7 +161,9 @@ void main() {
           weekKey: '2026-W42',
         ),
         award,
-      );
+        today: today,
+        price: price,
+      )!;
 
       expect(board.booster, isNull);
       expect(board.weekly, isNull);

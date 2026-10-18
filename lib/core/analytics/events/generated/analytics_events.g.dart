@@ -2487,6 +2487,45 @@ class SpinWheelSpunEvent extends AnalyticsEvent {
   }
 }
 
+class DailyChestOpenedEvent extends AnalyticsEvent {
+  const DailyChestOpenedEvent({
+    required this.free,
+    required this.cost,
+    required this.slot,
+    required this.prize,
+    required this.tier,
+    required this.coins,
+    required this.xp,
+    required this.doubled,
+  });
+
+  final bool free;
+  final int cost;
+  final int slot;
+  final String prize;
+  final String tier;
+  final int coins;
+  final int xp;
+  final bool doubled;
+
+  @override
+  String get eventName => 'daily_chest_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'free': free ? 1 : 0,
+      'cost': cost,
+      'slot': slot,
+      'prize': prize,
+      'tier': tier,
+      'coins': coins,
+      'xp': xp,
+      'doubled': doubled ? 1 : 0,
+    };
+  }
+}
+
 class QuestProgressedEvent extends AnalyticsEvent {
   const QuestProgressedEvent({
     required this.questId,
@@ -2522,21 +2561,6 @@ class QuestCompletedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'quest_id': questId, 'coins': coins, 'xp': xp};
-  }
-}
-
-class QuestChestOpenedEvent extends AnalyticsEvent {
-  const QuestChestOpenedEvent({required this.coins, this.itemId});
-
-  final int coins;
-  final String? itemId;
-
-  @override
-  String get eventName => 'quest_chest_opened';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'coins': coins, if (itemId != null) 'item_id': itemId!};
   }
 }
 

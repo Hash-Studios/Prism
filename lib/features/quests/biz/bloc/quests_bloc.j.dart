@@ -16,7 +16,6 @@ class QuestsBloc extends Bloc<QuestsEvent, QuestsState> {
   QuestsBloc(this._repository) : super(const QuestsState()) {
     on<_Started>(_onStarted);
     on<_Refreshed>(_onRefreshed);
-    on<_ChestOpened>(_onChestOpened);
     on<_AwardsShown>((_, _) => _repository.consumeAwards());
   }
 
@@ -40,15 +39,5 @@ class QuestsBloc extends Bloc<QuestsEvent, QuestsState> {
     final QuestState? today = _today(state.quests);
     if (today != state.quests) emit(state.copyWith(quests: today));
     await _repository.refresh();
-  }
-
-  Future<void> _onChestOpened(_ChestOpened event, Emitter<QuestsState> emit) async {
-    if (state.opening) return;
-    emit(state.copyWith(opening: true));
-    final ChestResult chest = await _repository.openChest();
-    emit(state.copyWith(opening: false, chest: chest));
-    if (chest.outcome == ChestOutcome.locked || chest.outcome == ChestOutcome.alreadyOpened) {
-      unawaited(_repository.refresh());
-    }
   }
 }

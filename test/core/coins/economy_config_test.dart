@@ -12,13 +12,13 @@ void main() {
     expect(c.spend.giftPremiumPass, 50);
     expect(c.award.rewardedAdFirstOfDay, 20);
     expect(c.award.streakDaily, <int>[3, 3, 5, 5, 8, 8, 10]);
-    expect(c.award.questChestMin, 5);
-    expect(c.award.questChestMax, 15);
     expect(c.award.weeklyQuestCoins, 30);
     expect(c.award.proSpin.map((SpinSegment s) => s.coins), <int>[20, 30, 50, 75, 100]);
     expect(c.spend.spinWheel, 10);
     expect(c.award.spinWheelMaxPerDay, 5);
     expect(describeWheel(c.award.spinWheel), defaultWheelLines);
+    expect(c.spend.dailyChest, 8);
+    expect(describeWheel(c.award.dailyChest), defaultChestLines);
     expect(c.xp.ranks.map((RankDef r) => r.id), <String>['bronze', 'silver', 'gold', 'prism']);
     expect(c.flags.drawEnabled, isFalse);
     expect(c.flags.legacyPricingUntil, '2027-01-31T00:00:00Z');
@@ -54,8 +54,8 @@ void main() {
         'streakDaily': <int>[1, 2, 3],
         'proSpin': <Object>[],
         'rewardedAd': 5000,
-        'questChestMin': 30,
-        'questChestMax': 10,
+        'streakChestMin': 50,
+        'streakChestMax': 20,
       },
       'xp': <String, dynamic>{'ranks': 'none'},
       'flags': 'off',
@@ -67,7 +67,7 @@ void main() {
     expect(c.award.streakDaily, <int>[3, 3, 5, 5, 8, 8, 10]);
     expect(c.award.proSpin, hasLength(5));
     expect(c.award.rewardedAd, 10);
-    expect((c.award.questChestMin, c.award.questChestMax), (5, 15));
+    expect((c.award.streakChestMin, c.award.streakChestMax), (15, 40));
     expect(c.xp.ranks, hasLength(4));
     expect(c.flags.drawEnabled, isFalse);
     expect(c.proBypassActions, EconomyConfig.defaults.proBypassActions);
@@ -160,6 +160,85 @@ void main() {
         final EconomyConfig c = parse(price: 12, cap: 4, wheel: wheel);
         expect(describeWheel(c.award.spinWheel), defaultWheelLines, reason: '$wheel');
         expect((c.spend.spinWheel, c.award.spinWheelMaxPerDay), (12, 4));
+      }
+    });
+  });
+
+  group('daily chest', () {
+    EconomyConfig parse({Object? price, Object? table, bool absent = false}) => EconomyConfig.fromMap(<String, dynamic>{
+      if (!absent) ...<String, dynamic>{
+        'spend': <String, dynamic>{'dailyChest': price},
+        'award': <String, dynamic>{'dailyChest': table},
+      },
+    });
+
+    test('a valid price and table are read, next to an untouched spin wheel', () {
+      final EconomyConfig c = parse(
+        price: 6,
+        table: <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 7, 'weight': 2},
+          <String, Object>{'kind': 'coins', 'coins': 40, 'weight': 1.5},
+          <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 1, 'weight': 1},
+        ],
+      );
+      expect(c.spend.dailyChest, 6);
+      expect(describeWheel(c.award.dailyChest), <String>['coins 7 x2', 'coins 40 x1', 'cosmetic 1 x1']);
+      expect(c.spend.spinWheel, 10);
+      expect(describeWheel(c.award.spinWheel), defaultWheelLines);
+    });
+
+    test('zero is a valid price', () {
+      expect(parse(price: 0).spend.dailyChest, 0);
+    });
+
+    test('a doc without the fields gives the defaults', () {
+      for (final EconomyConfig c in <EconomyConfig>[
+        parse(absent: true),
+        parse(),
+        EconomyConfig.fromMap(<String, dynamic>{'spend': <String, dynamic>{}, 'award': <String, dynamic>{}}),
+      ]) {
+        expect(c.spend.dailyChest, 8);
+        expect(describeWheel(c.award.dailyChest), defaultChestLines);
+      }
+    });
+
+    test('a malformed price falls back to 8', () {
+      for (final Object? bad in <Object?>[-1, 10001, 'eight', true, double.nan]) {
+        expect(parse(price: bad).spend.dailyChest, 8, reason: '$bad');
+      }
+    });
+
+    test('a malformed table, or one with an XP slot, falls back to the default chest and keeps the price', () {
+      final List<Object?> bad = <Object?>[
+        'chest',
+        <Object>[],
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 10, 'weight': 18},
+          <String, Object>{'kind': 'xp', 'xp': 25, 'weight': 15},
+        ],
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'xp', 'xp': 25, 'weight': 1},
+          <String, Object>{'kind': 'xp', 'xp': 50, 'weight': 1},
+        ],
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 1},
+        ],
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 0},
+          <String, Object>{'kind': 'coins', 'coins': 6, 'weight': 0},
+        ],
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 1},
+          <String, Object>{'kind': 'coins', 'coins': 2000, 'weight': 1},
+        ],
+        <Map<String, Object>>[
+          for (int i = 0; i < 13; i++) <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 1},
+        ],
+      ];
+      for (final Object? table in bad) {
+        final EconomyConfig c = parse(price: 12, table: table);
+        expect(describeWheel(c.award.dailyChest), defaultChestLines, reason: '$table');
+        expect(c.spend.dailyChest, 12);
       }
     });
   });

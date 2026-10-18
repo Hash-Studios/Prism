@@ -6,17 +6,14 @@ import 'package:Prism/features/quests/domain/repositories/quests_repository.dart
 import 'package:flutter/foundation.dart';
 
 class FakeQuestsRepository implements QuestsRepository {
-  FakeQuestsRepository({QuestState? quests, this.chest = const ChestResult(ChestOutcome.opened, coins: 8)}) {
+  FakeQuestsRepository({QuestState? quests}) {
     this.quests.value = quests;
   }
 
   final ValueNotifier<QuestState?> quests = ValueNotifier<QuestState?>(null);
   final ValueNotifier<List<QuestAward>> awards = ValueNotifier<List<QuestAward>>(const <QuestAward>[]);
-  ChestResult chest;
   int refreshes = 0;
-  int opens = 0;
   int consumed = 0;
-  Completer<ChestResult>? pendingOpen;
 
   @override
   Stream<QuestState?> watchQuests() => _watch(quests);
@@ -26,12 +23,6 @@ class FakeQuestsRepository implements QuestsRepository {
 
   @override
   Future<void> refresh() async => refreshes++;
-
-  @override
-  Future<ChestResult> openChest() {
-    opens++;
-    return pendingOpen?.future ?? Future<ChestResult>.value(chest);
-  }
 
   @override
   void consumeAwards() {

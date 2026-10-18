@@ -7,16 +7,22 @@ const mean = (values: number[]) => values.reduce((sum, n) => sum + n, 0) / value
 const streakDaily = mean(award.streakDaily);
 const streakChestPerDay = (award.streakChestMin + award.streakChestMax) / 2 / 7;
 const questsPerDay = 3 * award.questCoins;
-const questChest = (award.questChestMin + award.questChestMax) / 2;
 const weeklyPerDay = award.weeklyQuestCoins / 7;
 const wheelTotalWeight = award.spinWheel.reduce((sum, s) => sum + s.weight, 0);
 const wheelCoinEv = award.spinWheel.reduce((sum, s) => sum + (s.kind === "coins" ? s.coins * s.weight : 0), 0) /
   wheelTotalWeight;
 
+// Coins per daily chest. A cosmetic slot counts 0 (its fallback only pays once every common item is owned). The
+// engaged personas finish the three quests, so their chest is free; the bonus quest would double the coins, which the
+// personas leave out. The chest's 10 XP comes from xp.activities.questChest, not from the prize.
+const chestTotalWeight = award.dailyChest.reduce((sum, s) => sum + s.weight, 0);
+const chestCoinEv = award.dailyChest.reduce((sum, s) => sum + (s.kind === "coins" ? s.coins * s.weight : 0), 0) /
+  chestTotalWeight;
+
 const personas = {
   casual: streakDaily + streakChestPerDay,
-  engagedFree: streakDaily + streakChestPerDay + questsPerDay + questChest + award.rewardedAdFirstOfDay + weeklyPerDay,
-  engagedPro: (streakDaily + streakChestPerDay) * award.proStreakMultiplier + questsPerDay + questChest + wheelCoinEv +
+  engagedFree: streakDaily + streakChestPerDay + questsPerDay + chestCoinEv + award.rewardedAdFirstOfDay + weeklyPerDay,
+  engagedPro: (streakDaily + streakChestPerDay) * award.proStreakMultiplier + questsPerDay + chestCoinEv + wheelCoinEv +
     weeklyPerDay,
 };
 
@@ -24,7 +30,7 @@ test("economy sim: coins a day per persona on DEFAULT_ECONOMY", () => {
   console.table(Object.fromEntries(Object.entries(personas).map(([name, perDay]) =>
     [name, {perDay: Number(perDay.toFixed(1)), perWeek: Math.round(perDay * 7)}])));
   assert.ok(personas.casual <= 15, `casual ${personas.casual}`);
-  // Revision 3 defaults give about 50.2 a day (the spec cohort budget, about 350 a week), above the 45 target.
+  // Revision 3 defaults give about 50.4 a day (the spec cohort budget, about 350 a week), above the 45 target.
   assert.ok(personas.engagedFree <= 55, `engaged free ${personas.engagedFree}`);
   assert.ok(personas.engagedPro <= 75, `engaged Pro ${personas.engagedPro}`);
 });
@@ -37,4 +43,12 @@ test("economy sim: direct wheel payouts stay below the price; full cosmetic owne
   const fallbackEv = award.spinWheel.reduce((sum, segment) =>
     sum + (segment.kind === "cosmetic" ? segment.fallbackCoins * segment.weight : 0), 0) / wheelTotalWeight;
   assert.equal(Number((wheelCoinEv + fallbackEv).toFixed(2)), 10.86);
+});
+
+test("economy sim: a paid daily chest pays back a little more than it costs, and the bonus doubles it", () => {
+  assert.equal(Number(chestCoinEv.toFixed(2)), 10.14);
+  const net = chestCoinEv - DEFAULT_ECONOMY.spend.dailyChest;
+  assert.equal(Number(net.toFixed(1)), 2.1);
+  assert.ok(net > 0 && net <= 5, `paid chest net ${net}`);
+  assert.equal(Number((chestCoinEv * 2).toFixed(1)), 20.3);
 });

@@ -60,6 +60,7 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.9.0
   liquid_glass_renderer: ^0.2.0-dev.4
+  lottie: ^3.3.0
   mixpanel_flutter: ^2.14.0
   package_info_plus: ^10.2.1
   palette_generator: ^0.3.0
@@ -120,6 +121,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/lottie/
     - assets/sounds/
     - assets/app_icons/
 

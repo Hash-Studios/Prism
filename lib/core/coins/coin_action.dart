@@ -31,10 +31,11 @@ enum CoinSpendAction {
   drawTicket,
   shopItem,
   spinWheel,
+  questChest,
 }
 
 extension CoinEarnActionX on CoinEarnAction {
-  /// The amount shown before the server answers. Server-rolled rewards (spin, chests) show their minimum.
+  /// The amount shown before the server answers. Server-rolled rewards (spin, chest) are 0: the reply names the prize.
   int defaultAmount() {
     switch (this) {
       case CoinEarnAction.rewardedAd:
@@ -54,10 +55,9 @@ extension CoinEarnActionX on CoinEarnAction {
         return CoinPolicy.proDailyBonus;
       case CoinEarnAction.quest:
         return CoinPolicy.questCoins;
-      case CoinEarnAction.questChest:
-        return CoinPolicy.questChestMin;
       case CoinEarnAction.refund:
       case CoinEarnAction.spinWheel:
+      case CoinEarnAction.questChest:
         return 0;
     }
   }
@@ -97,6 +97,8 @@ extension CoinSpendActionX on CoinSpendAction {
         return 0;
       case CoinSpendAction.spinWheel:
         return CoinPolicy.spinWheelPrice;
+      case CoinSpendAction.questChest:
+        return CoinPolicy.dailyChestPrice;
     }
   }
 }

@@ -207,6 +207,85 @@ test("parseEconomy: spend.spinWheel is an integer in 0..10000 and the daily cap 
   for (const bad of [-1, 1001, 1.5, "3"]) assert.equal(cap(bad), 5, String(bad));
 });
 
+const SPEC_CHEST = [
+  {kind: "coins", coins: 5, weight: 34},
+  {kind: "coins", coins: 8, weight: 28},
+  {kind: "coins", coins: 12, weight: 15},
+  {kind: "coins", coins: 20, weight: 11},
+  {kind: "cosmetic", fallbackCoins: 25, weight: 8},
+  {kind: "coins", coins: 40, weight: 3},
+  {kind: "coins", coins: 100, weight: 1},
+];
+
+test("parseEconomy: the default daily chest is the spec table at 8 coins and survives a Firestore round trip", () => {
+  assert.deepEqual(DEFAULT_ECONOMY.award.dailyChest, SPEC_CHEST);
+  assert.equal(DEFAULT_ECONOMY.spend.dailyChest, 8);
+  const stored = JSON.parse(JSON.stringify({award: {dailyChest: SPEC_CHEST}, spend: {dailyChest: 8}}));
+  const config = parseEconomy(stored);
+  assert.deepEqual(config.award.dailyChest, SPEC_CHEST);
+  assert.equal(config.spend.dailyChest, 8);
+  assert.deepEqual(parseEconomy(null).award.dailyChest, SPEC_CHEST);
+});
+
+test("parseEconomy: a valid custom daily chest table is kept in order, apart from the wheel", () => {
+  const config = parseEconomy({award: {dailyChest: [
+    {kind: "coins", coins: 1000, weight: 0, junk: true},
+    {kind: "cosmetic", fallbackCoins: 1, weight: 1000},
+  ]}});
+  assert.deepEqual(config.award.dailyChest, [
+    {kind: "coins", coins: 1000, weight: 0},
+    {kind: "cosmetic", fallbackCoins: 1, weight: 1000},
+  ]);
+  assert.deepEqual(config.award.spinWheel, SPEC_WHEEL);
+});
+
+test("parseEconomy: a malformed daily chest table falls back to the whole default table", () => {
+  const coins = (n: number) => ({kind: "coins", coins: n, weight: 1});
+  const bad: unknown[] = [
+    [coins(1), {kind: "jackpot", coins: 5, weight: 1}],
+    [coins(1), coins(0)],
+    [coins(1), coins(5000)],
+    [coins(1), {kind: "xp", xp: 25, weight: 1}],
+    [coins(1), {kind: "xp", coins: 5, weight: 1}],
+    [coins(1), {kind: "cosmetic", fallbackCoins: 0, weight: 1}],
+    [coins(1), {kind: "coins", coins: 5, weight: -1}],
+    [coins(1), null],
+    [coins(1)],
+    [],
+    Array.from({length: 13}, (_, i) => coins(i + 1)),
+    [{...coins(1), weight: 0}, {...coins(2), weight: 0}],
+    "nope",
+    7,
+  ];
+  for (const dailyChest of bad) {
+    const config = parseEconomy({award: {dailyChest}});
+    assert.deepEqual(config.award.dailyChest, SPEC_CHEST, JSON.stringify(dailyChest));
+  }
+});
+
+test("parseEconomy: a stored chest table from before XP left the prizes falls back to the coin-only default", () => {
+  const stored = JSON.parse(JSON.stringify({award: {dailyChest: [
+    {kind: "coins", coins: 5, weight: 32},
+    {kind: "coins", coins: 10, weight: 26},
+    {kind: "xp", xp: 25, weight: 15},
+    {kind: "coins", coins: 20, weight: 13},
+    {kind: "cosmetic", fallbackCoins: 25, weight: 8},
+    {kind: "coins", coins: 40, weight: 4},
+    {kind: "coins", coins: 100, weight: 2},
+  ]}}));
+  const config = parseEconomy(stored);
+  assert.deepEqual(config.award.dailyChest, SPEC_CHEST);
+  assert.equal(config.award.dailyChest.some((slot) => (slot as {kind: string}).kind === "xp"), false);
+});
+
+test("parseEconomy: spend.dailyChest is an integer in 0..10000, else 8", () => {
+  const price = (dailyChest: unknown) => parseEconomy({spend: {dailyChest}}).spend.dailyChest;
+  assert.equal(price(0), 0);
+  assert.equal(price(5), 5);
+  assert.equal(price(10_000), 10_000);
+  for (const bad of [-1, 10_001, 2.5, "8", null, Number.NaN]) assert.equal(price(bad), 8, String(bad));
+});
+
 test("parseEconomy: ranks are sorted by min", () => {
   const config = parseEconomy({xp: {ranks: [{id: "gold", min: 100}, {id: "bronze", min: 0}]}});
   assert.deepEqual(config.xp.ranks.map((r) => r.id), ["bronze", "gold"]);

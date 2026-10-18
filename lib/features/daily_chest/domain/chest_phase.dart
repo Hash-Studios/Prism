@@ -1,0 +1,63 @@
+/// Where one chest is, from the first tap to the prize on screen. `spent` is a chest that was opened earlier today.
+enum ChestPhase { ready, charging, opening, revealed, spent }
+
+enum ChestPlayback {
+  loop,
+  once,
+
+  /// Shows [ChestMarker.stillFrame] and does not tick.
+  hold,
+}
+
+/// One named span of the box animation.
+class ChestMarker {
+  const ChestMarker(
+    this.name, {
+    required this.startFrame,
+    required this.endFrame,
+    required this.playback,
+    this.burstFrame,
+    int? stillFrame,
+  }) : stillFrame = stillFrame ?? startFrame;
+
+  /// The marker name in the Lottie file.
+  final String name;
+  final int startFrame;
+  final int endFrame;
+  final ChestPlayback playback;
+
+  /// The frame where the light leaves the box, if this span has one. The prize shows from here.
+  final int? burstFrame;
+
+  /// The frame a still box shows for this span. The first frame, except for `spent`: the file holds the emptied box
+  /// from frame 391, so frame 390 is still the last frame of the `opened` loop.
+  final int stillFrame;
+
+  int get frames => endFrame - startFrame;
+}
+
+/// The frame rate and the out point of `assets/lottie/daily_chest.json`. The last marker ends at frame 392.
+const int chestFrameRate = 60;
+const int chestTotalFrames = 393;
+
+/// The timeline of the box. The box reads the real spans from the file's markers when it can and falls back to these.
+const Map<ChestPhase, ChestMarker> chestMarkers = <ChestPhase, ChestMarker>{
+  ChestPhase.ready: ChestMarker('idle', startFrame: 0, endFrame: 120, playback: ChestPlayback.loop),
+  ChestPhase.charging: ChestMarker('charge', startFrame: 120, endFrame: 180, playback: ChestPlayback.loop),
+  ChestPhase.opening: ChestMarker(
+    'open',
+    startFrame: 180,
+    endFrame: 270,
+    playback: ChestPlayback.once,
+    burstFrame: 196,
+  ),
+  ChestPhase.revealed: ChestMarker('opened', startFrame: 270, endFrame: 390, playback: ChestPlayback.loop),
+  ChestPhase.spent: ChestMarker('spent', startFrame: 390, endFrame: 392, playback: ChestPlayback.hold, stillFrame: 392),
+};
+
+/// The phase whose still frame a box shows when it does not animate: the row icon and reduced motion.
+ChestPhase chestStillPhase(ChestPhase phase) => switch (phase) {
+  ChestPhase.ready || ChestPhase.charging => ChestPhase.ready,
+  ChestPhase.opening || ChestPhase.revealed => ChestPhase.revealed,
+  ChestPhase.spent => ChestPhase.spent,
+};

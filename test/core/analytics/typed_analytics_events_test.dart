@@ -61,6 +61,40 @@ void main() {
     );
   });
 
+  test('daily_chest_opened serializes the chest and the quest_chest spend wire value', () {
+    const DailyChestOpenedEvent event = DailyChestOpenedEvent(
+      free: true,
+      cost: 0,
+      slot: 6,
+      prize: 'coins',
+      tier: 'legendary',
+      coins: 200,
+      xp: 0,
+      doubled: true,
+    );
+
+    expect(event.eventName, 'daily_chest_opened');
+    expect(event.toWireParameters(), <String, Object?>{
+      'free': 1,
+      'cost': 0,
+      'slot': 6,
+      'prize': 'coins',
+      'tier': 'legendary',
+      'coins': 200,
+      'xp': 0,
+      'doubled': 1,
+    });
+    expect(
+      const CoinSpentEvent(
+        action: CoinSpendAction.questChest,
+        amount: 8,
+        balance: 92,
+        sourceTag: 'coins.daily_chest',
+      ).toWireParameters()['action'],
+      'quest_chest',
+    );
+  });
+
   group('provider-backed track dispatch', () {
     test('dispatches typed event via provider.logEvent', () async {
       final RecordingAnalyticsProvider provider = RecordingAnalyticsProvider();

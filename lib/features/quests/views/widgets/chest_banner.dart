@@ -1,41 +1,42 @@
-import 'package:Prism/core/coins/coin_policy.dart';
+import 'dart:async';
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/daily_chest/daily_chest.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
 import 'package:Prism/features/quests/domain/quest_catalog.dart';
-import 'package:Prism/features/quests/views/widgets/chest_art.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_palette.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The daily chest with its key pips and, until it opens, the booster that doubles it.
+/// The daily chest with its key pips and, until it opens, the booster that doubles it. The Open button opens the
+/// daily chest page, which owns the paying and the opening.
 /// [onOpenSpin] opens the spin machine. Pro users tap it from the booster strip.
 class ChestBanner extends StatelessWidget {
-  const ChestBanner({super.key, required this.board, required this.opening, this.onOpenSpin});
+  const ChestBanner({super.key, required this.board, this.onOpenSpin});
 
   final QuestBoard board;
-  final bool opening;
   final VoidCallback? onOpenSpin;
 
   @override
   Widget build(BuildContext context) {
-    final ChestBooster? booster = board.chest == ChestStage.opened ? null : board.booster;
+    final ChestBooster? booster = board.stage == ChestStage.opened ? null : board.booster;
     return PrismCard(
       padding: const EdgeInsets.all(PrismSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          _ChestRow(board: board, opening: opening),
+          _ChestRow(board: board),
           if (booster != null) ...<Widget>[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
               child: Divider(height: 1, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)),
             ),
-            _BoosterStrip(booster: booster, chestReady: board.chest == ChestStage.ready, onOpenSpin: onOpenSpin),
+            _BoosterStrip(booster: booster, onOpenSpin: onOpenSpin),
           ],
         ],
       ),
@@ -44,50 +45,38 @@ class ChestBanner extends StatelessWidget {
 }
 
 class _ChestRow extends StatelessWidget {
-  const _ChestRow({required this.board, required this.opening});
+  const _ChestRow({required this.board});
 
   final QuestBoard board;
-  final bool opening;
 
   @override
   Widget build(BuildContext context) {
     final int total = board.daily.length;
     final int done = board.doneCount;
     final int chestXp = EconomyConfig.current.xp.activities.questChest;
-    final (String caption, String state, Widget trailing) = switch (board.chest) {
-      ChestStage.locked => (
-        'Finish $total quests to open it',
-        'locked. $done of $total quests done',
-        ExcludeSemantics(child: Text('$done of $total', style: PrismTextStyles.caption(context))),
-      ),
-      ChestStage.ready => (
-        '${CoinPolicy.questChestMin} to ${CoinPolicy.questChestMax} coins${chestXp > 0 ? ' and $chestXp XP' : ''}, '
-            'maybe a cosmetic',
-        'ready to open',
-        PrismButton(
-          label: 'Open',
-          size: PrismButtonSize.compact,
-          loading: opening,
-          onPressed: () => context.read<QuestsBloc>().add(const QuestsEvent.chestOpened()),
-        ),
-      ),
-      ChestStage.opened => (
-        board.doubled ? 'Opened and doubled. A new one tomorrow.' : 'Opened. A new one tomorrow.',
-        'opened',
-        const _Done(),
-      ),
+    final Widget openButton = PrismButton(
+      label: 'Open',
+      size: PrismButtonSize.compact,
+      onPressed: () => unawaited(showDailyChest(context)),
+    );
+    final (String state, Widget trailing) = switch (board.stage) {
+      ChestStage.paid => ('ready to open. $done of $total quests done', openButton),
+      ChestStage.free => ('ready to open', openButton),
+      ChestStage.opened => ('opened', const _Done()),
     };
+    final String caption = chestRowSubtitle(board.chest, doubled: board.doubled);
+    final String? xpLine = board.stage != ChestStage.opened && chestXp > 0 ? 'Opening it gives $chestXp XP.' : null;
     return Row(
       children: <Widget>[
         // Only the description merges into one node; the trailing button stays reachable on its own.
         Expanded(
           child: Semantics(
             container: true,
-            label: 'Daily chest, $state. $caption',
+            label: 'Daily chest, $state. $caption${xpLine == null ? '' : '. $xpLine'}',
             excludeSemantics: true,
             child: Row(
               children: <Widget>[
-                LiveChest(stage: board.chest, size: 88),
+                _ChestSlot(phase: board.stage == ChestStage.opened ? ChestPhase.spent : ChestPhase.ready),
                 const SizedBox(width: PrismSpace.sm),
                 Expanded(
                   child: Column(
@@ -96,6 +85,7 @@ class _ChestRow extends StatelessWidget {
                     children: <Widget>[
                       Text('Daily chest', style: PrismTextStyles.cardTitle(context)),
                       Text(caption, style: PrismTextStyles.caption(context)),
+                      if (xpLine != null) Text(xpLine, style: PrismTextStyles.caption(context)),
                       const SizedBox(height: PrismSpace.xs),
                       _KeyPips(done: done, total: total),
                     ],
@@ -110,6 +100,20 @@ class _ChestRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The box in an 88 slot, the size of the chest it replaces. The Lottie has wide margins for its float and its glow, so a
+/// box of 88 draws a chest about 50 wide. The box is larger than its slot, and only its empty margin spills over.
+class _ChestSlot extends StatelessWidget {
+  const _ChestSlot({required this.phase});
+
+  final ChestPhase phase;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.square(
+    dimension: 88,
+    child: OverflowBox(maxWidth: 120, maxHeight: 120, child: ChestBox(phase: phase, size: 120)),
+  );
 }
 
 class _KeyPips extends StatelessWidget {
@@ -159,10 +163,9 @@ class _Pip extends StatelessWidget {
 }
 
 class _BoosterStrip extends StatefulWidget {
-  const _BoosterStrip({required this.booster, required this.chestReady, required this.onOpenSpin});
+  const _BoosterStrip({required this.booster, required this.onOpenSpin});
 
   final ChestBooster booster;
-  final bool chestReady;
   final VoidCallback? onOpenSpin;
 
   @override
@@ -199,11 +202,8 @@ class _BoosterStripState extends State<_BoosterStrip> {
         : pro
         ? questInfo('pro_spin').title
         : watchAdOptionLabel();
-    final String caption = booster.claimed
-        ? 'Your bonus is done'
-        : widget.chestReady
-        ? 'Do this first to double your chest'
-        : 'Doubles your chest';
+    // The strip only shows while the chest can still be opened, so a booster that is not done is always first.
+    final String caption = booster.claimed ? 'Your bonus is done' : 'Do this first to double your chest';
     return Row(
       children: <Widget>[
         // Only the description merges into one node; the trailing button stays reachable on its own.

@@ -55,13 +55,12 @@ extension QuestsEventPatterns on QuestsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Refreshed value)?  refreshed,TResult Function( _ChestOpened value)?  chestOpened,TResult Function( _AwardsShown value)?  awardsShown,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _Refreshed value)?  refreshed,TResult Function( _AwardsShown value)?  awardsShown,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Refreshed() when refreshed != null:
-return refreshed(_that);case _ChestOpened() when chestOpened != null:
-return chestOpened(_that);case _AwardsShown() when awardsShown != null:
+return refreshed(_that);case _AwardsShown() when awardsShown != null:
 return awardsShown(_that);case _:
   return orElse();
 
@@ -80,13 +79,12 @@ return awardsShown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Refreshed value)  refreshed,required TResult Function( _ChestOpened value)  chestOpened,required TResult Function( _AwardsShown value)  awardsShown,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _Refreshed value)  refreshed,required TResult Function( _AwardsShown value)  awardsShown,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _Refreshed():
-return refreshed(_that);case _ChestOpened():
-return chestOpened(_that);case _AwardsShown():
+return refreshed(_that);case _AwardsShown():
 return awardsShown(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -104,13 +102,12 @@ return awardsShown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Refreshed value)?  refreshed,TResult? Function( _ChestOpened value)?  chestOpened,TResult? Function( _AwardsShown value)?  awardsShown,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _Refreshed value)?  refreshed,TResult? Function( _AwardsShown value)?  awardsShown,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _Refreshed() when refreshed != null:
-return refreshed(_that);case _ChestOpened() when chestOpened != null:
-return chestOpened(_that);case _AwardsShown() when awardsShown != null:
+return refreshed(_that);case _AwardsShown() when awardsShown != null:
 return awardsShown(_that);case _:
   return null;
 
@@ -128,12 +125,11 @@ return awardsShown(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshed,TResult Function()?  chestOpened,TResult Function()?  awardsShown,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshed,TResult Function()?  awardsShown,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _Refreshed() when refreshed != null:
-return refreshed();case _ChestOpened() when chestOpened != null:
-return chestOpened();case _AwardsShown() when awardsShown != null:
+return refreshed();case _AwardsShown() when awardsShown != null:
 return awardsShown();case _:
   return orElse();
 
@@ -152,12 +148,11 @@ return awardsShown();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshed,required TResult Function()  chestOpened,required TResult Function()  awardsShown,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshed,required TResult Function()  awardsShown,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _Refreshed():
-return refreshed();case _ChestOpened():
-return chestOpened();case _AwardsShown():
+return refreshed();case _AwardsShown():
 return awardsShown();case _:
   throw StateError('Unexpected subclass');
 
@@ -175,12 +170,11 @@ return awardsShown();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshed,TResult? Function()?  chestOpened,TResult? Function()?  awardsShown,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshed,TResult? Function()?  awardsShown,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _Refreshed() when refreshed != null:
-return refreshed();case _ChestOpened() when chestOpened != null:
-return chestOpened();case _AwardsShown() when awardsShown != null:
+return refreshed();case _AwardsShown() when awardsShown != null:
 return awardsShown();case _:
   return null;
 
@@ -256,38 +250,6 @@ String toString() {
 /// @nodoc
 
 
-class _ChestOpened implements QuestsEvent {
-  const _ChestOpened();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChestOpened);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'QuestsEvent.chestOpened()';
-}
-
-
-}
-
-
-
-
-/// @nodoc
-
-
 class _AwardsShown implements QuestsEvent {
   const _AwardsShown();
   
@@ -320,8 +282,7 @@ String toString() {
 /// @nodoc
 mixin _$QuestsState {
 
- QuestState? get quests; List<QuestAward> get awards; bool get opening;/// The last chest result. The view shows the chest sheet when it changes.
- ChestResult? get chest;
+ QuestState? get quests; List<QuestAward> get awards;
 /// Create a copy of QuestsState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -332,16 +293,16 @@ $QuestsStateCopyWith<QuestsState> get copyWith => _$QuestsStateCopyWithImpl<Ques
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuestsState&&(identical(other.quests, quests) || other.quests == quests)&&const DeepCollectionEquality().equals(other.awards, awards)&&(identical(other.opening, opening) || other.opening == opening)&&(identical(other.chest, chest) || other.chest == chest));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is QuestsState&&(identical(other.quests, quests) || other.quests == quests)&&const DeepCollectionEquality().equals(other.awards, awards));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,quests,const DeepCollectionEquality().hash(awards),opening,chest);
+int get hashCode => Object.hash(runtimeType,quests,const DeepCollectionEquality().hash(awards));
 
 @override
 String toString() {
-  return 'QuestsState(quests: $quests, awards: $awards, opening: $opening, chest: $chest)';
+  return 'QuestsState(quests: $quests, awards: $awards)';
 }
 
 
@@ -352,7 +313,7 @@ abstract mixin class $QuestsStateCopyWith<$Res>  {
   factory $QuestsStateCopyWith(QuestsState value, $Res Function(QuestsState) _then) = _$QuestsStateCopyWithImpl;
 @useResult
 $Res call({
- QuestState? quests, List<QuestAward> awards, bool opening, ChestResult? chest
+ QuestState? quests, List<QuestAward> awards
 });
 
 
@@ -369,13 +330,11 @@ class _$QuestsStateCopyWithImpl<$Res>
 
 /// Create a copy of QuestsState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? quests = freezed,Object? awards = null,Object? opening = null,Object? chest = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? quests = freezed,Object? awards = null,}) {
   return _then(_self.copyWith(
 quests: freezed == quests ? _self.quests : quests // ignore: cast_nullable_to_non_nullable
 as QuestState?,awards: null == awards ? _self.awards : awards // ignore: cast_nullable_to_non_nullable
-as List<QuestAward>,opening: null == opening ? _self.opening : opening // ignore: cast_nullable_to_non_nullable
-as bool,chest: freezed == chest ? _self.chest : chest // ignore: cast_nullable_to_non_nullable
-as ChestResult?,
+as List<QuestAward>,
   ));
 }
 
@@ -460,10 +419,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( QuestState? quests,  List<QuestAward> awards,  bool opening,  ChestResult? chest)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( QuestState? quests,  List<QuestAward> awards)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _QuestsState() when $default != null:
-return $default(_that.quests,_that.awards,_that.opening,_that.chest);case _:
+return $default(_that.quests,_that.awards);case _:
   return orElse();
 
 }
@@ -481,10 +440,10 @@ return $default(_that.quests,_that.awards,_that.opening,_that.chest);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( QuestState? quests,  List<QuestAward> awards,  bool opening,  ChestResult? chest)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( QuestState? quests,  List<QuestAward> awards)  $default,) {final _that = this;
 switch (_that) {
 case _QuestsState():
-return $default(_that.quests,_that.awards,_that.opening,_that.chest);case _:
+return $default(_that.quests,_that.awards);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -501,10 +460,10 @@ return $default(_that.quests,_that.awards,_that.opening,_that.chest);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( QuestState? quests,  List<QuestAward> awards,  bool opening,  ChestResult? chest)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( QuestState? quests,  List<QuestAward> awards)?  $default,) {final _that = this;
 switch (_that) {
 case _QuestsState() when $default != null:
-return $default(_that.quests,_that.awards,_that.opening,_that.chest);case _:
+return $default(_that.quests,_that.awards);case _:
   return null;
 
 }
@@ -516,7 +475,7 @@ return $default(_that.quests,_that.awards,_that.opening,_that.chest);case _:
 
 
 class _QuestsState implements QuestsState {
-  const _QuestsState({this.quests, final  List<QuestAward> awards = const <QuestAward>[], this.opening = false, this.chest}): _awards = awards;
+  const _QuestsState({this.quests, final  List<QuestAward> awards = const <QuestAward>[]}): _awards = awards;
   
 
 @override final  QuestState? quests;
@@ -527,9 +486,6 @@ class _QuestsState implements QuestsState {
   return EqualUnmodifiableListView(_awards);
 }
 
-@override@JsonKey() final  bool opening;
-/// The last chest result. The view shows the chest sheet when it changes.
-@override final  ChestResult? chest;
 
 /// Create a copy of QuestsState
 /// with the given fields replaced by the non-null parameter values.
@@ -541,16 +497,16 @@ _$QuestsStateCopyWith<_QuestsState> get copyWith => __$QuestsStateCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuestsState&&(identical(other.quests, quests) || other.quests == quests)&&const DeepCollectionEquality().equals(other._awards, _awards)&&(identical(other.opening, opening) || other.opening == opening)&&(identical(other.chest, chest) || other.chest == chest));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _QuestsState&&(identical(other.quests, quests) || other.quests == quests)&&const DeepCollectionEquality().equals(other._awards, _awards));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,quests,const DeepCollectionEquality().hash(_awards),opening,chest);
+int get hashCode => Object.hash(runtimeType,quests,const DeepCollectionEquality().hash(_awards));
 
 @override
 String toString() {
-  return 'QuestsState(quests: $quests, awards: $awards, opening: $opening, chest: $chest)';
+  return 'QuestsState(quests: $quests, awards: $awards)';
 }
 
 
@@ -561,7 +517,7 @@ abstract mixin class _$QuestsStateCopyWith<$Res> implements $QuestsStateCopyWith
   factory _$QuestsStateCopyWith(_QuestsState value, $Res Function(_QuestsState) _then) = __$QuestsStateCopyWithImpl;
 @override @useResult
 $Res call({
- QuestState? quests, List<QuestAward> awards, bool opening, ChestResult? chest
+ QuestState? quests, List<QuestAward> awards
 });
 
 
@@ -578,13 +534,11 @@ class __$QuestsStateCopyWithImpl<$Res>
 
 /// Create a copy of QuestsState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? quests = freezed,Object? awards = null,Object? opening = null,Object? chest = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? quests = freezed,Object? awards = null,}) {
   return _then(_QuestsState(
 quests: freezed == quests ? _self.quests : quests // ignore: cast_nullable_to_non_nullable
 as QuestState?,awards: null == awards ? _self._awards : awards // ignore: cast_nullable_to_non_nullable
-as List<QuestAward>,opening: null == opening ? _self.opening : opening // ignore: cast_nullable_to_non_nullable
-as bool,chest: freezed == chest ? _self.chest : chest // ignore: cast_nullable_to_non_nullable
-as ChestResult?,
+as List<QuestAward>,
   ));
 }
 

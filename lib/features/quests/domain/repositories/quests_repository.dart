@@ -10,8 +10,6 @@ abstract class QuestsRepository {
   /// Syncs the quest state with the server.
   Future<void> refresh();
 
-  Future<ChestResult> openChest();
-
   /// Call after the awards were shown.
   void consumeAwards();
 }

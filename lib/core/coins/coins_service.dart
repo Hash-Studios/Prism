@@ -8,6 +8,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
+import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/downloaded_link_lookup.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_snapshot_store.dart';
@@ -2437,7 +2438,8 @@ class CoinsService with WidgetsBindingObserver {
         if (shopSuccess) unawaited(_refreshShopBalance(userId, generation));
         return _EconomyReply(data, stale: true);
       }
-      if (const <String>{'progressQuest', 'spinWheel', 'openQuestChest'}.contains(name) && data['success'] == true) {
+      if (const <String>{'progressQuest', 'spinWheel', 'openQuestChest', 'openDailyChest'}.contains(name) &&
+          data['success'] == true) {
         applyRoutineXpReply(data, userId: userId, session: generation);
       }
       final bool shopReplay = shopSuccess && data['reason'] == 'duplicate';
@@ -2470,12 +2472,14 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Calls a paid economy callable with a request id stored until a definite answer, so a retry after a crash or a
-  /// lost reply replays the same purchase instead of paying twice. [scope] names the thing bought.
+  /// lost reply replays the same purchase instead of paying twice. [scope] names the thing bought. [timeout] replaces
+  /// the plugin's 60 seconds for a caller that holds the user on a screen while it waits.
   Future<_EconomyReply?> _economyPurchase(
     String name,
     String scope,
     Map<String, Object?> params, {
     required String sourceTag,
+    Duration? timeout,
   }) async {
     final String userId = app_state.prismUser.id;
     final int generation = _economySessionGeneration;
@@ -2490,6 +2494,7 @@ class CoinsService with WidgetsBindingObserver {
       <String, Object?>{...params, 'requestId': requestId},
       userId: userId,
       sourceTag: sourceTag,
+      timeout: timeout,
     );
     if (!_isCurrentOwner(userId, generation)) return null;
     if (reply != null && _staleEconomyReply(reply.data)) reply = _EconomyReply(reply.data, stale: true);
@@ -2695,59 +2700,102 @@ class CoinsService with WidgetsBindingObserver {
     spinWheelNotifier.value = status;
   }
 
-  /// Opens today's quest chest once the three daily items are claimed.
-  Future<ChestResult> openQuestChest() async {
-    if (!_canMutateCoins()) return const ChestResult(ChestOutcome.failed, reason: 'not_logged_in');
+  /// Opens today's chest. The server charges at most [maxCost], the price the user saw: 0 when it showed the chest as
+  /// free. It rolls the prize and grants it.
+  ///
+  /// [balanceNotifier] and [questsNotifier] already hold the state after the open when this returns. A refusal or a
+  /// failure moves no coins. After a lost reply the next call replays the same request id, so a tap opens once.
+  Future<DailyChestResult> openDailyChest({required int maxCost}) async {
+    if (!_canMutateCoins()) return const ChestFailed('not_logged_in');
     final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
-    final String dayKey = questsNotifier.value?.dayKey ?? economyDayKey(DateTime.now());
     final _EconomyReply? reply = await _economyPurchase(
-      'openQuestChest',
-      dayKey,
-      const <String, Object?>{},
-      sourceTag: 'coins.quests.chest',
+      'openDailyChest',
+      economyDayKey(DateTime.now()),
+      <String, Object?>{'maxCost': maxCost},
+      sourceTag: 'coins.daily_chest',
+      timeout: const Duration(seconds: 20),
     );
-    if (!_isCurrentOwner(userId, generation) || reply == null) {
-      return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
-    }
-    final String reason = reply.reason;
-    if (!reply.success) {
-      return ChestResult(switch (reason) {
-        'quest_chest_locked' => ChestOutcome.locked,
-        'quest_chest_already_opened' => ChestOutcome.alreadyOpened,
-        _ => ChestOutcome.failed,
-      }, reason: reason);
-    }
+    if (!_isCurrentOwner(userId, generation) || reply == null) return const ChestFailed('session_changed');
+    if (reply.errorCode != null) return ChestFailed(reply.reason);
+    // Every reply the server sends carries the quests, a refusal included. A stale cache is what got the user refused.
     if (!reply.stale) _applyQuestReply(reply.data);
-    final int coins = parseIntOr(reply.data['coins']);
-    final String? itemId = _optionalString(reply.data['itemId']);
+    if (!reply.success) {
+      if (!reply.stale) {
+        unawaited(
+          _persistEconomy(userId, <String, dynamic>{
+            'rev': _economyRev,
+            if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
+          }),
+        );
+      }
+      switch (reply.reason) {
+        case 'daily_chest_price_changed':
+          unawaited(EconomyConfig.load());
+          return ChestRefused(ChestRefusal.priceChanged, price: parseInt(toJsonMap(reply.data['status'])['price']));
+        case 'daily_chest_already_opened':
+          return const ChestRefused(ChestRefusal.alreadyOpened);
+        case 'daily_chest_insufficient_balance':
+          return const ChestRefused(ChestRefusal.insufficientBalance);
+        default:
+          return reply.insufficient ? const ChestRefused(ChestRefusal.insufficientBalance) : ChestFailed(reply.reason);
+      }
+    }
+    final List<WheelSegment> slots = parseWheel(reply.data['slots']) ?? CoinPolicy.dailyChest;
+    final Map<String, dynamic> prize = toJsonMap(reply.data['prize']);
+    final ChestWon won = ChestWon(
+      win: ChestWin(
+        slot: parseIntOr(reply.data['slot'], fallback: -1).clamp(0, slots.length - 1),
+        coins: max(0, parseIntOr(prize['coins'])),
+        xp: max(0, parseIntOr(reply.data['xpAwarded'])),
+        itemId: _optionalString(prize['itemId']),
+      ),
+      cost: max(0, parseIntOr(reply.data['cost'])),
+      doubled: reply.data['doubled'] == true,
+      slots: slots,
+    );
+    final ChestWin win = won.win;
+    final String? itemId = win.itemId;
     if (!reply.stale && itemId != null) {
       inventoryNotifier.value = inventoryNotifier.value.withOwned(
         Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
       );
     }
-    if (!reply.stale) {
-      await _persistEconomy(userId, <String, dynamic>{
-        'rev': _economyRev,
-        if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
-        'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
-      });
-    }
-    if (!_isCurrentOwner(userId, generation)) {
-      return const ChestResult(ChestOutcome.failed, reason: 'session_changed');
-    }
     if (reply.changed) {
-      analytics.track(QuestChestOpenedEvent(coins: coins, itemId: itemId));
-      _logEarn(action: CoinEarnAction.questChest, amount: coins, sourceTag: 'coins.quests.chest');
-      unawaited(reconcileRankRewards());
+      if (reply.stale) unawaited(reconcileRankRewards());
+      analytics.track(
+        DailyChestOpenedEvent(
+          free: reply.data['free'] == true,
+          cost: won.cost,
+          slot: win.slot,
+          prize: switch (won.prize) {
+            CoinsPrize() => 'coins',
+            XpPrize() => 'xp',
+            CosmeticPrize() => 'cosmetic',
+          },
+          tier: won.tier.name,
+          coins: win.coins,
+          xp: win.xp,
+          doubled: won.doubled,
+        ),
+      );
+      if (won.cost > 0) {
+        _logSpend(action: CoinSpendAction.questChest, amount: won.cost, sourceTag: 'coins.daily_chest');
+      }
+      if (win.coins > 0) _logEarn(action: CoinEarnAction.questChest, amount: win.coins, sourceTag: 'coins.daily_chest');
     }
-    return ChestResult(
-      ChestOutcome.opened,
-      coins: coins,
-      doubled: reply.data['doubled'] == true,
-      itemId: itemId,
-      reason: reason,
-    );
+    // The chest waits for this reply, so the snapshot write must not hold it back.
+    if (!reply.stale) {
+      unawaited(
+        _persistEconomy(userId, <String, dynamic>{
+          'rev': _economyRev,
+          if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
+          if (itemId != null) 'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
+        }),
+      );
+    }
+    return won;
   }
 
   Future<ShopPurchaseResult> purchaseShopItem(String itemId) async {

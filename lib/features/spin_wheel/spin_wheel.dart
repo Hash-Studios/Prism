@@ -1,2 +1,9 @@
 export 'views/pages/spin_wheel_page.dart';
+export 'views/widgets/coin_burst.dart';
+export 'views/widgets/count_up.dart';
+export 'views/widgets/get_coins_sheet.dart';
+export 'views/widgets/odds_pill.dart';
+export 'views/widgets/prize_labels.dart';
+export 'views/widgets/spin_button.dart';
 export 'views/widgets/spin_wheel_card.dart';
+export 'views/widgets/stage_top_bar.dart';

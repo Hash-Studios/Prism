@@ -33,6 +33,7 @@ export interface EconomyConfig {
     giftPremiumPass: number;
     drawTicket: number;
     spinWheel: number;
+    dailyChest: number;
   };
   proDiscountActions: string[];
   proBypassActions: string[];
@@ -53,6 +54,8 @@ export interface EconomyConfig {
     spinWheelMaxPerDay: number;
     /** Wheel order, clockwise. Index 0 sits under the pointer at rest. */
     spinWheel: WheelSegment[];
+    /** The daily chest prize table, same shape as `spinWheel`. Slot order is the odds sheet order. */
+    dailyChest: WheelSegment[];
     questCoins: number;
     questXp: number;
     questChestMin: number;
@@ -104,6 +107,7 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     giftPremiumPass: 50,
     drawTicket: 20,
     spinWheel: 10,
+    dailyChest: 8,
   },
   proDiscountActions: ["aiGeneration", "dropWall", "dropPack"],
   proBypassActions: [
@@ -140,6 +144,15 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
       {kind: "coins", coins: 2, weight: 12},
       {kind: "coins", coins: 50, weight: 3},
       {kind: "cosmetic", fallbackCoins: 50, weight: 6},
+    ],
+    dailyChest: [
+      {kind: "coins", coins: 5, weight: 34},
+      {kind: "coins", coins: 8, weight: 28},
+      {kind: "coins", coins: 12, weight: 15},
+      {kind: "coins", coins: 20, weight: 11},
+      {kind: "cosmetic", fallbackCoins: 25, weight: 8},
+      {kind: "coins", coins: 40, weight: 3},
+      {kind: "coins", coins: 100, weight: 1},
     ],
     questCoins: 2,
     questXp: 25,
@@ -286,6 +299,7 @@ export function parseEconomy(raw: unknown): EconomyConfig {
     award.proSpin = defaults.award.proSpin;
   }
   award.spinWheel = parseWheel(award.spinWheel) ?? defaults.award.spinWheel;
+  award.dailyChest = parseWheel(award.dailyChest) ?? defaults.award.dailyChest;
   merged.award = award;
   merged.proDiscountActions = merged.proDiscountActions.filter((a) => typeof a === "string");
   merged.proBypassActions = merged.proBypassActions.filter((a) => typeof a === "string" && !NEVER_BYPASSED.has(a));
