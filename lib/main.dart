@@ -43,6 +43,7 @@ import 'package:Prism/core/startup/session_ended_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
+import 'package:Prism/core/utils/orientation_policy.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/data/notifications/notification_tombstones.dart';
 import 'package:Prism/data/notifications/notifications.dart';
@@ -71,6 +72,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
 import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -272,7 +274,7 @@ Future<void> main() async {
       getIt<NotificationTombstones>().setOwner(notificationOwner);
       await Future.wait(<Future<void>>[
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
-        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
+        applyAllowedOrientations(),
       ]);
       final bool lightChrome =
           themeMode == 'Light' ||
@@ -958,6 +960,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   @override
+  void didChangeMetrics() => unawaited(applyAllowedOrientations());
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       final now = DateTime.now();
@@ -1045,7 +1050,14 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                 debugShowCheckedModeBanner: false,
                 builder: (context, child) {
                   app_state.notchSize = MediaQuery.paddingOf(context).top;
-                  return child ?? const SizedBox.shrink();
+                  final ThemeData theme = Theme.of(context);
+                  final bool wide = MediaQuery.sizeOf(context).width > PrismLayout.panelWidth;
+                  return Theme(
+                    data: theme.copyWith(
+                      snackBarTheme: theme.snackBarTheme.copyWith(width: wide ? PrismLayout.panelWidth : null),
+                    ),
+                    child: child ?? const SizedBox.shrink(),
+                  );
                 },
                 routerConfig: _appRouter.config(
                   deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
