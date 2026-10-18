@@ -423,7 +423,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
           _stage(context, layout),
           _actions(context),
           const SizedBox(height: PrismSpace.xs),
-          _OddsPill(onTap: () => unawaited(showChestOdds(context, _won?.slots ?? CoinPolicy.dailyChest))),
+          _odds(context),
           const SizedBox(height: PrismSpace.md),
         ],
       ),
@@ -493,6 +493,22 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
             ),
         ],
       ),
+    );
+  }
+
+  /// The odds are for a chest nobody is opening. While the box works, and once the prize is up, the pill would compete
+  /// with Done and the Shop button. The slot keeps its height, so nothing on the page moves when it goes.
+  Widget _odds(BuildContext context) {
+    final bool idle = _phase == ChestPhase.ready || _phase == ChestPhase.spent;
+    return AnimatedSwitcher(
+      key: const ValueKey<String>('odds_slot'),
+      duration: context.motion(PrismDurations.fast),
+      child: idle
+          ? _OddsPill(
+              key: const ValueKey<String>('odds'),
+              onTap: () => unawaited(showChestOdds(context, CoinPolicy.dailyChest)),
+            )
+          : const SizedBox(key: ValueKey<String>('no_odds'), height: _ChestLayout.oddsHeight),
     );
   }
 
@@ -668,7 +684,7 @@ class _TopBar extends StatelessWidget {
 
 /// A small outlined pill under the button. It opens the odds.
 class _OddsPill extends StatelessWidget {
-  const _OddsPill({required this.onTap});
+  const _OddsPill({super.key, required this.onTap});
 
   final VoidCallback onTap;
 
@@ -685,7 +701,7 @@ class _OddsPill extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
+            constraints: const BoxConstraints(minHeight: _ChestLayout.oddsHeight),
             child: Center(
               widthFactor: 1,
               child: DecoratedBox(
@@ -733,8 +749,11 @@ class _ChestLayout {
   /// The cost, the bonus line and the button: two lines of 14 and one of 12, the gap and the 66 high button.
   static const double actionsHeight = 150;
 
-  /// The odds pill and the margin under it.
-  static const double footerHeight = 44 + PrismSpace.xs + PrismSpace.md;
+  /// The odds pill, or the empty slot that holds its place.
+  static const double oddsHeight = 44;
+
+  /// The odds slot and the margins around it.
+  static const double footerHeight = oddsHeight + PrismSpace.xs + PrismSpace.md;
 
   final double width;
   final double box;

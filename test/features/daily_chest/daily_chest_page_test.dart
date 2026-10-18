@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
-import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -161,6 +160,7 @@ void main() {
       expect(find.text('Open it for 8 coins, or finish 3 more quests to open it free.'), findsOneWidget);
       expect(find.text("Do today's bonus quest first to double it."), findsOneWidget);
       expect(find.text('340'), findsOneWidget);
+      expect(find.text('See the odds'), findsOneWidget);
       expect(phase(tester), ChestPhase.ready);
     });
 
@@ -181,6 +181,7 @@ void main() {
       expect(find.text('Back tomorrow'), findsOneWidget);
       expect(find.text('Opened. A new chest in 5h 12m.'), findsOneWidget);
       expect(find.textContaining('bonus quest'), findsNothing);
+      expect(find.text('See the odds'), findsOneWidget);
       expect(phase(tester), ChestPhase.spent);
       await tester.tap(find.text('Back tomorrow'));
       await tester.pump();
@@ -254,6 +255,18 @@ void main() {
       expect(find.text('Pays 25 coins if you own them all'), findsOneWidget);
     });
 
+    testWidgets('the odds slot keeps its top and its height after a win, with nothing in it', (tester) async {
+      await pumpPage(tester);
+      const Key slot = ValueKey<String>('odds_slot');
+      final (double, double) ready = (tester.getTopLeft(find.byKey(slot)).dy, tester.getSize(find.byKey(slot)).height);
+
+      await openWith(tester, _won(3, coins: 20));
+
+      expect(find.text('See the odds'), findsNothing);
+      expect((tester.getTopLeft(find.byKey(slot)).dy, tester.getSize(find.byKey(slot)).height), ready);
+      expect(ready.$2, 44);
+    });
+
     testWidgets('the close button has a tooltip and leaves the page', (tester) async {
       final NavigatorState navigator = await pumpRouted(tester);
 
@@ -302,9 +315,11 @@ void main() {
       replies.single.complete(_won(3, coins: 20));
       await pumpFor(tester, const Duration(milliseconds: 500));
       expect(phase(tester), ChestPhase.charging);
+      expect(find.text('See the odds'), findsNothing);
 
       await pumpFor(tester, const Duration(milliseconds: 200));
       expect(phase(tester), ChestPhase.opening);
+      expect(find.text('See the odds'), findsNothing);
       await pumpFor(tester, const Duration(seconds: 2));
     });
 
@@ -362,6 +377,7 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 2));
       expect(find.text('+20'), findsOneWidget);
       expect(find.text('Done'), findsOneWidget);
+      expect(find.text('See the odds'), findsNothing);
       expect(find.text('See it in the Shop'), findsNothing);
       expect(find.text('Doubled by your bonus quest'), findsNothing);
       expect(find.text('352'), findsOneWidget);
@@ -461,25 +477,6 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 1));
 
       expect(find.byType(DailyChestPage), findsNothing);
-    });
-
-    testWidgets('the table the server rolled sets the odds sheet, even if it has other slots', (tester) async {
-      await pumpPage(tester);
-      const List<WheelSegment> table = <WheelSegment>[
-        WheelSegment(CoinsPrize(7), weight: 75),
-        WheelSegment(CoinsPrize(9), weight: 25),
-      ];
-
-      await openWith(tester, const ChestWon(win: ChestWin(slot: 1, coins: 9), cost: 8, doubled: false, slots: table));
-      await tester.tap(find.text('See the odds'));
-      await pumpFor(tester, const Duration(milliseconds: 500));
-
-      expect(find.text('7 coins'), findsOneWidget);
-      expect(find.text('9 coins'), findsOneWidget);
-      expect(find.text('75%'), findsOneWidget);
-      expect(find.text('25%'), findsOneWidget);
-      expect(find.text('100%'), findsOneWidget, reason: 'the common tier holds both slots');
-      expect(find.text('100 coins'), findsNothing);
     });
   });
 
@@ -589,6 +586,7 @@ void main() {
       expect(find.text('Rare'), findsOneWidget);
       expect(find.text('+20'), findsOneWidget);
       expect(find.text('Done'), findsOneWidget);
+      expect(find.text('See the odds'), findsNothing);
       expect(find.text('352'), findsOneWidget);
       expect(phase(tester), ChestPhase.revealed);
     });
