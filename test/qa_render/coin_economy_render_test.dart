@@ -323,6 +323,23 @@ void main() {
       await shot.save('shop_item_sheet');
     });
 
+    qaScreen('shop_icons', setUpExtra: registerShopBloc, (QaShot shot) async {
+      await shot.pump(const ShopPage());
+      await shot.tester.tap(find.text('Icons'));
+      await shot.settle();
+      await shot.save('shop_icons');
+    });
+
+    qaScreen('shop_icon_sheet', setUpExtra: registerShopBloc, (QaShot shot) async {
+      CoinsService.instance.balanceNotifier.value = 340;
+      await shot.pump(const ShopPage());
+      await shot.tester.tap(find.text('Icons'));
+      await shot.settle();
+      await shot.tester.tap(find.text('Sunset'));
+      await shot.settle(frames: 12);
+      await shot.save('shop_icon_sheet');
+    });
+
     // 6. Theme picker with locked chips
     qaScreen(
       'theme_picker_locked',

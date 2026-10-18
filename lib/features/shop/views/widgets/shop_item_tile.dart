@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
@@ -45,7 +47,13 @@ class ShopItemTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
-            child: Center(child: ShopItemPreview(item: item, size: 80)),
+            child: item.kind == ShopItemKind.appIcon
+                ? LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints box) => Center(
+                      child: ShopItemPreview(item: item, size: math.min(box.maxWidth, box.maxHeight)),
+                    ),
+                  )
+                : Center(child: ShopItemPreview(item: item, size: 80)),
           ),
           const SizedBox(height: PrismSpace.xs),
           Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),

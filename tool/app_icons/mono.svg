@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" gradientUnits="userSpaceOnUse" cx="512" cy="380" r="900">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.6" stop-color="#EDEDF0"/>
+      <stop offset="1" stop-color="#CFCFD5"/>
+    </radialGradient>
+    <path id="ringPath" d="M80 25.7A16 16 0 0 1 93.48 33.07L133.05 94.89A13 13 0 0 1 128.28 113.34L86.65 135.82A14 14 0 0 1 73.35 135.82L31.72 113.34A13 13 0 0 1 26.95 94.89L66.52 33.07A16 16 0 0 1 80 25.7Z"/>
+    <path id="crystalPath" d="M77.4 50.5A3 3 0 0 1 82.6 50.5L111.6 100.76A3 3 0 0 1 110.18 105.02L81.17 117.3A3 3 0 0 1 78.83 117.3L49.82 105.02A3 3 0 0 1 48.4 100.76Z"/>
+    <mask id="ringMask" maskUnits="userSpaceOnUse" x="0" y="0" width="160" height="160">
+      <use href="#ringPath" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linejoin="round"/>
+    </mask>
+    <linearGradient id="ink" gradientUnits="userSpaceOnUse" x1="0" y1="20" x2="0" y2="142">
+      <stop offset="0" stop-color="#3A3A42"/>
+      <stop offset="1" stop-color="#0E0E12"/>
+    </linearGradient>
+    <linearGradient id="crystalLeft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F0F0F3"/>
+    </linearGradient>
+    <linearGradient id="crystalRight" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#DEDEE4"/>
+      <stop offset="1" stop-color="#B5B5BF"/>
+    </linearGradient>
+    <clipPath id="crystalClip"><use href="#crystalPath"/></clipPath>
+    <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1"/></filter>
+    <filter id="blur3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+    <path id="spark" d="M0 -1C0.09 -0.09 0.09 -0.09 1 0C0.09 0.09 0.09 0.09 0 1C-0.09 0.09 -0.09 0.09 -1 0C-0.09 -0.09 -0.09 -0.09 0 -1Z"/>
+  </defs>
+
+  <rect x="-512" y="-512" width="2048" height="2048" fill="url(#bg)"/>
+
+  <g transform="translate(512 520) scale(4.6) translate(-80 -81.6)">
+    <ellipse cx="80" cy="150" rx="50" ry="6" fill="#000000" opacity="0.22" filter="url(#blur3)"/>
+    <g fill="none" stroke="#050507" stroke-width="12" stroke-linejoin="round">
+      <use href="#ringPath" transform="translate(0 7)"/>
+      <use href="#ringPath" transform="translate(0 5.5)"/>
+      <use href="#ringPath" transform="translate(0 4)"/>
+      <use href="#ringPath" transform="translate(0 2.5)"/>
+      <use href="#ringPath" transform="translate(0 1)"/>
+    </g>
+    <use href="#ringPath" fill="none" stroke="url(#ink)" stroke-width="12" stroke-linejoin="round"/>
+    <g mask="url(#ringMask)">
+      <use href="#ringPath" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round" opacity="0.55" transform="translate(0 -4.4)" filter="url(#blur1)"/>
+      <path d="M46 62L66 30" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" opacity="0.9" transform="translate(1.4 0)" filter="url(#blur1)"/>
+    </g>
+
+    <use href="#crystalPath" fill="#050507" transform="translate(0 2.6)"/>
+    <use href="#crystalPath" fill="url(#crystalRight)"/>
+    <g clip-path="url(#crystalClip)">
+      <rect x="40" y="40" width="40" height="85" fill="url(#crystalLeft)"/>
+      <polygon points="74.5,40 77.5,40 59.5,125 56.5,125" fill="#FFFFFF"/>
+    </g>
+  </g>
+
+  <use href="#spark" fill="#0E0E12" transform="translate(770 250) scale(64)"/>
+  <use href="#spark" fill="#0E0E12" transform="translate(850 350) scale(24)"/>
+  <use href="#spark" fill="#0E0E12" transform="translate(236 304) scale(20)" opacity="0.8"/>
+</svg>

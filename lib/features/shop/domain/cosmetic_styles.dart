@@ -43,10 +43,5 @@ NameGlowStyle glowStyle(String id) => switch (id) {
   _ => const NameGlowStyle(colors: <Color>[_orange, _pink]),
 };
 
-/// Two colours for the app icon preview tile.
-List<Color> appIconColors(String id) => switch (id) {
-  'icon_noir' => const <Color>[Color(0xFF16161B), Color(0xFF3A3A44)],
-  'icon_glass' => const <Color>[Color(0xFFBFD8F5), Color(0xFFF4F8FF)],
-  'icon_sunset' => const <Color>[Color(0xFFFF7E5F), Color(0xFFFEB47B)],
-  _ => const <Color>[Color(0xFF8A8A92), Color(0xFFD6D6DB)],
-};
+/// The real icon art for an app icon shop item.
+String appIconAsset(String id) => 'assets/app_icons/$id.jpg';
