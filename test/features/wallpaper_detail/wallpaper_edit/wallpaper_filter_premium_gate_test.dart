@@ -626,6 +626,8 @@ Future<void> _tapInvert(WidgetTester tester) async {
     await tester.drag(filters, const Offset(-600, 0));
     await tester.pumpAndSettle();
   }
+  await tester.ensureVisible(find.text('Invert'));
+  await tester.pumpAndSettle();
   await tester.tap(find.text('Invert'));
   await tester.pump();
   await _waitForEditorReady(tester);

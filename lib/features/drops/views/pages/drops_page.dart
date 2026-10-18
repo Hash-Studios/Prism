@@ -31,6 +31,7 @@ class _DropsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
+      maxContentWidth: double.infinity,
       title: 'Weekly Drop',
       body: BlocConsumer<DropsBloc, DropsState>(
         listenWhen: (previous, current) => current.lastResult != null && current.lastResult != previous.lastResult,

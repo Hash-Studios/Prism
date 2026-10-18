@@ -45,7 +45,8 @@ String _formatDownloadSize(int bytes) {
 @RoutePage()
 class DownloadScreen extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => const PrismPage(title: 'Downloads', body: DownloadsBody());
+  Widget build(BuildContext context) =>
+      const PrismPage(title: 'Downloads', maxContentWidth: double.infinity, body: DownloadsBody());
 }
 
 /// The downloads list without a page frame, so the Library tabs can host it.

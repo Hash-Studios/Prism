@@ -81,6 +81,7 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
   Widget build(BuildContext context) {
     final title = (_isCategoryView ? _decodedCategoryName : widget.collectionName).inCaps;
     return PrismPage(
+      maxContentWidth: double.infinity,
       title: title,
       body: _isCategoryView
           ? _CategoryFeedContent(categoryName: _decodedCategoryName, onRetry: _selectCategory)

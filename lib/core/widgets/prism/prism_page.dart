@@ -1,5 +1,6 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_max_width.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +84,7 @@ class PrismPage extends StatefulWidget {
     this.headerBottom,
     this.bottomBar,
     this.resizeToAvoidBottomInset = true,
+    this.maxContentWidth = PrismLayout.readableWidth,
   });
 
   final String title;
@@ -98,6 +100,10 @@ class PrismPage extends StatefulWidget {
   /// Pinned at the bottom, for example the page's main action.
   final Widget? bottomBar;
   final bool resizeToAvoidBottomInset;
+
+  /// On a tablet the header, body and bottom bar sit in a centred column this wide. Pass [double.infinity] for a page
+  /// whose body is a wallpaper grid, so the grid can use the whole screen.
+  final double maxContentWidth;
 
   @override
   State<PrismPage> createState() => _PrismPageState();
@@ -189,28 +195,31 @@ class _PrismPageState extends State<PrismPage> {
               padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
               child: SafeArea(
                 minimum: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.md),
-                child: widget.bottomBar!,
+                child: PrismMaxWidth(maxWidth: widget.maxContentWidth, child: widget.bottomBar!),
               ),
             ),
       body: SafeArea(
         bottom: false,
-        child: Column(
-          children: <Widget>[
-            PrismHeader(
-              title: widget.title,
-              showBack: widget.showBack,
-              onBack: widget.onBack,
-              actions: widget.actions,
-              titleWidget: widget.titleWidget,
-            ),
-            if (widget.headerBottom != null) widget.headerBottom!,
-            AnimatedOpacity(
-              opacity: _scrolled ? 1 : 0,
-              duration: context.motion(PrismDurations.fast),
-              child: Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
-            ),
-            Expanded(child: body),
-          ],
+        child: PrismMaxWidth(
+          maxWidth: widget.maxContentWidth,
+          child: Column(
+            children: <Widget>[
+              PrismHeader(
+                title: widget.title,
+                showBack: widget.showBack,
+                onBack: widget.onBack,
+                actions: widget.actions,
+                titleWidget: widget.titleWidget,
+              ),
+              if (widget.headerBottom != null) widget.headerBottom!,
+              AnimatedOpacity(
+                opacity: _scrolled ? 1 : 0,
+                duration: context.motion(PrismDurations.fast),
+                child: Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
+              ),
+              Expanded(child: body),
+            ],
+          ),
         ),
       ),
     );

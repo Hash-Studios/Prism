@@ -218,6 +218,21 @@ abstract final class PrismIcons {
 /// and 5 in landscape, and a tablet gets more instead of huge, blurry tiles.
 int wallpaperGridColumns(double width) => (width / 180).round().clamp(3, 8);
 
+/// Columns for a grid of large wallpaper tiles: 2 on any phone (narrower than 600), then one per 200 pt up to 6.
+int largeTileGridColumns(double width) => (width / 200).floor().clamp(2, 6);
+
+/// Width caps for tablets. Each cap is wider than any phone, so a phone keeps the full screen width.
+abstract final class PrismLayout {
+  /// Most a page of text, lists or forms grows to. The same as the bottom sheet's width cap.
+  static const double readableWidth = 640;
+
+  /// Most a floating panel or bar over full-screen art grows to.
+  static const double panelWidth = 560;
+
+  /// Shortest side, in logical pixels, from which a screen is a tablet.
+  static const double tabletShortestSide = 600;
+}
+
 /// Layout constants for the personalized feed carousel and wallpaper grid.
 abstract final class PrismFeedLayout {
   /// Number of wallpaper previews shown inside the carousel.
