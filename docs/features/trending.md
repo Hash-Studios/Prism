@@ -4,13 +4,13 @@ Trending shows the Prism wallpapers that people use most. It has two lists: **Th
 
 ## Where to find it
 
-- The **Trending this week** row on the home feed. It sits under the carousel. Tap **See all** to open the page.
-- The **Trending** page (`TrendingPage`, route `TrendingRoute`, path `/trending`). It has two segments, **This week** and **All time**.
+- The **Trending** tab on the Home screen. It sits between **Following** and **Latest**. It has two segments at the top, **This week** and **All time**.
+- The tab replaces the old home strip and the old Trending page. The `/trending` route is gone.
 
 ## Platforms and plans
 
 - Android and iOS. The code has no platform branch.
-- Free. The row, the page and the detail screen have no coin or premium gate.
+- Free. The tab and the detail screen have no coin or premium gate.
 
 ## How it works
 
@@ -18,8 +18,8 @@ Trending shows the Prism wallpapers that people use most. It has two lists: **Th
 |---|---|
 | `lib/features/trending/data/repositories/trending_repository_impl.dart` | Reads the id list, loads the walls, and keeps the offline copy. |
 | `lib/features/trending/biz/bloc/trending_bloc.j.dart` | Holds both lists. Events: `started`, `rangeSelected`, `refreshRequested`. |
-| `lib/features/trending/views/widgets/trending_strip.dart` | The home row. |
-| `lib/features/trending/views/pages/trending_page.dart` | The page with two segments. |
+| `lib/features/personalized_feed/views/widgets/trending_chip_sliver.dart` | The Trending tab on Home: the segments, then the grid. |
+| `lib/features/personalized_feed/views/pages/personalized_feed_screen.dart` | Creates the bloc the first time the user opens the tab. |
 | `functions/src/trending.ts` | Writes `trending/current` and `popular/current`. See [popular-and-trending.md](popular-and-trending.md). |
 
 ### Loading a list
@@ -36,32 +36,29 @@ The Wallhaven content filters do not apply. The lists hold only Prism wallpapers
 
 After a good load, the repository saves the list in the feed cache. It saves an empty list too, so a list that went empty does not come back from the old copy. The cache source is `trending` and the scope is `week` or `allTime`. If a later load fails, the repository returns the saved list and hides creators that the user blocked since. A saved empty list gives an empty list. If there is no saved list at all, the load fails.
 
-### The home row
+### The home tab
 
-- The row shows up to 12 wallpapers, most trending first. A tap opens the wallpaper detail screen with the wallpaper that the row already loaded.
-- The row stays hidden until the list loads. If the list is empty or the load fails, it stays hidden. It shows no error.
-- The row loads when the home feed opens. Pull to refresh on the For you chip reloads it too.
-- When the user blocks a creator, the bloc removes that creator's walls from both lists at once.
-
-### The page
-
-- **This week** loads when the page opens. **All time** loads the first time the user picks it. A later pick reuses the list.
+- The tab shows the **This week | All time** segments, then the walls of the chosen list in the home grid. The grid has 3 columns on a phone in portrait, 2 px gaps, no side margin and square corners.
+- The tab shows the whole list, up to 100 walls, with no paging. A boosted wall has the "Boosted" tag.
+- A tap on a tile opens the wallpaper detail screen with the wallpaper that the tab already loaded. A long press opens the quick actions. The analytics source context is `home_trending_grid`.
+- The bloc starts the first time the user opens the tab, not when the Home screen opens. The `started` event loads **This week** and reports the `viewTrending` quest event. The Home screen keeps the bloc, so a later visit to the tab does not report it again.
+- **All time** loads the first time the user picks it. A later pick reuses the list.
 - Pull down to refresh the list that is on screen. The old walls stay on screen while the new list loads.
-- A first load shows a skeleton. An empty list shows "Nothing is trending yet". A failed first load shows "Couldn't load trending wallpapers" and a **Try again** button.
-- A tile opens the wallpaper detail screen. A long press opens the quick actions. The analytics source context is `trending_grid`.
+- A first load shows the skeleton grid. An empty list shows "Nothing is trending yet". A failed first load shows "Couldn't load trending wallpapers" and a **Try again** button.
+- When the user blocks a creator, the bloc removes that creator's walls from both lists at once.
 
 ## Limits
 
 - Prism wallpapers only. Wallhaven and Pexels walls do not appear.
 - The lists change every 3 hours at most. A new action can take that long to show.
-- A list holds at most 100 walls. The page shows all of them at once, with no paging.
-- A wall that is hidden, rejected or from a blocked creator leaves a gap that the page closes. A list can be shorter than 100.
-- The home row has no analytics events yet.
+- A list holds at most 100 walls. The tab shows all of them at once, with no paging.
+- A wall that is hidden, rejected or from a blocked creator leaves a gap that the tab closes. A list can be shorter than 100.
+- The home tab sends the tab tap (`home_chip_trending`) and the tile source context `home_trending_grid`. It sends no `surface_content_loaded` event yet.
 
 ## How to test
 
-1. Run `fvm flutter test test/features/trending`.
-2. Open the app with a signed-in test account. Check that **Trending this week** shows under the carousel on the For you chip.
-3. Tap **See all**. Check the two segments and the pull to refresh.
-4. Turn on airplane mode after one good load. Close and open the app. Check that the row and the page still show the saved list.
-5. Block a creator that has a trending wall. Check that the wall is gone from the row and the page.
+1. Run `fvm flutter test test/features/trending test/features/personalized_feed`.
+2. Open the app with a signed-in test account. Tap the **Trending** tab on Home. Check that the **This week | All time** segments show above the grid.
+3. Tap **All time**. Check that a new list loads. Pull down to refresh. Check that the list on screen reloads.
+4. Turn on airplane mode after one good load. Close and open the app. Open the **Trending** tab. Check that it shows the saved list.
+5. Block a creator that has a trending wall. Check that the wall is gone from the tab.
