@@ -64,6 +64,7 @@ void main() {
 
   test('success updates session badges and balance and queues new badges', () async {
     backend.onCall = (name, _) async {
+      if (name == 'reconcileRankRewards') return <String, Object>{};
       calls++;
       expect(name, 'checkBadges');
       return <String, Object>{
@@ -148,7 +149,8 @@ void main() {
     final Completer<dynamic> response = Completer<dynamic>();
     final CoinsTestFirestore firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 175};
     getIt.registerSingleton<FirestoreClient>(firestore);
-    backend.onCall = (_, _) {
+    backend.onCall = (name, _) {
+      if (name == 'reconcileRankRewards') return Future<dynamic>.value(<String, Object>{});
       started.complete();
       return response.future;
     };
@@ -169,7 +171,8 @@ void main() {
     final Completer<dynamic> response = Completer<dynamic>();
     final CoinsTestFirestore firestore = CoinsTestFirestore()..userData = <String, dynamic>{'coins': 100};
     getIt.registerSingleton<FirestoreClient>(firestore);
-    backend.onCall = (_, _) {
+    backend.onCall = (name, _) {
+      if (name == 'reconcileRankRewards') return Future<dynamic>.value(<String, Object>{});
       started.complete();
       return response.future;
     };
@@ -194,7 +197,8 @@ void main() {
     addTearDown(AnalyticsRuntime.reset);
     final _FailingRefreshFirestore firestore = _FailingRefreshFirestore();
     getIt.registerSingleton<FirestoreClient>(firestore);
-    backend.onCall = (_, _) {
+    backend.onCall = (name, _) {
+      if (name == 'reconcileRankRewards') return Future<dynamic>.value(<String, Object>{});
       started.complete();
       return response.future;
     };

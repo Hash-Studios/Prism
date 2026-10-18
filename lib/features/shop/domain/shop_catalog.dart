@@ -14,6 +14,7 @@ class ShopItem {
     required this.price,
     this.proOnly = false,
     this.minRank,
+    this.rankReward,
     this.founders = false,
     this.common = false,
     this.themeId,
@@ -27,6 +28,11 @@ class ShopItem {
   /// Only Pro members may buy it. Ownership survives a lapse; equipping does not.
   final bool proOnly;
   final String? minRank;
+
+  /// Granted by the server when lifetime XP reaches this configured rank.
+  final String? rankReward;
+
+  String? get requiredRank => rankReward ?? minRank;
 
   /// Sold only until `flags.foundersUntil`.
   final bool founders;
@@ -72,11 +78,12 @@ const List<ShopItem> shopCatalog = <ShopItem>[
   ShopItem(id: 'frame_ring', kind: ShopItemKind.frame, name: 'Ring', price: 120, common: true),
   ShopItem(id: 'frame_aurora', kind: ShopItemKind.frame, name: 'Aurora', price: 200),
   ShopItem(id: 'frame_prism', kind: ShopItemKind.frame, name: 'Prism', price: 300, proOnly: true),
-  ShopItem(id: 'frame_gold', kind: ShopItemKind.frame, name: 'Gold', price: 250, minRank: 'gold'),
+  ShopItem(id: 'frame_gold', kind: ShopItemKind.frame, name: 'Gold', price: 250, rankReward: 'gold'),
   ShopItem(id: 'frame_founders', kind: ShopItemKind.frame, name: 'Founders', price: 1000, founders: true),
   ShopItem(id: 'glow_ember', kind: ShopItemKind.nameGlow, name: 'Ember', price: 100, common: true),
   ShopItem(id: 'glow_ocean', kind: ShopItemKind.nameGlow, name: 'Ocean', price: 100, common: true),
-  ShopItem(id: 'glow_aurora', kind: ShopItemKind.nameGlow, name: 'Aurora', price: 200, minRank: 'silver'),
+  ShopItem(id: 'glow_aurora', kind: ShopItemKind.nameGlow, name: 'Aurora', price: 200, rankReward: 'silver'),
+  ShopItem(id: 'glow_prism', kind: ShopItemKind.nameGlow, name: 'Prism', price: 0, rankReward: 'prism'),
   ShopItem(id: 'glow_founders', kind: ShopItemKind.nameGlow, name: 'Founders', price: 1000, founders: true),
 ];
 
@@ -96,7 +103,7 @@ int shopFromPrice(DateTime now, {EconomyConfig? config}) {
   final DateTime? foundersUntil = economy.flags.foundersUntilAt;
   final bool foundersOpen = foundersUntil != null && now.toUtc().isBefore(foundersUntil);
   return shopCatalog
-      .where((ShopItem item) => foundersOpen || !item.founders)
+      .where((ShopItem item) => item.rankReward == null && (foundersOpen || !item.founders))
       .map((ShopItem item) => economy.shopPrices[item.id] ?? item.price)
       .reduce(min);
 }
@@ -120,12 +127,13 @@ ShopAvailability shopAvailability(
     if (until == null || !now.toUtc().isBefore(until)) return ShopAvailability.soldOut;
   }
   if (item.proOnly && !premium) return ShopAvailability.proOnly;
-  final String? needed = item.minRank;
+  final String? needed = item.requiredRank;
   if (needed != null) {
     final List<RankDef> ranks = economy.xp.ranks;
-    final int neededMin = ranks.where((RankDef r) => r.id == needed).firstOrNull?.min ?? 1 << 30;
+    final RankDef? requiredRank = ranks.where((RankDef r) => r.id == needed).firstOrNull;
+    if (requiredRank == null) return ShopAvailability.rankLocked;
     final int ownMin = ranks.where((RankDef r) => r.id == rankId).firstOrNull?.min ?? 0;
-    if (ownMin < neededMin) return ShopAvailability.rankLocked;
+    if (ownMin < requiredRank.min) return ShopAvailability.rankLocked;
   }
   return ShopAvailability.available;
 }

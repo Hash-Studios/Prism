@@ -38,6 +38,7 @@ FrameStyle frameStyle(String id, {Color accent = const Color(prismDefaultAccentV
 NameGlowStyle glowStyle(String id) => switch (id) {
   'glow_ocean' => const NameGlowStyle(colors: <Color>[_blue, _teal]),
   'glow_aurora' => const NameGlowStyle(colors: <Color>[_teal, _violet]),
+  'glow_prism' => const NameGlowStyle(colors: glintRingNodeColors),
   'glow_founders' => const NameGlowStyle(colors: <Color>[_goldLight, _goldDark]),
   _ => const NameGlowStyle(colors: <Color>[_orange, _pink]),
 };

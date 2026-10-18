@@ -1,10 +1,8 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/glint/glint.dart';
-import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/features/rewards/views/widgets/streak_cycle_strip.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -111,69 +109,8 @@ class _HeroCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: PrismSpace.md),
-          Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
-          const SizedBox(height: PrismSpace.md),
-          const _RankBlock(),
         ],
       ),
     );
   }
 }
-
-/// The rank chip and a thin bar to the next rank.
-class _RankBlock extends StatelessWidget {
-  const _RankBlock();
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    return ValueListenableBuilder<XpStatus>(
-      valueListenable: CoinsService.instance.xpNotifier,
-      builder: (context, status, _) {
-        final Rank rank = status.rank;
-        final RankDef? next = rank.next;
-        final String caption = next == null
-            ? 'Prism rank'
-            : '${_grouped(status.xp)} / ${_grouped(next.min)} XP to ${_rankTitle(next.id)}';
-        return Semantics(
-          container: true,
-          label: '${_rankTitle(rank.id)} rank, $caption',
-          excludeSemantics: true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  PrismTag(label: _rankTitle(rank.id), tone: PrismTone.accent, icon: Icons.military_tech_outlined),
-                  const SizedBox(width: PrismSpace.sm),
-                  Expanded(child: Text(caption, style: PrismTextStyles.caption(context))),
-                ],
-              ),
-              const SizedBox(height: PrismSpace.xs),
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(end: rank.progress),
-                duration: context.motion(PrismDurations.slow),
-                curve: PrismCurves.enter,
-                builder: (context, value, _) => ClipRRect(
-                  borderRadius: BorderRadius.circular(PrismRadius.pill),
-                  child: LinearProgressIndicator(
-                    value: value,
-                    minHeight: 4,
-                    color: cs.primary,
-                    backgroundColor: cs.onSurface.withValues(alpha: 0.08),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-String _rankTitle(String id) => id.isEmpty ? id : '${id[0].toUpperCase()}${id.substring(1)}';
-
-/// 1240 becomes "1 240" with a no-break space, so a number never wraps in the middle.
-String _grouped(int value) => value.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '\u00A0');

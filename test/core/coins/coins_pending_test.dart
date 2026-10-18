@@ -201,9 +201,68 @@ void main() {
   });
 
   group('rewarded ad awards', () {
+    for (final bool committedReply in <bool>[false, true]) {
+      test(
+        'an ad ${committedReply ? 'committed reply' : 'unknown outcome'} after sign-out stays with its owner',
+        () async {
+          final originalUser = app_state.prismUser;
+          final String ownerId = app_state.prismUser.id;
+          final Completer<Object?> response = Completer<Object?>();
+          final Completer<void> started = Completer<void>();
+          String? requestId;
+          backend.onCall = (_, parameters) {
+            requestId = parameters['requestId'] as String;
+            started.complete();
+            return response.future;
+          };
+
+          final Future<CoinMutationResult> award = service.award(CoinEarnAction.rewardedAd);
+          await started.future;
+          app_state.prismUser = app_constants.createGuestPrismUser()
+            ..id = 'other-user'
+            ..loggedIn = true
+            ..coins = 70;
+          service.resetSession();
+          if (committedReply) {
+            response.complete(<String, Object>{..._refunded, 'adsRemaining': 2});
+          } else {
+            response.completeError(FirebaseFunctionsException(code: 'unavailable', message: 'lost reply'));
+          }
+
+          expect((await award).reason, 'not_logged_in');
+          expect(stored(_queueKey), isNotEmpty);
+          final entries = (jsonDecode(stored(_queueKey)) as List<Object?>).cast<Map<String, Object?>>();
+          expect(entries.single['userId'], ownerId);
+          expect(entries.single['requestId'], requestId);
+          expect(entries.single['kind'], 'reward');
+          expect(app_state.prismUser.coins, 70);
+          expect(service.balanceNotifier.value, 70);
+          expect(service.adsRemainingToday, isNull);
+
+          backend.onCall = (_, _) => throw StateError('the other account must not retry this reward');
+          await service.retryPendingRefunds();
+          expect(stored(_queueKey), contains(ownerId));
+
+          app_state.prismUser = originalUser;
+          service.resetSession();
+          final List<String> retried = <String>[];
+          backend.onCall = (name, parameters) async {
+            if (name == 'reconcileRankRewards') return <String, Object>{};
+            retried.add(parameters['requestId'] as String);
+            return <String, Object>{..._refunded, 'currentBalance': 110, 'delta': 10};
+          };
+          await service.retryPendingRefunds();
+          expect(retried, <String>[requestId!]);
+          expect(stored(_queueKey), isEmpty);
+          expect(app_state.prismUser.coins, 110);
+        },
+      );
+    }
+
     test('a rewarded ad award carries a requestId and is retried once with the same id', () async {
       final requestIds = <String>[];
       backend.onCall = (name, parameters) async {
+        if (name == 'reconcileRankRewards') return <String, Object>{};
         requestIds.add(parameters['requestId'] as String);
         if (requestIds.length == 1) throw FirebaseFunctionsException(code: 'deadline-exceeded', message: 'slow');
         return <String, Object>{
@@ -230,6 +289,7 @@ void main() {
     test('other awards do not carry a requestId', () async {
       final calls = <Map<String, dynamic>>[];
       backend.onCall = (name, parameters) async {
+        if (name == 'reconcileRankRewards') return <String, Object>{};
         calls.add(parameters);
         return _refunded;
       };
@@ -256,6 +316,7 @@ void main() {
 
       final retried = <String>[];
       backend.onCall = (name, parameters) async {
+        if (name == 'reconcileRankRewards') return <String, Object>{};
         retried.add(parameters['requestId'] as String);
         return <String, Object>{
           'success': true,
@@ -381,6 +442,7 @@ void main() {
     List<Map<String, dynamic>> recordRefunds() {
       final refunds = <Map<String, dynamic>>[];
       backend.onCall = (name, parameters) async {
+        if (name == 'reconcileRankRewards') return <String, Object>{};
         refunds.add(parameters);
         return _refunded;
       };

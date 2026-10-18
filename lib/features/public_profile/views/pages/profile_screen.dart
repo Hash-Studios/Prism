@@ -5,7 +5,6 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -34,6 +33,7 @@ import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
+import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
@@ -719,16 +719,15 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 ),
                               ),
                             ),
-                            Container(
-                              width: 1,
-                              height: 16,
-                              margin: const EdgeInsets.symmetric(horizontal: 16),
-                              color: cs.onSurface.withValues(alpha: 0.2),
-                            ),
-                            PrismTag(
-                              label: EconomyConfig.current.rankFor(cosmetics.xp).id.inCaps,
-                              tone: PrismTone.accent,
-                            ),
+                            if (!ownProfile) ...<Widget>[
+                              Container(
+                                width: 1,
+                                height: 16,
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                color: cs.onSurface.withValues(alpha: 0.2),
+                              ),
+                              Flexible(child: RankInfoChip(xp: cosmetics.xp)),
+                            ],
                           ],
                         ),
                       ),
@@ -761,6 +760,13 @@ class _ProfileChildState extends State<_ProfileChild> {
                 ),
               ),
             ),
+            if (ownProfile)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+                  child: RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
+                ),
+              ),
             if (showProfileCompletenessCard)
               SliverToBoxAdapter(
                 child: Padding(

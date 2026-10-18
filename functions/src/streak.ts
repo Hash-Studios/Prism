@@ -6,6 +6,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {isLoggedOut, pickFcmToken, sendNotification, userPushTokens} from "./notificationHelper";
 import {coinTransactionDoc, db, int, REGION, str} from "./common";
 import {DEFAULT_ECONOMY, type EconomyConfig, grantXp, loadEconomy, randomInt, xpForCoins} from "./economy";
+import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
 const USERS_COLLECTION = "usersv2";
 const COIN_TX_COLLECTION = "coinTransactions";
@@ -98,6 +99,7 @@ export const claimDailyStreak = onCall(
 
     const config = await loadEconomy();
     const userRef = db.collection(USERS_COLLECTION).doc(uid);
+    const privateRef = userRef.collection("private").doc("economy");
 
     let claimed = false;
     let alreadyClaimedToday = false;
@@ -125,6 +127,7 @@ export const claimDailyStreak = onCall(
       totalReward = 0;
       nextReminderAtUtcMillis = undefined;
       const userSnap = await tx.get(userRef);
+      const privateSnap = await tx.get(privateRef);
       if (!userSnap.exists) {
         throw new HttpsError("not-found", "User profile was not found.");
       }
@@ -253,10 +256,18 @@ export const claimDailyStreak = onCall(
         delete coinState.streakReminderNextAtUtc;
       }
 
+      const nextXp = claimed ? grantXp(userData, xpForCoins(totalReward, config), now.getTime()) : null;
+      if (nextXp) {
+        const privateData = privateSnap.data() ?? {};
+        const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, now.getTime());
+        if (rewards.added.length > 0) {
+          tx.set(privateRef, {rev: int(privateData.rev, 0) + 1, inventory: {owned: rewards.owned}}, {merge: true});
+        }
+      }
       tx.update(userRef, {
         coins: newBalance,
         coinState,
-        ...(claimed ? grantXp(userData, xpForCoins(totalReward, config), now.getTime()) : {}),
+        ...nextXp,
       });
     });
 

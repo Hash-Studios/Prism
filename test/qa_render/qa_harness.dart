@@ -39,7 +39,10 @@ void seedUser({required bool pro}) {
     active: true,
     claimedToday: true,
   );
-  coins.inventoryNotifier.value = const Inventory(owned: <String>{'frame_ring', 'theme_rose'}, frame: 'frame_ring');
+  coins.inventoryNotifier.value = const Inventory(
+    owned: <String>{'frame_ring', 'theme_rose', 'glow_aurora'},
+    frame: 'frame_ring',
+  );
 }
 
 void resetUser() {

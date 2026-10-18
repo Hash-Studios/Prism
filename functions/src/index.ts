@@ -17,6 +17,7 @@ export {githubPutFile, githubDeleteFile} from "./githubContent";
 export {awardCoins, spendCoins, processReferral, buyStreakFreeze, unlockPremiumPreview, restoreStreak, claimProSpin} from "./coinsCallables";
 export {progressQuest, openQuestChest} from "./quests";
 export {purchaseShopItem, equipCosmetic} from "./shop";
+export {reconcileRankRewards} from "./rankRewards";
 export {planWeeklyDrop, unlockDrop} from "./drops";
 export {boostWall} from "./boosts";
 export {giftPremiumPass} from "./gifts";

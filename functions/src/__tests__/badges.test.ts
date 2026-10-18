@@ -74,6 +74,7 @@ test("coin badges are only the server-backed ones", () => {
 
 interface Store {
   user: Record<string, unknown>;
+  privateEconomy?: Record<string, unknown>;
   rate: Record<string, unknown> | undefined;
   ledger: Record<string, Record<string, unknown>>;
 }
@@ -85,10 +86,15 @@ function fakeDb(
   onCountQuery?: (collection: string, filters: [string, unknown][], limit: number | undefined) => void,
   onGetQuery?: (collection: string, limit: number | undefined) => void,
 ) {
-  const docRef = (path: string) => ({path, get: async () => snapOf(path)});
+  interface Ref {path: string; get: () => Promise<{exists: boolean; data: () => Record<string, unknown> | undefined}>;
+    collection: (name: string) => {doc: (id: string) => Ref}}
+  const docRef = (path: string): Ref => ({
+    path, get: async () => snapOf(path), collection: (name) => ({doc: (id) => docRef(`${path}/${name}/${id}`)}),
+  });
   t.mock.method(db, "doc", (path: string) => docRef(path));
   const snapOf = (path: string) => {
-    const data = path.startsWith("usersv2/") ? store.user : path.startsWith("badgeCheckRate/") ? store.rate : undefined;
+    const data = path.endsWith("/private/economy") ? store.privateEconomy :
+      path.startsWith("usersv2/") ? store.user : path.startsWith("badgeCheckRate/") ? store.rate : undefined;
     const snapshot = data === undefined ? undefined : structuredClone(data);
     return {exists: snapshot !== undefined, data: () => snapshot};
   };
@@ -146,6 +152,7 @@ function fakeDb(
           get: async (ref: {path: string}) => snapOf(ref.path),
           set: (ref: {path: string}, data: Record<string, unknown>) => writes.push(() => {
             if (ref.path.startsWith("badgeCheckRate/")) store.rate = data;
+            else if (ref.path.endsWith("/private/economy")) store.privateEconomy = {...store.privateEconomy, ...data};
             else store.ledger[ref.path] = data;
           }),
           update: (_ref: unknown, data: Record<string, unknown>) => writes.push(() => Object.assign(store.user, data)),

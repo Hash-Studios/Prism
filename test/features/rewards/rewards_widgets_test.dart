@@ -16,6 +16,7 @@ import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
+import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -361,21 +362,22 @@ void main() {
       expect(find.byIcon(Icons.check_rounded), findsNWidgets(5));
     });
 
-    testWidgets('hero: rank chip and XP bar ($mode)', (tester) async {
+    testWidgets('XP card: current rank and progress ($mode)', (tester) async {
       svc.xpNotifier.value = XpStatus(xp: 1240, weekXp: 40, rank: EconomyConfig.current.rankFor(1240));
-      await _pump(tester, theme, const RewardsHero());
+      await _pump(tester, theme, const RankProgressCard());
       expect(find.text('Silver'), findsOneWidget);
-      expect(find.text('1\u00A0240 / 2\u00A0000 XP to Gold'), findsOneWidget);
+      expect(find.text('1\u00A0240 lifetime XP'), findsOneWidget);
+      expect(find.text('760 XP to Gold'), findsOneWidget);
       final LinearProgressIndicator bar = tester.widget(find.byType(LinearProgressIndicator));
       expect(bar.value, closeTo((1240 - 500) / (2000 - 500), 0.001));
-      expect(find.bySemanticsLabel('Silver rank, 1\u00A0240 / 2\u00A0000 XP to Gold'), findsOneWidget);
+      expect(find.bySemanticsLabel('Silver rank progress'), findsOneWidget);
     });
 
-    testWidgets('hero: the top rank has no next step ($mode)', (tester) async {
+    testWidgets('XP card: the top rank has no next step ($mode)', (tester) async {
       svc.xpNotifier.value = XpStatus(xp: 9000, weekXp: 0, rank: EconomyConfig.current.rankFor(9000));
-      await _pump(tester, theme, const RewardsHero());
+      await _pump(tester, theme, const RankProgressCard());
       expect(find.text('Prism'), findsOneWidget);
-      expect(find.text('Prism rank'), findsOneWidget);
+      expect(find.text('Highest rank reached'), findsOneWidget);
       final LinearProgressIndicator bar = tester.widget(find.byType(LinearProgressIndicator));
       expect(bar.value, 1);
     });
