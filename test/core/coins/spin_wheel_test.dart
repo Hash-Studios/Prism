@@ -77,5 +77,14 @@ void main() {
       expect((paid.nextCost, paid.canSpin), (10, true));
       expect((capped.nextCost, capped.canSpin), (10, false));
     });
+
+    test('two statuses with the same fields are equal', () {
+      const SpinWheelStatus a = SpinWheelStatus(freeSpinAvailable: true, paidSpinsLeft: 3, price: 10);
+      const SpinWheelStatus b = SpinWheelStatus(freeSpinAvailable: true, paidSpinsLeft: 3, price: 10);
+      const SpinWheelStatus c = SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 3, price: 10);
+      expect(a == b, isTrue);
+      expect(a.hashCode, b.hashCode);
+      expect(a == c, isFalse);
+    });
   });
 }
