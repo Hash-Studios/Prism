@@ -79,7 +79,8 @@ test("boostWall debits, writes the boost and boostedUntil, and puts the wall fir
   assert.equal(result.delta, -100);
   assert.equal(result.transactionId, `ctx_boost_u1_${REQ}`);
   assert.equal(store.get("usersv2/u1")?.coins, 400);
-  assert.deepEqual(store.get("boosts/WALL1"), {wallId: "WALL1", uid: "u1", startsAt: NOW.getTime(), endsAt});
+  assert.deepEqual(store.get("boosts/WALL1"),
+    {wallId: "WALL1", trendingId: "WALL1", uid: "u1", startsAt: NOW.getTime(), endsAt});
   assert.equal(store.get("walls/WALL1")?.boostedUntil, endsAt);
   assert.deepEqual(store.get("trending/current")?.wallIds, ["WALL1", "X", "Y"]);
   const ledger = store.get(`coinTransactions/ctx_boost_u1_${REQ}`);
@@ -149,4 +150,22 @@ test("expired boosts do not take a slot", async (t) => {
   setup(t, seed);
   const result = await run({wallId: "WALL1", requestId: REQ});
   assert.equal(result.success, true);
+});
+
+test("boostWall finds an older wall by its id field when the doc id is different", async (t) => {
+  const store = setup(t, {
+    "walls/randomDocId": {id: "LEGACY", review: true, email: "owner@example.com"},
+    "trending/current": {wallIds: ["X"]},
+  });
+  const result = await run({wallId: "LEGACY", requestId: REQ});
+  const endsAt = NOW.getTime() + DAY;
+  assert.equal(result.success, true);
+  assert.equal(result.reason, "boost_LEGACY");
+  assert.equal(store.get("usersv2/u1")?.coins, 400);
+  assert.equal(store.get("walls/randomDocId")?.boostedUntil, endsAt);
+  assert.deepEqual(store.get("boosts/randomDocId"),
+    {wallId: "randomDocId", trendingId: "LEGACY", uid: "u1", startsAt: NOW.getTime(), endsAt});
+  assert.deepEqual(store.get("trending/current")?.wallIds, ["LEGACY", "X"]);
+  const again = await run({wallId: "LEGACY", requestId: "request_0002"});
+  assert.equal(again.reason, "boost_active");
 });

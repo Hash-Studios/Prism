@@ -38,8 +38,7 @@ export const boostWall = onCall(
     const nowMs = Date.now();
     const txId = `ctx_boost_${uid}_${requestId}`;
     const userRef = db.collection("usersv2").doc(uid);
-    const wallRef = db.collection("walls").doc(wallId);
-    const boostRef = db.collection("boosts").doc(wallId);
+    const wallsRef = db.collection("walls");
     const txRef = db.collection("coinTransactions").doc(txId);
     const trendingRef = db.collection("trending").doc("current");
     const activeQuery = db.collection("boosts").where("endsAt", ">", nowMs).limit(MAX_ACTIVE_BOOSTS);
@@ -47,9 +46,11 @@ export const boostWall = onCall(
     let response: BoostResponse | null = null;
     await db.runTransaction(async (tx) => {
       response = null;
-      const [userSnap, wallSnap, boostSnap, txSnap, trendingSnap, activeSnap] = await Promise.all([
-        tx.get(userRef), tx.get(wallRef), tx.get(boostRef), tx.get(txRef), tx.get(trendingRef), tx.get(activeQuery),
+      const [userSnap, docSnap, txSnap, trendingSnap, activeSnap] = await Promise.all([
+        tx.get(userRef), tx.get(wallsRef.doc(wallId)), tx.get(txRef), tx.get(trendingRef), tx.get(activeQuery),
       ]);
+      // The app sends the wall's `id` field. Older walls have a random doc id, so look the wall up by that field too.
+      const wallSnap = docSnap.exists ? docSnap : (await tx.get(wallsRef.where("id", "==", wallId).limit(1))).docs[0];
       if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
       const user = userSnap.data() ?? {};
       const previous = int(user.coins, 0);
@@ -81,8 +82,12 @@ export const boostWall = onCall(
         return;
       }
 
-      const wall = wallSnap.data();
-      if (!wallSnap.exists || !wall) throw new HttpsError("not-found", "boost_wall_not_found");
+      const wall = wallSnap?.data();
+      if (!wallSnap?.exists || !wall) throw new HttpsError("not-found", "boost_wall_not_found");
+      const wallRef = wallSnap.ref;
+      // Trending lists hold the `id` field (the wallpaper_stats key), not the doc id.
+      const trendingId = str(wall.id) || wallRef.id;
+      const boostRef = db.collection("boosts").doc(wallRef.id);
       if (wall.review !== true) {
         response = {...base, reason: "boost_wall_not_approved"};
         return;
@@ -91,7 +96,7 @@ export const boostWall = onCall(
       if (owner === "" || owner !== str(user.email).toLowerCase() || wall.origin === "studio") {
         throw new HttpsError("permission-denied", "boost_not_owner");
       }
-      if (int(boostSnap.data()?.endsAt, 0) > nowMs) {
+      if (int((await tx.get(boostRef)).data()?.endsAt, 0) > nowMs) {
         response = {...base, reason: "boost_active"};
         return;
       }
@@ -106,7 +111,7 @@ export const boostWall = onCall(
       }
 
       const endsAt = nowMs + BOOST_MS;
-      const reason = `boost_${wallId}`;
+      const reason = `boost_${trendingId}`;
       const current = previous - price;
       const ledger = coinTransactionDoc({
         id: txId,
@@ -122,9 +127,9 @@ export const boostWall = onCall(
       const ids = trendingSnap.data()?.wallIds;
       tx.update(userRef, {coins: current});
       tx.set(txRef, {...ledger, endsAt});
-      tx.set(boostRef, {wallId, uid, startsAt: nowMs, endsAt});
+      tx.set(boostRef, {wallId: wallRef.id, trendingId, uid, startsAt: nowMs, endsAt});
       tx.update(wallRef, {boostedUntil: endsAt});
-      tx.set(trendingRef, {wallIds: mergeBoosted([wallId], Array.isArray(ids) ? ids.map(String) : [])}, {merge: true});
+      tx.set(trendingRef, {wallIds: mergeBoosted([trendingId], Array.isArray(ids) ? ids.map(String) : [])}, {merge: true});
       response = {
         ...base,
         success: true,
