@@ -27,20 +27,22 @@ Index 0 sits under the pointer at rest. Order is the wheel order, clockwise.
 | # | Prize | Weight |
 |---|---|---|
 | 0 | 10 coins | 18 |
-| 1 | 25 XP | 22 |
+| 1 | 1 coin | 22 |
 | 2 | 5 coins | 30 |
 | 3 | 100 coins | 1 |
 | 4 | 20 coins | 8 |
-| 5 | 50 XP | 12 |
+| 5 | 2 coins | 12 |
 | 6 | 50 coins | 3 |
 | 7 | Mystery cosmetic (50 coins if all owned) | 6 |
 
-Coin EV is 7.4 a spin, plus about 19 XP. A paid spin is a mild sink (net -2.6 coins). The cosmetic is a random
-unowned `common` shop item (`pickChestCosmetic`), the same pool as the quest chest.
+Direct coin EV is 7.86 a spin (previously 7.4), below the 10-coin price. When all common cosmetics are owned,
+the 50-coin fallback makes it 10.86. The cosmetic is a random unowned `common` shop item (`pickChestCosmetic`),
+the same pool as the quest chest. Paid and free spins grant no XP; XP remains activity-based.
 
-Segment JSON: `{"kind": "coins", "coins": 10, "weight": 18}`, `{"kind": "xp", "xp": 25, "weight": 22}`,
-`{"kind": "cosmetic", "fallbackCoins": 50, "weight": 6}`. `coins`, `xp` and `fallbackCoins` are integers
-1..1000, `weight` 0..1000 with a positive sum, 2..12 segments. Anything else falls back to the default table.
+Segment JSON: `{"kind": "coins", "coins": 10, "weight": 18}`,
+`{"kind": "cosmetic", "fallbackCoins": 50, "weight": 6}`. `coins` and `fallbackCoins` are integers
+1..1000, `weight` 0..1000 with a positive sum, 2..12 segments. Anything else, including a legacy XP segment,
+falls back to the whole default coin-only table on both server and client.
 
 ## Callable `spinWheel`
 
@@ -49,8 +51,8 @@ Request: `{requestId, maxCost, sourceTag}`. `requestId` must pass `isValidReques
 
 One Firestore transaction:
 
-1. Replay. Ledger doc `coinTransactions/ctx_spinWheel_{uid}_{requestId}` exists: return its stored reply with a
-   fresh `status`.
+1. Replay. Ledger doc `coinTransactions/ctx_spinWheel_{uid}_{requestId}` exists: retain its original prize and
+   wheel, with live balances, zero delta, current `status`, XP snapshot, private revision and owned inventory.
 2. Free spin: `premium == true` and neither `coinState.proSpinDate` nor `coinState.proDailyBonusDate` is today and
    `private/economy.spinWheel.freeUsed` is not true for today.
 3. Paid spin: refuse `spin_wheel_daily_limit` when today's `paid >= spinWheelMaxPerDay`. Cost is `spend.spinWheel`.
@@ -58,8 +60,8 @@ One Firestore transaction:
 5. Refuse `spin_wheel_insufficient_balance` (`insufficientBalance: true`) when `coins < cost`.
 6. `weightedPick(award.spinWheel)`. Grant the prize. Cosmetic: `pickChestCosmetic(owned)`, write
    `inventory.owned.{id} = nowMs`; none left pays `fallbackCoins`.
-7. Root update: `coins = balance - cost + prizeCoins`, XP `prizeXp + xpForCoins(prizeCoins)` through `grantXp`, and
-   both `coinState` dates when free.
+7. Root update: `coins = balance - cost + prizeCoins`, and both `coinState` dates when free. Preserve lifetime
+   and weekly XP without writing either field. A spin cannot grant rank rewards.
 8. `private/economy` through `writePrivate`: `spinWheel = {dayKey, paid, freeUsed}`; the `pro_spin` quest event when
    the spin was the free Pro spin.
 9. One ledger doc, `action: "spinWheel"`, `delta = prizeCoins - cost`, extras `{cost, free, segment, prize}`.
@@ -68,7 +70,10 @@ Every reply carries `status: {freeSpinAvailable, paidSpinsLeft, price}` and the 
 (`success`, `changed`, `previousBalance`, `currentBalance`, `delta`, `reason`, `transactionId`). A win adds
 `cost`, `free`, `segment`, `prize: {kind, coins, xp, itemId}` and `segments` (the table the server spun, so the
 client lands on the truth even with a stale config). Cosmetic fallback replies `kind: "cosmetic"`, `itemId: null` and
-the fallback in `coins`.
+the fallback in `coins`. New prize replies always have `xp: 0`. Every reply also includes the authoritative
+`xpPolicyVersion`, absolute `xp`, `xpWeek`, `xpAwarded: 0`, `rev` and `owned`. A fresh spin returns its new private
+revision; a refusal or replay returns the current revision. Historical XP prizes remain visible on replay without
+granting XP again or changing their stored receipt.
 
 ## Client
 
@@ -77,6 +82,8 @@ the fallback in `coins`.
   `private/economy.spinWheel`, the `pro_spin` bonus quest and each reply.
 - Request ids go through `_economyPurchase('spinWheel', 'next', ...)`: a lost reply replays the same id on the next
   tap, so one tap never spins twice.
+- The client applies absolute XP and private snapshots after account and revision checks. It never increments XP
+  from prize values. Historical reply decoding accepts old XP prizes without allowing them in new config tables.
 - Analytics: `spin_wheel_spun` with `free`, `cost`, `segment`, `prize`, `coins`, `xp`.
 
 ## Machine (UI)

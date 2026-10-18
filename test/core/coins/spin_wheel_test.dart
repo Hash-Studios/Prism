@@ -21,11 +21,20 @@ void main() {
         <String>['coins 1000 x1000', 'cosmetic 1 x0'],
       );
       final List<Map<String, Object>> twelve = List<Map<String, Object>>.filled(12, <String, Object>{
-        'kind': 'xp',
-        'xp': 1,
+        'kind': 'coins',
+        'coins': 1,
         'weight': 1,
       });
       expect(parseWheel(twelve), hasLength(12));
+    });
+
+    test('XP tables are rejected for config and decoded only for historical replies', () {
+      const List<Map<String, Object>> legacy = <Map<String, Object>>[
+        <String, Object>{'kind': 'coins', 'coins': 10, 'weight': 1},
+        <String, Object>{'kind': 'xp', 'xp': 25, 'weight': 1},
+      ];
+      expect(parseWheel(legacy), isNull);
+      expect(describeWheel(parseWheel(legacy, allowLegacyXp: true)!), <String>['coins 10 x1', 'xp 25 x1']);
     });
 
     test('refuses a table the server would refuse', () {

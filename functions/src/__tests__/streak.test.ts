@@ -3,6 +3,7 @@ import test, {beforeEach, mock} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {DEFAULT_ECONOMY, ECONOMY_CONFIG_DOC, resetEconomyCache, weekKey} from "../economy";
+import {installFakeDb} from "./fakeDb";
 
 import {
   claimDailyStreak,
@@ -66,7 +67,7 @@ test("a retried claim that another call already committed returns no reward", as
   const yesterday = localDateKeyFromUtc(new Date(Date.now() - 86_400_000), 330);
   const attempts = [
     {coins: 100, premium: true, coinState: {lastDailyClaimDate: yesterday, streakDay: 6, streakCount: 6}},
-    {coins: 175, premium: true, coinState: {lastDailyClaimDate: today, streakDay: 7, streakCount: 7}},
+    {coins: 175, premium: true, xp: 1000, coinState: {lastDailyClaimDate: today, streakDay: 7, streakCount: 7}},
   ];
   const committedLedger: unknown[] = [];
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
@@ -91,6 +92,8 @@ test("a retried claim that another call already committed returns no reward", as
   assert.equal(result.proBonusReward, 0);
   assert.equal(result.milestone, null);
   assert.equal(result.newBalance, 175);
+  assert.equal(result.xpAwarded, 0);
+  assert.equal(result.xp, 1000);
   assert.deepEqual(committedLedger, []);
 });
 
@@ -756,8 +759,9 @@ test("claimDailyStreak: day 7 credits the chest and XP in one update and reports
   assert.equal(result.totalReward, 38);
   assert.equal(result.newBalance, 138);
   assert.equal(update.coins, 138);
-  assert.equal(update.xp, 78);
-  assert.deepEqual(update.xpWeek, {weekKey: weekKey(now), xp: 38});
+  assert.equal(update.xp, 70);
+  assert.deepEqual(update.xpWeek, {weekKey: weekKey(now), xp: 30});
+  assert.equal(result.xpAwarded, 30);
   assert.deepEqual(ledger.map((entry) => [entry.action, entry.delta]),
     [["dailyLogin", 10], ["streakChest", 15], ["proStreakBonus", 13]]);
 });
@@ -779,4 +783,51 @@ test("claimDailyStreak: a mid-cycle day is not a chest", async (t) => {
   } as Parameters<typeof claimDailyStreak.run>[0]);
   assert.equal(result.isChest, false);
   assert.equal(result.totalReward, 5);
+});
+
+test("claimDailyStreak: fixed XP is equal across Pro, random chests and coin config; replays use current XP", async (t) => {
+  const now = Date.parse("2026-10-18T12:00:00Z");
+  for (const premium of [false, true]) {
+    for (const random of [0, 0.999]) {
+      for (const cycleDay of [1, 7]) {
+        await t.test(`${premium}/${random}/${cycleDay}`, async (sub) => {
+          resetEconomyCache();
+          sub.mock.timers.enable({apis: ["Date"], now});
+          sub.mock.method(Math, "random", () => random);
+          const userPath = "usersv2/user-1";
+          const privatePath = `${userPath}/private/economy`;
+          const store = installFakeDb(sub, {
+            [ECONOMY_CONFIG_DOC]: {xp: {perCoinEarned: 10}, award: {
+              streakDaily: [10, 20, 30, 40, 50, 60, 70], streakChestMin: 3, streakChestMax: 30, proStreakMultiplier: 3,
+            }},
+            [userPath]: {coins: 100, premium, xp: 499, xpWeek: {weekKey: weekKey(now), xp: 20}, coinState: {
+              lastDailyClaimDate: cycleDay === 1 ? "" : "2026-10-17", streakCount: cycleDay - 1,
+              streakDay: cycleDay - 1, streakTimezoneOffsetMinutes: 0, streakClaimTimezoneOffsetMinutes: 0,
+            }},
+            [privatePath]: {rev: 2, inventory: {owned: {theme_rose: 123}}},
+          });
+          const req = {auth: {uid: "user-1"}, data: {timezoneOffsetMinutes: 0, reminderEnabled: false}};
+          const first = await claimDailyStreak.run(req as Parameters<typeof claimDailyStreak.run>[0]);
+          const expectedXp = cycleDay === 7 ? 30 : 5;
+          const chest = cycleDay === 7 ? (random === 0 ? 3 : 30) : 0;
+          const coins = ((cycleDay === 7 ? 70 : 10) + chest) * (premium ? 3 : 1);
+          assert.equal(first.totalReward, coins);
+          assert.equal(first.newBalance, 100 + coins);
+          assert.equal(first.xpPolicyVersion, 1);
+          assert.equal(first.xpAwarded, expectedXp);
+          assert.equal(first.xp, 499 + expectedXp);
+          assert.deepEqual(first.xpWeek, {weekKey: weekKey(now), xp: 20 + expectedXp});
+          const inventory = store.get(privatePath)?.inventory as {owned: Record<string, number>};
+          assert.equal(inventory.owned.theme_rose, 123);
+          assert.ok(Object.keys(inventory.owned).length > 1);
+          store.set(userPath, {...store.get(userPath), xp: 900, xpWeek: {weekKey: weekKey(now), xp: 300}});
+          const replay = await claimDailyStreak.run(req as Parameters<typeof claimDailyStreak.run>[0]);
+          assert.equal(replay.alreadyClaimedToday, true);
+          assert.equal(replay.xpAwarded, 0);
+          assert.equal(replay.xp, 900);
+          assert.deepEqual(replay.xpWeek, {weekKey: weekKey(now), xp: 300});
+        });
+      }
+    }
+  }
 });

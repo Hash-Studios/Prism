@@ -3,7 +3,7 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {coinTransactionDoc, db, int, readDailyCount, REGION, str, utcDateString} from "./common";
 import {
   DEFAULT_ECONOMY, type EconomyConfig, grantXp, isPrice, loadEconomy, proPrice, type WheelSegment, weightedPick,
-  xpForCoins,
+  xpReceipt, type XpReceipt,
 } from "./economy";
 import {applyQuestEvent, buildQuestState, type QuestState} from "./questCatalog";
 import {pickChestCosmetic} from "./shopCatalog";
@@ -42,7 +42,6 @@ const LEGACY_AI_TIERS = new Map<number, AiTier>([[10, "fast"], [75, "balanced"],
 const PREMIUM_PASS_ACTIONS = new Set(["premiumWallpaperDownload", "premiumPreview24h"]);
 const PASS_MS = 7 * 86_400_000;
 const STYLE_ID_PATTERN = /^[a-z][a-z_]{1,39}$/;
-const AD_XP_MAX_PER_DAY = 3;
 
 export const STREAK_FREEZE_COST = DEFAULT_ECONOMY.spend.streakFreeze;
 export const MAX_STREAK_FREEZES = 2;
@@ -396,7 +395,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
   }
   // The worker's answer for an AI refund, asked once even when the transaction retries. Undefined: not asked yet.
   let aiChargeStatus: AiChargeStatus | null | undefined;
-  let response: {
+  let response: XpReceipt & {
     success: boolean;
     changed: boolean;
     previousBalance: number;
@@ -405,6 +404,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     reason: string;
     adsRemaining?: number;
   } = {
+    ...xpReceipt({}, nowMs),
     success: false,
     changed: false,
     previousBalance: 0,
@@ -425,6 +425,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     const refundDailySnap = debitRef ? await tx.get(refundDailyRef) : null;
 
     const data = snap.data() ?? {};
+    response = {...response, ...xpReceipt(data, nowMs)};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const state = coinState(data.coinState);
     const adCountToday = typeof adRateSnap?.data()?.count === "number" ? adRateSnap.data()?.count : 0;
@@ -518,9 +519,9 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       tx.set(adRateRef, {count: adCountToday + 1, lastAt: nowMs});
       state.adsToday = {day: today, count: adCountToday + 1};
     }
-    // Refunds give back coins, not progress; only the first few ads of a day count for XP.
-    const earnsXp = action !== "refund" && (action !== "rewardedAd" || adCountToday < AD_XP_MAX_PER_DAY);
-    const nextXp = earnsXp ? grantXp(data, xpForCoins(delta, config), nowMs) : null;
+    const xpAwarded = action === "firstWallpaperUpload" ? config.xp.activities.firstWallpaperUpload :
+      action === "profileCompletion" ? config.xp.activities.profileCompletion : 0;
+    const nextXp = xpAwarded > 0 ? grantXp(data, xpAwarded, nowMs) : null;
     const privateData = privateSnap?.data() ?? {};
     const rewards = nextXp ? rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs) : null;
     if (action === "rewardedAd" || (rewards?.added.length ?? 0) > 0) {
@@ -538,6 +539,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     });
     writeTx(tx, {userId: callerUid, delta, previous, action, sourceTag, reason, fixedId: adAwardRef?.id});
     response = {
+      ...xpReceipt(nextXp ?? data, nowMs, xpAwarded),
       success: true,
       changed: true,
       previousBalance: previous,
@@ -562,6 +564,7 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
   const nowMs = Date.now();
   const today = utcDateString(new Date(nowMs));
   const empty = {
+    ...xpReceipt({}, nowMs),
     success: false,
     changed: false,
     previousBalance: 0,
@@ -581,6 +584,7 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
     const txSnap = await tx.get(txRef);
     const privateSnap = await tx.get(privateRef);
     const data = snap.data() ?? {};
+    response = {...response, ...xpReceipt(data, nowMs)};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const state = coinState(data.coinState);
     if (txSnap.exists) {
@@ -589,6 +593,7 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
         ...duplicateSpendResponse(response, original, previous, "pro_spin"),
         coins: int(original.coins, 0),
         segment: int(original.segment, -1),
+        ...xpReceipt(data, nowMs),
       };
       return;
     }
@@ -604,12 +609,10 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
     const segment = weightedPick(config.award.proSpin);
     const coins = config.award.proSpin[segment].coins;
     const balance = previous + coins;
-    const nextXp = grantXp(data, xpForCoins(coins, config), nowMs);
     tx.update(userRef, {
       "coins": balance,
       "coinState.proSpinDate": today,
       "coinState.proDailyBonusDate": today,
-      ...nextXp,
     });
     writeTx(tx, {
       userId: callerUid,
@@ -623,10 +626,8 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
       extra: {coins, segment},
     });
     const privateData = privateSnap.data() ?? {};
-    const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs);
     writePrivate(tx, privateRef, privateData, {
       ...questsAfter(privateData, "pro_spin", nowMs, true, config),
-      ...(rewards.added.length > 0 ? {inventory: {owned: rewards.owned}} : {}),
     });
     response = {
       ...response,
@@ -714,7 +715,6 @@ export function resolveWheelPrize(
 ): WheelPrize {
   switch (segment.kind) {
   case "coins": return {kind: "coins", coins: segment.coins, xp: 0, itemId: null};
-  case "xp": return {kind: "xp", coins: 0, xp: segment.xp, itemId: null};
   case "cosmetic": {
     const item = pickChestCosmetic(owned, random);
     return {kind: "cosmetic", coins: item ? 0 : segment.fallbackCoins, xp: 0, itemId: item?.id ?? null};
@@ -722,7 +722,9 @@ export function resolveWheelPrize(
   }
 }
 
-interface SpinWheelReplyBase {
+interface SpinWheelReplyBase extends XpReceipt {
+  rev: number;
+  owned: string[];
   previousBalance: number;
   currentBalance: number;
   delta: number;
@@ -769,6 +771,8 @@ export const spinWheel = onCall(
       const data = snap.data() ?? {};
       const privateData = privateSnap.data() ?? {};
       const balance = int(data.coins, 0);
+      const snapshot = {...xpReceipt(data, nowMs), rev: int(privateData.rev, 0),
+        owned: Object.keys(inventoryOwned(privateData))};
       const dayInput = {
         isPro: data.premium === true,
         today,
@@ -779,11 +783,13 @@ export const spinWheel = onCall(
       // The stored outcome with the live balance and today's status: other spends or a new day may have come between.
       if (txSnap.exists) {
         const stored = (txSnap.data() ?? {}).replay as SpinWheelReply;
-        return {...stored, previousBalance: balance, currentBalance: balance, delta: 0, status: wheelStatus(dayInput)};
+        return {...stored, ...snapshot,
+          previousBalance: balance, currentBalance: balance, delta: 0, status: wheelStatus(dayInput)};
       }
       const plan = planWheelSpin({...dayInput, balance, maxCost});
       if (!plan.ok) {
         return {
+          ...snapshot,
           success: false,
           changed: false,
           previousBalance: balance,
@@ -803,21 +809,20 @@ export const spinWheel = onCall(
       const prize = resolveWheelPrize(segments[segment], Object.keys(owned));
       const current = balance - plan.cost + prize.coins;
       const delta = prize.coins - plan.cost;
-      const nextXp = grantXp(data, prize.xp + xpForCoins(prize.coins, config), nowMs);
       tx.update(userRef, {
         coins: current,
         ...(plan.free ? {"coinState.proSpinDate": today, "coinState.proDailyBonusDate": today} : {}),
-        ...nextXp,
       });
       const ownedAfterPrize = prize.itemId ? {...inventoryOwned(privateData), [prize.itemId]: nowMs} : null;
-      const rewards = rankRewardsFor(nextXp.xp, ownedAfterPrize ?? inventoryOwned(privateData), config, nowMs);
-      const nextOwned = rewards.added.length > 0 ? rewards.owned : ownedAfterPrize;
       writePrivate(tx, privateRef, privateData, {
         spinWheel: plan.next,
         ...(plan.free ? questsAfter(privateData, "pro_spin", nowMs, true, config) : {}),
-        ...(nextOwned ? {inventory: {...rawInventory, owned: nextOwned}} : {}),
+        ...(ownedAfterPrize ? {inventory: {...rawInventory, owned: ownedAfterPrize}} : {}),
       });
       const reply: SpinWheelReply = {
+        ...snapshot,
+        rev: snapshot.rev + 1,
+        owned: Object.keys(ownedAfterPrize ?? inventoryOwned(privateData)),
         success: true,
         changed: true,
         previousBalance: balance,
@@ -1054,6 +1059,7 @@ export const processReferral = onCall(CALLABLE_OPTIONS, async (request: Callable
   const nowMs = Date.now();
   const today = utcDateString(new Date(nowMs));
   let result = {
+    ...xpReceipt({}, nowMs),
     success: false,
     changed: false,
     previousBalance: 0,
@@ -1069,6 +1075,7 @@ export const processReferral = onCall(CALLABLE_OPTIONS, async (request: Callable
     const statsSnap = await tx.get(statsRef);
     if (!callerSnap.exists || !inviterSnap.exists) throw new HttpsError("not-found", "Referral user was not found.");
     const callerData = callerSnap.data() ?? {};
+    result = {...result, ...xpReceipt(callerData, nowMs)};
     const state = coinState(callerData.coinState);
     const previous = typeof callerData.coins === "number" ? Math.trunc(callerData.coins) : 0;
     if (state.referralRewarded === true) {
@@ -1117,6 +1124,7 @@ export const processReferral = onCall(CALLABLE_OPTIONS, async (request: Callable
     writeTx(tx, {userId: callerUid, delta: reward, previous, action: "referral", sourceTag: "coins.process_referral", reason: "referral_rewarded"});
     writeTx(tx, {userId: inviterUid, delta: reward, previous: inviterPrevious, action: "referral", sourceTag: "coins.process_referral", reason: "inviter_reward"});
     result = {
+      ...xpReceipt(callerData, nowMs),
       success: true,
       changed: true,
       previousBalance: previous,

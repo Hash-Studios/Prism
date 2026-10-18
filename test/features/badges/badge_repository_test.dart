@@ -4,6 +4,7 @@ import 'package:Prism/auth/badge_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -70,6 +71,10 @@ void main() {
       calls++;
       expect(name, 'checkBadges');
       return <String, Object>{
+        'xpPolicyVersion': 1,
+        'xp': 125,
+        'xpAwarded': 25,
+        'xpWeek': <String, Object>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 25},
         'newBadges': <Object>[
           <String, Object>{'id': 'week_warrior', 'coins': 25},
         ],
@@ -84,6 +89,7 @@ void main() {
     expect(app_state.prismUser.badges.map((b) => b.id), <String>['week_warrior']);
     expect(app_state.prismUser.coins, 125);
     expect(CoinsService.instance.balanceNotifier.value, 125);
+    expect(CoinsService.instance.xpNotifier.value.xp, 125);
     expect(repo.unseen.value.map((b) => (b.id, b.coins)), <(String, int)>[('week_warrior', 25)]);
   });
 
@@ -105,7 +111,8 @@ void main() {
   });
 
   test('concurrent checks share one request', () async {
-    backend.onCall = (_, _) async {
+    backend.onCall = (name, _) async {
+      if (name == 'reconcileRankRewards') return <String, Object>{};
       calls++;
       await Future<void>.delayed(const Duration(milliseconds: 20));
       return <String, Object>{'newBadges': <Object>[], 'badges': <Object>[], 'currentBalance': 100};
@@ -124,7 +131,8 @@ void main() {
     final Completer<void> secondStarted = Completer<void>();
     final Completer<dynamic> firstResponse = Completer<dynamic>();
     final Completer<dynamic> secondResponse = Completer<dynamic>();
-    backend.onCall = (_, _) {
+    backend.onCall = (name, _) {
+      if (name == 'reconcileRankRewards') return Future<dynamic>.value(<String, Object>{});
       calls++;
       if (calls == 1) {
         firstStarted.complete();
@@ -338,5 +346,29 @@ void main() {
     expect(app_state.prismUser.badges, isEmpty);
     expect(app_state.prismUser.coins, 100);
     expect(repo.unseen.value, isEmpty);
+  });
+
+  test('a badge receipt after sign-out and back into the same account is dropped', () async {
+    final Completer<dynamic> delayed = Completer<dynamic>();
+    final Completer<void> started = Completer<void>();
+    backend.onCall = (_, _) {
+      started.complete();
+      return delayed.future;
+    };
+    final Future<result_types.Result<List<Badge>>> check = repo.check();
+    await started.future;
+    CoinsService.instance.resetSession();
+    delayed.complete(<String, Object>{
+      'newBadges': <Object>[],
+      'badges': <Object>[],
+      'currentBalance': 999,
+      'xpPolicyVersion': 1,
+      'xp': 999,
+      'xpAwarded': 25,
+      'xpWeek': <String, Object>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 999},
+    });
+    expect((await check).isFailure, isTrue);
+    expect(CoinsService.instance.xpNotifier.value.xp, 0);
+    expect(app_state.prismUser.coins, 100);
   });
 }

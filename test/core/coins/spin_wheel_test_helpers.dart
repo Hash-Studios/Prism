@@ -12,11 +12,11 @@ List<String> describeWheel(List<WheelSegment> segments) => <String>[
 
 const List<String> defaultWheelLines = <String>[
   'coins 10 x18',
-  'xp 25 x22',
+  'coins 1 x22',
   'coins 5 x30',
   'coins 100 x1',
   'coins 20 x8',
-  'xp 50 x12',
+  'coins 2 x12',
   'coins 50 x3',
   'cosmetic 50 x6',
 ];
@@ -24,11 +24,11 @@ const List<String> defaultWheelLines = <String>[
 /// The wire JSON of [defaultWheel], the shape the server stores in `award.spinWheel` and returns in a spin reply.
 const List<Map<String, Object>> defaultWheelJson = <Map<String, Object>>[
   <String, Object>{'kind': 'coins', 'coins': 10, 'weight': 18},
-  <String, Object>{'kind': 'xp', 'xp': 25, 'weight': 22},
+  <String, Object>{'kind': 'coins', 'coins': 1, 'weight': 22},
   <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 30},
   <String, Object>{'kind': 'coins', 'coins': 100, 'weight': 1},
   <String, Object>{'kind': 'coins', 'coins': 20, 'weight': 8},
-  <String, Object>{'kind': 'xp', 'xp': 50, 'weight': 12},
+  <String, Object>{'kind': 'coins', 'coins': 2, 'weight': 12},
   <String, Object>{'kind': 'coins', 'coins': 50, 'weight': 3},
   <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 50, 'weight': 6},
 ];

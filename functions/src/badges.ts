@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, REGION} from "./common";
-import {grantXp, loadEconomy, xpForCoins} from "./economy";
+import {grantXp, loadEconomy, xpReceipt} from "./economy";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
 const USERS = "usersv2";
@@ -16,18 +16,19 @@ interface BadgeDef {
   description: string;
   /** Coins only for badges backed by server-owned data, so client-written data cannot farm them. */
   coins: number;
+  xp: number;
 }
 
 export const BADGES: readonly BadgeDef[] = [
-  {id: "week_warrior", name: "Week Warrior", description: "Reach a 7 day streak", coins: 25},
-  {id: "streak_master", name: "Streak Master", description: "Reach a 28 day streak", coins: 100},
-  {id: "creator", name: "Creator", description: "Get a wallpaper approved", coins: 50},
-  {id: "ai_artist", name: "AI Artist", description: "Generate 10 AI wallpapers", coins: 30},
-  {id: "prism_veteran", name: "Prism Veteran", description: "Use Prism for 30 days and reach a 7 day streak", coins: 75},
-  {id: "collector", name: "Collector", description: "Favourite 10 wallpapers", coins: 0},
-  {id: "art_curator", name: "Art Curator", description: "Favourite 50 wallpapers", coins: 0},
-  {id: "social_butterfly", name: "Social Butterfly", description: "Follow 10 creators", coins: 0},
-  {id: "profile_complete", name: "Profile Complete", description: "Add a photo, username, bio and a link", coins: 0},
+  {id: "week_warrior", name: "Week Warrior", description: "Reach a 7 day streak", coins: 25, xp: 25},
+  {id: "streak_master", name: "Streak Master", description: "Reach a 28 day streak", coins: 100, xp: 100},
+  {id: "creator", name: "Creator", description: "Get a wallpaper approved", coins: 50, xp: 0},
+  {id: "ai_artist", name: "AI Artist", description: "Generate 10 AI wallpapers", coins: 30, xp: 30},
+  {id: "prism_veteran", name: "Prism Veteran", description: "Use Prism for 30 days and reach a 7 day streak", coins: 75, xp: 75},
+  {id: "collector", name: "Collector", description: "Favourite 10 wallpapers", coins: 0, xp: 0},
+  {id: "art_curator", name: "Art Curator", description: "Favourite 50 wallpapers", coins: 0, xp: 0},
+  {id: "social_butterfly", name: "Social Butterfly", description: "Follow 10 creators", coins: 0, xp: 0},
+  {id: "profile_complete", name: "Profile Complete", description: "Add a photo, username, bio and a link", coins: 0, xp: 0},
 ];
 
 export interface BadgeFacts {
@@ -149,6 +150,7 @@ export const checkBadges = onCall(
       newBadges: [] as {id: string; coins: number}[],
       badges: (Array.isArray(existing.badges) ? existing.badges : []) as Record<string, unknown>[],
       currentBalance: int(existing.coins, 0),
+      ...xpReceipt(existing, nowMs),
     });
     if (isCooling) return skip();
 
@@ -166,7 +168,7 @@ export const checkBadges = onCall(
       const previous = int(data.coins, 0);
       const state = data.coinState && typeof data.coinState === "object" ? data.coinState : {};
       const streakBest = Math.max(int(state.streakBest, 0), int(state.streakCount, 0));
-      response = {newBadges: [], badges, currentBalance: previous};
+      response = {newBadges: [], badges, currentBalance: previous, ...xpReceipt(data, nowMs)};
 
       const owned = ownedIds(badges);
       const accountAgeDays = facts.streakBest < 7 && streakBest >= 7 && !owned.has("prism_veteran") ?
@@ -197,17 +199,20 @@ export const checkBadges = onCall(
         }));
         balance += b.coins;
       }
-      if (balance === previous) tx.update(userRef, {badges});
-      else {
-        const nextXp = grantXp(data, xpForCoins(balance - previous, config), nowMs);
+      const xpAwarded = fresh.reduce((sum, b) => sum + b.xp, 0);
+      const nextXp = xpAwarded > 0 ? grantXp(data, xpAwarded, nowMs) : null;
+      tx.update(userRef, {badges, ...(balance !== previous ? {coins: balance} : {}), ...nextXp});
+      if (nextXp) {
         const privateData = privateSnap.data() ?? {};
         const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs);
-        tx.update(userRef, {badges, coins: balance, ...nextXp});
         if (rewards.added.length > 0) {
           tx.set(privateRef, {rev: int(privateData.rev, 0) + 1, inventory: {owned: rewards.owned}}, {merge: true});
         }
       }
-      response = {newBadges: fresh.map((b) => ({id: b.id, coins: b.coins})), badges, currentBalance: balance};
+      response = {
+        newBadges: fresh.map((b) => ({id: b.id, coins: b.coins})), badges, currentBalance: balance,
+        ...xpReceipt(nextXp ?? data, nowMs, xpAwarded),
+      };
     });
     return response;
   },

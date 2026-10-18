@@ -32,6 +32,7 @@ Map<String, Object?> _spun({
   String kind = 'coins',
   int coins = 0,
   int xp = 0,
+  int lifetimeXp = 0,
   String? itemId,
   bool free = false,
   Map<String, Object> status = _afterPaidSpin,
@@ -51,6 +52,10 @@ Map<String, Object?> _spun({
     'free': free,
     'segment': segment,
     'prize': <String, Object?>{'kind': kind, 'coins': coins, 'xp': xp, 'itemId': itemId},
+    'xpPolicyVersion': 1,
+    'xp': lifetimeXp,
+    'xpAwarded': 0,
+    'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 0},
     if (!omitSegments) 'segments': segments,
     'status': status,
   };
@@ -150,26 +155,34 @@ void main() {
   });
 
   group('a landed spin', () {
-    test('a coin win pays the prize and the XP, and names the slice to land on', () async {
+    test('a coin win pays coins without XP and names the slice to land on', () async {
       reply((_, _) => _spun(segment: 3, coins: 100));
       final SpinWon won = await spinWon();
       expect((won.win.segment, won.win.coins, won.win.xp, won.win.itemId, won.cost), (3, 100, 0, null, 10));
       expect(describeWheel(won.segments), defaultWheelLines);
       expect(won.balance, 190, reason: 'The reply carries the balance after the spin');
       expect(service.balanceNotifier.value, 190);
-      expect(service.xpNotifier.value.xp, 100);
+      expect(service.xpNotifier.value.xp, 0);
       final (String name, Map<String, dynamic> params) = calls.single;
       expect((name, params['maxCost'], params['sourceTag']), ('spinWheel', 10, 'coins.spin_wheel'));
       expect(params['requestId'], matches(idPattern));
     });
 
-    test('an XP win pays the XP and only charges the price', () async {
-      reply((_, _) => _spun(segment: 5, kind: 'xp', xp: 50));
+    test('a historical XP replay renders the old prize without adding XP again', () async {
+      final List<Map<String, Object>> legacy = <Map<String, Object>>[
+        ...defaultWheelJson.take(5),
+        <String, Object>{'kind': 'xp', 'xp': 50, 'weight': 12},
+        ...defaultWheelJson.skip(6),
+      ];
+      reply((_, _) => _spun(segment: 5, kind: 'xp', xp: 50, lifetimeXp: 450, segments: legacy));
       final SpinWon won = await spinWon();
       expect((won.win.segment, won.win.coins, won.win.xp, won.win.itemId), (5, 0, 50, null));
       expect(won.balance, 90);
       expect(service.balanceNotifier.value, 90);
-      expect(service.xpNotifier.value.xp, 50);
+      expect(won.segments[5].prize, isA<XpPrize>());
+      expect(service.xpNotifier.value.xp, 450);
+      await spinWon();
+      expect(service.xpNotifier.value.xp, 450);
     });
 
     test('a cosmetic win adds the item to the inventory', () async {
@@ -187,7 +200,72 @@ void main() {
       expect((won.win.segment, won.win.coins, won.win.xp, won.win.itemId), (7, 50, 0, null));
       expect(service.inventoryNotifier.value.owned, isEmpty);
       expect(service.balanceNotifier.value, 140);
-      expect(service.xpNotifier.value.xp, 50);
+      expect(service.xpNotifier.value.xp, 0);
+    });
+
+    test('paid and free spins retain historical XP and server-owned cosmetics', () async {
+      service.applyRoutineXpReply(
+        <String, dynamic>{
+          'xpPolicyVersion': 1,
+          'xp': 450,
+          'xpAwarded': 0,
+          'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 45},
+        },
+        userId: backend.userId,
+        session: service.economySession,
+      );
+      await pumpEventQueue();
+      for (final bool free in <bool>[false, true]) {
+        reply(
+          (_, _) => <String, Object?>{
+            ..._spun(segment: 5, coins: 2, lifetimeXp: 450, free: free),
+            'rev': free ? 2 : 1,
+            'owned': <String>['frame_ring', 'glow_aurora'],
+            'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 45},
+          },
+        );
+        await spinWon(maxCost: free ? 0 : 10);
+        expect(service.balanceNotifier.value, free ? 102 : 92);
+        expect(service.xpNotifier.value.xp, 450);
+        expect(service.xpNotifier.value.weekXp, 45);
+        expect(service.inventoryNotifier.value.owned, <String>{'frame_ring', 'glow_aurora'});
+      }
+    });
+
+    test('an old backend spin reconciles XP without estimating from its prize', () async {
+      service.applyRoutineXpReply(
+        <String, dynamic>{
+          'xpPolicyVersion': 1,
+          'xp': 450,
+          'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 45},
+        },
+        userId: backend.userId,
+        session: service.economySession,
+      );
+      await pumpEventQueue();
+      int reconciliations = 0;
+      backend.onCall = (String name, Map<String, dynamic> params) async {
+        if (name == 'reconcileRankRewards') {
+          reconciliations++;
+          return <String, Object?>{
+            'success': true,
+            'xpPolicyVersion': 1,
+            'xp': 460,
+            'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 55},
+          };
+        }
+        final Map<String, Object?> old = _spun(segment: 3, coins: 100);
+        old.remove('xpPolicyVersion');
+        old.remove('xp');
+        old.remove('xpWeek');
+        return old;
+      };
+      await spinWon();
+      await service.reconcileRankRewards();
+      expect(reconciliations, greaterThan(0));
+      expect(service.balanceNotifier.value, 190);
+      expect(service.xpNotifier.value.xp, 460);
+      expect(service.xpNotifier.value.weekXp, 55);
     });
 
     test('a free spin costs nothing and ticks the pro_spin bonus quest', () async {
@@ -228,7 +306,7 @@ void main() {
         'award': <String, dynamic>{
           'spinWheel': <Map<String, Object>>[
             <String, Object>{'kind': 'coins', 'coins': 9, 'weight': 1},
-            <String, Object>{'kind': 'xp', 'xp': 9, 'weight': 1},
+            <String, Object>{'kind': 'coins', 'coins': 3, 'weight': 1},
           ],
         },
       });
@@ -247,11 +325,11 @@ void main() {
       expect(describeWheel(fromReply.segments), <String>['xp 1 x1', 'coins 2 x1', 'coins 5 x1']);
       expect(fromReply.win.segment, 2);
 
-      reply((_, _) => _spun(segment: 1, kind: 'xp', xp: 9, omitSegments: true));
+      reply((_, _) => _spun(segment: 1, coins: 3, omitSegments: true));
       final SpinWon fromConfig = await spinWon();
-      expect(describeWheel(fromConfig.segments), <String>['coins 9 x1', 'xp 9 x1']);
-      reply((_, _) => _spun(segment: 1, kind: 'xp', xp: 9, segments: <Object>['junk']));
-      expect(describeWheel((await spinWon()).segments), <String>['coins 9 x1', 'xp 9 x1']);
+      expect(describeWheel(fromConfig.segments), <String>['coins 9 x1', 'coins 3 x1']);
+      reply((_, _) => _spun(segment: 1, coins: 3, segments: <Object>['junk']));
+      expect(describeWheel((await spinWon()).segments), <String>['coins 9 x1', 'coins 3 x1']);
     });
 
     test('a slice index outside the table lands on the nearest slice instead of past the end', () async {
@@ -300,7 +378,17 @@ void main() {
     });
 
     test('an XP win logs no coin earned, a free spin logs no coin spent', () async {
-      reply((_, _) => _spun(segment: 5, kind: 'xp', xp: 50));
+      reply(
+        (_, _) => _spun(
+          segment: 1,
+          kind: 'xp',
+          xp: 50,
+          segments: <Map<String, Object>>[
+            <String, Object>{'kind': 'coins', 'coins': 10, 'weight': 1},
+            <String, Object>{'kind': 'xp', 'xp': 50, 'weight': 1},
+          ],
+        ),
+      );
       await spinWon();
       await pumpEventQueue();
       expect(names(), <String>['spin_wheel_spun', 'coin_spent']);
@@ -308,7 +396,7 @@ void main() {
         'event': 'spin_wheel_spun',
         'free': 0,
         'cost': 10,
-        'segment': 5,
+        'segment': 1,
         'prize': 'xp',
         'coins': 0,
         'xp': 50,
@@ -486,6 +574,29 @@ void main() {
         'spinWheel': <String, Object>{'dayKey': today(), 'paid': 2, 'freeUsed': true},
       });
       expect(_fields(service.spinWheelNotifier.value), (false, 3, 10));
+    });
+
+    test('a spin reply older than private progress cannot replace counters, XP or owned items', () async {
+      await bootstrapWith(<String, dynamic>{
+        'spinWheel': <String, Object>{'dayKey': today(), 'paid': 5, 'freeUsed': true},
+        'inventory': <String, Object>{
+          'owned': <String>['frame_ring'],
+        },
+      });
+      reply(
+        (_, _) => <String, Object?>{
+          ..._spun(segment: 7, kind: 'cosmetic', itemId: 'frame_aurora', lifetimeXp: 999),
+          'rev': 2,
+          'owned': <String>['frame_aurora'],
+        },
+      );
+      final SpinWon won = await spinWon();
+      expect(won.status, service.spinWheelNotifier.value);
+      expect(_fields(service.spinWheelNotifier.value), (false, 0, 10));
+      expect(won.balance, 100);
+      expect(service.balanceNotifier.value, 100);
+      expect(service.xpNotifier.value.xp, 0);
+      expect(service.inventoryNotifier.value.owned, <String>{'frame_ring'});
     });
 
     test("ignores the counters of another day, and a doc that has none", () async {
