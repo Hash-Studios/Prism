@@ -16,7 +16,7 @@ Android and iOS. The home feed has no premium or coin gate. The Following tab as
 
 | Path | Role |
 |---|---|
-| `lib/features/personalized_feed/views/pages/personalized_feed_screen.dart` | Floating header, carousel, grid, footer. Owns the tab controller and the lists of the other tabs. |
+| `lib/features/personalized_feed/views/pages/personalized_feed_screen.dart` | Floating header, carousel, grid, footer. Owns the tab controller, the Trending bloc and the lists of the other tabs. |
 | `lib/features/personalized_feed/domain/entities/home_feed_chip.dart` | `HomeFeedChip`: the tabs and their labels, in tab order. |
 | `lib/features/personalized_feed/views/widgets/home_feed_tab_bar.dart` | The five text tabs, the accent underline and the "Updating" bar. |
 | `lib/features/navigation/views/widgets/prism_top_app_bar.dart` | The top bar row: avatar, wordmark, bell. |
@@ -31,7 +31,8 @@ Android and iOS. The home feed has no premium or coin gate. The Following tab as
 | `lib/features/personalized_feed/biz/bloc/popular_feed_bloc.j.dart` | Popular: most viewed walls. |
 | `lib/features/personalized_feed/data/personalized_feed_repository_impl.dart` | Ranking, cache, `readCached`, `fetchFollowing`, `fetchPopular`. |
 | `lib/features/personalized_feed/data/feed_impression_store.dart` | Shown counts and hidden walls. |
-| `lib/features/trending/biz/bloc/trending_bloc.j.dart` | Trending lists. See [trending.md](trending.md). |
+| `lib/features/trending/biz/bloc/trending_bloc.j.dart` | Trending lists. The Trending tab and the carousel share it. See [trending.md](trending.md). |
+| `lib/features/trending/views/widgets/boosted_tag.dart` | `BoostedTag`: the "Boosted" pill. Used on the Trending tiles and on the boosted carousel pages. |
 | `lib/features/navigation/views/widgets/bottom_nav_bar.dart` | Hosts the floating pill and the create button above the tab pages. |
 | `lib/features/navigation/views/widgets/prism_bottom_nav.dart` | The pill with the four tab buttons. |
 | `lib/features/navigation/views/widgets/prism_fab.dart` | The round create button with four layered rings. |
@@ -58,25 +59,35 @@ The tabs sit under the top bar, in this order: For you, Following, Trending, Lat
 | Latest | Newest reviewed Prism walls, 24 per page. | Yes. |
 | Popular | The `popular/current` doc (see `popular-and-trending.md`). | One page. |
 
-- The bloc keeps the selected tab, so the choice stays when the user changes tab in the bottom bar. The lists of the other tabs load the first time the user opens them.
+- The bloc keeps the selected tab, so the choice stays when the user changes tab in the bottom bar. The Following, Latest and Popular lists load the first time the user opens them. The Trending week list loads once when the Home opens, because the carousel needs the boosted walls.
 - Following with nobody followed shows "Follow creators to see their new wallpapers here" and a **Find creators** button that opens user search.
 - A guest on Following sees the sign-in prompt. The app does not read Firestore for a guest on this tab.
 - Popular reads `popular/current` (`sourceTag` `popular.current`). It takes the first 40 ids and loads the walls 10 at a time (`popular.walls`). If the doc is missing or unreadable, it reads the 40 walls with most views from `wallpaper_stats` (`popular.stats`). The ids are upper case. Upload ids are upper case, so they match the `id` field of the wall.
-- Trending shows a **This week | All time** switch above the grid. The grid has a "Boosted" tag on boosted walls. The first time the user opens the tab, the app loads **This week** and reports the `viewTrending` quest event. A tile sends the source context `home_trending_grid`. The tab sends no `surface_content_loaded` event. Details are in [trending.md](trending.md).
+- Trending shows a **This week | All time** switch above the grid. Boosted walls come first in the grid and have a "Boosted" tag. The Home loads **This week** when it opens. The Home screen reports the `viewTrending` quest event each time the Trending tab becomes the selected tab, the first visit included. Opening the Home alone reports nothing. A tile sends the source context `home_trending_grid`. The tab sends no `surface_content_loaded` event. Details are in [trending.md](trending.md).
 - Analytics: a tap on a tab sends `surface_action_tapped` with action `home_chip_selected` and context `home_chip_<name>`. The names are `forYou`, `following`, `trending`, `latest` and `popular`, so Trending gives `home_chip_trending`. The lists send `surface_content_loaded` with surface `home_latest_grid`, `home_following_grid` or `home_popular_grid`.
 
 ### Carousel
 
-- The carousel shows on the For you tab only. It is as wide as the screen and 0.6 times as tall as it is wide. It has no side margin and square corners.
-- The pages are the Wall of the Day (when there is one), the promo banner (when one is set) and the first 4 wallpapers of the feed.
+- The carousel shows on the For you tab only. It has a 4 px margin on each side (`PrismFeedLayout.gridSpacing`), so a card is as wide as the screen minus 8 px. A card is 0.6 times as tall as it is wide. It has rounded corners (`PrismRadius.lg`, 20 px) and a thin outline. The height is fixed, so pages that arrive late do not move the grid.
+- A 4 px gap separates the carousel from the first row of the grid.
+- The pages are, in this order:
+  1. The boosted walls, in the order of the Trending week list. There are at most 10.
+  2. The Wall of the Day (when there is one).
+  3. The promo banner (when one is set).
+  4. The first 4 wallpapers of the feed.
+- A boost pays for the top of Trending for 24 hours. The boosted walls also lead the home carousel, so the user sees them first on the For you tab. A boosted page has the "Boosted" tag at the top left and no caption. A tap opens the wallpaper detail screen.
+- The app takes the boosted walls from the Trending week list: the walls of that list with a live boost (`boostedUntil` in the future). The Home screen holds the Trending bloc and loads the list when it opens. With no boosted wall, the carousel starts with the Wall of the Day.
+- A wall shows once. The preview pages and the For you grid skip the walls that the boosted pages already show.
 - The page dots sit over the bottom of the image. They show when the carousel has more than one page.
 - A wallpaper page has no caption. The banner and the Wall of the Day keep their text.
+- A pull down on the For you tab also refreshes the Trending list, so the boosted pages stay current.
+- A tap on a boosted page sends `surface_action_tapped` with context `personalized_feed_carousel_boosted`. Each boosted page counts a wallpaper impression with the source `personalized_feed_carousel_boosted`.
 
 ### Grid
 
-- Every tab uses the same grid: 3 columns on a phone in portrait (a wider screen gets more), 2 px gaps on both axes, no side margin and square corners. A tile is twice as tall as it is wide.
-- The Home grids pass `PrismFeedLayout.gridSpacing` to `PrismWallGrid.delegate` and set the tile `borderRadius` to zero.
-- The other screens (search, categories, collections, favourites, profiles) keep the 8 px gap, the side margin and the rounded corners.
+- Every tab uses the same grid: 3 columns on a phone in portrait (a wider screen gets more), 4 px gaps on both axes, a 4 px side margin and rounded corners (12 px). The side margin equals the gap, so the gutters are even. A tile is twice as tall as it is wide.
+- The Home grids pass `PrismFeedLayout.gridSpacing` (4 px) to `PrismWallGrid.delegate` and `PrismFeedLayout.gridPadding` as the padding. The tiles keep the default `PrismWallGrid.tileRadius`.
+- The other screens (search, categories, collections, favourites, profiles) keep the 8 px gap, the 12 px side margin and the rounded corners.
 
 ### Bottom bar
 
@@ -119,7 +130,7 @@ The app counts a wallpaper as shown when its tile is first built, not when its p
 
 - The scroll view keeps 1.5 screens of tiles ready beyond the viewport.
 - When a page arrives, the app starts loading the thumbnails of its first 6 new items at the grid decode height. A low data setting will turn this off (see Limits).
-- The first-load skeleton uses the same columns, tile ratio, gaps and square corners as the grid.
+- The first-load skeleton uses the same columns, tile ratio, gaps, side margin and rounded corners as the grid. The carousel skeleton has the same side margin and corners as the carousel.
 - The carousel turns pages by itself only when the user does not ask for reduced motion, the tab is on screen, and no screen covers the feed.
 - The carousel tiles decode at the carousel height, not at full size.
 
@@ -133,25 +144,28 @@ The app counts a wallpaper as shown when its tile is first built, not when its p
 - The image prefetch ignores the low data setting for now. The feed checks a placeholder that is always off. The Data saver setting will replace it.
 - Only the For you view has Show less like this and the "Updating" bar.
 - The Trending tab does not page. It shows the whole list (up to 100 walls) at once.
+- The carousel shows at most 10 boosted walls. The server also allows at most 10 active boosts.
+- The carousel finds boosted walls in the Trending week list only. A boosted wall that is not in that list does not show in the carousel.
 - The tabs do not keep the scroll position. A tab starts at the top each time the user picks it.
 - The Pexels path of the feed asks for 30 photos for each query. Category grids still ask for 80.
 
 ## How to test
 
 1. Open the Home tab. Make sure the top bar shows your picture on the left, the "prism" wordmark in the centre and the bell on the right. Tap the wordmark. Make sure nothing happens.
-2. Make sure the tabs For you, Following, Trending, Latest and Popular show under the top bar, with an accent underline under For you. Make sure the carousel runs edge to edge with page dots over the image, and that the wallpaper pages have no caption.
+2. Make sure the tabs For you, Following, Trending, Latest and Popular show under the top bar, with an accent underline under For you. Make sure the carousel has a 4 px margin on each side and rounded corners, with page dots over the image, and that the wallpaper pages have no caption.
 3. Scroll down. Make sure the top bar and the tabs slide away and the status bar strip stays. Make sure the bottom bar hides and a scroll-to-top button shows. Scroll up a little. Make sure the header and the bar come back. Scroll down again and tap the scroll-to-top button. Make sure the list goes to the top.
-4. Make sure the grid has 3 columns, 2 px gaps, no side margin and square corners. Open Search. Make sure its grid keeps the 8 px gap and rounded corners.
+4. Make sure the grid has 3 columns, 4 px gaps, a 4 px side margin and rounded corners. Make sure a 4 px gap separates the carousel from the first row. Open Search. Make sure its grid keeps the 8 px gap, the 12 px side margin and rounded corners.
 5. Tap **Latest**, then **Popular**, then **For you**. Make sure each view shows wallpapers and the list starts at the top each time. Open another tab in the bottom bar and come back. Make sure the tab is still the one you chose.
-6. Tap **Trending**. Make sure the **This week | All time** switch shows above the grid. Tap **All time**. Make sure a new list loads. Pull down to refresh. Make sure the list on screen reloads. Make sure a boosted wall has the "Boosted" tag.
-7. Tap the selected **For you** tab. Make sure the feed settings sheet opens.
-8. Sign in with an account that follows nobody. Tap **Following**. Make sure the empty text and **Find creators** show. Tap **Find creators**. Make sure user search opens.
-9. Follow a creator who has wallpapers. Make sure **Following** lists them.
-10. Close the app and open it again. Make sure the grid shows at once and a thin bar shows on the line under the tabs until the new page arrives.
-11. Turn on airplane mode and open the app. Make sure the cached grid shows. Scroll to the end. Make sure the footer says "Couldn't load more. Try again". Turn the network on and tap it.
-12. Long press a tile on For you. Tap **Show less like this**. Make sure the tile goes and **Undo** shows. Tap **Undo**. Make sure the tile comes back in the same place.
-13. In Settings, turn the anime filter on or off. Go to Home. Make sure the feed reloads.
-14. Make sure the create button in the bottom bar turns slowly. Tap it. Make sure the Create sheet opens.
+6. Tap **Trending**. Make sure the **This week | All time** switch shows above the grid. Tap **All time**. Make sure a new list loads. Pull down to refresh. Make sure the list on screen reloads. Make sure the boosted walls come first and have the "Boosted" tag.
+7. Boost an approved wall (the **Boost to Trending** button on its detail screen). Open the Home on **For you**. Make sure the boosted wall is the first carousel page, with the "Boosted" tag at the top left and no caption. Make sure the next page is the Wall of the Day. Tap the page. Make sure the wallpaper detail screen opens. Scroll down. Make sure the wall is not in the grid. With no live boost, make sure the carousel starts with the Wall of the Day.
+8. Tap the selected **For you** tab. Make sure the feed settings sheet opens.
+9. Sign in with an account that follows nobody. Tap **Following**. Make sure the empty text and **Find creators** show. Tap **Find creators**. Make sure user search opens.
+10. Follow a creator who has wallpapers. Make sure **Following** lists them.
+11. Close the app and open it again. Make sure the grid shows at once and a thin bar shows on the line under the tabs until the new page arrives.
+12. Turn on airplane mode and open the app. Make sure the cached grid shows. Scroll to the end. Make sure the footer says "Couldn't load more. Try again". Turn the network on and tap it.
+13. Long press a tile on For you. Tap **Show less like this**. Make sure the tile goes and **Undo** shows. Tap **Undo**. Make sure the tile comes back in the same place.
+14. In Settings, turn the anime filter on or off. Go to Home. Make sure the feed reloads.
+15. Make sure the create button in the bottom bar turns slowly. Tap it. Make sure the Create sheet opens.
 
 Automated tests:
 

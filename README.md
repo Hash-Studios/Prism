@@ -48,7 +48,7 @@ Upload your own art, follow creators, make new wallpapers with AI, and earn Pris
 - Browse community wallpapers, Wallhaven, and Pexels, with a personalized home feed and a Wall of the Day.
 - Search by keyword, color, or tag, with filters and recent searches. Open "More like this" to find similar wallpapers.
 - Browse categories and collections, and follow creators.
-- See this week's trending wallpapers in a row on the home feed. Open the Trending page for this week and all time.
+- See this week's and all-time trending wallpapers in the Trending tab on the home feed. Boosted wallpapers show first in the home carousel.
 
 **Preview, set, and edit**
 
