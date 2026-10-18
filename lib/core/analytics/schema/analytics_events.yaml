@@ -71,6 +71,7 @@ enums:
       - draw_ticket
       - shop_item
       - spin_wheel
+      - quest_chest
   - name: ai_charge_mode
     dart_type: AiChargeMode
     import: package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart
