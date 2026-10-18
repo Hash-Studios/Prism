@@ -55,9 +55,11 @@ const Map<ChestPhase, ChestMarker> chestMarkers = <ChestPhase, ChestMarker>{
   ChestPhase.spent: ChestMarker('spent', startFrame: 390, endFrame: 392, playback: ChestPlayback.hold),
 };
 
-/// The frame a box shows when it does not animate: the row icon and reduced motion.
-int chestStillFrame(ChestPhase phase) => switch (phase) {
-  ChestPhase.ready || ChestPhase.charging => chestMarkers[ChestPhase.ready]!.startFrame,
-  ChestPhase.opening || ChestPhase.revealed => chestMarkers[ChestPhase.revealed]!.startFrame,
-  ChestPhase.spent => chestMarkers[ChestPhase.spent]!.startFrame,
+/// The phase whose first frame a box shows when it does not animate: the row icon and reduced motion.
+ChestPhase chestStillPhase(ChestPhase phase) => switch (phase) {
+  ChestPhase.ready || ChestPhase.charging => ChestPhase.ready,
+  ChestPhase.opening || ChestPhase.revealed => ChestPhase.revealed,
+  ChestPhase.spent => ChestPhase.spent,
 };
+
+int chestStillFrame(ChestPhase phase) => chestMarkers[chestStillPhase(phase)]!.startFrame;
