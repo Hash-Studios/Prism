@@ -500,14 +500,6 @@ void main() {
       expect(_fields(service.spinWheelNotifier.value), (false, 5, 10));
     });
 
-    test('the legacy Pro spin of the app itself takes the free spin too', () async {
-      await bootstrapWith(<String, dynamic>{'quests': _bonusQuests(dayKey: today(), claimed: false)});
-      expect(service.spinWheelNotifier.value.freeSpinAvailable, isTrue);
-      reply((_, _) => <String, Object?>{'success': true, 'changed': true, 'coins': 20, 'segment': 0});
-      await service.claimProSpin();
-      expect(service.spinWheelNotifier.value.freeSpinAvailable, isFalse);
-    });
-
     test('follows the price and the cap of the loaded config', () async {
       await bootstrapWith(<String, dynamic>{
         'spinWheel': <String, Object>{'dayKey': today(), 'paid': 1, 'freeUsed': false},

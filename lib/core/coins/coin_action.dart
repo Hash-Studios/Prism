@@ -9,7 +9,6 @@ enum CoinEarnAction {
   profileCompletion,
   proDailyBonus,
   refund,
-  proSpin,
   quest,
   questChest,
   streakChest,
@@ -52,7 +51,6 @@ extension CoinEarnActionX on CoinEarnAction {
       case CoinEarnAction.profileCompletion:
         return CoinPolicy.profileCompletion;
       case CoinEarnAction.proDailyBonus:
-      case CoinEarnAction.proSpin:
         return CoinPolicy.proDailyBonus;
       case CoinEarnAction.quest:
         return CoinPolicy.questCoins;

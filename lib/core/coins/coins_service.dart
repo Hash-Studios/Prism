@@ -2351,35 +2351,6 @@ class CoinsService with WidgetsBindingObserver {
     spinWheelNotifier.value = status;
   }
 
-  /// The Pro daily spin. The server picks the segment.
-  Future<ProSpinResult> claimProSpin() async {
-    if (!_canMutateCoins()) return const ProSpinResult(ProSpinOutcome.failed, reason: 'not_logged_in');
-    final _EconomyReply? reply = await _economyPurchase(
-      'claimProSpin',
-      'daily',
-      const <String, Object?>{},
-      sourceTag: 'coins.pro_spin',
-    );
-    if (reply == null) return const ProSpinResult(ProSpinOutcome.failed, reason: 'session_changed');
-    final String reason = reply.reason;
-    if (!reply.success) {
-      return ProSpinResult(switch (reason) {
-        'pro_spin_already_claimed' => ProSpinOutcome.alreadyClaimed,
-        'pro_spin_requires_premium' => ProSpinOutcome.notPro,
-        _ => ProSpinOutcome.failed,
-      }, reason: reason);
-    }
-    final int coins = parseIntOr(reply.data['coins']);
-    final int segment = parseIntOr(reply.data['segment'], fallback: -1);
-    if (reply.changed) {
-      analytics.track(ProSpinClaimedEvent(coins: coins, segment: segment));
-      _logEarn(action: CoinEarnAction.proSpin, amount: coins, sourceTag: 'coins.pro_spin');
-      _grantLocalXp(_xpForCoins(coins));
-    }
-    _markBonusQuestDone(QuestEvent.proSpin);
-    return ProSpinResult(ProSpinOutcome.won, coins: coins, segment: segment, reason: reason);
-  }
-
   /// Opens today's quest chest once the three daily items are claimed.
   Future<ChestResult> openQuestChest() async {
     if (!_canMutateCoins()) return const ChestResult(ChestOutcome.failed, reason: 'not_logged_in');

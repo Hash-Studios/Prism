@@ -48,7 +48,6 @@ enums:
       - profile_completion
       - pro_daily_bonus
       - refund
-      - pro_spin
       - quest
       - quest_chest
       - streak_chest
@@ -1464,14 +1463,6 @@ events:
         key: result
         type: enum
         enum: BinaryResultValue
-  - id: pro_spin_claimed
-    fields:
-      - name: coins
-        key: coins
-        type: int
-      - name: segment
-        key: segment
-        type: int
   - id: spin_wheel_spun
     fields:
       - name: free

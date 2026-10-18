@@ -2108,21 +2108,6 @@ class AutoRotateRunResultEvent extends AnalyticsEvent {
   }
 }
 
-class ProSpinClaimedEvent extends AnalyticsEvent {
-  const ProSpinClaimedEvent({required this.coins, required this.segment});
-
-  final int coins;
-  final int segment;
-
-  @override
-  String get eventName => 'pro_spin_claimed';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'coins': coins, 'segment': segment};
-  }
-}
-
 class SpinWheelSpunEvent extends AnalyticsEvent {
   const SpinWheelSpunEvent({
     required this.free,

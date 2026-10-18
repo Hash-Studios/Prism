@@ -64,7 +64,6 @@ void main() {
         'profile_completion',
         'pro_daily_bonus',
         'refund',
-        'pro_spin',
         'quest',
         'quest_chest',
         'streak_chest',
