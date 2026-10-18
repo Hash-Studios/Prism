@@ -1,3 +1,5 @@
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -9,6 +11,7 @@ import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/coins_test_backend.dart';
+import '../../../support/fake_app_analytics.dart';
 
 Map<String, Object?> _reply({
   bool success = true,
@@ -33,8 +36,11 @@ void main() {
   final CoinsService coins = CoinsService.instance;
   late List<(String, Map<String, dynamic>)> calls;
   late ShopBloc bloc;
+  late FakeAppAnalytics analytics;
 
   setUp(() async {
+    analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
     calls = <(String, Map<String, dynamic>)>[];
     await backend.install();
     backend.onCall = (String name, Map<String, dynamic> params) async {
@@ -48,6 +54,7 @@ void main() {
 
   tearDown(() async {
     await bloc.close();
+    AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
     coins.inventoryNotifier.value = Inventory.empty;
     await getIt.reset();
@@ -119,6 +126,47 @@ void main() {
     expect(state.notice!.success, isTrue);
     expect(state.notice!.message, 'Ring is yours');
     expect(state.loadingItemId, isNull);
+    expect(analytics.events.whereType<ShopItemPurchasedEvent>(), hasLength(1));
+  });
+
+  test('a rank reward sync confirms ownership without recording a paid purchase', () async {
+    backend.onCall = (_, _) async => _reply(
+      success: false,
+      reason: 'shop_item_owned',
+      after: 300,
+      extra: <String, Object?>{
+        'rev': 8,
+        'inventoryChanged': true,
+        'owned': <String>['frame_gold'],
+      },
+    );
+    bloc.add(const ShopEvent.started());
+    await bloc.stream.first;
+
+    final ShopState state = await settled(const ShopEvent.purchaseRequested('frame_gold'));
+
+    expect(state.owned, contains('frame_gold'));
+    expect(state.notice!.message, 'Gold rank reward synced');
+    expect(state.notice!.success, isTrue);
+    expect(analytics.events.whereType<ShopItemPurchasedEvent>(), isEmpty);
+  });
+
+  test('a failed rank reward sync offers to retry syncing', () async {
+    backend.onCall = (_, _) async => throw Exception('offline');
+
+    final ShopState state = await settled(const ShopEvent.purchaseRequested('frame_gold'));
+
+    expect(state.notice!.message, 'Could not sync this reward. Try again.');
+    expect(state.notice!.success, isFalse);
+    expect(analytics.events.whereType<ShopItemPurchasedEvent>(), isEmpty);
+  });
+
+  test('a successful rank reward reply does not record a paid purchase', () async {
+    final ShopState state = await settled(const ShopEvent.purchaseRequested('frame_gold'));
+
+    expect(state.notice!.message, 'Gold rank reward synced');
+    expect(state.notice!.success, isTrue);
+    expect(analytics.events.whereType<ShopItemPurchasedEvent>(), isEmpty);
   });
 
   test('a purchase marks the item as loading while it runs', () async {
@@ -133,7 +181,7 @@ void main() {
 
   test('every refusal becomes a message', () async {
     final Map<String, String> cases = <String, String>{
-      'shop_item_owned': 'You already own this',
+      'shop_item_owned': 'Gold rank reward synced',
       'shop_item_pro_only': 'This item is for Pro members',
       'shop_item_rank_locked': 'Reach Gold rank to unlock this',
       'shop_item_expired': 'This limited item is sold out',

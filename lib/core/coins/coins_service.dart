@@ -564,10 +564,11 @@ class CoinsService with WidgetsBindingObserver {
     _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
+    final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
     if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
-      _syncRootProjection(userId, rootSnapshot);
+      _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
     }
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
@@ -599,8 +600,10 @@ class CoinsService with WidgetsBindingObserver {
       await _persistEconomy(userId, privateData, authoritative: true);
       if (!_isCurrentOwner(userId, generation)) return;
     } else if (privateRead.authoritativeMissing && _economyMutationGeneration == mutationGeneration) {
-      _resetEconomy(userId);
-      if (rootSnapshot != null) _syncRootProjection(userId, rootSnapshot);
+      _resetEconomy(userId, resetXp: false);
+      if (rootSnapshot != null) {
+        _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
+      }
       await _invalidateEconomySnapshot(userId);
       if (!_isCurrentOwner(userId, generation)) return;
     }
@@ -611,8 +614,9 @@ class CoinsService with WidgetsBindingObserver {
     }
     _applyLocalBalance(parseIntOr(data['coins']), delta: 0);
     if (_economyMutationGeneration == mutationGeneration) {
-      _syncStreakFromUserData(data);
-      await _persistRootEconomySnapshot(userId, data);
+      final bool syncXp = _xpMutationGeneration == xpGeneration;
+      _syncStreakFromUserData(data, syncXp: syncXp);
+      await _persistRootEconomySnapshot(userId, data, includeXp: syncXp, merge: !syncXp);
       if (!_isCurrentOwner(userId, generation)) return;
     }
     await retryPendingRefunds();
@@ -623,13 +627,14 @@ class CoinsService with WidgetsBindingObserver {
   Future<void> restoreLocalEconomyForCurrentUser() async {
     final String userId = app_state.prismUser.id;
     if (!_canMutateCoins() || userId.trim().isEmpty) return;
+    _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
-    _ensureEconomyUser(userId);
+    final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
     if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
-      _syncRootProjection(userId, rootSnapshot);
+      _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
     }
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
@@ -680,12 +685,17 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _persistRootEconomySnapshot(String userId, Map<String, dynamic> userData, {bool merge = false}) async {
+  Future<void> _persistRootEconomySnapshot(
+    String userId,
+    Map<String, dynamic> userData, {
+    bool merge = false,
+    bool includeXp = true,
+  }) async {
     try {
       await _economySnapshots.writeRoot(userId, <String, dynamic>{
-        if (userData.containsKey('xp')) 'xp': userData['xp'],
-        if (userData.containsKey('xpWeek')) 'xpWeek': userData['xpWeek'],
-        if (userData.containsKey('cosmetics')) 'cosmetics': userData['cosmetics'],
+        if (includeXp && userData.containsKey('xp')) 'xp': userData['xp'],
+        if (includeXp && userData.containsKey('xpWeek')) 'xpWeek': userData['xpWeek'],
+        if (!includeXp || userData.containsKey('cosmetics')) 'cosmetics': userData['cosmetics'],
       }, merge: merge);
     } catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.root_economy.persist', error: error, stackTrace: stackTrace);
@@ -717,10 +727,11 @@ class CoinsService with WidgetsBindingObserver {
     _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
+    final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
-      _syncRootProjection(userId, rootSnapshot);
+      _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
     }
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
@@ -750,8 +761,10 @@ class CoinsService with WidgetsBindingObserver {
       await _persistEconomy(userId, privateData, authoritative: true);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     } else if (privateRead.authoritativeMissing && _economyMutationGeneration == mutationGeneration) {
-      _resetEconomy(userId);
-      if (rootSnapshot != null) _syncRootProjection(userId, rootSnapshot);
+      _resetEconomy(userId, resetXp: false);
+      if (rootSnapshot != null) {
+        _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
+      }
       await _invalidateEconomySnapshot(userId);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
@@ -762,8 +775,9 @@ class CoinsService with WidgetsBindingObserver {
     final int coins = parseIntOr(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
     if (_economyMutationGeneration == mutationGeneration) {
-      _syncStreakFromUserData(userData);
-      await _persistRootEconomySnapshot(userId, userData);
+      final bool syncXp = _xpMutationGeneration == xpGeneration;
+      _syncStreakFromUserData(userData, syncXp: syncXp);
+      await _persistRootEconomySnapshot(userId, userData, includeXp: syncXp, merge: !syncXp);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
     await reconcileRankRewards();
@@ -859,6 +873,12 @@ class CoinsService with WidgetsBindingObserver {
       transactionId: transactionId,
       requestId: requestId,
     );
+    if (action == CoinEarnAction.rewardedAd) {
+      final String prefix = '$_awardTransactionPrefix${userId}_';
+      if (result.unknownOutcomeTransactionId.startsWith(prefix)) {
+        await _rememberPendingReward(result.unknownOutcomeTransactionId.substring(prefix.length), userId: userId);
+      }
+    }
     if (!_isCurrentOwner(userId, generation)) return _notLoggedIn;
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (action == CoinEarnAction.rewardedAd) {
@@ -866,11 +886,6 @@ class CoinsService with WidgetsBindingObserver {
       if (result.changed) {
         _noteAdWatched();
         _markBonusQuestDone(QuestEvent.watchAd);
-      }
-      final String prefix = '$_awardTransactionPrefix${userId}_';
-      if (result.unknownOutcomeTransactionId.startsWith(prefix)) {
-        await _rememberPendingReward(result.unknownOutcomeTransactionId.substring(prefix.length), userId: userId);
-        if (!_isCurrentOwner(userId, generation)) return _notLoggedIn;
       }
     }
     if (result.changed) {
@@ -1953,17 +1968,19 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  void _resetEconomy(String userId) {
+  void _resetEconomy(String userId, {bool resetXp = true}) {
     _economyUserId = userId;
-    _xpUserId = '';
-    _confirmedXp = XpStatus.empty();
-    _confirmedXpWeek = '';
-    _xpMutationGeneration++;
+    if (resetXp) {
+      _xpUserId = '';
+      _confirmedXp = XpStatus.empty();
+      _confirmedXpWeek = '';
+      _xpMutationGeneration++;
+      xpNotifier.value = XpStatus.empty();
+    }
     _economyRev = -1;
     _graceDownloadsUsed = 0;
     _adsTodayDay = null;
     _adsTodayCount = 0;
-    xpNotifier.value = XpStatus.empty();
     questsNotifier.value = null;
     questAwardsNotifier.value = const <QuestAward>[];
     inventoryNotifier.value = Inventory.empty;
@@ -1976,9 +1993,9 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Social fields on the root doc: XP, equipped cosmetics, today's ad count.
-  void _syncRootEconomy(Map<String, dynamic> userData, Map<String, dynamic> coinState) {
+  void _syncRootEconomy(Map<String, dynamic> userData, Map<String, dynamic> coinState, {bool syncXp = true}) {
     final String userId = app_state.prismUser.id;
-    _syncRootProjection(userId, userData);
+    _syncRootProjection(userId, userData, syncXp: syncXp);
     final Map<String, dynamic> adsToday = toJsonMap(coinState['adsToday']);
     final String? day = _optionalString(adsToday['day']);
     if (day != null) {
@@ -1987,10 +2004,12 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  void _syncRootProjection(String userId, Map<String, dynamic> userData) {
+  void _syncRootProjection(String userId, Map<String, dynamic> userData, {bool syncXp = true}) {
     _ensureEconomyUser(userId);
-    _confirmXp(userData, announce: _xpUserId == userId);
-    _xpUserId = userId;
+    if (syncXp) {
+      _confirmXp(userData, announce: _xpUserId == userId);
+      _xpUserId = userId;
+    }
     final Map<String, dynamic> cosmetics = toJsonMap(userData['cosmetics']);
     inventoryNotifier.value = inventoryNotifier.value.withEquipped(
       frame: _optionalString(cosmetics['frame']),
@@ -2105,7 +2124,7 @@ class CoinsService with WidgetsBindingObserver {
     _confirmedXp = XpStatus(xp: xp, weekXp: weekXp, rank: EconomyConfig.current.rankFor(xp));
     _confirmedXpWeek = week;
     final XpStatus previous = xpNotifier.value;
-    if (protectReads && (previous.xp != xp || previous.weekXp != weekXp)) _economyMutationGeneration++;
+    if (protectReads && (previous.xp != xp || previous.weekXp != weekXp)) _xpMutationGeneration++;
     _setXp(_confirmedXp, announce: announce);
   }
 
@@ -2852,10 +2871,10 @@ class CoinsService with WidgetsBindingObserver {
     return localReminder.subtract(Duration(minutes: timezoneOffsetMinutes)).toUtc();
   }
 
-  StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData) {
+  StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData, {bool syncXp = true}) {
     final Map<String, dynamic> coinState = toJsonMap(userData[_coinStateField]);
     earnFlagsNotifier.value = CoinEarnFlags.fromCoinState(coinState);
-    _syncRootEconomy(userData, coinState);
+    _syncRootEconomy(userData, coinState, syncXp: syncXp);
     final int timezoneOffsetMinutes =
         parseInt(coinState['streakClaimTimezoneOffsetMinutes']) ??
         parseInt(coinState[_streakTimezoneOffsetMinutesField]) ??

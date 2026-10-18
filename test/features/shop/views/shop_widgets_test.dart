@@ -44,6 +44,7 @@ void main() {
 
   tearDown(() async {
     app_state.prismUser = app_constants.createGuestPrismUser();
+    coins.xpNotifier.value = XpStatus.empty();
     coins.inventoryNotifier.value = Inventory.empty;
     EconomyConfig.resetForTest();
     await getIt.reset();
@@ -252,7 +253,7 @@ void main() {
       await tester.runAsync(() => Future<void>.delayed(Duration.zero));
       await tester.pump();
       expect(toastCalls.map((call) => call.method), <String>['cancel', 'showToast']);
-      expect((toastCalls.last.arguments as Map<Object?, Object?>)['msg'], 'You already own this');
+      expect((toastCalls.last.arguments as Map<Object?, Object?>)['msg'], 'Gold rank reward synced');
       // Fluttertoast clears its Dart-side showing flag one second after the platform reply.
       await tester.pump(const Duration(seconds: 1));
     });

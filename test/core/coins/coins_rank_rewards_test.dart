@@ -15,6 +15,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
 
+class _PausingRootSnapshotStore extends EconomySnapshotStore {
+  _PausingRootSnapshotStore({required super.store});
+
+  final Completer<void> started = Completer<void>();
+  final Completer<void> resume = Completer<void>();
+
+  @override
+  Future<Map<String, dynamic>?> readRoot(String ownerId) async {
+    final Map<String, dynamic>? snapshot = await super.readRoot(ownerId);
+    if (!started.isCompleted) {
+      started.complete();
+      await resume.future;
+    }
+    return snapshot;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final CoinsTestBackend backend = CoinsTestBackend();
@@ -141,6 +158,127 @@ void main() {
     expect(coins.questsNotifier.value?.dayKey, 'saved-day');
     expect((await store.read(backend.userId))?.revision, 7);
   });
+
+  for (final bool bootstrap in <bool>[true, false]) {
+    test('${bootstrap ? 'bootstrap' : 'refresh'} hydrates private state after confirmed XP', () async {
+      final String week = economyWeekKey(DateTime.now());
+      await store.writeRoot(backend.userId, <String, dynamic>{
+        'xp': 450,
+        'xpWeek': <String, Object?>{'weekKey': week, 'xp': 5},
+        'cosmetics': <String, Object?>{'frame': 'frame_ring'},
+      });
+      await seed();
+      final Completer<Map<String, dynamic>?> privateRead = Completer<Map<String, dynamic>?>();
+      final Completer<Map<String, dynamic>> rootRead = Completer<Map<String, dynamic>>();
+      firestore.privateEconomyResponse = privateRead.future;
+      firestore.userResponse = rootRead.future;
+      backend.onCall = (_, _) async => <String, Object?>{
+        ...inventoryReply(6, <String>['frame_ring'], changed: false),
+        'xp': 650,
+        'xpWeek': <String, Object?>{'weekKey': week, 'xp': 25},
+      };
+
+      final Future<void> refresh = bootstrap ? coins.bootstrapForCurrentUser() : coins.refreshBalance();
+      await firestore.privateEconomyReadStarted.future;
+      await coins.reconcileRankRewards();
+      expect(coins.xpNotifier.value.xp, 650);
+      privateRead.complete(<String, dynamic>{
+        'rev': 6,
+        'quests': <String, Object?>{'dayKey': 'server-day'},
+        'inventory': <String, Object?>{
+          'owned': <String>['frame_ring'],
+        },
+        'passes': <String, Object?>{'premiumPassUntil': DateTime.utc(2099).millisecondsSinceEpoch},
+      });
+      rootRead.complete(<String, dynamic>{
+        'coins': 100,
+        'xp': 450,
+        'xpWeek': <String, Object?>{'weekKey': week, 'xp': 5},
+        if (bootstrap) 'cosmetics': <String, Object?>{'frame': 'frame_ring'},
+        'coinState': <String, Object?>{'streakBest': 9, 'firstWallpaperUploadRewarded': true},
+      });
+      await refresh;
+
+      expect(coins.questsNotifier.value?.dayKey, 'server-day');
+      expect(coins.currentPasses.premiumPassActive(DateTime.utc(2026)), isTrue);
+      expect(coins.currentPasses.autoRotatePassActive(DateTime.utc(2026)), isFalse);
+      expect(coins.streakNotifier.value.best, 9);
+      expect(coins.earnFlagsNotifier.value.firstUploadRewarded, isTrue);
+      expect(coins.inventoryNotifier.value.frame, bootstrap ? 'frame_ring' : null);
+      expect(coins.xpNotifier.value.xp, 650);
+      expect(coins.xpNotifier.value.weekXp, 25);
+      expect((await store.read(backend.userId))?.data['quests'], <String, Object?>{'dayKey': 'server-day'});
+      expect((await store.readRoot(backend.userId))?['xp'], 650);
+      expect((await store.readRoot(backend.userId))?['xpWeek'], <String, Object?>{'weekKey': week, 'xp': 25});
+      expect(
+        (await store.readRoot(backend.userId))?['cosmetics'],
+        bootstrap ? <String, Object?>{'frame': 'frame_ring'} : null,
+      );
+    });
+  }
+
+  test('local restore hydrates cosmetics and private state without replacing confirmed XP during its read', () async {
+    await store.writeRoot(backend.userId, <String, dynamic>{'xp': 450});
+    await seed();
+    await store.writeRoot(backend.userId, <String, dynamic>{
+      'xp': 450,
+      'cosmetics': <String, Object?>{'nameGlow': 'glow_ember'},
+    });
+    await store.write(backend.userId, 6, <String, dynamic>{
+      'quests': <String, Object?>{'dayKey': 'later-cache'},
+    });
+    final _PausingRootSnapshotStore pausing = _PausingRootSnapshotStore(
+      store: DurableJsonStore('rank_rewards', directory: directory),
+    );
+    coins.setEconomySnapshotStoreForTest(pausing);
+    backend.onCall = (_, _) async => <String, Object?>{
+      ...inventoryReply(6, <String>['frame_ring'], changed: false),
+      'xp': 650,
+    };
+
+    final Future<void> restore = coins.restoreLocalEconomyForCurrentUser();
+    await pausing.started.future;
+    await coins.reconcileRankRewards();
+    pausing.resume.complete();
+    await restore;
+
+    expect(coins.xpNotifier.value.xp, 650);
+    expect(coins.inventoryNotifier.value.nameGlow, 'glow_ember');
+    expect(coins.questsNotifier.value?.dayKey, 'later-cache');
+  });
+
+  for (final bool bootstrap in <bool>[true, false]) {
+    test('${bootstrap ? 'bootstrap' : 'refresh'} clears missing private state without erasing concurrent XP', () async {
+      await store.writeRoot(backend.userId, <String, dynamic>{'xp': 450});
+      await seed(rev: 0, owned: <String>[]);
+      final Completer<Map<String, dynamic>?> privateRead = Completer<Map<String, dynamic>?>();
+      firestore.privateEconomyResponse = privateRead.future;
+      firestore.userData = <String, dynamic>{
+        'coins': 100,
+        'xp': 450,
+        'cosmetics': <String, Object?>{'frame': 'frame_ring'},
+        'coinState': <String, Object?>{'streakBest': 9},
+      };
+      backend.onCall = (_, _) async => <String, Object?>{...inventoryReply(0, <String>[], changed: false), 'xp': 480};
+
+      final Future<void> refresh = bootstrap ? coins.bootstrapForCurrentUser() : coins.refreshBalance();
+      await firestore.privateEconomyReadStarted.future;
+      await coins.reconcileRankRewards();
+      privateRead.complete(null);
+      await refresh;
+
+      expect(coins.questsNotifier.value, isNull);
+      expect(coins.currentPasses.autoRotatePassActive(DateTime.utc(2026)), isFalse);
+      final EconomySnapshot? saved = await store.read(backend.userId);
+      expect(saved?.data.containsKey('quests'), isFalse);
+      expect(saved?.data.containsKey('passes'), isFalse);
+      expect(coins.xpNotifier.value.xp, 480);
+      expect(coins.streakNotifier.value.best, 9);
+      expect(coins.inventoryNotifier.value.frame, 'frame_ring');
+      expect((await store.readRoot(backend.userId))?['xp'], 480);
+      expect((await store.readRoot(backend.userId))?['cosmetics'], <String, Object?>{'frame': 'frame_ring'});
+    });
+  }
 
   test('a delayed refused purchase cannot erase a newer reconciliation', () async {
     await seed();
