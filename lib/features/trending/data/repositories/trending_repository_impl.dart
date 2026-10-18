@@ -11,7 +11,6 @@ import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
-import 'package:Prism/features/trending/domain/entities/trending_range.dart';
 import 'package:Prism/features/trending/domain/repositories/trending_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -29,31 +28,27 @@ class TrendingRepositoryImpl implements TrendingRepository {
   static const int _whereInLimit = 30;
   static const int _cacheTtlHours = 3;
   static const String _cacheSource = 'trending';
+  static const String _cacheScope = 'week';
   static const String trendingLoadFailureMessage =
       "Couldn't load trending wallpapers. Check your connection and try again.";
 
-  static String _collection(TrendingRange range) => switch (range) {
-    TrendingRange.week => 'trending',
-    TrendingRange.allTime => 'popular',
-  };
-
   @override
-  Future<Result<List<PrismWallpaper>>> fetch(TrendingRange range) async {
+  Future<Result<List<PrismWallpaper>>> fetch() async {
     try {
       final Map<String, dynamic>? doc = await _firestoreClient.getById<Map<String, dynamic>>(
-        _collection(range),
+        'trending',
         'current',
         (data, _) => data,
-        sourceTag: 'trending.${range.name}.ids',
+        sourceTag: 'trending.week.ids',
       );
       final List<String> ids = _wallIds(doc?['wallIds']);
-      final List<PrismWallpaper> walls = await _loadWalls(ids, range);
+      final List<PrismWallpaper> walls = await _loadWalls(ids);
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       final List<PrismWallpaper> visible = _visible(walls, blocked);
-      await _writeCache(range, walls);
+      await _writeCache(walls);
       return Result.success(visible);
     } catch (error, stackTrace) {
-      final List<PrismWallpaper>? cached = await _readCached(range);
+      final List<PrismWallpaper>? cached = await _readCached();
       if (cached != null) {
         logger.w('[TrendingRepository] fetch failed; returning the saved list', error: error, stackTrace: stackTrace);
         return Result.success(cached);
@@ -64,13 +59,13 @@ class TrendingRepositoryImpl implements TrendingRepository {
   }
 
   /// Loads the walls by id in batches of 30 and puts them back in the order of [ids].
-  Future<List<PrismWallpaper>> _loadWalls(List<String> ids, TrendingRange range) async {
+  Future<List<PrismWallpaper>> _loadWalls(List<String> ids) async {
     final List<List<PrismWallpaper>> batches = await Future.wait(
       ids.slices(_whereInLimit).map((batch) {
         return _firestoreClient.query<PrismWallpaper>(
           FirestoreQuerySpec(
             collection: FirebaseCollections.walls,
-            sourceTag: 'trending.${range.name}.walls',
+            sourceTag: 'trending.week.walls',
             filters: <FirestoreFilter>[
               const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
               FirestoreFilter(field: 'id', op: FirestoreFilterOp.whereIn, value: batch),
@@ -94,11 +89,11 @@ class TrendingRepositoryImpl implements TrendingRepository {
       )
       .toList(growable: false);
 
-  Future<void> _writeCache(TrendingRange range, List<PrismWallpaper> walls) async {
+  Future<void> _writeCache(List<PrismWallpaper> walls) async {
     try {
       await _feedCacheLocal.write(
         source: _cacheSource,
-        scope: range.name,
+        scope: _cacheScope,
         ttlHours: _cacheTtlHours,
         payload: <String, Object?>{
           'items': walls
@@ -111,9 +106,9 @@ class TrendingRepositoryImpl implements TrendingRepository {
     }
   }
 
-  Future<List<PrismWallpaper>?> _readCached(TrendingRange range) async {
+  Future<List<PrismWallpaper>?> _readCached() async {
     try {
-      final FeedSnapshot? snapshot = await _feedCacheLocal.read(source: _cacheSource, scope: range.name);
+      final FeedSnapshot? snapshot = await _feedCacheLocal.read(source: _cacheSource, scope: _cacheScope);
       final Object? rawItems = toJsonMap(snapshot?.payload)['items'];
       if (rawItems is! List) return null;
       final List<PrismWallpaper> walls = rawItems

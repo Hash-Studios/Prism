@@ -146,14 +146,14 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     PrismHaptics.impact();
     final HomeFeedChip chip = _bloc.state.chip;
     if (chip == HomeFeedChip.trending) {
-      final Future<TrendingState> settled = _trending.stream.firstWhere((s) => s.current.status != LoadStatus.loading);
+      final Future<TrendingState> settled = _trending.stream.firstWhere((s) => s.status != LoadStatus.loading);
       _trending.add(const TrendingEvent.refreshRequested());
       final TrendingState result = await settled.timeout(const Duration(seconds: 30), onTimeout: () => _trending.state);
       if (mounted &&
           refreshVersion == _refreshVersion &&
           identical(impressions, _impressions) &&
           _bloc.state.chip == chip &&
-          result.current.status == LoadStatus.success) {
+          result.status == LoadStatus.success) {
         setState(() => _impressions = WallpaperImpressionSession());
       }
       return;
@@ -178,7 +178,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     }
     final Future<PersonalizedFeedState> settled = _bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
     _bloc.add(const PersonalizedFeedEvent.refreshRequested());
-    // The week list holds the boosted walls, whatever range the Trending tab shows.
+    // The trending list holds the boosted walls of the carousel.
     _trending.add(const TrendingEvent.started());
     final PersonalizedFeedState result = await settled.timeout(
       const Duration(seconds: 30),
@@ -352,7 +352,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         return <Widget>[
           BlocSelector<TrendingBloc, TrendingState, List<PrismWallpaper>>(
             bloc: _trending,
-            selector: (trending) => trending.week.walls,
+            selector: (trending) => trending.walls,
             builder: (context, weekWalls) =>
                 _forYouSliver(context, state, weekWalls, crossAxisCount, tileMemCacheHeight),
           ),
