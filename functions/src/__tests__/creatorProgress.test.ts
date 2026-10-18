@@ -370,6 +370,63 @@ test("rank inventory and unrelated private state are preserved in the milestone 
   assert.equal(store.get("usersv2/creator")?.coins, 9);
 });
 
+for (const crossingRank of [false, true]) {
+  for (const [shape, owned] of Object.entries({
+    "legacy array": ["frame_ring", "glow_prism"],
+    "mixed map": {existing: 12, legacy: "owned", flag: true, metadata: {kept: true}, invalid: Number.NaN},
+    "numeric map": {existing: 12},
+    "unsupported scalar": "legacy-owned",
+  })) {
+    test(`creator approval preserves ${shape} ${crossingRank ? "while granting a rank" : "without a new rank"}`, async (t) => {
+      const {store, seedWall} = setup(t); seedWall();
+      row(store, "usersv2/creator").xp = crossingRank ? 490 : 10;
+      const inventory = {owned, equipped: {frame: "frame_ring"}};
+      store.set(privatePath, {rev: 6, inventory, quests: {kept: true}});
+      await approve();
+      const data = row(store, privatePath);
+      const updatedInventory = data.inventory as Doc;
+      const expectedOwned = crossingRank && typeof owned === "object" ? {
+        ...(Array.isArray(owned) ? Object.fromEntries(owned.map((id) => [id, 0])) : owned), glow_aurora: NOW,
+      } : owned;
+      assert.deepEqual(updatedInventory, {...inventory, owned: expectedOwned});
+      assert.deepEqual(data.quests, {kept: true});
+      assert.equal(data.rev, 7);
+      assert.equal((data.creator as Doc).approvedWalls, 1);
+      assert.equal(row(store, "usersv2/creator").xp, crossingRank ? 540 : 60);
+      assert.equal(row(store, "usersv2/creator").coins, 9);
+      assert.equal(row(store, receiptPath()).approvalCredited, true);
+      await approve();
+      assert.deepEqual(row(store, privatePath), data);
+    });
+  }
+}
+
+for (const [shape, owned] of Object.entries({
+  "legacy array": ["glow_aurora"],
+  "legacy map": {glow_aurora: "legacy-owned"},
+})) {
+  for (const crossingRank of [false, true]) {
+    test(`existing rank in ${shape} stays owned ${crossingRank ? "with a new rank" : "without a new rank"}`, async (t) => {
+      const {store, seedWall} = setup(t); seedWall();
+      row(store, "usersv2/creator").xp = crossingRank ? 1990 : 490;
+      const inventory = {owned};
+      store.set(privatePath, {inventory});
+      await approve();
+      const expectedOwned = crossingRank ? {
+        ...(Array.isArray(owned) ? {glow_aurora: 0} : owned), frame_gold: NOW,
+      } : owned;
+      assert.deepEqual(row(store, privatePath).inventory, {owned: expectedOwned});
+      assert.equal(row(store, "usersv2/creator").xp, crossingRank ? 2040 : 540);
+    });
+  }
+}
+
+test("creator approval leaves absent inventory absent without a rank reward", async (t) => {
+  const {store, seedWall} = setup(t); seedWall();
+  await approve();
+  assert.equal(Object.prototype.hasOwnProperty.call(row(store, privatePath), "inventory"), false);
+});
+
 test("weekly buckets keep exact current/previous keys and discard older weeks", async (t) => {
   const {store, seedWall} = setup(t); seedWall();
   await approve();

@@ -3,7 +3,7 @@ import {createHash} from "node:crypto";
 import {onDocumentCreated, onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, int, REGION} from "./common";
 import {dayKey, grantXp, loadEconomy, weekBounds, weekKey} from "./economy";
-import {inventoryOwned, rankRewardsFor} from "./rankRewards";
+import {rankRewardsFor} from "./rankRewards";
 
 type Data = admin.firestore.DocumentData;
 type Snapshot = admin.firestore.DocumentSnapshot;
@@ -184,7 +184,16 @@ async function recordCreator(source: Source): Promise<void> {
         xp: count(previous?.xp) + (key === currentKey ? xp : 0)});
     }
     const xpFields = grantXp(creator.data() ?? {}, xp, nowMs);
-    const ranks = rankRewardsFor(xpFields.xp, inventoryOwned(privateData), config, nowMs);
+    const rawOwned: unknown = privateData.inventory?.owned;
+    let owned: Record<string, unknown> | null = null;
+    if (rawOwned === undefined) owned = {};
+    else if (Array.isArray(rawOwned)) {
+      owned = Object.fromEntries(rawOwned.filter((id: unknown): id is string => typeof id === "string").map((id) => [id, 0]));
+    } else if (rawOwned && typeof rawOwned === "object") {
+      owned = Object.fromEntries(Object.entries(rawOwned));
+    }
+    const rankOwnership = Object.fromEntries(Object.keys(owned ?? {}).map((id) => [id, 0]));
+    const ranks = owned === null ? null : rankRewardsFor(xpFields.xp, rankOwnership, config, nowMs);
     tx.set(receiptRef(logicalId), {
       ...(bound ?? {}), creatorUid: owner, ownerEmail: email(wall.data().email), canonicalPath: wall.ref.path,
       approvalCredited: bound?.approvalCredited === true || !memberUid,
@@ -198,7 +207,8 @@ async function recordCreator(source: Source): Promise<void> {
     }
     tx.update(creatorRef, {...xpFields});
     tx.set(privateRef, {...privateData, rev: int(privateData.rev, 0) + 1,
-      inventory: {...(privateData.inventory ?? {}), owned: ranks.owned},
+      ...(ranks?.added.length ? {inventory: {...(privateData.inventory ?? {}),
+        owned: {...owned, ...Object.fromEntries(ranks.added.map((id) => [id, nowMs]))}}} : {}),
       creator: {version: 1, trackedSinceMs: count(old.trackedSinceMs) || nowMs,
         approvedWalls, uniqueMembers, awardedIds: [...awarded], milestones: CREATOR_MILESTONES, weeks}});
   });
