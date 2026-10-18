@@ -2123,6 +2123,39 @@ class ProSpinClaimedEvent extends AnalyticsEvent {
   }
 }
 
+class SpinWheelSpunEvent extends AnalyticsEvent {
+  const SpinWheelSpunEvent({
+    required this.free,
+    required this.cost,
+    required this.segment,
+    required this.prize,
+    required this.coins,
+    required this.xp,
+  });
+
+  final bool free;
+  final int cost;
+  final int segment;
+  final String prize;
+  final int coins;
+  final int xp;
+
+  @override
+  String get eventName => 'spin_wheel_spun';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'free': free ? 1 : 0,
+      'cost': cost,
+      'segment': segment,
+      'prize': prize,
+      'coins': coins,
+      'xp': xp,
+    };
+  }
+}
+
 class QuestProgressedEvent extends AnalyticsEvent {
   const QuestProgressedEvent({
     required this.questId,

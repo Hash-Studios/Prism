@@ -68,6 +68,7 @@ void main() {
         'quest',
         'quest_chest',
         'streak_chest',
+        'spin_wheel',
       ],
       'CoinSpendAction': <String>[
         'wallpaper_download',
@@ -84,6 +85,7 @@ void main() {
         'gift_premium_pass',
         'draw_ticket',
         'shop_item',
+        'spin_wheel',
       ],
       'AiChargeMode': <String>['free_trial', 'pro_included', 'coin_spend', 'insufficient'],
       'SettingValue': <String>['anime_wallpapers', 'sketchy_wallpapers', 'recommendations_notifications', 'haptics'],

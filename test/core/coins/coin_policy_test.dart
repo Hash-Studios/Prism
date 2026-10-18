@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -61,6 +62,7 @@ void main() {
     });
     expect((CoinPolicy.spinWheelPrice, CoinPolicy.spinWheelMaxPerDay), (25, 2));
     expect(describeWheel(CoinPolicy.spinWheel), <String>['coins 9 x1', 'xp 9 x1']);
+    expect(CoinSpendAction.spinWheel.cost(), 25);
   });
 
   test('isStreakAlive allows one missed day per held freeze', () {

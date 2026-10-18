@@ -35,6 +35,7 @@ void main() {
       'streakFreeze': 'Streak freeze',
       'badgeReward': 'Badge reward',
       'proSpin': 'Pro spin',
+      'spinWheel': 'Spin the wheel',
       'quest': 'Quest',
       'questChest': 'Daily chest',
       'streakChest': 'Day 7 chest',
