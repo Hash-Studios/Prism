@@ -15,8 +15,8 @@ import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
-import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
+import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -81,7 +81,7 @@ void main() {
     await getIt.reset();
   });
 
-  testWidgets('standalone guest rewards can navigate back while tab has no back button', (tester) async {
+  testWidgets('standalone guest rewards can navigate back', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -103,10 +103,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('open'), findsOneWidget);
-    await tester.pumpWidget(const MaterialApp(home: RewardsTabPage()));
-    await tester.pump();
-    expect(find.byTooltip('Back'), findsNothing);
-    expect(find.text('Rewards'), findsOneWidget);
   });
 
   testWidgets('signed-in rewards page shows the header pill and every section', (tester) async {

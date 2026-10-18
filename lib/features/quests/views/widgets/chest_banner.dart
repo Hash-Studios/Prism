@@ -56,7 +56,7 @@ class _ChestRow extends StatelessWidget {
       ChestStage.locked => (
         'Finish $total quests to open it',
         'locked. $done of $total quests done',
-        Text('$done of $total', style: PrismTextStyles.caption(context)),
+        ExcludeSemantics(child: Text('$done of $total', style: PrismTextStyles.caption(context))),
       ),
       ChestStage.ready => (
         '${CoinPolicy.questChestMin} to ${CoinPolicy.questChestMax} coins, maybe a cosmetic',
@@ -80,7 +80,7 @@ class _ChestRow extends StatelessWidget {
         Expanded(
           child: Semantics(
             container: true,
-            label: 'Daily chest, $state',
+            label: 'Daily chest, $state. $caption',
             excludeSemantics: true,
             child: Row(
               children: <Widget>[

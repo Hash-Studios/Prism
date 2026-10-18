@@ -46,70 +46,73 @@ class QuestTile extends StatelessWidget {
       container: true,
       label: _semanticsLabel,
       excludeSemantics: true,
-      child: Padding(
-        padding: EdgeInsets.only(left: _stickerOverhang + _stickerTiltSpill, top: _weekly ? _ribbonOverhang : 0),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            CustomPaint(
-              painter: _PanelPainter(colors: panel, gloss: palette.gloss),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, PrismSpace.sm, PrismSpace.sm, PrismSpace.sm + _lip),
-                child: Row(
-                  children: <Widget>[
-                    Transform.translate(
-                      offset: const Offset(-_stickerOverhang, 0),
-                      child: _Sticker(icon: quest.info.icon, ink: panel.ink, done: quest.done),
-                    ),
-                    const SizedBox(width: PrismSpace.sm),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          _OutlinedText(
-                            quest.info.title.toUpperCase(),
-                            style: PrismTextStyles.rowTitle(context).copyWith(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
-                              height: 1.1,
-                              color: palette.title,
-                            ),
-                            ink: panel.ink,
-                            stroke: 3,
-                            drop: 2,
-                            maxLines: 2,
-                          ),
-                          const SizedBox(height: PrismSpace.xs),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: _ProgressBar(quest: quest, palette: palette, ink: panel.ink),
-                              ),
-                              const SizedBox(width: PrismSpace.xs),
-                              _Badges(reward: quest.reward, ink: panel.ink, textColor: palette.title),
-                            ],
-                          ),
-                        ],
+      child: MediaQuery.withClampedTextScaling(
+        maxScaleFactor: 1.5,
+        child: Padding(
+          padding: EdgeInsets.only(left: _stickerOverhang + _stickerTiltSpill, top: _weekly ? _ribbonOverhang : 0),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              CustomPaint(
+                painter: _PanelPainter(colors: panel, gloss: palette.gloss),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, PrismSpace.sm, PrismSpace.sm, PrismSpace.sm + _lip),
+                  child: Row(
+                    children: <Widget>[
+                      Transform.translate(
+                        offset: const Offset(-_stickerOverhang, 0),
+                        child: _Sticker(icon: quest.info.icon, ink: panel.ink, done: quest.done),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: PrismSpace.sm),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            _OutlinedText(
+                              quest.info.title.toUpperCase(),
+                              style: PrismTextStyles.rowTitle(context).copyWith(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.3,
+                                height: 1.1,
+                                color: palette.title,
+                              ),
+                              ink: panel.ink,
+                              stroke: 3,
+                              drop: 2,
+                              maxLines: 2,
+                            ),
+                            const SizedBox(height: PrismSpace.xs),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: _ProgressBar(quest: quest, palette: palette, ink: panel.ink),
+                                ),
+                                const SizedBox(width: PrismSpace.xs),
+                                _Badges(reward: quest.reward, ink: panel.ink, textColor: palette.title),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            if (_weekly)
-              Positioned(
-                top: -_ribbonOverhang,
-                right: PrismSpace.sm,
-                child: _Ribbon(
-                  label: endsIn == null ? 'WEEKLY' : 'WEEKLY · $endsIn',
-                  fill: palette.ribbon,
-                  ink: panel.ink,
-                  textColor: palette.title,
+              if (_weekly)
+                Positioned(
+                  top: -_ribbonOverhang,
+                  right: PrismSpace.sm,
+                  child: _Ribbon(
+                    label: endsIn == null ? 'WEEKLY' : 'WEEKLY · $endsIn',
+                    fill: palette.ribbon,
+                    ink: panel.ink,
+                    textColor: palette.title,
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -256,25 +259,28 @@ class _Ribbon extends StatelessWidget {
   final Color textColor;
 
   @override
-  Widget build(BuildContext context) => Transform.rotate(
-    angle: 3 * math.pi / 180,
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        color: fill,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: ink, width: 2),
-        boxShadow: <BoxShadow>[BoxShadow(color: ink, offset: const Offset(0, 2))],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 2),
-        child: _OutlinedText(
-          label,
-          style: PrismTextStyles.rowTitle(
-            context,
-          ).copyWith(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.4, height: 1.1, color: textColor),
-          ink: ink,
-          stroke: 2.5,
-          maxLines: 1,
+  Widget build(BuildContext context) => MediaQuery.withClampedTextScaling(
+    maxScaleFactor: 1.15,
+    child: Transform.rotate(
+      angle: 3 * math.pi / 180,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: ink, width: 2),
+          boxShadow: <BoxShadow>[BoxShadow(color: ink, offset: const Offset(0, 2))],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 2),
+          child: _OutlinedText(
+            label,
+            style: PrismTextStyles.rowTitle(
+              context,
+            ).copyWith(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.4, height: 1.1, color: textColor),
+            ink: ink,
+            stroke: 2.5,
+            maxLines: 1,
+          ),
         ),
       ),
     ),
@@ -310,29 +316,32 @@ class _ProgressBar extends StatelessWidget {
           child: count,
         ),
         child: Center(
-          child: quest.done
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(
-                      Icons.check_rounded,
-                      size: 16,
-                      color: palette.title,
-                      shadows: <Shadow>[
-                        for (final Offset side in const <Offset>[
-                          Offset(-1, 0),
-                          Offset(1, 0),
-                          Offset(0, -1),
-                          Offset(0, 1),
-                        ])
-                          Shadow(color: ink, offset: side),
-                      ],
-                    ),
-                    const SizedBox(width: PrismSpace.xxs / 2),
-                    _OutlinedText('DONE', style: style, ink: ink, stroke: 3, maxLines: 1),
-                  ],
-                )
-              : _OutlinedText('${quest.progress}/${quest.target}', style: style, ink: ink, stroke: 3, maxLines: 1),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: quest.done
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: palette.title,
+                        shadows: <Shadow>[
+                          for (final Offset side in const <Offset>[
+                            Offset(-1, 0),
+                            Offset(1, 0),
+                            Offset(0, -1),
+                            Offset(0, 1),
+                          ])
+                            Shadow(color: ink, offset: side),
+                        ],
+                      ),
+                      const SizedBox(width: PrismSpace.xxs / 2),
+                      _OutlinedText('DONE', style: style, ink: ink, stroke: 3, maxLines: 1),
+                    ],
+                  )
+                : _OutlinedText('${quest.progress}/${quest.target}', style: style, ink: ink, stroke: 3, maxLines: 1),
+          ),
         ),
       ),
     );

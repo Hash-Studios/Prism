@@ -22,14 +22,14 @@ QuestTileModel _daily({
   reward: reward,
 );
 
-QuestTileModel _weekly() => const QuestTileModel(
+QuestTileModel _weekly({bool done = false}) => QuestTileModel(
   id: 'weekly',
-  info: QuestInfo(title: 'Save or set 5 walls', icon: Icons.event_available_outlined),
+  info: const QuestInfo(title: 'Save or set 5 walls', icon: Icons.event_available_outlined),
   scope: QuestScope.weekly,
-  progress: 2,
+  progress: done ? 5 : 2,
   target: 5,
-  done: false,
-  reward: QuestReward(coins: 30, xp: 150),
+  done: done,
+  reward: const QuestReward(coins: 30, xp: 150),
 );
 
 Future<void> _pump(
@@ -151,6 +151,31 @@ void main() {
     testWidgets('the weekly tile fits a 320 px surface at 1.3x text', (WidgetTester tester) async {
       await _pump(tester, _weekly(), endsIn: '4d 2h', width: 320, textScale: 1.3);
       expect(tester.takeException(), isNull);
+    });
+
+    for (final ThemeData theme in <ThemeData>[kLightTheme, kDarkTheme]) {
+      testWidgets('a done weekly tile fits 390 px at text scale 2.4 (${theme.brightness.name})', (
+        WidgetTester tester,
+      ) async {
+        await _pump(tester, _weekly(done: true), endsIn: '4d 2h', theme: theme, textScale: 2.4);
+        expect(tester.takeException(), isNull);
+        expect(find.text('DONE'), findsNWidgets(2));
+        expect(find.text('WEEKLY · 4d 2h'), findsNWidgets(2));
+      });
+    }
+
+    testWidgets('text beyond 1.5x does not grow the tile', (WidgetTester tester) async {
+      await _pump(tester, _daily(), textScale: 1.5);
+      final Size capped = tester.getSize(find.byType(QuestTile));
+      await _pump(tester, _daily(), textScale: 2.4);
+      expect(tester.getSize(find.byType(QuestTile)), capped);
+    });
+
+    testWidgets('the weekly ribbon stops growing at 1.15x text', (WidgetTester tester) async {
+      await _pump(tester, _weekly(), endsIn: '4d 2h', textScale: 1.15);
+      final Size capped = tester.getSize(find.text('WEEKLY · 4d 2h').first);
+      await _pump(tester, _weekly(), endsIn: '4d 2h', textScale: 2.4);
+      expect(tester.getSize(find.text('WEEKLY · 4d 2h').first), capped);
     });
 
     testWidgets('the dark theme pumps', (WidgetTester tester) async {

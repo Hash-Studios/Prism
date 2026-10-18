@@ -112,23 +112,29 @@ class _ChestSheetState extends State<ChestSheet> with SingleTickerProviderStateM
       opacity: rise,
       child: Transform.translate(
         offset: Offset(0, PrismSpace.md * (1 - rise)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const PrismCoinIcon(size: 48),
-            const SizedBox(width: PrismSpace.sm),
-            Text(
-              '+${(widget.result.coins * _countUp.transform(t)).round()}',
-              style: PrismTextStyles.numeral(context, 56),
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.5,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const PrismCoinIcon(size: 48),
+                const SizedBox(width: PrismSpace.sm),
+                Text(
+                  '+${(widget.result.coins * _countUp.transform(t)).round()}',
+                  style: PrismTextStyles.numeral(context, 56),
+                ),
+                if (widget.result.doubled) ...<Widget>[
+                  const SizedBox(width: PrismSpace.sm),
+                  Opacity(
+                    opacity: pop.clamp(0.0, 1.0),
+                    child: Transform.scale(scale: 0.6 + 0.4 * pop, child: const _DoubledTag()),
+                  ),
+                ],
+              ],
             ),
-            if (widget.result.doubled) ...<Widget>[
-              const SizedBox(width: PrismSpace.sm),
-              Opacity(
-                opacity: pop.clamp(0.0, 1.0),
-                child: Transform.scale(scale: 0.6 + 0.4 * pop, child: const _DoubledTag()),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

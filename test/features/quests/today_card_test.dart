@@ -38,9 +38,10 @@ void main() {
     QuestState? quests, {
     VoidCallback? onOpenSpin,
     Brightness brightness = Brightness.light,
+    DateTime Function()? clock,
   }) async {
     final FakeQuestsRepository repo = FakeQuestsRepository(quests: quests);
-    getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo));
+    getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo)..clock = clock ?? DateTime.now);
     await tester.pumpWidget(
       MaterialApp(
         theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
@@ -104,7 +105,11 @@ void main() {
     expect(find.text('Daily chest'), findsOneWidget);
     expect(find.text('Finish 3 quests to open it'), findsOneWidget);
     expect(find.text('1 of 3'), findsOneWidget);
-    expect(find.bySemanticsLabel('Daily chest, locked. 1 of 3 quests done'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Daily chest, locked. 1 of 3 quests done. Finish 3 quests to open it'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('1 of 3'), findsNothing);
     expect(find.text('Open'), findsNothing);
     expect(find.textContaining('Watch a video'), findsOneWidget);
     expect(find.text('Doubles your chest'), findsOneWidget);
@@ -157,17 +162,20 @@ void main() {
     expect(find.text('Open'), findsNothing);
     expect(find.text('Opened. A new one tomorrow.'), findsOneWidget);
     expect(find.descendant(of: find.byType(ChestBanner), matching: find.byIcon(Icons.check_rounded)), findsOneWidget);
-    expect(find.bySemanticsLabel('Daily chest, opened'), findsOneWidget);
+    expect(find.bySemanticsLabel('Daily chest, opened. Opened. A new one tomorrow.'), findsOneWidget);
     expect(find.text('Watch'), findsNothing);
     expect(find.text('Doubles your chest'), findsNothing);
     handle.dispose();
   });
 
   testWidgets('doubled: the chest says it opened doubled', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed(chestOpened: true, chestDoubled: true));
 
     expect(find.text('Opened and doubled. A new one tomorrow.'), findsOneWidget);
+    expect(find.bySemanticsLabel('Daily chest, opened. Opened and doubled. A new one tomorrow.'), findsOneWidget);
     expect(find.text('Watch'), findsNothing);
+    handle.dispose();
   });
 
   testWidgets('a claimed booster on a ready chest says the chest is doubled', (tester) async {
@@ -236,29 +244,45 @@ void main() {
     'ready': allClaimed(),
     'doubled': allClaimed(chestOpened: true, chestDoubled: true),
   };
+  Future<void> pumpScaled(
+    WidgetTester tester,
+    QuestState quests,
+    Brightness brightness, {
+    required double width,
+    required double textScale,
+  }) async {
+    tester.view.physicalSize = Size(width, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final FakeQuestsRepository repo = FakeQuestsRepository(quests: quests);
+    getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
+        home: const Scaffold(body: SingleChildScrollView(child: TodayCard())),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+
   for (final Brightness brightness in Brightness.values) {
     for (final MapEntry<String, QuestState> board in boards.entries) {
       testWidgets('${board.key} fits 320px at text scale 1.3 (${brightness.name})', (tester) async {
-        tester.view.physicalSize = const Size(320, 640);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.reset);
-        final FakeQuestsRepository repo = FakeQuestsRepository(quests: board.value);
-        getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo));
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
-              child: child!,
-            ),
-            home: const Scaffold(body: SingleChildScrollView(child: TodayCard())),
-          ),
-        );
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 500));
+        await pumpScaled(tester, board.value, brightness, width: 320, textScale: 1.3);
         expect(tester.takeException(), isNull);
       });
     }
+
+    testWidgets('locked fits 390px at text scale 2.4 (${brightness.name})', (tester) async {
+      await pumpScaled(tester, boards['locked']!, brightness, width: 390, textScale: 2.4);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Daily quests'), findsOneWidget);
+    });
   }
 
   testWidgets('syncs again on resume and when the card shows again after a pushed route', (tester) async {
@@ -281,12 +305,40 @@ void main() {
     expect(repo.refreshes, 3);
   });
 
+  group('the minute check', () {
+    final DateTime yesterday = DateTime.now().subtract(const Duration(days: 1));
+
+    Future<FakeQuestsRepository> pumpYesterdaysCard(WidgetTester tester) =>
+        pumpCard(tester, questState(dayKey: economyDayKey(yesterday)), clock: () => yesterday);
+
+    testWidgets('syncs again once the quests are for an earlier day', (tester) async {
+      final FakeQuestsRepository repo = await pumpYesterdaysCard(tester);
+      expect(repo.refreshes, 1);
+
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pump();
+      expect(repo.refreshes, 2);
+    });
+
+    testWidgets('does nothing while another page covers the card', (tester) async {
+      final FakeQuestsRepository repo = await pumpYesterdaysCard(tester);
+      final NavigatorState navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Other'))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pump();
+      expect(repo.refreshes, 1);
+    });
+  });
+
   testWidgets('the chest text merges into one node and the Open button keeps its own', (tester) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed());
 
     expect(find.bySemanticsLabel('Set or save a wallpaper, done. Pays 2 coins and 25 XP'), findsOneWidget);
-    expect(find.bySemanticsLabel('Daily chest, ready to open'), findsOneWidget);
+    expect(find.bySemanticsLabel('Daily chest, ready to open. 5 to 15 coins, maybe a cosmetic'), findsOneWidget);
     expect(find.bySemanticsLabel('Open'), findsOneWidget);
     handle.dispose();
   });

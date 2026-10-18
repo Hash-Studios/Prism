@@ -143,10 +143,16 @@ class _RewardsPageState extends State<RewardsPage> {
 }
 
 /// The Rewards tab body. Kept apart from [RewardsPage] so the tab and the pushed route have distinct routes.
+///
+/// The tab stack never pauses a hidden tab's tickers, so this does: the chest and Glint stop drawing off screen, and
+/// the Today card sees the tab show again.
 @RoutePage()
 class RewardsTabPage extends StatelessWidget {
   const RewardsTabPage({super.key});
 
   @override
-  Widget build(BuildContext context) => const RewardsPage(showBack: false);
+  Widget build(BuildContext context) => TickerMode(
+    enabled: context.watchTabsRouter.current.name == RewardsTabRoute.name,
+    child: const RewardsPage(showBack: false),
+  );
 }

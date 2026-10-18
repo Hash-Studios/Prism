@@ -1,8 +1,10 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/quests/domain/quest_catalog.dart';
 import 'package:Prism/features/quests/views/widgets/chest_sheet.dart';
+import 'package:Prism/features/spin_wheel/views/widgets/coin_burst.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,7 +20,12 @@ void main() {
     PrismHaptics.enabled = true;
   });
 
-  Future<void> openSheet(WidgetTester tester, ChestResult result, {bool reduceMotion = false}) async {
+  Future<void> openSheet(
+    WidgetTester tester,
+    ChestResult result, {
+    bool reduceMotion = false,
+    double textScale = 1,
+  }) async {
     const MethodChannel channel = MethodChannel('prism/haptics');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
       haptics.add(call.arguments);
@@ -29,7 +36,9 @@ void main() {
       MaterialApp(
         theme: kLightTheme,
         builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(disableAnimations: reduceMotion, textScaler: TextScaler.linear(textScale)),
           child: child!,
         ),
         home: Scaffold(
@@ -61,7 +70,8 @@ void main() {
     );
     expect(find.textContaining('10% chance of a cosmetic'), findsOneWidget);
     expect(find.text('See it in the Shop'), findsNothing);
-    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(CoinBurst), findsOneWidget);
+    expect(find.byType(Glint), findsNothing);
   });
 
   testWidgets('without a doubling it tells how to double and shows no tag', (tester) async {
@@ -118,8 +128,20 @@ void main() {
 
     expect(find.text('+14'), findsOneWidget);
     expect(find.text('×2'), findsOneWidget);
-    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(CoinBurst), findsNothing);
     expect(haptics, isEmpty);
+  });
+
+  testWidgets('a doubled chest fits a 360 px wide screen at text scale 2.0', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await openSheet(tester, const ChestResult(ChestOutcome.opened, coins: 30, doubled: true), textScale: 2);
+    await tester.pump(sequence);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('+30'), findsOneWidget);
+    expect(find.text('×2'), findsOneWidget);
   });
 
   test('cosmeticName reads the catalog id', () {

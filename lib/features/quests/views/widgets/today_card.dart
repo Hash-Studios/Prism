@@ -32,10 +32,13 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
   /// The Rewards tab stays built under other tabs and pushed routes.
   bool _visible = true;
 
+  late final Timer _clock;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _clock = Timer.periodic(const Duration(minutes: 1), (_) => _onMinute());
   }
 
   @override
@@ -51,8 +54,16 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed && _visible) _bloc.add(const QuestsEvent.refreshed());
   }
 
+  void _onMinute() {
+    if (!_visible) return;
+    final QuestState? quests = _bloc.state.quests;
+    if (quests != null && quests.dayKey != economyDayKey(DateTime.now())) _bloc.add(const QuestsEvent.refreshed());
+    setState(() {});
+  }
+
   @override
   void dispose() {
+    _clock.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _bloc.close();
     super.dispose();
@@ -85,13 +96,11 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
             if (quests == null) return const SizedBox.shrink();
             return ValueListenableBuilder<EconomyConfig>(
               valueListenable: EconomyConfig.notifier,
-              builder: (context, _, _) => _MinuteClock(
-                builder: (context, now) => _TodayView(
-                  board: QuestBoard.of(quests, EconomyConfig.current.award),
-                  now: now,
-                  opening: state.opening,
-                  onOpenSpin: widget.onOpenSpin,
-                ),
+              builder: (context, _, _) => _TodayView(
+                board: QuestBoard.of(quests, EconomyConfig.current.award),
+                now: DateTime.now(),
+                opening: state.opening,
+                onOpenSpin: widget.onOpenSpin,
               ),
             );
           },
@@ -114,35 +123,6 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
         toasts.error("Couldn't open the chest. Try again.");
     }
   }
-}
-
-class _MinuteClock extends StatefulWidget {
-  const _MinuteClock({required this.builder});
-
-  final Widget Function(BuildContext context, DateTime now) builder;
-
-  @override
-  State<_MinuteClock> createState() => _MinuteClockState();
-}
-
-class _MinuteClockState extends State<_MinuteClock> {
-  late final Timer _timer;
-  DateTime _now = DateTime.now();
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) => setState(() => _now = DateTime.now()));
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.builder(context, _now);
 }
 
 class _TodayView extends StatelessWidget {
@@ -193,23 +173,26 @@ class _Header extends StatelessWidget {
           child: Semantics(header: true, child: Text('Daily quests', style: PrismTextStyles.sectionTitle(context))),
         ),
         const SizedBox(width: PrismSpace.sm),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: cs.onSurface.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(PrismRadius.pill),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.xs),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(Icons.schedule_rounded, size: 14, color: cs.onSurfaceVariant),
-                const SizedBox(width: PrismSpace.xxs),
-                Text(
-                  'New in ${formatCountdown(untilReset)}',
-                  style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w700),
-                ),
-              ],
+        MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.5,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: cs.onSurface.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(PrismRadius.pill),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.xs),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(Icons.schedule_rounded, size: 14, color: cs.onSurfaceVariant),
+                  const SizedBox(width: PrismSpace.xxs),
+                  Text(
+                    'New in ${formatCountdown(untilReset)}',
+                    style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
