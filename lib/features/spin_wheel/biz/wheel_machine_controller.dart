@@ -62,11 +62,11 @@ class WheelMachineController {
     spinner.start(_now);
   }
 
-  /// The reply named slice [index]. Ease out onto it, [offset] of the way through the slice. Under reduced motion the
-  /// wheel jumps there and [onLanded] fires at once.
+  /// The reply named slice [index]. Ease out onto it, [offset] of the way through the slice. Under reduced motion, or
+  /// when the wheel never started (reduced motion was turned off mid-spin), it jumps there and [onLanded] fires at once.
   void land({required int index, required int count, required double offset}) {
     segmentCount = count;
-    if (_reduceMotion) {
+    if (_reduceMotion || !spinner.busy) {
       spinner.jumpTo(angleForSlice(index, count));
       _landedAt = _now - bulbFlashSeconds;
       _publish();

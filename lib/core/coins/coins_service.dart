@@ -2540,6 +2540,8 @@ class CoinsService with WidgetsBindingObserver {
     final SpinWheelStatus? status = parseSpinWheelStatus(reply.data['status']);
     if (!reply.success) {
       _adoptSpinWheelStatus(status);
+      // The next recompute reads the price from the config, so reload it or the old price comes back.
+      if (reply.reason == 'spin_wheel_price_changed') unawaited(EconomyConfig.load());
       final SpinRefusal? refusal = switch (reply.reason) {
         'spin_wheel_insufficient_balance' => SpinRefusal.insufficientBalance,
         'spin_wheel_daily_limit' => SpinRefusal.dailyLimit,

@@ -520,6 +520,24 @@ void main() {
       expect(_fields(service.spinWheelNotifier.value), (true, 2, 15));
     });
 
+    test('a price change reloads the config, so a later recompute keeps the new price', () async {
+      await bootstrapWith(<String, dynamic>{});
+      (getIt<FirestoreClient>() as CoinsTestFirestore).docs['economyConfig/current'] = <String, dynamic>{
+        'spend': <String, dynamic>{'spinWheel': 15},
+      };
+      reply(
+        (_, _) => _refused('spin_wheel_price_changed', <String, Object>{
+          'freeSpinAvailable': false,
+          'paidSpinsLeft': 5,
+          'price': 15,
+        }),
+      );
+      expect(await service.spinWheel(maxCost: 10), isA<SpinRefused>());
+      await pumpEventQueue();
+      service.refreshSpinWheelStatus();
+      expect(service.spinWheelNotifier.value.price, 15);
+    });
+
     test('follows Pro when the session user changes', () async {
       app_state.prismUser.premium = false;
       final _FakeSession session = _FakeSession(app_state.prismUser);

@@ -76,7 +76,7 @@ Rules: `economyConfig/{doc}` is readable by anyone signed in, write false. Admin
 `npm run economy:config -- --set spend.wallpaperDownload=10 --apply`.
 
 `award.spinWheel` is the wheel table, in wheel order. A segment is `coins` (1..1000 coins), `xp` (1..1000 XP) or
-`cosmetic` (`fallbackCoins` 0..1000, paid when the user owns every common item). Each has a `weight` of 0..1000. The
+`cosmetic` (`fallbackCoins` 1..1000, paid when the user owns every common item). Each has a `weight` of 0..1000. The
 table needs 2 to 12 segments and a positive weight sum. If any part is wrong, the server uses the whole default table.
 The rules, the odds and the UI are in `docs/features/spin-wheel.md`.
 

@@ -53,6 +53,13 @@ void main() {
     expect(pegs, inInclusiveRange(10, 40));
   });
 
+  test('a reply for a wheel that never started still lands, so the page cannot hang', () {
+    controller.land(index: 5, count: 8, offset: 0.5);
+    expect(landed, 1);
+    expect(sliceUnderPointer(controller.theta.value, 8), 5);
+    expect(controller.busy, isFalse);
+  });
+
   test('lands on the named slice, fires onLanded once and flashes the bulbs three times', () {
     controller.start();
     run(0, 700);
