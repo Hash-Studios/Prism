@@ -13,6 +13,7 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_snapshot_store.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/coins/pending_download.dart';
+import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -403,6 +404,13 @@ class CoinsService with WidgetsBindingObserver {
     const <String, DropUnlock>{},
   );
   final ValueNotifier<Passes> passesNotifier = ValueNotifier<Passes>(Passes.empty);
+  final ValueNotifier<SpinWheelStatus> spinWheelNotifier = ValueNotifier<SpinWheelStatus>(
+    SpinWheelStatus(
+      freeSpinAvailable: app_state.prismUser.premium,
+      paidSpinsLeft: CoinPolicy.spinWheelMaxPerDay,
+      price: CoinPolicy.spinWheelPrice,
+    ),
+  );
   String _economyUserId = '';
 
   /// The user whose root XP was read, so a later rise can be announced as a rank up.
@@ -2213,6 +2221,9 @@ class CoinsService with WidgetsBindingObserver {
       logCoinError(sourceTag: 'coins.quests.report', error: error, stackTrace: stackTrace);
     }
   }
+
+  /// One spin of the coin wheel. The server charges at most [maxCost], picks the segment and grants the prize.
+  Future<SpinWheelResult> spinWheel({required int maxCost}) async => throw UnimplementedError();
 
   /// The Pro daily spin. The server picks the segment.
   Future<ProSpinResult> claimProSpin() async {

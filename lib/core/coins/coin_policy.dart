@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/coins/spin_wheel.dart';
 
 /// Coin amounts the app shows and sends. Every value reads the loaded [EconomyConfig], so call sites stay live.
 class CoinPolicy {
@@ -29,6 +30,8 @@ class CoinPolicy {
   /// What the legacy flat Pro bonus pays now: the lowest spin segment.
   static int get proDailyBonus => proSpin.map((SpinSegment s) => s.coins).reduce(min);
   static List<SpinSegment> get proSpin => _award.proSpin;
+  static List<WheelSegment> get spinWheel => defaultWheel;
+  static int get spinWheelMaxPerDay => 5;
   static int get graceDownloads => _award.graceDownloads;
   static int get questCoins => _award.questCoins;
   static int get questChestMin => _award.questChestMin;
@@ -51,6 +54,7 @@ class CoinPolicy {
   static int get boostWall => _spend.boostWall;
   static int get giftPremiumPass => _spend.giftPremiumPass;
   static int get drawTicket => _spend.drawTicket;
+  static int get spinWheelPrice => 10;
   static const int maxStreakFreezes = 2;
 
   // UX
