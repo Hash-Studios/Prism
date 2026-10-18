@@ -51,11 +51,16 @@ Future<void> _run(QaShot shot, {required int frames, Duration step = const Durat
 /// Mounts the page with an open function that answers when the returned completer completes.
 Future<Completer<DailyChestResult>> _mount(QaShot shot, {QuestState? quests, int balance = 340}) async {
   final Completer<DailyChestResult> reply = Completer<DailyChestResult>();
+  final ValueNotifier<int> coins = ValueNotifier<int>(balance);
   await shot.pump(
     DailyChestPage(
-      open: ({required int maxCost}) => reply.future,
+      // Like the coins service, a win moves the balance before the reply reaches the page.
+      open: ({required int maxCost}) => reply.future.then((DailyChestResult result) {
+        if (result is ChestWon) coins.value += result.win.coins - result.cost;
+        return result;
+      }),
       quests: ValueNotifier<QuestState?>(quests ?? _quests()),
-      balance: ValueNotifier<int>(balance),
+      balance: coins,
       now: () => _now,
       refresh: () async {},
     ),
