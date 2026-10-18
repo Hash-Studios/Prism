@@ -17,8 +17,8 @@ class LoadingCards extends StatelessWidget {
   final BorderRadius borderRadius;
   final int? columns;
 
-  /// Lays the skeleton out like the home grid: no side margin, [PrismFeedLayout.gridSpacing] gaps and square bones.
-  /// It never scrolls by itself.
+  /// Lays the skeleton out like the home grid: [PrismFeedLayout.gridPadding] side margin and
+  /// [PrismFeedLayout.gridSpacing] gaps. It never scrolls by itself.
   final bool useFeedLayout;
 
   @override
@@ -30,7 +30,7 @@ class LoadingCards extends StatelessWidget {
           builder: (context, _) => GridView.builder(
             primary: false,
             physics: const NeverScrollableScrollPhysics(),
-            padding: useFeedLayout ? EdgeInsets.zero : PrismWallGrid.padding,
+            padding: useFeedLayout ? PrismFeedLayout.gridPadding : PrismWallGrid.padding,
             itemCount: 18,
             shrinkWrap: true,
             gridDelegate: PrismWallGrid.delegate(
@@ -39,7 +39,7 @@ class LoadingCards extends StatelessWidget {
               aspectRatio: childAspectRatio,
               spacing: useFeedLayout ? PrismFeedLayout.gridSpacing : PrismWallGrid.spacing,
             ),
-            itemBuilder: (context, index) => PulseFill(borderRadius: useFeedLayout ? BorderRadius.zero : borderRadius),
+            itemBuilder: (context, index) => PulseFill(borderRadius: borderRadius),
           ),
         ),
       ),

@@ -229,8 +229,10 @@ abstract final class PrismFeedLayout {
   /// Minimal spacer appended when the feed still has more pages to load.
   static const double endOfPageSpacerHeight = 22;
 
-  /// Gap between tiles of the full-bleed home grid, on both axes.
-  static const double gridSpacing = 2.0;
+  /// Gap between tiles of the home grid, on both axes. The side margin is the same, so the gutters are even.
+  static const double gridSpacing = 4.0;
+
+  static const EdgeInsets gridPadding = EdgeInsets.symmetric(horizontal: gridSpacing);
 }
 
 /// Visual parameters for the `PersonalizedFeedEditorialNote` pattern.

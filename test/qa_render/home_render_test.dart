@@ -99,7 +99,7 @@ PrismWallpaper _wall(int n, {bool boosted = false, bool premium = false}) {
     ),
     title: 'Wall $n',
     collections: premium ? const <String>['space'] : null,
-    boostedUntil: boosted ? DateTime.now().add(const Duration(days: 2)) : null,
+    boostedUntil: boosted ? DateTime.now().add(const Duration(hours: 3)) : null,
   );
 }
 
@@ -196,8 +196,7 @@ class _Home {
       return Result.success(_page(<int>[for (int i = start; i < start + _pageSize; i++) i]));
     });
     when(() => fetchTrending(TrendingRange.week)).thenAnswer(
-      (_) async =>
-          Result.success(<PrismWallpaper>[for (int i = 0; i < 18; i++) _wall(400 + i * 5, boosted: i == 1 || i == 6)]),
+      (_) async => Result.success(<PrismWallpaper>[for (int i = 0; i < 18; i++) _wall(400 + i * 5, boosted: i < 2)]),
     );
     when(() => fetchTrending(TrendingRange.allTime)).thenAnswer(
       (_) async => Result.success(<PrismWallpaper>[for (int i = 0; i < 18; i++) _wall(500 + i * 9, boosted: i == 3)]),

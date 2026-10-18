@@ -20,7 +20,7 @@ bool canBoostWall(PrismWallpaper wall) {
       owner == app_state.prismUser.email.trim().toLowerCase();
 }
 
-/// "Boost to Trending" for the owner of an approved wall: 24 hours at the front of Trending for coins.
+/// "Boost to Trending" for the owner of an approved wall: 24 hours first on Home and in Trending, for coins.
 class BoostWallRow extends StatefulWidget {
   const BoostWallRow({super.key, required this.wall});
 
@@ -47,7 +47,7 @@ class _BoostWallRowState extends State<BoostWallRow> {
     final bool confirmed = await showPrismConfirm(
       context,
       title: 'Boost to Trending',
-      message: 'Put this wallpaper at the top of Trending for 24 hours for ${CoinPolicy.boostWall} coins.',
+      message: 'Show this wallpaper first on Home and in Trending for 24 hours for ${CoinPolicy.boostWall} coins.',
       confirmLabel: 'Boost for ${CoinPolicy.boostWall} coins',
     );
     if (!confirmed || !mounted) return;
@@ -63,7 +63,7 @@ class _BoostWallRowState extends State<BoostWallRow> {
     switch (result.outcome) {
       case BoostOutcome.boosted:
         unawaited(analytics.track(BoostPurchasedEvent(wallId: widget.wall.id)));
-        toasts.success('Boosted. It is live in Trending.');
+        toasts.success('Boosted. It is live on Home and in Trending.');
       case BoostOutcome.active:
         toasts.info('Already boosted.');
       case BoostOutcome.slotsFull:

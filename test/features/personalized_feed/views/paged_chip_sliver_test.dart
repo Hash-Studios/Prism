@@ -6,6 +6,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
@@ -72,7 +73,7 @@ void main() {
     );
   }
 
-  testWidgets('the grid is edge to edge: three square tiles a row with 2 px gaps both ways', (tester) async {
+  testWidgets('the grid has a 4 px side margin, 4 px gaps both ways and rounded tiles', (tester) async {
     await pumpSliver(
       tester,
       PagedFeedState.initial().copyWith(
@@ -83,15 +84,14 @@ void main() {
       ),
     );
 
-    const double gap = PrismFeedLayout.gridSpacing;
     final List<Rect> tiles = [for (int i = 0; i < 6; i++) tester.getRect(find.byType(FeedWallTile).at(i))];
-    expect(tiles[0].left, 0);
-    expect(tiles[2].right, closeTo(600, 0.01));
-    expect(tiles[1].left - tiles[0].right, closeTo(gap, 0.01));
-    expect(tiles[2].left - tiles[1].right, closeTo(gap, 0.01));
-    expect(tiles[3].top - tiles[0].bottom, closeTo(gap, 0.01));
+    expect(tiles[0].left, 4);
+    expect(tiles[2].right, closeTo(596, 0.01));
+    expect(tiles[1].left - tiles[0].right, closeTo(4, 0.01));
+    expect(tiles[2].left - tiles[1].right, closeTo(4, 0.01));
+    expect(tiles[3].top - tiles[0].bottom, closeTo(4, 0.01));
     for (final Element tile in find.byType(PrismWallTile).evaluate()) {
-      expect((tile.widget as PrismWallTile).borderRadius, BorderRadius.zero);
+      expect((tile.widget as PrismWallTile).borderRadius, BorderRadius.circular(12));
     }
   });
 
@@ -99,6 +99,6 @@ void main() {
     await pumpSliver(tester, PagedFeedState.initial().copyWith(status: LoadStatus.loading));
 
     expect(tester.widget<LoadingCards>(find.byType(LoadingCards)).useFeedLayout, isTrue);
-    expect(tester.getTopLeft(find.byType(GridView)).dx, 0);
+    expect(tester.getTopLeft(find.byType(PulseFill).first).dx, 4);
   });
 }

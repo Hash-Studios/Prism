@@ -322,12 +322,11 @@ void main() {
     expect(find.byType(FeedCarousel), findsNothing);
   });
 
-  testWidgets('the home loads no trending list until the Trending tab opens, and has no Trending strip', (
-    tester,
-  ) async {
+  testWidgets('the home loads the trending week list once at start, and has no Trending strip', (tester) async {
     await pumpScreen(tester);
 
-    verifyNever(() => fetchTrending(any()));
+    verify(() => fetchTrending(TrendingRange.week)).called(1);
+    verifyNever(() => fetchTrending(TrendingRange.allTime));
     expect(find.text('Trending this week'), findsNothing);
     expect(find.text('See all'), findsNothing);
   });
@@ -354,8 +353,8 @@ void main() {
     expect(find.byType(FeedCarousel), findsNothing);
     final Rect first = tester.getRect(find.byType(WallpaperTile).first);
     final Rect second = tester.getRect(find.byType(WallpaperTile).at(1));
-    expect(first.left, 0, reason: 'no side margin');
-    expect(second.left - first.right, 2, reason: 'a 2 px gap');
+    expect(first.left, 4, reason: 'a 4 px side margin');
+    expect(second.left - first.right, 4, reason: 'a 4 px gap');
   });
 
   testWidgets('the All time switch loads the all time list once', (tester) async {
@@ -433,6 +432,7 @@ void main() {
     await tapTab(tester, 'Latest');
     await _settle(tester);
     verify(() => prismRepository.fetchFeed(refresh: true)).called(1);
+    verify(() => fetchTrending(TrendingRange.week)).called(1);
 
     await tester.drag(
       find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(CustomScrollView)).first,
@@ -444,6 +444,20 @@ void main() {
 
     verify(() => prismRepository.fetchFeed(refresh: true)).called(1);
     verifyNever(() => fetchTrending(any()));
+  });
+
+  testWidgets('pull to refresh on For you reloads the feed and the trending list that feeds the carousel', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    verify(() => fetchTrending(TrendingRange.week)).called(1);
+    clearInteractions(fetchUseCase);
+
+    await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await _settle(tester);
+
+    verify(() => fetchUseCase(any())).called(1);
+    verify(() => fetchTrending(TrendingRange.week)).called(1);
   });
 
   testWidgets('refresh preserves impression dedupe while pending and failed, then resets on success', (tester) async {
@@ -520,6 +534,24 @@ void main() {
     }
 
     expect(events, <String>['view_trending', 'view_trending']);
+  });
+
+  testWidgets('opening the home alone reports no trending quest, the Trending tab does', (tester) async {
+    final CoinsTestBackend backend = CoinsTestBackend();
+    final List<String> events = <String>[];
+    await tester.runAsync(backend.install);
+    backend.onCall = (String name, Map<String, dynamic> params) async {
+      if (name == 'progressQuest') events.add(params['event'] as String);
+      return <String, Object?>{'success': true, 'rev': 1};
+    };
+    await pumpScreen(tester);
+
+    expect(events, isEmpty);
+
+    await tapTab(tester, 'Trending');
+    await _settle(tester);
+
+    expect(events, <String>['view_trending']);
   });
 
   testWidgets('Following with nobody followed explains how to fill it and offers a way to find creators', (
@@ -758,7 +790,9 @@ void main() {
     verify(() => paged.add(const PagedFeedEvent.fetchMoreRequested())).called(1);
   });
 
-  testWidgets('the carousel shows Wall of the Day first, edge to edge, with the dots inside the image', (tester) async {
+  testWidgets('the carousel shows Wall of the Day first, inset by 4 px, with the dots inside the image', (
+    tester,
+  ) async {
     await pumpScreen(
       tester,
       wotdEntity: const WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana'),
@@ -768,11 +802,174 @@ void main() {
     expect(find.text('by Ana'), findsOneWidget);
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
     final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
-    expect(card.left, 0);
-    expect(card.width, 600);
-    expect(card.height, 360);
+    expect(card.left, 4);
+    expect(card.width, 592);
+    expect(card.height, closeTo(355.2, 0.01));
     expect(dots.top, greaterThanOrEqualTo(card.top));
     expect(dots.bottom, lessThanOrEqualTo(card.bottom));
+  });
+
+  testWidgets('the For you grid has a 4 px side margin, 4 px gaps and rounded tiles', (tester) async {
+    await pumpScreen(tester);
+
+    final List<Rect> tiles = [for (int i = 0; i < 4; i++) tester.getRect(find.byType(FeedWallTile).at(i))];
+    expect(tiles[0].left, 4);
+    expect(tiles[2].right, closeTo(596, 0.01));
+    expect(tiles[1].left - tiles[0].right, closeTo(4, 0.01));
+    expect(tiles[3].top - tiles[0].bottom, closeTo(4, 0.01));
+    expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile).first).borderRadius, BorderRadius.circular(12));
+  });
+
+  testWidgets('the carousel and the first grid row are 4 px apart', (tester) async {
+    await pumpScreen(tester);
+
+    final double carouselBottom = tester.getRect(find.byType(CarouselSlider)).bottom;
+    expect(tester.getRect(find.byType(FeedWallTile).first).top - carouselBottom, closeTo(4, 0.01));
+  });
+
+  testWidgets('the Latest grid has a 4 px side margin, 4 px gaps and rounded tiles', (tester) async {
+    when(
+      () => prismRepository.fetchFeed(refresh: any(named: 'refresh')),
+    ).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('l1'), _wall('l2'), _wall('l3'), _wall('l4')]));
+    await pumpScreen(tester);
+
+    await tapTab(tester, 'Latest');
+    await _settle(tester);
+
+    final List<Rect> tiles = [for (int i = 0; i < 4; i++) tester.getRect(find.byType(FeedWallTile).at(i))];
+    expect(tiles[0].left, 4);
+    expect(tiles[1].left - tiles[0].right, closeTo(4, 0.01));
+    expect(tiles[3].top - tiles[0].bottom, closeTo(4, 0.01));
+    expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile).first).borderRadius, BorderRadius.circular(12));
+  });
+
+  group('boosted walls on the home', () {
+    DateTime inThreeHours() => DateTime.now().add(const Duration(hours: 3));
+
+    String shownWallId(WidgetTester tester) => tester
+        .widget<WallpaperImpression>(
+          find.descendant(of: find.byType(CarouselSlider), matching: find.byType(WallpaperImpression)),
+        )
+        .itemId;
+
+    Future<void> nextPage(WidgetTester tester) async {
+      await tester.fling(find.byType(CarouselSlider), const Offset(-300, 0), 1500);
+      await _settle(tester);
+      await _settle(tester);
+    }
+
+    List<String> gridWallIds(WidgetTester tester) =>
+        tester.widgetList<FeedWallTile>(find.byType(FeedWallTile)).map((tile) => tile.item.id).toList();
+
+    const WallOfTheDayEntity wotd = WallOfTheDayEntity(
+      wallId: 'wotd-1',
+      url: '',
+      thumbnailUrl: '',
+      photographer: 'Ana',
+    );
+
+    testWidgets('lead the carousel in server order, each with a Boosted tag, before Wall of the Day', (tester) async {
+      when(() => fetchTrending(TrendingRange.week)).thenAnswer(
+        (_) async => Result.success(<PrismWallpaper>[
+          _wall('hot1', boostedUntil: inThreeHours()),
+          _wall('hot2', boostedUntil: inThreeHours()),
+          _wall('plain'),
+        ]),
+      );
+
+      await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
+
+      expect(shownWallId(tester), 'hot1');
+      expect(find.text('Boosted'), findsOneWidget);
+      expect(find.text('Wall of the day'), findsNothing);
+
+      await nextPage(tester);
+
+      expect(shownWallId(tester), 'hot2');
+      expect(find.text('Boosted'), findsOneWidget);
+
+      await nextPage(tester);
+
+      expect(find.text('Wall of the day'), findsOneWidget);
+      expect(find.text('Boosted'), findsNothing);
+    });
+
+    testWidgets('leave out a boost that has ended', (tester) async {
+      when(() => fetchTrending(TrendingRange.week)).thenAnswer(
+        (_) async => Result.success(<PrismWallpaper>[
+          _wall('old', boostedUntil: DateTime.now().subtract(const Duration(minutes: 1))),
+          _wall('hot1', boostedUntil: inThreeHours()),
+        ]),
+      );
+
+      await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
+
+      expect(shownWallId(tester), 'hot1');
+      expect(tester.widget<FeedCarousel>(find.byType(FeedCarousel)).boostedWalls.map((wall) => wall.id), <String>[
+        'hot1',
+      ]);
+    });
+
+    testWidgets('a boosted wall that is also in the feed shows in the carousel only, not in the grid', (tester) async {
+      when(() => fetchTrending(TrendingRange.week)).thenAnswer(
+        (_) async => Result.success(<PrismWallpaper>[_wall('a', boostedUntil: inThreeHours()), _wall('plain')]),
+      );
+
+      await pumpScreen(tester, disableAnimations: true);
+
+      expect(shownWallId(tester), 'a');
+      expect(tester.widget<FeedCarousel>(find.byType(FeedCarousel)).previewWalls.map((wall) => wall.id), <String>[
+        'b',
+        'c',
+        'd',
+        'e',
+      ]);
+      expect(gridWallIds(tester), <String>['f', 'g', 'h']);
+    });
+
+    testWidgets('with no boosted walls the carousel starts with Wall of the Day and the grid keeps every wall', (
+      tester,
+    ) async {
+      when(
+        () => fetchTrending(TrendingRange.week),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('plain')]));
+
+      await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
+
+      expect(find.text('Wall of the day'), findsOneWidget);
+      expect(find.text('Boosted'), findsNothing);
+      expect(gridWallIds(tester), <String>['e', 'f', 'g', 'h']);
+    });
+
+    testWidgets('that arrive after the feed take the first page and do not move the grid', (tester) async {
+      final Completer<Result<List<PrismWallpaper>>> late = Completer<Result<List<PrismWallpaper>>>();
+      when(() => fetchTrending(TrendingRange.week)).thenAnswer((_) => late.future);
+      await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
+      expect(find.text('Wall of the day'), findsOneWidget);
+      final Rect carouselBefore = tester.getRect(find.byType(CarouselSlider));
+      final double gridTopBefore = tester.getRect(find.byType(FeedWallTile).first).top;
+
+      late.complete(Result.success(<PrismWallpaper>[_wall('hot1', boostedUntil: inThreeHours())]));
+      await _settle(tester);
+
+      expect(shownWallId(tester), 'hot1');
+      expect(find.text('Boosted'), findsOneWidget);
+      expect(tester.getRect(find.byType(CarouselSlider)), carouselBefore);
+      expect(tester.getRect(find.byType(FeedWallTile).first).top, gridTopBefore);
+    });
+
+    testWidgets('stay out of the other tabs, which have no carousel', (tester) async {
+      when(
+        () => fetchTrending(TrendingRange.week),
+      ).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('hot1', boostedUntil: inThreeHours())]));
+      await pumpScreen(tester, disableAnimations: true);
+
+      await tapTab(tester, 'Latest');
+      await _settle(tester);
+
+      expect(find.byType(FeedCarousel), findsNothing);
+      expect(find.text('Boosted'), findsNothing);
+    });
   });
 
   testWidgets('only a premium wallpaper gets the gold star badge', (tester) async {
@@ -832,9 +1029,9 @@ void main() {
         find.descendant(of: find.byType(CarouselSlider), matching: find.byType(PrismImageTile)),
       );
 
-      // 600 px wide at a pixel ratio of 1, so the page is 600 px wide and 0.6 as tall: 360 px.
+      // 600 px wide at a pixel ratio of 1, so the page is 592 px wide and 0.6 as tall: 355.2 px.
       expect(tiles, isNotEmpty);
-      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(360));
+      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(355));
     });
   });
 
@@ -855,11 +1052,10 @@ void main() {
 
     expect(tester.widget<LoadingCards>(find.byType(LoadingCards)).useFeedLayout, isTrue);
     expect(tab('Latest'), findsOneWidget, reason: 'the tabs are usable while it loads');
-    expect(
-      tester.getSize(find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone))),
-      const Size(600, 360),
-      reason: 'the carousel place is edge to edge',
-    );
+    final Finder bone = find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone));
+    expect(tester.getRect(bone).left, 4);
+    expect(tester.getSize(bone).width, 592);
+    expect(tester.getSize(bone).height, closeTo(355.2, 0.01));
   });
 
   testWidgets('a failed first load offers Try again and loads again', (tester) async {

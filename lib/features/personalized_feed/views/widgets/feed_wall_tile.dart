@@ -12,7 +12,7 @@ bool isPremiumFeedItem(FeedItemEntity item) => switch (item) {
   _ => false,
 };
 
-/// One wallpaper in the full-bleed home grid: a square [WallpaperTile] with quick actions and a premium star.
+/// One wallpaper in the home grid: a [WallpaperTile] with quick actions and a premium star.
 class FeedWallTile extends StatelessWidget {
   const FeedWallTile({
     super.key,
@@ -41,7 +41,6 @@ class FeedWallTile extends StatelessWidget {
       crossAxisCount: crossAxisCount,
       memCacheHeight: memCacheHeight,
       quickActions: true,
-      borderRadius: BorderRadius.zero,
       onShowLessLikeThis: onShowLessLikeThis,
       onVisible: onVisible,
     );

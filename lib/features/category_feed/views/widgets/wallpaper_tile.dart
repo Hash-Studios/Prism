@@ -31,7 +31,6 @@ class WallpaperTile extends StatelessWidget {
     this.overlay,
     this.impressionSession,
     this.onVisible,
-    this.borderRadius = PrismWallGrid.tileRadius,
   });
 
   final FeedItemEntity item;
@@ -56,8 +55,6 @@ class WallpaperTile extends StatelessWidget {
 
   /// Legacy grid-column hint for callers that need a fixed decode size.
   final int? crossAxisCount;
-
-  final BorderRadius borderRadius;
 
   AnalyticsSurfaceValue get _surface => switch (item.source) {
     WallpaperSource.wallhaven => AnalyticsSurfaceValue.homeWallhavenGrid,
@@ -102,7 +99,6 @@ class WallpaperTile extends StatelessWidget {
         heroTag: heroTag,
         semanticLabel: item.semanticLabel,
         memCacheHeight: decodeHeight,
-        borderRadius: borderRadius,
         overlay: _overlay(),
         onTap: () {
           PrismHaptics.tap();

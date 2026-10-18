@@ -7,7 +7,7 @@ import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The wallpapers of one home tab (Latest, Following or Popular) as full-bleed slivers.
+/// The wallpapers of one home tab (Latest, Following or Popular) as slivers.
 class PagedChipSliver extends StatelessWidget {
   const PagedChipSliver({
     super.key,
@@ -62,24 +62,27 @@ class PagedChipSliver extends StatelessWidget {
         }
         return SliverMainAxisGroup(
           slivers: <Widget>[
-            SliverGrid(
-              gridDelegate: PrismWallGrid.delegate(
-                context,
-                columns: crossAxisCount,
-                spacing: PrismFeedLayout.gridSpacing,
+            SliverPadding(
+              padding: PrismFeedLayout.gridPadding,
+              sliver: SliverGrid(
+                gridDelegate: PrismWallGrid.delegate(
+                  context,
+                  columns: crossAxisCount,
+                  spacing: PrismFeedLayout.gridSpacing,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final FeedItemEntity item = state.items[index];
+                  return KeyedSubtree(
+                    key: ValueKey<String>(item.id),
+                    child: FeedWallTile(
+                      item: item,
+                      index: index,
+                      crossAxisCount: crossAxisCount,
+                      memCacheHeight: tileMemCacheHeight,
+                    ),
+                  );
+                }, childCount: state.items.length),
               ),
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final FeedItemEntity item = state.items[index];
-                return KeyedSubtree(
-                  key: ValueKey<String>(item.id),
-                  child: FeedWallTile(
-                    item: item,
-                    index: index,
-                    crossAxisCount: crossAxisCount,
-                    memCacheHeight: tileMemCacheHeight,
-                  ),
-                );
-              }, childCount: state.items.length),
             ),
             SliverToBoxAdapter(child: _footer(state)),
             const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),

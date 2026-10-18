@@ -68,24 +68,26 @@ class TrendingChipSliver extends StatelessWidget {
         ),
       );
     }
-    return SliverGrid(
-      gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount, spacing: PrismFeedLayout.gridSpacing),
-      delegate: SliverChildBuilderDelegate((context, index) {
-        final wall = section.walls[index];
-        return KeyedSubtree(
-          key: ValueKey<String>(wall.id),
-          child: WallpaperTile(
-            item: PrismFeedItem(id: wall.id, wallpaper: wall),
-            index: index,
-            crossAxisCount: crossAxisCount,
-            memCacheHeight: tileMemCacheHeight,
-            quickActions: true,
-            sourceContext: 'home_trending_grid',
-            overlay: boostedTagFor(wall),
-            borderRadius: BorderRadius.zero,
-          ),
-        );
-      }, childCount: section.walls.length),
+    return SliverPadding(
+      padding: PrismFeedLayout.gridPadding,
+      sliver: SliverGrid(
+        gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount, spacing: PrismFeedLayout.gridSpacing),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final wall = section.walls[index];
+          return KeyedSubtree(
+            key: ValueKey<String>(wall.id),
+            child: WallpaperTile(
+              item: PrismFeedItem(id: wall.id, wallpaper: wall),
+              index: index,
+              crossAxisCount: crossAxisCount,
+              memCacheHeight: tileMemCacheHeight,
+              quickActions: true,
+              sourceContext: 'home_trending_grid',
+              overlay: boostedTagFor(wall),
+            ),
+          );
+        }, childCount: section.walls.length),
+      ),
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
@@ -53,9 +54,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
   late final PersonalizedFeedBloc _bloc;
+  late final TrendingBloc _trending;
   late final TabController _tabs;
   final ScrollController _scrollController = ScrollController();
-  TrendingBloc? _trending;
   LatestFeedBloc? _latest;
   FollowingFeedBloc? _following;
   PopularFeedBloc? _popular;
@@ -73,6 +74,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   void initState() {
     super.initState();
     _bloc = getIt<PersonalizedFeedBloc>();
+    _trending = getIt<TrendingBloc>()..add(const TrendingEvent.started());
     _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     _bloc.add(const PersonalizedFeedEvent.started());
@@ -91,7 +93,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _scrollController.dispose();
     _tabs.dispose();
     unawaited(_bloc.close());
-    unawaited(_trending?.close());
+    unawaited(_trending.close());
     unawaited(_latest?.close());
     unawaited(_following?.close());
     unawaited(_popular?.close());
@@ -105,9 +107,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     HomeFeedChip.following => _following ??= getIt<FollowingFeedBloc>()..add(const PagedFeedEvent.started()),
     HomeFeedChip.popular => _popular ??= getIt<PopularFeedBloc>()..add(const PagedFeedEvent.started()),
   };
-
-  /// The Trending list. It loads the first time the Trending tab is shown.
-  TrendingBloc _trendingBloc() => _trending ??= getIt<TrendingBloc>()..add(const TrendingEvent.started());
 
   bool _showsSignIn(HomeFeedChip chip) => chip == HomeFeedChip.following && !app_state.prismUser.loggedIn;
 
@@ -147,10 +146,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     PrismHaptics.impact();
     final HomeFeedChip chip = _bloc.state.chip;
     if (chip == HomeFeedChip.trending) {
-      final TrendingBloc bloc = _trendingBloc();
-      final Future<TrendingState> settled = bloc.stream.firstWhere((s) => s.current.status != LoadStatus.loading);
-      bloc.add(const TrendingEvent.refreshRequested());
-      final TrendingState result = await settled.timeout(const Duration(seconds: 30), onTimeout: () => bloc.state);
+      final Future<TrendingState> settled = _trending.stream.firstWhere((s) => s.current.status != LoadStatus.loading);
+      _trending.add(const TrendingEvent.refreshRequested());
+      final TrendingState result = await settled.timeout(const Duration(seconds: 30), onTimeout: () => _trending.state);
       if (mounted &&
           refreshVersion == _refreshVersion &&
           identical(impressions, _impressions) &&
@@ -180,6 +178,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     }
     final Future<PersonalizedFeedState> settled = _bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
     _bloc.add(const PersonalizedFeedEvent.refreshRequested());
+    // The week list holds the boosted walls, whatever range the Trending tab shows.
+    _trending.add(const TrendingEvent.started());
     final PersonalizedFeedState result = await settled.timeout(
       const Duration(seconds: 30),
       onTimeout: () => _bloc.state,
@@ -252,8 +252,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               if (_scrollController.hasClients && _scrollController.offset > 0) {
                 _scrollController.jumpTo(0);
               }
-              // The quest is daily and the screen outlives a day. The first visit reports through the bloc's start.
-              if (state.chip == HomeFeedChip.trending && _trending != null) {
+              // The quest is daily and the screen outlives a day, so every visit reports it.
+              if (state.chip == HomeFeedChip.trending) {
                 CoinsService.instance.reportQuestEvent(QuestEvent.viewTrending);
               }
             },
@@ -273,13 +273,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               prev.chip != curr.chip ||
               prev.isRefreshing != curr.isRefreshing,
           builder: (context, state) {
-            final prismItems = state.items.whereType<PrismFeedItem>();
-            final previewWalls = prismItems.take(_carouselPreviewCount).toList(growable: false);
-            final previewSet = prismItems.take(_carouselPreviewCount).toSet();
-            final visibleItems = state.items.where((item) => !previewSet.contains(item)).toList(growable: false);
-            final bool loadingFirstPage =
-                state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading);
-
             // The scroll view starts under the status bar, so the floating header slides in right below the strip and
             // never under it.
             return Column(
@@ -332,20 +325,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                                 isRefreshing: state.isRefreshing,
                               ),
                             ),
-                            if (state.chip == HomeFeedChip.forYou)
-                              SliverToBoxAdapter(
-                                child: loadingFirstPage
-                                    ? const _CarouselSkeleton()
-                                    : FeedCarousel(
-                                        previewWalls: previewWalls,
-                                        onWallShown: (wall) => _bloc.add(
-                                          PersonalizedFeedEvent.tilesSeen(<String>[
-                                            PersonalizedRankingService.canonicalKey(wall),
-                                          ]),
-                                        ),
-                                      ),
-                              ),
-                            ..._contentSlivers(context, state, visibleItems, crossAxisCount, tileMemCacheHeight),
+                            ..._contentSlivers(context, state, crossAxisCount, tileMemCacheHeight),
                             const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
                           ],
                         ),
@@ -364,13 +344,19 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   List<Widget> _contentSlivers(
     BuildContext context,
     PersonalizedFeedState state,
-    List<FeedItemEntity> visibleItems,
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
     switch (state.chip) {
       case HomeFeedChip.forYou:
-        return _forYouSlivers(context, state, visibleItems, crossAxisCount, tileMemCacheHeight);
+        return <Widget>[
+          BlocSelector<TrendingBloc, TrendingState, List<PrismWallpaper>>(
+            bloc: _trending,
+            selector: (trending) => trending.week.walls,
+            builder: (context, weekWalls) =>
+                _forYouSliver(context, state, weekWalls, crossAxisCount, tileMemCacheHeight),
+          ),
+        ];
       case HomeFeedChip.latest:
         return <Widget>[
           PagedChipSliver(
@@ -399,11 +385,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ];
       case HomeFeedChip.trending:
         return <Widget>[
-          TrendingChipSliver(
-            bloc: _trendingBloc(),
-            crossAxisCount: crossAxisCount,
-            tileMemCacheHeight: tileMemCacheHeight,
-          ),
+          TrendingChipSliver(bloc: _trending, crossAxisCount: crossAxisCount, tileMemCacheHeight: tileMemCacheHeight),
         ];
       case HomeFeedChip.popular:
         return <Widget>[
@@ -419,7 +401,51 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     }
   }
 
-  List<Widget> _forYouSlivers(
+  /// The For you tab: the carousel, then the grid. Active boosted walls lead the carousel and are left out of the
+  /// grid, so a wall shows once.
+  Widget _forYouSliver(
+    BuildContext context,
+    PersonalizedFeedState state,
+    List<PrismWallpaper> weekWalls,
+    int crossAxisCount,
+    int tileMemCacheHeight,
+  ) {
+    final DateTime now = DateTime.now();
+    final List<PrismWallpaper> boostedWalls = weekWalls.where((wall) => wall.isBoostedAt(now)).toList(growable: false);
+    final Set<String> boostedIds = <String>{for (final PrismWallpaper wall in boostedWalls) wall.id};
+    final List<PrismFeedItem> previewWalls = state.items
+        .whereType<PrismFeedItem>()
+        .where((item) => !boostedIds.contains(item.id))
+        .take(_carouselPreviewCount)
+        .toList(growable: false);
+    final Set<String> shownInCarousel = <String>{...boostedIds, for (final PrismFeedItem item in previewWalls) item.id};
+    final List<FeedItemEntity> visibleItems = state.items
+        .where((item) => item is! PrismFeedItem || !shownInCarousel.contains(item.id))
+        .toList(growable: false);
+    final bool loadingFirstPage =
+        state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading);
+    return SliverMainAxisGroup(
+      slivers: <Widget>[
+        SliverPadding(
+          padding: const EdgeInsets.only(bottom: PrismFeedLayout.gridSpacing),
+          sliver: SliverToBoxAdapter(
+            child: loadingFirstPage
+                ? const _CarouselSkeleton()
+                : FeedCarousel(
+                    boostedWalls: boostedWalls,
+                    previewWalls: previewWalls,
+                    onWallShown: (wall) => _bloc.add(
+                      PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(wall)]),
+                    ),
+                  ),
+          ),
+        ),
+        ..._forYouGridSlivers(context, state, visibleItems, crossAxisCount, tileMemCacheHeight),
+      ],
+    );
+  }
+
+  List<Widget> _forYouGridSlivers(
     BuildContext context,
     PersonalizedFeedState state,
     List<FeedItemEntity> visibleItems,
@@ -445,23 +471,26 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       }
     }
     return <Widget>[
-      SliverGrid(
-        gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount, spacing: PrismFeedLayout.gridSpacing),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final FeedItemEntity item = visibleItems[index];
-          return KeyedSubtree(
-            key: ValueKey<String>(item.id),
-            child: FeedWallTile(
-              item: item,
-              index: index,
-              crossAxisCount: crossAxisCount,
-              memCacheHeight: tileMemCacheHeight,
-              onShowLessLikeThis: () => _lessLikeThis(item),
-              onVisible: () =>
-                  _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
-            ),
-          );
-        }, childCount: visibleItems.length),
+      SliverPadding(
+        padding: PrismFeedLayout.gridPadding,
+        sliver: SliverGrid(
+          gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount, spacing: PrismFeedLayout.gridSpacing),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final FeedItemEntity item = visibleItems[index];
+            return KeyedSubtree(
+              key: ValueKey<String>(item.id),
+              child: FeedWallTile(
+                item: item,
+                index: index,
+                crossAxisCount: crossAxisCount,
+                memCacheHeight: tileMemCacheHeight,
+                onShowLessLikeThis: () => _lessLikeThis(item),
+                onVisible: () =>
+                    _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(item)])),
+              ),
+            );
+          }, childCount: visibleItems.length),
+        ),
       ),
       SliverToBoxAdapter(child: _bottomState(context, state, crossAxisCount)),
     ];
@@ -518,6 +547,11 @@ class _CarouselSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PrismSkeleton(child: PrismBone(height: feedCarouselCardHeight(context), radius: 0));
+    return PrismSkeleton(
+      child: Padding(
+        padding: PrismFeedLayout.gridPadding,
+        child: PrismBone(height: feedCarouselCardHeight(context), radius: PrismRadius.lg),
+      ),
+    );
   }
 }

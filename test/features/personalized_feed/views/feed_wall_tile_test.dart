@@ -6,7 +6,6 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -55,21 +54,9 @@ void main() {
 
   BorderRadius tileRadius(WidgetTester tester) => tester.widget<PrismWallTile>(find.byType(PrismWallTile)).borderRadius;
 
-  testWidgets('a home grid tile has square corners', (tester) async {
+  testWidgets('a home grid tile has rounded corners', (tester) async {
     await pumpTile(tester, const FeedWallTile(item: _item, index: 0, crossAxisCount: 3, memCacheHeight: 400));
 
-    expect(tileRadius(tester), BorderRadius.zero);
-  });
-
-  testWidgets('a wallpaper tile keeps the rounded grid corners by default', (tester) async {
-    await pumpTile(tester, const WallpaperTile(item: _item, index: 0));
-
-    expect(tileRadius(tester), PrismWallGrid.tileRadius);
-  });
-
-  testWidgets('a wallpaper tile takes the corners it is given', (tester) async {
-    await pumpTile(tester, const WallpaperTile(item: _item, index: 0, borderRadius: BorderRadius.zero));
-
-    expect(tileRadius(tester), BorderRadius.zero);
+    expect(tileRadius(tester), BorderRadius.circular(12));
   });
 }
