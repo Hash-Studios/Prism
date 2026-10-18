@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
@@ -60,6 +61,7 @@ class EconomySpend {
     this.giftPremiumPass = 50,
     this.drawTicket = 20,
     this.spinWheel = 10,
+    this.dailyChest = 8,
   });
 
   factory EconomySpend.fromMap(Map<String, dynamic> m) {
@@ -82,6 +84,7 @@ class EconomySpend {
       giftPremiumPass: _int(m['giftPremiumPass'], d.giftPremiumPass),
       drawTicket: _int(m['drawTicket'], d.drawTicket),
       spinWheel: _int(m['spinWheel'], d.spinWheel),
+      dailyChest: _int(m['dailyChest'], d.dailyChest),
     );
   }
 
@@ -104,6 +107,9 @@ class EconomySpend {
 
   /// What a paid spin of the wheel costs.
   final int spinWheel;
+
+  /// What the daily chest costs before today's quests are done.
+  final int dailyChest;
 }
 
 class SpinSegment {
@@ -136,6 +142,7 @@ class EconomyAward {
     ],
     this.spinWheel = defaultWheel,
     this.spinWheelMaxPerDay = 5,
+    this.dailyChest = defaultChest,
     this.questCoins = 2,
     this.questXp = 25,
     this.questChestMin = 5,
@@ -189,6 +196,7 @@ class EconomyAward {
           : d.proSpin,
       spinWheel: parseWheel(m['spinWheel']) ?? d.spinWheel,
       spinWheelMaxPerDay: award('spinWheelMaxPerDay', d.spinWheelMaxPerDay),
+      dailyChest: parseWheel(m['dailyChest']) ?? d.dailyChest,
       questCoins: award('questCoins', d.questCoins),
       questXp: award('questXp', d.questXp),
       questChestMin: questChestMin,
@@ -221,6 +229,9 @@ class EconomyAward {
 
   /// Paid spins per UTC day. The free Pro spin does not count.
   final int spinWheelMaxPerDay;
+
+  /// The daily chest's slots, in the wheel table's shape.
+  final List<WheelSegment> dailyChest;
   final int questCoins;
   final int questXp;
   final int questChestMin;

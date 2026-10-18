@@ -32,6 +32,7 @@ class CoinPolicy {
   static List<SpinSegment> get proSpin => _award.proSpin;
   static List<WheelSegment> get spinWheel => _award.spinWheel;
   static int get spinWheelMaxPerDay => _award.spinWheelMaxPerDay;
+  static List<WheelSegment> get dailyChest => _award.dailyChest;
   static int get graceDownloads => _award.graceDownloads;
   static int get questCoins => _award.questCoins;
   static int get questChestMin => _award.questChestMin;
@@ -55,6 +56,7 @@ class CoinPolicy {
   static int get giftPremiumPass => _spend.giftPremiumPass;
   static int get drawTicket => _spend.drawTicket;
   static int get spinWheelPrice => _spend.spinWheel;
+  static int get dailyChestPrice => _spend.dailyChest;
   static const int maxStreakFreezes = 2;
 
   // UX

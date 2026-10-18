@@ -8,6 +8,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
+import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/downloaded_link_lookup.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_snapshot_store.dart';
@@ -2621,6 +2622,9 @@ class CoinsService with WidgetsBindingObserver {
     );
     spinWheelNotifier.value = status;
   }
+
+  /// Opens today's chest. [maxCost] is the price the user saw: 0 when it showed the chest as free.
+  Future<DailyChestResult> openDailyChest({required int maxCost}) async => throw UnimplementedError();
 
   /// Opens today's quest chest once the three daily items are claimed.
   Future<ChestResult> openQuestChest() async {
