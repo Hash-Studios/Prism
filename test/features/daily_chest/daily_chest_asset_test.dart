@@ -63,6 +63,15 @@ int _countRed(ByteData data, {int rows = _size, int minRed = 120}) {
   return count;
 }
 
+/// Pixels with any alpha in the rows from [from] up to [to].
+int _litPixels(ByteData data, {int from = 0, required int to}) {
+  int count = 0;
+  for (int i = from * _size * 4 + 3; i < to * _size * 4; i += 4) {
+    if (data.getUint8(i) > 0) count++;
+  }
+  return count;
+}
+
 int _maxDelta(ByteData a, ByteData b) {
   int most = 0;
   for (int i = 0; i < a.lengthInBytes; i++) {
@@ -141,6 +150,20 @@ void main() {
     final int gone = _countRed(await _render(composition, 224, red), rows: aboveBox);
     expect(flying, greaterThan(1500), reason: 'frame 198 shows a solid lid');
     expect(gone, 0, reason: 'frame 224 has no lid left');
+  });
+
+  test('the light rays and the beam fade out before the top edge of the canvas', () async {
+    // The top 24 px of the 512 px composition are the top 12 rows of this render.
+    const int fadeRows = 12;
+    for (final double frame in <double>[240, 269, 300, 330, 356, 389]) {
+      final ByteData data = await _render(composition, frame);
+      expect(_litPixels(data, to: fadeRows), 0, reason: 'frame $frame has light in the top rows');
+      expect(
+        _litPixels(data, from: fadeRows, to: 32),
+        greaterThan(20),
+        reason: 'frame $frame keeps light under the fade',
+      );
+    }
   });
 
   test('the opened box has a bright core and the spent box does not', () async {

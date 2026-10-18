@@ -286,14 +286,15 @@ def layer(ind, name, shapes=(), parent=None, ip=0, op=END, **tr):
     return out
 
 
-def soft(name, color, center, big, small, steps, peak, curve=1.5):
-    """Stacked solid ellipses whose composited alpha follows an eased falloff, so one colour delegate can tint them.
+def falloff(steps, peak, curve=1.5):
+    """(index, alpha %) of each layer in a stack whose composited alpha follows an eased falloff.
 
-    Alpha is 0 at the big rim and `peak` percent inside the small ellipse. Each ring adds only the alpha that is still
-    missing, so the steps stay thin and no ring edge shows. `curve` above 1 pulls the light toward the centre.
-    A ring that would add less than one alpha byte (0.4 %) is left out and its alpha goes to the next ring.
+    Index 0 is the outermost layer and the composite is 0 outside it and `peak` percent inside the innermost.
+    Each layer adds only the alpha that is still missing, so the steps stay thin and no edge shows. `curve` above 1
+    pulls the light toward the inside. A layer that would add less than one alpha byte (0.4 %) is left out and its
+    alpha goes to the next layer.
     """
-    out, covered = [], 0.0
+    covered = 0.0
     for i in range(steps):
         u = (i + 1) / steps
         target = peak / 100 * (u * u * (3 - 2 * u)) ** curve
@@ -301,8 +302,19 @@ def soft(name, color, center, big, small, steps, peak, curve=1.5):
         if alpha < 0.4:
             continue
         covered = target
-        size = tuple(b + (s - b) * i / (steps - 1) for b, s in zip(big, small))
-        out.append(shape(f"{name}_{i}", color, [ellipse(center[0], center[1], *size)], opacity=alpha))
+        yield i, alpha
+
+
+def soft(name, color, center, big, small, steps, peak, curve=1.5, rise=False):
+    """Stacked solid ellipses whose composited alpha follows `falloff`, so one colour delegate can tint them.
+
+    The ellipses are concentric on `center`. With `rise` they share their bottom point instead, so the light fades out
+    upward and its top edge is the biggest ellipse's top.
+    """
+    out = []
+    for i, alpha in falloff(steps, peak, curve):
+        w, h = (b + (s - b) * i / (steps - 1) for b, s in zip(big, small))
+        out.append(shape(f"{name}_{i}", color, [ellipse(center[0], center[1] - (h / 2 if rise else 0), w, h)], opacity=alpha))
     return out
 
 
@@ -514,7 +526,7 @@ def build_shade_and_seams():
 
 def build_bloom():
     cx, cy = OPENING
-    beam = soft("beam", "glow", (cx, cy - 110), (130, 340), (60, 200), 24, 17)
+    beam = soft("beam", "glow", (cx, cy), (118, 158), (56, 96), 24, 17, rise=True)
     halo = soft("halo", "glow", (cx, cy), (400, 260), (110, 72), 44, 35)
     core = [shape("core_halo", WHITE, [ellipse(cx, cy, 112, 64)], opacity=26), shape("core", WHITE, [ellipse(cx, cy, 70, 40)], opacity=92)]
     return beam + halo + core
@@ -527,7 +539,9 @@ def build_flash():
     return bloom + heart
 
 
-RAYS = ((-72, 170, 3.5), (-54, 215, 4.5), (-37, 250, 3.0), (-20, 230, 5.0), (-6, 270, 3.5), (9, 255, 4.2), (24, 235, 3.0), (40, 245, 4.6), (57, 215, 3.5), (73, 165, 4.0))
+# The lengths, and the beam's size in build_bloom, keep all light below y=24 at the worst sway, float and squash frame.
+# daily_chest_asset_test.dart renders frames to check it, so the canvas edge never cuts a ray.
+RAYS = ((-72, 170, 3.5), (-54, 215, 4.5), (-37, 236, 3.0), (-20, 210, 5.0), (-6, 205, 3.5), (9, 200, 4.2), (24, 208, 3.0), (40, 235, 4.6), (57, 215, 3.5), (73, 165, 4.0))
 
 
 def ray_kite(theta, length, half):
@@ -537,11 +551,18 @@ def ray_kite(theta, length, half):
     return [(0, 0), (dx * shoulder - dy * wid, dy * shoulder + dx * wid), (dx * length, dy * length), (dx * shoulder + dy * wid, dy * shoulder - dx * wid)]
 
 
+RAY_STEPS, RAY_PEAK = 7, 26
+
+
 def build_rays():
+    """Each ray is nested kites on one eased falloff, so it thins out to nothing at its tip instead of ending on an edge."""
     rays = []
     for n, (theta, length, half) in enumerate(RAYS):
         k, phase = 1 + n % 2, n * 1.3
-        kites = [poly(f"ray_{i}", ray_kite(theta, length * f, half * f ** 0.4), "glow", opacity=5) for i, f in enumerate((1.0, 0.74, 0.52, 0.32))]
+        kites = []
+        for i, alpha in falloff(RAY_STEPS, RAY_PEAK):
+            f = 1 - 0.7 * i / (RAY_STEPS - 1)
+            kites.append(poly(f"ray_{i}", ray_kite(theta, length * f, half * f ** 0.4), "glow", opacity=alpha))
         rot = Track(swing(0, 3.2, k, phase, 192))
         scale = Track([(t, [v] * 2, e) for t, v, e in swing(100, 7, k, phase + 2, 192)])
         rays.append({"ty": "gr", "nm": f"ray_group_{n}", "it": [*kites[::-1], transform(group=True, r=rot, s=scale)]})
