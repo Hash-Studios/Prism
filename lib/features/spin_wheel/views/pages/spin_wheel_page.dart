@@ -7,16 +7,17 @@ import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/spin_wheel/biz/wheel_machine_controller.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_motion.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/coin_burst.dart';
+import 'package:Prism/features/spin_wheel/views/widgets/get_coins_sheet.dart';
+import 'package:Prism/features/spin_wheel/views/widgets/odds_pill.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_button.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_plinth.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_result_panel.dart';
+import 'package:Prism/features/spin_wheel/views/widgets/stage_top_bar.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_geometry.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_machine.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_odds_sheet.dart';
@@ -263,42 +264,12 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     toasts.error("Couldn't reach Prism. Try again.");
   }
 
-  /// The short-balance flow: one sheet that offers a video for coins.
-  Future<void> _getCoins() async {
-    final bool watch =
-        await showPrismSheet<bool>(
-          context: context,
-          builder: (BuildContext sheetContext) => PrismSheetBody(
-            title: 'Not enough coins',
-            message: 'A spin costs ${_status.price} coins. You have $_balance. Watch a video to earn more.',
-            mood: GlintMood.worried,
-            centered: true,
-            actions: <Widget>[
-              PrismButton(
-                label: 'Watch a video (+${CoinsService.instance.adsRewardNow})',
-                expand: true,
-                onPressed: () => Navigator.of(sheetContext).pop(true),
-              ),
-              PrismButton(
-                label: 'Not now',
-                expand: true,
-                variant: PrismButtonVariant.ghost,
-                onPressed: () => Navigator.of(sheetContext).pop(false),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!watch || !mounted) return;
-    final int reward = CoinsService.instance.adsRewardNow;
-    final bool credited = await CoinGate.forContext(context).watchAdForCoins(
-      sourceTag: 'coins.spin_wheel.rewarded_ad',
-      upsellSource: 'spin_wheel_rewarded_ad',
-      isMounted: () => mounted,
-      adErrorMessage: 'Ad was not completed.',
-    );
-    if (credited) toasts.success('+$reward coins');
-  }
+  Future<void> _getCoins() => showGetCoinsSheet(
+    context,
+    message: 'A spin costs ${_status.price} coins. You have $_balance. Watch a video to earn more.',
+    sourceTag: 'coins.spin_wheel.rewarded_ad',
+    upsellSource: 'spin_wheel_rewarded_ad',
+  );
 
   void _openPaywall() {
     unawaited(
@@ -377,7 +348,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
       padding: EdgeInsets.only(top: layout.topSpare),
       child: Column(
         children: <Widget>[
-          _TopBar(balance: _balance, delta: _delta, low: _action == SpinAction.getCoins, onClose: _close),
+          StageTopBar(balance: _balance, delta: _delta, low: _action == SpinAction.getCoins, onClose: _close),
           SizedBox(
             height: _StageLayout.titleBand,
             child: Center(
@@ -449,7 +420,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
             ),
           ),
           const SizedBox(height: PrismSpace.sm),
-          _OddsPill(onTap: () => unawaited(showWheelOdds(context, _segments))),
+          OddsPill(onTap: () => unawaited(showWheelOdds(context, _segments))),
           const SizedBox(height: PrismSpace.xxs),
           Text(spinsLeftCaption(_status), style: PrismTextStyles.caption(context)),
           if (!pro) ...<Widget>[
@@ -521,33 +492,6 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.balance, required this.delta, required this.low, required this.onClose});
-
-  final int balance;
-  final int delta;
-  final bool low;
-  final VoidCallback onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 56,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-        child: Row(
-          children: <Widget>[
-            PrismIconButton(icon: Icons.close_rounded, tooltip: 'Close', filled: true, onPressed: onClose),
-            const Spacer(),
-            CoinBalancePill(balance: balance, delta: delta, low: low),
-            const SizedBox(width: PrismSpace.xs),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// One quiet row for people who are not Pro. It opens the paywall.
 class _ProRow extends StatelessWidget {
   const _ProRow({required this.onTap});
@@ -578,52 +522,6 @@ class _ProRow extends StatelessWidget {
   }
 }
 
-class _OddsPill extends StatelessWidget {
-  const _OddsPill({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    return PressScale(
-      child: Semantics(
-        button: true,
-        label: 'See the odds',
-        excludeSemantics: true,
-        onTap: onTap,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
-            child: Center(
-              widthFactor: 1,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(PrismRadius.pill),
-                  border: Border.all(color: cs.onSurface.withValues(alpha: 0.28)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: 7),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(Icons.info_outline_rounded, size: 16, color: cs.onSurface),
-                      const SizedBox(width: 6),
-                      Text('See the odds', style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Where everything goes on one screen: the wheel is as big as the screen allows, up to 340.
 class _StageLayout {
   const _StageLayout({required this.width, required this.diameter, required this.topSpare, required this.height});
@@ -638,9 +536,9 @@ class _StageLayout {
     return _StageLayout(width: size.width, diameter: d, topSpare: spare * 0.45, height: height);
   }
 
-  static const double barHeight = 56;
+  static const double barHeight = StageTopBar.height;
   static const double titleBand = 44;
-  static const double footerHeight = 12 + 44 + 4 + 18;
+  static const double footerHeight = 12 + OddsPill.height + 4 + 18;
   static const double proRowHeight = 16 + 56;
 
   final double width;

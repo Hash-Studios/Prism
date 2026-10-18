@@ -6,6 +6,7 @@ import 'package:Prism/features/daily_chest/domain/chest_tiers.dart';
 import 'package:Prism/features/quests/domain/quest_catalog.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
+import 'package:Prism/features/spin_wheel/spin_wheel.dart';
 import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:flutter/material.dart';
 
@@ -89,7 +90,7 @@ class ChestRevealCard extends StatelessWidget {
       children: <Widget>[
         if (_isXp) Icon(Icons.bolt_rounded, size: 38, color: cs.onSurface) else const PrismCoinIcon(size: 36),
         const SizedBox(width: PrismSpace.xs),
-        _CountUp(value: _isXp ? won.win.xp : won.win.coins, suffix: _isXp ? ' XP' : '', style: numeral),
+        CountUp(value: _isXp ? won.win.xp : won.win.coins, suffix: _isXp ? ' XP' : '', style: numeral),
       ],
     );
   }
@@ -145,25 +146,6 @@ class _TierChip extends StatelessWidget {
           style: PrismTextStyles.caption(context).copyWith(color: prismOnColor(fill), fontWeight: FontWeight.w700),
         ),
       ),
-    );
-  }
-}
-
-/// "+N" counting up from 0. Under reduced motion it shows the number at once.
-class _CountUp extends StatelessWidget {
-  const _CountUp({required this.value, required this.style, this.suffix = ''});
-
-  final int value;
-  final String suffix;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: context.reduceMotion ? 1 : 0, end: 1),
-      duration: context.motion(PrismDurations.slow * 2),
-      curve: PrismCurves.enter,
-      builder: (BuildContext context, double t, Widget? _) => Text('+${(value * t).round()}$suffix', style: style),
     );
   }
 }

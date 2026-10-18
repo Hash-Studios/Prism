@@ -8,9 +8,7 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/daily_chest/domain/chest_action.dart';
 import 'package:Prism/features/daily_chest/domain/chest_copy.dart';
 import 'package:Prism/features/daily_chest/domain/chest_phase.dart';
@@ -18,8 +16,7 @@ import 'package:Prism/features/daily_chest/domain/chest_tiers.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_box.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_odds_sheet.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_reveal_card.dart';
-import 'package:Prism/features/spin_wheel/views/widgets/coin_burst.dart';
-import 'package:Prism/features/spin_wheel/views/widgets/spin_button.dart';
+import 'package:Prism/features/spin_wheel/spin_wheel.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
@@ -296,42 +293,12 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     toasts.error("Couldn't reach Prism. Try again.");
   }
 
-  /// The short-balance flow: one sheet that offers a video for coins.
-  Future<void> _getCoins(DailyChestStatus status) async {
-    final bool watch =
-        await showPrismSheet<bool>(
-          context: context,
-          builder: (BuildContext sheetContext) => PrismSheetBody(
-            title: 'Not enough coins',
-            message: 'The chest costs ${status.price} coins. You have $_balance. Watch a video to earn more.',
-            mood: GlintMood.worried,
-            centered: true,
-            actions: <Widget>[
-              PrismButton(
-                label: 'Watch a video (+${CoinsService.instance.adsRewardNow})',
-                expand: true,
-                onPressed: () => Navigator.of(sheetContext).pop(true),
-              ),
-              PrismButton(
-                label: 'Not now',
-                expand: true,
-                variant: PrismButtonVariant.ghost,
-                onPressed: () => Navigator.of(sheetContext).pop(false),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!watch || !mounted) return;
-    final int reward = CoinsService.instance.adsRewardNow;
-    final bool credited = await CoinGate.forContext(context).watchAdForCoins(
-      sourceTag: 'coins.daily_chest.rewarded_ad',
-      upsellSource: 'daily_chest_rewarded_ad',
-      isMounted: () => mounted,
-      adErrorMessage: 'Ad was not completed.',
-    );
-    if (credited) toasts.success('+$reward coins');
-  }
+  Future<void> _getCoins(DailyChestStatus status) => showGetCoinsSheet(
+    context,
+    message: 'The chest costs ${status.price} coins. You have $_balance. Watch a video to earn more.',
+    sourceTag: 'coins.daily_chest.rewarded_ad',
+    upsellSource: 'daily_chest_rewarded_ad',
+  );
 
   void _close() => Navigator.of(context).maybePop();
 
@@ -415,7 +382,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       padding: EdgeInsets.only(top: layout.topSpare),
       child: Column(
         children: <Widget>[
-          _TopBar(
+          StageTopBar(
             balance: _balance,
             delta: _delta,
             low: _action == ChestAction.getCoins,
@@ -505,7 +472,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       key: const ValueKey<String>('odds_slot'),
       duration: context.motion(PrismDurations.fast),
       child: idle
-          ? _OddsPill(
+          ? OddsPill(
               key: const ValueKey<String>('odds'),
               onTap: () => unawaited(showChestOdds(context, CoinPolicy.dailyChest)),
             )
@@ -656,82 +623,6 @@ class _RisingCard extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.balance, required this.delta, required this.low, required this.onClose});
-
-  final int balance;
-  final int delta;
-  final bool low;
-
-  /// Null while the box works: closing then would hide a prize the user already paid for.
-  final VoidCallback? onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: _ChestLayout.barHeight,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-        child: Row(
-          children: <Widget>[
-            PrismIconButton(icon: Icons.close_rounded, tooltip: 'Close', filled: true, onPressed: onClose),
-            const Spacer(),
-            CoinBalancePill(balance: balance, delta: delta, low: low),
-            const SizedBox(width: PrismSpace.xs),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A small outlined pill under the button. It opens the odds.
-class _OddsPill extends StatelessWidget {
-  const _OddsPill({super.key, required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    return PressScale(
-      child: Semantics(
-        button: true,
-        label: 'See the odds',
-        excludeSemantics: true,
-        onTap: onTap,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: _ChestLayout.oddsHeight),
-            child: Center(
-              widthFactor: 1,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(PrismRadius.pill),
-                  border: Border.all(color: cs.onSurface.withValues(alpha: 0.28)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: 7),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(Icons.info_outline_rounded, size: 16, color: cs.onSurface),
-                      const SizedBox(width: 6),
-                      Text('See the odds', style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Where everything goes on one screen: the box is as big as the screen allows, up to 320 and 70 % of the width.
 class _ChestLayout {
   const _ChestLayout({required this.width, required this.box, required this.topSpare});
@@ -744,7 +635,7 @@ class _ChestLayout {
     return _ChestLayout(width: size.width, box: box, topSpare: spare * 0.4);
   }
 
-  static const double barHeight = 56;
+  static const double barHeight = StageTopBar.height;
 
   /// The title, and the prize card in its place once it is up.
   static const double headerHeight = 168;
@@ -753,7 +644,7 @@ class _ChestLayout {
   static const double actionsHeight = 150;
 
   /// The odds pill, or the empty slot that holds its place.
-  static const double oddsHeight = 44;
+  static const double oddsHeight = OddsPill.height;
 
   /// The odds slot and the margins around it.
   static const double footerHeight = oddsHeight + PrismSpace.xs + PrismSpace.md;

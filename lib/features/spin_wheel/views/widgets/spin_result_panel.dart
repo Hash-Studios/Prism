@@ -5,6 +5,7 @@ import 'package:Prism/features/quests/domain/quest_catalog.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
+import 'package:Prism/features/spin_wheel/views/widgets/count_up.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_button.dart';
 import 'package:flutter/material.dart';
 
@@ -156,7 +157,7 @@ class _Headline extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: <Widget>[
-          _CountUp(value: panel.win.xp, style: numeral),
+          CountUp(value: panel.win.xp, style: numeral),
           const SizedBox(width: PrismSpace.xs),
           Text('XP', style: PrismTextStyles.sectionTitle(context).copyWith(color: ink)),
         ],
@@ -167,26 +168,8 @@ class _Headline extends StatelessWidget {
       children: <Widget>[
         const PrismCoinIcon(size: 34),
         const SizedBox(width: PrismSpace.xs),
-        _CountUp(value: panel.win.coins, style: numeral),
+        CountUp(value: panel.win.coins, style: numeral),
       ],
-    );
-  }
-}
-
-/// "+N" counting up from 0. Under reduced motion it shows the number at once.
-class _CountUp extends StatelessWidget {
-  const _CountUp({required this.value, required this.style});
-
-  final int value;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: context.reduceMotion ? 1 : 0, end: 1),
-      duration: context.motion(PrismDurations.slow * 2),
-      curve: PrismCurves.enter,
-      builder: (BuildContext context, double t, Widget? _) => Text('+${(value * t).round()}', style: style),
     );
   }
 }

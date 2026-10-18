@@ -1,10 +1,9 @@
 import 'package:Prism/core/coins/spin_wheel.dart';
-import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/daily_chest/domain/chest_odds.dart';
-import 'package:Prism/features/daily_chest/domain/chest_prize.dart';
 import 'package:Prism/features/daily_chest/domain/chest_tiers.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
+import 'package:Prism/features/spin_wheel/spin_wheel.dart';
 import 'package:flutter/material.dart';
 
 /// Lists every slot of the chest with its odds in percent, grouped by tier.
@@ -36,9 +35,9 @@ Future<void> showChestOdds(BuildContext context, List<WheelSegment> slots) {
               children: <Widget>[
                 for (final WheelOdds o in group.rows)
                   PrismRow(
-                    leading: _icon(o.prize),
-                    title: chestPrizeTitle(o.prize),
-                    subtitle: chestPrizeNote(o.prize),
+                    leading: prizeIcon(o.prize),
+                    title: prizeTitle(o.prize),
+                    subtitle: prizeNote(o.prize),
                     value: oddsLabel(o.percent),
                   ),
               ],
@@ -75,14 +74,3 @@ class _TierHeader extends StatelessWidget {
     );
   }
 }
-
-Widget _icon(WheelPrize prize) => SizedBox.square(
-  dimension: 32,
-  child: Center(
-    child: switch (prize) {
-      CoinsPrize() => const PrismCoinIcon(size: 24),
-      XpPrize() => const Icon(Icons.bolt_rounded, size: 24),
-      CosmeticPrize() => const Icon(Icons.auto_awesome_rounded, size: 24),
-    },
-  ),
-);
