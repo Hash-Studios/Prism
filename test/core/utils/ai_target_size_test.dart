@@ -16,7 +16,15 @@ void main() {
     expect(aiTargetSize(size: const Size(820, 1180), devicePixelRatio: 2), '1424x2040');
   });
 
-  test('a landscape screen gives a landscape size', () {
-    expect(aiTargetSize(size: const Size(915, 412), devicePixelRatio: 2.625), '2048x920');
+  test('a landscape screen gives the same portrait size as the portrait screen', () {
+    expect(aiTargetSize(size: const Size(915, 412), devicePixelRatio: 2.625), '920x2048');
+    expect(
+      aiTargetSize(size: const Size(1376, 1032), devicePixelRatio: 2),
+      aiTargetSize(size: const Size(1032, 1376), devicePixelRatio: 2),
+    );
+  });
+
+  test('a common phone size is unchanged', () {
+    expect(aiTargetSize(size: const Size(393, 852), devicePixelRatio: 3), '944x2048');
   });
 }

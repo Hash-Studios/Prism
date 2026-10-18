@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' show min, pi;
+import 'dart:math' show max, min, pi;
 import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -56,6 +56,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_butto
 import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -410,11 +411,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
 
   _PanelGeometry _panelGeometry(BuildContext context) {
     final EdgeInsets safe = MediaQuery.paddingOf(context);
+    final double side = max(0.0, (MediaQuery.sizeOf(context).width - PrismLayout.panelWidth) / 2);
     return _PanelGeometry(
       collapsed: _handleHeight + WallpaperActionBar.height,
       open: MediaQuery.sizeOf(context).height * _panelMaxFraction,
-      left: safe.left + _panelInset,
-      right: safe.right + _panelInset,
+      left: max(safe.left + _panelInset, side),
+      right: max(safe.right + _panelInset, side),
       bottom: safe.bottom + _panelInset,
     );
   }
@@ -1184,7 +1186,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     }
   }
 
-  Size _screenPixels(BuildContext context) => MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
+  Size _screenPixels(BuildContext context) {
+    final Size px = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
+    return Size(px.shortestSide, px.longestSide);
+  }
 
   void _onWallpaperSet(FeedItemEntity entity) {
     _recordTaste(TasteAction.set, entity);

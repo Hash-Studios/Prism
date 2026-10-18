@@ -324,7 +324,11 @@ void main() {
 
   testWidgets('the Live chip rides 12 px above the glass and fades out as the panel opens', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client(live: true));
-    await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+    await pump(
+      tester,
+      WallpaperDetailLoaded(entity: _prism(), paletteLoading: false),
+      surfaceSize: const Size(393, 852),
+    );
     await tester.pump();
     final Finder pill = find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(PrismGlass));
     final Finder panelGlass = find.byType(PrismGlass).last;
@@ -347,28 +351,30 @@ void main() {
     await tester.pump();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('the Live chip and the glass keep clear of a side safe area, and the wallpaper stays full screen', (
-    tester,
-  ) async {
-    aw.AsyncWallpaper.debugSetClient(_Client(live: true));
-    tester.view.physicalSize = const Size(844 * 3, 390 * 3);
-    tester.view.devicePixelRatio = 3;
-    tester.view.padding = const FakeViewPadding(left: 47 * 3, right: 47 * 3, bottom: 21 * 3);
-    tester.view.viewPadding = const FakeViewPadding(left: 47 * 3, right: 47 * 3, bottom: 21 * 3);
-    addTearDown(tester.view.reset);
-    await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
-    await tester.pump(const Duration(milliseconds: 200));
+  testWidgets(
+    'in a wide window the glass is a centred 560 column clear of the side safe area, and the wallpaper stays full screen',
+    (tester) async {
+      aw.AsyncWallpaper.debugSetClient(_Client(live: true));
+      tester.view.physicalSize = const Size(844 * 3, 390 * 3);
+      tester.view.devicePixelRatio = 3;
+      tester.view.padding = const FakeViewPadding(left: 47 * 3, right: 47 * 3, bottom: 21 * 3);
+      tester.view.viewPadding = const FakeViewPadding(left: 47 * 3, right: 47 * 3, bottom: 21 * 3);
+      addTearDown(tester.view.reset);
+      await pump(tester, WallpaperDetailLoaded(entity: _prism(), paletteLoading: false));
+      await tester.pump(const Duration(milliseconds: 200));
 
-    final Rect glass = tester.getRect(find.byType(PrismGlass).last);
-    expect(glass.left, 57);
-    expect(glass.right, 844 - 57);
-    expect(
-      tester.getRect(find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(PrismGlass))).left,
-      81,
-    );
-    expect(tester.getRect(find.byType(SetWallpaperButton)).left, 81);
-    expect(tester.getRect(find.byType(SetWallpaperButton)).left, greaterThan(glass.left));
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+      final Rect glass = tester.getRect(find.byType(PrismGlass).last);
+      expect(glass.left, 142);
+      expect(glass.right, 844 - 142);
+      expect(
+        tester.getRect(find.descendant(of: find.byType(MakeItLiveChip), matching: find.byType(PrismGlass))).left,
+        166,
+      );
+      expect(tester.getRect(find.byType(SetWallpaperButton)).left, 166);
+      expect(tester.getRect(find.byType(SetWallpaperButton)).left, greaterThan(glass.left));
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
 
   testWidgets('no Live chip on iOS, where nothing can be set from the app', (tester) async {
     aw.AsyncWallpaper.debugSetClient(_Client(live: true));
