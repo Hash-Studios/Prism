@@ -12,6 +12,26 @@ enum BulbMode {
   landed,
 }
 
+/// The state of every bulb at one frame.
+class BulbFrame {
+  const BulbFrame({this.mode = BulbMode.idle, this.time = 0, this.chase = 0, this.flash = 0});
+
+  final BulbMode mode;
+
+  /// The clock in seconds.
+  final double time;
+
+  /// The position of the comet in bulbs, while [mode] is spinning.
+  final double chase;
+
+  /// Seconds since the landing, while [mode] is landed.
+  final double flash;
+
+  /// Brightness of bulb [index], 0 to 1.
+  double intensity(int index, {int period = 4}) =>
+      bulbIntensity(mode: mode, index: index, time: time, chase: chase, flash: flash, period: period);
+}
+
 /// Seconds one flash cycle lasts after a landing. Three flashes.
 const double bulbFlashCycle = 0.4;
 const int bulbFlashCount = 3;
