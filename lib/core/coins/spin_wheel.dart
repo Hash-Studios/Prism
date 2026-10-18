@@ -107,6 +107,16 @@ class SpinWheelStatus {
   int get nextCost => freeSpinAvailable ? 0 : price;
 
   bool get canSpin => freeSpinAvailable || paidSpinsLeft > 0;
+
+  @override
+  bool operator ==(Object other) =>
+      other is SpinWheelStatus &&
+      other.freeSpinAvailable == freeSpinAvailable &&
+      other.paidSpinsLeft == paidSpinsLeft &&
+      other.price == price;
+
+  @override
+  int get hashCode => Object.hash(freeSpinAvailable, paidSpinsLeft, price);
 }
 
 /// What the user got from a landed spin. Cosmetic fallback coins arrive as [coins] with a null [itemId].

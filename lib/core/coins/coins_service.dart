@@ -14,6 +14,7 @@ import 'package:Prism/core/coins/economy_snapshot_store.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/coins/pending_download.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
+import 'package:Prism/core/coins/spin_wheel_status.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -31,6 +32,7 @@ import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -312,7 +314,10 @@ class StreakFreezePurchase {
 }
 
 class CoinsService with WidgetsBindingObserver {
-  CoinsService._();
+  CoinsService._() {
+    questsNotifier.addListener(refreshSpinWheelStatus);
+    EconomyConfig.notifier.addListener(refreshSpinWheelStatus);
+  }
 
   static final CoinsService instance = CoinsService._();
   EconomySnapshotStore _economySnapshots = EconomySnapshotStore();
@@ -412,6 +417,11 @@ class CoinsService with WidgetsBindingObserver {
     ),
   );
   String _economyUserId = '';
+
+  /// The spin counters of `private/economy`. Spin replies update them too, so a recompute keeps the server's view.
+  SpinDay _spinDay = SpinDay.none;
+  SessionRepository? _watchedSession;
+  StreamSubscription<Object?>? _sessionSubscription;
 
   /// The user whose root XP was read, so a later rise can be announced as a rank up.
   String _xpUserId = '';
@@ -565,6 +575,7 @@ class CoinsService with WidgetsBindingObserver {
     }
     final String userId = app_state.prismUser.id;
     _ensureEconomyUser(userId);
+    _watchSessionForSpinWheel();
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
@@ -625,6 +636,7 @@ class CoinsService with WidgetsBindingObserver {
     final int generation = _economySessionGeneration;
     final int mutationGeneration = _economyMutationGeneration;
     _ensureEconomyUser(userId);
+    _watchSessionForSpinWheel();
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
     if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
@@ -1358,6 +1370,7 @@ class CoinsService with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
+    refreshSpinWheelStatus();
     unawaited(retryPendingRefunds());
     unawaited(EconomyConfig.refreshIfStale());
   }
@@ -1944,6 +1957,7 @@ class CoinsService with WidgetsBindingObserver {
     _economyUserId = userId;
     _xpUserId = '';
     _economyRev = -1;
+    _spinDay = SpinDay.none;
     _graceDownloadsUsed = 0;
     _adsTodayDay = null;
     _adsTodayCount = 0;
@@ -1953,6 +1967,7 @@ class CoinsService with WidgetsBindingObserver {
     inventoryNotifier.value = Inventory.empty;
     dropsUnlockedNotifier.value = const <String, DropUnlock>{};
     passesNotifier.value = Passes.empty;
+    refreshSpinWheelStatus();
   }
 
   void _ensureEconomyUser(String userId) {
@@ -1989,6 +2004,7 @@ class CoinsService with WidgetsBindingObserver {
     final int rev = parseIntOr(data['rev'], fallback: 0);
     if (rev < _economyRev) return;
     _economyRev = rev;
+    _spinDay = SpinDay.fromMap(data['spinWheel']);
     questsNotifier.value = QuestState.fromMap(data['quests']);
     final Object? rawOwned = toJsonMap(data['inventory'])['owned'];
     final Set<String> owned = rawOwned is List
@@ -2007,6 +2023,7 @@ class CoinsService with WidgetsBindingObserver {
     dropsUnlockedNotifier.value = Map<String, DropUnlock>.unmodifiable(unlocked);
     passesNotifier.value = Passes.fromMap(data['passes']);
     _graceDownloadsUsed = max(0, parseIntOr(data['graceDownloadsUsed']));
+    refreshSpinWheelStatus();
   }
 
   void _setXp(XpStatus next, {required bool announce}) {
@@ -2222,8 +2239,117 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  /// One spin of the coin wheel. The server charges at most [maxCost], picks the segment and grants the prize.
-  Future<SpinWheelResult> spinWheel({required int maxCost}) async => throw UnimplementedError();
+  /// Recomputes [spinWheelNotifier] from the cached economy, Pro and the loaded config. Every change of those calls it.
+  /// Call it too when a page opens, because the UTC day may have rolled over since the last change.
+  void refreshSpinWheelStatus() {
+    final bool owned = _ownsEconomyState;
+    spinWheelNotifier.value = deriveSpinWheelStatus(
+      today: economyDayKey(DateTime.now()),
+      day: owned ? _spinDay : SpinDay.none,
+      quests: owned ? questsNotifier.value : null,
+      isPro: _canMutateCoins() && app_state.prismUser.premium,
+      price: CoinPolicy.spinWheelPrice,
+      maxPerDay: CoinPolicy.spinWheelMaxPerDay,
+    );
+  }
+
+  /// Pro can change at any time, for example when a purchase lands. The session stream is the only signal for it.
+  void _watchSessionForSpinWheel() {
+    final SessionRepository? session = getIt.isRegistered<SessionRepository>() ? getIt<SessionRepository>() : null;
+    if (identical(session, _watchedSession)) return;
+    unawaited(_sessionSubscription?.cancel());
+    _watchedSession = session;
+    _sessionSubscription = session?.watchCurrentUser().listen((_) => refreshSpinWheelStatus());
+  }
+
+  /// One spin of the coin wheel. The server charges at most [maxCost], picks the slice and grants the prize.
+  ///
+  /// [balanceNotifier] and [spinWheelNotifier] already hold the state after the spin when this returns. A refusal or a
+  /// failure moves no coins. After a lost reply the next call replays the same request id, so a tap spins once.
+  Future<SpinWheelResult> spinWheel({required int maxCost}) async {
+    if (!_canMutateCoins()) return const SpinFailed('not_logged_in');
+    final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
+    final int generation = _economySessionGeneration;
+    final _EconomyReply? reply = await _economyPurchase('spinWheel', 'next', <String, Object?>{
+      'maxCost': maxCost,
+    }, sourceTag: 'coins.spin_wheel');
+    if (!_isCurrentOwner(userId, generation) || reply == null) return const SpinFailed('session_changed');
+    if (reply.errorCode != null) return SpinFailed(reply.reason);
+    final SpinWheelStatus? status = parseSpinWheelStatus(reply.data['status']);
+    if (!reply.success) {
+      _adoptSpinWheelStatus(status);
+      final SpinRefusal? refusal = switch (reply.reason) {
+        'spin_wheel_insufficient_balance' => SpinRefusal.insufficientBalance,
+        'spin_wheel_daily_limit' => SpinRefusal.dailyLimit,
+        'spin_wheel_price_changed' => SpinRefusal.priceChanged,
+        _ => reply.insufficient ? SpinRefusal.insufficientBalance : null,
+      };
+      return refusal == null
+          ? SpinFailed(reply.reason)
+          : SpinRefused(refusal, status: status ?? spinWheelNotifier.value);
+    }
+    final List<WheelSegment> segments = parseWheel(reply.data['segments']) ?? CoinPolicy.spinWheel;
+    final Map<String, dynamic> prize = toJsonMap(reply.data['prize']);
+    final WheelWin win = WheelWin(
+      segment: parseIntOr(reply.data['segment'], fallback: -1).clamp(0, segments.length - 1),
+      coins: max(0, parseIntOr(prize['coins'])),
+      xp: max(0, parseIntOr(prize['xp'])),
+      itemId: _optionalString(prize['itemId']),
+    );
+    final int cost = max(0, parseIntOr(reply.data['cost']));
+    final bool free = reply.data['free'] == true;
+    final String? itemId = win.itemId;
+    if (itemId != null) {
+      inventoryNotifier.value = inventoryNotifier.value.withOwned(
+        Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
+      );
+    }
+    if (reply.changed) {
+      _grantLocalXp(win.xp + _xpForCoins(win.coins));
+      analytics.track(
+        SpinWheelSpunEvent(
+          free: free,
+          cost: cost,
+          segment: win.segment,
+          prize: switch (segments[win.segment].prize) {
+            CoinsPrize() => 'coins',
+            XpPrize() => 'xp',
+            CosmeticPrize() => 'cosmetic',
+          },
+          coins: win.coins,
+          xp: win.xp,
+        ),
+      );
+      if (cost > 0) _logSpend(action: CoinSpendAction.spinWheel, amount: cost, sourceTag: 'coins.spin_wheel');
+      if (win.coins > 0) _logEarn(action: CoinEarnAction.spinWheel, amount: win.coins, sourceTag: 'coins.spin_wheel');
+    }
+    if (free) _markBonusQuestDone(QuestEvent.proSpin);
+    _adoptSpinWheelStatus(status);
+    // The wheel waits for this reply, so the snapshot write must not hold it back.
+    unawaited(
+      _persistEconomy(userId, <String, dynamic>{
+        'rev': _economyRev,
+        'spinWheel': _spinDay.toMap(),
+        if (itemId != null) 'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
+      }),
+    );
+    return SpinWon(win: win, cost: cost, segments: segments, status: status ?? spinWheelNotifier.value);
+  }
+
+  /// Makes the server's [status] today's status. It also becomes the cached counters, so a later recompute (a config
+  /// refresh, a Pro change) does not take the user back to a state the server has moved past.
+  void _adoptSpinWheelStatus(SpinWheelStatus? status) {
+    if (status == null) return;
+    _spinDay = SpinDay.fromStatus(
+      status,
+      today: economyDayKey(DateTime.now()),
+      maxPerDay: CoinPolicy.spinWheelMaxPerDay,
+      isPro: app_state.prismUser.premium,
+      previous: _spinDay,
+    );
+    spinWheelNotifier.value = status;
+  }
 
   /// The Pro daily spin. The server picks the segment.
   Future<ProSpinResult> claimProSpin() async {

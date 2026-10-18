@@ -3,6 +3,15 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 class EconomySnapshotStore {
   EconomySnapshotStore({DurableJsonStore? store}) : _store = store ?? DurableJsonStore('private_economy');
 
+  static const List<String> _privateFields = <String>[
+    'quests',
+    'inventory',
+    'drops',
+    'passes',
+    'graceDownloadsUsed',
+    'spinWheel',
+  ];
+
   final DurableJsonStore _store;
   Future<void> _writeTail = Future<void>.value();
   final Map<String, int> _generations = <String, int>{};
@@ -40,7 +49,7 @@ class EconomySnapshotStore {
   Future<void> write(String ownerId, int revision, Map<String, dynamic> data) {
     if (ownerId.isEmpty || revision < 0) return Future<void>.value();
     final Map<String, dynamic> safeData = <String, dynamic>{};
-    for (final String field in const <String>['quests', 'inventory', 'drops', 'passes', 'graceDownloadsUsed']) {
+    for (final String field in _privateFields) {
       if (data.containsKey(field)) safeData[field] = data[field];
     }
     final int generation = _generations[ownerId] ?? 0;
@@ -59,7 +68,7 @@ class EconomySnapshotStore {
     if (ownerId.isEmpty || revision < 0) return Future<void>.value();
     final int generation = _generations[ownerId] ?? 0;
     final Map<String, dynamic> safeData = <String, dynamic>{
-      for (final String field in const <String>['quests', 'inventory', 'drops', 'passes', 'graceDownloadsUsed'])
+      for (final String field in _privateFields)
         if (data.containsKey(field)) field: data[field],
       'rev': revision,
     };
