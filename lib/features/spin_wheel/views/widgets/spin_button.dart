@@ -67,12 +67,14 @@ class _SpinButtonState extends State<SpinButton> {
     final bool flat = !_enabled && !widget.pressed;
     final bool sunk = _down || widget.pressed;
     final Duration duration = context.motion(PrismDurations.press);
-    final Color faceTop = flat ? palette.colorScheme.onSurface.withValues(alpha: 0.16) : gold.highlight;
-    final Color faceMid = flat ? palette.colorScheme.onSurface.withValues(alpha: 0.12) : gold.light;
-    final Color faceBottom = flat ? palette.colorScheme.onSurface.withValues(alpha: 0.1) : gold.base;
-    final Color edge = flat ? palette.colorScheme.onSurface.withValues(alpha: 0.06) : gold.deep;
-    final Color edgeBottom = flat ? palette.colorScheme.onSurface.withValues(alpha: 0.04) : gold.dark;
-    final Color ink = flat ? palette.colorScheme.onSurface.withValues(alpha: 0.5) : gold.ink;
+    // A disabled button sits on the plinth as a flat, quiet slab in the plinth's own ink.
+    final Color plinthInk = palette.plinthInk;
+    final Color faceTop = flat ? plinthInk.withValues(alpha: 0.16) : gold.highlight;
+    final Color faceMid = flat ? plinthInk.withValues(alpha: 0.13) : gold.light;
+    final Color faceBottom = flat ? plinthInk.withValues(alpha: 0.1) : gold.base;
+    final Color edge = flat ? plinthInk.withValues(alpha: 0.06) : gold.deep;
+    final Color edgeBottom = flat ? plinthInk.withValues(alpha: 0.04) : gold.dark;
+    final Color ink = flat ? plinthInk.withValues(alpha: 0.85) : gold.ink;
     // SPIN is big. A longer label ("Get coins", "Back tomorrow") is set smaller and tighter so it stays on one line.
     final bool short = widget.label.length <= 5;
     final TextStyle labelStyle = PrismTextStyles.button.copyWith(
@@ -95,7 +97,7 @@ class _SpinButtonState extends State<SpinButton> {
         ? Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Opacity(opacity: flat ? 0.5 : 1, child: const PrismCoinIcon(size: 16)),
+              Opacity(opacity: flat ? 0.6 : 1, child: const PrismCoinIcon(size: 16)),
               const SizedBox(width: 4),
               Text('${widget.price}', style: captionStyle.copyWith(fontSize: 14)),
             ],

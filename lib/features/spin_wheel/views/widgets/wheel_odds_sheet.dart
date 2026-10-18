@@ -37,11 +37,16 @@ Future<void> showWheelOdds(BuildContext context, List<WheelSegment> segments) {
   );
 }
 
-Widget _icon(WheelPrize prize) => switch (prize) {
-  CoinsPrize() => const PrismCoinIcon(size: 24),
-  XpPrize() => const Icon(Icons.bolt_rounded, size: 24),
-  CosmeticPrize() => const Icon(Icons.auto_awesome_rounded, size: 24),
-};
+Widget _icon(WheelPrize prize) => SizedBox.square(
+  dimension: 32,
+  child: Center(
+    child: switch (prize) {
+      CoinsPrize() => const PrismCoinIcon(size: 24),
+      XpPrize() => const Icon(Icons.bolt_rounded, size: 24),
+      CosmeticPrize() => const Icon(Icons.auto_awesome_rounded, size: 24),
+    },
+  ),
+);
 
 String _title(WheelPrize prize) => switch (prize) {
   CoinsPrize(:final int coins) => '$coins coins',

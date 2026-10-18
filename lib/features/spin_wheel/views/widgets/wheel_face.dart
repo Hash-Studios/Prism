@@ -82,8 +82,24 @@ class WheelFacePainter extends CustomPainter {
       }
     }
 
-    // Pegs.
     final WheelGold gold = palette.gold;
+    final int? win = winner;
+    if (win != null && dim > 0) {
+      // A gold line along the rim of the winning slice.
+      canvas.drawArc(
+        rect.deflate(geometry.diameter * 0.006),
+        -math.pi / 2 + win * s + 0.02,
+        s - 0.04,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = geometry.diameter * 0.009
+          ..color = gold.glint.withValues(alpha: 0.9 * dim),
+      );
+    }
+
+    // Pegs.
     final double pr = geometry.pegRadius;
     for (int i = 0; i < n; i++) {
       final double a = -math.pi / 2 + i * s;

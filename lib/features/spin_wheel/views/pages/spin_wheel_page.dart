@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/spin_wheel/biz/wheel_machine_controller.dart';
+import 'package:Prism/features/spin_wheel/domain/wheel_motion.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/coin_burst.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_button.dart';
@@ -79,6 +80,11 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   late int _balance;
   int _delta = 0;
   Timer? _deltaTimer;
+
+  /// The balance before the spin that is landing, and what it should be after the prize: the price leaves and the
+  /// coins arrive.
+  int _balanceBefore = 0;
+  int _expectedBalance = 0;
 
   List<WheelSegment> _segments = CoinPolicy.spinWheel;
   _Stage _stage = _Stage.idle;
@@ -208,9 +214,6 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     _machine.land(index: index, count: count, offset: offset);
   }
 
-  int _expectedBalance = 0;
-  int _balanceBefore = 0;
-
   void _onLanded() {
     final SpinWon? won = _won;
     if (!mounted || won == null) return;
@@ -222,6 +225,8 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
       _burst.forward(from: 0);
     }
     setState(() {
+      // Light up the slice that is really under the pointer. It is the server's slice, by construction.
+      _winner = sliceUnderPointer(_machine.theta.value, won.segments.length);
       _stage = _Stage.landed;
       _status = won.status;
       _balance = shown;
@@ -368,7 +373,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     final ColorScheme cs = Theme.of(context).colorScheme;
     final WheelPalette palette = WheelPalette.of(cs);
     final WheelGeometry geometry = WheelGeometry(layout.diameter);
-    final double plinthWidth = math.min(layout.width - 24, layout.diameter + 24);
+    final double plinthWidth = math.min(layout.width - 24, 368);
     final double blockHeight = layout.topPad + layout.diameter + PlinthMetrics.visibleHeight;
     final Duration slide = context.motion(PrismDurations.base);
     return Padding(
