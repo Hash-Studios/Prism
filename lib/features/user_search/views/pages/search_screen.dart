@@ -287,7 +287,7 @@ class _SearchScreenState extends State<SearchScreen> {
       future: _search,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingCards(useFeedLayout: true);
+          return const LoadingCards();
         }
         if (snapshot.hasError) {
           return RefreshableGlintState(
@@ -301,7 +301,7 @@ class _SearchScreenState extends State<SearchScreen> {
         }
         final WallpaperSearchPage? page = snapshot.data;
         if (page == null) {
-          return const LoadingCards(useFeedLayout: true);
+          return const LoadingCards();
         }
         if (page.results.isEmpty && page.prismResults.isEmpty) {
           final bool filtered = _filters != const SearchFilters();

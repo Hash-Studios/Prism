@@ -18,7 +18,6 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
-import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
@@ -221,11 +220,13 @@ class _HomeTabPageState extends State<HomeTabPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: PrismTopAppBar(onLogoTap: _openFeedSettings),
       body: Stack(
         children: <Widget>[
           PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
-          ConnectivityWidget(offline: !_isOnline),
+          Padding(
+            padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
+            child: ConnectivityWidget(offline: !_isOnline),
+          ),
         ],
       ),
     );

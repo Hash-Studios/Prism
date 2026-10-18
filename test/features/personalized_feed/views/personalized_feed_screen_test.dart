@@ -20,10 +20,13 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
+import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/following_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/popular_feed_bloc.j.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/personalized_feed/domain/usecases/personalized_feed_usecases.dart';
@@ -32,6 +35,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dar
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_loading_more.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/home_feed_tab_bar.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/paged_chip_sliver.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
@@ -51,6 +55,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../support/coins_test_backend.dart';
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/in_memory_local_store.dart';
@@ -71,12 +76,20 @@ class _MockFavouriteBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsSta
 
 class _MockPagedFeedBloc extends MockBloc<PagedFeedEvent, PagedFeedState> implements PagedFeedBloc {}
 
+class _MockNotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNotificationsState>
+    implements InAppNotificationsBloc {}
+
 FeedItemEntity _item(String id, {List<String>? collections}) => FeedItemEntity.prism(
   id: id,
   wallpaper: PrismWallpaper(
     core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: '', authorEmail: '$id@x.com'),
     collections: collections,
   ),
+);
+
+PrismWallpaper _wall(String id, {DateTime? boostedUntil}) => PrismWallpaper(
+  core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: '', authorEmail: '$id@x.com'),
+  boostedUntil: boostedUntil,
 );
 
 PersonalizedFeedPage _page(
@@ -152,7 +165,7 @@ void main() {
     when(() => feedRepository.fetchPopular()).thenAnswer((_) async => Result.success(_page(<String>['pop1', 'pop2'])));
     when(
       () => prismRepository.fetchFeed(refresh: any(named: 'refresh')),
-    ).thenAnswer((_) async => Result.success(<PrismWallpaper>[(_item('late1') as PrismFeedItem).wallpaper]));
+    ).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('late1')]));
     when(() => prismRepository.hasMore).thenReturn(false);
     when(
       () => fetchUseCase(any()),
@@ -184,11 +197,17 @@ void main() {
     bool tickersEnabled = true,
     WallOfTheDayEntity? wotdEntity,
     VoidCallback? onTuneTap,
+    Size viewSize = const Size(600, 3000),
+    double statusBar = 0,
   }) async {
-    // Tall, so the carousel, the chips and the first rows of tiles are all on screen.
-    tester.view.physicalSize = const Size(600, 3000);
+    // Tall by default, so the header, the carousel and the first rows of tiles are all on screen.
+    tester.view.physicalSize = viewSize;
     tester.view.devicePixelRatio = 1;
+    tester.view.padding = FakeViewPadding(top: statusBar);
+    tester.view.viewPadding = FakeViewPadding(top: statusBar);
     addTearDown(tester.view.reset);
+    addTearDown(tester.view.resetPadding);
+    addTearDown(tester.view.resetViewPadding);
     final wotd = _MockWotdBloc();
     when(() => wotd.state).thenReturn(
       WotdState.initial().copyWith(
@@ -198,6 +217,8 @@ void main() {
     );
     final favourites = _MockFavouriteBloc();
     when(() => favourites.state).thenReturn(FavouriteWallsState.initial());
+    final notifications = _MockNotificationsBloc();
+    when(() => notifications.state).thenReturn(InAppNotificationsState.initial());
     await tester.pumpWidget(
       MaterialApp(
         builder: (context, child) => MediaQuery(
@@ -211,6 +232,7 @@ void main() {
               providers: [
                 BlocProvider<WotdBloc>.value(value: wotd),
                 BlocProvider<FavouriteWallsBloc>.value(value: favourites),
+                BlocProvider<InAppNotificationsBloc>.value(value: notifications),
               ],
               child: PersonalizedFeedScreen(onTuneTap: onTuneTap),
             ),
@@ -221,41 +243,196 @@ void main() {
     await _settle(tester);
   }
 
-  testWidgets('shows the four chips under the title, with For you chosen', (tester) async {
+  Finder tab(String label) => find.widgetWithText(Tab, label);
+
+  /// The tabs scroll sideways when they are wider than the screen, so bring one into view before the tap.
+  Future<void> tapTab(WidgetTester tester, String label) async {
+    await tester.ensureVisible(tab(label));
+    await tester.pump();
+    await tester.tap(tab(label));
+  }
+
+  PersonalizedFeedBloc feedBloc(WidgetTester tester) =>
+      tester.element(find.byType(CustomScrollView)).read<PersonalizedFeedBloc>();
+
+  testWidgets('shows the five tabs in the header, with For you chosen', (tester) async {
     await pumpScreen(tester);
 
-    for (final label in <String>['For you', 'Latest', 'Following', 'Popular']) {
-      expect(find.widgetWithText(PrismChip, label), findsOneWidget);
-    }
-    expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'For you')).selected, isTrue);
+    final List<String> labels = <String>['For you', 'Following', 'Trending', 'Latest', 'Popular'];
+    final List<double> lefts = labels.map((label) => tester.getTopLeft(find.text(label)).dx).toList();
+    expect(find.byType(Tab), findsNWidgets(5));
+    expect(lefts, <double>[...lefts]..sort());
+    expect(feedBloc(tester).state.chip, HomeFeedChip.forYou);
+    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 0);
     expect(find.byType(WallpaperTile), findsWidgets);
   });
 
-  testWidgets('hides the Trending strip when nothing is trending', (tester) async {
+  testWidgets('tapping Latest selects it and the underline follows', (tester) async {
     await pumpScreen(tester);
 
+    await tapTab(tester, 'Latest');
+    await _settle(tester);
+
+    expect(feedBloc(tester).state.chip, HomeFeedChip.latest);
+    expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 3);
+  });
+
+  testWidgets('the For you header has no section title and no tune button', (tester) async {
+    var tuned = 0;
+    await pumpScreen(tester, onTuneTap: () => tuned++);
+
+    expect(find.text('For you'), findsOneWidget, reason: 'only the tab says it');
+    expect(find.byTooltip('Tune your feed'), findsNothing);
+    expect(find.text('Tune your feed'), findsNothing);
+    expect(find.byIcon(Icons.tune_rounded), findsNothing);
+    expect(tuned, 0);
+  });
+
+  testWidgets('tapping For you while it is chosen opens the feed settings once', (tester) async {
+    var tuned = 0;
+    await pumpScreen(tester, onTuneTap: () => tuned++);
+
+    await tapTab(tester, 'For you');
+    await _settle(tester);
+
+    expect(tuned, 1);
+    expect(feedBloc(tester).state.chip, HomeFeedChip.forYou);
+  });
+
+  testWidgets('tapping For you from another tab selects it and does not open the feed settings', (tester) async {
+    var tuned = 0;
+    await pumpScreen(tester, onTuneTap: () => tuned++);
+    await tapTab(tester, 'Popular');
+    await _settle(tester);
+
+    await tapTab(tester, 'For you');
+    await _settle(tester);
+
+    expect(tuned, 0);
+    expect(feedBloc(tester).state.chip, HomeFeedChip.forYou);
+  });
+
+  testWidgets('the carousel is For you content: the other tabs have none', (tester) async {
+    await pumpScreen(tester);
+    expect(find.byType(FeedCarousel), findsOneWidget);
+
+    await tapTab(tester, 'Latest');
+    await _settle(tester);
+
+    expect(find.byType(FeedCarousel), findsNothing);
+  });
+
+  testWidgets('the home loads no trending list until the Trending tab opens, and has no Trending strip', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    verifyNever(() => fetchTrending(any()));
     expect(find.text('Trending this week'), findsNothing);
-    expect(find.text('For you'), findsWidgets);
+    expect(find.text('See all'), findsNothing);
   });
 
-  testWidgets('shows the Trending strip above the For you title', (tester) async {
-    when(
-      () => fetchTrending(TrendingRange.week),
-    ).thenAnswer((_) async => Result.success(<PrismWallpaper>[(_item('hot1') as PrismFeedItem).wallpaper]));
-
-    await pumpScreen(tester);
-
-    expect(find.text('Trending this week'), findsOneWidget);
-    expect(find.text('See all'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('Trending this week')).dy,
-      lessThan(tester.getTopLeft(find.text('For you').first).dy),
+  testWidgets('the Trending tab shows the range switch and the trending walls in the home grid', (tester) async {
+    when(() => fetchTrending(TrendingRange.week)).thenAnswer(
+      (_) async => Result.success(<PrismWallpaper>[
+        _wall('hot1', boostedUntil: DateTime.now().add(const Duration(hours: 3))),
+        _wall('hot2'),
+        _wall('hot3'),
+        _wall('hot4'),
+      ]),
     );
+    await pumpScreen(tester);
+
+    await tapTab(tester, 'Trending');
+    await _settle(tester);
+
+    verify(() => fetchTrending(TrendingRange.week)).called(1);
+    expect(find.text('This week'), findsOneWidget);
+    expect(find.text('All time'), findsOneWidget);
+    expect(find.byType(WallpaperTile), findsNWidgets(4));
+    expect(find.text('Boosted'), findsOneWidget);
+    expect(find.byType(FeedCarousel), findsNothing);
+    final Rect first = tester.getRect(find.byType(WallpaperTile).first);
+    final Rect second = tester.getRect(find.byType(WallpaperTile).at(1));
+    expect(first.left, 0, reason: 'no side margin');
+    expect(second.left - first.right, 2, reason: 'a 2 px gap');
   });
 
-  testWidgets('pull to refresh reloads the Trending strip too', (tester) async {
+  testWidgets('the All time switch loads the all time list once', (tester) async {
+    when(
+      () => fetchTrending(TrendingRange.allTime),
+    ).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('old1'), _wall('old2')]));
     await pumpScreen(tester);
+    await tapTab(tester, 'Trending');
+    await _settle(tester);
+
+    await tester.tap(find.text('All time'));
+    await _settle(tester);
+
+    verify(() => fetchTrending(TrendingRange.allTime)).called(1);
+    expect(find.byType(WallpaperTile), findsNWidgets(2));
+  });
+
+  testWidgets('an empty Trending tab says nothing is trending', (tester) async {
+    await pumpScreen(tester);
+
+    await tapTab(tester, 'Trending');
+    await _settle(tester);
+
+    expect(find.text('Nothing is trending yet'), findsOneWidget);
+    expect(find.text('This week'), findsOneWidget);
+    expect(find.byType(WallpaperTile), findsNothing);
+  });
+
+  testWidgets('a failed Trending load offers Try again and loads again', (tester) async {
+    int calls = 0;
+    when(() => fetchTrending(TrendingRange.week)).thenAnswer(
+      (_) async => ++calls == 1
+          ? Result.error(const NetworkFailure('offline'))
+          : Result.success(<PrismWallpaper>[_wall('hot1')]),
+    );
+    await pumpScreen(tester);
+    await tapTab(tester, 'Trending');
+    await _settle(tester);
+    expect(find.text("Couldn't load trending wallpapers"), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Try again'));
+    await _settle(tester);
+
+    expect(find.text("Couldn't load trending wallpapers"), findsNothing);
+    expect(find.byType(WallpaperTile), findsOneWidget);
+  });
+
+  testWidgets('pull to refresh on the Trending tab reloads the trending list and waits for it', (tester) async {
+    await pumpScreen(tester);
+    await tapTab(tester, 'Trending');
+    await _settle(tester);
     verify(() => fetchTrending(TrendingRange.week)).called(1);
+    final Completer<Result<List<PrismWallpaper>>> pending = Completer<Result<List<PrismWallpaper>>>();
+    when(() => fetchTrending(TrendingRange.week)).thenAnswer((_) => pending.future);
+
+    bool refreshed = false;
+    final Future<void> refresh = tester
+        .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+        .onRefresh()
+        .then((_) => refreshed = true);
+    await tester.pump();
+
+    verify(() => fetchTrending(TrendingRange.week)).called(1);
+    expect(refreshed, isFalse, reason: 'the spinner lasts as long as the load');
+
+    pending.complete(Result.success(<PrismWallpaper>[_wall('hot1')]));
+    await refresh;
+    await tester.pump();
+
+    expect(refreshed, isTrue);
+  });
+
+  testWidgets('pull to refresh on the Latest tab reloads Latest and not the trending list', (tester) async {
+    await pumpScreen(tester);
+    await tapTab(tester, 'Latest');
+    await _settle(tester);
+    verify(() => prismRepository.fetchFeed(refresh: true)).called(1);
 
     await tester.drag(
       find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(CustomScrollView)).first,
@@ -265,7 +442,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    verify(() => fetchTrending(TrendingRange.week)).called(1);
+    verify(() => prismRepository.fetchFeed(refresh: true)).called(1);
+    verifyNever(() => fetchTrending(any()));
   });
 
   testWidgets('refresh preserves impression dedupe while pending and failed, then resets on success', (tester) async {
@@ -293,56 +471,55 @@ void main() {
     expect(session().record('prism', 'probe'), isTrue);
   });
 
-  for (final String chip in <String>['Latest', 'Popular', 'Following']) {
-    testWidgets('pull to refresh on the $chip chip reloads the Trending strip too', (tester) async {
-      await pumpScreen(tester);
-      await tester.tap(find.widgetWithText(PrismChip, chip));
-      await _settle(tester);
-      verify(() => fetchTrending(TrendingRange.week)).called(1);
-
-      await tester.drag(
-        find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(CustomScrollView)).first,
-        const Offset(0, 1200),
-      );
-      for (int i = 0; i < 20; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-
-      verify(() => fetchTrending(TrendingRange.week)).called(1);
-    });
-  }
-
-  testWidgets('the Latest chip loads the newest Prism walls', (tester) async {
+  testWidgets('the Latest tab loads the newest Prism walls', (tester) async {
     await pumpScreen(tester);
     verifyNever(() => prismRepository.fetchFeed(refresh: any(named: 'refresh')));
 
-    await tester.tap(find.widgetWithText(PrismChip, 'Latest'));
+    await tapTab(tester, 'Latest');
     await _settle(tester);
 
     verify(() => prismRepository.fetchFeed(refresh: true)).called(1);
-    expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Latest')).selected, isTrue);
+    expect(feedBloc(tester).state.chip, HomeFeedChip.latest);
     expect(find.byType(WallpaperTile), findsOneWidget);
   });
 
-  testWidgets('the Popular chip shows the popular walls', (tester) async {
+  testWidgets('the Popular tab shows the popular walls', (tester) async {
     await pumpScreen(tester);
 
-    await tester.tap(find.widgetWithText(PrismChip, 'Popular'));
+    await tapTab(tester, 'Popular');
     await _settle(tester);
 
     verify(() => feedRepository.fetchPopular()).called(1);
     expect(find.byType(WallpaperTile), findsNWidgets(2));
   });
 
-  testWidgets('a chip is loaded once, however often the user comes back to it', (tester) async {
+  testWidgets('a tab is loaded once, however often the user comes back to it', (tester) async {
     await pumpScreen(tester);
 
     for (final label in <String>['Popular', 'For you', 'Popular']) {
-      await tester.tap(find.widgetWithText(PrismChip, label));
+      await tapTab(tester, label);
       await _settle(tester);
     }
 
     verify(() => feedRepository.fetchPopular()).called(1);
+  });
+
+  testWidgets('every visit to the Trending tab reports the daily trending quest', (tester) async {
+    final CoinsTestBackend backend = CoinsTestBackend();
+    final List<String> events = <String>[];
+    await tester.runAsync(backend.install);
+    backend.onCall = (String name, Map<String, dynamic> params) async {
+      if (name == 'progressQuest') events.add(params['event'] as String);
+      return <String, Object?>{'success': true, 'rev': 1};
+    };
+    await pumpScreen(tester);
+
+    for (final label in <String>['Trending', 'Latest', 'Trending']) {
+      await tapTab(tester, label);
+      await _settle(tester);
+    }
+
+    expect(events, <String>['view_trending', 'view_trending']);
   });
 
   testWidgets('Following with nobody followed explains how to fill it and offers a way to find creators', (
@@ -350,7 +527,7 @@ void main() {
   ) async {
     await pumpScreen(tester);
 
-    await tester.tap(find.widgetWithText(PrismChip, 'Following'));
+    await tapTab(tester, 'Following');
     await _settle(tester);
 
     expect(find.text('Follow creators to see their new wallpapers here'), findsOneWidget);
@@ -364,17 +541,17 @@ void main() {
     ).thenAnswer((_) async => Result.success(_page(<String>['f1', 'f2', 'f3'])));
     await pumpScreen(tester);
 
-    await tester.tap(find.widgetWithText(PrismChip, 'Following'));
+    await tapTab(tester, 'Following');
     await _settle(tester);
 
     expect(find.byType(WallpaperTile), findsNWidgets(3));
   });
 
-  testWidgets('a guest is asked to sign in on the Following chip and nothing is fetched', (tester) async {
+  testWidgets('a guest is asked to sign in on the Following tab and nothing is fetched', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await pumpScreen(tester);
 
-    await tester.tap(find.widgetWithText(PrismChip, 'Following'));
+    await tapTab(tester, 'Following');
     await _settle(tester);
 
     expect(find.text('Sign in to use following'), findsOneWidget);
@@ -387,7 +564,7 @@ void main() {
     ).thenAnswer((_) async => Result.error(const NetworkFailure('x')));
     await pumpScreen(tester);
 
-    await tester.tap(find.widgetWithText(PrismChip, 'Latest'));
+    await tapTab(tester, 'Latest');
     await _settle(tester);
 
     expect(find.text("Couldn't load the latest wallpapers"), findsOneWidget);
@@ -404,6 +581,10 @@ void main() {
 
     expect(find.byType(WallpaperTile), findsWidgets);
     final Finder updating = find.bySemanticsLabel('Updating');
+    expect(
+      find.descendant(of: find.byType(HomeFeedTabBar), matching: find.byType(LinearProgressIndicator)),
+      findsOneWidget,
+    );
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(updating, findsOneWidget);
 
@@ -446,7 +627,7 @@ void main() {
     expect(calls.single, isNotEmpty);
   });
 
-  testWidgets('loading shows skeletons, not a spinner, and the chips stay usable', (tester) async {
+  testWidgets('loading shows skeletons, not a spinner, and the tabs stay usable', (tester) async {
     final Completer<Result<PersonalizedFeedPage>> never = Completer<Result<PersonalizedFeedPage>>();
     when(() => fetchUseCase(any())).thenAnswer((_) => never.future);
 
@@ -471,17 +652,13 @@ void main() {
     expect(haptics, <String>['tap']);
   });
 
-  testWidgets('content shows the For you header, a tune button, the grid and the caught up state', (tester) async {
+  testWidgets('content shows the grid and the caught up state', (tester) async {
     when(
       () => fetchUseCase(any()),
     ).thenAnswer((_) async => Result.success(_page(<String>['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'])));
-    var tuned = 0;
 
-    await pumpScreen(tester, onTuneTap: () => tuned++);
+    await pumpScreen(tester);
 
-    expect(find.text('For you'), findsNWidgets(2), reason: 'the header and the chip');
-    await tester.tap(find.byTooltip('Tune your feed'));
-    expect(tuned, 1);
     expect(find.byType(FeedWallTile), findsWidgets);
     expect(find.byType(PrismWallTile), findsWidgets);
     await tester.scrollUntilVisible(find.text('You are all caught up'), 300, scrollable: find.byType(Scrollable).first);
@@ -581,7 +758,7 @@ void main() {
     verify(() => paged.add(const PagedFeedEvent.fetchMoreRequested())).called(1);
   });
 
-  testWidgets('the carousel shows Wall of the Day first, with dots under the card', (tester) async {
+  testWidgets('the carousel shows Wall of the Day first, edge to edge, with the dots inside the image', (tester) async {
     await pumpScreen(
       tester,
       wotdEntity: const WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana'),
@@ -589,13 +766,13 @@ void main() {
 
     expect(find.text('Wall of the day'), findsOneWidget);
     expect(find.text('by Ana'), findsOneWidget);
-    final Size card = tester.getSize(find.byType(FeedHeroCard).first);
-    expect(card.width, 600 - 2 * PrismWallGrid.margin);
-    expect(card.height / card.width, closeTo(0.56, 0.01));
-    expect(
-      tester.getTopLeft(find.byType(FeedCarouselDots)).dy,
-      greaterThanOrEqualTo(tester.getBottomLeft(find.byType(FeedHeroCard).first).dy),
-    );
+    final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
+    final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
+    expect(card.left, 0);
+    expect(card.width, 600);
+    expect(card.height, 360);
+    expect(dots.top, greaterThanOrEqualTo(card.top));
+    expect(dots.bottom, lessThanOrEqualTo(card.bottom));
   });
 
   testWidgets('only a premium wallpaper gets the gold star badge', (tester) async {
@@ -655,9 +832,9 @@ void main() {
         find.descendant(of: find.byType(CarouselSlider), matching: find.byType(PrismImageTile)),
       );
 
-      // 600 px wide at a pixel ratio of 1, so the card is 576 px wide and 0.56 as tall: 322.56 px.
+      // 600 px wide at a pixel ratio of 1, so the page is 600 px wide and 0.6 as tall: 360 px.
       expect(tiles, isNotEmpty);
-      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(323));
+      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(360));
     });
   });
 
@@ -677,7 +854,12 @@ void main() {
     await pumpScreen(tester);
 
     expect(tester.widget<LoadingCards>(find.byType(LoadingCards)).useFeedLayout, isTrue);
-    expect(find.widgetWithText(PrismChip, 'Latest'), findsOneWidget, reason: 'the chips are usable while it loads');
+    expect(tab('Latest'), findsOneWidget, reason: 'the tabs are usable while it loads');
+    expect(
+      tester.getSize(find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone))),
+      const Size(600, 360),
+      reason: 'the carousel place is edge to edge',
+    );
   });
 
   testWidgets('a failed first load offers Try again and loads again', (tester) async {
@@ -706,6 +888,82 @@ void main() {
     await _settle(tester);
 
     verify(() => fetchUseCase(any())).called(1);
+  });
+
+  group('floating header', () {
+    bool shown(WidgetTester tester, Finder finder) => finder.evaluate().isNotEmpty && tester.getRect(finder).bottom > 0;
+
+    Future<void> scroll(WidgetTester tester, double dy) async {
+      await tester.drag(find.byType(CustomScrollView), Offset(0, dy));
+      await _settle(tester);
+      await _settle(tester);
+    }
+
+    testWidgets('sits at the top at first: the top bar is 52 high and the tabs are 44 high under it', (tester) async {
+      await pumpScreen(tester, viewSize: const Size(600, 800));
+
+      expect(tester.getRect(find.byType(PrismTopAppBar)), const Rect.fromLTWH(0, 0, 600, 52));
+      expect(tester.getRect(find.byType(HomeFeedTabBar)), const Rect.fromLTWH(0, 52, 600, 44));
+    });
+
+    testWidgets('scrolling down hides the top bar and the tabs, and a small scroll up brings them back', (
+      tester,
+    ) async {
+      await pumpScreen(tester, viewSize: const Size(600, 800));
+
+      await scroll(tester, -700);
+
+      expect(shown(tester, find.byType(PrismAvatar)), isFalse);
+      expect(shown(tester, find.byType(HomeFeedTabBar)), isFalse);
+
+      await scroll(tester, 80);
+
+      expect(shown(tester, find.byType(PrismAvatar)), isTrue);
+      expect(tester.getRect(find.byType(PrismTopAppBar)).top, 0);
+      expect(tester.getRect(find.byType(HomeFeedTabBar)).bottom, 96);
+    });
+
+    testWidgets('keeps a solid status bar strip, and the header slides in under it, not behind it', (tester) async {
+      await pumpScreen(tester, viewSize: const Size(600, 800), statusBar: 47);
+
+      expect(tester.getRect(find.byType(PrismTopAppBar)).top, 47);
+      expect(tester.getRect(find.byType(HomeFeedTabBar)).bottom, 47 + 96);
+
+      await scroll(tester, -700);
+      expect(shown(tester, find.byType(PrismAvatar)), isFalse);
+      final Finder strip = find.byWidgetPredicate(
+        (widget) =>
+            widget is ColoredBox &&
+            widget.color == Theme.of(tester.element(find.byType(CustomScrollView))).colorScheme.surface &&
+            tester.getRect(find.byWidget(widget)) == const Rect.fromLTWH(0, 0, 600, 47),
+      );
+      expect(strip, findsOneWidget);
+
+      await scroll(tester, 80);
+
+      expect(tester.getRect(find.byType(PrismTopAppBar)).top, 47);
+      expect(tester.getRect(find.byType(HomeFeedTabBar)).bottom, 47 + 96);
+    });
+
+    testWidgets('the pull to refresh spinner shows under the header', (tester) async {
+      await pumpScreen(tester, viewSize: const Size(600, 800), statusBar: 47);
+
+      expect(tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).edgeOffset, 96);
+    });
+
+    testWidgets('choosing a tab starts it at the top', (tester) async {
+      await pumpScreen(tester, viewSize: const Size(600, 800));
+      await scroll(tester, -700);
+      await scroll(tester, 80);
+      final ScrollableState scrollable = tester.state<ScrollableState>(find.byType(Scrollable).first);
+      expect(scrollable.position.pixels, greaterThan(0));
+
+      await tapTab(tester, 'Popular');
+      await _settle(tester);
+
+      expect(scrollable.position.pixels, 0);
+      expect(tester.getRect(find.byType(PrismTopAppBar)).top, 0);
+    });
   });
 }
 

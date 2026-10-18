@@ -8,7 +8,6 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
@@ -20,11 +19,11 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Height of one carousel card: the card is inset by the grid margin and about 0.56 as tall as it is wide.
-double feedCarouselCardHeight(BuildContext context) =>
-    (MediaQuery.sizeOf(context).width - 2 * PrismWallGrid.margin) * 0.56;
+/// Height of one carousel page: the page is as wide as the screen and 0.6 times as tall as it is wide.
+double feedCarouselCardHeight(BuildContext context) => MediaQuery.sizeOf(context).width * 0.6;
 
-/// The home carousel: Wall of the Day, the promo banner and the first wallpapers, with page dots under the card.
+/// The home carousel: Wall of the Day, the promo banner and the first wallpapers, edge to edge, with page dots over
+/// the bottom of the image.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({super.key, required this.previewWalls, this.onWallShown});
 
@@ -98,7 +97,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final bool moving = pages.length > 1;
     // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see.
     final bool visible = TickerMode.valuesOf(context).enabled && (ModalRoute.of(context)?.isCurrent ?? true);
-    return Column(
+    return Stack(
       children: <Widget>[
         CarouselSlider.builder(
           itemCount: pages.length,
@@ -113,21 +112,20 @@ class _FeedCarouselState extends State<FeedCarousel> {
               if (mounted) setState(() => _current = index);
             },
           ),
-          itemBuilder: (BuildContext context, int i, int realIndex) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: PrismWallGrid.margin),
-              child: pages[i],
-            );
-          },
+          itemBuilder: (BuildContext context, int i, int realIndex) => pages[i],
         ),
-        if (moving) FeedCarouselDots(current: current, count: pages.length),
+        if (moving)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: PrismSpace.sm,
+            child: FeedCarouselDots(current: current, count: pages.length),
+          ),
       ],
     );
   }
 
   Widget _previewCard(PrismFeedItem wall, int feedIndex, int memCacheHeight) {
-    final String? author = wall.wallpaper.core.authorName?.trim();
-    final String category = wall.wallpaper.core.category?.trim() ?? '';
     return WallpaperImpression(
       itemId: wall.id,
       provider: wall.source.name,
@@ -142,8 +140,6 @@ class _FeedCarouselState extends State<FeedCarousel> {
           memCacheHeight: memCacheHeight,
         ),
         semanticLabel: wall.semanticLabel,
-        title: category.isEmpty ? 'Wallpaper' : category,
-        subtitle: author == null || author.isEmpty ? null : 'by $author',
         badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
         onTap: () => _openWall(wall, feedIndex),
       ),
@@ -151,6 +147,8 @@ class _FeedCarouselState extends State<FeedCarousel> {
   }
 }
 
+/// The page dots, drawn in white with a soft shadow so they read over any image. They never take a touch, so swipes
+/// and taps reach the page under them.
 class FeedCarouselDots extends StatelessWidget {
   const FeedCarouselDots({required this.current, required this.count});
 
@@ -159,10 +157,8 @@ class FeedCarouselDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color ink = Theme.of(context).colorScheme.onSurface;
     return ExcludeSemantics(
-      child: Padding(
-        padding: const EdgeInsets.only(top: PrismSpace.sm),
+      child: IgnorePointer(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -175,7 +171,10 @@ class FeedCarouselDots extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(PrismRadius.pill),
-                  color: current == i ? ink : ink.withValues(alpha: 0.25),
+                  color: Colors.white.withValues(alpha: current == i ? 1 : 0.5),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 4, offset: const Offset(0, 1)),
+                  ],
                 ),
               ),
           ],

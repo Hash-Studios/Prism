@@ -1245,22 +1245,6 @@ class ThemeViewRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [TrendingPage]
-class TrendingRoute extends PageRouteInfo<void> {
-  const TrendingRoute({List<PageRouteInfo>? children})
-    : super(TrendingRoute.name, initialChildren: children);
-
-  static const String name = 'TrendingRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return WrappedRoute(child: const TrendingPage());
-    },
-  );
-}
-
-/// generated route for
 /// [UploadWallScreen]
 class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
   UploadWallRoute({
