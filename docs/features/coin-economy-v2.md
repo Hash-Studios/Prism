@@ -44,7 +44,7 @@ Shape (defaults):
     "streakFreeze": 50, "streakRescue": 100,
     "aiFast": 10, "aiBalanced": 75, "aiQuality": 100,
     "dropWall": 30, "dropPack": 150, "boostWall": 100, "giftPremiumPass": 20, "drawTicket": 20,
-    "spinWheel": 10
+    "spinWheel": 10, "dailyChest": 8
   },
   "proDiscountActions": ["aiGeneration", "dropWall", "dropPack"],   // Pro pays ceil(price / 2)
   "proBypassActions": ["wallpaperDownload", "premiumWallpaperDownload", "liveWallpaperStyle", "premiumFilter", "premiumPreview24h", "autoRotatePass7d"],
@@ -62,6 +62,7 @@ Shape (defaults):
       {"kind": "coins", "coins": 20, "weight": 8}, {"kind": "xp", "xp": 50, "weight": 12},
       {"kind": "coins", "coins": 50, "weight": 3}, {"kind": "cosmetic", "fallbackCoins": 50, "weight": 6}
     ],
+    "dailyChest": [...],   // same segment shape as spinWheel, 7 slots by default, see docs/features/daily-chest.md
     "questCoins": 2, "questXp": 25, "questChestMin": 5, "questChestMax": 20, "questChestCosmeticChance": 0.1,
     "weeklyQuestCoins": 50, "weeklyQuestXp": 150,
     "graceDownloads": 3
