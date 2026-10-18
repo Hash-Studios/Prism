@@ -2,6 +2,9 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
@@ -12,12 +15,16 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/daily_chest/daily_chest.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/views/widgets/today_card.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../features/quests/fake_quests_repository.dart';
+import '../support/coins_test_backend.dart';
 import 'qa_harness.dart';
+import 'qa_images.dart';
 
 /// 18:48 UTC: the next chest is in 5h 12m.
 final DateTime _now = DateTime.utc(2026, 10, 18, 18, 48);
@@ -81,6 +88,50 @@ Future<void> _open(
   await shot.tester.pump();
   await _run(shot, frames: 200, step: const Duration(milliseconds: 25));
   await shot.settle(frames: 2);
+}
+
+/// One captured frame per 1/30 s of app time, and the moment the fake `open` answers after the tap.
+const Duration _reelStep = Duration(microseconds: 33333);
+const Duration _reelReply = Duration(milliseconds: 400);
+
+/// Opens the chest once in the dark theme and writes a 390x844 PNG per frame to
+/// `build/qa_render/daily_chest_flow/[name]`. It starts with 0.6 s of idle box and ends 1 s after the Done button
+/// appears. Returns the frame count.
+Future<int> _film(QaShot shot, String name, ChestWon won) async {
+  final WidgetTester tester = shot.tester;
+  final Directory dir = Directory('build/qa_render/daily_chest_flow/$name');
+  if (dir.existsSync()) dir.deleteSync(recursive: true);
+  dir.createSync(recursive: true);
+  int count = 0;
+  Future<void> frame() async {
+    final RenderRepaintBoundary boundary = shot.boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final File file = File('${dir.path}/frame_${(count++).toString().padLeft(4, '0')}.png');
+    await tester.runAsync(() async {
+      final ui.Image image = await boundary.toImage();
+      final ByteData? bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      await file.writeAsBytes(bytes!.buffer.asUint8List());
+      image.dispose();
+    });
+    await tester.pump(_reelStep);
+  }
+
+  final Completer<DailyChestResult> reply = await _mount(shot);
+  for (int i = 0; i < 18; i++) {
+    await frame();
+  }
+  await tester.tap(find.text('Open'));
+  await tester.pump();
+  expect(find.text('332'), findsOneWidget, reason: 'the price leaves the pill at the tap');
+  Duration sinceTap = Duration.zero;
+  int tail = 0;
+  while (tail < 30) {
+    await frame();
+    sinceTap += _reelStep;
+    if (!reply.isCompleted && sinceTap >= _reelReply) reply.complete(won);
+    if (find.text('Done').evaluate().isNotEmpty) tail++;
+    expect(sinceTap, lessThan(const Duration(seconds: 8)), reason: 'the chest never showed its prize');
+  }
+  return count;
 }
 
 void main() {
@@ -228,4 +279,30 @@ void main() {
       await shot.save('chest_today_row');
     },
   );
+
+  group('chest open flow', skip: !qaRender, () {
+    for (final (String name, ChestWon won, int balance) in <(String, ChestWon, int)>[
+      ('rare', _won(3, coins: 20), 352),
+      ('legendary', _won(6, coins: 100), 432),
+    ]) {
+      testWidgets('$name (dark)', (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1170, 844 * 3);
+        tester.view.devicePixelRatio = 3;
+        addTearDown(tester.view.reset);
+        final CoinsTestBackend backend = CoinsTestBackend();
+        await backend.install();
+        seedUser(pro: false);
+        await QaImages.install(tester);
+        addTearDown(() async {
+          QaImages.uninstall();
+          resetUser();
+          await getIt.reset();
+        });
+        final int frames = await _film(QaShot(tester, Brightness.dark, kDarkTheme, backend), name, won);
+        expect(find.text('$balance'), findsOneWidget, reason: 'the pill shows the balance with the prize');
+        debugPrint('chest open flow $name: $frames frames at 30 fps');
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
 }
