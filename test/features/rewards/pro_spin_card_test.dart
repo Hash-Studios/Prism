@@ -56,9 +56,18 @@ void main() {
   });
 
   testWidgets('Pro users spin once and see the won amount count up, then Back tomorrow', (tester) async {
-    int calls = 0;
+    final List<String> calls = <String>[];
     backend.onCall = (name, params) async {
-      calls++;
+      calls.add(name);
+      if (name == 'reconcileRankRewards') {
+        return <String, Object>{
+          'success': true,
+          'rev': 0,
+          'owned': <String>[],
+          'added': <String>[],
+          'inventoryChanged': false,
+        };
+      }
       expect(name, 'claimProSpin');
       return <String, Object>{
         'success': true,
@@ -84,7 +93,8 @@ void main() {
     expect(find.text('Spin'), findsNothing);
     await tester.pump(const Duration(seconds: 1));
 
-    expect(calls, 1);
+    expect(calls.where((name) => name == 'claimProSpin'), hasLength(1));
+    expect(calls, contains('reconcileRankRewards'));
     expect(find.text('+50 coins'), findsOneWidget);
     expect(find.text('Back tomorrow'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
