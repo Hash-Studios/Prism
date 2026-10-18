@@ -11,7 +11,6 @@ import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/spin_wheel/biz/wheel_machine_controller.dart';
-import 'package:Prism/features/spin_wheel/domain/wheel_motion.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/coin_burst.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_button.dart';
@@ -82,11 +81,6 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   int _delta = 0;
   Timer? _deltaTimer;
 
-  /// The balance before the spin that is landing, and what it should be after the prize: the price leaves and the
-  /// coins arrive.
-  int _balanceBefore = 0;
-  int _expectedBalance = 0;
-
   List<WheelSegment> _segments = CoinPolicy.spinWheel;
   _Stage _stage = _Stage.idle;
   SpinWon? _won;
@@ -99,6 +93,8 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   VoidCallback? _afterStop;
 
   SpinFunction get _spin => widget.spin ?? CoinsService.instance.spinWheel;
+
+  bool get _spinInFlight => _stage == _Stage.spinning;
 
   @override
   void initState() {
@@ -142,12 +138,12 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   }
 
   void _onStatusChanged() {
-    if (_stage == _Stage.spinning) return;
+    if (_spinInFlight) return;
     setState(() => _status = _statusSource.value);
   }
 
   void _onBalanceChanged() {
-    if (_stage == _Stage.spinning) return;
+    if (_spinInFlight) return;
     setState(() {
       _balance = _balanceSource.value;
       _shortOverride = false;
@@ -160,7 +156,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   }
 
   Future<void> _onSpin() async {
-    if (_stage == _Stage.spinning) return;
+    if (_spinInFlight) return;
     switch (_action) {
       case SpinAction.capped:
         return;
@@ -190,7 +186,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     if (!mounted) return;
     switch (result) {
       case final SpinWon won:
-        _onWon(won, before);
+        _onWon(won);
       case final SpinRefused refused:
         _afterStop = () => _onRefused(refused);
         _machine.stop();
@@ -200,7 +196,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     }
   }
 
-  void _onWon(SpinWon result, int before) {
+  void _onWon(SpinWon result) {
     final int count = result.segments.length;
     final int index = result.win.segment.clamp(0, count - 1);
     final double offset = 0.2 + 0.6 * _random.nextDouble();
@@ -208,28 +204,21 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
       _segments = result.segments;
       _won = result;
     });
-    // The result lands at the end of the wheel's ease-out, or at once under reduced motion.
-    _expectedBalance = before - result.cost + result.win.coins;
-    _balanceBefore = before;
     _machine.land(index: index, count: count, offset: offset);
   }
 
   void _onLanded() {
     final SpinWon? won = _won;
     if (!mounted || won == null) return;
-    // The service updates the balance when the reply arrives, long before the wheel stops. Trust it if it moved.
-    final int actual = _balanceSource.value;
-    final int shown = actual != _balanceBefore ? actual : _expectedBalance;
     PrismHaptics.success();
     if (!context.reduceMotion && won.win.coins > 0 && !_isXp(won)) {
       _burst.forward(from: 0);
     }
     setState(() {
-      // Light up the slice that is really under the pointer. It is the server's slice, by construction.
-      _winner = sliceUnderPointer(_machine.theta.value, won.segments.length);
+      _winner = won.win.segment.clamp(0, won.segments.length - 1);
       _stage = _Stage.landed;
       _status = won.status;
-      _balance = shown;
+      _balance = won.balance;
       _delta = won.win.coins - won.cost;
       _shortOverride = false;
     });
@@ -324,7 +313,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     final bool pro = app_state.prismUser.premium;
     // A paid spin finishes on screen: closing mid-spin would hide a prize the user already paid for.
     return PopScope(
-      canPop: _stage != _Stage.spinning,
+      canPop: !_spinInFlight,
       child: Scaffold(
         backgroundColor: cs.surface,
         body: SafeArea(
@@ -478,9 +467,8 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
 
   Widget _button() {
     final SpinAction action = _action;
-    final bool spinning = _stage == _Stage.spinning;
     final bool free = _status.freeSpinAvailable;
-    if (spinning) {
+    if (_spinInFlight) {
       return SpinButton(
         label: 'SPIN',
         semanticLabel: 'Spinning',

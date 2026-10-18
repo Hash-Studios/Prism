@@ -2334,7 +2334,13 @@ class CoinsService with WidgetsBindingObserver {
         if (itemId != null) 'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
       }),
     );
-    return SpinWon(win: win, cost: cost, segments: segments, status: status ?? spinWheelNotifier.value);
+    return SpinWon(
+      win: win,
+      cost: cost,
+      balance: parseIntOr(reply.data['currentBalance'], fallback: balanceNotifier.value),
+      segments: segments,
+      status: status ?? spinWheelNotifier.value,
+    );
   }
 
   /// Makes the server's [status] today's status. It also becomes the cached counters, so a later recompute (a config

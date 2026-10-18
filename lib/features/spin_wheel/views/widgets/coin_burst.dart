@@ -12,10 +12,12 @@ class CoinBurst extends StatelessWidget {
   final double radius;
   final int count;
 
+  /// Fixed seed for the jitter: the same burst every time, so a frame is reproducible.
+  static const int _jitterSeed = 7;
+
   @override
   Widget build(BuildContext context) {
-    // Fixed jitter: the same burst every time, so a frame is reproducible.
-    final math.Random random = math.Random(7);
+    final math.Random random = math.Random(_jitterSeed);
     final List<_Coin> coins = <_Coin>[
       for (int i = 0; i < count; i++)
         _Coin(

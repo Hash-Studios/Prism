@@ -137,12 +137,21 @@ sealed class SpinWheelResult {
 }
 
 final class SpinWon extends SpinWheelResult {
-  const SpinWon({required this.win, required this.cost, required this.segments, required this.status});
+  const SpinWon({
+    required this.win,
+    required this.cost,
+    required this.balance,
+    required this.segments,
+    required this.status,
+  });
 
   final WheelWin win;
 
   /// What this spin cost, 0 for the Pro free spin.
   final int cost;
+
+  /// The coin balance after the spin, as the server reports it.
+  final int balance;
 
   /// The table the server spun. Land on this, not on the cached config.
   final List<WheelSegment> segments;

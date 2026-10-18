@@ -41,6 +41,10 @@ class SpinButton extends StatefulWidget {
 }
 
 class _SpinButtonState extends State<SpinButton> {
+  /// A label up to this long ("SPIN") is set big. A longer one ("Get coins", "Back tomorrow") is set smaller and
+  /// tighter so it stays on one line.
+  static const int _bigLabelMaxChars = 5;
+
   bool _down = false;
 
   bool get _enabled => widget.onPressed != null;
@@ -75,12 +79,11 @@ class _SpinButtonState extends State<SpinButton> {
     final Color edge = flat ? plinthInk.withValues(alpha: 0.06) : gold.deep;
     final Color edgeBottom = flat ? plinthInk.withValues(alpha: 0.04) : gold.dark;
     final Color ink = flat ? plinthInk.withValues(alpha: 0.85) : gold.ink;
-    // SPIN is big. A longer label ("Get coins", "Back tomorrow") is set smaller and tighter so it stays on one line.
-    final bool short = widget.label.length <= 5;
+    final bool big = widget.label.length <= _bigLabelMaxChars;
     final TextStyle labelStyle = PrismTextStyles.button.copyWith(
-      fontSize: compact ? 15 : (short ? 30 : 23),
+      fontSize: compact ? 15 : (big ? 30 : 23),
       fontWeight: FontWeight.w700,
-      letterSpacing: compact ? 0.2 : (short ? 2.4 : 0.4),
+      letterSpacing: compact ? 0.2 : (big ? 2.4 : 0.4),
       height: 1,
       color: ink,
       shadows: flat

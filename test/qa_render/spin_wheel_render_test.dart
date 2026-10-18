@@ -22,10 +22,13 @@ const SpinWheelStatus _freeStatus = SpinWheelStatus(freeSpinAvailable: true, pai
 const SpinWheelStatus _paidStatus = SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 4, price: 10);
 const SpinWheelStatus _cappedStatus = SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 0, price: 10);
 
+const int _startBalance = 340;
+
 SpinWon _won(int segment, {int coins = 0, int xp = 0, String? itemId, int cost = 0, SpinWheelStatus? status}) =>
     SpinWon(
       win: WheelWin(segment: segment, coins: coins, xp: xp, itemId: itemId),
       cost: cost,
+      balance: _startBalance - cost + coins,
       segments: defaultWheel,
       status: status ?? _paidStatus,
     );

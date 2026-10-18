@@ -16,17 +16,22 @@ const SpinWheelStatus _free = SpinWheelStatus(freeSpinAvailable: true, paidSpins
 const SpinWheelStatus _paid = SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 4, price: 10);
 const SpinWheelStatus _capped = SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 0, price: 10);
 
+const int _startBalance = 340;
+
+/// A landed spin. [balance] defaults to the start balance less the price plus the coins won.
 SpinWon _won(
   int segment, {
   int coins = 0,
   int xp = 0,
   String? itemId,
   int cost = 10,
+  int? balance,
   SpinWheelStatus status = _paid,
   List<WheelSegment> segments = defaultWheel,
 }) => SpinWon(
   win: WheelWin(segment: segment, coins: coins, xp: xp, itemId: itemId),
   cost: cost,
+  balance: balance ?? _startBalance - cost + coins,
   segments: segments,
   status: status,
 );
@@ -51,7 +56,7 @@ void main() {
     haptics.clear();
     selectionTimes.clear();
     status = ValueNotifier<SpinWheelStatus>(_free);
-    balance = ValueNotifier<int>(340);
+    balance = ValueNotifier<int>(_startBalance);
     maxCosts = <int>[];
     replies = <Completer<SpinWheelResult>>[];
     PrismHaptics.enabled = true;
@@ -212,6 +217,20 @@ void main() {
       expect(find.text('Done'), findsOneWidget);
       expect(find.text('350'), findsOneWidget);
       expect(haptics, contains('success'));
+      await pumpFor(tester, const Duration(seconds: 3));
+    });
+
+    testWidgets('shows the balance the server reports after the spin, whatever the page expected', (tester) async {
+      status.value = _paid;
+      await pumpPage(tester);
+
+      await tapSpin(tester);
+      replies.single.complete(_won(4, coins: 20, balance: 777));
+      await pumpUntil(tester, find.text('Spin again'));
+      await pumpFor(tester, const Duration(seconds: 2));
+
+      expect(find.text('777'), findsOneWidget);
+      expect(find.text('350'), findsNothing);
       await pumpFor(tester, const Duration(seconds: 3));
     });
 

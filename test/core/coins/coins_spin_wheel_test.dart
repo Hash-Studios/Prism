@@ -150,6 +150,7 @@ void main() {
       final SpinWon won = await spinWon();
       expect((won.win.segment, won.win.coins, won.win.xp, won.win.itemId, won.cost), (3, 100, 0, null, 10));
       expect(describeWheel(won.segments), defaultWheelLines);
+      expect(won.balance, 190, reason: 'The reply carries the balance after the spin');
       expect(service.balanceNotifier.value, 190);
       expect(service.xpNotifier.value.xp, 100);
       final (String name, Map<String, dynamic> params) = calls.single;
@@ -161,6 +162,7 @@ void main() {
       reply((_, _) => _spun(segment: 5, kind: 'xp', xp: 50));
       final SpinWon won = await spinWon();
       expect((won.win.segment, won.win.coins, won.win.xp, won.win.itemId), (5, 0, 50, null));
+      expect(won.balance, 90);
       expect(service.balanceNotifier.value, 90);
       expect(service.xpNotifier.value.xp, 50);
     });

@@ -57,10 +57,15 @@ class WheelGold {
 class WheelPalette {
   WheelPalette._({required this.colorScheme, required this.gold, required this.sliceHues});
 
+  /// An accent below this saturation is grey (AMOLED white, Frost) and has no hue to step.
+  static const double _greyAccentSaturation = 0.12;
+
+  /// The hue of the default pink accent, used when the accent is grey.
+  static const double _fallbackHue = 340;
+
   factory WheelPalette.of(ColorScheme colorScheme) {
     final HSLColor accent = HSLColor.fromColor(colorScheme.primary);
-    // A grey accent (AMOLED white, Frost) has no hue to step. Fall back to the hue of the default pink accent.
-    final double hue = accent.saturation < 0.12 ? 340 : accent.hue;
+    final double hue = accent.saturation < _greyAccentSaturation ? _fallbackHue : accent.hue;
     return WheelPalette._(
       colorScheme: colorScheme,
       gold: WheelGold(),
@@ -88,8 +93,8 @@ class WheelPalette {
   /// The accent at a plinth's strength: its own hue, but always a vivid colour, whatever the theme's accent is.
   HSLColor get _plinthHsl {
     final HSLColor hsl = HSLColor.fromColor(accent);
-    return hsl.saturation < 0.12
-        ? const HSLColor.fromAHSL(1, 340, 0.5, 0.5)
+    return hsl.saturation < _greyAccentSaturation
+        ? const HSLColor.fromAHSL(1, _fallbackHue, 0.5, 0.5)
         : hsl.withSaturation(math.max(hsl.saturation, 0.5));
   }
 
@@ -116,7 +121,7 @@ class WheelPalette {
     final int? jackpot = jackpotIndex(segments);
     return <Color>[
       for (int i = 0; i < n; i++)
-        if (i == jackpot) gold.coin else _candy(sliceHues[_hueIndex(i, n)]),
+        if (i == jackpot) gold.coin else _candy(sliceHues[_sliceHueIndex(i, n)]),
     ];
   }
 
@@ -134,9 +139,9 @@ class WheelPalette {
   }
 
   /// Four hues in a row. A wheel of 5, 9 or 13 slices would end on the hue it starts with, so the last slice skips one.
-  static int _hueIndex(int i, int n) {
-    final int hue = i % 4;
-    return i == n - 1 && n > 1 && hue == 0 ? 2 : hue;
+  static int _sliceHueIndex(int i, int n) {
+    final int hueIndex = i % 4;
+    return i == n - 1 && n > 1 && hueIndex == 0 ? 2 : hueIndex;
   }
 }
 
