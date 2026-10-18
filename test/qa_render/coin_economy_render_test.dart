@@ -212,7 +212,7 @@ void main() {
     // 3. Today card in four states
     qaScreen(
       'today_card_states',
-      height: 2060,
+      height: 3200,
       setUpExtra: () {
         final List<QuestState> states = <QuestState>[
           questState(),

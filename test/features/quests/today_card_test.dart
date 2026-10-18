@@ -1,8 +1,8 @@
-import 'package:Prism/core/coins/coin_policy.dart';
-import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
+import 'package:Prism/features/quests/views/widgets/chest_banner.dart';
 import 'package:Prism/features/quests/views/widgets/today_card.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -32,14 +32,16 @@ void main() {
     EconomyConfig.resetForTest();
   });
 
+  /// The chest animates forever once it is ready, so these tests pump fixed durations and never settle.
   Future<FakeQuestsRepository> pumpCard(
     WidgetTester tester,
     QuestState? quests, {
     VoidCallback? onOpenSpin,
     Brightness brightness = Brightness.light,
+    DateTime Function()? clock,
   }) async {
     final FakeQuestsRepository repo = FakeQuestsRepository(quests: quests);
-    getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo));
+    getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo)..clock = clock ?? DateTime.now);
     await tester.pumpWidget(
       MaterialApp(
         theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
@@ -64,64 +66,128 @@ void main() {
     chestDoubled: chestDoubled,
   );
 
+  Finder resetCountdown() => find.byWidgetPredicate(
+    (Widget w) => w is Text && RegExp(r'^New in (\d+d \d+h|\d+h \d+m|\d+m)$').hasMatch(w.data ?? ''),
+  );
+
   testWidgets('shows nothing until the quests load', (tester) async {
     await pumpCard(tester, null);
-    expect(find.text('Today'), findsNothing);
+    expect(find.text('Daily quests'), findsNothing);
   });
 
-  testWidgets('locked: shows the three quests with progress, the bonus row and the weekly row', (tester) async {
-    final FakeQuestsRepository repo = await pumpCard(tester, questState());
+  testWidgets('locked: shows the header, the quest tiles, the locked chest and the weekly tile', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final FakeQuestsRepository repo = await pumpCard(
+      tester,
+      questState(
+        items: <QuestItem>[
+          questItem('set_wall', QuestEvent.setWallpaper, claimed: true, progress: 1),
+          questItem('fav_3', QuestEvent.favourite, target: 3, progress: 1),
+          questItem('wotd_view', QuestEvent.viewWotd),
+        ],
+      ),
+    );
 
     expect(repo.refreshes, 1);
-    expect(find.text('Today'), findsOneWidget);
-    expect(find.text('0 of 3 done'), findsOneWidget);
-    expect(find.text('Set or save a wallpaper'), findsOneWidget);
-    expect(find.text('Favourite 3 walls'), findsOneWidget);
-    expect(find.textContaining('1 of 3'), findsOneWidget);
-    expect(find.textContaining('+${CoinPolicy.questCoins} coins · +25 XP'), findsNWidgets(3));
-    expect(find.text('Watch a video (+${CoinsService.instance.adsRewardNow})'), findsOneWidget);
-    expect(find.text('Doubles your chest'), findsOneWidget);
+    expect(find.text('Daily quests'), findsOneWidget);
+    expect(resetCountdown(), findsOneWidget);
+    expect(find.bySemanticsLabel('Set or save a wallpaper, done. Pays 2 coins and 25 XP'), findsOneWidget);
+    expect(find.bySemanticsLabel('Favourite 3 walls, 1 of 3. Pays 2 coins and 25 XP'), findsOneWidget);
+    expect(find.bySemanticsLabel("Open today's Wall of the Day, 0 of 1. Pays 2 coins and 25 XP"), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        RegExp(
+          r'^Save or set 5 walls, 2 of 5\. Pays 30 coins and 150 XP\. This week, ends in (\d+d \d+h|\d+h \d+m|\d+m)$',
+        ),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Daily chest'), findsOneWidget);
-    expect(find.textContaining('Finish 3 quests'), findsOneWidget);
+    expect(find.text('Finish 3 quests to open it'), findsOneWidget);
+    expect(find.text('1 of 3'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Daily chest, locked. 1 of 3 quests done. Finish 3 quests to open it'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('1 of 3'), findsNothing);
     expect(find.text('Open'), findsNothing);
-    expect(find.text('Save or set 5 walls'), findsOneWidget);
-    expect(find.textContaining('This week · 2 of 5'), findsOneWidget);
-    expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
+    expect(find.textContaining('Watch a video'), findsOneWidget);
+    expect(find.text('Doubles your chest'), findsOneWidget);
+    expect(find.text('Watch'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    handle.dispose();
   });
 
-  testWidgets('ready: shows an Open button that opens the chest sheet', (tester) async {
+  testWidgets('ready: an Open button opens the chest sheet', (tester) async {
     final FakeQuestsRepository repo = await pumpCard(tester, allClaimed());
     repo.chest = const ChestResult(ChestOutcome.opened, coins: 12);
 
-    expect(find.text('3 of 3 done'), findsOneWidget);
-    expect(find.byIcon(Icons.check_rounded), findsNWidgets(3));
+    expect(find.text('5 to 15 coins and 10 XP, maybe a cosmetic'), findsOneWidget);
+    expect(find.text('Do this first to double your chest'), findsOneWidget);
     await tester.tap(find.text('Open'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 1500));
 
     expect(repo.opens, 1);
     expect(find.text('Chest opened'), findsOneWidget);
     expect(find.text('+12'), findsOneWidget);
   });
 
-  testWidgets('opened: the chest shows a check and no Open button', (tester) async {
+  testWidgets('a locked chest answer shows an info toast', (tester) async {
+    final FakeQuestsRepository repo = await pumpCard(tester, allClaimed());
+    repo.chest = const ChestResult(ChestOutcome.locked);
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(toasts, <String>['Finish your 3 quests to open the chest.']);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a failed chest shows an error toast', (tester) async {
+    final FakeQuestsRepository repo = await pumpCard(tester, allClaimed());
+    repo.chest = const ChestResult(ChestOutcome.failed);
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(toasts, <String>["Couldn't open the chest. Try again."]);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('opened: the chest shows a check, no Open button and no booster', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed(chestOpened: true));
 
     expect(find.text('Open'), findsNothing);
     expect(find.text('Opened. A new one tomorrow.'), findsOneWidget);
-    expect(find.byIcon(Icons.inventory_2_outlined), findsOneWidget);
+    expect(find.descendant(of: find.byType(ChestBanner), matching: find.byIcon(Icons.check_rounded)), findsOneWidget);
+    expect(find.bySemanticsLabel('Daily chest, opened. Opened. A new one tomorrow.'), findsOneWidget);
+    expect(find.text('Watch'), findsNothing);
+    expect(find.text('Doubles your chest'), findsNothing);
+    handle.dispose();
   });
 
-  testWidgets('doubled: the chest says it was doubled and the bonus row is done', (tester) async {
+  testWidgets('doubled: the chest says it opened doubled', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed(chestOpened: true, chestDoubled: true));
 
-    expect(find.text('Opened and doubled'), findsOneWidget);
-    expect(find.text('Watch a video'), findsOneWidget);
+    expect(find.text('Opened and doubled. A new one tomorrow.'), findsOneWidget);
+    expect(find.bySemanticsLabel('Daily chest, opened. Opened and doubled. A new one tomorrow.'), findsOneWidget);
     expect(find.text('Watch'), findsNothing);
+    handle.dispose();
   });
 
-  testWidgets('a Pro bonus row opens the spin machine through the callback', (tester) async {
+  testWidgets('a claimed booster on a ready chest says the chest is doubled', (tester) async {
+    await pumpCard(tester, allClaimed(chestDoubled: true));
+
+    expect(find.text('Chest doubled'), findsOneWidget);
+    expect(find.text('Your bonus is done'), findsOneWidget);
+    expect(find.text('Watch'), findsNothing);
+    expect(find.text('Open'), findsOneWidget);
+  });
+
+  testWidgets('a Pro booster opens the spin machine through the callback', (tester) async {
     int taps = 0;
     await pumpCard(tester, questState(bonus: questItem('pro_spin', QuestEvent.proSpin)), onOpenSpin: () => taps++);
 
@@ -141,27 +207,18 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  testWidgets('a failed chest shows an error toast', (tester) async {
-    final FakeQuestsRepository repo = await pumpCard(tester, allClaimed());
-    repo.chest = const ChestResult(ChestOutcome.failed);
-    await tester.tap(find.text('Open'));
-    await tester.pump();
-    await tester.pump();
-
-    expect(toasts, <String>["Couldn't open the chest. Try again."]);
-    await tester.pump(const Duration(seconds: 2));
-  });
-
-  testWidgets('quest rows use configured coins and XP without a standalone bonus XP award', (tester) async {
+  testWidgets('quest tiles use the configured coins and XP', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, questState());
     EconomyConfig.current = const EconomyConfig(
       award: EconomyAward(questCoins: 7, questXp: 41, weeklyQuestCoins: 90, weeklyQuestXp: 305),
     );
     await tester.pump();
-    expect(find.textContaining('+7 coins · +41 XP'), findsNWidgets(3));
-    expect(find.textContaining('+90 coins · +305 XP'), findsOneWidget);
+
+    expect(find.bySemanticsLabel(RegExp('Pays 7 coins and 41 XP')), findsNWidgets(3));
+    expect(find.bySemanticsLabel(RegExp('Pays 90 coins and 305 XP')), findsOneWidget);
     expect(find.text('Doubles your chest'), findsOneWidget);
-    expect(find.textContaining('+0 XP'), findsNothing);
+    handle.dispose();
   });
 
   testWidgets('completion feedback sums actual server awards, including XP-only rewards', (tester) async {
@@ -182,26 +239,49 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  for (final Brightness brightness in Brightness.values) {
-    testWidgets('fits 320px at text scale 1.3 (${brightness.name})', (tester) async {
-      tester.view.physicalSize = const Size(320, 640);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final FakeQuestsRepository repo = FakeQuestsRepository(quests: allClaimed());
-      getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo));
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
-            child: child!,
-          ),
-          home: const Scaffold(body: SingleChildScrollView(child: TodayCard())),
+  final Map<String, QuestState> boards = <String, QuestState>{
+    'locked': questState(),
+    'ready': allClaimed(),
+    'doubled': allClaimed(chestOpened: true, chestDoubled: true),
+  };
+  Future<void> pumpScaled(
+    WidgetTester tester,
+    QuestState quests,
+    Brightness brightness, {
+    required double width,
+    required double textScale,
+  }) async {
+    tester.view.physicalSize = Size(width, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final FakeQuestsRepository repo = FakeQuestsRepository(quests: quests);
+    getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
         ),
-      );
-      await tester.pump();
-      await tester.pump();
+        home: const Scaffold(body: SingleChildScrollView(child: TodayCard())),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+
+  for (final Brightness brightness in Brightness.values) {
+    for (final MapEntry<String, QuestState> board in boards.entries) {
+      testWidgets('${board.key} fits 320px at text scale 1.3 (${brightness.name})', (tester) async {
+        await pumpScaled(tester, board.value, brightness, width: 320, textScale: 1.3);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('locked fits 390px at text scale 2.4 (${brightness.name})', (tester) async {
+      await pumpScaled(tester, boards['locked']!, brightness, width: 390, textScale: 2.4);
       expect(tester.takeException(), isNull);
+      expect(find.text('Daily quests'), findsOneWidget);
     });
   }
 
@@ -216,18 +296,52 @@ void main() {
 
     final NavigatorState navigator = tester.state<NavigatorState>(find.byType(Navigator));
     navigator.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Other'))));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(repo.refreshes, 2);
     navigator.pop();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(repo.refreshes, 3);
   });
 
-  testWidgets('a quest row merges only its text; the trailing button keeps its own node', (tester) async {
+  group('the minute check', () {
+    final DateTime yesterday = DateTime.now().subtract(const Duration(days: 1));
+
+    Future<FakeQuestsRepository> pumpYesterdaysCard(WidgetTester tester) =>
+        pumpCard(tester, questState(dayKey: economyDayKey(yesterday)), clock: () => yesterday);
+
+    testWidgets('syncs again once the quests are for an earlier day', (tester) async {
+      final FakeQuestsRepository repo = await pumpYesterdaysCard(tester);
+      expect(repo.refreshes, 1);
+
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pump();
+      expect(repo.refreshes, 2);
+    });
+
+    testWidgets('does nothing while another page covers the card', (tester) async {
+      final FakeQuestsRepository repo = await pumpYesterdaysCard(tester);
+      final NavigatorState navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      navigator.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Other'))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.pump(const Duration(minutes: 1));
+      await tester.pump();
+      expect(repo.refreshes, 1);
+    });
+  });
+
+  testWidgets('the chest text merges into one node and the Open button keeps its own', (tester) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed());
 
-    expect(find.bySemanticsLabel('Set or save a wallpaper, done. +2 coins · +25 XP'), findsOneWidget);
+    expect(find.bySemanticsLabel('Set or save a wallpaper, done. Pays 2 coins and 25 XP'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Daily chest, ready to open. 5 to 15 coins and 10 XP, maybe a cosmetic'),
+      findsOneWidget,
+    );
     expect(find.bySemanticsLabel('Open'), findsOneWidget);
     handle.dispose();
   });
