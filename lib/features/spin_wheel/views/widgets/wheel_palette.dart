@@ -85,6 +85,31 @@ class WheelPalette {
   /// The accent the aura and the plinth take.
   Color get accent => colorScheme.primary;
 
+  /// The accent at a plinth's strength: its own hue, but always a vivid colour, whatever the theme's accent is.
+  HSLColor get _plinthHsl {
+    final HSLColor hsl = HSLColor.fromColor(accent);
+    return hsl.saturation < 0.12
+        ? const HSLColor.fromAHSL(1, 340, 0.5, 0.5)
+        : hsl.withSaturation(math.max(hsl.saturation, 0.5));
+  }
+
+  /// The plinth: the accent over the raised surface, lighter at the top.
+  Color get plinthTop => Color.alphaBlend(
+    _plinthHsl.withLightness(dark ? 0.4 : 0.7).toColor().withValues(alpha: 0.92),
+    colorScheme.surfaceContainerHigh,
+  );
+
+  Color get plinthBottom => Color.alphaBlend(
+    _plinthHsl.withLightness(dark ? 0.27 : 0.58).toColor().withValues(alpha: 0.92),
+    colorScheme.surfaceContainerHigh,
+  );
+
+  /// The inner panel of the plinth: a deeper step of the same colour.
+  Color get plinthPanel => _plinthHsl.withLightness(dark ? 0.2 : 0.46).toColor().withValues(alpha: dark ? 0.7 : 0.45);
+
+  /// Text and icons on the plinth.
+  Color get plinthInk => prismOnColor(Color.lerp(plinthTop, plinthBottom, 0.5)!);
+
   /// One candy colour per slice. Four hues alternate, the jackpot slice is gold.
   List<Color> sliceColors(List<WheelSegment> segments) {
     final int n = segments.length;

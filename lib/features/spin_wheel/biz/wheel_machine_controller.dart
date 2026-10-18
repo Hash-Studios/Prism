@@ -38,6 +38,7 @@ class WheelMachineController {
   final ValueNotifier<BulbFrame> bulbs = ValueNotifier<BulbFrame>(const BulbFrame());
 
   double _now = 0;
+  double _lastElapsed = 0;
   double _chase = 0;
   double? _landedAt;
   double _lastPegPass = -1;
@@ -88,9 +89,13 @@ class WheelMachineController {
 
   /// Advances every part to [elapsed].
   void tick(Duration elapsed) {
-    final double now = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
-    final double dt = (now - _now).clamp(0.0, 0.1);
-    _now = now;
+    final double seconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
+    // A ticker that was stopped and started again counts from 0. The controller's clock only moves forward.
+    final double delta = seconds > _lastElapsed ? seconds - _lastElapsed : 0;
+    _lastElapsed = seconds;
+    _now += delta;
+    final double now = _now;
+    final double dt = delta.clamp(0.0, 0.1);
     if (_reduceMotion) {
       _publish();
       return;

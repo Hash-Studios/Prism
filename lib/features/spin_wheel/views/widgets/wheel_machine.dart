@@ -21,6 +21,7 @@ class WheelMachine extends StatelessWidget {
     required this.bulbs,
     this.winner,
     this.dim = 0,
+    this.showLabels = true,
   });
 
   final List<WheelSegment> segments;
@@ -36,6 +37,9 @@ class WheelMachine extends StatelessWidget {
   /// The slice to keep bright once the wheel has landed, and how far the others dim.
   final int? winner;
   final double dim;
+
+  /// False for the small wheel on the Rewards card.
+  final bool showLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +62,14 @@ class WheelMachine extends StatelessWidget {
             ValueListenableBuilder<double>(
               valueListenable: theta,
               child: RepaintBoundary(
-                child: WheelFace(segments: segments, palette: palette, geometry: geometry, winner: winner, dim: dim),
+                child: WheelFace(
+                  segments: segments,
+                  palette: palette,
+                  geometry: geometry,
+                  winner: winner,
+                  dim: dim,
+                  showLabels: showLabels,
+                ),
               ),
               builder: (BuildContext context, double angle, Widget? face) =>
                   Transform.rotate(angle: angle, child: face),

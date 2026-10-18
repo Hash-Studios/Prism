@@ -75,7 +75,7 @@ class WheelFacePainter extends CustomPainter {
     );
 
     if (winner != null && dim > 0) {
-      final Paint shade = Paint()..color = palette.ink.withValues(alpha: 0.5 * dim);
+      final Paint shade = Paint()..color = palette.ink.withValues(alpha: 0.36 * dim);
       for (int i = 0; i < n; i++) {
         if (i == winner) continue;
         canvas.drawArc(rect, -math.pi / 2 + i * s, s, true, shade);
@@ -121,6 +121,7 @@ class WheelFace extends StatelessWidget {
     required this.geometry,
     this.winner,
     this.dim = 0,
+    this.showLabels = true,
   });
 
   final List<WheelSegment> segments;
@@ -128,6 +129,9 @@ class WheelFace extends StatelessWidget {
   final WheelGeometry geometry;
   final int? winner;
   final double dim;
+
+  /// False for the small wheel on the Rewards card, where a label would be noise.
+  final bool showLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -148,19 +152,19 @@ class WheelFace extends StatelessWidget {
               dim: dim,
             ),
           ),
-          for (int i = 0; i < n; i++)
-            Transform.rotate(
-              angle: (i + 0.5) * s,
-              child: _SliceLabelStrip(
-                segment: segments[i],
-                ink: palette.inkOn(colors[i]),
-                geometry: geometry,
-                count: n,
-                // The left half of the wheel reads towards the hub so its text is upright at rest.
-                towardsHub: (i + 0.5) * s > math.pi,
-                dimmed: winner != null && winner != i ? dim : 0,
+          if (showLabels)
+            for (int i = 0; i < n; i++)
+              Transform.rotate(
+                angle: (i + 0.5) * s,
+                child: _SliceLabelStrip(
+                  segment: segments[i],
+                  ink: palette.inkOn(colors[i]),
+                  geometry: geometry,
+                  count: n,
+                  // The left half of the wheel reads towards the hub so its text is upright at rest.
+                  towardsHub: (i + 0.5) * s > math.pi,
+                ),
               ),
-            ),
         ],
       ),
     );
@@ -176,7 +180,6 @@ class _SliceLabelStrip extends StatelessWidget {
     required this.geometry,
     required this.count,
     required this.towardsHub,
-    required this.dimmed,
   });
 
   final WheelSegment segment;
@@ -184,7 +187,6 @@ class _SliceLabelStrip extends StatelessWidget {
   final WheelGeometry geometry;
   final int count;
   final bool towardsHub;
-  final double dimmed;
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +267,7 @@ class WheelPrizeLabel extends StatelessWidget {
       CosmeticPrize() => <Widget>[
         Icon(Icons.auto_awesome_rounded, size: size * 0.78, color: ink),
         SizedBox(width: gap),
-        Text('Mystery', style: word.copyWith(fontSize: size * 0.58)),
+        Text('Mystery', style: word.copyWith(fontSize: size * 0.66)),
       ],
     };
     return Row(mainAxisSize: MainAxisSize.min, children: parts);
