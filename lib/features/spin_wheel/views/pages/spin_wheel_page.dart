@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/spin_wheel/biz/wheel_machine_controller.dart';
+import 'package:Prism/features/spin_wheel/domain/wheel_motion.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/coin_burst.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_button.dart';
@@ -213,8 +214,13 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     if (!context.reduceMotion && won.win.coins > 0 && !_isXp(won)) {
       _burst.forward(from: 0);
     }
+    final int winner = won.win.segment.clamp(0, won.segments.length - 1);
+    assert(
+      sliceUnderPointer(_machine.theta.value, won.segments.length) == winner,
+      'The wheel stopped off the slice the server picked',
+    );
     setState(() {
-      _winner = won.win.segment.clamp(0, won.segments.length - 1);
+      _winner = winner;
       _stage = _Stage.landed;
       _status = won.status;
       _balance = won.balance;
