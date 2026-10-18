@@ -2398,12 +2398,14 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Calls a paid economy callable with a request id stored until a definite answer, so a retry after a crash or a
-  /// lost reply replays the same purchase instead of paying twice. [scope] names the thing bought.
+  /// lost reply replays the same purchase instead of paying twice. [scope] names the thing bought. [timeout] replaces
+  /// the plugin's 60 seconds for a caller that holds the user on a screen while it waits.
   Future<_EconomyReply?> _economyPurchase(
     String name,
     String scope,
     Map<String, Object?> params, {
     required String sourceTag,
+    Duration? timeout,
   }) async {
     final String userId = app_state.prismUser.id;
     final int generation = _economySessionGeneration;
@@ -2418,6 +2420,7 @@ class CoinsService with WidgetsBindingObserver {
       <String, Object?>{...params, 'requestId': requestId},
       userId: userId,
       sourceTag: sourceTag,
+      timeout: timeout,
     );
     if (!_isCurrentOwner(userId, generation)) return null;
     if (reply != null && _staleEconomyReply(reply.data)) reply = _EconomyReply(reply.data, stale: true);
@@ -2638,6 +2641,7 @@ class CoinsService with WidgetsBindingObserver {
       economyDayKey(DateTime.now()),
       <String, Object?>{'maxCost': maxCost},
       sourceTag: 'coins.daily_chest',
+      timeout: const Duration(seconds: 20),
     );
     if (!_isCurrentOwner(userId, generation) || reply == null) return const ChestFailed('session_changed');
     if (reply.errorCode != null) return ChestFailed(reply.reason);

@@ -413,7 +413,12 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       padding: EdgeInsets.only(top: layout.topSpare),
       child: Column(
         children: <Widget>[
-          _TopBar(balance: _balance, delta: _delta, low: _action == ChestAction.getCoins, onClose: _close),
+          _TopBar(
+            balance: _balance,
+            delta: _delta,
+            low: _action == ChestAction.getCoins,
+            onClose: _busy ? null : _close,
+          ),
           _stage(context, layout),
           _actions(context),
           const SizedBox(height: PrismSpace.xs),
@@ -655,7 +660,9 @@ class _TopBar extends StatelessWidget {
   final int balance;
   final int delta;
   final bool low;
-  final VoidCallback onClose;
+
+  /// Null while the box works: closing then would hide a prize the user already paid for.
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {

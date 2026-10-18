@@ -339,6 +339,36 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 2));
     });
 
+    testWidgets('the close button is dimmed and says it is disabled while the box works, and wakes once revealed', (
+      tester,
+    ) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final NavigatorState navigator = await pumpRouted(tester);
+      final Finder close = find.byTooltip('Close');
+      Matcher closeSemantics({required bool enabled}) =>
+          containsSemantics(isButton: true, hasEnabledState: true, isEnabled: enabled);
+
+      expect(tester.getSemantics(close), closeSemantics(enabled: true));
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      expect(tester.getSemantics(close), closeSemantics(enabled: false));
+      expect(tester.widget<IconButton>(find.ancestor(of: close, matching: find.byType(IconButton))).onPressed, isNull);
+      await tester.tap(close, warnIfMissed: false);
+      await tester.pump();
+      expect(find.byType(DailyChestPage), findsOneWidget);
+
+      replies.single.complete(_won(3, coins: 20));
+      await pumpUntil(tester, find.text('Done'));
+      await pumpFor(tester, const Duration(seconds: 1));
+      expect(tester.getSemantics(close), closeSemantics(enabled: true));
+      await tester.tap(close);
+      await pumpFor(tester, const Duration(seconds: 1));
+      expect(find.byType(DailyChestPage), findsNothing);
+      expect(navigator.canPop(), isFalse);
+      semantics.dispose();
+    });
+
     testWidgets('back does not close the page while the box charges or opens, and does once it is revealed', (
       tester,
     ) async {

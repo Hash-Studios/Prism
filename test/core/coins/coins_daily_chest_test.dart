@@ -470,6 +470,11 @@ void main() {
       expect(ids[3], isNot(ids[2]));
     });
 
+    test('the call waits 20 seconds for the server, not the plugin default of 60', () async {
+      await openWon();
+      expect(backend.timeoutsMs['openDailyChest'], 20000);
+    });
+
     test('a failed call moves no coins and logs nothing', () async {
       backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'deadline-exceeded', message: 'slow');
       final DailyChestResult result = await service.openDailyChest(maxCost: 8);
