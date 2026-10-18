@@ -36,21 +36,31 @@ Map<String, Object?> _quests({required bool chestOpened, bool doubled = false, b
       'weekKey': '2026-W42',
     };
 
-/// An opened chest the way the server replies, for a user with 100 coins before the open.
+/// The XP receipt every reply carries. `xp` is the user's absolute lifetime XP after the call.
+Map<String, Object?> _receipt({required int xp, required int awarded}) => <String, Object?>{
+  'xpPolicyVersion': 1,
+  'xp': xp,
+  'xpAwarded': awarded,
+  'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': xp},
+};
+
+/// An opened chest the way the server replies, for a user with 100 coins and [xpBefore] XP before the open. A fresh
+/// open grants the chest's 10 XP whatever the prize; a replay grants none and reports the live total.
 Map<String, Object?> _opened({
   int slot = 0,
   String kind = 'coins',
   int coins = 0,
-  int xp = 0,
   String? itemId,
   bool free = false,
   bool doubled = false,
   Object? slots = defaultChestJson,
   bool omitSlots = false,
   bool replay = false,
+  int xpBefore = 0,
 }) {
   final int cost = free ? 0 : 8;
   final int after = 100 - cost + coins;
+  final int awarded = replay ? 0 : 10;
   return <String, Object?>{
     'success': true,
     'changed': true,
@@ -64,10 +74,11 @@ Map<String, Object?> _opened({
     'free': free,
     'doubled': doubled,
     'slot': slot,
-    'prize': <String, Object?>{'kind': kind, 'coins': coins, 'xp': xp, 'itemId': itemId},
+    'prize': <String, Object?>{'kind': kind, 'coins': coins, 'xp': 0, 'itemId': itemId},
     if (!omitSlots) 'slots': slots,
     'status': <String, Object>{'opened': true, 'free': free, 'price': 8},
     'quests': _quests(chestOpened: true, doubled: doubled),
+    ..._receipt(xp: xpBefore + awarded, awarded: awarded),
   };
 }
 
@@ -87,6 +98,7 @@ Map<String, Object?> _refused(
   if (insufficient) 'insufficientBalance': true,
   if (status != null) 'status': status,
   if (quests != null) ...<String, Object?>{'quests': quests, 'rev': rev},
+  ..._receipt(xp: 0, awarded: 0),
 };
 
 void main() {
@@ -130,54 +142,46 @@ void main() {
   });
 
   group('an opened chest', () {
-    test('a coin win pays the prize and the XP, and names the slot with its tier', () async {
+    test("a coin win pays the coins, reports the open's 10 XP, and names the slot with its tier", () async {
       reply((_, _) => _opened(slot: 3, coins: 20));
       final ChestWon won = await openWon();
-      expect((won.win.slot, won.win.coins, won.win.xp, won.win.itemId), (3, 20, 0, null));
+      expect((won.win.slot, won.win.coins, won.win.xp, won.win.itemId), (3, 20, 10, null));
       expect((won.cost, won.doubled, won.tier), (8, false, ChestTier.rare));
       expect(describeWheel(won.slots), defaultChestLines);
       expect(service.balanceNotifier.value, 112);
-      expect(service.xpNotifier.value.xp, 20);
+      expect(service.xpNotifier.value.xp, 10, reason: 'the receipt says 10, not one XP per coin');
       final (String name, Map<String, dynamic> params) = calls.single;
       expect((name, params['maxCost'], params['sourceTag']), ('openDailyChest', 8, 'coins.daily_chest'));
       expect(params['requestId'], matches(idPattern));
     });
 
-    test('an XP win pays the XP and only charges the price', () async {
-      reply((_, _) => _opened(slot: 2, kind: 'xp', xp: 25));
-      final ChestWon won = await openWon();
-      expect((won.win.slot, won.win.coins, won.win.xp, won.win.itemId, won.tier), (2, 0, 25, null, ChestTier.rare));
-      expect(service.balanceNotifier.value, 92);
-      expect(service.xpNotifier.value.xp, 25);
-    });
-
-    test('a cosmetic win adds the item to the inventory', () async {
+    test('a cosmetic win adds the item to the inventory and still reports the 10 XP', () async {
       reply((_, _) => _opened(slot: 4, kind: 'cosmetic', itemId: 'frame_ring'));
       final ChestWon won = await openWon();
       expect(
         (won.win.slot, won.win.coins, won.win.xp, won.win.itemId, won.tier),
-        (4, 0, 0, 'frame_ring', ChestTier.epic),
+        (4, 0, 10, 'frame_ring', ChestTier.epic),
       );
       expect(service.inventoryNotifier.value.owned, <String>{'frame_ring'});
       expect(service.balanceNotifier.value, 92);
-      expect(service.xpNotifier.value.xp, 0);
+      expect(service.xpNotifier.value.xp, 10);
     });
 
-    test('a cosmetic fallback pays its coins and adds no item', () async {
+    test('a cosmetic fallback pays its coins and adds no item, with the same 10 XP', () async {
       reply((_, _) => _opened(slot: 4, kind: 'cosmetic', coins: 25));
       final ChestWon won = await openWon();
-      expect((won.win.slot, won.win.coins, won.win.itemId), (4, 25, null));
+      expect((won.win.slot, won.win.coins, won.win.xp, won.win.itemId), (4, 25, 10, null));
       expect(service.inventoryNotifier.value.owned, isEmpty);
       expect(service.balanceNotifier.value, 117);
-      expect(service.xpNotifier.value.xp, 25);
+      expect(service.xpNotifier.value.xp, 10);
     });
 
-    test('a free doubled chest costs nothing and pays the doubled prize', () async {
+    test('a free doubled chest costs nothing and doubles the coins but not the XP', () async {
       reply((_, _) => _opened(slot: 6, coins: 200, free: true, doubled: true));
       final ChestWon won = await openWon(maxCost: 0);
-      expect((won.cost, won.doubled, won.win.coins, won.tier), (0, true, 200, ChestTier.legendary));
+      expect((won.cost, won.doubled, won.win.coins, won.win.xp, won.tier), (0, true, 200, 10, ChestTier.legendary));
       expect(service.balanceNotifier.value, 300);
-      expect(service.xpNotifier.value.xp, 200);
+      expect(service.xpNotifier.value.xp, 10);
       expect(service.questsNotifier.value?.chestDoubled, isTrue);
       expect(calls.single.$2['maxCost'], 0);
     });
@@ -201,7 +205,7 @@ void main() {
         'award': <String, dynamic>{
           'dailyChest': <Map<String, Object>>[
             <String, Object>{'kind': 'coins', 'coins': 9, 'weight': 1},
-            <String, Object>{'kind': 'xp', 'xp': 9, 'weight': 1},
+            <String, Object>{'kind': 'coins', 'coins': 3, 'weight': 1},
           ],
         },
       });
@@ -210,22 +214,38 @@ void main() {
           slot: 2,
           coins: 5,
           slots: <Map<String, Object>>[
-            <String, Object>{'kind': 'xp', 'xp': 1, 'weight': 1},
+            <String, Object>{'kind': 'coins', 'coins': 1, 'weight': 1},
             <String, Object>{'kind': 'coins', 'coins': 2, 'weight': 1},
             <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 98},
           ],
         ),
       );
       final ChestWon fromReply = await openWon();
-      expect(describeWheel(fromReply.slots), <String>['xp 1 x1', 'coins 2 x1', 'coins 5 x98']);
+      expect(describeWheel(fromReply.slots), <String>['coins 1 x1', 'coins 2 x1', 'coins 5 x98']);
       expect((fromReply.win.slot, fromReply.tier), (2, ChestTier.common));
 
-      reply((_, _) => _opened(slot: 1, kind: 'xp', xp: 9, omitSlots: true));
+      reply((_, _) => _opened(slot: 1, coins: 3, omitSlots: true));
       final ChestWon fromConfig = await openWon();
-      expect(describeWheel(fromConfig.slots), <String>['coins 9 x1', 'xp 9 x1']);
+      expect(describeWheel(fromConfig.slots), <String>['coins 9 x1', 'coins 3 x1']);
       expect(fromConfig.tier, ChestTier.common);
-      reply((_, _) => _opened(slot: 1, kind: 'xp', xp: 9, slots: <Object>['junk']));
-      expect(describeWheel((await openWon()).slots), <String>['coins 9 x1', 'xp 9 x1']);
+      reply((_, _) => _opened(slot: 1, coins: 3, slots: <Object>['junk']));
+      expect(describeWheel((await openWon()).slots), <String>['coins 9 x1', 'coins 3 x1']);
+    });
+
+    test('a reply table with an XP slot is refused, so the cached coin-only table is used', () async {
+      reply(
+        (_, _) => _opened(
+          slot: 1,
+          coins: 5,
+          slots: <Map<String, Object>>[
+            <String, Object>{'kind': 'coins', 'coins': 2, 'weight': 1},
+            <String, Object>{'kind': 'xp', 'xp': 25, 'weight': 1},
+          ],
+        ),
+      );
+      final ChestWon won = await openWon();
+      expect(describeWheel(won.slots), defaultChestLines);
+      expect(won.win.xp, 10, reason: 'the XP comes from the receipt, never from a prize slot');
     });
 
     test('a slot outside the table lands on the nearest slot instead of past the end', () async {
@@ -244,6 +264,84 @@ void main() {
       expect(calls.map((c) => c.$1), <String>['openDailyChest']);
       expect(service.questsNotifier.value?.chestOpened, isTrue);
     });
+
+    test('a replay adds no XP: the card reports none and the total stays what the server says', () async {
+      reply((_, _) => _opened(slot: 3, coins: 20));
+      await openWon();
+      expect(service.xpNotifier.value.xp, 10);
+
+      reply((_, _) => _opened(slot: 3, coins: 20, replay: true, xpBefore: 10));
+      final ChestWon replayed = await openWon();
+      await pumpEventQueue();
+      expect(replayed.win.xp, 0);
+      expect(service.xpNotifier.value.xp, 10, reason: 'a second 10 would make it 20');
+    });
+
+    test("the XP total follows the receipt's absolute value, not the awarded amount added to the old total", () async {
+      reply((_, _) => _opened(slot: 3, coins: 20, xpBefore: 450));
+      await openWon();
+      expect((service.xpNotifier.value.xp, service.xpNotifier.value.weekXp), (460, 460));
+
+      reply((_, _) => _opened(slot: 3, coins: 20, xpBefore: 460 + 25));
+      await openWon();
+      expect(service.xpNotifier.value.xp, 495, reason: '25 more XP came in from another device');
+    });
+
+    test('a reply without the XP receipt asks the server for the total, never estimates it from the prize', () async {
+      final Completer<Map<String, Object?>> serverTotal = Completer<Map<String, Object?>>();
+      int reconciliations = 0;
+      backend.onCall = (String name, Map<String, dynamic> params) async {
+        if (name == 'reconcileRankRewards') {
+          reconciliations++;
+          return serverTotal.future;
+        }
+        calls.add((name, params));
+        return _opened(slot: 6, coins: 100)
+          ..remove('xpPolicyVersion')
+          ..remove('xp')
+          ..remove('xpAwarded')
+          ..remove('xpWeek');
+      };
+      final ChestWon won = await openWon();
+      await pumpEventQueue();
+      expect(won.win.xp, 0);
+      expect(reconciliations, 1);
+      expect(service.xpNotifier.value.xp, 0, reason: 'nothing is granted locally while the server has not answered');
+
+      serverTotal.complete(<String, Object?>{'success': true, ..._receipt(xp: 460, awarded: 0)});
+      await pumpEventQueue();
+      expect(service.xpNotifier.value.xp, 460);
+    });
+
+    test(
+      'a reply older than private progress is not adopted, but a changed open still asks the server for XP',
+      () async {
+        final CoinsTestFirestore firestore = CoinsTestFirestore()
+          ..userData = <String, dynamic>{'coins': 100}
+          ..docs['usersv2/${backend.userId}/private/economy'] = <String, dynamic>{'rev': 9};
+        if (getIt.isRegistered<FirestoreClient>()) getIt.unregister<FirestoreClient>();
+        getIt.registerSingleton<FirestoreClient>(firestore);
+        backend.onCall = (_, _) async => <String, Object>{};
+        await service.bootstrapForCurrentUser();
+        await pumpEventQueue();
+
+        int reconciliations = 0;
+        backend.onCall = (String name, Map<String, dynamic> params) async {
+          if (name == 'reconcileRankRewards') {
+            reconciliations++;
+            return <String, Object?>{'success': true, ..._receipt(xp: 10, awarded: 0)};
+          }
+          calls.add((name, params));
+          return _opened(slot: 3, coins: 20);
+        };
+        final ChestWon won = await openWon();
+        await pumpEventQueue();
+        expect(won.win.xp, 10);
+        expect(service.balanceNotifier.value, 100, reason: 'the stale reply moved nothing');
+        expect(reconciliations, 1);
+        expect(service.xpNotifier.value.xp, 10);
+      },
+    );
 
     test('restores the quests and a won cosmetic after a restart', () async {
       reply((_, _) => _opened(slot: 4, kind: 'cosmetic', itemId: 'frame_ring'));
@@ -279,7 +377,7 @@ void main() {
           'prize': 'coins',
           'tier': 'legendary',
           'coins': 100,
-          'xp': 0,
+          'xp': 10,
           'doubled': 0,
         },
         <String, Object?>{
@@ -299,30 +397,33 @@ void main() {
       ]);
     });
 
-    test('an XP win logs no coin earned, a free chest logs no coin spent', () async {
-      reply((_, _) => _opened(slot: 2, kind: 'xp', xp: 50, doubled: true));
-      await openWon();
-      await pumpEventQueue();
-      expect(names(), <String>['daily_chest_opened', 'coin_spent']);
-      expect(logged().first, <String, Object?>{
-        'event': 'daily_chest_opened',
-        'free': 0,
-        'cost': 8,
-        'slot': 2,
-        'prize': 'xp',
-        'tier': 'rare',
-        'coins': 0,
-        'xp': 50,
-        'doubled': 1,
-      });
+    test(
+      'a cosmetic win logs no coin earned and a doubled chest logs the same 10 XP, a free chest no coin spent',
+      () async {
+        reply((_, _) => _opened(slot: 4, kind: 'cosmetic', itemId: 'frame_ring', doubled: true));
+        await openWon();
+        await pumpEventQueue();
+        expect(names(), <String>['daily_chest_opened', 'coin_spent']);
+        expect(logged().first, <String, Object?>{
+          'event': 'daily_chest_opened',
+          'free': 0,
+          'cost': 8,
+          'slot': 4,
+          'prize': 'cosmetic',
+          'tier': 'epic',
+          'coins': 0,
+          'xp': 10,
+          'doubled': 1,
+        });
 
-      analytics.events.clear();
-      reply((_, _) => _opened(coins: 5, free: true));
-      await openWon(maxCost: 0);
-      await pumpEventQueue();
-      expect(names(), <String>['daily_chest_opened', 'coin_earned']);
-      expect((logged().first['free'], logged().first['cost'], logged().first['tier']), (1, 0, 'common'));
-    });
+        analytics.events.clear();
+        reply((_, _) => _opened(coins: 5, free: true));
+        await openWon(maxCost: 0);
+        await pumpEventQueue();
+        expect(names(), <String>['daily_chest_opened', 'coin_earned']);
+        expect((logged().first['free'], logged().first['cost'], logged().first['tier']), (1, 0, 'common'));
+      },
+    );
 
     test('a cosmetic and its coin fallback both log the prize as a cosmetic', () async {
       reply((_, _) => _opened(slot: 4, kind: 'cosmetic', itemId: 'frame_ring'));
@@ -336,9 +437,16 @@ void main() {
           if (e['event'] == 'daily_chest_opened') <Object?>[e['prize'], e['tier'], e['coins'], e['xp']],
       ];
       expect(opens, <List<Object?>>[
-        <Object?>['cosmetic', 'epic', 0, 0],
-        <Object?>['cosmetic', 'epic', 25, 0],
+        <Object?>['cosmetic', 'epic', 0, 10],
+        <Object?>['cosmetic', 'epic', 25, 10],
       ]);
+    });
+
+    test('a replay logs the XP the reply reports, which is none', () async {
+      reply((_, _) => _opened(slot: 3, coins: 20, replay: true));
+      await openWon();
+      await pumpEventQueue();
+      expect(logged().first['xp'], 0);
     });
 
     test('a refusal logs nothing', () async {

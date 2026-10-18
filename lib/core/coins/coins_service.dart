@@ -2748,7 +2748,7 @@ class CoinsService with WidgetsBindingObserver {
       win: ChestWin(
         slot: parseIntOr(reply.data['slot'], fallback: -1).clamp(0, slots.length - 1),
         coins: max(0, parseIntOr(prize['coins'])),
-        xp: max(0, parseIntOr(prize['xp'])),
+        xp: max(0, parseIntOr(reply.data['xpAwarded'])),
         itemId: _optionalString(prize['itemId']),
       ),
       cost: max(0, parseIntOr(reply.data['cost'])),
@@ -2763,6 +2763,7 @@ class CoinsService with WidgetsBindingObserver {
       );
     }
     if (reply.changed) {
+      if (reply.stale) unawaited(reconcileRankRewards());
       analytics.track(
         DailyChestOpenedEvent(
           free: reply.data['free'] == true,

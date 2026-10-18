@@ -62,8 +62,10 @@ void main() {
       );
     });
 
-    test('the default chest keeps the odds the spec lists', () {
+    test('the default chest keeps the odds the spec lists, in whole percent, with no XP slot', () {
       expect(describeWheel(defaultChest), defaultChestLines);
+      expect(defaultChest.fold<double>(0, (double sum, WheelSegment s) => sum + s.weight), 100);
+      expect(defaultChest.map((WheelSegment s) => s.prize), isNot(contains(isA<XpPrize>())));
     });
 
     test('the tier follows the share of the slot, not its position', () {

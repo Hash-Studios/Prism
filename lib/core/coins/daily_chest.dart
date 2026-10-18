@@ -17,15 +17,15 @@ enum ChestTier {
   }
 }
 
-/// Same slots and odds as `DEFAULT_ECONOMY.award.dailyChest` on the server.
+/// Same slots and odds as `DEFAULT_ECONOMY.award.dailyChest` on the server. No slot pays XP.
 const List<WheelSegment> defaultChest = <WheelSegment>[
-  WheelSegment(CoinsPrize(5), weight: 32),
-  WheelSegment(CoinsPrize(10), weight: 26),
-  WheelSegment(XpPrize(25), weight: 15),
-  WheelSegment(CoinsPrize(20), weight: 13),
+  WheelSegment(CoinsPrize(5), weight: 34),
+  WheelSegment(CoinsPrize(8), weight: 28),
+  WheelSegment(CoinsPrize(12), weight: 15),
+  WheelSegment(CoinsPrize(20), weight: 11),
   WheelSegment(CosmeticPrize(fallbackCoins: 25), weight: 8),
-  WheelSegment(CoinsPrize(40), weight: 4),
-  WheelSegment(CoinsPrize(100), weight: 2),
+  WheelSegment(CoinsPrize(40), weight: 3),
+  WheelSegment(CoinsPrize(100), weight: 1),
 ];
 
 /// The tier of slot [index] in [slots]. The chest table has the same shape as the wheel table.
@@ -64,8 +64,9 @@ class DailyChestStatus {
   int get nextCost => free ? 0 : price;
 }
 
-/// What the chest held. Cosmetic fallback coins arrive as [coins] with a null [itemId]. [coins] and [xp] are already
-/// doubled when the bonus quest doubled the chest.
+/// What the chest held. Cosmetic fallback coins arrive as [coins] with a null [itemId]. [coins] is already doubled when
+/// the bonus quest doubled the chest. [xp] is the activity XP this open granted (`xpAwarded` in the reply), never
+/// doubled and never part of the prize; it is 0 on a replay.
 class ChestWin {
   const ChestWin({required this.slot, this.coins = 0, this.xp = 0, this.itemId});
 
@@ -90,7 +91,7 @@ final class ChestWon extends DailyChestResult {
   /// What opening cost, 0 when the quests made it free.
   final int cost;
 
-  /// The bonus quest doubled the coins and the XP.
+  /// The bonus quest doubled the coins.
   final bool doubled;
 
   /// The table the server rolled. Read the prize and the tier from this, not from the cached config.

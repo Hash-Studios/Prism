@@ -74,14 +74,14 @@ void main() {
       'spend': <String, dynamic>{'dailyChest': 6},
       'award': <String, dynamic>{
         'dailyChest': <Map<String, Object>>[
-          <String, Object>{'kind': 'xp', 'xp': 30, 'weight': 3},
+          <String, Object>{'kind': 'coins', 'coins': 30, 'weight': 3},
           <String, Object>{'kind': 'coins', 'coins': 12, 'weight': 2},
           <String, Object>{'kind': 'coins', 'coins': 9, 'weight': 1},
         ],
       },
     });
     expect(CoinPolicy.dailyChestPrice, 6);
-    expect(describeWheel(CoinPolicy.dailyChest), <String>['xp 30 x3', 'coins 12 x2', 'coins 9 x1']);
+    expect(describeWheel(CoinPolicy.dailyChest), <String>['coins 30 x3', 'coins 12 x2', 'coins 9 x1']);
     expect(CoinSpendAction.questChest.cost(), 6);
   });
 
