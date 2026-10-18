@@ -18,7 +18,7 @@ const Map<String, QuestInfo> _quests = <String, QuestInfo>{
   'download_2': QuestInfo(title: 'Download 2 walls', icon: Icons.download_rounded),
   'browse_10': QuestInfo(title: 'Look at 10 walls', icon: Icons.visibility_outlined),
   'watch_ad': QuestInfo(title: 'Watch a video', icon: Icons.play_circle_outline_rounded),
-  'pro_spin': QuestInfo(title: 'Open your Pro spin', icon: Icons.workspace_premium_outlined),
+  'pro_spin': QuestInfo(title: 'Take your free spin', icon: Icons.workspace_premium_outlined),
   'weekly_set_5': QuestInfo(title: 'Save or set 5 walls', icon: Icons.event_available_outlined),
 };
 
