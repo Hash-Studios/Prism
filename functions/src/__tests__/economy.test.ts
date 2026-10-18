@@ -208,13 +208,13 @@ test("parseEconomy: spend.spinWheel is an integer in 0..10000 and the daily cap 
 });
 
 const SPEC_CHEST = [
-  {kind: "coins", coins: 5, weight: 32},
-  {kind: "coins", coins: 10, weight: 26},
-  {kind: "xp", xp: 25, weight: 15},
-  {kind: "coins", coins: 20, weight: 13},
+  {kind: "coins", coins: 5, weight: 34},
+  {kind: "coins", coins: 8, weight: 28},
+  {kind: "coins", coins: 12, weight: 15},
+  {kind: "coins", coins: 20, weight: 11},
   {kind: "cosmetic", fallbackCoins: 25, weight: 8},
-  {kind: "coins", coins: 40, weight: 4},
-  {kind: "coins", coins: 100, weight: 2},
+  {kind: "coins", coins: 40, weight: 3},
+  {kind: "coins", coins: 100, weight: 1},
 ];
 
 test("parseEconomy: the default daily chest is the spec table at 8 coins and survives a Firestore round trip", () => {
@@ -229,11 +229,11 @@ test("parseEconomy: the default daily chest is the spec table at 8 coins and sur
 
 test("parseEconomy: a valid custom daily chest table is kept in order, apart from the wheel", () => {
   const config = parseEconomy({award: {dailyChest: [
-    {kind: "xp", xp: 1000, weight: 0, junk: true},
+    {kind: "coins", coins: 1000, weight: 0, junk: true},
     {kind: "cosmetic", fallbackCoins: 1, weight: 1000},
   ]}});
   assert.deepEqual(config.award.dailyChest, [
-    {kind: "xp", xp: 1000, weight: 0},
+    {kind: "coins", coins: 1000, weight: 0},
     {kind: "cosmetic", fallbackCoins: 1, weight: 1000},
   ]);
   assert.deepEqual(config.award.spinWheel, SPEC_WHEEL);
@@ -245,6 +245,7 @@ test("parseEconomy: a malformed daily chest table falls back to the whole defaul
     [coins(1), {kind: "jackpot", coins: 5, weight: 1}],
     [coins(1), coins(0)],
     [coins(1), coins(5000)],
+    [coins(1), {kind: "xp", xp: 25, weight: 1}],
     [coins(1), {kind: "xp", coins: 5, weight: 1}],
     [coins(1), {kind: "cosmetic", fallbackCoins: 0, weight: 1}],
     [coins(1), {kind: "coins", coins: 5, weight: -1}],
@@ -260,6 +261,21 @@ test("parseEconomy: a malformed daily chest table falls back to the whole defaul
     const config = parseEconomy({award: {dailyChest}});
     assert.deepEqual(config.award.dailyChest, SPEC_CHEST, JSON.stringify(dailyChest));
   }
+});
+
+test("parseEconomy: a stored chest table from before XP left the prizes falls back to the coin-only default", () => {
+  const stored = JSON.parse(JSON.stringify({award: {dailyChest: [
+    {kind: "coins", coins: 5, weight: 32},
+    {kind: "coins", coins: 10, weight: 26},
+    {kind: "xp", xp: 25, weight: 15},
+    {kind: "coins", coins: 20, weight: 13},
+    {kind: "cosmetic", fallbackCoins: 25, weight: 8},
+    {kind: "coins", coins: 40, weight: 4},
+    {kind: "coins", coins: 100, weight: 2},
+  ]}}));
+  const config = parseEconomy(stored);
+  assert.deepEqual(config.award.dailyChest, SPEC_CHEST);
+  assert.equal(config.award.dailyChest.some((slot) => (slot as {kind: string}).kind === "xp"), false);
 });
 
 test("parseEconomy: spend.dailyChest is an integer in 0..10000, else 8", () => {
