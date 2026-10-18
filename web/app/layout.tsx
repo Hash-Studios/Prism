@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MarketingAnalytics } from "@/components/analytics";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { APP_NAME, OG_IMAGE, SITE_URL } from "@/lib/site-config";
@@ -52,6 +53,7 @@ export default function RootLayout({
     <html lang="en" className="bg-neutral-100">
       <body className={`${manrope.variable} bg-neutral-100 text-black antialiased min-h-screen overflow-x-hidden`}>
         {children}
+        <MarketingAnalytics />
       </body>
     </html>
   );

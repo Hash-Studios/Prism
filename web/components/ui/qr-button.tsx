@@ -15,7 +15,7 @@ export async function QrButton({ url, className }: QrButtonProps) {
   });
 
   return (
-    <div className="relative inline-block group">
+    <div className="relative inline-block group" data-analytics-qr>
       <button
         type="button"
         className={className}

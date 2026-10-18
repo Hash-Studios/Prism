@@ -8,6 +8,42 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 
+Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
+  'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
+  'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
+  'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
+  'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
+  'subscription_entitlement_refresh_result': SubscriptionEntitlementRefreshResultValue.values
+      .map((value) => value.wireValue)
+      .toList(),
+  'coin_earn_action': CoinEarnAction.values.map((value) => value.wireValue).toList(),
+  'coin_spend_action': CoinSpendAction.values.map((value) => value.wireValue).toList(),
+  'ai_charge_mode': AiChargeMode.values.map((value) => value.wireValue).toList(),
+  'setting': SettingValue.values.map((value) => value.wireValue).toList(),
+  'analytics_action': AnalyticsActionValue.values.map((value) => value.wireValue).toList(),
+  'event_result': EventResultValue.values.map((value) => value.wireValue).toList(),
+  'analytics_reason': AnalyticsReasonValue.values.map((value) => value.wireValue).toList(),
+  'search_provider': SearchProviderValue.values.map((value) => value.wireValue).toList(),
+  'item_type': ItemTypeValue.values.map((value) => value.wireValue).toList(),
+  'target_type': TargetTypeValue.values.map((value) => value.wireValue).toList(),
+  'entrypoint': EntryPointValue.values.map((value) => value.wireValue).toList(),
+  'launch_state': LaunchStateValue.values.map((value) => value.wireValue).toList(),
+  'share_channel': ShareChannelValue.values.map((value) => value.wireValue).toList(),
+  'share_format': ShareFormatValue.values.map((value) => value.wireValue).toList(),
+  'dismiss_mode': DismissModeValue.values.map((value) => value.wireValue).toList(),
+  'notification_type': NotificationTypeValue.values.map((value) => value.wireValue).toList(),
+  'auth_method': AuthMethodValue.values.map((value) => value.wireValue).toList(),
+  'nav_tab': NavTabValue.values.map((value) => value.wireValue).toList(),
+  'notification_preference': NotificationPreferenceValue.values.map((value) => value.wireValue).toList(),
+  'deep_link_source': DeepLinkSourceValue.values.map((value) => value.wireValue).toList(),
+  'share_type': ShareTypeValue.values.map((value) => value.wireValue).toList(),
+  'analytics_surface': AnalyticsSurfaceValue.values.map((value) => value.wireValue).toList(),
+  'scroll_list_name': ScrollListNameValue.values.map((value) => value.wireValue).toList(),
+  'scroll_depth_percent': ScrollDepthPercentValue.values.map((value) => value.wireValue).toList(),
+  'link_destination': LinkDestinationValue.values.map((value) => value.wireValue).toList(),
+  'push_kind': PushKindValue.values.map((value) => value.wireValue).toList(),
+};
+
 class ContentReportSubmitEvent extends AnalyticsEvent {
   const ContentReportSubmitEvent({required this.contentType, required this.result, this.reason});
 
@@ -59,20 +95,30 @@ class DownloadOwnWallEvent extends AnalyticsEvent {
 
 class SetWallEvent extends AnalyticsEvent {
   const SetWallEvent({
+    this.requestId,
     required this.wallpaperTarget,
     required this.result,
     this.errorCode,
     this.fit,
     this.entryPoint,
     this.usedDefault,
+    this.operationId,
+    this.itemId,
+    this.provider,
+    this.source,
   });
 
+  final String? requestId;
   final WallpaperTarget wallpaperTarget;
   final BinaryResultValue result;
   final String? errorCode;
   final String? fit;
   final String? entryPoint;
   final bool? usedDefault;
+  final String? operationId;
+  final String? itemId;
+  final String? provider;
+  final String? source;
 
   @override
   String get eventName => 'set_wall';
@@ -80,12 +126,17 @@ class SetWallEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{
+      if (requestId != null) 'request_id': requestId!,
       'wallpaper_target': wallpaperTarget.wireValue,
       'result': result.wireValue,
       if (errorCode != null) 'error_code': errorCode!,
       if (fit != null) 'fit': fit!,
       if (entryPoint != null) 'entry_point': entryPoint!,
       if (usedDefault != null) 'used_default': usedDefault! ? 1 : 0,
+      if (operationId != null) 'operation_id': operationId!,
+      if (itemId != null) 'item_id': itemId!,
+      if (provider != null) 'provider': provider!,
+      if (source != null) 'source': source!,
     };
   }
 }
@@ -137,11 +188,25 @@ class CoinFilterWatchAndRetryUsedEvent extends AnalyticsEvent {
 }
 
 class DownloadWallpaperEvent extends AnalyticsEvent {
-  const DownloadWallpaperEvent({required this.link, this.sourceContext, this.premiumContent});
+  const DownloadWallpaperEvent({
+    this.requestId,
+    required this.link,
+    this.sourceContext,
+    this.premiumContent,
+    this.operationId,
+    this.itemId,
+    this.provider,
+    this.source,
+  });
 
+  final String? requestId;
   final String link;
   final String? sourceContext;
   final bool? premiumContent;
+  final String? operationId;
+  final String? itemId;
+  final String? provider;
+  final String? source;
 
   @override
   String get eventName => 'download_wallpaper';
@@ -149,9 +214,14 @@ class DownloadWallpaperEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{
+      if (requestId != null) 'request_id': requestId!,
       'link': link,
       if (sourceContext != null) 'source_context': sourceContext!,
       if (premiumContent != null) 'premium_content': premiumContent! ? 1 : 0,
+      if (operationId != null) 'operation_id': operationId!,
+      if (itemId != null) 'item_id': itemId!,
+      if (provider != null) 'provider': provider!,
+      if (source != null) 'source': source!,
     };
   }
 }
@@ -323,20 +393,26 @@ class SubscriptionEntitlementRefreshEvent extends AnalyticsEvent {
 
 class SubscriptionConversionEvent extends AnalyticsEvent {
   const SubscriptionConversionEvent({
+    this.priceType,
     required this.source,
     required this.productId,
     required this.packageType,
     required this.subscriptionTier,
     required this.price,
     required this.currency,
+    this.transactionId,
+    this.restored,
   });
 
+  final String? priceType;
   final String source;
   final String productId;
   final String packageType;
   final String subscriptionTier;
   final num price;
   final String currency;
+  final String? transactionId;
+  final bool? restored;
 
   @override
   String get eventName => 'subscription_conversion';
@@ -344,12 +420,15 @@ class SubscriptionConversionEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{
+      if (priceType != null) 'price_type': priceType!,
       'source': source,
       'product_id': productId,
       'package_type': packageType,
       'subscription_tier': subscriptionTier,
       'price': price,
       'currency': currency,
+      if (transactionId != null) 'transaction_id': transactionId!,
+      if (restored != null) 'restored': restored! ? 1 : 0,
     };
   }
 }
@@ -360,12 +439,24 @@ class AiChargeReservedEvent extends AnalyticsEvent {
     required this.coinsSpent,
     required this.balance,
     required this.sourceTag,
+    this.operationId,
+    this.durationMs,
+    this.chargeTransactionId,
+    this.generationId,
+    this.errorCategory,
+    this.refundResult,
   });
 
   final AiChargeMode mode;
   final int coinsSpent;
   final int balance;
   final String sourceTag;
+  final String? operationId;
+  final int? durationMs;
+  final String? chargeTransactionId;
+  final String? generationId;
+  final String? errorCategory;
+  final String? refundResult;
 
   @override
   String get eventName => 'ai_charge_reserved';
@@ -377,6 +468,12 @@ class AiChargeReservedEvent extends AnalyticsEvent {
       'coins_spent': coinsSpent,
       'balance': balance,
       'source_tag': sourceTag,
+      if (operationId != null) 'operation_id': operationId!,
+      if (durationMs != null) 'duration_ms': durationMs!,
+      if (chargeTransactionId != null) 'charge_transaction_id': chargeTransactionId!,
+      if (generationId != null) 'generation_id': generationId!,
+      if (errorCategory != null) 'error_category': errorCategory!,
+      if (refundResult != null) 'refund_result': refundResult!,
     };
   }
 }
@@ -387,12 +484,24 @@ class AiChargeRolledBackEvent extends AnalyticsEvent {
     required this.balance,
     required this.sourceTag,
     this.coinsRefunded,
+    this.operationId,
+    this.durationMs,
+    this.chargeTransactionId,
+    this.generationId,
+    this.errorCategory,
+    this.refundResult,
   });
 
   final AiChargeMode mode;
   final int balance;
   final String sourceTag;
   final int? coinsRefunded;
+  final String? operationId;
+  final int? durationMs;
+  final String? chargeTransactionId;
+  final String? generationId;
+  final String? errorCategory;
+  final String? refundResult;
 
   @override
   String get eventName => 'ai_charge_rolled_back';
@@ -404,6 +513,12 @@ class AiChargeRolledBackEvent extends AnalyticsEvent {
       'balance': balance,
       'source_tag': sourceTag,
       if (coinsRefunded != null) 'coins_refunded': coinsRefunded!,
+      if (operationId != null) 'operation_id': operationId!,
+      if (durationMs != null) 'duration_ms': durationMs!,
+      if (chargeTransactionId != null) 'charge_transaction_id': chargeTransactionId!,
+      if (generationId != null) 'generation_id': generationId!,
+      if (errorCategory != null) 'error_category': errorCategory!,
+      if (refundResult != null) 'refund_result': refundResult!,
     };
   }
 }
@@ -414,12 +529,24 @@ class AiChargeCommittedEvent extends AnalyticsEvent {
     required this.coinsSpent,
     required this.balance,
     required this.sourceTag,
+    this.operationId,
+    this.durationMs,
+    this.chargeTransactionId,
+    this.generationId,
+    this.errorCategory,
+    this.refundResult,
   });
 
   final AiChargeMode mode;
   final int coinsSpent;
   final int balance;
   final String sourceTag;
+  final String? operationId;
+  final int? durationMs;
+  final String? chargeTransactionId;
+  final String? generationId;
+  final String? errorCategory;
+  final String? refundResult;
 
   @override
   String get eventName => 'ai_charge_committed';
@@ -431,6 +558,12 @@ class AiChargeCommittedEvent extends AnalyticsEvent {
       'coins_spent': coinsSpent,
       'balance': balance,
       'source_tag': sourceTag,
+      if (operationId != null) 'operation_id': operationId!,
+      if (durationMs != null) 'duration_ms': durationMs!,
+      if (chargeTransactionId != null) 'charge_transaction_id': chargeTransactionId!,
+      if (generationId != null) 'generation_id': generationId!,
+      if (errorCategory != null) 'error_category': errorCategory!,
+      if (refundResult != null) 'refund_result': refundResult!,
     };
   }
 }
@@ -555,65 +688,167 @@ class AiHistoryOpenedEvent extends AnalyticsEvent {
 }
 
 class AiGenerateStartedEvent extends AnalyticsEvent {
-  const AiGenerateStartedEvent({required this.style, required this.quality, required this.mode});
+  const AiGenerateStartedEvent({
+    required this.style,
+    required this.quality,
+    required this.mode,
+    this.operationId,
+    this.durationMs,
+    this.chargeTransactionId,
+    this.generationId,
+    this.errorCategory,
+    this.refundResult,
+  });
 
   final String style;
   final String quality;
   final AiChargeMode mode;
+  final String? operationId;
+  final int? durationMs;
+  final String? chargeTransactionId;
+  final String? generationId;
+  final String? errorCategory;
+  final String? refundResult;
 
   @override
   String get eventName => 'ai_generate_started';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'style': style, 'quality': quality, 'mode': mode.wireValue};
+    return <String, Object?>{
+      'style': style,
+      'quality': quality,
+      'mode': mode.wireValue,
+      if (operationId != null) 'operation_id': operationId!,
+      if (durationMs != null) 'duration_ms': durationMs!,
+      if (chargeTransactionId != null) 'charge_transaction_id': chargeTransactionId!,
+      if (generationId != null) 'generation_id': generationId!,
+      if (errorCategory != null) 'error_category': errorCategory!,
+      if (refundResult != null) 'refund_result': refundResult!,
+    };
   }
 }
 
 class AiGenerateSuccessEvent extends AnalyticsEvent {
-  const AiGenerateSuccessEvent({required this.provider, required this.mode, required this.coinsSpent});
+  const AiGenerateSuccessEvent({
+    required this.provider,
+    required this.mode,
+    required this.coinsSpent,
+    this.operationId,
+    this.durationMs,
+    this.chargeTransactionId,
+    this.generationId,
+    this.errorCategory,
+    this.refundResult,
+  });
 
   final String provider;
   final AiChargeMode mode;
   final int coinsSpent;
+  final String? operationId;
+  final int? durationMs;
+  final String? chargeTransactionId;
+  final String? generationId;
+  final String? errorCategory;
+  final String? refundResult;
 
   @override
   String get eventName => 'ai_generate_success';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'provider': provider, 'mode': mode.wireValue, 'coins_spent': coinsSpent};
+    return <String, Object?>{
+      'provider': provider,
+      'mode': mode.wireValue,
+      'coins_spent': coinsSpent,
+      if (operationId != null) 'operation_id': operationId!,
+      if (durationMs != null) 'duration_ms': durationMs!,
+      if (chargeTransactionId != null) 'charge_transaction_id': chargeTransactionId!,
+      if (generationId != null) 'generation_id': generationId!,
+      if (errorCategory != null) 'error_category': errorCategory!,
+      if (refundResult != null) 'refund_result': refundResult!,
+    };
   }
 }
 
 class AiVariationUsedEvent extends AnalyticsEvent {
-  const AiVariationUsedEvent({required this.provider, required this.mode, required this.coinsSpent});
+  const AiVariationUsedEvent({
+    required this.provider,
+    required this.mode,
+    required this.coinsSpent,
+    this.operationId,
+    this.durationMs,
+    this.chargeTransactionId,
+    this.generationId,
+    this.errorCategory,
+    this.refundResult,
+  });
 
   final String provider;
   final AiChargeMode mode;
   final int coinsSpent;
+  final String? operationId;
+  final int? durationMs;
+  final String? chargeTransactionId;
+  final String? generationId;
+  final String? errorCategory;
+  final String? refundResult;
 
   @override
   String get eventName => 'ai_variation_used';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'provider': provider, 'mode': mode.wireValue, 'coins_spent': coinsSpent};
+    return <String, Object?>{
+      'provider': provider,
+      'mode': mode.wireValue,
+      'coins_spent': coinsSpent,
+      if (operationId != null) 'operation_id': operationId!,
+      if (durationMs != null) 'duration_ms': durationMs!,
+      if (chargeTransactionId != null) 'charge_transaction_id': chargeTransactionId!,
+      if (generationId != null) 'generation_id': generationId!,
+      if (errorCategory != null) 'error_category': errorCategory!,
+      if (refundResult != null) 'refund_result': refundResult!,
+    };
   }
 }
 
 class AiGenerateFailedEvent extends AnalyticsEvent {
-  const AiGenerateFailedEvent({required this.error, required this.mode});
+  const AiGenerateFailedEvent({
+    required this.error,
+    required this.mode,
+    this.operationId,
+    this.durationMs,
+    this.chargeTransactionId,
+    this.generationId,
+    this.errorCategory,
+    this.refundResult,
+  });
 
   final String error;
   final AiChargeMode mode;
+  final String? operationId;
+  final int? durationMs;
+  final String? chargeTransactionId;
+  final String? generationId;
+  final String? errorCategory;
+  final String? refundResult;
 
   @override
   String get eventName => 'ai_generate_failed';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'error': error, 'mode': mode.wireValue};
+    return <String, Object?>{
+      'error': error,
+      'mode': mode.wireValue,
+      if (operationId != null) 'operation_id': operationId!,
+      if (durationMs != null) 'duration_ms': durationMs!,
+      if (chargeTransactionId != null) 'charge_transaction_id': chargeTransactionId!,
+      if (generationId != null) 'generation_id': generationId!,
+      if (errorCategory != null) 'error_category': errorCategory!,
+      if (refundResult != null) 'refund_result': refundResult!,
+    };
   }
 }
 
@@ -781,6 +1016,7 @@ class SearchSubmittedEvent extends AnalyticsEvent {
     required this.queryWordCount,
     required this.sourceContext,
     required this.fromSuggestion,
+    this.searchId,
   });
 
   final SearchProviderValue provider;
@@ -788,6 +1024,7 @@ class SearchSubmittedEvent extends AnalyticsEvent {
   final int queryWordCount;
   final String sourceContext;
   final bool fromSuggestion;
+  final String? searchId;
 
   @override
   String get eventName => 'search_submitted';
@@ -800,6 +1037,7 @@ class SearchSubmittedEvent extends AnalyticsEvent {
       'query_word_count': queryWordCount,
       'source_context': sourceContext,
       'from_suggestion': fromSuggestion ? 1 : 0,
+      if (searchId != null) 'search_id': searchId!,
     };
   }
 }
@@ -821,18 +1059,22 @@ class SearchTagSelectedEvent extends AnalyticsEvent {
 
 class SearchResultsLoadedEvent extends AnalyticsEvent {
   const SearchResultsLoadedEvent({
+    this.reason,
     required this.provider,
     required this.queryLength,
     required this.resultCount,
     required this.page,
     required this.result,
+    this.searchId,
   });
 
+  final String? reason;
   final SearchProviderValue provider;
   final int queryLength;
   final int resultCount;
   final int page;
   final EventResultValue result;
+  final String? searchId;
 
   @override
   String get eventName => 'search_results_loaded';
@@ -840,11 +1082,13 @@ class SearchResultsLoadedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{
+      if (reason != null) 'reason': reason!,
       'provider': provider.wireValue,
       'query_length': queryLength,
       'result_count': resultCount,
       'page': page,
       'result': result.wireValue,
+      if (searchId != null) 'search_id': searchId!,
     };
   }
 }
@@ -856,6 +1100,7 @@ class SearchResultOpenedEvent extends AnalyticsEvent {
     required this.itemId,
     required this.index,
     required this.queryLength,
+    this.searchId,
   });
 
   final SearchProviderValue provider;
@@ -863,6 +1108,7 @@ class SearchResultOpenedEvent extends AnalyticsEvent {
   final String itemId;
   final int index;
   final int queryLength;
+  final String? searchId;
 
   @override
   String get eventName => 'search_result_opened';
@@ -875,54 +1121,82 @@ class SearchResultOpenedEvent extends AnalyticsEvent {
       'item_id': itemId,
       'index': index,
       'query_length': queryLength,
+      if (searchId != null) 'search_id': searchId!,
     };
   }
 }
 
 class SearchPaginationRequestedEvent extends AnalyticsEvent {
-  const SearchPaginationRequestedEvent({required this.provider, required this.queryLength, required this.page});
+  const SearchPaginationRequestedEvent({
+    required this.provider,
+    required this.queryLength,
+    required this.page,
+    this.searchId,
+  });
 
   final SearchProviderValue provider;
   final int queryLength;
   final int page;
+  final String? searchId;
 
   @override
   String get eventName => 'search_pagination_requested';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'provider': provider.wireValue, 'query_length': queryLength, 'page': page};
+    return <String, Object?>{
+      'provider': provider.wireValue,
+      'query_length': queryLength,
+      'page': page,
+      if (searchId != null) 'search_id': searchId!,
+    };
   }
 }
 
 class UserSearchSubmittedEvent extends AnalyticsEvent {
-  const UserSearchSubmittedEvent({required this.queryLength, required this.sourceContext});
+  const UserSearchSubmittedEvent({required this.queryLength, required this.sourceContext, this.searchId});
 
   final int queryLength;
   final String sourceContext;
+  final String? searchId;
 
   @override
   String get eventName => 'user_search_submitted';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'query_length': queryLength, 'source_context': sourceContext};
+    return <String, Object?>{
+      'query_length': queryLength,
+      'source_context': sourceContext,
+      if (searchId != null) 'search_id': searchId!,
+    };
   }
 }
 
 class UserSearchResultOpenedEvent extends AnalyticsEvent {
-  const UserSearchResultOpenedEvent({required this.resultUserId, required this.index, required this.queryLength});
+  const UserSearchResultOpenedEvent({
+    required this.resultUserId,
+    required this.index,
+    required this.queryLength,
+    this.searchId,
+  });
 
   final String resultUserId;
   final int index;
   final int queryLength;
+  final String? searchId;
 
   @override
   String get eventName => 'user_search_result_opened';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'result_user_id': resultUserId, 'index': index, 'query_length': queryLength};
+    return <String, Object?>{
+      'result_user_id': resultUserId,
+      'index': index,
+      'query_length': queryLength,
+      if (searchId != null) 'search_id': searchId!,
+    };
   }
 }
 
@@ -1356,6 +1630,8 @@ class SurfaceActionTappedEvent extends AnalyticsEvent {
     this.itemType,
     this.itemId,
     this.index,
+    this.requestId,
+    this.provider,
   });
 
   final AnalyticsSurfaceValue surface;
@@ -1364,6 +1640,8 @@ class SurfaceActionTappedEvent extends AnalyticsEvent {
   final ItemTypeValue? itemType;
   final String? itemId;
   final int? index;
+  final String? requestId;
+  final String? provider;
 
   @override
   String get eventName => 'surface_action_tapped';
@@ -1377,6 +1655,8 @@ class SurfaceActionTappedEvent extends AnalyticsEvent {
       if (itemType != null) 'item_type': itemType!.wireValue,
       if (itemId != null) 'item_id': itemId!,
       if (index != null) 'index': index!,
+      if (requestId != null) 'request_id': requestId!,
+      if (provider != null) 'provider': provider!,
     };
   }
 }
@@ -1475,17 +1755,35 @@ class ExternalLinkOpenResultEvent extends AnalyticsEvent {
 }
 
 class RevenueRecordedEvent extends AnalyticsEvent {
-  const RevenueRecordedEvent({required this.amountUsd, required this.source});
+  const RevenueRecordedEvent({
+    this.amountUsd,
+    required this.source,
+    this.amount,
+    this.currency,
+    this.productId,
+    this.transactionId,
+  });
 
-  final double amountUsd;
+  final double? amountUsd;
   final String source;
+  final num? amount;
+  final String? currency;
+  final String? productId;
+  final String? transactionId;
 
   @override
   String get eventName => 'revenue_recorded';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'amount_usd': amountUsd, 'source': source};
+    return <String, Object?>{
+      if (amountUsd != null) 'amount_usd': amountUsd!,
+      'source': source,
+      if (amount != null) 'amount': amount!,
+      if (currency != null) 'currency': currency!,
+      if (productId != null) 'product_id': productId!,
+      if (transactionId != null) 'transaction_id': transactionId!,
+    };
   }
 }
 
@@ -1825,33 +2123,74 @@ class AdConsentResultEvent extends AnalyticsEvent {
 }
 
 class DownloadAttemptEvent extends AnalyticsEvent {
-  const DownloadAttemptEvent({required this.source, required this.premium});
+  const DownloadAttemptEvent({
+    this.requestId,
+    required this.source,
+    required this.premium,
+    this.operationId,
+    this.itemId,
+    this.provider,
+  });
 
+  final String? requestId;
   final String source;
   final bool premium;
+  final String? operationId;
+  final String? itemId;
+  final String? provider;
 
   @override
   String get eventName => 'download_attempt';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'source': source, 'premium': premium ? 1 : 0};
+    return <String, Object?>{
+      if (requestId != null) 'request_id': requestId!,
+      'source': source,
+      'premium': premium ? 1 : 0,
+      if (operationId != null) 'operation_id': operationId!,
+      if (itemId != null) 'item_id': itemId!,
+      if (provider != null) 'provider': provider!,
+    };
   }
 }
 
 class DownloadResultEvent extends AnalyticsEvent {
-  const DownloadResultEvent({required this.result, this.reason, required this.stage});
+  const DownloadResultEvent({
+    this.requestId,
+    required this.result,
+    this.reason,
+    required this.stage,
+    this.operationId,
+    this.itemId,
+    this.provider,
+    this.source,
+  });
 
+  final String? requestId;
   final String result;
   final String? reason;
   final String stage;
+  final String? operationId;
+  final String? itemId;
+  final String? provider;
+  final String? source;
 
   @override
   String get eventName => 'download_result';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'result': result, if (reason != null) 'reason': reason!, 'stage': stage};
+    return <String, Object?>{
+      if (requestId != null) 'request_id': requestId!,
+      'result': result,
+      if (reason != null) 'reason': reason!,
+      'stage': stage,
+      if (operationId != null) 'operation_id': operationId!,
+      if (itemId != null) 'item_id': itemId!,
+      if (provider != null) 'provider': provider!,
+      if (source != null) 'source': source!,
+    };
   }
 }
 
@@ -1872,17 +2211,24 @@ class UploadMetadataSubmittedEvent extends AnalyticsEvent {
 }
 
 class FollowResultEvent extends AnalyticsEvent {
-  const FollowResultEvent({required this.action, required this.result});
+  const FollowResultEvent({required this.action, required this.result, this.creatorId, this.source});
 
   final String action;
   final String result;
+  final String? creatorId;
+  final String? source;
 
   @override
   String get eventName => 'follow_result';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'action': action, 'result': result};
+    return <String, Object?>{
+      'action': action,
+      'result': result,
+      if (creatorId != null) 'creator_id': creatorId!,
+      if (source != null) 'source': source!,
+    };
   }
 }
 
@@ -2306,5 +2652,152 @@ class RankUpEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'rank': rank, 'xp': xp};
+  }
+}
+
+class WallpaperImpressionEvent extends AnalyticsEvent {
+  const WallpaperImpressionEvent({
+    required this.itemId,
+    required this.provider,
+    required this.surface,
+    required this.requestId,
+    required this.index,
+    required this.source,
+    this.rankingVersion,
+  });
+
+  final String itemId;
+  final String provider;
+  final String surface;
+  final String requestId;
+  final int index;
+  final String source;
+  final String? rankingVersion;
+
+  @override
+  String get eventName => 'wallpaper_impression';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'item_id': itemId,
+      'provider': provider,
+      'surface': surface,
+      'request_id': requestId,
+      'index': index,
+      'source': source,
+      if (rankingVersion != null) 'ranking_version': rankingVersion!,
+    };
+  }
+}
+
+class PurchaseVerifiedEvent extends AnalyticsEvent {
+  const PurchaseVerifiedEvent({
+    this.source,
+    this.placement,
+    required this.productId,
+    required this.restored,
+    this.amount,
+    this.currency,
+    this.transactionId,
+  });
+
+  final String? source;
+  final String? placement;
+  final String productId;
+  final bool restored;
+  final num? amount;
+  final String? currency;
+  final String? transactionId;
+
+  @override
+  String get eventName => 'purchase_verified';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      if (source != null) 'source': source!,
+      if (placement != null) 'placement': placement!,
+      'product_id': productId,
+      'restored': restored ? 1 : 0,
+      if (amount != null) 'amount': amount!,
+      if (currency != null) 'currency': currency!,
+      if (transactionId != null) 'transaction_id': transactionId!,
+    };
+  }
+}
+
+class ReferralResultEvent extends AnalyticsEvent {
+  const ReferralResultEvent({
+    required this.outcome,
+    required this.role,
+    this.operationId,
+    this.referralId,
+    this.reason,
+    this.referrerId,
+    this.refereeId,
+  });
+
+  final String outcome;
+  final String role;
+  final String? operationId;
+  final String? referralId;
+  final String? reason;
+  final String? referrerId;
+  final String? refereeId;
+
+  @override
+  String get eventName => 'referral_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'outcome': outcome,
+      'role': role,
+      if (operationId != null) 'operation_id': operationId!,
+      if (referralId != null) 'referral_id': referralId!,
+      if (reason != null) 'reason': reason!,
+      if (referrerId != null) 'referrer_id': referrerId!,
+      if (refereeId != null) 'referee_id': refereeId!,
+    };
+  }
+}
+
+class StreakLifecycleEvent extends AnalyticsEvent {
+  const StreakLifecycleEvent({
+    required this.action,
+    required this.streakCount,
+    this.previousCount,
+    this.coins,
+    this.result,
+    this.freezesUsed,
+    this.freezesLeft,
+    this.milestone,
+  });
+
+  final String action;
+  final int streakCount;
+  final int? previousCount;
+  final int? coins;
+  final String? result;
+  final int? freezesUsed;
+  final int? freezesLeft;
+  final int? milestone;
+
+  @override
+  String get eventName => 'streak_lifecycle';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'action': action,
+      'streak_count': streakCount,
+      if (previousCount != null) 'previous_count': previousCount!,
+      if (coins != null) 'coins': coins!,
+      if (result != null) 'result': result!,
+      if (freezesUsed != null) 'freezes_used': freezesUsed!,
+      if (freezesLeft != null) 'freezes_left': freezesLeft!,
+      if (milestone != null) 'milestone': milestone!,
+    };
   }
 }

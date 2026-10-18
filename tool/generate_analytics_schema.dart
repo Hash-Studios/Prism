@@ -24,7 +24,11 @@ void main(List<String> args) {
   }
 
   final List<YamlMap> events = _readEvents(decoded);
-  final String content = _generateFile(events, _readEnumImports(decoded));
+  final String content = _generateFile(
+    events,
+    _readEnumImports(decoded),
+    (decoded['enums'] as YamlList).cast<YamlMap>(),
+  );
 
   final File outputFile = File(outputPath);
   outputFile.parent.createSync(recursive: true);
@@ -48,12 +52,13 @@ Set<String> _readEnumImports(YamlMap root) {
   return raw.cast<YamlMap>().map((YamlMap e) => e['import']).whereType<String>().toSet();
 }
 
-String _generateFile(List<YamlMap> events, Set<String> enumImports) {
+String _generateFile(List<YamlMap> events, Set<String> enumImports, List<YamlMap> enums) {
   final StringBuffer buffer = StringBuffer();
   buffer.writeln('// GENERATED CODE - DO NOT MODIFY BY HAND.');
   buffer.writeln('//');
   buffer.writeln('// Run: dart run tool/generate_analytics_schema.dart');
   buffer.writeln();
+
   final List<String> imports = <String>[
     'package:Prism/core/analytics/events/analytics_enums.dart',
     'package:Prism/core/analytics/events/analytics_event.dart',
@@ -62,6 +67,12 @@ String _generateFile(List<YamlMap> events, Set<String> enumImports) {
   for (final String import in imports) {
     buffer.writeln("import '$import';");
   }
+  buffer.writeln();
+  buffer.writeln('Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{');
+  for (final YamlMap spec in enums) {
+    buffer.writeln("  '${spec['name']}': ${spec['dart_type']}.values.map((value) => value.wireValue).toList(),");
+  }
+  buffer.writeln('};');
   buffer.writeln();
 
   for (final YamlMap event in events) {

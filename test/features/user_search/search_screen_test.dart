@@ -276,6 +276,27 @@ void main() {
 
     expect(find.byType(SearchGrid), findsOneWidget);
     expect(find.text('From Prism'), findsOneWidget);
+    final loaded = analytics.events.whereType<SearchResultsLoadedEvent>().single;
+    expect(loaded.resultCount, 2);
+    expect(loaded.result, EventResultValue.success);
+  });
+
+  testWidgets('a Prism-only search reports its displayed row as a successful result', (tester) async {
+    when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
+      (_) async => _page(
+        const <FeedItemEntity>[],
+        provider: SearchProviderValue.prism,
+        prismResults: <FeedItemEntity>[_wallpaper('prism-1')],
+      ),
+    );
+
+    await submit(tester, 'forest');
+    await tester.pump();
+
+    expect(find.text('From Prism'), findsOneWidget);
+    final loaded = analytics.events.whereType<SearchResultsLoadedEvent>().single;
+    expect(loaded.resultCount, 1);
+    expect(loaded.result, EventResultValue.success);
   });
 
   testWidgets('a search is saved as a recent search and listed after the clear button is used', (tester) async {
@@ -358,7 +379,7 @@ void main() {
     expect(pendingTagSearch.value, isNull);
   });
 
-  testWidgets('the search event reports the provider that returned the results', (tester) async {
+  testWidgets('submission and results share an opaque ID across provider fallback', (tester) async {
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     when(() => service.search(any(), filters: any(named: 'filters'))).thenAnswer(
@@ -374,8 +395,13 @@ void main() {
     await tester.pump();
 
     final SearchSubmittedEvent event = analytics.events.whereType<SearchSubmittedEvent>().single;
-    expect(event.provider, SearchProviderValue.pexels);
+    expect(event.provider, SearchProviderValue.auto);
     expect(event.sourceContext, 'search_textfield');
+    final SearchResultsLoadedEvent loaded = analytics.events.whereType<SearchResultsLoadedEvent>().single;
+    expect(loaded.provider, SearchProviderValue.pexels);
+    expect(loaded.searchId, event.searchId);
+    expect(event.searchId, isNotEmpty);
+    expect(event.toWireParameters().values, isNot(contains('forest')));
   });
 
   testWidgets('changing filters drops the old results while the new search runs', (tester) async {

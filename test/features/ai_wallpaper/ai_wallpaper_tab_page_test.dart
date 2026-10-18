@@ -124,6 +124,9 @@ AiGenerationRecord _record({
 const AiSubmissionMetadata _emptyMetadata = (title: '', description: '', category: '', tags: <String>[]);
 
 void main() {
+  setUp(AnalyticsRuntime.reset);
+  tearDown(AnalyticsRuntime.reset);
+
   testWidgets('failed save resolution clears the saving lock so the user can retry', (tester) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -162,7 +165,6 @@ void main() {
   testWidgets('AI share is single-flight, reports the chosen image and records tap and success', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     tester.view.physicalSize = const Size(320, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -229,7 +231,6 @@ void main() {
   testWidgets('AI share failure records failure and restores the action', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -287,7 +288,6 @@ void main() {
   testWidgets('AI share dismissed by the user is tracked as cancelled without an error toast', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -334,7 +334,6 @@ void main() {
   testWidgets('AI share still completes and unlocks when tap analytics throws', (tester) async {
     final analytics = _ThrowingShareTapAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -381,7 +380,6 @@ void main() {
   testWidgets('AI share handles asynchronous tap analytics failure', (tester) async {
     final analytics = _AsyncThrowingShareTapAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -420,7 +418,6 @@ void main() {
   testWidgets('AI share completion after disposal does not report a false success', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -713,7 +710,6 @@ void main() {
   testWidgets('does not apply a completed submission to a newly active account', (tester) async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
-    addTearDown(AnalyticsRuntime.reset);
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

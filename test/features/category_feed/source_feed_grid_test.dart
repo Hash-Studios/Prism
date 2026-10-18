@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -93,6 +94,55 @@ void main() {
 
     expect(find.byType(LoadingCards), findsOneWidget);
     expect(find.byType(GlintState), findsNothing);
+  });
+
+  testWidgets('refresh retains impression dedupe until a fresh page succeeds', (tester) async {
+    final bloc = _MockCategoryFeedBloc();
+    final controller = StreamController<CategoryFeedState>.broadcast(sync: true);
+    addTearDown(controller.close);
+    final state = CategoryFeedState.initial().copyWith(
+      status: LoadStatus.success,
+      actionStatus: ActionStatus.success,
+      selectedCategory: space,
+      items: const <FeedItemEntity>[item],
+      hasMore: false,
+    );
+    whenListen(bloc, controller.stream, initialState: state);
+    // Read the tile passed to the wrapper without mounting its unrelated dependencies.
+    WallpaperImpressionSession? current;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<CategoryFeedBloc>.value(
+          value: bloc,
+          child: SourceFeedGrid<PrismFeedItem>(
+            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+            listName: ScrollListNameValue.wallpaperGrid,
+            sourceContextPrefix: 'test',
+            itemWrapper: (context, item, tile) {
+              current = (tile as WallpaperTile).impressionSession;
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
+    final original = current!;
+    expect(original.record('prism', 'probe'), isTrue);
+    Future<void> refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    controller.add(state.copyWith(status: LoadStatus.loading));
+    await tester.pump();
+    expect(current!.record('prism', 'probe'), isFalse);
+    controller.add(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure));
+    await refresh;
+    await tester.pump();
+    expect(current!.record('prism', 'probe'), isFalse);
+    refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    controller.add(state.copyWith(status: LoadStatus.loading));
+    await tester.pump();
+    controller.add(state);
+    await refresh;
+    await tester.pump();
+    expect(current!.record('prism', 'probe'), isTrue);
   });
 
   testWidgets('a successful empty feed shows an empty state, not skeletons', (tester) async {

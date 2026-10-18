@@ -300,7 +300,16 @@ void main() {
       tester,
       const WallpaperSetResult(WallpaperSetStatus.failed, 'x', errorCode: 'out-of-memory'),
       target: WallpaperTarget.both,
-      setContext: const WallpaperSetContext(fit: 'whole', entryPoint: 'wallpaper_detail', usedDefault: true),
+      setContext: const WallpaperSetContext(
+        fit: 'whole',
+        entryPoint: 'wallpaper_detail',
+        usedDefault: true,
+        operationId: 'set-operation',
+        itemId: 'wall-1',
+        provider: 'prism',
+        source: 'wallpaper_detail',
+        requestId: 'browse-request',
+      ),
       onRetry: (_) {},
     );
 
@@ -311,6 +320,10 @@ void main() {
     expect(event.toWireParameters(), containsPair('fit', 'whole'));
     expect(event.toWireParameters(), containsPair('entry_point', 'wallpaper_detail'));
     expect(event.toWireParameters(), containsPair('used_default', 1));
+    expect(event.toWireParameters(), containsPair('operation_id', 'set-operation'));
+    expect(event.toWireParameters(), containsPair('item_id', 'wall-1'));
+    expect(event.toWireParameters(), containsPair('provider', 'prism'));
+    expect(event.toWireParameters(), containsPair('request_id', 'browse-request'));
     await tester.pump(const Duration(seconds: 5));
   });
 

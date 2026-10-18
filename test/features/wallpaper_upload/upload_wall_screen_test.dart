@@ -89,6 +89,9 @@ Future<void> pumpRoutedUpload(WidgetTester tester, UploadWallRoute Function() ro
 }
 
 void main() {
+  setUp(AnalyticsRuntime.reset);
+  tearDown(AnalyticsRuntime.reset);
+
   Future<File> makeImage(WidgetTester tester) async {
     final tempDirectory = (await tester.runAsync(() => Directory.systemTemp.createTemp('prism-upload-wall-')))!;
     addTearDown(() => tester.runAsync(() => tempDirectory.delete(recursive: true)));
@@ -350,7 +353,6 @@ void main() {
     final save = Completer<wall_store.WallSubmissionResult>();
     final recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    addTearDown(AnalyticsRuntime.reset);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -526,7 +528,6 @@ void main() {
     final image = await makeImage(tester);
     final recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    addTearDown(AnalyticsRuntime.reset);
     var saveCalls = 0;
     final deletedFiles = <String>[];
 
@@ -666,7 +667,6 @@ void main() {
     final image = await makeImage(tester);
     final recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
-    addTearDown(AnalyticsRuntime.reset);
     var saveCalls = 0;
 
     await tester.pumpWidget(

@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/analytics_event_normalizer.dart';
+import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/analytics/providers/analytics_provider.dart';
 
@@ -23,6 +24,7 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
 
   final AnalyticsProvider _provider;
   final AnalyticsEventNormalizer _normalizer;
+  final String _sessionId = AnalyticsCorrelation.newId();
 
   @override
   Future<void> track(AnalyticsEvent event) {
@@ -30,16 +32,22 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
       return _provider.logScreenView(
         screenName: _normalizer.normalizeScreenName(event.screenName),
         screenClass: _nonEmptyOrNull(event.screenClass),
-        parameters: _normalizer.normalizeParameters(event.parameters),
+        parameters: _normalizer.normalizeParameters(_withContext(event.parameters)),
       );
     }
 
     final NormalizedAnalyticsEvent normalized = _normalizer.normalizeEvent(
       name: event.eventName,
-      parameters: event.toWireParameters(),
+      parameters: _withContext(event.toWireParameters()),
     );
     return _provider.logEvent(name: normalized.name, parameters: normalized.parameters);
   }
+
+  Map<String, Object?> _withContext(Map<String, Object?>? parameters) => <String, Object?>{
+    ...?parameters,
+    'analytics_session_id': _sessionId,
+    'analytics_schema_version': 2,
+  };
 
   @override
   Future<void> setUserId(String? userId) {

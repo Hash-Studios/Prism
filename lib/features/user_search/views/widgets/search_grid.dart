@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -34,6 +35,8 @@ class SearchGrid extends StatefulWidget {
     this.prismResults = const <FeedItemEntity>[],
     this.filters = const SearchFilters(),
     this.isLocal = false,
+    this.searchId,
+    this.trackInitialResults = true,
   });
 
   final String query;
@@ -44,6 +47,8 @@ class SearchGrid extends StatefulWidget {
   final List<FeedItemEntity> prismResults;
   final SearchFilters filters;
   final bool isLocal;
+  final String? searchId;
+  final bool trackInitialResults;
 
   @override
   State<SearchGrid> createState() => _SearchGridState();
@@ -56,24 +61,30 @@ class _SearchGridState extends State<SearchGrid> {
   late bool _hasMore = _hasExternalResults;
   bool _loadMoreFailed = false;
   int _currentPage = 1;
+  int _loadGeneration = 0;
+  late WallpaperImpressionSession _impressions = WallpaperImpressionSession(requestId: widget.searchId);
 
   bool get _hasExternalResults => !widget.isLocal && widget.provider != SearchProviderValue.prism;
 
   int get _queryLength => widget.query.trim().length;
 
-  void _trackResultsLoaded({required int page, required EventResultValue result}) {
+  int get _resultCount => _results.length + widget.prismResults.length;
+
+  void _trackResultsLoaded({required int page, required EventResultValue result, String? reason}) {
     analytics.track(
       SearchResultsLoadedEvent(
         provider: widget.provider,
         queryLength: _queryLength,
-        resultCount: _results.length,
+        resultCount: result == EventResultValue.cancelled ? 0 : _resultCount,
         page: page,
         result: result,
+        searchId: widget.searchId,
+        reason: reason,
       ),
     );
   }
 
-  EventResultValue get _loadedResult => _results.isNotEmpty ? EventResultValue.success : EventResultValue.empty;
+  EventResultValue get _loadedResult => _resultCount > 0 ? EventResultValue.success : EventResultValue.empty;
 
   Future<void> _requestNextPage() async {
     if (seeMoreLoader || !_hasMore) {
@@ -84,12 +95,19 @@ class _SearchGridState extends State<SearchGrid> {
       _loadMoreFailed = false;
     });
     final int nextPage = _currentPage + 1;
+    final int generation = _loadGeneration;
     analytics.track(
-      SearchPaginationRequestedEvent(provider: widget.provider, queryLength: _queryLength, page: nextPage),
+      SearchPaginationRequestedEvent(
+        provider: widget.provider,
+        queryLength: _queryLength,
+        page: nextPage,
+        searchId: widget.searchId,
+      ),
     );
     try {
       final more = await _search.fetchPage(widget.provider, widget.query, refresh: false, filters: widget.filters);
-      if (!mounted) {
+      if (!mounted || generation != _loadGeneration) {
+        _trackResultsLoaded(page: nextPage, result: EventResultValue.cancelled, reason: 'superseded');
         return;
       }
       setState(() {
@@ -99,13 +117,17 @@ class _SearchGridState extends State<SearchGrid> {
       });
       _trackResultsLoaded(page: nextPage, result: _loadedResult);
     } catch (error, stackTrace) {
+      if (!mounted || generation != _loadGeneration) {
+        _trackResultsLoaded(page: nextPage, result: EventResultValue.cancelled, reason: 'superseded');
+        return;
+      }
       logger.e('Failed to load search results page.', error: error, stackTrace: stackTrace);
-      if (mounted) {
+      if (mounted && generation == _loadGeneration) {
         setState(() => _loadMoreFailed = true);
       }
       _trackResultsLoaded(page: nextPage, result: EventResultValue.failure);
     } finally {
-      if (mounted) {
+      if (mounted && generation == _loadGeneration) {
         setState(() {
           seeMoreLoader = false;
         });
@@ -117,7 +139,7 @@ class _SearchGridState extends State<SearchGrid> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _trackResultsLoaded(page: 1, result: _loadedResult);
+      if (mounted && widget.trackInitialResults) _trackResultsLoaded(page: 1, result: _loadedResult);
     });
   }
 
@@ -125,9 +147,11 @@ class _SearchGridState extends State<SearchGrid> {
     if (!_hasExternalResults) {
       return;
     }
+    final int generation = ++_loadGeneration;
+    setState(() => seeMoreLoader = false);
     try {
       final fresh = await _search.fetchPage(widget.provider, widget.query, refresh: true, filters: widget.filters);
-      if (!mounted) {
+      if (!mounted || generation != _loadGeneration) {
         return;
       }
       setState(() {
@@ -140,6 +164,7 @@ class _SearchGridState extends State<SearchGrid> {
       });
       _trackResultsLoaded(page: 1, result: _loadedResult);
     } catch (error, stackTrace) {
+      if (!mounted || generation != _loadGeneration) return;
       logger.e('Failed to refresh search results.', error: error, stackTrace: stackTrace);
       toasts.error("Couldn't refresh. Pull down to try again.");
       _trackResultsLoaded(page: 1, result: EventResultValue.failure);
@@ -154,12 +179,14 @@ class _SearchGridState extends State<SearchGrid> {
         itemId: wallpaper.id,
         index: index,
         queryLength: _queryLength,
+        searchId: widget.searchId,
       ),
     );
     context.router.push(
       WallpaperDetailRoute(
         entity: wallpaper,
         analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+        requestId: widget.searchId,
         heroTag: prismHeroTag(this, index, wallpaper.id),
       ),
     );
@@ -173,12 +200,14 @@ class _SearchGridState extends State<SearchGrid> {
         itemId: wallpaper.id,
         index: index,
         queryLength: _queryLength,
+        searchId: widget.searchId,
       ),
     );
     context.router.push(
       WallpaperDetailRoute(
         entity: wallpaper,
         analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+        requestId: widget.searchId,
         heroTag: prismHeroTag(widget.prismResults, index, wallpaper.id),
       ),
     );
@@ -219,7 +248,7 @@ class _SearchGridState extends State<SearchGrid> {
               ),
             if (widget.prismResults.isNotEmpty)
               SliverToBoxAdapter(
-                child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper),
+                child: _FromPrismRow(results: widget.prismResults, onOpen: _openPrismWallpaper, session: _impressions),
               ),
             SliverPadding(
               padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
@@ -230,21 +259,29 @@ class _SearchGridState extends State<SearchGrid> {
                     return SeeMoreButton(seeMoreLoader: seeMoreLoader, failed: _loadMoreFailed, func: _requestNextPage);
                   }
                   final FeedItemEntity wallpaper = _results[index];
-                  return PrismWallTile(
-                    key: ValueKey<String>(wallpaper.id),
-                    url: wallpaper.thumbnailUrl,
-                    fallbackUrl: wallpaper.fullUrl,
-                    memCacheHeight: decodeHeight,
-                    heroTag: prismHeroTag(this, index, wallpaper.id),
-                    semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
-                    onTap: () {
-                      PrismHaptics.tap();
-                      _openWallpaper(wallpaper, index);
-                    },
-                    onLongPress: () {
-                      PrismHaptics.impact();
-                      unawaited(showWallpaperQuickActions(context, wallpaper));
-                    },
+                  return WallpaperImpression(
+                    itemId: wallpaper.id,
+                    provider: wallpaper.source.name,
+                    surface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                    source: 'search_results',
+                    index: index,
+                    session: _impressions,
+                    child: PrismWallTile(
+                      key: ValueKey<String>(wallpaper.id),
+                      url: wallpaper.thumbnailUrl,
+                      fallbackUrl: wallpaper.fullUrl,
+                      memCacheHeight: decodeHeight,
+                      heroTag: prismHeroTag(this, index, wallpaper.id),
+                      semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                      onTap: () {
+                        PrismHaptics.tap();
+                        _openWallpaper(wallpaper, index);
+                      },
+                      onLongPress: () {
+                        PrismHaptics.impact();
+                        unawaited(showWallpaperQuickActions(context, wallpaper, requestId: widget.searchId));
+                      },
+                    ),
                   );
                 }, childCount: _results.length + (showFooter ? 1 : 0)),
               ),
@@ -258,7 +295,8 @@ class _SearchGridState extends State<SearchGrid> {
 
 /// Prism catalogue walls that match the query, as a sideways row above the provider results.
 class _FromPrismRow extends StatelessWidget {
-  const _FromPrismRow({required this.results, required this.onOpen});
+  const _FromPrismRow({required this.results, required this.onOpen, required this.session});
+  final WallpaperImpressionSession session;
 
   final List<FeedItemEntity> results;
   final void Function(FeedItemEntity wallpaper, int index) onOpen;
@@ -284,17 +322,25 @@ class _FromPrismRow extends StatelessWidget {
               final FeedItemEntity wallpaper = results[index];
               return AspectRatio(
                 aspectRatio: 0.5,
-                child: PrismWallTile(
-                  key: ValueKey<String>('prism-${wallpaper.id}'),
-                  url: wallpaper.thumbnailUrl,
-                  fallbackUrl: wallpaper.fullUrl,
-                  memCacheHeight: 400,
-                  heroTag: prismHeroTag(results, index, wallpaper.id),
-                  semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
-                  onTap: () {
-                    PrismHaptics.tap();
-                    onOpen(wallpaper, index);
-                  },
+                child: WallpaperImpression(
+                  itemId: wallpaper.id,
+                  provider: wallpaper.source.name,
+                  surface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                  source: 'search_prism_results',
+                  index: index,
+                  session: session,
+                  child: PrismWallTile(
+                    key: ValueKey<String>('prism-${wallpaper.id}'),
+                    url: wallpaper.thumbnailUrl,
+                    fallbackUrl: wallpaper.fullUrl,
+                    memCacheHeight: 400,
+                    heroTag: prismHeroTag(results, index, wallpaper.id),
+                    semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                    onTap: () {
+                      PrismHaptics.tap();
+                      onOpen(wallpaper, index);
+                    },
+                  ),
                 ),
               );
             },

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -14,6 +16,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
+import '../../support/fake_app_analytics.dart';
 
 class _ReminderFirestore extends CoinsTestFirestore {
   final Map<String, dynamic> updates = <String, dynamic>{};
@@ -779,6 +782,9 @@ void main() {
     });
 
     test('app resume retries a queued refund', () async {
+      final FakeAppAnalytics recorder = FakeAppAnalytics();
+      AnalyticsRuntime.instance = recorder;
+      addTearDown(AnalyticsRuntime.reset);
       await queueRefund('tx-resume');
       final ids = <String>[];
       backend.onCall = (_, parameters) async {
@@ -791,6 +797,9 @@ void main() {
 
       expect(ids, <String>['tx-resume']);
       expect(stored(), isEmpty);
+      final AiChargeRolledBackEvent recovery = recorder.events.whereType<AiChargeRolledBackEvent>().single;
+      expect(recovery.chargeTransactionId, 'tx-resume');
+      expect(recovery.operationId, isNull);
     });
 
     test('app resume with an empty queue makes no call', () async {

@@ -296,6 +296,27 @@ class StreakClaimResult {
   final int proBonusReward;
   final int totalReward;
   final int newBalance;
+
+  List<StreakLifecycleEvent> get lifecycleEvents => !claimed
+      ? const <StreakLifecycleEvent>[]
+      : <StreakLifecycleEvent>[
+          if (streakBroken)
+            StreakLifecycleEvent(action: 'break', streakCount: streakCount, previousCount: previousStreakCount),
+          StreakLifecycleEvent(
+            action: streakCount == 1 ? 'start' : 'increment',
+            streakCount: streakCount,
+            previousCount: previousStreakCount,
+          ),
+          if (freezesUsed > 0)
+            StreakLifecycleEvent(
+              action: 'freeze_used',
+              streakCount: streakCount,
+              freezesUsed: freezesUsed,
+              freezesLeft: freezesLeft,
+            ),
+          if (milestone != null && milestone! > 0)
+            StreakLifecycleEvent(action: 'milestone', streakCount: streakCount, milestone: milestone),
+        ];
 }
 
 enum StreakFreezeOutcome { success, insufficientBalance, atCap, unavailable, failed }
@@ -1106,6 +1127,7 @@ class CoinsService with WidgetsBindingObserver {
 
   Future<_AiGenerationReservationResult> reserveForAiGeneration({
     required AiQualityTier qualityTier,
+    String? operationId,
     String sourceTag = 'coins.reserve.ai_generation',
   }) async {
     if (!_canMutateCoins()) {
@@ -1147,6 +1169,8 @@ class CoinsService with WidgetsBindingObserver {
     }
     analytics.track(
       AiChargeReservedEvent(
+        operationId: operationId,
+        chargeTransactionId: result.transactionId,
         mode: result.mode,
         coinsSpent: result.coinsSpent,
         balance: app_state.prismUser.coins,
@@ -1160,6 +1184,7 @@ class CoinsService with WidgetsBindingObserver {
     AiChargeMode mode, {
     String sourceTag = 'coins.rollback.ai_generation',
     String? reservationTransactionId,
+    String? operationId,
   }) async {
     if (mode == AiChargeMode.insufficient) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
@@ -1175,6 +1200,8 @@ class CoinsService with WidgetsBindingObserver {
       if (refund.changed) {
         analytics.track(
           AiChargeRolledBackEvent(
+            operationId: operationId,
+            chargeTransactionId: reservationTransactionId,
             mode: mode,
             coinsRefunded: refund.delta,
             balance: app_state.prismUser.coins,
@@ -1190,16 +1217,24 @@ class CoinsService with WidgetsBindingObserver {
     return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
   }
 
-  bool _isRetryableRefundFailure(CoinMutationResult refund) =>
-      !refund.success &&
-      !const <String>{
-        'failed-precondition',
-        'invalid-argument',
-        'permission-denied',
-        'refund_daily_limit',
-        'missing_transaction_id',
-        'not_logged_in',
-      }.contains(refund.reason);
+  static String aiRefundOutcome(CoinMutationResult refund, {bool charged = true}) {
+    if (!charged || refund.reason == 'no_reservation_to_rollback') return 'not_required';
+    if (refund.changed) return 'refunded';
+    if (refund.reason == 'already_refunded') return 'already_refunded';
+    if (const <String>{
+      'failed-precondition',
+      'invalid-argument',
+      'permission-denied',
+      'refund_daily_limit',
+      'missing_transaction_id',
+      'not_logged_in',
+      'refund_denied_generation_succeeded',
+    }.contains(refund.reason))
+      return 'denied';
+    return refund.success ? 'failed' : 'pending';
+  }
+
+  bool _isRetryableRefundFailure(CoinMutationResult refund) => aiRefundOutcome(refund) == 'pending';
 
   List<Map<String, dynamic>> _readPendingEntries() {
     if (!_settings.isOpen) return <Map<String, dynamic>>[];
@@ -1331,12 +1366,27 @@ class CoinsService with WidgetsBindingObserver {
         result = await award(CoinEarnAction.rewardedAd, sourceTag: 'coins.reward.retry', requestId: key);
         if (result.changed) toasts.success('Your ad reward was added.');
       } else {
+        final CoinSpendAction action =
+            CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration;
         result = await refundSpend(
-          CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration,
+          action,
           sourceTag: 'coins.rollback.retry',
           transactionId: key,
           reason: entry['reason']?.toString() ?? 'ai_generation_failed_refund',
         );
+        if (app_state.prismUser.id == userId &&
+            action == CoinSpendAction.aiGeneration &&
+            (result.changed || result.reason == 'already_refunded')) {
+          analytics.track(
+            AiChargeRolledBackEvent(
+              chargeTransactionId: key,
+              mode: AiChargeMode.coinSpend,
+              coinsRefunded: result.delta,
+              balance: app_state.prismUser.coins,
+              sourceTag: 'coins.rollback.retry',
+            ),
+          );
+        }
       }
       if (app_state.prismUser.id != userId) break;
       if (result.changed || !_isRetryableRefundFailure(result)) resolvedKeys.add(key);
@@ -1569,10 +1619,14 @@ class CoinsService with WidgetsBindingObserver {
   void commitAiGenerationReservation({
     required AiChargeMode mode,
     required int coinsSpent,
+    String? operationId,
+    String? chargeTransactionId,
     String sourceTag = 'coins.commit.ai_generation',
   }) {
     analytics.track(
       AiChargeCommittedEvent(
+        operationId: operationId,
+        chargeTransactionId: chargeTransactionId,
         mode: mode,
         coinsSpent: coinsSpent,
         balance: app_state.prismUser.coins,
@@ -1717,6 +1771,9 @@ class CoinsService with WidgetsBindingObserver {
       );
       if (claimed) _grantLocalXp(_xpForCoins(totalReward));
       if (claimed && _publishedClaimDays.add((userId, todayLocalKey))) {
+        for (final event in result.lifecycleEvents) {
+          analytics.track(event);
+        }
         _pendingClaimUserId = userId;
         lastClaimNotifier.value = result;
       }
@@ -1811,6 +1868,17 @@ class CoinsService with WidgetsBindingObserver {
             sourceTag: 'coins.buy_streak_freeze',
           );
         }
+        if (_asBool(data['changed'])) {
+          analytics.track(
+            StreakLifecycleEvent(
+              action: 'freeze_purchased',
+              streakCount: streakNotifier.value.count,
+              coins: CoinPolicy.streakFreezeCost,
+              freezesLeft: freezes,
+              result: 'success',
+            ),
+          );
+        }
         return StreakFreezePurchase(StreakFreezeOutcome.success, freezes: freezes);
       }
       return StreakFreezePurchase(
@@ -1873,6 +1941,9 @@ class CoinsService with WidgetsBindingObserver {
       await setPendingReferralInviterId(inviterUserId);
     }
     if (!_canMutateCoins()) {
+      if (pendingReferralInviterId?.isNotEmpty ?? false) {
+        analytics.track(const ReferralResultEvent(outcome: 'ineligible', role: 'referee', reason: 'not_logged_in'));
+      }
       return _notLoggedIn;
     }
     final String currentUserId = app_state.prismUser.id;
@@ -1881,6 +1952,7 @@ class CoinsService with WidgetsBindingObserver {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_pending_referral');
     }
     if (pendingInviter == currentUserId) {
+      analytics.track(const ReferralResultEvent(outcome: 'skipped', role: 'referee', reason: 'self_referral'));
       await clearPendingReferralInviterId();
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'self_referral');
     }
@@ -1892,6 +1964,42 @@ class CoinsService with WidgetsBindingObserver {
       logReason: 'referee_reward',
       callableName: 'processReferral',
       inviterUserId: pendingInviter,
+    );
+    analytics.track(
+      ReferralResultEvent(
+        operationId: _newRequestId(),
+        outcome: result.changed
+            ? 'success'
+            : result.reason == 'referral_inviter_daily_limit'
+            ? 'retry_pending'
+            : result.success
+            ? 'skipped'
+            : 'retry_pending',
+        role: 'referee',
+        reason:
+            const <String>{
+              'referral_already_processed',
+              'referral_caller_not_new',
+              'referral_inviter_not_older',
+              'referral_inviter_lifetime_limit',
+              'referral_inviter_daily_limit',
+              'referral_inviter_not_found',
+              'not_logged_in',
+              'unauthenticated',
+              'permission-denied',
+              'unavailable',
+              'deadline-exceeded',
+              'resource-exhausted',
+              'callable_failed',
+            }.contains(result.reason)
+            ? result.reason
+            : result.changed
+            ? 'confirmed'
+            : 'unknown',
+        referralId: result.transactionId.isEmpty ? null : result.transactionId,
+        referrerId: pendingInviter.contains('@') ? null : pendingInviter,
+        refereeId: currentUserId.contains('@') ? null : currentUserId,
+      ),
     );
     if (result.changed ||
         const <String>{

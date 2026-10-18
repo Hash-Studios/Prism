@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -16,6 +18,7 @@ import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/trending/domain/entities/trending_range.dart';
+import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
 import 'package:Prism/features/trending/views/pages/trending_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -25,9 +28,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/fake_user_block_repository.dart';
 import '../../../support/in_memory_local_store.dart';
 
 class _MockTrendingBloc extends MockBloc<TrendingEvent, TrendingState> implements TrendingBloc {}
+
+class _MockFetchTrending extends Mock implements FetchTrendingUseCase {}
 
 class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
     implements FavouriteWallsBloc {}
@@ -169,6 +175,64 @@ void main() {
 
     expect(find.text('Nothing is trending yet'), findsOneWidget);
     expect(find.text('Try again'), findsNothing);
+  });
+
+  testWidgets('refresh preserves impression dedupe through pending and failure until success', (tester) async {
+    final fetch = _MockFetchTrending();
+    final requests = <Completer<Result<List<PrismWallpaper>>>>[];
+    when(() => fetch(TrendingRange.week)).thenAnswer((_) {
+      final request = Completer<Result<List<PrismWallpaper>>>();
+      requests.add(request);
+      return request.future;
+    });
+    final realBloc = TrendingBloc(fetch, FakeUserBlockRepository.pending());
+    addTearDown(realBloc.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider<TrendingBloc>.value(value: realBloc),
+            BlocProvider<FavouriteWallsBloc>.value(value: favouritesBloc),
+          ],
+          child: const TrendingPage(),
+        ),
+      ),
+    );
+    realBloc.add(const TrendingEvent.refreshRequested());
+    await tester.pump();
+    final wall = _wall('a');
+    requests.last.complete(Result.success(<PrismWallpaper>[wall]));
+    await tester.pump();
+
+    WallpaperImpressionSession currentSession() =>
+        tester.widget<WallpaperTile>(find.byType(WallpaperTile).first).impressionSession!;
+    final original = currentSession();
+    expect(original.record('prism', 'probe'), isTrue);
+
+    Future<void> refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    expect(realBloc.state.current.status, LoadStatus.loading);
+    expect(currentSession(), same(original));
+    expect(currentSession().record('prism', 'probe'), isFalse);
+
+    requests.last.complete(Result.error(const ServerFailure('offline')));
+    await tester.pump();
+    await refresh;
+    expect(realBloc.state.current.status, LoadStatus.failure);
+    expect(currentSession(), same(original));
+    expect(currentSession().record('prism', 'probe'), isFalse);
+
+    refresh = tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+    await tester.pump();
+    expect(currentSession(), same(original));
+    // A successful fetch can return the same wallpaper objects in a fresh list.
+    requests.last.complete(Result.success(<PrismWallpaper>[wall]));
+    await tester.pump();
+    await refresh;
+    expect(realBloc.state.current.status, LoadStatus.success);
+    expect(currentSession(), isNot(same(original)));
+    expect(currentSession().record('prism', 'probe'), isTrue);
+    expect(currentSession().record('prism', 'probe'), isFalse);
   });
 
   testWidgets('a failed first load shows the error and Try again refreshes', (tester) async {

@@ -5,7 +5,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 
 class AnalyticsIdentitySync {
-  /// Without [analytics], each sync resolves [AnalyticsRuntime.instance], which is swapped in after the first frame.
   factory AnalyticsIdentitySync({AppAnalytics? analytics}) {
     if (analytics == null) {
       return _default;
@@ -17,8 +16,16 @@ class AnalyticsIdentitySync {
 
   static final AnalyticsIdentitySync _default = AnalyticsIdentitySync._(null);
 
+  static void resetDefault() {
+    _default._pending = null;
+    _default._generation++;
+    _default._lastAppliedState = null;
+    _default._lastAppliedTo = null;
+  }
+
   final AppAnalytics? _fixedAnalytics;
-  Future<void> _pending = Future<void>.value();
+  Future<void>? _pending;
+  int _generation = 0;
   _AnalyticsIdentityState? _lastAppliedState;
   AppAnalytics? _lastAppliedTo;
 
@@ -36,12 +43,14 @@ class AnalyticsIdentitySync {
       isPremium: isPremium,
     );
 
-    final Future<void> operation = _pending.then((_) => _apply(state, sourceTag));
+    final int generation = _generation;
+    Future<void> apply() => generation == _generation ? _apply(state, sourceTag, generation) : Future<void>.value();
+    final Future<void> operation = _pending?.then((_) => apply()) ?? Future<void>.sync(apply);
     _pending = operation.catchError((Object _) {});
     return operation;
   }
 
-  Future<void> _apply(_AnalyticsIdentityState state, String sourceTag) async {
+  Future<void> _apply(_AnalyticsIdentityState state, String sourceTag, int generation) async {
     final AppAnalytics analytics = _fixedAnalytics ?? AnalyticsRuntime.instance;
 
     if (_lastAppliedState == state && identical(_lastAppliedTo, analytics)) {
@@ -59,6 +68,7 @@ class AnalyticsIdentitySync {
       await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
       await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
       await analytics.setUserProperty(name: AnalyticsUserProperty.loggedIn.wireName, value: '0');
+      if (generation != _generation) return;
       _lastAppliedState = state;
       _lastAppliedTo = analytics;
       _logIdentitySync(
@@ -70,6 +80,9 @@ class AnalyticsIdentitySync {
       return;
     }
 
+    if ((_lastAppliedState?.isIdentified ?? false) && _lastAppliedState!.userId != state.userId) {
+      await analytics.setUserId(null);
+    }
     await analytics.setUserId(state.userId);
     await analytics.setUserProperty(
       name: AnalyticsUserProperty.subscriptionTier.wireName,
@@ -77,6 +90,7 @@ class AnalyticsIdentitySync {
     );
     await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: state.isPremium ? '1' : '0');
     await analytics.setUserProperty(name: AnalyticsUserProperty.loggedIn.wireName, value: '1');
+    if (generation != _generation) return;
     _lastAppliedState = state;
     _lastAppliedTo = analytics;
     _logIdentitySync(

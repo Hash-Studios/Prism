@@ -1,5 +1,7 @@
 // ignore_for_file: subtype_of_sealed_class, avoid_implementing_value_types
 
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
@@ -12,6 +14,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../support/fake_app_analytics.dart';
 
 import '../../support/in_memory_local_store.dart';
 
@@ -61,6 +64,7 @@ void main() {
   late OnboardingV2RepositoryImpl repository;
 
   setUp(() {
+    AnalyticsRuntime.reset();
     firestore = _MockFirebaseFirestore();
     users = _MockCollectionReference();
     user = _MockDocumentReference();
@@ -84,6 +88,8 @@ void main() {
       remoteConfig: remoteConfig,
     );
   });
+
+  tearDown(AnalyticsRuntime.reset);
 
   test('saveInterests preserves the Firebase update error code', () async {
     when(
@@ -148,6 +154,8 @@ void main() {
   });
 
   test('a failed batch can be retried and only records local completion after success', () async {
+    final FakeAppAnalytics recorder = FakeAppAnalytics();
+    AnalyticsRuntime.instance = recorder;
     int commitAttempts = 0;
     when(() => batch.commit()).thenAnswer((_) async {
       commitAttempts++;
@@ -171,6 +179,12 @@ void main() {
     );
 
     expect(retry.isSuccess, isTrue);
+    await AnalyticsRuntime.instance.flush();
+    final List<FollowResultEvent> follows = recorder.events.whereType<FollowResultEvent>().toList();
+    expect(follows.map((event) => event.result), <String>['failure', 'success']);
+    expect(follows.map((event) => event.creatorId).toSet(), <String>{'creator-1'});
+    expect(follows.map((event) => event.source).toSet(), <String>{'onboarding_starter_pack'});
+    expect(follows.expand((event) => event.toWireParameters().values), isNot(contains('creator@example.com')));
     expect(store.data.values, contains('creator@example.com'));
     verify(() => batch.commit()).called(2);
     expect(batch.updates, hasLength(4));

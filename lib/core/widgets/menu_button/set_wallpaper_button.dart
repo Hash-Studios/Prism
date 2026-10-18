@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -58,6 +59,9 @@ class SetWallpaperFlow {
     required String url,
     String? thumbnailUrl,
     String? entryPoint,
+    String? requestId,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
   })
   studioOpener = _openStudio;
 
@@ -70,9 +74,19 @@ class SetWallpaperFlow {
     required String url,
     String? thumbnailUrl,
     String? entryPoint,
+    String? requestId,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
   }) {
     return context.router.push<WallpaperSetResult>(
-      WallpaperPositionRoute(imageUrl: url, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint),
+      WallpaperPositionRoute(
+        imageUrl: url,
+        thumbnailUrl: thumbnailUrl,
+        entryPoint: entryPoint,
+        requestId: requestId,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+      ),
     );
   }
 
@@ -108,6 +122,7 @@ class SetWallpaperFlow {
     bool recordHistory = true,
     ValueChanged<bool>? onBusy,
     String? entryPoint,
+    String? requestId,
     List<String> notes = const <String>[],
     VoidCallback? onMatchAccent,
   }) async {
@@ -127,7 +142,15 @@ class SetWallpaperFlow {
         onBusy?.call(true);
         try {
           if (!context.mounted) return null;
-          return await studioOpener(context, url: url, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint);
+          return await studioOpener(
+            context,
+            url: url,
+            thumbnailUrl: thumbnailUrl,
+            entryPoint: entryPoint,
+            requestId: requestId,
+            wallpaperId: wallpaperId,
+            wallpaperSource: wallpaperSource,
+          );
         } finally {
           onBusy?.call(false);
         }
@@ -154,6 +177,7 @@ class SetWallpaperFlow {
           recordHistory: recordHistory,
           onBusy: onBusy,
           entryPoint: entryPoint,
+          requestId: requestId,
           usedDefault: usedDefault,
           messenger: messenger,
           onMatchAccent: onMatchAccent,
@@ -185,6 +209,7 @@ class SetWallpaperFlow {
     bool recordHistory = true,
     ValueChanged<bool>? onBusy,
     String? entryPoint,
+    String? requestId,
     bool usedDefault = false,
     ScaffoldMessengerState? messenger,
     VoidCallback? onMatchAccent,
@@ -192,6 +217,7 @@ class SetWallpaperFlow {
     WallpaperSource? wallpaperSource,
   }) async {
     final ScaffoldMessengerState? host = messenger ?? (context.mounted ? ScaffoldMessenger.maybeOf(context) : null);
+    final String operationId = AnalyticsCorrelation.newId();
     onBusy?.call(true);
     final WallpaperSetResult result;
     try {
@@ -213,7 +239,16 @@ class SetWallpaperFlow {
       result,
       target: choice.target,
       messenger: host,
-      setContext: WallpaperSetContext(fit: choice.fit.name, entryPoint: entryPoint, usedDefault: usedDefault),
+      setContext: WallpaperSetContext(
+        fit: choice.fit.name,
+        entryPoint: entryPoint,
+        usedDefault: usedDefault,
+        operationId: operationId,
+        itemId: wallpaperId,
+        provider: wallpaperSource?.name,
+        source: entryPoint,
+        requestId: requestId,
+      ),
       onMatchAccent: onMatchAccent,
       onRetry: (retryTarget) => unawaited(
         apply(
@@ -225,6 +260,7 @@ class SetWallpaperFlow {
           onBusy: onBusy,
           entryPoint: entryPoint,
           usedDefault: usedDefault,
+          requestId: requestId,
           messenger: host,
           onMatchAccent: onMatchAccent,
           wallpaperId: wallpaperId,
@@ -400,6 +436,7 @@ class SetWallpaperButton extends StatefulWidget {
 
   /// Names the screen in the `set_wall` event.
   final String? entryPoint;
+  final String? requestId;
 
   /// Short warnings about this wall, shown as chips in the set sheet.
   final List<String> notes;
@@ -427,6 +464,7 @@ class SetWallpaperButton extends StatefulWidget {
     this.onSet,
     this.label,
     this.entryPoint,
+    this.requestId,
     this.notes = const <String>[],
     this.onMatchAccent,
     this.prepareSource,
@@ -476,6 +514,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         wallpaperSource: widget.wallpaperSource,
         forceSheet: forceSheet,
         entryPoint: widget.entryPoint,
+        requestId: widget.requestId,
         notes: widget.notes,
         onMatchAccent: widget.onMatchAccent,
         onBusy: (busy) {

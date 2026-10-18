@@ -1,8 +1,10 @@
+import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wallpaper_position/biz/bloc/wallpaper_position_bloc.j.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart';
@@ -17,7 +19,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// Pan, zoom, fit and dim a wallpaper before it is set. Pops with the [WallpaperSetResult] when the wall was set.
 @RoutePage()
 class WallpaperPositionScreen extends StatelessWidget {
-  const WallpaperPositionScreen({super.key, required this.imageUrl, this.thumbnailUrl, this.entryPoint});
+  const WallpaperPositionScreen({
+    super.key,
+    required this.imageUrl,
+    this.thumbnailUrl,
+    this.entryPoint,
+    this.requestId,
+    this.wallpaperId,
+    this.wallpaperSource,
+  });
+
+  final String? requestId;
+  final String? wallpaperId;
+  final WallpaperSource? wallpaperSource;
 
   final String imageUrl;
   final String? thumbnailUrl;
@@ -30,13 +44,31 @@ class WallpaperPositionScreen extends StatelessWidget {
     return BlocProvider<WallpaperPositionBloc>(
       create: (_) => getIt<WallpaperPositionBloc>()
         ..add(WallpaperPositionEvent.started(imageUrl: imageUrl, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint)),
-      child: _WallpaperPositionView(imageUrl: imageUrl, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint),
+      child: _WallpaperPositionView(
+        imageUrl: imageUrl,
+        thumbnailUrl: thumbnailUrl,
+        entryPoint: entryPoint,
+        requestId: requestId,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+      ),
     );
   }
 }
 
 class _WallpaperPositionView extends StatefulWidget {
-  const _WallpaperPositionView({required this.imageUrl, required this.thumbnailUrl, required this.entryPoint});
+  const _WallpaperPositionView({
+    required this.imageUrl,
+    required this.thumbnailUrl,
+    required this.entryPoint,
+    this.requestId,
+    this.wallpaperId,
+    this.wallpaperSource,
+  });
+
+  final String? requestId;
+  final String? wallpaperId;
+  final WallpaperSource? wallpaperSource;
 
   final String imageUrl;
   final String? thumbnailUrl;
@@ -50,6 +82,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
   final TransformationController _controller = TransformationController();
   late final Future<aw.WallpaperCapabilities> _capabilities = aw.AsyncWallpaper.getCapabilities();
   WallpaperTarget _lastTarget = WallpaperTarget.both;
+  String? _operationId;
 
   @override
   void dispose() {
@@ -66,6 +99,11 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
       result,
       target: _lastTarget,
       setContext: WallpaperSetContext(
+        operationId: _operationId,
+        requestId: widget.requestId,
+        itemId: widget.wallpaperId,
+        provider: widget.wallpaperSource?.wireValue,
+        source: widget.entryPoint ?? 'position_studio',
         fit: 'studio_${state.placement.fit.name}',
         entryPoint: widget.entryPoint ?? 'position_studio',
       ),
@@ -75,6 +113,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
   }
 
   void _apply(WallpaperPositionBloc bloc, WallpaperTarget target) {
+    _operationId = AnalyticsCorrelation.newId();
     _lastTarget = target;
     final Size screen = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
     bloc.add(WallpaperPositionEvent.applyRequested(target: target, outputSize: screen));

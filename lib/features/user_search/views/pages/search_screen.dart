@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/color/prism_palette.dart';
@@ -41,6 +42,7 @@ class _SearchScreenState extends State<SearchScreen> {
     ..add(const SearchDiscoveryEvent.fetchRequested());
   Future<WallpaperSearchPage>? _search;
   String _submittedQuery = '';
+  String? _searchId;
   SearchFilters _filters = const SearchFilters();
   bool isSubmitted = false;
 
@@ -53,9 +55,9 @@ class _SearchScreenState extends State<SearchScreen> {
     required String query,
     required bool fromSuggestion,
     required String sourceContext,
+    required String searchId,
   }) {
     final String trimmedQuery = query.trim();
-    if (trimmedQuery.isEmpty) return;
     analytics.track(
       SearchSubmittedEvent(
         provider: provider,
@@ -63,6 +65,7 @@ class _SearchScreenState extends State<SearchScreen> {
         queryWordCount: _queryWordCount(trimmedQuery),
         sourceContext: sourceContext,
         fromSuggestion: fromSuggestion,
+        searchId: searchId,
       ),
     );
   }
@@ -71,31 +74,87 @@ class _SearchScreenState extends State<SearchScreen> {
     final String trimmed = query.trim();
     if (trimmed.isEmpty && _filters.color == null) return;
     if (_filters.color != null) CoinsService.instance.reportQuestEvent(QuestEvent.colourSearch);
+    final String searchId = AnalyticsCorrelation.newId();
     final Future<WallpaperSearchPage> search = getIt<WallpaperSearchService>().search(trimmed, filters: _filters)
       ..ignore();
     setState(() {
       isSubmitted = true;
       _submittedQuery = trimmed;
+      _searchId = searchId;
       _search = search;
     });
-    if (sourceContext != null) {
-      unawaited(
-        search.then(
-          (page) => _trackSearchSubmitted(
-            provider: page.provider,
-            query: trimmed,
-            fromSuggestion: fromSuggestion,
-            sourceContext: sourceContext,
-          ),
-          onError: (Object _) => _trackSearchSubmitted(
-            provider: SearchProviderValue.wallhaven,
-            query: trimmed,
-            fromSuggestion: fromSuggestion,
-            sourceContext: sourceContext,
-          ),
-        ),
-      );
-    }
+    _trackSearchSubmitted(
+      provider: SearchProviderValue.auto,
+      query: trimmed,
+      fromSuggestion: fromSuggestion,
+      sourceContext: sourceContext ?? 'search_retry_or_filter',
+      searchId: searchId,
+    );
+    unawaited(
+      search.then(
+        (page) {
+          if (!mounted || _searchId != searchId) {
+            unawaited(
+              analytics.track(
+                SearchResultsLoadedEvent(
+                  provider: page.provider,
+                  queryLength: trimmed.length,
+                  resultCount: 0,
+                  page: 1,
+                  result: EventResultValue.cancelled,
+                  searchId: searchId,
+                  reason: 'superseded',
+                ),
+              ),
+            );
+            return;
+          }
+          final int count = page.results.length + page.prismResults.length;
+          unawaited(
+            analytics.track(
+              SearchResultsLoadedEvent(
+                provider: page.provider,
+                queryLength: trimmed.length,
+                resultCount: count,
+                page: 1,
+                result: count == 0 ? EventResultValue.empty : EventResultValue.success,
+                searchId: searchId,
+              ),
+            ),
+          );
+        },
+        onError: (Object _) {
+          if (!mounted || _searchId != searchId) {
+            unawaited(
+              analytics.track(
+                SearchResultsLoadedEvent(
+                  provider: SearchProviderValue.auto,
+                  queryLength: trimmed.length,
+                  resultCount: 0,
+                  page: 1,
+                  result: EventResultValue.cancelled,
+                  searchId: searchId,
+                  reason: 'superseded',
+                ),
+              ),
+            );
+            return;
+          }
+          unawaited(
+            analytics.track(
+              SearchResultsLoadedEvent(
+                provider: SearchProviderValue.auto,
+                queryLength: trimmed.length,
+                resultCount: 0,
+                page: 1,
+                result: EventResultValue.failure,
+                searchId: searchId,
+              ),
+            ),
+          );
+        },
+      ),
+    );
     if (trimmed.isNotEmpty) {
       unawaited(_recents.add(trimmed).then((recents) => mounted ? setState(() => _recentSearches = recents) : null));
     }
@@ -104,6 +163,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _backToDiscover() {
     setState(() {
       isSubmitted = false;
+      _searchId = null;
       _search = null;
       if (_submittedQuery.isEmpty) _filters = _filters.copyWith(clearColor: true);
     });
@@ -258,6 +318,8 @@ class _SearchScreenState extends State<SearchScreen> {
         return SearchGrid(
           key: ValueKey<Future<WallpaperSearchPage>?>(_search),
           query: _submittedQuery,
+          searchId: _searchId,
+          trackInitialResults: false,
           provider: page.provider,
           initialResults: page.results,
           prismResults: page.prismResults,
