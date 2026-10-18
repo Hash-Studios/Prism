@@ -2,10 +2,7 @@
 enum ChestPhase { ready, charging, opening, revealed, spent }
 
 enum ChestPlayback {
-  /// Plays the span again and again.
   loop,
-
-  /// Plays the span once and holds its last frame.
   once,
 
   /// Shows [ChestMarker.stillFrame] and does not tick.

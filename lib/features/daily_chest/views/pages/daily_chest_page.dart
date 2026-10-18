@@ -49,8 +49,6 @@ Future<void> showDailyChest(BuildContext context) {
   );
 }
 
-/// The daily chest: a full-screen stage with the box, what it costs and the Open button.
-///
 /// [open], [quests], [balance], [refresh], [now] and [onOpenShop] default to the live coins service and the router.
 /// A test or a render passes its own.
 class DailyChestPage extends StatefulWidget {
@@ -58,10 +56,7 @@ class DailyChestPage extends StatefulWidget {
 
   final OpenChestFunction? open;
 
-  /// Today's quests. The chest status comes from them.
   final ValueListenable<QuestState?>? quests;
-
-  /// The coin balance the page starts from.
   final ValueListenable<int>? balance;
 
   /// Syncs the quests with the server. The page calls it when it has no quests for today.
@@ -89,7 +84,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   late ChestPhase _phase;
   ChestWon? _won;
 
-  /// The prize card is up: it comes out of the box at the burst and stays.
   bool _cardUp = false;
 
   /// The server said the balance is short, whatever the page shows, until the balance changes.
@@ -147,7 +141,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     return DailyChestStatus(opened: base.opened, questsLeft: base.questsLeft, price: _priceOverride ?? base.price);
   }
 
-  /// The phase of a chest nobody is opening: ready, or spent when it was opened today.
   ChestPhase _idlePhase() => (_status?.opened ?? false) ? ChestPhase.spent : ChestPhase.ready;
 
   ChestAction? get _action {
@@ -244,7 +237,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     }
   }
 
-  /// The light leaves the box: the prize comes out of it.
   void _onBurst() {
     final ChestWon? won = _won;
     if (!mounted || won == null || _cardUp) return;
@@ -341,7 +333,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     );
   }
 
-  /// The glow behind the box: the accent while it is closed, the colour of the prize's tier once the server has said.
   Widget _aura(_ChestLayout layout, ColorScheme cs) {
     final double size = layout.box * 2.6;
     final bool dark = cs.brightness == Brightness.dark;
@@ -398,7 +389,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     );
   }
 
-  /// The title and the prize card above, the box under them. The card is last so it rises over the box.
   Widget _stage(BuildContext context, _ChestLayout layout) {
     final ChestWon? won = _won;
     final Duration fade = context.motion(PrismDurations.fast);
@@ -442,6 +432,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
               ),
             ),
           ),
+          // Last, so the card rises over the box.
           if (_cardUp && won != null)
             Positioned(
               left: PrismSpace.page,
@@ -480,7 +471,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     );
   }
 
-  /// What sits under the box: the cost and the Open button, or the prize's two exits once it is revealed.
   Widget _actions(BuildContext context) {
     final ChestWon? won = _won;
     final bool revealed = _phase == ChestPhase.revealed && won != null;
@@ -598,7 +588,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   }
 }
 
-/// The prize card coming out of the box: it starts [rise] below its place, small and clear, and settles.
 class _RisingCard extends StatelessWidget {
   const _RisingCard({super.key, required this.rise, required this.child});
 
@@ -623,7 +612,6 @@ class _RisingCard extends StatelessWidget {
   }
 }
 
-/// Where everything goes on one screen: the box is as big as the screen allows, up to 320 and 70 % of the width.
 class _ChestLayout {
   const _ChestLayout({required this.width, required this.box, required this.topSpare});
 
@@ -637,16 +625,13 @@ class _ChestLayout {
 
   static const double barHeight = StageTopBar.height;
 
-  /// The title, and the prize card in its place once it is up.
   static const double headerHeight = 168;
 
   /// The cost, the bonus line and the button: two lines of 14 and one of 12, the gap and the 66 high button.
   static const double actionsHeight = 150;
 
-  /// The odds pill, or the empty slot that holds its place.
   static const double oddsHeight = OddsPill.height;
 
-  /// The odds slot and the margins around it.
   static const double footerHeight = oddsHeight + PrismSpace.xs + PrismSpace.md;
 
   final double width;
