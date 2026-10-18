@@ -77,7 +77,7 @@ function optionalReason(value: unknown, fallback: string): string {
   return typeof value === "string" ? value.trim().slice(0, 200) : fallback;
 }
 
-function optionalLabel(value: unknown): string | undefined {
+export function optionalLabel(value: unknown): string | undefined {
   const label = typeof value === "string" ? value.trim().slice(0, 60) : "";
   return label === "" ? undefined : label;
 }

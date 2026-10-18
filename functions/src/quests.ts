@@ -3,7 +3,11 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, REGION} from "./common";
-import {dayKey, grantXp, loadEconomy, randomInt, weekKey, xpForCoins} from "./economy";
+import {
+  dayKey, type EconomyConfig, grantXp, isPrice, loadEconomy, randomInt, type WheelSegment, weekKey, weightedPick,
+  xpForCoins,
+} from "./economy";
+import {isValidRequestId, optionalLabel, resolveWheelPrize, type WheelPrize} from "./coinsCallables";
 import {
   applyQuestEvent,
   buildQuestState,
@@ -289,6 +293,202 @@ export const openQuestChest = onCall(
         transactionId: chestRef.id,
         rev: rev + 1,
       };
+    });
+  },
+);
+
+/** What the chest row shows. Derived from today's quests and the config; nothing extra is stored. */
+export interface DailyChestStatus { opened: boolean; free: boolean; price: number }
+
+export type DailyChestRefusal =
+  "daily_chest_already_opened" | "daily_chest_price_changed" | "daily_chest_insufficient_balance";
+
+export type DailyChestPlan =
+  | {ok: false; reason: DailyChestRefusal}
+  | {ok: true; free: boolean; cost: number};
+
+interface DailyChestDay {
+  quests: QuestState;
+  /** `coinTransactions/ctx_questChest_{uid}_{dayKey}`. Both this callable and 3.6.0 `openQuestChest` write it. */
+  receipt: admin.firestore.DocumentData | undefined;
+  config: EconomyConfig;
+}
+
+interface DailyChestFields {
+  previousBalance: number;
+  currentBalance: number;
+  delta: number;
+  reason: string;
+  transactionId: string;
+  insufficientBalance: boolean;
+  status: DailyChestStatus;
+}
+
+export interface DailyChestWin extends DailyChestFields {
+  success: true;
+  changed: true;
+  cost: number;
+  free: boolean;
+  doubled: boolean;
+  slot: number;
+  prize: WheelPrize;
+  slots: WheelSegment[];
+}
+
+interface DailyChestRefused extends DailyChestFields { success: false; changed: false }
+
+/** Every reply carries the next quest state and its `rev`, so the client adopts both. */
+export type DailyChestReply = (DailyChestWin | DailyChestRefused) & {quests: QuestState; rev: number};
+
+export function dailyChestStatus({quests, receipt, config}: DailyChestDay): DailyChestStatus {
+  return {
+    opened: quests.chestOpened || receipt !== undefined,
+    free: quests.items.every((item) => item.claimed),
+    price: config.spend.dailyChest,
+  };
+}
+
+/** Whether the chest may open and what it costs. The cost never exceeds `maxCost`. */
+export function planDailyChest(input: DailyChestDay & {balance: number; maxCost: number}): DailyChestPlan {
+  const {opened, free, price} = dailyChestStatus(input);
+  if (opened) return {ok: false, reason: "daily_chest_already_opened"};
+  const cost = free ? 0 : price;
+  if (cost > input.maxCost) return {ok: false, reason: "daily_chest_price_changed"};
+  if (input.balance < cost) return {ok: false, reason: "daily_chest_insufficient_balance"};
+  return {ok: true, free, cost};
+}
+
+/** The win this `requestId` stored. A 3.6.0 receipt has no `replay`, so it never matches. */
+export function storedDailyChestWin(
+  receipt: admin.firestore.DocumentData | undefined,
+  requestId: string,
+): DailyChestWin | null {
+  return receipt?.requestId === requestId && receipt.replay ? receipt.replay as DailyChestWin : null;
+}
+
+/** Rolls the slot and resolves the prize. The bonus quest doubles coins and XP; a cosmetic stays one item. */
+export function rollDailyChest(
+  config: EconomyConfig,
+  quests: QuestState,
+  owned: readonly string[],
+  random: () => number = Math.random,
+): {slot: number; doubled: boolean; prize: WheelPrize} {
+  const slots = config.award.dailyChest;
+  const slot = weightedPick(slots, random);
+  const prize = resolveWheelPrize(slots[slot], owned, random);
+  const doubled = quests.bonus.claimed;
+  return {slot, doubled, prize: doubled ? {...prize, coins: prize.coins * 2, xp: prize.xp * 2} : prize};
+}
+
+export const openDailyChest = onCall(
+  CALLABLE_OPTIONS,
+  async (request: CallableRequest<{requestId?: unknown; maxCost?: unknown; sourceTag?: unknown}>) => {
+    const uid = callerUid(request);
+    const requestId = request.data?.requestId;
+    if (!isValidRequestId(requestId)) throw new HttpsError("invalid-argument", "requestId is invalid.");
+    const maxCost = request.data?.maxCost;
+    if (!isPrice(maxCost)) throw new HttpsError("invalid-argument", "maxCost is invalid.");
+    const sourceTag = optionalLabel(request.data?.sourceTag) ?? "quests.daily_chest.callable";
+
+    const config = await loadEconomy();
+    const nowMs = Date.now();
+    const userRef = db.collection(USERS).doc(uid);
+    const privateRef = privateEconomyRef(uid);
+    const chestRef = db.collection(TRANSACTIONS).doc(`ctx_questChest_${uid}_${dayKey(nowMs)}`);
+
+    return db.runTransaction<DailyChestReply>(async (tx) => {
+      const userSnap = await tx.get(userRef);
+      const privateSnap = await tx.get(privateRef);
+      const chestSnap = await tx.get(chestRef);
+      if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
+
+      const userData = userSnap.data() as admin.firestore.DocumentData;
+      const privateData = privateSnap.data() ?? {};
+      const balance = int(userData.coins, 0);
+      const rev = int(privateData.rev, 0);
+      const quests = buildQuestState(privateData.quests, nowMs, userData.premium === true);
+      const receipt = chestSnap.data();
+      const day = {quests, receipt, config};
+
+      // The stored win with the live balance, status and quests: other spends or quest progress may have come between.
+      const stored = storedDailyChestWin(receipt, requestId);
+      if (stored) {
+        return {
+          ...stored, previousBalance: balance, currentBalance: balance, delta: 0, status: dailyChestStatus(day), quests, rev,
+        };
+      }
+      const plan = planDailyChest({...day, balance, maxCost});
+      if (!plan.ok) {
+        return {
+          success: false,
+          changed: false,
+          previousBalance: balance,
+          currentBalance: balance,
+          delta: 0,
+          reason: plan.reason,
+          transactionId: "",
+          insufficientBalance: plan.reason === "daily_chest_insufficient_balance",
+          status: dailyChestStatus(day),
+          quests,
+          rev,
+        };
+      }
+
+      const rawInventory = privateData.inventory as {owned?: Record<string, unknown>} | undefined;
+      const owned = rawInventory?.owned ?? {};
+      const {slot, doubled, prize} = rollDailyChest(config, quests, Object.keys(owned));
+      const delta = prize.coins - plan.cost;
+      const currentBalance = balance + delta;
+      const nextQuests: QuestState = {...quests, chestOpened: true, chestDoubled: doubled};
+      const win: DailyChestWin = {
+        success: true,
+        changed: true,
+        previousBalance: balance,
+        currentBalance,
+        delta,
+        reason: "daily_chest",
+        transactionId: chestRef.id,
+        insufficientBalance: false,
+        status: dailyChestStatus({...day, quests: nextQuests}),
+        cost: plan.cost,
+        free: plan.free,
+        doubled,
+        slot,
+        prize,
+        slots: config.award.dailyChest,
+      };
+
+      tx.update(userRef, {
+        coins: currentBalance,
+        ...grantXp(userData, prize.xp + xpForCoins(prize.coins, config), nowMs),
+      });
+      writePrivate(tx, privateRef, rev + 1, {
+        quests: nextQuests,
+        ...(prize.itemId ? {inventory: {...rawInventory, owned: {...owned, [prize.itemId]: nowMs}}} : {}),
+      });
+      tx.set(chestRef, {
+        ...coinTransactionDoc({
+          id: chestRef.id,
+          userId: uid,
+          at: admin.firestore.Timestamp.fromMillis(nowMs),
+          delta,
+          balanceBefore: balance,
+          action: "questChest",
+          description: `Daily chest (${delta >= 0 ? "+" : ""}${delta})`,
+          sourceTag,
+          reason: "daily_chest",
+        }),
+        requestId,
+        cost: plan.cost,
+        free: plan.free,
+        doubled,
+        slot,
+        prize,
+        coins: prize.coins,
+        itemId: prize.itemId,
+        replay: win,
+      });
+      return {...win, quests: nextQuests, rev: rev + 1};
     });
   },
 );
