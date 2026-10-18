@@ -683,6 +683,39 @@ void main() {
       expect(phase(tester), ChestPhase.revealed);
     });
 
+    testWidgets('turning it on while the box opens still shows the prize, and the page can close', (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final GlobalKey<NavigatorState> navigator = GlobalKey<NavigatorState>();
+      Widget app({required bool reduceMotion}) => MediaQuery(
+        data: MediaQueryData(size: const Size(390, 844), disableAnimations: reduceMotion),
+        child: MaterialApp(theme: kLightTheme, navigatorKey: navigator, home: const SizedBox()),
+      );
+      await tester.pumpWidget(app(reduceMotion: false));
+      unawaited(navigator.currentState!.push<void>(MaterialPageRoute<void>(builder: (_) => page())));
+      await pumpFor(tester, const Duration(milliseconds: 500));
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      replies.single.complete(_won(3, coins: 20));
+      await pumpFor(tester, const Duration(milliseconds: 800));
+      expect(phase(tester), ChestPhase.opening);
+      expect(find.text('Done'), findsNothing);
+
+      await tester.pumpWidget(app(reduceMotion: true));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+
+      expect(phase(tester), ChestPhase.revealed);
+      expect(find.text('Rare'), findsOneWidget);
+      expect(find.text('352'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+      await tester.tap(find.text('Done'));
+      await pumpFor(tester, const Duration(seconds: 1));
+      expect(find.byType(DailyChestPage), findsNothing);
+    });
+
     testWidgets('a refusal under reduced motion shows its state at once', (tester) async {
       await pumpPage(tester, reduceMotion: true);
 

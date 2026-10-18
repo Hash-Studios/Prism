@@ -124,6 +124,16 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The box stops ticking once reduced motion turns on, so an open span that already started never ends.
+    if (_phase == ChestPhase.opening && context.reduceMotion) {
+      _onBurst();
+      _onOpened();
+    }
+  }
+
+  @override
   void dispose() {
     _questsSource.removeListener(_onQuestsChanged);
     _balanceSource.removeListener(_onBalanceChanged);
