@@ -39,8 +39,6 @@ import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/shop.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
-import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
-import 'package:Prism/features/trending/views/widgets/trending_strip.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/boost_wall_row.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -110,8 +108,6 @@ class _MockLeaderboardBloc extends MockBloc<LeaderboardEvent, LeaderboardState> 
 class _MockDrawBloc extends MockBloc<DrawEvent, DrawState> implements DrawBloc {}
 
 class _MockProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
-
-class _MockTrendingBloc extends MockBloc<TrendingEvent, TrendingState> implements TrendingBloc {}
 
 class _ProfileRepository implements PublicProfileRepository {
   final StreamController<PublicProfileEntity?> profiles = StreamController<PublicProfileEntity?>.broadcast();
@@ -479,36 +475,6 @@ void main() {
         ),
       );
       await shot.save('wall_detail_boost');
-    });
-
-    qaScreen('trending_boosted', height: 380, (QaShot shot) async {
-      final _MockTrendingBloc bloc = _MockTrendingBloc();
-      whenListen(
-        bloc,
-        const Stream<TrendingState>.empty(),
-        initialState: TrendingState.initial().copyWith(
-          week: TrendingSection(
-            status: LoadStatus.success,
-            walls: <PrismWallpaper>[
-              _wall('t1', boostedUntil: DateTime.now().add(const Duration(hours: 3))),
-              for (final (int i, String by) in <String>['Kenji', 'Sofia', 'Dev', 'Lea'].indexed)
-                _wall('t${i + 2}', by: by),
-            ],
-          ),
-        ),
-      );
-      await shot.pump(
-        Scaffold(
-          body: Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(top: PrismSpace.xxl),
-              child: BlocProvider<TrendingBloc>.value(value: bloc, child: const TrendingStrip()),
-            ),
-          ),
-        ),
-      );
-      await shot.save('trending_boosted');
     });
 
     // 11. Coin gate, short balance

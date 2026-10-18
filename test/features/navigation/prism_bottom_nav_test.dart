@@ -75,7 +75,11 @@ class _FakeTabsRouter extends ChangeNotifier implements TabsRouter {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Widget _host(_FakeTabsRouter router, Widget child) => MaterialApp(
+Widget _host(_FakeTabsRouter router, Widget child, {bool reduceMotion = false}) => MaterialApp(
+  builder: (context, app) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+    child: app!,
+  ),
   home: TabsRouterScope(
     controller: router,
     stateHash: 0,
@@ -139,15 +143,37 @@ void main() {
     expect(analytics.events.where((e) => e.eventName == 'nav_tab_selected'), hasLength(1));
   });
 
-  testWidgets('the pill is 60 high and the tap targets are at least 48', (tester) async {
+  testWidgets('the pill is 56 high and the tap targets are at least 48', (tester) async {
     final router = _FakeTabsRouter();
     await tester.pumpWidget(_host(router, const Center(child: PrismBottomNav())));
 
-    expect(tester.getSize(find.byType(PrismBottomNav)).height, 60);
+    expect(tester.getSize(find.byType(PrismBottomNav)).height, 56);
     expect(tester.getSize(find.byTooltip('Home')).shortestSide, greaterThanOrEqualTo(48));
   });
 
-  testWidgets('scrolling down hides the bar and shows a back to top button that scrolls up', (tester) async {
+  testWidgets('a filled circle sits behind the active tab only and follows the selection', (tester) async {
+    final router = _FakeTabsRouter();
+    await tester.pumpWidget(_host(router, const Center(child: PrismBottomNav())));
+
+    Color? circleBehind(IconData icon) {
+      final container = tester.widget<AnimatedContainer>(
+        find.ancestor(of: find.byIcon(icon), matching: find.byType(AnimatedContainer)),
+      );
+      return (container.decoration! as BoxDecoration).color;
+    }
+
+    expect(circleBehind(JamIcons.home_f), isNot(Colors.transparent));
+    expect(circleBehind(JamIcons.search), Colors.transparent);
+
+    router.setActiveIndex(1);
+    await tester.pumpAndSettle();
+
+    expect(circleBehind(JamIcons.home_f), Colors.transparent);
+    expect(circleBehind(JamIcons.search), isNot(Colors.transparent));
+  });
+
+  testWidgets('scrolling down hides the bar and shows a scroll to top button that scrolls up', (tester) async {
+    final handle = tester.ensureSemantics();
     final router = _FakeTabsRouter();
     final controller = ScrollController();
     addTearDown(controller.dispose);
@@ -161,25 +187,21 @@ void main() {
             itemBuilder: (_, i) => SizedBox(height: 80, child: Text('row $i')),
           ),
         ),
+        reduceMotion: true,
       ),
     );
-    final Finder toTop = find.byTooltip('Back to top');
-    expect(
-      tester.widget<IgnorePointer>(find.ancestor(of: toTop, matching: find.byType(IgnorePointer)).first).ignoring,
-      isTrue,
-    );
+    final Finder toTop = find.bySemanticsLabel('Scroll to top');
+    expect(toTop, findsNothing);
 
     await tester.drag(find.byType(ListView), const Offset(0, -600));
     await tester.pumpAndSettle();
     expect(controller.offset, greaterThan(0));
-    expect(
-      tester.widget<IgnorePointer>(find.ancestor(of: toTop, matching: find.byType(IgnorePointer)).first).ignoring,
-      isFalse,
-    );
+    expect(toTop, findsOneWidget);
 
-    await tester.tap(toTop);
+    await tester.tap(find.byIcon(JamIcons.arrow_up));
     await tester.pumpAndSettle();
     expect(controller.offset, 0);
+    handle.dispose();
   });
 
   testWidgets('tapping the active tab again pops that tab back to its root', (tester) async {
@@ -221,7 +243,7 @@ void main() {
       await tester.pumpWidget(MaterialApp.router(theme: theme, routerConfig: _TestRouter().config()));
       await tester.pumpAndSettle();
 
-      final Color pill = theme.colorScheme.surfaceContainerHigh;
+      final Color pill = theme.primaryColor;
       final Icon active = tester.widget<Icon>(find.descendant(of: find.byTooltip('Home'), matching: find.byType(Icon)));
       final Icon inactive = tester.widget<Icon>(
         find.descendant(of: find.byTooltip('Search'), matching: find.byType(Icon)),

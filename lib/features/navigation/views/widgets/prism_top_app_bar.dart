@@ -12,43 +12,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// The Home tab's top bar: notifications, the prism wordmark (opens Tune your feed), and the profile.
-class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const PrismTopAppBar({super.key, required this.onLogoTap});
+/// The Home tab's top bar, in the style of X: the profile on the left, the prism wordmark in the centre and the
+/// notifications on the right. The feed screen puts it in the floating header.
+class PrismTopAppBar extends StatelessWidget {
+  const PrismTopAppBar({super.key});
 
-  final VoidCallback onLogoTap;
-
-  @override
-  Size get preferredSize => const Size.fromHeight(PrismAppBarSizes.height);
+  static const double height = 52;
 
   @override
   Widget build(BuildContext context) {
-    void handleLogoTap() {
-      PrismHaptics.tap();
-      onLogoTap();
-    }
-
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surface,
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: PrismAppBarSizes.height,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-            child: Row(
-              children: <Widget>[
-                BlocBuilder<InAppNotificationsBloc, InAppNotificationsState>(
-                  builder: (BuildContext context, InAppNotificationsState state) =>
-                      _NotificationButton(hasUnread: state.unreadCount > 0),
-                ),
-                Expanded(
-                  child: Center(child: _Wordmark(onTap: handleLogoTap)),
-                ),
-                const _ProfileAvatar(),
-              ],
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            const Align(alignment: AlignmentDirectional.centerStart, child: _ProfileAvatar()),
+            const _Wordmark(),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: BlocBuilder<InAppNotificationsBloc, InAppNotificationsState>(
+                builder: (BuildContext context, InAppNotificationsState state) =>
+                    _NotificationButton(hasUnread: state.unreadCount > 0),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -56,45 +46,22 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class _Wordmark extends StatelessWidget {
-  const _Wordmark({required this.onTap});
-
-  final VoidCallback onTap;
+  const _Wordmark();
 
   @override
   Widget build(BuildContext context) {
     final Color ink = Theme.of(context).colorScheme.onSurface;
     return Semantics(
-      button: true,
-      label: 'Feed settings',
+      header: true,
+      label: 'Prism',
       excludeSemantics: true,
-      onTap: onTap,
-      child: PressScale(
-        scale: 0.97,
-        child: GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  SvgPicture.string(
-                    prismVector,
-                    width: 11,
-                    height: 13,
-                    colorFilter: ColorFilter.mode(ink, BlendMode.srcIn),
-                  ),
-                  const SizedBox(width: 6),
-                  Text('prism', style: PrismTextStyles.brandName.copyWith(fontSize: 18, color: ink)),
-                  const SizedBox(width: 2),
-                  Icon(PrismIcons.dropdownCaret, color: ink.withValues(alpha: 0.6), size: 18),
-                ],
-              ),
-            ),
-          ),
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SvgPicture.string(prismVector, width: 11, height: 13, colorFilter: ColorFilter.mode(ink, BlendMode.srcIn)),
+          const SizedBox(width: 6),
+          Text('prism', style: PrismTextStyles.brandName.copyWith(fontSize: 18, color: ink)),
+        ],
       ),
     );
   }

@@ -278,7 +278,7 @@ Only after the client that sends `chargeTxId` is the minimum supported build. Se
 | Wrong order | What breaks |
 |---|---|
 | Client before functions | `restoreStreak` and `recordWallpaperAction` return `not-found`. The app hides the result. Rewarded ad `requestId` is ignored, so a retry can credit twice. |
-| Client before rules | `trending/current` and `popular/current` reads fail. The Popular chip falls back to `wallpaper_stats`. |
+| Client before rules | `trending/current` and `popular/current` reads fail. The Popular tab falls back to `wallpaper_stats`. |
 | Flag flip before the client | Old builds get 402 `charge_required` on every AI generation. |
 | Functions before the worker | AI refunds fall back to the 10 minute rule. Nothing breaks. |
 

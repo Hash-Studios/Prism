@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Skeleton for a wallpaper grid. It uses the shared [PrismWallGrid] layout, so content lands where the skeleton was.
@@ -16,8 +17,8 @@ class LoadingCards extends StatelessWidget {
   final BorderRadius borderRadius;
   final int? columns;
 
-  /// Kept for feed callers. It has no effect: every skeleton already uses the shared [PrismWallGrid] layout and never
-  /// scrolls by itself.
+  /// Lays the skeleton out like the home grid: [PrismFeedLayout.gridPadding] side margin and
+  /// [PrismFeedLayout.gridSpacing] gaps. It never scrolls by itself.
   final bool useFeedLayout;
 
   @override
@@ -29,10 +30,15 @@ class LoadingCards extends StatelessWidget {
           builder: (context, _) => GridView.builder(
             primary: false,
             physics: const NeverScrollableScrollPhysics(),
-            padding: PrismWallGrid.padding,
+            padding: useFeedLayout ? PrismFeedLayout.gridPadding : PrismWallGrid.padding,
             itemCount: 18,
             shrinkWrap: true,
-            gridDelegate: PrismWallGrid.delegate(context, columns: columns, aspectRatio: childAspectRatio),
+            gridDelegate: PrismWallGrid.delegate(
+              context,
+              columns: columns,
+              aspectRatio: childAspectRatio,
+              spacing: useFeedLayout ? PrismFeedLayout.gridSpacing : PrismWallGrid.spacing,
+            ),
             itemBuilder: (context, index) => PulseFill(borderRadius: borderRadius),
           ),
         ),

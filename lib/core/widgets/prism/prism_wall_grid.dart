@@ -21,7 +21,12 @@ abstract final class PrismWallGrid {
   static const EdgeInsets padding = EdgeInsets.symmetric(horizontal: margin);
 
   /// Grid delegate for a wallpaper grid. [columns] defaults to [wallpaperGridColumns] for the screen width.
-  static SliverGridDelegate delegate(BuildContext context, {int? columns, double? aspectRatio}) {
+  static SliverGridDelegate delegate(
+    BuildContext context, {
+    int? columns,
+    double? aspectRatio,
+    double spacing = PrismWallGrid.spacing,
+  }) {
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: columns ?? wallpaperGridColumns(MediaQuery.sizeOf(context).width),
       mainAxisSpacing: spacing,

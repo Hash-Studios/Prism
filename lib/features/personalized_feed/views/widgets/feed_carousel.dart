@@ -8,11 +8,12 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
+import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -20,15 +21,25 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Height of one carousel card: the card is inset by the grid margin and about 0.56 as tall as it is wide.
+/// Height of one carousel page: the page is as wide as the screen less the [PrismFeedLayout.gridSpacing] margin on
+/// both sides, and 0.6 times as tall as it is wide.
 double feedCarouselCardHeight(BuildContext context) =>
-    (MediaQuery.sizeOf(context).width - 2 * PrismWallGrid.margin) * 0.56;
+    (MediaQuery.sizeOf(context).width - 2 * PrismFeedLayout.gridSpacing) * 0.6;
 
-/// The home carousel: Wall of the Day, the promo banner and the first wallpapers, with page dots under the card.
+/// The home carousel: Wall of the Day, boosted walls, the promo banner and the first wallpapers as rounded pages, with
+/// page dots over the bottom of the image.
 class FeedCarousel extends StatefulWidget {
-  const FeedCarousel({super.key, required this.previewWalls, this.onWallShown});
+  const FeedCarousel({
+    super.key,
+    required this.previewWalls,
+    this.boostedWalls = const <PrismWallpaper>[],
+    this.onWallShown,
+  });
 
   final List<PrismFeedItem> previewWalls;
+
+  /// Walls with a live boost. They follow the Wall of the Day, so a boost buys one of the first views of the home.
+  final List<PrismWallpaper> boostedWalls;
 
   /// Called after a preview wallpaper meets the visibility and dwell threshold.
   final ValueChanged<PrismFeedItem>? onWallShown;
@@ -54,14 +65,14 @@ class _FeedCarouselState extends State<FeedCarousel> {
     openPrismLink(context, app_state.bannerURL);
   }
 
-  void _openWall(PrismFeedItem wall, int feedIndex) {
+  void _openWall(PrismFeedItem wall, int feedIndex, String sourceContext) {
     PrismHaptics.tap();
     unawaited(
       analytics.track(
         SurfaceActionTappedEvent(
           surface: AnalyticsSurfaceValue.homeWallpaperGrid,
           action: AnalyticsActionValue.carouselItemOpened,
-          sourceContext: 'personalized_feed_carousel',
+          sourceContext: sourceContext,
           itemType: ItemTypeValue.wallpaper,
           itemId: wall.id,
           index: feedIndex,
@@ -84,6 +95,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
     final List<Widget> pages = <Widget>[
       if (hasWotd) const WallOfTheDayCard(),
+      for (int i = 0; i < widget.boostedWalls.length; i++) _boostedCard(widget.boostedWalls[i], i, memCacheHeight),
       if (bannerImage.trim().isNotEmpty)
         FeedHeroCard(
           image: PrismImageTile(url: bannerImage, memCacheHeight: memCacheHeight),
@@ -98,7 +110,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final bool moving = pages.length > 1;
     // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see.
     final bool visible = TickerMode.valuesOf(context).enabled && (ModalRoute.of(context)?.isCurrent ?? true);
-    return Column(
+    return Stack(
       children: <Widget>[
         CarouselSlider.builder(
           itemCount: pages.length,
@@ -113,28 +125,51 @@ class _FeedCarouselState extends State<FeedCarousel> {
               if (mounted) setState(() => _current = index);
             },
           ),
-          itemBuilder: (BuildContext context, int i, int realIndex) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: PrismWallGrid.margin),
-              child: pages[i],
-            );
-          },
+          itemBuilder: (BuildContext context, int i, int realIndex) =>
+              Padding(padding: PrismFeedLayout.gridPadding, child: pages[i]),
         ),
-        if (moving) FeedCarouselDots(current: current, count: pages.length),
+        if (moving)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: PrismSpace.sm,
+            child: FeedCarouselDots(current: current, count: pages.length),
+          ),
       ],
     );
   }
 
-  Widget _previewCard(PrismFeedItem wall, int feedIndex, int memCacheHeight) {
-    final String? author = wall.wallpaper.core.authorName?.trim();
-    final String category = wall.wallpaper.core.category?.trim() ?? '';
+  Widget _boostedCard(PrismWallpaper wall, int index, int memCacheHeight) => _wallCard(
+    PrismFeedItem(id: wall.id, wallpaper: wall),
+    index,
+    memCacheHeight,
+    source: 'personalized_feed_carousel_boosted',
+    tag: const BoostedTag(),
+  );
+
+  Widget _previewCard(PrismFeedItem wall, int feedIndex, int memCacheHeight) => _wallCard(
+    wall,
+    feedIndex,
+    memCacheHeight,
+    source: 'personalized_feed_carousel',
+    onVisible: () => widget.onWallShown?.call(wall),
+  );
+
+  Widget _wallCard(
+    PrismFeedItem wall,
+    int index,
+    int memCacheHeight, {
+    required String source,
+    Widget? tag,
+    VoidCallback? onVisible,
+  }) {
     return WallpaperImpression(
       itemId: wall.id,
       provider: wall.source.name,
       surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-      source: 'personalized_feed_carousel',
-      index: feedIndex,
-      onVisible: () => widget.onWallShown?.call(wall),
+      source: source,
+      index: index,
+      onVisible: onVisible,
       child: FeedHeroCard(
         image: PrismImageTile(
           url: wall.wallpaper.thumbnailUrl,
@@ -142,15 +177,16 @@ class _FeedCarouselState extends State<FeedCarousel> {
           memCacheHeight: memCacheHeight,
         ),
         semanticLabel: wall.semanticLabel,
-        title: category.isEmpty ? 'Wallpaper' : category,
-        subtitle: author == null || author.isEmpty ? null : 'by $author',
+        tag: tag,
         badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
-        onTap: () => _openWall(wall, feedIndex),
+        onTap: () => _openWall(wall, index, source),
       ),
     );
   }
 }
 
+/// The page dots, drawn in white with a soft shadow so they read over any image. They never take a touch, so swipes
+/// and taps reach the page under them.
 class FeedCarouselDots extends StatelessWidget {
   const FeedCarouselDots({required this.current, required this.count});
 
@@ -159,10 +195,8 @@ class FeedCarouselDots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color ink = Theme.of(context).colorScheme.onSurface;
     return ExcludeSemantics(
-      child: Padding(
-        padding: const EdgeInsets.only(top: PrismSpace.sm),
+      child: IgnorePointer(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -175,7 +209,10 @@ class FeedCarouselDots extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(PrismRadius.pill),
-                  color: current == i ? ink : ink.withValues(alpha: 0.25),
+                  color: Colors.white.withValues(alpha: current == i ? 1 : 0.5),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 4, offset: const Offset(0, 1)),
+                  ],
                 ),
               ),
           ],

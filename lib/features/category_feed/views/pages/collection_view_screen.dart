@@ -93,7 +93,7 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
       future: _collectionFuture,
       builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingCards(useFeedLayout: true);
+          return const LoadingCards();
         }
         if (snapshot.hasError) {
           return RefreshableGlintState(
@@ -129,10 +129,10 @@ class _CategoryFeedContent extends StatelessWidget {
         final bool showsThisCategory =
             expected != null && state.selectedCategory?.name.trim().toLowerCase() == expected;
         if (!showsThisCategory && !(state.items.isEmpty && state.status == LoadStatus.failure)) {
-          return const LoadingCards(useFeedLayout: true);
+          return const LoadingCards();
         }
         if (state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading)) {
-          return const LoadingCards(useFeedLayout: true);
+          return const LoadingCards();
         }
         if (state.items.isEmpty && state.status == LoadStatus.failure) {
           return RefreshableGlintState(

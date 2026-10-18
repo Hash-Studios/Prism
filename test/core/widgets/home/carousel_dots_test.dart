@@ -22,17 +22,44 @@ void main() {
 
   List<Color?> colours(WidgetTester tester) => [for (int i = 0; i < 4; i++) decorationOf(tester, i).color];
 
-  testWidgets('the active dot is a 16 by 6 pill in the page ink and the others are faded 6 by 6 dots', (tester) async {
+  testWidgets('the active dot is a 16 by 6 white pill and the others are 6 by 6 dots at half white', (tester) async {
     await tester.pumpWidget(_dots(current: 1));
 
-    final Color ink = ThemeData().colorScheme.onSurface;
     expect(sizes(tester), const <Size>[Size(6, 6), Size(16, 6), Size(6, 6), Size(6, 6)]);
     expect(colours(tester), <Color>[
-      ink.withValues(alpha: 0.25),
-      ink,
-      ink.withValues(alpha: 0.25),
-      ink.withValues(alpha: 0.25),
+      Colors.white.withValues(alpha: 0.5),
+      Colors.white,
+      Colors.white.withValues(alpha: 0.5),
+      Colors.white.withValues(alpha: 0.5),
     ]);
+  });
+
+  testWidgets('every dot casts a soft shadow so it reads over a bright image', (tester) async {
+    await tester.pumpWidget(_dots(current: 0));
+
+    for (int i = 0; i < 4; i++) {
+      expect(decorationOf(tester, i).boxShadow, isNotEmpty);
+    }
+  });
+
+  testWidgets('the dots do not take touches, so a swipe or a tap reaches the page under them', (tester) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            children: <Widget>[
+              Positioned.fill(child: GestureDetector(onTap: () => taps++)),
+              const Positioned(left: 0, right: 0, bottom: 8, child: FeedCarouselDots(current: 0, count: 4)),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(dots.first, warnIfMissed: false);
+
+    expect(taps, 1);
   });
 
   testWidgets('the pill moves to the next dot and the row keeps its width', (tester) async {

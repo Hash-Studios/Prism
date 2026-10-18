@@ -44,7 +44,6 @@ import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/features/shop/shop.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
-import 'package:Prism/features/trending/views/pages/trending_page.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
@@ -130,7 +129,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/ai', page: AiTabRoute.page),
     AutoRoute(path: '/wallpaper-detail', page: WallpaperDetailRoute.page),
     AutoRoute(path: '/wotd-archive', page: WotdArchiveRoute.page),
-    AutoRoute(path: '/trending', page: TrendingRoute.page),
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
     // Standalone path so Edit Profile works when ProfileScreen was opened via

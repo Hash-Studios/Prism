@@ -214,15 +214,6 @@ abstract final class PrismIcons {
   static const IconData dropdownCaret = Icons.expand_more_rounded;
 }
 
-/// Fixed-size dimensions for app-bar chrome.
-///
-/// Heights and touch targets follow Material 3 guidance. Adjust these values
-/// to tune the entire app-bar in one place.
-abstract final class PrismAppBarSizes {
-  /// Total height of the Prism custom app-bar (excluding status bar inset).
-  static const double height = 56;
-}
-
 /// Wallpaper grid columns for a screen [width]: about one per 180 pt, so a phone gets 3 in portrait
 /// and 5 in landscape, and a tablet gets more instead of huge, blurry tiles.
 int wallpaperGridColumns(double width) => (width / 180).round().clamp(3, 8);
@@ -237,6 +228,11 @@ abstract final class PrismFeedLayout {
 
   /// Minimal spacer appended when the feed still has more pages to load.
   static const double endOfPageSpacerHeight = 22;
+
+  /// Gap between tiles of the home grid, on both axes. The side margin is the same, so the gutters are even.
+  static const double gridSpacing = 4.0;
+
+  static const EdgeInsets gridPadding = EdgeInsets.symmetric(horizontal: gridSpacing);
 }
 
 /// Visual parameters for the `PersonalizedFeedEditorialNote` pattern.

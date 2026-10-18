@@ -311,7 +311,7 @@ Glint skins are out: the mascot keeps the logo colours on every theme (`.impecca
 | `drops` | `/drops`, `/drops/:weekKey` | live drop grid with blurred thumbs, unlock one or all, vault of past unlocks (urls from the private doc), card for Rewards and Home; admin review gets a "Reserve for Drop" action |
 | `leaderboard` | `/leaderboard` | Friends (followed users' root docs, sorted by weekly XP then uid) and Global (`leaderboards/current`) |
 | `draw` | `/draw` | tickets, pot, closes-in, last winner; hidden when `drawEnabled` is false |
-| boosts | in `wallpaper_detail` and `trending` | Boost button for the owner of an approved wall; "Boosted" tag on trending tiles |
+| boosts | in `wallpaper_detail`, `trending` and the home carousel | Boost button for the owner of an approved wall; boosted walls show in the home carousel on the For you tab (after the Wall of the Day) and lead the Trending tab, with a "Boosted" tag; see [trending.md](trending.md) |
 | gifts | in `public_profile` | "Gift a 24 h pass" button |
 
 ### Analytics

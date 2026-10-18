@@ -17,7 +17,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [notifications.md](notifications.md) | Inbox, preferences, Wall of the Day at 09:00 local time |
 | [reliability.md](reliability.md) | Timeouts, offline banner, cache, error reports, ad consent, startup |
 | [backend-deploy.md](backend-deploy.md) | Deploy order for indexes, functions, worker, web and the app |
-| [home-feed.md](home-feed.md) | Instant home from cache, chip rail (For you, Latest, Following, Popular), Show less undo |
+| [home-feed.md](home-feed.md) | Instant home from cache, floating header and tabs (For you, Following, Trending, Latest, Popular), tight 4 px grid with rounded tiles, boosted walls after the Wall of the Day in the carousel, bottom bar, Show less undo |
 | [categories.md](categories.md) | Prism-first categories, AMOLED tile, tile quick actions |
 | [wall-of-the-day.md](wall-of-the-day.md) | Card, push, past picks archive |
 | [themes.md](themes.md) | Themes, accents, contrast rules, AMOLED, match system colour |
@@ -33,7 +33,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [ai-charge.md](ai-charge.md) | AI charge check on the worker, refund evidence |
 | [studio.md](studio.md) | Prism Studio: daily AI wallpapers, checks, review queue, setup (backend) |
 | [popular-and-trending.md](popular-and-trending.md) | Engagement counters and the trending and popular lists (backend) |
-| [trending.md](trending.md) | Trending this week row on home, Trending page with This week and All time |
+| [trending.md](trending.md) | Trending tab on home with This week and All time; boosted walls also show in the home carousel, after the Wall of the Day |
 | [moderation.md](moderation.md) | Report auto-hold, sweeper, username dedupe, WOTD creator notice (backend) |
 
 ## Page rules

@@ -35,7 +35,7 @@ void main() {
     await getIt.reset();
   });
 
-  test('opening Trending reports the view_trending quest event once', () async {
+  test('the bloc only loads data: starting it and switching range report no quest event', () async {
     final _MockFetchTrending fetch = _MockFetchTrending();
     when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[]));
     final TrendingBloc bloc = TrendingBloc(fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
@@ -46,6 +46,8 @@ void main() {
     bloc.add(const TrendingEvent.rangeSelected(TrendingRange.allTime));
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    expect(events, <String>['view_trending']);
+    verify(() => fetch(TrendingRange.week)).called(1);
+    verify(() => fetch(TrendingRange.allTime)).called(1);
+    expect(events, isEmpty);
   });
 }

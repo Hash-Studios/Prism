@@ -12,7 +12,7 @@ bool isPremiumFeedItem(FeedItemEntity item) => switch (item) {
   _ => false,
 };
 
-/// One wallpaper in a home grid: the shared [WallpaperTile] with quick actions, and a gold star on premium walls.
+/// One wallpaper in the home grid: a [WallpaperTile] with quick actions and a premium star.
 class FeedWallTile extends StatelessWidget {
   const FeedWallTile({
     super.key,

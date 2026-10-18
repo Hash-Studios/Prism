@@ -7,7 +7,7 @@ import 'package:Prism/features/prism_feed/biz/bloc/paged_feed_bloc.j.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The wallpapers of one home chip (Latest, Following or Popular) as slivers, so they scroll with the feed header.
+/// The wallpapers of one home tab (Latest, Following or Popular) as slivers.
 class PagedChipSliver extends StatelessWidget {
   const PagedChipSliver({
     super.key,
@@ -63,9 +63,13 @@ class PagedChipSliver extends StatelessWidget {
         return SliverMainAxisGroup(
           slivers: <Widget>[
             SliverPadding(
-              padding: PrismWallGrid.padding,
+              padding: PrismFeedLayout.gridPadding,
               sliver: SliverGrid(
-                gridDelegate: PrismWallGrid.delegate(context, columns: crossAxisCount),
+                gridDelegate: PrismWallGrid.delegate(
+                  context,
+                  columns: crossAxisCount,
+                  spacing: PrismFeedLayout.gridSpacing,
+                ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final FeedItemEntity item = state.items[index];
                   return KeyedSubtree(

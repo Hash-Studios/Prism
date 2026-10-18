@@ -83,7 +83,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
 
     if (walls.isEmpty) {
       if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
-        return const LoadingCards(useFeedLayout: true);
+        return const LoadingCards();
       }
       final bool failed = state.status == LoadStatus.failure;
       return RefreshableGlintState(

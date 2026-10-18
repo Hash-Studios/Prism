@@ -51,8 +51,8 @@ The Themes page lets the user choose the app theme mode (system, light or dark),
 ### Text on the theme background
 
 - Caption and eyebrow text (`PrismTextStyles.caption`, `eyebrow`) use 72% of `onSurface`. At 55% Rose and Cotton Blue were below 4.5:1.
-- The top bar wordmark, caret, logo and bell use `onColor(primaryColor)` and `onSurface`. They read on all 12 themes.
-- The bottom bar marks the active tab as selected for screen readers. The inactive icons use `onColor(primaryColor)` at 70%.
+- The top bar wordmark, logo and bell use `onSurface`. They read on all 12 themes.
+- The bottom bar marks the active tab as selected for screen readers. The active icon uses `secondary`, on a circle of `secondary` at 15% over `primaryColor`. The inactive icons use `secondary` at 60%.
 - The offline banner uses `errorContainer` and `onErrorContainer`. The text is 12 sp. The banner is a live region only while it shows. When the connection returns, it reads "Back online" for 2 seconds.
 - Plain `Text` on a light theme is white by default (`textTheme.bodyMedium`). The not found page, the startup failure screen, the update screen and the profile nudge sheet now set their own text style and background.
 - Toasts use darker green and red, so white text has at least 4.5:1. `toasts.info(msg)` shows a neutral toast. A new toast cancels the one on screen.
@@ -74,8 +74,8 @@ The Themes page lets the user choose the app theme mode (system, light or dark),
 4. Change the system wallpaper. Open the page again. Make sure the accent follows.
 5. Pick an accent colour by hand. Make sure the switch turns off and the colour stays.
 6. Turn the switch off and on again. Make sure the accent returns to the system colour.
-7. Choose the AMOLED dark theme. Make sure the active tab in the bottom bar shows a white circle with a black icon.
-8. Choose Frost White as the light theme. Open Home. Make sure the "prism" wordmark, the arrow, the logo and the bell are dark and easy to read.
+7. Choose the AMOLED dark theme. Make sure the active tab in the bottom bar shows a dark grey circle with a light icon.
+8. Choose Frost White as the light theme. Open Home. Make sure the "prism" wordmark, the logo and the bell are dark and easy to read.
 9. Turn on airplane mode in the app for a few seconds. Make sure a red tinted banner shows "No internet connection". Turn it off. Make sure the banner reads "Back online" and leaves after 2 seconds.
 
 Automated tests:
