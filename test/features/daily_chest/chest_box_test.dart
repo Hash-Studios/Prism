@@ -173,7 +173,7 @@ void main() {
 
     testWidgets('a vivid accent tints the three accent layers', (tester) async {
       const Color primary = Color(0xFFE91E63);
-      await pumpBox(tester, phase: ChestPhase.ready, primary: primary);
+      await pumpBox(tester, phase: ChestPhase.ready);
       final ChestAccent accent = chestAccentOf(primary)!;
 
       expect(at(tester, chestAccentLightKeyPath)!.value, accent.light);

@@ -63,8 +63,8 @@ void main() {
     });
 
     test('a paid chest opens when the balance covers the price and not when it is a coin short', () {
-      expect(chestAction(status: _status(price: 8), balance: 8), ChestAction.open);
-      expect(chestAction(status: _status(price: 8), balance: 7), ChestAction.getCoins);
+      expect(chestAction(status: _status(), balance: 8), ChestAction.open);
+      expect(chestAction(status: _status(), balance: 7), ChestAction.getCoins);
     });
   });
 
@@ -124,10 +124,7 @@ void main() {
     test('the cost line says what the chest costs now', () {
       final DateTime now = DateTime.utc(2026, 10, 18, 18, 48);
       expect(chestCostLine(_status(questsLeft: 0), now: now), 'Your quests made it free today.');
-      expect(
-        chestCostLine(_status(questsLeft: 2), now: now),
-        'Open it for 8 coins, or finish 2 more quests to open it free.',
-      );
+      expect(chestCostLine(_status(), now: now), 'Open it for 8 coins, or finish 2 more quests to open it free.');
       expect(
         chestCostLine(_status(questsLeft: 1), now: now),
         'Open it for 8 coins, or finish 1 more quest to open it free.',
@@ -143,8 +140,8 @@ void main() {
     test('the row subtitle follows the state', () {
       expect(chestRowSubtitle(_status(opened: true)), 'Opened. A new one tomorrow.');
       expect(chestRowSubtitle(_status(questsLeft: 0)), 'Free today');
-      expect(chestRowSubtitle(_status(questsLeft: 3, price: 8)), '8 coins, or free after 3 more quests');
-      expect(chestRowSubtitle(_status(questsLeft: 1, price: 8)), '8 coins, or free after 1 more quest');
+      expect(chestRowSubtitle(_status(questsLeft: 3)), '8 coins, or free after 3 more quests');
+      expect(chestRowSubtitle(_status(questsLeft: 1)), '8 coins, or free after 1 more quest');
     });
   });
 
