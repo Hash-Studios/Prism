@@ -38,7 +38,7 @@ void main() {
   testWidgets('everyone else sees the price, the best prize and a Spin button', (tester) async {
     await pumpCard(tester, const SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 3, price: 10));
 
-    expect(find.text('10 coins a spin. Win up to 100 coins, XP or a cosmetic'), findsOneWidget);
+    expect(find.text('10 coins a spin. Win up to 100 coins or a cosmetic'), findsOneWidget);
     expect(find.text('Spin'), findsOneWidget);
     expect(find.text('Free spin'), findsNothing);
   });
@@ -50,11 +50,11 @@ void main() {
       segments: const <WheelSegment>[
         WheelSegment(CoinsPrize(30), weight: 1),
         WheelSegment(CoinsPrize(250), weight: 1),
-        WheelSegment(XpPrize(500), weight: 1),
+        WheelSegment(CosmeticPrize(fallbackCoins: 500), weight: 1),
       ],
     );
 
-    expect(find.text('12 coins a spin. Win up to 250 coins, XP or a cosmetic'), findsOneWidget);
+    expect(find.text('12 coins a spin. Win up to 250 coins or a cosmetic'), findsOneWidget);
   });
 
   testWidgets('with no spins left it says Back tomorrow and has no button', (tester) async {

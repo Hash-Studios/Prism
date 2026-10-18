@@ -106,12 +106,12 @@ void main() {
     await shot.save('machine_jackpot');
   });
 
-  qaScreen('machine_xp', (QaShot shot) async {
+  qaScreen('machine_small_coin', (QaShot shot) async {
     final Completer<SpinWheelResult> reply = await _mount(shot, _paidStatus);
     await _tapSpin(shot, spinFrames: 60);
-    await _land(shot, reply, _won(5, xp: 50, cost: 10));
+    await _land(shot, reply, _won(5, coins: 2, cost: 10));
     await shot.settle(frames: 4);
-    await shot.save('machine_xp');
+    await shot.save('machine_small_coin');
   });
 
   qaScreen('machine_cosmetic', (QaShot shot) async {

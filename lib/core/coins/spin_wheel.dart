@@ -31,7 +31,7 @@ class WheelSegment {
   final double weight;
 
   /// The JSON shape the server stores in `award.spinWheel` and returns in a spin reply.
-  static WheelSegment? fromMap(Object? raw) {
+  static WheelSegment? fromMap(Object? raw, {bool allowLegacyXp = false}) {
     if (raw is! Map) return null;
     final Map<String, dynamic> m = toJsonMap(raw);
     final Object? weight = m['weight'];
@@ -41,7 +41,7 @@ class WheelSegment {
         final int c => CoinsPrize(c),
         _ => null,
       },
-      'xp' => switch (_amount(m['xp'], min: 1)) {
+      'xp' when allowLegacyXp => switch (_amount(m['xp'], min: 1)) {
         final int xp => XpPrize(xp),
         _ => null,
       },
@@ -68,11 +68,11 @@ int? _amount(Object? raw, {required int min}) {
 
 /// Parses a wheel table, or returns null when any segment is malformed, the count is out of range or no weight is
 /// positive. The caller falls back to [defaultWheel].
-List<WheelSegment>? parseWheel(Object? raw) {
+List<WheelSegment>? parseWheel(Object? raw, {bool allowLegacyXp = false}) {
   if (raw is! List || raw.length < minWheelSegments || raw.length > maxWheelSegments) return null;
   final List<WheelSegment> segments = <WheelSegment>[];
   for (final Object? s in raw) {
-    final WheelSegment? segment = WheelSegment.fromMap(s);
+    final WheelSegment? segment = WheelSegment.fromMap(s, allowLegacyXp: allowLegacyXp);
     if (segment == null) return null;
     segments.add(segment);
   }
@@ -83,11 +83,11 @@ List<WheelSegment>? parseWheel(Object? raw) {
 /// Same order and odds as `DEFAULT_ECONOMY.award.spinWheel` on the server. Index 0 sits under the pointer at rest.
 const List<WheelSegment> defaultWheel = <WheelSegment>[
   WheelSegment(CoinsPrize(10), weight: 18),
-  WheelSegment(XpPrize(25), weight: 22),
+  WheelSegment(CoinsPrize(1), weight: 22),
   WheelSegment(CoinsPrize(5), weight: 30),
   WheelSegment(CoinsPrize(100), weight: 1),
   WheelSegment(CoinsPrize(20), weight: 8),
-  WheelSegment(XpPrize(50), weight: 12),
+  WheelSegment(CoinsPrize(2), weight: 12),
   WheelSegment(CoinsPrize(50), weight: 3),
   WheelSegment(CosmeticPrize(fallbackCoins: 50), weight: 6),
 ];

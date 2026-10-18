@@ -5,7 +5,7 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {coinTransactionDoc, db, int, REGION} from "./common";
 import {
   dayKey, type EconomyConfig, grantXp, isPrice, loadEconomy, randomInt, type WheelSegment, weekKey, weightedPick,
-  xpForCoins,
+  xpReceipt, type XpReceipt,
 } from "./economy";
 import {isValidRequestId, optionalLabel, resolveWheelPrize, type WheelPrize} from "./coinsCallables";
 import {
@@ -141,6 +141,7 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
       delta: totalCoins,
       reason,
       rev: privateChanged ? rev + 1 : rev,
+      ...xpReceipt(nextXp ?? userData, nowMs, totalXp),
     };
   });
 }
@@ -219,6 +220,7 @@ export const openQuestChest = onCall(
         delta: 0,
         reason,
         rev,
+        ...xpReceipt(userData, nowMs),
       });
 
       if (chestSnap.exists) {
@@ -237,6 +239,7 @@ export const openQuestChest = onCall(
           reason: "quest_chest_replay",
           transactionId: chestRef.id,
           rev,
+          ...xpReceipt(userData, nowMs),
         };
       }
       if (state.chestOpened) return refused("quest_chest_already_opened");
@@ -245,7 +248,7 @@ export const openQuestChest = onCall(
       const doubled = state.bonus.claimed;
       const base = randomInt(config.award.questChestMin, config.award.questChestMax);
       const coins = doubled ? base * 2 : base;
-      const nextXp = grantXp(userData, xpForCoins(coins, config), nowMs);
+      const nextXp = grantXp(userData, config.xp.activities.questChest, nowMs);
       const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs);
       const owned = rewards.owned;
       const cosmetic = Math.random() < config.award.questChestCosmeticChance ?
@@ -292,6 +295,7 @@ export const openQuestChest = onCall(
         reason: "quest_chest",
         transactionId: chestRef.id,
         rev: rev + 1,
+        ...xpReceipt(nextXp, nowMs, config.xp.activities.questChest),
       };
     });
   },
@@ -338,7 +342,7 @@ export interface DailyChestWin extends DailyChestFields {
 interface DailyChestRefused extends DailyChestFields { success: false; changed: false }
 
 /** Every reply carries the next quest state and its `rev`, so the client adopts both. */
-export type DailyChestReply = (DailyChestWin | DailyChestRefused) & {quests: QuestState; rev: number};
+export type DailyChestReply = (DailyChestWin | DailyChestRefused) & {quests: QuestState; rev: number} & XpReceipt;
 
 export function dailyChestStatus({quests, receipt, config}: DailyChestDay): DailyChestStatus {
   return {
@@ -366,7 +370,7 @@ export function storedDailyChestWin(
   return receipt?.requestId === requestId && receipt.replay ? receipt.replay as DailyChestWin : null;
 }
 
-/** Rolls the slot and resolves the prize. The bonus quest doubles coins and XP; a cosmetic stays one item. */
+/** Rolls the slot and resolves the prize. The bonus quest doubles the coins; a cosmetic stays one item. */
 export function rollDailyChest(
   config: EconomyConfig,
   quests: QuestState,
@@ -377,7 +381,7 @@ export function rollDailyChest(
   const slot = weightedPick(slots, random);
   const prize = resolveWheelPrize(slots[slot], owned, random);
   const doubled = quests.bonus.claimed;
-  return {slot, doubled, prize: doubled ? {...prize, coins: prize.coins * 2, xp: prize.xp * 2} : prize};
+  return {slot, doubled, prize: doubled ? {...prize, coins: prize.coins * 2} : prize};
 }
 
 export const openDailyChest = onCall(
@@ -415,6 +419,7 @@ export const openDailyChest = onCall(
       if (stored) {
         return {
           ...stored, previousBalance: balance, currentBalance: balance, delta: 0, status: dailyChestStatus(day), quests, rev,
+          ...xpReceipt(userData, nowMs),
         };
       }
       const plan = planDailyChest({...day, balance, maxCost});
@@ -431,11 +436,13 @@ export const openDailyChest = onCall(
           status: dailyChestStatus(day),
           quests,
           rev,
+          ...xpReceipt(userData, nowMs),
         };
       }
 
-      const rawInventory = privateData.inventory as {owned?: Record<string, unknown>} | undefined;
-      const owned = rawInventory?.owned ?? {};
+      const nextXp = grantXp(userData, config.xp.activities.questChest, nowMs);
+      const rewards = rankRewardsFor(nextXp.xp, inventoryOwned(privateData), config, nowMs);
+      const owned = rewards.owned;
       const {slot, doubled, prize} = rollDailyChest(config, quests, Object.keys(owned));
       const delta = prize.coins - plan.cost;
       const currentBalance = balance + delta;
@@ -458,13 +465,12 @@ export const openDailyChest = onCall(
         slots: config.award.dailyChest,
       };
 
-      tx.update(userRef, {
-        coins: currentBalance,
-        ...grantXp(userData, prize.xp + xpForCoins(prize.coins, config), nowMs),
-      });
+      tx.update(userRef, {coins: currentBalance, ...nextXp});
       writePrivate(tx, privateRef, rev + 1, {
         quests: nextQuests,
-        ...(prize.itemId ? {inventory: {...rawInventory, owned: {...owned, [prize.itemId]: nowMs}}} : {}),
+        ...(prize.itemId || rewards.added.length > 0 ? {
+          inventory: {owned: {...owned, ...(prize.itemId ? {[prize.itemId]: nowMs} : {})}},
+        } : {}),
       });
       tx.set(chestRef, {
         ...coinTransactionDoc({
@@ -488,7 +494,9 @@ export const openDailyChest = onCall(
         itemId: prize.itemId,
         replay: win,
       });
-      return {...win, quests: nextQuests, rev: rev + 1};
+      return {
+        ...win, quests: nextQuests, rev: rev + 1, ...xpReceipt(nextXp, nowMs, config.xp.activities.questChest),
+      };
     });
   },
 );

@@ -56,12 +56,12 @@ void main() {
         'spinWheelMaxPerDay': 2,
         'spinWheel': <Map<String, Object>>[
           <String, Object>{'kind': 'coins', 'coins': 9, 'weight': 1},
-          <String, Object>{'kind': 'xp', 'xp': 9, 'weight': 1},
+          <String, Object>{'kind': 'coins', 'coins': 3, 'weight': 1},
         ],
       },
     });
     expect((CoinPolicy.spinWheelPrice, CoinPolicy.spinWheelMaxPerDay), (25, 2));
-    expect(describeWheel(CoinPolicy.spinWheel), <String>['coins 9 x1', 'xp 9 x1']);
+    expect(describeWheel(CoinPolicy.spinWheel), <String>['coins 9 x1', 'coins 3 x1']);
     expect(CoinSpendAction.spinWheel.cost(), 25);
   });
 

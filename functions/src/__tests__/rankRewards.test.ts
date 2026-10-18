@@ -141,43 +141,78 @@ test("equip reconciles a rank reward, preserves the other slot, and keeps Pro fr
   assert.equal(owned(store).frame_prism, 15);
 });
 
-test("all XP award transaction paths persist newly crossed rank rewards with their existing state", async (t) => {
-  for (const path of ["award", "ad", "spin", "wheel", "streak", "badge", "quest", "chest"] as const) {
+test("fixed activity XP paths persist newly crossed rank rewards with their existing state", async (t) => {
+  for (const path of ["award", "streak", "badge", "quest", "chest"] as const) {
     await t.test(path, async (sub) => {
       resetEconomyCache();
       sub.mock.timers.enable({apis: ["Date"], now: NOW});
       sub.mock.method(Math, "random", () => 0);
-      let quests = buildQuestState(null, NOW, path === "spin");
+      let quests = buildQuestState(null, NOW, false);
       if (path === "quest") {
         quests = {...quests, items: [
           {id: "wotd_view", event: "view_wotd", target: 1, progress: 0, claimed: false}, ...quests.items.slice(1),
         ]};
       }
       if (path === "chest") quests = {...quests, items: quests.items.map((item) => ({...item, claimed: true, progress: item.target}))};
-      const store = installFakeDb(sub, {[USER]: {coins: 100, xp: 499, premium: path === "spin" || path === "award",
-        coinState: path === "badge" ? {streakBest: 7, streakCount: 7} : {}},
+      const store = installFakeDb(sub, {[USER]: {coins: 100, xp: 499,
+        coinState: path === "badge" ? {streakBest: 7, streakCount: 7} : {},
+        ...(path === "award" ? {username: "artist", bio: "bio", profilePhoto: "photo", links: {site: "site"}} : {})},
       [PRIVATE]: {rev: 5, quests, passes: {premiumPassUntil: 123}, inventory: {owned: {frame_ring: 17}}},
       "economyConfig/current": {award: {questChestCosmeticChance: 1}}});
       if (path === "badge") sub.mock.method(badgeIo, "accountCreatedMs", async () => NOW);
-      if (path === "award") await call(awardCoins, {action: "proDailyBonus", sourceTag: "test.rank_reward", reason: "test"});
-      if (path === "ad") {
-        await call(awardCoins, {
-          action: "rewardedAd", requestId: "ad-request-1", sourceTag: "test.rank_reward", reason: "test",
-        });
-      }
-      if (path === "spin") await call(claimProSpin, {requestId: "spin-request-1"});
-      if (path === "wheel") await call(spinWheel, {requestId: "wheel-request-1", maxCost: 10});
+      if (path === "award") await call(awardCoins, {action: "profileCompletion", sourceTag: "test.rank_reward", reason: "test"});
       if (path === "streak") await call(claimDailyStreak, {timezoneOffsetMinutes: 0, reminderEnabled: false});
       if (path === "badge") await call(checkBadges);
       if (path === "quest") await call(progressQuest, {event: "view_wotd", eventId: "quest-event-1"});
       if (path === "chest") await call(openQuestChest, {requestId: "chest-request-1"});
-      assert.ok((store.get(USER)?.xp as number) >= 500, path);
+      const expectedXp = {award: 25, streak: 5, badge: 25, quest: 25, chest: 10}[path];
+      assert.equal(store.get(USER)?.xp, 499 + expectedXp, path);
+      assert.deepEqual(store.get(USER)?.xpWeek, {weekKey: weekKey(NOW), xp: expectedXp}, path);
       assert.equal(owned(store).glow_aurora, NOW, path);
       assert.equal(owned(store).frame_ring, 17, path);
       assert.equal(store.get(PRIVATE)?.rev, 6, path);
       assert.deepEqual(store.get(PRIVATE)?.passes, {premiumPassUntil: 123}, path);
-      if (["ad", "spin", "quest", "chest"].includes(path)) assert.ok(store.get(PRIVATE)?.quests, path);
+      assert.ok(store.get(PRIVATE)?.quests, path);
       if (path === "chest") assert.equal(Object.keys(owned(store)).length, 3);
     });
+  }
+});
+
+test("ad, Pro spin, wheel and legacy bonus keep coins and quest progress without XP or rank grants", async (t) => {
+  for (const path of ["ad", "spin", "wheel", "legacy"] as const) {
+    for (const xp of [499, 6000]) {
+      await t.test(`${path}/${xp}`, async (sub) => {
+        resetEconomyCache();
+        sub.mock.timers.enable({apis: ["Date"], now: NOW});
+        sub.mock.method(Math, "random", () => 0);
+        const quests = buildQuestState(null, NOW, path === "spin" || path === "wheel");
+        const xpWeek = {weekKey: weekKey(NOW), xp: 100};
+        const inventory = {owned: {frame_ring: 17}};
+        const store = installFakeDb(sub, {
+          [USER]: {coins: 100, xp, xpWeek, premium: true},
+          [PRIVATE]: {rev: 5, quests, passes: {premiumPassUntil: 123}, inventory},
+          "economyConfig/current": {xp: {perCoinEarned: 10}},
+        });
+        const result = path === "wheel" ? await call(spinWheel, {requestId: "wheel-request-1", maxCost: 0}) :
+          path === "spin" ? await call(claimProSpin, {requestId: "spin-request-1"}) :
+            await call(awardCoins, {action: path === "ad" ? "rewardedAd" : "proDailyBonus",
+              requestId: "award-request-1", sourceTag: "test.rank_reward", reason: "test"});
+        const coins = path === "wheel" ? DEFAULT_ECONOMY.award.spinWheel[0] : null;
+        const delta = coins?.kind === "coins" ? coins.coins : 20;
+        assert.equal(result.delta, delta);
+        assert.equal(store.get(USER)?.coins, 100 + delta);
+        assert.equal(result.xpAwarded, 0);
+        assert.equal(result.xp, xp);
+        assert.equal(store.get(USER)?.xp, xp);
+        assert.deepEqual(store.get(USER)?.xpWeek, xpWeek);
+        assert.deepEqual(store.get(PRIVATE)?.inventory, inventory);
+        assert.equal(store.get(PRIVATE)?.rev, path === "legacy" ? 5 : 6);
+        assert.deepEqual(store.get(PRIVATE)?.passes, {premiumPassUntil: 123});
+        if (path !== "legacy") {
+          const state = store.get(PRIVATE)?.quests as typeof quests;
+          assert.equal(state.bonus.claimed, true);
+        }
+      });
+    }
   }
 });

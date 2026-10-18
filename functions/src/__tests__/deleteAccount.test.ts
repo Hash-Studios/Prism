@@ -41,13 +41,22 @@ function fake(t: TestContext, options: Options = {}) {
   };
   t.mock.method(db, "collection", (name: string) => name === "usersv2" ?
     {...query(name), doc: () => userRef} :
-    {...query(name), doc: (id: string) => ({path: `${name}/${id}`, get: async () => ({exists: true})})});
+    {...query(name), doc: (id: string) => ({path: `${name}/${id}`, get: async () => ({exists: true}),
+      set: async () => {
+        log.push(`barrier:${name}/${id}`);
+      }})});
+  t.mock.method(db, "collectionGroup", (name: string) => query(name));
   t.mock.method(db, "recursiveDelete", async (ref: {path: string}) => {
     log.push(`recursive:${ref.path}`);
   });
   let deletes = 0;
   const updates: Array<{path: string; data: Record<string, unknown>}> = [];
   t.mock.method(db, "bulkWriter", () => ({
+    set: (ref: {path: string}, data: Record<string, unknown>) => {
+      log.push(`close:${ref.path}`);
+      updates.push({path: ref.path, data});
+      return Promise.resolve();
+    },
     delete: (ref: {path: string}) => {
       log.push(`delete:${ref.path}`);
       deletes += 1;
@@ -152,7 +161,7 @@ test("the writer closes even when queueing a delete throws", async (t) => {
       collection: (sub: string) => ({path: `usersv2/u1/${sub}`}),
       get: async () => ({data: () => ({email: "sam@example.com"})}),
     })} :
-    {where: () => ({get: async () => {
+    {doc: () => ({set: async () => undefined}), where: () => ({get: async () => {
       throw new Error("query failed");
     }})});
   await assert.rejects(async () => {
@@ -212,6 +221,21 @@ test("a user without an email still has uid-keyed records deleted and nothing is
   assert.ok(log.includes("delete:users/u1"));
   assert.ok(!log.some((entry) => entry.startsWith("update:") && !entry.startsWith("update:walls/w9")));
   assert.ok(!log.includes("delete:notifications/d1"));
+});
+
+test("creator deletion barrier and anonymized wall receipts precede recursive private deletion", async (t) => {
+  const log = fake(t);
+  await call();
+  const barrier = log.indexOf("barrier:creatorDeletionState/u1");
+  const receipt = log.indexOf("close:creatorWallCredits/d1");
+  const privateDelete = log.indexOf("recursive:usersv2/u1/private");
+  assert.ok(barrier >= 0 && receipt > barrier && privateDelete > receipt);
+  assert.deepEqual(log.updates.find((update) => update.path === "creatorWallCredits/d1")?.data,
+    {closed: true, approvalCredited: true});
+  assert.ok(log.includes("query:creatorMembers.memberUid==u1"));
+  assert.ok(log.includes("delete:creatorMembers/d1"));
+  assert.ok(log.includes("query:creatorMemberRateDaily.memberUid==u1"));
+  assert.ok(log.includes("delete:creatorMemberRateDaily/d1"));
 });
 
 test("a failed update throws before the profile is anonymized or the auth user removed", async (t) => {

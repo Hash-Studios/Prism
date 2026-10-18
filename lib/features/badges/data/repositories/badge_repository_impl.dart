@@ -52,6 +52,7 @@ class BadgeRepositoryImpl implements BadgeRepository {
       return Result.error(const ServerFailure('Sign in to earn badges'));
     }
     final int startingBalance = app_state.prismUser.coins;
+    final int session = CoinsService.instance.economySession;
     final ValueNotifier<int> balanceNotifier = CoinsService.instance.balanceNotifier;
     bool balanceChanged = false;
     void onBalanceChanged() => balanceChanged = true;
@@ -61,13 +62,20 @@ class BadgeRepositoryImpl implements BadgeRepository {
       final cf.HttpsCallableResult<dynamic> response = await appFunctions
           .httpsCallable('checkBadges', options: cf.HttpsCallableOptions(timeout: _callableTimeout))
           .call(<String, dynamic>{});
-      if (!app_state.prismUser.loggedIn || uid != app_state.prismUser.id.trim()) {
+      if (!app_state.prismUser.loggedIn ||
+          uid != app_state.prismUser.id.trim() ||
+          session != CoinsService.instance.economySession) {
         return Result.error(const ServerFailure('Session changed'));
       }
       final Map<Object?, Object?> data = response.data is Map ? response.data as Map<Object?, Object?> : const {};
       if (data['badges'] is! List || data['newBadges'] is! List || data['currentBalance'] is! num) {
         return Result.error(const ServerFailure('Invalid badge response'));
       }
+      CoinsService.instance.applyRoutineXpReply(
+        data.map((Object? key, Object? value) => MapEntry<String, dynamic>(key.toString(), value)),
+        userId: uid,
+        session: session,
+      );
       final int currentBalance = (data['currentBalance']! as num).toInt();
       if (balanceChanged || startingBalance != app_state.prismUser.coins) {
         try {
@@ -79,7 +87,9 @@ class BadgeRepositoryImpl implements BadgeRepository {
             stackTrace: stackTrace,
           );
         }
-        if (!app_state.prismUser.loggedIn || uid != app_state.prismUser.id.trim()) {
+        if (!app_state.prismUser.loggedIn ||
+            uid != app_state.prismUser.id.trim() ||
+            session != CoinsService.instance.economySession) {
           return Result.error(const ServerFailure('Session changed'));
         }
       } else {

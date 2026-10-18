@@ -72,6 +72,9 @@ void main() {
     expect(find.textContaining('Spending coins never lowers your XP'), findsOneWidget);
     expect(find.textContaining('cost no coins and stay yours'), findsOneWidget);
     expect(find.textContaining('Daily quests award 25 XP'), findsOneWidget);
+    expect(find.textContaining('Daily streaks earn 5 XP'), findsOneWidget);
+    expect(find.textContaining('Quest chests earn 10 XP'), findsOneWidget);
+    expect(find.textContaining('Ads, Pro spins, Pro daily bonuses, referrals and refunds earn no XP.'), findsOneWidget);
   });
 
   testWidgets('public rank opens explanation without a private inventory claim', (tester) async {
@@ -91,7 +94,7 @@ void main() {
       initialState: ShopState.initial().copyWith(owned: owned, rankId: 'gold'),
     );
     getIt.registerFactory<ShopBloc>(() => bloc);
-    CoinsService.instance.xpNotifier.value = XpStatus.empty().plus(2500);
+    CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 2500});
     CoinsService.instance.inventoryNotifier.value = const Inventory(owned: owned);
     await tester.pumpWidget(
       const MaterialApp(
@@ -123,7 +126,7 @@ void main() {
   });
 
   testWidgets('a config refresh recomputes the live rank and keeps next rank distinct from reward', (tester) async {
-    CoinsService.instance.xpNotifier.value = XpStatus.empty().plus(70);
+    CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 70});
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: RankProgressCard())));
     EconomyConfig.current = const EconomyConfig(
       xp: EconomyXp(
@@ -138,7 +141,7 @@ void main() {
     expect(find.text('30 XP to Collector'), findsOneWidget);
     expect(find.text('Next reward: Aurora name glow'), findsOneWidget);
     expect(find.text('Yours automatically at Silver · 700 XP'), findsOneWidget);
-    CoinsService.instance.xpNotifier.value = XpStatus.empty().plus(800);
+    CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 800});
     await tester.pump();
     expect(find.text('Silver'), findsOneWidget);
     expect(find.text('Highest rank reached'), findsOneWidget);

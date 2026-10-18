@@ -508,7 +508,7 @@ void main() {
     });
 
     testWidgets('own profile shows full lifetime XP progress and confirmed reward state', (tester) async {
-      CoinsService.instance.xpNotifier.value = XpStatus.empty().plus(1240);
+      CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 1240});
       CoinsService.instance.inventoryNotifier.value = const Inventory(owned: <String>{'glow_aurora'});
       await pumpScreen(tester);
 

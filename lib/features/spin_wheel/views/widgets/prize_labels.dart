@@ -14,7 +14,7 @@ Widget prizeIcon(WheelPrize prize) => SizedBox.square(
 );
 
 String prizeTitle(WheelPrize prize) => switch (prize) {
-  CoinsPrize(:final int coins) => '$coins coins',
+  CoinsPrize(:final int coins) => '$coins ${coins == 1 ? 'coin' : 'coins'}',
   XpPrize(:final int xp) => '$xp XP',
   CosmeticPrize() => 'Mystery cosmetic',
 };

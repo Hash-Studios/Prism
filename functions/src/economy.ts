@@ -9,7 +9,7 @@ const DAY_MS = 86_400_000;
 export interface SpinSegment { coins: number; weight: number }
 /** One slice of the spin wheel. Mirrored by `WheelSegment` in lib/core/coins/spin_wheel.dart. */
 export type WheelSegment =
-  ({kind: "coins"; coins: number} | {kind: "xp"; xp: number} | {kind: "cosmetic"; fallbackCoins: number}) &
+  ({kind: "coins"; coins: number} | {kind: "cosmetic"; fallbackCoins: number}) &
   {weight: number};
 export interface RankDef { id: string; min: number }
 
@@ -67,6 +67,13 @@ export interface EconomyConfig {
   };
   xp: {
     perCoinEarned: number;
+    activities: {
+      dailyStreak: number;
+      streakWeek: number;
+      questChest: number;
+      firstWallpaperUpload: number;
+      profileCompletion: number;
+    };
     ranks: RankDef[];
   };
   flags: {
@@ -130,22 +137,22 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     spinWheelMaxPerDay: 5,
     spinWheel: [
       {kind: "coins", coins: 10, weight: 18},
-      {kind: "xp", xp: 25, weight: 22},
+      {kind: "coins", coins: 1, weight: 22},
       {kind: "coins", coins: 5, weight: 30},
       {kind: "coins", coins: 100, weight: 1},
       {kind: "coins", coins: 20, weight: 8},
-      {kind: "xp", xp: 50, weight: 12},
+      {kind: "coins", coins: 2, weight: 12},
       {kind: "coins", coins: 50, weight: 3},
       {kind: "cosmetic", fallbackCoins: 50, weight: 6},
     ],
     dailyChest: [
-      {kind: "coins", coins: 5, weight: 32},
-      {kind: "coins", coins: 10, weight: 26},
-      {kind: "xp", xp: 25, weight: 15},
-      {kind: "coins", coins: 20, weight: 13},
+      {kind: "coins", coins: 5, weight: 34},
+      {kind: "coins", coins: 8, weight: 28},
+      {kind: "coins", coins: 12, weight: 15},
+      {kind: "coins", coins: 20, weight: 11},
       {kind: "cosmetic", fallbackCoins: 25, weight: 8},
-      {kind: "coins", coins: 40, weight: 4},
-      {kind: "coins", coins: 100, weight: 2},
+      {kind: "coins", coins: 40, weight: 3},
+      {kind: "coins", coins: 100, weight: 1},
     ],
     questCoins: 2,
     questXp: 25,
@@ -158,6 +165,13 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
   },
   xp: {
     perCoinEarned: 1,
+    activities: {
+      dailyStreak: 5,
+      streakWeek: 25,
+      questChest: 10,
+      firstWallpaperUpload: 50,
+      profileCompletion: 25,
+    },
     ranks: [
       {id: "bronze", min: 0},
       {id: "silver", min: 500},
@@ -197,7 +211,6 @@ function parseWheelSegment(raw: unknown): WheelSegment | null {
   const weight = raw.weight;
   switch (raw.kind) {
   case "coins": return isIntIn(raw.coins, MAX_AWARD) && raw.coins >= 1 ? {kind: "coins", coins: raw.coins, weight} : null;
-  case "xp": return isIntIn(raw.xp, MAX_AWARD) && raw.xp >= 1 ? {kind: "xp", xp: raw.xp, weight} : null;
   case "cosmetic":
     return isIntIn(raw.fallbackCoins, MAX_AWARD) && raw.fallbackCoins >= 1 ?
       {kind: "cosmetic", fallbackCoins: raw.fallbackCoins, weight} : null;
@@ -295,8 +308,13 @@ export function parseEconomy(raw: unknown): EconomyConfig {
     ranks.every((r) => isRecord(r) && typeof r.id === "string" && r.id !== "" && isIntIn(r.min, Number.MAX_SAFE_INTEGER)) &&
     new Set(ranks.map((r) => r.id)).size === ranks.length &&
     Math.min(...ranks.map((r) => r.min)) === 0;
+  const activities = {...merged.xp.activities};
+  for (const key of Object.keys(defaults.xp.activities) as (keyof EconomyConfig["xp"]["activities"])[]) {
+    if (!isAward(activities[key])) activities[key] = defaults.xp.activities[key];
+  }
   merged.xp = {
     perCoinEarned: isNumberIn(merged.xp.perCoinEarned, 0, 10) ? merged.xp.perCoinEarned : defaults.xp.perCoinEarned,
+    activities,
     ranks: ranksOk ? [...ranks].sort((a, b) => a.min - b.min) : defaults.xp.ranks,
   };
   return merged;
@@ -390,9 +408,17 @@ function safeXp(value: unknown): number {
   return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.trunc(value)));
 }
 
-/** XP for coins earned, per config. Refunds pass 0. */
-export function xpForCoins(coins: number, config: EconomyConfig): number {
-  return Math.max(0, Math.round(coins * config.xp.perCoinEarned));
+export interface XpReceipt extends XpFields {
+  xpPolicyVersion: 1;
+  xpAwarded: number;
+}
+
+/**
+ * Absolute transaction snapshot. Inactive weeks reply as the current week with zero XP without rewriting history.
+ * Awarding callers pass their post-grant fields; no-op/replay callers pass the current user snapshot and award zero.
+ */
+export function xpReceipt(userData: admin.firestore.DocumentData, nowMs: number, xpAwarded = 0): XpReceipt {
+  return {xpPolicyVersion: 1, ...grantXp(userData, 0, nowMs), xpAwarded: safeXp(xpAwarded)};
 }
 
 /** Deterministic pick of `count` distinct items from `pool`, stable for the same seed. */

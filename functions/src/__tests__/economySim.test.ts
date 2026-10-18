@@ -8,8 +8,6 @@ const streakDaily = mean(award.streakDaily);
 const streakChestPerDay = (award.streakChestMin + award.streakChestMax) / 2 / 7;
 const questsPerDay = 3 * award.questCoins;
 const weeklyPerDay = award.weeklyQuestCoins / 7;
-// Coins per spin of the wheel. A cosmetic or XP slice pays no coins, so it counts 0 (a cosmetic's fallback only
-// pays once every common item is owned).
 const wheelTotalWeight = award.spinWheel.reduce((sum, s) => sum + s.weight, 0);
 const wheelCoinEv = award.spinWheel.reduce((sum, s) => sum + (s.kind === "coins" ? s.coins * s.weight : 0), 0) /
   wheelTotalWeight;
@@ -37,11 +35,14 @@ test("economy sim: coins a day per persona on DEFAULT_ECONOMY", () => {
   assert.ok(personas.engagedPro <= 75, `engaged Pro ${personas.engagedPro}`);
 });
 
-test("economy sim: a paid wheel spin pays back less than it costs, so the wheel is a sink", () => {
-  assert.equal(Number(wheelCoinEv.toFixed(2)), 7.4);
+test("economy sim: direct wheel payouts stay below the price; full cosmetic ownership adds fallback coins", () => {
+  assert.equal(Number(wheelCoinEv.toFixed(2)), 7.86);
   assert.ok(wheelCoinEv < DEFAULT_ECONOMY.spend.spinWheel, `wheel EV ${wheelCoinEv}`);
   const maxNetPerDay = award.spinWheelMaxPerDay * (wheelCoinEv - DEFAULT_ECONOMY.spend.spinWheel);
-  assert.equal(Number(maxNetPerDay.toFixed(1)), -13);
+  assert.equal(Number(maxNetPerDay.toFixed(1)), -10.7);
+  const fallbackEv = award.spinWheel.reduce((sum, segment) =>
+    sum + (segment.kind === "cosmetic" ? segment.fallbackCoins * segment.weight : 0), 0) / wheelTotalWeight;
+  assert.equal(Number((wheelCoinEv + fallbackEv).toFixed(2)), 10.86);
 });
 
 test("economy sim: a paid daily chest pays back a little more than it costs, and the bonus doubles it", () => {

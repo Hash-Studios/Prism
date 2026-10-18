@@ -287,12 +287,22 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 3));
     });
 
-    testWidgets('an XP win shows +N XP', (tester) async {
+    testWidgets('a historical XP win shows +N XP', (tester) async {
       status.value = _paid;
       await pumpPage(tester);
 
       await tapSpin(tester);
-      replies.single.complete(_won(5, xp: 50));
+      replies.single.complete(
+        _won(
+          5,
+          xp: 50,
+          segments: <WheelSegment>[
+            ...defaultWheel.take(5),
+            const WheelSegment(XpPrize(50), weight: 12),
+            ...defaultWheel.skip(6),
+          ],
+        ),
+      );
       await pumpUntil(tester, find.text('Added to your XP'));
       await pumpFor(tester, const Duration(seconds: 2));
       expect(find.text('+50'), findsOneWidget);
@@ -576,11 +586,19 @@ void main() {
       await pumpFor(tester, const Duration(milliseconds: 500));
 
       expect(find.text('The odds'), findsOneWidget);
-      for (final String row in <String>['10 coins', '5 coins', '100 coins', '20 coins', '50 coins']) {
+      for (final String row in <String>[
+        '10 coins',
+        '1 coin',
+        '5 coins',
+        '100 coins',
+        '20 coins',
+        '2 coins',
+        '50 coins',
+      ]) {
         expect(find.text(row), findsOneWidget);
       }
-      expect(find.text('25 XP'), findsOneWidget);
-      expect(find.text('50 XP'), findsOneWidget);
+      expect(find.text('25 XP'), findsNothing);
+      expect(find.text('50 XP'), findsNothing);
       expect(find.text('Mystery cosmetic'), findsOneWidget);
       expect(find.text('Pays 50 coins if you own them all'), findsOneWidget);
       for (final String percent in <String>['18%', '22%', '30%', '1%', '8%', '12%', '3%', '6%']) {

@@ -33,6 +33,7 @@ import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
+import 'package:Prism/features/rewards/domain/creator_progress.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
@@ -420,6 +421,9 @@ class CoinsService with WidgetsBindingObserver {
   String? _pendingFreezeRequestId;
 
   final ValueNotifier<XpStatus> xpNotifier = ValueNotifier<XpStatus>(XpStatus.empty());
+  final ValueNotifier<CreatorProgressState> creatorNotifier = ValueNotifier<CreatorProgressState>(
+    const CreatorProgressState(),
+  );
   final ValueNotifier<QuestState?> questsNotifier = ValueNotifier<QuestState?>(null);
 
   /// Quest items the server just paid. The UI shows them, then calls [consumeQuestAwards].
@@ -614,7 +618,7 @@ class CoinsService with WidgetsBindingObserver {
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
     if (saved != null && _economyMutationGeneration == mutationGeneration && saved.revision >= _economyRev) {
-      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision});
+      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision}, fromCache: true);
     }
     startPendingRetryWatch();
     final Future<_PrivateEconomyRead> privateEconomy = _readPrivateEconomy(
@@ -681,7 +685,7 @@ class CoinsService with WidgetsBindingObserver {
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return;
     if (saved != null && _economyMutationGeneration == mutationGeneration && saved.revision >= _economyRev) {
-      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision});
+      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision}, fromCache: true);
     }
     if (_economyMutationGeneration != mutationGeneration) return;
   }
@@ -778,7 +782,7 @@ class CoinsService with WidgetsBindingObserver {
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
     if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     if (saved != null && _economyMutationGeneration == mutationGeneration && saved.revision >= _economyRev) {
-      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision});
+      _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision}, fromCache: true);
     }
     final Future<_PrivateEconomyRead> privateEconomy = _readPrivateEconomy(
       userId,
@@ -794,6 +798,12 @@ class CoinsService with WidgetsBindingObserver {
     if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     final _PrivateEconomyRead privateRead = await privateEconomy;
     if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
+    if (privateRead.data == null && !privateRead.authoritativeMissing) {
+      creatorNotifier.value = CreatorProgressState(
+        progress: creatorNotifier.value.progress,
+        status: CreatorProgressStatus.unavailable,
+      );
+    }
     final Map<String, dynamic>? privateData = privateRead.data;
     if (privateData != null &&
         _economyMutationGeneration == mutationGeneration &&
@@ -1791,7 +1801,8 @@ class CoinsService with WidgetsBindingObserver {
             ? null
             : DateTime.fromMillisecondsSinceEpoch(nextReminderAtUtcMillis, isUtc: true),
       );
-      if (claimed) _grantLocalXp(_xpForCoins(totalReward));
+      _economyMutationGeneration++;
+      applyRoutineXpReply(payload, userId: userId, session: generation);
       if (claimed && _publishedClaimDays.add((userId, todayLocalKey))) {
         for (final event in result.lifecycleEvents) {
           analytics.track(event);
@@ -2117,6 +2128,7 @@ class CoinsService with WidgetsBindingObserver {
     inventoryNotifier.value = Inventory.empty;
     dropsUnlockedNotifier.value = const <String, DropUnlock>{};
     passesNotifier.value = Passes.empty;
+    creatorNotifier.value = const CreatorProgressState();
     refreshSpinWheelStatus();
   }
 
@@ -2138,7 +2150,7 @@ class CoinsService with WidgetsBindingObserver {
 
   void _syncRootProjection(String userId, Map<String, dynamic> userData, {bool syncXp = true}) {
     _ensureEconomyUser(userId);
-    if (syncXp) {
+    if (syncXp && userData['xp'] is num && (userData['xp'] as num).isFinite && (userData['xp'] as num) >= 0) {
       _confirmXp(userData, announce: _xpUserId == userId);
       _xpUserId = userId;
     }
@@ -2150,12 +2162,16 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Owner-only state from `usersv2/{uid}/private/economy`. A doc older than the state already held is ignored.
-  void _syncPrivateEconomy(String userId, Map<String, dynamic>? data) {
+  void _syncPrivateEconomy(String userId, Map<String, dynamic>? data, {bool fromCache = false}) {
     _ensureEconomyUser(userId);
     if (data == null) return;
     final int rev = parseIntOr(data['rev'], fallback: 0);
     if (rev < _economyRev) return;
     _economyRev = rev;
+    creatorNotifier.value = CreatorProgressState(
+      progress: CreatorProgress.fromMap(data['creator']),
+      status: fromCache ? CreatorProgressStatus.cached : CreatorProgressStatus.loaded,
+    );
     _spinDay = SpinDay.fromMap(data['spinWheel']);
     questsNotifier.value = QuestState.fromMap(data['quests']);
     final Object? rawOwned = toJsonMap(data['inventory'])['owned'];
@@ -2186,14 +2202,65 @@ class CoinsService with WidgetsBindingObserver {
     }
   }
 
-  void _grantLocalXp(int xp) {
-    if (xp <= 0) return;
+  int get economySession => _economySessionGeneration;
+
+  /// Applies only absolute server totals, including replay replies. The receipt amount is never added locally.
+  void applyRoutineXpReply(Map<String, dynamic> data, {required String userId, required int session}) {
+    if (!_isCurrentOwner(userId, session)) return;
+    _ensureEconomyUser(userId);
+    if (_staleEconomyReply(data)) return;
+    _economyMutationGeneration++;
+    if (data['xpPolicyVersion'] != 1 || !_usableXpSnapshot(data)) {
+      unawaited(reconcileRankRewards());
+      return;
+    }
+    _xpMutationGeneration++;
+    _confirmXp(data, announce: _xpUserId == userId);
+    _xpUserId = userId;
+    final XpStatus xp = xpNotifier.value;
+    unawaited(
+      _persistRootEconomySnapshot(userId, <String, dynamic>{
+        'xp': xp.xp,
+        'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': xp.weekXp},
+      }, merge: true),
+    );
+    unawaited(reconcileRankRewards());
+  }
+
+  bool _usableXpSnapshot(Map<String, dynamic> data) {
+    bool valid(Object? value) => value is num && value.isFinite && value >= 0 && value == value.truncate();
+    final Map<String, dynamic> week = toJsonMap(data['xpWeek']);
+    return valid(data['xp']) &&
+        valid(week['xp']) &&
+        week['weekKey'] is String &&
+        RegExp(r'^\d{4}-W\d{2}$').hasMatch(week['weekKey'] as String);
+  }
+
+  /// Rewards calls this on entry/resume. Private state has no live subscription.
+  Future<void> refreshCreatorProgress() async {
+    if (!_canMutateCoins()) return;
     final String userId = app_state.prismUser.id;
     _ensureEconomyUser(userId);
-    _xpMutationGeneration++;
-    _economyMutationGeneration++;
-    _setXp(xpNotifier.value.plus(xp), announce: _xpUserId == userId);
-    unawaited(reconcileRankRewards());
+    final int session = _economySessionGeneration;
+    creatorNotifier.value = CreatorProgressState(
+      progress: creatorNotifier.value.progress,
+      status: CreatorProgressStatus.loading,
+    );
+    try {
+      await refreshBalance();
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.creator.refresh', error: error, stackTrace: stackTrace);
+    }
+    if (_isCurrentOwner(userId, session) &&
+        const <CreatorProgressStatus>{
+          CreatorProgressStatus.loading,
+          CreatorProgressStatus.cached,
+        }.contains(creatorNotifier.value.status)) {
+      creatorNotifier.value = CreatorProgressState(
+        progress: creatorNotifier.value.progress,
+        status: CreatorProgressStatus.unavailable,
+      );
+    }
   }
 
   /// Repairs rank ownership on normal refresh and after XP awards. Concurrent requests for this session share a
@@ -2225,7 +2292,12 @@ class CoinsService with WidgetsBindingObserver {
           timeout: const Duration(seconds: 10),
         );
         if (!_isCurrentOwner(userId, generation)) return;
-        if (reply != null && reply.success && !reply.stale && reply.data['xp'] is num) {
+        if (reply != null &&
+            reply.success &&
+            !reply.stale &&
+            reply.data['xp'] is num &&
+            (reply.data['xp'] as num).isFinite &&
+            (reply.data['xp'] as num) >= 0) {
           if (_xpMutationGeneration == xpGeneration) {
             _confirmXp(reply.data, announce: false, protectReads: true);
             final XpStatus xp = xpNotifier.value;
@@ -2277,8 +2349,6 @@ class CoinsService with WidgetsBindingObserver {
       'inventory': <String, Object?>{'owned': owned.toList()},
     });
   }
-
-  int _xpForCoins(int coins) => max(0, (coins * EconomyConfig.current.xp.perCoinEarned).round());
 
   /// Mirrors the server, which ticks the ad and spin bonus quests inside the ad credit and the spin.
   void _markBonusQuestDone(QuestEvent event) {
@@ -2367,6 +2437,10 @@ class CoinsService with WidgetsBindingObserver {
       if (_staleEconomyReply(data)) {
         if (shopSuccess) unawaited(_refreshShopBalance(userId, generation));
         return _EconomyReply(data, stale: true);
+      }
+      if (const <String>{'progressQuest', 'spinWheel', 'openQuestChest', 'openDailyChest'}.contains(name) &&
+          data['success'] == true) {
+        applyRoutineXpReply(data, userId: userId, session: generation);
       }
       final bool shopReplay = shopSuccess && data['reason'] == 'duplicate';
       if (!shopReplay && data['currentBalance'] is num) {
@@ -2488,7 +2562,6 @@ class CoinsService with WidgetsBindingObserver {
       for (final QuestAward award in awards) {
         analytics.track(QuestCompletedEvent(questId: award.id, coins: award.coins, xp: award.xp));
       }
-      if (!stale) _grantLocalXp(awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp));
       if (stale) unawaited(reconcileRankRewards());
     }
     return questsNotifier.value;
@@ -2541,7 +2614,7 @@ class CoinsService with WidgetsBindingObserver {
     }, sourceTag: 'coins.spin_wheel');
     if (!_isCurrentOwner(userId, generation) || reply == null) return const SpinFailed('session_changed');
     if (reply.errorCode != null) return SpinFailed(reply.reason);
-    final SpinWheelStatus? status = parseSpinWheelStatus(reply.data['status']);
+    final SpinWheelStatus? status = reply.stale ? null : parseSpinWheelStatus(reply.data['status']);
     if (!reply.success) {
       _adoptSpinWheelStatus(status);
       // The next recompute reads the price from the config, so reload it or the old price comes back.
@@ -2556,7 +2629,7 @@ class CoinsService with WidgetsBindingObserver {
           ? SpinFailed(reply.reason)
           : SpinRefused(refusal, status: status ?? spinWheelNotifier.value);
     }
-    final List<WheelSegment> segments = parseWheel(reply.data['segments']) ?? CoinPolicy.spinWheel;
+    final List<WheelSegment> segments = parseWheel(reply.data['segments'], allowLegacyXp: true) ?? CoinPolicy.spinWheel;
     final Map<String, dynamic> prize = toJsonMap(reply.data['prize']);
     final WheelWin win = WheelWin(
       segment: parseIntOr(reply.data['segment'], fallback: -1).clamp(0, segments.length - 1),
@@ -2573,7 +2646,6 @@ class CoinsService with WidgetsBindingObserver {
       );
     }
     if (reply.changed) {
-      if (!reply.stale) _grantLocalXp(win.xp + _xpForCoins(win.coins));
       if (reply.stale) unawaited(reconcileRankRewards());
       analytics.track(
         SpinWheelSpunEvent(
@@ -2606,7 +2678,9 @@ class CoinsService with WidgetsBindingObserver {
     return SpinWon(
       win: win,
       cost: cost,
-      balance: parseIntOr(reply.data['currentBalance'], fallback: balanceNotifier.value),
+      balance: reply.stale
+          ? balanceNotifier.value
+          : parseIntOr(reply.data['currentBalance'], fallback: balanceNotifier.value),
       segments: segments,
       status: status ?? spinWheelNotifier.value,
     );
@@ -2689,8 +2763,6 @@ class CoinsService with WidgetsBindingObserver {
       );
     }
     if (reply.changed) {
-      if (!reply.stale) _grantLocalXp(win.xp + _xpForCoins(win.coins));
-      if (reply.stale) unawaited(reconcileRankRewards());
       analytics.track(
         DailyChestOpenedEvent(
           free: reply.data['free'] == true,
@@ -3026,6 +3098,9 @@ class CoinsService with WidgetsBindingObserver {
         final Map<String, dynamic> data = toJsonMap(response.data);
         if (!_isCurrentOwner(userId, generation)) {
           return signedOut(mayHaveDebited: data['changed'] == true);
+        }
+        if (callableName == 'awardCoins' && action != 'refund' && data['success'] == true) {
+          applyRoutineXpReply(data, userId: userId, session: generation);
         }
         final int balance = parseIntOr(data['currentBalance']);
         return CoinMutationResult(

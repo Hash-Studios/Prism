@@ -28,10 +28,6 @@ class XpStatus {
   final int xp;
   final int weekXp;
   final Rank rank;
-
-  XpStatus plus(int gained) => gained <= 0
-      ? this
-      : XpStatus(xp: xp + gained, weekXp: weekXp + gained, rank: EconomyConfig.current.rankFor(xp + gained));
 }
 
 /// Quest events. Only [clientReported] events are sent by the app; the server counts the rest.

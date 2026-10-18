@@ -10,7 +10,7 @@ import {
   spinWheel,
   wheelStatus,
 } from "../coinsCallables";
-import {DEFAULT_ECONOMY, ECONOMY_CONFIG_DOC, resetEconomyCache, weekKey} from "../economy";
+import {DEFAULT_ECONOMY, ECONOMY_CONFIG_DOC, resetEconomyCache, weekKey, xpReceipt} from "../economy";
 import {buildQuestState} from "../questCatalog";
 import {SHOP_CATALOG} from "../shopCatalog";
 import {type Doc, installFakeDb} from "./fakeDb";
@@ -138,11 +138,9 @@ test("readWheelDay: stored garbage reads as an empty day", () => {
 
 const commonIds = SHOP_CATALOG.filter((item) => item.common).map((item) => item.id);
 
-test("resolveWheelPrize: coin and XP slices pay their own amount", () => {
+test("resolveWheelPrize: coin slices pay their own amount without XP", () => {
   assert.deepEqual(resolveWheelPrize({kind: "coins", coins: 20, weight: 1}, []),
     {kind: "coins", coins: 20, xp: 0, itemId: null});
-  assert.deepEqual(resolveWheelPrize({kind: "xp", xp: 50, weight: 1}, []),
-    {kind: "xp", coins: 0, xp: 50, itemId: null});
 });
 
 test("resolveWheelPrize: a cosmetic slice picks an unowned common item, else pays the fallback", () => {
@@ -175,7 +173,7 @@ function setup(t: test.TestContext, user: Doc, priv?: Doc, extra: Record<string,
 }
 
 /** Rolls that land on a slice of the default table. The weights sum to 100, so a roll is a percentage point. */
-const ROLL = {coins10: 0.1, xp25: 0.3, coins5: 0.5, coins20: 0.75, xp50: 0.85, cosmetic: 0.95};
+const ROLL = {coins10: 0.1, coins1: 0.3, coins5: 0.5, coins20: 0.75, coins2: 0.85, cosmetic: 0.95};
 
 function rolls(t: test.TestContext, ...values: number[]): void {
   const queue = [...values];
@@ -191,6 +189,9 @@ test("spinWheel: a Pro member's free spin pays the prize, writes both shared dat
   const store = setup(t, {coins: 10, premium: true}, {rev: 1, quests});
   const reply = await spin("spin_request_1", 0);
   assert.deepEqual(reply, {
+    ...xpReceipt({}, NOW),
+    rev: 2,
+    owned: [],
     success: true,
     changed: true,
     previousBalance: 10,
@@ -208,7 +209,8 @@ test("spinWheel: a Pro member's free spin pays the prize, writes both shared dat
   });
   const user = store.get(USER) ?? {};
   assert.equal(user.coins, 20);
-  assert.equal(user.xp, 10);
+  assert.equal(user.xp, undefined);
+  assert.equal(user.xpWeek, undefined);
   assert.deepEqual(user.coinState, {proSpinDate: TODAY, proDailyBonusDate: TODAY});
   const priv = store.get(PRIVATE) ?? {};
   assert.equal(priv.rev, 2);
@@ -242,8 +244,12 @@ test("spinWheel: a paid spin debits the cost, pays the prize and leaves a net le
   assert.deepEqual(reply.status, {freeSpinAvailable: false, paidSpinsLeft: 4, price: 10});
   const user = store.get(USER) ?? {};
   assert.equal(user.coins, 20);
-  assert.equal(user.xp, 5);
-  assert.deepEqual(user.xpWeek, {weekKey: weekKey(NOW), xp: 5});
+  assert.equal(user.xp, undefined);
+  assert.equal(user.xpWeek, undefined);
+  assert.equal(reply.xpAwarded, 0);
+  assert.equal(reply.xp, 0);
+  assert.equal(reply.rev, 5);
+  assert.deepEqual(reply.owned, []);
   assert.equal(user.coinState, undefined);
   const priv = store.get(PRIVATE) ?? {};
   assert.deepEqual(priv.spinWheel, {dayKey: TODAY, paid: 1, freeUsed: false});
@@ -273,18 +279,22 @@ test("spinWheel: a Pro member who used the free spin pays and does not progress 
   assert.deepEqual(store.get(PRIVATE)?.spinWheel, {dayKey: TODAY, paid: 1, freeUsed: false});
 });
 
-test("spinWheel: an XP prize adds XP and the cost is the only coin change", async (t) => {
-  rolls(t, ROLL.xp25);
-  const store = setup(t, {coins: 50, xp: 100});
+test("spinWheel: a former XP slice pays coins while preserving historical XP", async (t) => {
+  rolls(t, ROLL.coins1);
+  const xpWeek = {weekKey: weekKey(NOW), xp: 25};
+  const store = setup(t, {coins: 50, xp: 100, xpWeek});
   const reply = won(await spin());
   assert.equal(reply.segment, 1);
-  assert.deepEqual(reply.prize, {kind: "xp", coins: 0, xp: 25, itemId: null});
-  assert.equal(reply.delta, -10);
-  assert.equal(reply.currentBalance, 40);
+  assert.deepEqual(reply.prize, {kind: "coins", coins: 1, xp: 0, itemId: null});
+  assert.equal(reply.delta, -9);
+  assert.equal(reply.currentBalance, 41);
   const user = store.get(USER) ?? {};
-  assert.equal(user.coins, 40);
-  assert.equal(user.xp, 125);
-  assert.deepEqual(user.xpWeek, {weekKey: weekKey(NOW), xp: 25});
+  assert.equal(user.coins, 41);
+  assert.equal(user.xp, 100);
+  assert.deepEqual(user.xpWeek, xpWeek);
+  assert.equal(reply.xpAwarded, 0);
+  assert.equal(reply.xp, 100);
+  assert.deepEqual(reply.xpWeek, xpWeek);
 });
 
 test("spinWheel: a cosmetic prize is written to the inventory next to what the user owns", async (t) => {
@@ -294,8 +304,10 @@ test("spinWheel: a cosmetic prize is written to the inventory next to what the u
   assert.equal(reply.segment, 7);
   assert.deepEqual(reply.prize, {kind: "cosmetic", coins: 0, xp: 0, itemId: "theme_rose"});
   assert.equal(reply.currentBalance, 40);
-  assert.equal(store.get(USER)?.xp, 0);
+  assert.equal(store.get(USER)?.xp, undefined);
   assert.deepEqual(store.get(PRIVATE)?.inventory, {owned: {glow_ember: 5, theme_rose: NOW}});
+  assert.equal(reply.rev, 3);
+  assert.deepEqual(reply.owned, ["glow_ember", "theme_rose"]);
 });
 
 test("spinWheel: a cosmetic slice pays its fallback coins when every common item is owned", async (t) => {
@@ -306,20 +318,61 @@ test("spinWheel: a cosmetic slice pays its fallback coins when every common item
   assert.deepEqual(reply.prize, {kind: "cosmetic", coins: 50, xp: 0, itemId: null});
   assert.equal(reply.delta, 40);
   assert.equal(reply.currentBalance, 90);
-  assert.equal(store.get(USER)?.xp, 50);
+  assert.equal(store.get(USER)?.xp, undefined);
   assert.deepEqual(store.get(PRIVATE)?.inventory, {owned});
 });
 
 test("spinWheel: the reply carries the table the server spun, not the default one", async (t) => {
   rolls(t, 0.9);
-  const table = [{kind: "coins", coins: 7, weight: 1}, {kind: "xp", xp: 9, weight: 3}];
+  const table = [{kind: "coins", coins: 7, weight: 1}, {kind: "coins", coins: 9, weight: 3}];
   const store = setup(t, {coins: 50}, undefined, {[ECONOMY_CONFIG_DOC]: {award: {spinWheel: table}}});
   const reply = won(await spin());
   assert.equal(reply.segment, 1);
   assert.deepEqual(reply.segments, table);
-  assert.deepEqual(reply.prize, {kind: "xp", coins: 0, xp: 9, itemId: null});
+  assert.deepEqual(reply.prize, {kind: "coins", coins: 9, xp: 0, itemId: null});
   assert.deepEqual(store.get("coinTransactions/ctx_spinWheel_user-1_spin_request_1")?.prize,
-    {kind: "xp", coins: 0, xp: 9, itemId: null});
+    {kind: "coins", coins: 9, xp: 0, itemId: null});
+});
+
+test("spinWheel: an old XP configuration falls back to coin prizes without XP", async (t) => {
+  rolls(t, ROLL.coins2);
+  const xpWeek = {weekKey: "2026-W41", xp: 70};
+  const store = setup(t, {coins: 50, xp: 499, xpWeek}, {rev: 5, inventory: {owned: {}}}, {
+    [ECONOMY_CONFIG_DOC]: {award: {spinWheel: [
+      {kind: "xp", xp: 1000, weight: 1}, {kind: "coins", coins: 100, weight: 1},
+    ]}, xp: {perCoinEarned: 10}},
+  });
+  const reply = won(await spin());
+  assert.deepEqual(reply.segments, DEFAULT_ECONOMY.award.spinWheel);
+  assert.deepEqual(reply.prize, {kind: "coins", coins: 2, xp: 0, itemId: null});
+  assert.equal(reply.xpPolicyVersion, 1);
+  assert.equal(reply.xpAwarded, 0);
+  assert.equal(reply.xp, 499);
+  assert.deepEqual(reply.xpWeek, {weekKey: weekKey(NOW), xp: 0});
+  assert.equal(store.get(USER)?.xp, 499);
+  assert.deepEqual(store.get(USER)?.xpWeek, xpWeek);
+  assert.deepEqual(store.get(PRIVATE)?.inventory, {owned: {}});
+});
+
+test("spinWheel: a historical XP replay preserves its prize and ledger with a fresh zero-award XP snapshot", async (t) => {
+  const oldReply = {
+    success: true, changed: true, previousBalance: 100, currentBalance: 90, delta: -10,
+    reason: "spin_wheel", transactionId: "ctx_spinWheel_user-1_spin_request_1", insufficientBalance: false,
+    status: {freeSpinAvailable: false, paidSpinsLeft: 4, price: 10}, cost: 10, free: false, segment: 1,
+    prize: {kind: "xp", coins: 0, xp: 25, itemId: null},
+    segments: [{kind: "coins", coins: 5, weight: 1}, {kind: "xp", xp: 25, weight: 1}],
+    xpPolicyVersion: 1, xp: 125, xpWeek: {weekKey: "2026-W41", xp: 25}, xpAwarded: 25,
+  };
+  const receipt = {action: "spinWheel", prize: oldReply.prize, replay: oldReply};
+  const user = {coins: 70, xp: 160, xpWeek: {weekKey: weekKey(NOW), xp: 35}};
+  const privateData = {rev: 8, spinWheel: {dayKey: YESTERDAY, paid: 1, freeUsed: false}};
+  const store = setup(t, user, privateData, {[`${LEDGER}spin_request_1`]: receipt});
+  const reply = await spin();
+  assert.deepEqual(reply, {...oldReply, ...xpReceipt(user, NOW), rev: 8, owned: [], previousBalance: 70, currentBalance: 70,
+    delta: 0, status: {freeSpinAvailable: false, paidSpinsLeft: 5, price: 10}});
+  assert.deepEqual(store.get(USER), user);
+  assert.deepEqual(store.get(PRIVATE), privateData);
+  assert.deepEqual(store.get(`${LEDGER}spin_request_1`), receipt);
 });
 
 test("spinWheel: a retried request returns the original reply and charges once", async (t) => {
@@ -330,7 +383,7 @@ test("spinWheel: a retried request returns the original reply and charges once",
   const retry = await spin("spin_request_1", 0);
   assert.deepEqual(retry, {...first, previousBalance: 60, delta: 0});
   assert.equal(store.get(USER)?.coins, 60);
-  assert.equal(store.get(USER)?.xp, 20);
+  assert.equal(store.get(USER)?.xp, undefined);
   assert.equal(ledger(store).length, 1);
   assert.deepEqual(store.get(PRIVATE)?.spinWheel, {dayKey: TODAY, paid: 1, freeUsed: false});
   assert.equal(store.get(PRIVATE)?.rev, 2);
@@ -341,12 +394,23 @@ test("spinWheel: a replay after another spend reports the live balance, not the 
   const store = setup(t, {coins: 50}, {rev: 1});
   const first = won(await spin());
   assert.equal(first.currentBalance, 60);
-  store.set(USER, {...store.get(USER), coins: 55});
+  const xpWeek = {weekKey: weekKey(NOW), xp: 45};
+  store.set(USER, {...store.get(USER), coins: 55, xp: 550, xpWeek});
+  const privateData = {rev: 5, inventory: {owned: {frame_ring: 17, glow_aurora: NOW}},
+    spinWheel: {dayKey: TODAY, paid: 3, freeUsed: false}};
+  store.set(PRIVATE, privateData);
   const retry = won(await spin());
   assert.equal(retry.previousBalance, 55);
   assert.equal(retry.currentBalance, 55);
   assert.equal(retry.delta, 0);
   assert.deepEqual(retry.prize, first.prize);
+  assert.equal(retry.xp, 550);
+  assert.deepEqual(retry.xpWeek, xpWeek);
+  assert.equal(retry.xpAwarded, 0);
+  assert.equal(retry.rev, 5);
+  assert.deepEqual(retry.owned, ["frame_ring", "glow_aurora"]);
+  assert.equal(retry.status.paidSpinsLeft, 2);
+  assert.deepEqual(store.get(PRIVATE), privateData);
   assert.equal(store.get(USER)?.coins, 55);
   assert.equal(ledger(store).length, 1);
 });
@@ -354,13 +418,14 @@ test("spinWheel: a replay after another spend reports the live balance, not the 
 test("spinWheel: a replay on a later day returns the original outcome with today's status", async (t) => {
   let now = NOW;
   t.mock.method(Date, "now", () => now);
-  rolls(t, ROLL.coins10, ROLL.xp50);
+  rolls(t, ROLL.coins10, ROLL.coins2);
   const store = installFakeDb(t, {[USER]: {coins: 30}});
   const first = await spin();
   assert.deepEqual(first.status, {freeSpinAvailable: false, paidSpinsLeft: 4, price: 10});
   now = NOW + DAY_MS;
   resetEconomyCache();
-  assert.deepEqual(await spin(), {...first, status: {freeSpinAvailable: false, paidSpinsLeft: 5, price: 10}});
+  assert.deepEqual(await spin(), {...first, ...xpReceipt({}, now),
+    status: {freeSpinAvailable: false, paidSpinsLeft: 5, price: 10}});
   assert.equal(store.get(USER)?.coins, 30);
   assert.equal(ledger(store).length, 1);
 });
@@ -386,6 +451,9 @@ test("spinWheel: after the legacy claimProSpin, a client that showed 'free' is r
   const balance = store.get(USER)?.coins;
   const refused = await spin("spin_request_1", 0);
   assert.deepEqual(refused, {
+    ...xpReceipt({}, NOW),
+    rev: 1,
+    owned: [],
     success: false,
     changed: false,
     previousBalance: balance,
@@ -440,6 +508,9 @@ test("spinWheel: a short balance is refused with insufficientBalance and the bal
   const store = setup(t, {coins: 9}, {rev: 3});
   const refused = await spin();
   assert.deepEqual(refused, {
+    ...xpReceipt({}, NOW),
+    rev: 3,
+    owned: [],
     success: false,
     changed: false,
     previousBalance: 9,
@@ -457,16 +528,17 @@ test("spinWheel: a short balance is refused with insufficientBalance and the bal
 });
 
 test("spinWheel: a Pro member with no coins still gets the free spin", async (t) => {
-  rolls(t, ROLL.xp50);
+  rolls(t, ROLL.coins2);
   const store = setup(t, {coins: 0, premium: true});
   const reply = won(await spin("spin_request_1", 0));
   assert.equal(reply.free, true);
-  assert.equal(reply.currentBalance, 0);
-  assert.equal(store.get(USER)?.xp, 50);
+  assert.equal(reply.currentBalance, 2);
+  assert.equal(store.get(USER)?.xp, undefined);
+  assert.equal(reply.xpAwarded, 0);
 });
 
 test("spinWheel: a raised price is refused above maxCost and charged exactly when maxCost covers it", async (t) => {
-  rolls(t, ROLL.xp25);
+  rolls(t, ROLL.coins1);
   const store = setup(t, {coins: 100}, undefined, {[ECONOMY_CONFIG_DOC]: {spend: {spinWheel: 25}}});
   const refused = await spin("spin_request_1", 10);
   assert.equal(refused.reason, "spin_wheel_price_changed");
@@ -474,24 +546,24 @@ test("spinWheel: a raised price is refused above maxCost and charged exactly whe
   assert.equal(store.get(USER)?.coins, 100);
   const reply = won(await spin("spin_request_2", 25));
   assert.equal(reply.cost, 25);
-  assert.equal(store.get(USER)?.coins, 75);
+  assert.equal(store.get(USER)?.coins, 76);
 });
 
 test("spinWheel: a Pro member's free spin costs nothing even when maxCost is above zero", async (t) => {
-  rolls(t, ROLL.xp25);
+  rolls(t, ROLL.coins1);
   const store = setup(t, {coins: 5, premium: true});
   const reply = won(await spin("spin_request_1", 10));
   assert.equal(reply.cost, 0);
-  assert.equal(store.get(USER)?.coins, 5);
+  assert.equal(store.get(USER)?.coins, 6);
 });
 
 test("spinWheel: a spin ledger entry cannot be refunded back into coins", async (t) => {
-  rolls(t, ROLL.xp25);
+  rolls(t, ROLL.coins1);
   const store = setup(t, {coins: 50});
   const reply = won(await spin());
   await assert.rejects(() => award({action: "refund", transactionId: reply.transactionId}),
     {code: "failed-precondition"});
-  assert.equal(store.get(USER)?.coins, 40);
+  assert.equal(store.get(USER)?.coins, 41);
 });
 
 test("spinWheel: bad requestId or maxCost is invalid-argument and writes nothing", async (t) => {
