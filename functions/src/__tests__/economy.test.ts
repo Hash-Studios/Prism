@@ -12,6 +12,7 @@ import {
   seededPick,
   weekKey,
   weightedPick,
+  xpReceipt,
 } from "../economy";
 import {installFakeDb} from "./fakeDb";
 
@@ -37,6 +38,28 @@ test("parseEconomy: does not change DEFAULT_ECONOMY", () => {
   parseEconomy(null);
   parseEconomy({spend: {aiFast: -1}, xp: {ranks: [{id: "b", min: 5}, {id: "a", min: 0}]}});
   assert.equal(JSON.stringify(DEFAULT_ECONOMY), before);
+});
+
+test("parseEconomy: activity XP defaults and each override are bounded independently", () => {
+  assert.deepEqual(DEFAULT_ECONOMY.xp.activities, {
+    dailyStreak: 5, streakWeek: 25, questChest: 10, firstWallpaperUpload: 50, profileCompletion: 25,
+  });
+  for (const invalid of [-1, 1.5, 1001, "5", null, [], {}, Number.NaN, Number.POSITIVE_INFINITY]) {
+    const config = parseEconomy({xp: {activities: {dailyStreak: invalid, questChest: 0, streakWeek: 1000}}});
+    assert.equal(config.xp.activities.dailyStreak, 5);
+    assert.equal(config.xp.activities.questChest, 0);
+    assert.equal(config.xp.activities.streakWeek, 1000);
+    assert.equal(config.xp.activities.firstWallpaperUpload, 50);
+  }
+});
+
+test("xpReceipt: no-op snapshots normalize the current week without mutating history", () => {
+  const nowMs = at("2026-10-19T00:00:00Z");
+  const user = {xp: 900, xpWeek: {weekKey: "2026-W42", xp: 120}};
+  assert.deepEqual(xpReceipt(user, nowMs), {
+    xpPolicyVersion: 1, xp: 900, xpWeek: {weekKey: "2026-W43", xp: 0}, xpAwarded: 0,
+  });
+  assert.deepEqual(user, {xp: 900, xpWeek: {weekKey: "2026-W42", xp: 120}});
 });
 
 test("parseEconomy: spend and shop prices are integers in 0..10000", () => {

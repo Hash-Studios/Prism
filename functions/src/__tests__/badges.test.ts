@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
-import {weekKey} from "../economy";
+import {ECONOMY_CONFIG_DOC, resetEconomyCache, weekKey} from "../economy";
+import {installFakeDb} from "./fakeDb";
 import {AI_SPEND_SETTLE_MS, BADGES, badgeIo, checkBadges, evaluateBadges, isProfileComplete, settledCount, type BadgeFacts} from "../badges";
 
 const NONE: BadgeFacts = {
@@ -238,6 +239,72 @@ test("checkBadges: creator coins cannot be farmed with a forged profile email", 
   assert.deepEqual(result.newBadges, []);
   assert.equal(store.user.coins, 10);
   assert.deepEqual(store.ledger, {});
+});
+
+test("checkBadges: creator keeps its coins, grants no XP or new cosmetics, preserves historical ownership", async (t) => {
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  const store = baseStore();
+  store.user.coinState = {};
+  store.user.xp = 6001;
+  store.user.xpWeek = {weekKey: weekKey(now), xp: 500};
+  store.privateEconomy = {rev: 4, inventory: {owned: {theme_rose: 123}}};
+  fakeDb(t, store, {walls: 1});
+  const result = await call();
+  assert.deepEqual(result.newBadges, [{id: "creator", coins: 50}]);
+  assert.equal(result.currentBalance, 60);
+  assert.equal(result.xpAwarded, 0);
+  assert.equal(result.xpPolicyVersion, 1);
+  assert.equal(result.xp, 6001);
+  assert.deepEqual(result.xpWeek, {weekKey: weekKey(now), xp: 500});
+  assert.equal(store.user.xp, 6001);
+  assert.deepEqual(store.privateEconomy, {rev: 4, inventory: {owned: {theme_rose: 123}}});
+  store.user.xp = 7000;
+  const cooling = await call();
+  assert.equal(cooling.xp, 7000);
+  assert.equal(cooling.xpAwarded, 0);
+  t.mock.method(Date, "now", () => now + 61_000);
+  const replay = await call();
+  assert.equal(replay.xp, 7000);
+  assert.equal(replay.xpAwarded, 0);
+  assert.equal(store.user.coins, 60);
+  assert.equal(Object.keys(store.ledger).length, 1);
+});
+
+test("badge XP table is explicit and independent of coins", () => {
+  assert.deepEqual(Object.fromEntries(BADGES.map((badge) => [badge.id, badge.xp])), {
+    week_warrior: 25, streak_master: 100, creator: 0, ai_artist: 30, prism_veteran: 75,
+    collector: 0, art_curator: 0, social_butterfly: 0, profile_complete: 0,
+  });
+});
+
+test("checkBadges: fixed badge XP unlocks rank atomically and keeps historical badges and item timestamps", async (t) => {
+  resetEconomyCache();
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => now);
+  const historicalBadge = {id: "creator", name: "Creator", awardedAt: "2020-01-01"};
+  const store = installFakeDb(t, {
+    [ECONOMY_CONFIG_DOC]: {xp: {perCoinEarned: 0}},
+    "usersv2/u1": {coins: 100, xp: 499, badges: [historicalBadge], coinState: {streakBest: 7}},
+    "usersv2/u1/private/economy": {rev: 4, inventory: {owned: {theme_rose: 123}}},
+  });
+  const first = await call();
+  assert.deepEqual(first.newBadges, [{id: "week_warrior", coins: 25}]);
+  assert.equal(first.xpAwarded, 25);
+  assert.equal(first.xp, 524);
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.deepEqual(first.badges[0], historicalBadge);
+  const privateData = store.get("usersv2/u1/private/economy");
+  assert.equal(privateData?.rev, 5);
+  const owned = (privateData?.inventory as {owned: Record<string, number>}).owned;
+  assert.equal(owned.theme_rose, 123);
+  assert.ok(Object.keys(owned).length > 1);
+  t.mock.method(Date, "now", () => now + 61_000);
+  const replay = await call();
+  assert.equal(replay.xpAwarded, 0);
+  assert.equal(replay.xp, 524);
+  assert.equal(store.get("usersv2/u1/private/economy")?.rev, 5);
 });
 
 test("checkBadges: veteran age comes from Auth, not the client-writable profile date", async (t) => {

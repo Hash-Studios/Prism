@@ -45,7 +45,14 @@ class EconomySnapshotStore {
   Future<void> write(String ownerId, int revision, Map<String, dynamic> data) {
     if (ownerId.isEmpty || revision < 0) return Future<void>.value();
     final Map<String, dynamic> safeData = <String, dynamic>{};
-    for (final String field in const <String>['quests', 'inventory', 'drops', 'passes', 'graceDownloadsUsed']) {
+    for (final String field in const <String>[
+      'quests',
+      'inventory',
+      'drops',
+      'passes',
+      'graceDownloadsUsed',
+      'creator',
+    ]) {
       if (data.containsKey(field)) safeData[field] = data[field];
     }
     final int generation = _generations[ownerId] ?? 0;
@@ -64,7 +71,14 @@ class EconomySnapshotStore {
     if (ownerId.isEmpty || revision < 0) return Future<void>.value();
     final int generation = _generations[ownerId] ?? 0;
     final Map<String, dynamic> safeData = <String, dynamic>{
-      for (final String field in const <String>['quests', 'inventory', 'drops', 'passes', 'graceDownloadsUsed'])
+      for (final String field in const <String>[
+        'quests',
+        'inventory',
+        'drops',
+        'passes',
+        'graceDownloadsUsed',
+        'creator',
+      ])
         if (data.containsKey(field)) field: data[field],
       'rev': revision,
     };

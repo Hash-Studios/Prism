@@ -56,6 +56,13 @@ export interface EconomyConfig {
   };
   xp: {
     perCoinEarned: number;
+    activities: {
+      dailyStreak: number;
+      streakWeek: number;
+      questChest: number;
+      firstWallpaperUpload: number;
+      profileCompletion: number;
+    };
     ranks: RankDef[];
   };
   flags: {
@@ -125,6 +132,13 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
   },
   xp: {
     perCoinEarned: 1,
+    activities: {
+      dailyStreak: 5,
+      streakWeek: 25,
+      questChest: 10,
+      firstWallpaperUpload: 50,
+      profileCompletion: 25,
+    },
     ranks: [
       {id: "bronze", min: 0},
       {id: "silver", min: 500},
@@ -232,8 +246,13 @@ export function parseEconomy(raw: unknown): EconomyConfig {
     ranks.every((r) => isRecord(r) && typeof r.id === "string" && r.id !== "" && isIntIn(r.min, Number.MAX_SAFE_INTEGER)) &&
     new Set(ranks.map((r) => r.id)).size === ranks.length &&
     Math.min(...ranks.map((r) => r.min)) === 0;
+  const activities = {...merged.xp.activities};
+  for (const key of Object.keys(defaults.xp.activities) as (keyof EconomyConfig["xp"]["activities"])[]) {
+    if (!isAward(activities[key])) activities[key] = defaults.xp.activities[key];
+  }
   merged.xp = {
     perCoinEarned: isNumberIn(merged.xp.perCoinEarned, 0, 10) ? merged.xp.perCoinEarned : defaults.xp.perCoinEarned,
+    activities,
     ranks: ranksOk ? [...ranks].sort((a, b) => a.min - b.min) : defaults.xp.ranks,
   };
   return merged;
@@ -327,9 +346,17 @@ function safeXp(value: unknown): number {
   return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.trunc(value)));
 }
 
-/** XP for coins earned, per config. Refunds pass 0. */
-export function xpForCoins(coins: number, config: EconomyConfig): number {
-  return Math.max(0, Math.round(coins * config.xp.perCoinEarned));
+export interface XpReceipt extends XpFields {
+  xpPolicyVersion: 1;
+  xpAwarded: number;
+}
+
+/**
+ * Absolute transaction snapshot. Inactive weeks reply as the current week with zero XP without rewriting history.
+ * Awarding callers pass their post-grant fields; no-op/replay callers pass the current user snapshot and award zero.
+ */
+export function xpReceipt(userData: admin.firestore.DocumentData, nowMs: number, xpAwarded = 0): XpReceipt {
+  return {xpPolicyVersion: 1, ...grantXp(userData, 0, nowMs), xpAwarded: safeXp(xpAwarded)};
 }
 
 /** Deterministic pick of `count` distinct items from `pool`, stable for the same seed. */

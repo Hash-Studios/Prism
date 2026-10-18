@@ -54,6 +54,10 @@ const seed = () => Promise.all([
   req('PATCH', 'drawTickets/2026-W42_b', { uid: { stringValue: 'b' }, count: { integerValue: '1' } }, 'owner'),
   req('PATCH', 'leaderboards/current', { weekKey: { stringValue: '2026-W42' } }, 'owner'),
   req('PATCH', 'usersv2/b/private/economy', { rev: { integerValue: '1' } }, 'owner'),
+  req('PATCH', 'creatorWallCredits/test-wall', { creatorUid: { stringValue: 'b' } }, 'owner'),
+  req('PATCH', 'creatorDeletionState/b', { closed: { booleanValue: true } }, 'owner'),
+  req('PATCH', 'creatorMemberRateDaily/b_2026-10-18', { memberUid: { stringValue: 'b' } }, 'owner'),
+  req('PATCH', 'usersv2/b/private/economy/creatorMembers/a', { memberUid: { stringValue: 'a' } }, 'owner'),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
@@ -184,6 +188,22 @@ const cases = [
   ['owner queries own exact private economy doc', () => runQuery(Bu, [documentIdFilter('usersv2/b/private/economy')], 'private', 'usersv2/b'), 200],
   ['other user cannot query private economy doc', () => runQuery(A, [documentIdFilter('usersv2/b/private/economy')], 'private', 'usersv2/b'), 403],
   ['owner writes own private economy doc', () => req('PATCH', 'usersv2/b/private/economy', { rev: { integerValue: '99' } }, Bu), 403],
+  ...['creatorWallCredits/test-wall', 'creatorDeletionState/b', 'creatorMemberRateDaily/b_2026-10-18',
+    'usersv2/b/private/economy/creatorMembers/a'].flatMap((path) => [
+    [`owner cannot read server creator store ${path}`, () => req('GET', path, null, Bu), 403],
+    [`other member cannot read server creator store ${path}`, () => req('GET', path, null, A), 403],
+    [`admin client cannot read server creator store ${path}`, () => req('GET', path, null, ADM), 403],
+    [`signed-out cannot read server creator store ${path}`, () => req('GET', path, null, null), 403],
+    [`owner cannot write server creator store ${path}`, () => req('PATCH', path, { closed: { booleanValue: true } }, Bu), 403],
+    [`admin client cannot write server creator store ${path}`, () => req('PATCH', path, { closed: { booleanValue: true } }, ADM), 403],
+  ]),
+  ['shipped favourite create remains allowed', () => req('PATCH', 'usersv2/b/images/shipped-wall', {
+    id: { stringValue: 'shipped-wall' }, provider: { stringValue: 'Prism' },
+  }, Bu), 200],
+  ['shipped favourite update remains allowed', () => req('PATCH', 'usersv2/b/images/shipped-wall', {
+    provider: { stringValue: 'Prism' },
+  }, Bu, ['provider']), 200],
+  ['shipped favourite delete remains allowed', () => req('DELETE', 'usersv2/b/images/shipped-wall', null, Bu), 200],
   ['owner sets own xp', () => req('PATCH', 'usersv2/b', { xp: { integerValue: '9999' } }, Bu, ['xp']), 403],
   ['owner sets own xpWeek', () => req('PATCH', 'usersv2/b', { xpWeek: { mapValue: { fields: { xp: { integerValue: '9' } } } } }, Bu, ['xpWeek']), 403],
   ['owner sets own cosmetics', () => req('PATCH', 'usersv2/b', { cosmetics: { mapValue: { fields: { frame: { stringValue: 'frame_gold' } } } } }, Bu, ['cosmetics']), 403],

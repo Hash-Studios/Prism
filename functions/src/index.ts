@@ -3,6 +3,7 @@ export {claimDailyStreak, sendStreakReminders} from "./streak";
 export {sendWinBackPushes} from "./winBack";
 export {recordNotificationSignal} from "./notificationScoreboard";
 export {onWallApproved} from "./onWallApproved";
+export {onCreatorWallWritten, onCreatorFavouriteCreated} from "./creatorProgress";
 export {onFollowCreated} from "./onFollowCreated";
 export {onWallSubmitted} from "./onWallSubmitted";
 export {onWallCategorize} from "./onWallCategorize";

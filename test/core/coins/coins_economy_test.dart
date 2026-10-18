@@ -194,12 +194,24 @@ void main() {
   });
 
   group('claimProSpin', () {
-    test('a win credits the coins and XP', () async {
-      reply((_, _) => _paid(after: 150, extra: <String, Object?>{'coins': 50, 'segment': 2}));
+    test('a win credits coins with no spin XP', () async {
+      reply(
+        (_, _) => _paid(
+          after: 150,
+          extra: <String, Object?>{
+            'coins': 50,
+            'segment': 2,
+            'xpPolicyVersion': 1,
+            'xp': 0,
+            'xpAwarded': 0,
+            'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 0},
+          },
+        ),
+      );
       final ProSpinResult result = await service.claimProSpin();
       expect((result.outcome, result.coins, result.segment), (ProSpinOutcome.won, 50, 2));
       expect(service.balanceNotifier.value, 150);
-      expect(service.xpNotifier.value.xp, 50);
+      expect(service.xpNotifier.value.xp, 0);
       expect(calls.first.$2['requestId'], matches(idPattern));
       expect(calls.last.$1, 'reconcileRankRewards');
     });
@@ -246,6 +258,10 @@ void main() {
           ],
           'currentBalance': 102,
           'delta': 2,
+          'xpPolicyVersion': 1,
+          'xp': 25,
+          'xpAwarded': 25,
+          'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 25},
         },
       );
       final QuestState? state = await service.progressQuest(QuestEvent.viewWotd);

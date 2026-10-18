@@ -138,6 +138,8 @@ void main() {
     expect(find.byType(CoinBalancePill), findsOneWidget);
     expect(find.text('Use your coins'), findsOneWidget);
     expect(find.text('Earn coins'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Activity'), 400, scrollable: find.byType(Scrollable).first);
+    await tester.pump();
     expect(find.text('Activity'), findsOneWidget);
     expect(find.text('No coin activity yet.'), findsOneWidget);
     expect(tester.takeException(), isNull);

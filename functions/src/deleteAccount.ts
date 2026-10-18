@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {db, REGION, str} from "./common";
+import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -86,6 +87,9 @@ export const deleteAccount = onCall({region: REGION, cors: true, timeoutSeconds:
   const userRef = db.collection(USERS).doc(callerUid);
   const userSnap = await userRef.get();
   const email = ((userSnap.data()?.email ?? "") as string).toString().trim();
+
+  // Close rewards before deleting private state, including cross-user member receipts.
+  await closeCreatorProgressForDeletion(callerUid);
 
   // 1. Favourite/private subcollections — same set the client wipes in delete_account_service.dart.
   await db.recursiveDelete(userRef.collection("images"));

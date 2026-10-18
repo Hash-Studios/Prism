@@ -11,6 +11,7 @@ import 'package:Prism/features/badges/views/widgets/rewards_badges_section.dart'
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/quests/quests.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
+import 'package:Prism/features/rewards/views/widgets/creator_progress_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/pro_spin_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
@@ -37,17 +38,20 @@ class RewardsPage extends StatefulWidget {
   State<RewardsPage> createState() => _RewardsPageState();
 }
 
-class _RewardsPageState extends State<RewardsPage> {
+class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
   final GlobalKey _spendKey = GlobalKey();
   final GlobalKey _earnKey = GlobalKey();
   final GlobalKey _spinKey = GlobalKey();
 
   final ScrollController _scroll = ScrollController();
+  bool? _tabWasActive;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(EconomyConfig.refreshIfStale());
+    unawaited(CoinsService.instance.refreshCreatorProgress());
     if (widget.scrollToEarn) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTo(_earnKey));
     }
@@ -55,8 +59,24 @@ class _RewardsPageState extends State<RewardsPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scroll.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final TabsRouter? tabs = TabsRouterScope.of(context, watch: true)?.controller;
+    if (widget.showBack || tabs == null) return;
+    final bool active = tabs.current.name == RewardsTabRoute.name;
+    if (active && _tabWasActive == false) unawaited(CoinsService.instance.refreshCreatorProgress());
+    _tabWasActive = active;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(CoinsService.instance.refreshCreatorProgress());
   }
 
   /// The list builds rows lazily, so the target may not exist yet. Scroll down a screen at a time until it does.
@@ -112,6 +132,8 @@ class _RewardsPageState extends State<RewardsPage> {
                 const RewardsHero(),
                 gap,
                 RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
+                gap,
+                const CreatorProgressCard(),
                 gap,
                 TodayCard(onOpenProSpin: () => _scrollTo(_spinKey)),
                 gap,

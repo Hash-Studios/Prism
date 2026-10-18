@@ -222,9 +222,43 @@ class RankDef {
   final int min;
 }
 
+class EconomyXpActivities {
+  const EconomyXpActivities({
+    this.dailyStreak = 5,
+    this.streakWeek = 25,
+    this.questChest = 10,
+    this.firstWallpaperUpload = 50,
+    this.profileCompletion = 25,
+  });
+
+  factory EconomyXpActivities.fromMap(Map<String, dynamic> m) {
+    int amount(String key, int fallback) {
+      final Object? value = m[key];
+      return value is num && value.isFinite && value >= 0 && value <= _maxAward && value == value.truncate()
+          ? value.toInt()
+          : fallback;
+    }
+
+    return EconomyXpActivities(
+      dailyStreak: amount('dailyStreak', 5),
+      streakWeek: amount('streakWeek', 25),
+      questChest: amount('questChest', 10),
+      firstWallpaperUpload: amount('firstWallpaperUpload', 50),
+      profileCompletion: amount('profileCompletion', 25),
+    );
+  }
+
+  final int dailyStreak;
+  final int streakWeek;
+  final int questChest;
+  final int firstWallpaperUpload;
+  final int profileCompletion;
+}
+
 class EconomyXp {
   const EconomyXp({
     this.perCoinEarned = 1,
+    this.activities = const EconomyXpActivities(),
     this.ranks = const <RankDef>[
       RankDef(id: 'bronze', min: 0),
       RankDef(id: 'silver', min: 500),
@@ -247,11 +281,13 @@ class EconomyXp {
         : d.ranks;
     return EconomyXp(
       perCoinEarned: _double(m['perCoinEarned'], d.perCoinEarned),
+      activities: EconomyXpActivities.fromMap(toJsonMap(m['activities'])),
       ranks: List<RankDef>.unmodifiable(parsed),
     );
   }
 
   final double perCoinEarned;
+  final EconomyXpActivities activities;
 
   /// Sorted by [RankDef.min], lowest first.
   final List<RankDef> ranks;
