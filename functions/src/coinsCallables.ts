@@ -753,9 +753,6 @@ export const spinWheel = onCall(
       if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
       const txSnap = await tx.get(txRef);
       const privateSnap = await tx.get(privateRef);
-      // The stored reply, not a recomputed one: a lost reply and its retry must read the same.
-      if (txSnap.exists) return (txSnap.data() ?? {}).replay as SpinWheelReply;
-
       const data = snap.data() ?? {};
       const privateData = privateSnap.data() ?? {};
       const balance = int(data.coins, 0);
@@ -766,6 +763,8 @@ export const spinWheel = onCall(
         wheelState: readWheelDay(privateData.spinWheel),
         config,
       };
+      // The stored outcome with today's status, so a retry after midnight does not show yesterday's limits.
+      if (txSnap.exists) return {...(txSnap.data() ?? {}).replay as SpinWheelReply, status: wheelStatus(dayInput)};
       const plan = planWheelSpin({...dayInput, balance, maxCost});
       if (!plan.ok) {
         return {

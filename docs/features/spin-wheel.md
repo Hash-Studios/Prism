@@ -39,8 +39,8 @@ Coin EV is 7.4 a spin, plus about 19 XP. A paid spin is a mild sink (net -2.6 co
 unowned `common` shop item (`pickChestCosmetic`), the same pool as the quest chest.
 
 Segment JSON: `{"kind": "coins", "coins": 10, "weight": 18}`, `{"kind": "xp", "xp": 25, "weight": 22}`,
-`{"kind": "cosmetic", "fallbackCoins": 50, "weight": 6}`. `coins` and `xp` are integers 1..1000, `fallbackCoins`
-0..1000, `weight` 0..1000 with a positive sum, 2..12 segments. Anything else falls back to the default table.
+`{"kind": "cosmetic", "fallbackCoins": 50, "weight": 6}`. `coins`, `xp` and `fallbackCoins` are integers
+1..1000, `weight` 0..1000 with a positive sum, 2..12 segments. Anything else falls back to the default table.
 
 ## Callable `spinWheel`
 
@@ -49,7 +49,8 @@ Request: `{requestId, maxCost, sourceTag}`. `requestId` must pass `isValidReques
 
 One Firestore transaction:
 
-1. Replay. Ledger doc `coinTransactions/ctx_spinWheel_{uid}_{requestId}` exists: return its stored reply.
+1. Replay. Ledger doc `coinTransactions/ctx_spinWheel_{uid}_{requestId}` exists: return its stored reply with a
+   fresh `status`.
 2. Free spin: `premium == true` and neither `coinState.proSpinDate` nor `coinState.proDailyBonusDate` is today and
    `private/economy.spinWheel.freeUsed` is not true for today.
 3. Paid spin: refuse `spin_wheel_daily_limit` when today's `paid >= spinWheelMaxPerDay`. Cost is `spend.spinWheel`.

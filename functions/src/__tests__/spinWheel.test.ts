@@ -336,15 +336,16 @@ test("spinWheel: a retried request returns the original reply and charges once",
   assert.equal(store.get(PRIVATE)?.rev, 2);
 });
 
-test("spinWheel: a replay on a later day still returns the original reply and changes nothing", async (t) => {
+test("spinWheel: a replay on a later day returns the original outcome with today's status", async (t) => {
   let now = NOW;
   t.mock.method(Date, "now", () => now);
   rolls(t, ROLL.coins10, ROLL.xp50);
   const store = installFakeDb(t, {[USER]: {coins: 30}});
   const first = await spin();
+  assert.deepEqual(first.status, {freeSpinAvailable: false, paidSpinsLeft: 4, price: 10});
   now = NOW + DAY_MS;
   resetEconomyCache();
-  assert.deepEqual(await spin(), first);
+  assert.deepEqual(await spin(), {...first, status: {freeSpinAvailable: false, paidSpinsLeft: 5, price: 10}});
   assert.equal(store.get(USER)?.coins, 30);
   assert.equal(ledger(store).length, 1);
 });

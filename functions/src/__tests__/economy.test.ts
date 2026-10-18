@@ -129,11 +129,11 @@ test("parseEconomy: the default wheel is the spec table and survives a Firestore
 test("parseEconomy: a valid custom wheel is kept in order with unknown keys dropped", () => {
   const config = parseEconomy({award: {spinWheel: [
     {kind: "xp", xp: 1000, weight: 0, junk: true},
-    {kind: "cosmetic", fallbackCoins: 0, weight: 1000},
+    {kind: "cosmetic", fallbackCoins: 1, weight: 1000},
   ]}});
   assert.deepEqual(config.award.spinWheel, [
     {kind: "xp", xp: 1000, weight: 0},
-    {kind: "cosmetic", fallbackCoins: 0, weight: 1000},
+    {kind: "cosmetic", fallbackCoins: 1, weight: 1000},
   ]);
   const twelve = Array.from({length: 12}, (_, i) => ({kind: "coins", coins: i + 1, weight: 1}));
   assert.equal(parseEconomy({award: {spinWheel: twelve}}).award.spinWheel.length, 12);
@@ -150,7 +150,7 @@ test("parseEconomy: a malformed wheel falls back to the whole default table", ()
     [coins(1), {kind: "coins", coins: "5", weight: 1}],
     [coins(1), {kind: "xp", xp: 0, weight: 1}],
     [coins(1), {kind: "xp", coins: 5, weight: 1}],
-    [coins(1), {kind: "cosmetic", fallbackCoins: -1, weight: 1}],
+    [coins(1), {kind: "cosmetic", fallbackCoins: 0, weight: 1}],
     [coins(1), {kind: "cosmetic", fallbackCoins: 1001, weight: 1}],
     [coins(1), {kind: "coins", coins: 5, weight: 1001}],
     [coins(1), {kind: "coins", coins: 5, weight: -1}],

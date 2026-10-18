@@ -186,7 +186,8 @@ function parseWheelSegment(raw: unknown): WheelSegment | null {
   case "coins": return isIntIn(raw.coins, MAX_AWARD) && raw.coins >= 1 ? {kind: "coins", coins: raw.coins, weight} : null;
   case "xp": return isIntIn(raw.xp, MAX_AWARD) && raw.xp >= 1 ? {kind: "xp", xp: raw.xp, weight} : null;
   case "cosmetic":
-    return isIntIn(raw.fallbackCoins, MAX_AWARD) ? {kind: "cosmetic", fallbackCoins: raw.fallbackCoins, weight} : null;
+    return isIntIn(raw.fallbackCoins, MAX_AWARD) && raw.fallbackCoins >= 1 ?
+      {kind: "cosmetic", fallbackCoins: raw.fallbackCoins, weight} : null;
   default: return null;
   }
 }
