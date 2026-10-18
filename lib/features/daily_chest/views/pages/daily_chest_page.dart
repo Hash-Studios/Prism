@@ -214,7 +214,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       case final ChestRefused refused:
         _onRefused(refused);
       case ChestFailed():
-        _onFailed(before);
+        _onFailed();
     }
   }
 
@@ -276,11 +276,11 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
     if (refused.refusal == ChestRefusal.priceChanged) toasts.info('The price changed. Check it and open again.');
   }
 
-  void _onFailed(int before) {
+  void _onFailed() {
     setState(() {
       _readQuests();
-      _phase = ChestPhase.ready;
-      _balance = before;
+      _phase = _idlePhase();
+      _balance = _balanceSource.value;
       _delta = 0;
     });
     toasts.error("Couldn't reach Prism. Try again.");

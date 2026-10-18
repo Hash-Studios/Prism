@@ -754,6 +754,23 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 2));
     });
 
+    testWidgets('a failure after the server opened the chest shows it spent with the charged balance', (tester) async {
+      await pumpPage(tester);
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      quests.value = _quests(opened: true);
+      balance.value = 352;
+      replies.single.complete(const ChestFailed('deadline-exceeded'));
+      await pumpFor(tester, const Duration(seconds: 1));
+
+      expect(phase(tester), ChestPhase.spent);
+      expect(find.text('Back tomorrow'), findsOneWidget);
+      expect(find.text('352'), findsOneWidget);
+      expect(find.text('340'), findsNothing);
+      await pumpFor(tester, const Duration(seconds: 2));
+    });
+
     testWidgets('an open function that throws counts as a failure', (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3;
