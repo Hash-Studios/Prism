@@ -16,6 +16,13 @@ class PanelColors {
 
   /// The outline, the text stroke and the dark chips on the panel.
   final Color ink;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PanelColors && other.top == top && other.bottom == bottom && other.lip == lip && other.ink == ink;
+
+  @override
+  int get hashCode => Object.hash(top, bottom, lip, ink);
 }
 
 /// Every colour of the quest board. Daily panels take the accent's hue, the weekly panel is gold, a done panel goes grey.

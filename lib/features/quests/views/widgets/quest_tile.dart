@@ -9,6 +9,9 @@ import 'package:flutter/material.dart';
 const double _lip = 4;
 const double _stickerSize = 56;
 const double _stickerOverhang = 4;
+
+/// The tilted sticker's corners reach this far past its box.
+const double _stickerTiltSpill = 3;
 const double _ribbonOverhang = 8;
 const double _barHeight = 20;
 const double _chipHeight = 22;
@@ -48,7 +51,7 @@ class QuestTile extends StatelessWidget {
       label: _semanticsLabel,
       excludeSemantics: true,
       child: Padding(
-        padding: EdgeInsets.only(top: _weekly ? _ribbonOverhang : 0),
+        padding: EdgeInsets.only(left: _stickerOverhang + _stickerTiltSpill, top: _weekly ? _ribbonOverhang : 0),
         child: Stack(
           clipBehavior: Clip.none,
           children: <Widget>[

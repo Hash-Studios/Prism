@@ -2,6 +2,7 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
+import 'package:Prism/features/quests/views/widgets/chest_banner.dart';
 import 'package:Prism/features/quests/views/widgets/today_card.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -155,7 +156,7 @@ void main() {
 
     expect(find.text('Open'), findsNothing);
     expect(find.text('Opened. A new one tomorrow.'), findsOneWidget);
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    expect(find.descendant(of: find.byType(ChestBanner), matching: find.byIcon(Icons.check_rounded)), findsOneWidget);
     expect(find.bySemanticsLabel('Daily chest, opened'), findsOneWidget);
     expect(find.text('Watch'), findsNothing);
     expect(find.text('Doubles your chest'), findsNothing);
