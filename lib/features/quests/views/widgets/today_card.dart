@@ -116,7 +116,6 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
   }
 }
 
-/// Rebuilds [builder] once a minute so the reset countdowns stay current. It is the only clock on the board.
 class _MinuteClock extends StatefulWidget {
   const _MinuteClock({required this.builder});
 

@@ -10,17 +10,13 @@ const double _lip = 4;
 const double _stickerSize = 56;
 const double _stickerOverhang = 4;
 
-/// The tilted sticker's corners reach this far past its box.
-const double _stickerTiltSpill = 3;
+const double _stickerTilt = -6 * math.pi / 180;
+final double _stickerTiltSpill = _stickerSize * (math.cos(_stickerTilt) + math.sin(-_stickerTilt) - 1) / 2;
 const double _ribbonOverhang = 8;
 const double _barHeight = 20;
 const double _chipHeight = 22;
 
-/// One quest as a raised game panel: icon sticker, title, progress bar with the count, and the reward badges.
-/// [endsIn] is the weekly ribbon's countdown, such as "4d 2h".
-///
-/// The tile is one semantics node: "Favourite 3 walls, 1 of 3. Pays 2 coins and 25 XP", "..., done. Pays ...", and
-/// for the weekly quest "... Pays 30 coins and 150 XP. This week, ends in 4d 2h".
+/// One quest as a raised game panel. [endsIn] is the weekly ribbon's countdown, such as "4d 2h".
 class QuestTile extends StatelessWidget {
   const QuestTile({super.key, required this.quest, this.endsIn});
 
@@ -120,7 +116,6 @@ class QuestTile extends StatelessWidget {
   }
 }
 
-/// A slightly forward-slanted rounded panel on a [_lip] slab, with a gloss band over its top.
 class _PanelPainter extends CustomPainter {
   const _PanelPainter({required this.colors, required this.gloss});
 
@@ -200,7 +195,7 @@ class _Sticker extends StatelessWidget {
       clipBehavior: Clip.none,
       children: <Widget>[
         Transform.rotate(
-          angle: -6 * math.pi / 180,
+          angle: _stickerTilt,
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -493,7 +488,6 @@ class _XpTag extends StatelessWidget {
   );
 }
 
-/// [text] in [style]'s fill over an [ink] stroke of [stroke] px, with an optional [drop] shadow below.
 class _OutlinedText extends StatelessWidget {
   const _OutlinedText(
     this.text, {

@@ -23,7 +23,7 @@ Future<bool> showChestSheet(BuildContext context, ChestResult result) async {
   return openShop ?? false;
 }
 
-/// The chest reward: the chest shakes and bursts open, coins fly, the amount counts up, then the odds and any cosmetic.
+/// The reward sheet for an opened chest: the chest bursts open, then the coins count up.
 class ChestSheet extends StatefulWidget {
   const ChestSheet({super.key, required this.result});
 
@@ -38,7 +38,6 @@ class _ChestSheetState extends State<ChestSheet> with SingleTickerProviderStateM
   static const double _shakeAngle = 5 * math.pi / 180;
   static const double _shakeScale = 0.04;
 
-  /// The share of the run where the chest shakes, then bursts. The haptic fires at the burst.
   static const double _burstAt = 0.22;
   static const Interval _lidOpen = Interval(_burstAt, 0.4, curve: PrismCurves.pop);
   static const Interval _glowUp = Interval(_burstAt, 0.4, curve: PrismCurves.enter);
@@ -193,7 +192,6 @@ class _ChestSheetState extends State<ChestSheet> with SingleTickerProviderStateM
   }
 }
 
-/// The gold tag beside the amount when the bonus quest doubled the chest.
 class _DoubledTag extends StatelessWidget {
   const _DoubledTag();
 

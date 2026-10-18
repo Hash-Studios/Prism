@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 class PanelColors {
   const PanelColors({required this.top, required this.bottom, required this.lip, required this.ink});
 
-  /// The fill runs from [top] to [bottom].
   final Color top;
   final Color bottom;
 
@@ -66,7 +65,6 @@ class QuestPalette {
     ink: _hsl(0.2, 0.1),
   );
 
-  /// The panel for [quest]: grey when done, gold for the weekly quest, the accent for a daily one.
   PanelColors panelFor(QuestTileModel quest) => quest.done
       ? done
       : quest.scope == QuestScope.weekly
@@ -76,10 +74,8 @@ class QuestPalette {
   /// Title text on a panel. It always has an [PanelColors.ink] stroke under it.
   Color get title => Colors.white;
 
-  /// The specular band across the top of a panel or a bar.
   Color get gloss => Colors.white.withValues(alpha: 0.28);
 
-  /// The progress fill runs from [fillTop] to [fillBottom].
   Color get fillTop => HSLColor.fromColor(PrismColors.success).withLightness(0.68).toColor();
 
   Color get fillBottom => PrismColors.success;

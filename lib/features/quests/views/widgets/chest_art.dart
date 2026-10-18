@@ -13,7 +13,6 @@ class ChestArt extends StatelessWidget {
   final double lid;
   final double glow;
 
-  /// Draws the padlock on the front.
   final bool locked;
 
   @override
@@ -39,12 +38,11 @@ class LiveChest extends StatefulWidget {
 class _LiveChestState extends State<LiveChest> with TickerProviderStateMixin {
   static const Duration _cycle = Duration(milliseconds: 2400);
 
-  /// The wobble runs from 25 % to 42 % of a cycle: 400 ms, then the chest rests.
   static const double _wobbleStart = 0.25;
   static const double _wobbleEnd = _wobbleStart + 400 / 2400;
   static const double _wobbleAngle = 4 * math.pi / 180;
 
-  /// Ray wedges repeat every 30 degrees, so one cycle turns them one wedge and the loop has no seam.
+  /// One wedge step per cycle, so the loop has no seam.
   static const double _raysPerCycle = math.pi / 6;
 
   late final AnimationController _c = AnimationController(vsync: this, duration: _cycle);
@@ -143,10 +141,8 @@ class _ChestColors {
   final Color plank;
   final Color plankDark;
 
-  /// The outline of every part, a dark wood.
   final Color ink;
 
-  /// The dark inside of the open chest.
   final Color interior;
 }
 
