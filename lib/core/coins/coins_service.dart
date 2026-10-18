@@ -2676,8 +2676,6 @@ class CoinsService with WidgetsBindingObserver {
       );
     }
     _applyQuestReply(reply.data);
-    // A replay may not carry the quests. Without them the chest would look closed until the next sync.
-    if (!reply.data.containsKey('quests')) unawaited(progressQuest(null));
     if (reply.changed) {
       _grantLocalXp(win.xp + _xpForCoins(win.coins));
       analytics.track(

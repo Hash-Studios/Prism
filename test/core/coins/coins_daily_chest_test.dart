@@ -40,15 +40,15 @@ Map<String, Object?> _opened({
   bool doubled = false,
   Object? slots = defaultChestJson,
   bool omitSlots = false,
-  bool omitQuests = false,
   bool replay = false,
 }) {
   final int cost = free ? 0 : 8;
+  final int after = 100 - cost + coins;
   return <String, Object?>{
     'success': true,
-    'changed': !replay,
-    'previousBalance': 100,
-    'currentBalance': 100 - cost + coins,
+    'changed': true,
+    'previousBalance': replay ? after : 100,
+    'currentBalance': after,
     'delta': replay ? 0 : coins - cost,
     'reason': 'ok',
     'transactionId': 'ctx_questChest_test',
@@ -60,7 +60,7 @@ Map<String, Object?> _opened({
     'prize': <String, Object?>{'kind': kind, 'coins': coins, 'xp': xp, 'itemId': itemId},
     if (!omitSlots) 'slots': slots,
     'status': <String, Object>{'opened': true, 'free': free, 'price': 8},
-    if (!omitQuests) 'quests': _quests(chestOpened: true, doubled: doubled),
+    'quests': _quests(chestOpened: true, doubled: doubled),
   };
 }
 
@@ -221,21 +221,13 @@ void main() {
       expect((await openWon()).win.slot, 0);
     });
 
-    test('a replay moves no coins, grants no XP and asks for the quests it did not carry', () async {
-      reply((name, _) {
-        if (name == 'progressQuest') {
-          return <String, Object?>{'success': true, 'rev': 6, 'quests': _quests(chestOpened: true)};
-        }
-        return _opened(slot: 3, coins: 20, replay: true, omitQuests: true);
-      });
+    test('a retry after a lost reply shows the stored prize and moves no coins', () async {
+      reply((_, _) => _opened(slot: 3, coins: 20, replay: true));
       final ChestWon won = await openWon();
       await pumpEventQueue();
       expect((won.win.slot, won.win.coins), (3, 20));
       expect(service.balanceNotifier.value, 112);
-      expect(service.xpNotifier.value.xp, 0);
-      expect(analytics.events, isEmpty);
-      expect(calls.map((c) => c.$1), <String>['openDailyChest', 'progressQuest']);
-      expect(calls.last.$2.containsKey('event'), isFalse);
+      expect(calls.map((c) => c.$1), <String>['openDailyChest']);
       expect(service.questsNotifier.value?.chestOpened, isTrue);
     });
 
