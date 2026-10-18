@@ -2646,14 +2646,16 @@ class CoinsService with WidgetsBindingObserver {
     if (!_isCurrentOwner(userId, generation) || reply == null) return const ChestFailed('session_changed');
     if (reply.errorCode != null) return ChestFailed(reply.reason);
     // Every reply the server sends carries the quests, a refusal included. A stale cache is what got the user refused.
-    _applyQuestReply(reply.data);
+    if (!reply.stale) _applyQuestReply(reply.data);
     if (!reply.success) {
-      unawaited(
-        _persistEconomy(userId, <String, dynamic>{
-          'rev': _economyRev,
-          if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
-        }),
-      );
+      if (!reply.stale) {
+        unawaited(
+          _persistEconomy(userId, <String, dynamic>{
+            'rev': _economyRev,
+            if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
+          }),
+        );
+      }
       switch (reply.reason) {
         case 'daily_chest_price_changed':
           unawaited(EconomyConfig.load());
@@ -2681,13 +2683,14 @@ class CoinsService with WidgetsBindingObserver {
     );
     final ChestWin win = won.win;
     final String? itemId = win.itemId;
-    if (itemId != null) {
+    if (!reply.stale && itemId != null) {
       inventoryNotifier.value = inventoryNotifier.value.withOwned(
         Set<String>.unmodifiable(<String>{...inventoryNotifier.value.owned, itemId}),
       );
     }
     if (reply.changed) {
-      _grantLocalXp(win.xp + _xpForCoins(win.coins));
+      if (!reply.stale) _grantLocalXp(win.xp + _xpForCoins(win.coins));
+      if (reply.stale) unawaited(reconcileRankRewards());
       analytics.track(
         DailyChestOpenedEvent(
           free: reply.data['free'] == true,
@@ -2710,13 +2713,15 @@ class CoinsService with WidgetsBindingObserver {
       if (win.coins > 0) _logEarn(action: CoinEarnAction.questChest, amount: win.coins, sourceTag: 'coins.daily_chest');
     }
     // The chest waits for this reply, so the snapshot write must not hold it back.
-    unawaited(
-      _persistEconomy(userId, <String, dynamic>{
-        'rev': _economyRev,
-        if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
-        if (itemId != null) 'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
-      }),
-    );
+    if (!reply.stale) {
+      unawaited(
+        _persistEconomy(userId, <String, dynamic>{
+          'rev': _economyRev,
+          if (reply.data.containsKey('quests')) 'quests': reply.data['quests'],
+          if (itemId != null) 'inventory': <String, Object?>{'owned': inventoryNotifier.value.owned.toList()},
+        }),
+      );
+    }
     return won;
   }
 
