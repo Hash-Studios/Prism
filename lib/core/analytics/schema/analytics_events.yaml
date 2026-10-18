@@ -1810,6 +1810,32 @@ events:
       - name: xp
         key: xp
         type: int
+  - id: daily_chest_opened
+    fields:
+      - name: free
+        key: free
+        type: bool
+      - name: cost
+        key: cost
+        type: int
+      - name: slot
+        key: slot
+        type: int
+      - name: prize
+        key: prize
+        type: string
+      - name: tier
+        key: tier
+        type: string
+      - name: coins
+        key: coins
+        type: int
+      - name: xp
+        key: xp
+        type: int
+      - name: doubled
+        key: doubled
+        type: bool
   - id: quest_progressed
     fields:
       - name: quest_id

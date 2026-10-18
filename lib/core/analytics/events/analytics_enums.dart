@@ -27,6 +27,7 @@ extension CoinSpendActionWire on CoinSpendAction {
     CoinSpendAction.drawTicket => 'draw_ticket',
     CoinSpendAction.shopItem => 'shop_item',
     CoinSpendAction.spinWheel => 'spin_wheel',
+    CoinSpendAction.questChest => 'quest_chest',
   };
 }
 

@@ -65,6 +65,39 @@ void main() {
     expect(CoinSpendAction.spinWheel.cost(), 25);
   });
 
+  test('the daily chest getters follow the loaded config', () {
+    addTearDown(EconomyConfig.resetForTest);
+    expect(CoinPolicy.dailyChestPrice, 8);
+    expect(describeWheel(CoinPolicy.dailyChest), defaultChestLines);
+    expect((CoinSpendAction.questChest.cost(), CoinEarnAction.questChest.defaultAmount()), (8, 5));
+    EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+      'spend': <String, dynamic>{'dailyChest': 6},
+      'award': <String, dynamic>{
+        'dailyChest': <Map<String, Object>>[
+          <String, Object>{'kind': 'xp', 'xp': 30, 'weight': 3},
+          <String, Object>{'kind': 'coins', 'coins': 12, 'weight': 2},
+          <String, Object>{'kind': 'coins', 'coins': 9, 'weight': 1},
+        ],
+      },
+    });
+    expect(CoinPolicy.dailyChestPrice, 6);
+    expect(describeWheel(CoinPolicy.dailyChest), <String>['xp 30 x3', 'coins 12 x2', 'coins 9 x1']);
+    expect((CoinSpendAction.questChest.cost(), CoinEarnAction.questChest.defaultAmount()), (6, 9));
+  });
+
+  test('a chest table that pays no coins previews zero coins', () {
+    addTearDown(EconomyConfig.resetForTest);
+    EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+      'award': <String, dynamic>{
+        'dailyChest': <Map<String, Object>>[
+          <String, Object>{'kind': 'xp', 'xp': 30, 'weight': 1},
+          <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 25, 'weight': 1},
+        ],
+      },
+    });
+    expect(CoinEarnAction.questChest.defaultAmount(), 0);
+  });
+
   test('isStreakAlive allows one missed day per held freeze', () {
     expect(isStreakAlive('2026-03-01', '2026-03-01', 0), isTrue);
     expect(isStreakAlive('2026-03-01', '2026-03-02', 0), isTrue);
