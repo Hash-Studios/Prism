@@ -20,7 +20,9 @@ These are code defaults. The economy configuration can change activity XP indepe
 | AI Artist badge | 30 |
 | Prism Veteran badge | 75 |
 
-Ads, Pro spins, the legacy Pro daily bonus, referrals, refunds and purchases award no XP. The bonus quest can still double chest coins. It does not double chest XP. The Creator badge keeps its coin reward; creator milestones now award its future XP.
+Ads, paid or free wheel spins, the legacy Pro spin and daily bonus, referrals, refunds and purchases award no XP. The bonus quest can still double chest coins. It does not double chest XP. The Creator badge keeps its coin reward; creator milestones now award its future XP.
+
+The wheel's former XP slots pay 1 and 2 coins. Other prizes and odds stay the same. A configured wheel containing XP slots falls back to the coin-only default table. Historical spin receipts retain their original results; replaying one cannot award XP again.
 
 Historical XP and owned rewards remain intact. Rank thresholds remain unchanged. The legacy `perCoinEarned` configuration field remains readable for installed clients, but the new server and client do not use it to award XP.
 

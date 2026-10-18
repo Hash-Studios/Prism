@@ -35,6 +35,31 @@ void main() {
     expect(await restarted.read('owner-b'), isNull);
   });
 
+  test("keeps today's spin counters across a restart, in both write and replace", () async {
+    EconomySnapshotStore restart() => EconomySnapshotStore(store: DurableJsonStore('test', directory: directory));
+    await snapshots.write('owner-a', 2, <String, dynamic>{
+      'spinWheel': <String, Object?>{'dayKey': '2026-10-18', 'paid': 2, 'freeUsed': true},
+      'creator': <String, Object?>{'version': 1, 'approvedWalls': 5},
+    });
+    expect((await restart().read('owner-a'))?.data['spinWheel'], <String, dynamic>{
+      'dayKey': '2026-10-18',
+      'paid': 2,
+      'freeUsed': true,
+    });
+    expect((await restart().read('owner-a'))?.data['creator'], <String, dynamic>{'version': 1, 'approvedWalls': 5});
+
+    await snapshots.replace('owner-a', 3, <String, dynamic>{
+      'spinWheel': <String, Object?>{'dayKey': '2026-10-18', 'paid': 3, 'freeUsed': true},
+      'creator': <String, Object?>{'version': 1, 'approvedWalls': 6},
+    });
+    expect((await restart().read('owner-a'))?.data['spinWheel'], <String, dynamic>{
+      'dayKey': '2026-10-18',
+      'paid': 3,
+      'freeUsed': true,
+    });
+    expect((await restart().read('owner-a'))?.data['creator'], <String, dynamic>{'version': 1, 'approvedWalls': 6});
+  });
+
   test('newer revisions win and cleanup removes only the selected owner', () async {
     await snapshots.write('owner-a', 5, <String, dynamic>{
       'quests': <String, Object?>{'dayKey': 'new'},

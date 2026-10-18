@@ -2454,18 +2454,36 @@ class AutoRotateRunResultEvent extends AnalyticsEvent {
   }
 }
 
-class ProSpinClaimedEvent extends AnalyticsEvent {
-  const ProSpinClaimedEvent({required this.coins, required this.segment});
+class SpinWheelSpunEvent extends AnalyticsEvent {
+  const SpinWheelSpunEvent({
+    required this.free,
+    required this.cost,
+    required this.segment,
+    required this.prize,
+    required this.coins,
+    required this.xp,
+  });
 
-  final int coins;
+  final bool free;
+  final int cost;
   final int segment;
+  final String prize;
+  final int coins;
+  final int xp;
 
   @override
-  String get eventName => 'pro_spin_claimed';
+  String get eventName => 'spin_wheel_spun';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'coins': coins, 'segment': segment};
+    return <String, Object?>{
+      'free': free ? 1 : 0,
+      'cost': cost,
+      'segment': segment,
+      'prize': prize,
+      'coins': coins,
+      'xp': xp,
+    };
   }
 }
 

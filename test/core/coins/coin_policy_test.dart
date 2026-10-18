@@ -1,6 +1,9 @@
+import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'spin_wheel_test_helpers.dart';
 
 void main() {
   test('daily streak reward follows the config table and caps at day 7', () {
@@ -41,6 +44,25 @@ void main() {
     expect(CoinPolicy.rewardedAd, 4);
     expect(CoinPolicy.proDailyBonus, 25);
     expect(CoinPolicy.premiumWallpaperDownload, 25);
+  });
+
+  test('the spin wheel getters follow the loaded config', () {
+    addTearDown(EconomyConfig.resetForTest);
+    expect((CoinPolicy.spinWheelPrice, CoinPolicy.spinWheelMaxPerDay), (10, 5));
+    expect(describeWheel(CoinPolicy.spinWheel), defaultWheelLines);
+    EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+      'spend': <String, dynamic>{'spinWheel': 25},
+      'award': <String, dynamic>{
+        'spinWheelMaxPerDay': 2,
+        'spinWheel': <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 9, 'weight': 1},
+          <String, Object>{'kind': 'coins', 'coins': 3, 'weight': 1},
+        ],
+      },
+    });
+    expect((CoinPolicy.spinWheelPrice, CoinPolicy.spinWheelMaxPerDay), (25, 2));
+    expect(describeWheel(CoinPolicy.spinWheel), <String>['coins 9 x1', 'coins 3 x1']);
+    expect(CoinSpendAction.spinWheel.cost(), 25);
   });
 
   test('isStreakAlive allows one missed day per held freeze', () {

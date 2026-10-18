@@ -222,19 +222,6 @@ class Passes {
       );
 }
 
-enum ProSpinOutcome { won, alreadyClaimed, notPro, failed }
-
-class ProSpinResult {
-  const ProSpinResult(this.outcome, {this.coins = 0, this.segment = -1, this.reason = ''});
-
-  final ProSpinOutcome outcome;
-  final int coins;
-
-  /// Index into `award.proSpin` that the server picked, -1 when nothing was won.
-  final int segment;
-  final String reason;
-}
-
 enum ChestOutcome { opened, locked, alreadyOpened, failed }
 
 class ChestResult {

@@ -43,7 +43,8 @@ Shape (defaults):
     "premiumFilter": 5, "premiumPreview24h": 10, "autoRotatePass7d": 50,
     "streakFreeze": 50, "streakRescue": 100,
     "aiFast": 10, "aiBalanced": 75, "aiQuality": 100,
-    "dropWall": 30, "dropPack": 150, "boostWall": 100, "giftPremiumPass": 20, "drawTicket": 20
+    "dropWall": 30, "dropPack": 150, "boostWall": 100, "giftPremiumPass": 20, "drawTicket": 20,
+    "spinWheel": 10
   },
   "proDiscountActions": ["aiGeneration", "dropWall", "dropPack"],   // Pro pays ceil(price / 2)
   "proBypassActions": ["wallpaperDownload", "premiumWallpaperDownload", "liveWallpaperStyle", "premiumFilter", "premiumPreview24h", "autoRotatePass7d"],
@@ -53,7 +54,14 @@ Shape (defaults):
     "referral": 100, "referralMaxPerDay": 3, "referralMaxLifetime": 20,
     "streakDaily": [3, 3, 5, 5, 8, 8, 10], "streakChestMin": 15, "streakChestMax": 40,
     "proStreakMultiplier": 1.5,
-    "proSpin": [{"coins": 20, "weight": 40}, {"coins": 30, "weight": 25}, {"coins": 50, "weight": 20}, {"coins": 75, "weight": 10}, {"coins": 100, "weight": 5}],
+    "proSpin": [{"coins": 20, "weight": 40}, {"coins": 30, "weight": 25}, {"coins": 50, "weight": 20}, {"coins": 75, "weight": 10}, {"coins": 100, "weight": 5}],   // legacy, 3.6.0 and older only
+    "spinWheelMaxPerDay": 5,
+    "spinWheel": [
+      {"kind": "coins", "coins": 10, "weight": 18}, {"kind": "coins", "coins": 1, "weight": 22},
+      {"kind": "coins", "coins": 5, "weight": 30}, {"kind": "coins", "coins": 100, "weight": 1},
+      {"kind": "coins", "coins": 20, "weight": 8}, {"kind": "coins", "coins": 2, "weight": 12},
+      {"kind": "coins", "coins": 50, "weight": 3}, {"kind": "cosmetic", "fallbackCoins": 50, "weight": 6}
+    ],
     "questCoins": 2, "questXp": 25, "questChestMin": 5, "questChestMax": 20, "questChestCosmeticChance": 0.1,
     "weeklyQuestCoins": 50, "weeklyQuestXp": 150,
     "graceDownloads": 3
@@ -66,6 +74,12 @@ Shape (defaults):
 
 Rules: `economyConfig/{doc}` is readable by anyone signed in, write false. Admins change it with
 `npm run economy:config -- --set spend.wallpaperDownload=10 --apply`.
+
+`award.spinWheel` is the wheel table, in wheel order. A segment is `coins` (1..1000 coins) or
+`cosmetic` (`fallbackCoins` 1..1000, paid when the user owns every common item). Each has a `weight` of 0..1000. The
+table needs 2 to 12 segments and a positive weight sum. If any part is wrong, including a legacy `xp` segment,
+the server and client use the whole default coin-only table.
+The rules, the odds and the UI are in `docs/features/spin-wheel.md`.
 
 ### Pricing version and old clients
 
@@ -81,7 +95,7 @@ the server returns. The legacy `proDailyBonus` award keeps working and shares it
 |---|---|---|
 | Streak cycle | 5,5,8,8,12,12,15 + 40 | 3,3,5,5,8,8,10 + chest 15..40 |
 | Pro streak | +5 a day, +20 day 7 | 1.5x on the day's coins, chest included |
-| Pro daily | flat 50 | Pro spin, 20..100, mean 38 |
+| Pro daily | flat 50 | One free wheel spin a day: 7.86 direct coins on average, or a cosmetic (10.86 when all common cosmetics are owned); no XP. 3.6.0 and older keep the Pro spin, 20..100, mean 38. |
 | Download | 5 | 10, first 3 ever free (grace) |
 | Premium wall | 15 | 25 |
 | Live wallpaper paid style | Pro only | 20 per apply, Pro free |
@@ -151,8 +165,9 @@ reads every doc it needs before its first write. Every purchase takes a `request
 a fixed transaction doc id with a callable-specific prefix so a replay returns the stored result (store the result
 fields on the tx doc). Response base shape is the existing one: `{success, changed, previousBalance, currentBalance,
 delta, reason, transactionId}` plus action fields. XP: every callable sums the XP it grants and calls `grantXp` once
-per user per transaction. Quest and chest XP are explicit amounts; other credits grant `perCoinEarned` × coins; refunds
-grant none.
+per user per transaction. Activity XP uses fixed configured amounts independent of coin rewards. Ads, referrals,
+refunds, purchases, the legacy Pro bonus and paid/free spins grant none. `perCoinEarned` remains readable only for
+compatibility. See `docs/features/xp-and-creator-milestones.md` for the current XP policy.
 
 ### Changed
 
@@ -186,7 +201,8 @@ grant none.
 
 | Callable | Input | Effect | Reply extras |
 |---|---|---|---|
-| `claimProSpin` | `{requestId}` | premium only, once per UTC day (refused when `proSpinDate` or `proDailyBonusDate` is today), weighted pick from `proSpin`, writes both dates | `{coins, segment}` |
+| `claimProSpin` | `{requestId}` | legacy, for 3.6.0 and older (newer clients use `spinWheel`). Premium only, once per UTC day (refused when `proSpinDate` or `proDailyBonusDate` is today), weighted pick from `proSpin`, writes both dates | `{coins, segment}` |
+| `spinWheel` | `{requestId, maxCost, sourceTag}` | everyone can spin. Pro members get one free spin per UTC day; it shares its receipt with `claimProSpin` and `proDailyBonus`. A paid spin costs `spend.spinWheel`, at most `spinWheelMaxPerDay` a day. Refused with `spin_wheel_price_changed` when the cost is above `maxCost`, `spin_wheel_daily_limit` at the cap, `spin_wheel_insufficient_balance` when short. Otherwise grants coins or an unowned common cosmetic (fallback coins when all are owned), never XP. Ledger doc `ctx_spinWheel_{uid}_{requestId}` retains the original outcome; replay refreshes live balances, status, absolute XP, revision and inventory without another award. See `docs/features/spin-wheel.md` | Every reply includes `{status: {freeSpinAvailable, paidSpinsLeft, price}, xpPolicyVersion, xp, xpWeek, xpAwarded: 0, rev, owned}`; a win adds `{cost, free, segment, prize: {kind, coins, xp: 0, itemId}, segments}`. Historical replays can retain an old XP prize. |
 | `progressQuest` | `{event?, eventId?, requestId?}` | rebuilds `quests` for today if stale (daily items reset on `dayKey`, weekly on `weekKey`; the day's assignment is persisted and never reshuffled), bumps progress on every daily, bonus and weekly item with that event, grants coins + XP when an item reaches its target. `event` omitted = sync only. `questEventRate` caps an event at 2 × its largest target per day. Bumps `rev`. | `{quests, awarded: [{id, coins, xp}]}` |
 | `openQuestChest` | `{requestId}` | needs the three daily items claimed and `!chestOpened`; coins in `[questChestMin, questChestMax]`, doubled when the bonus item is claimed; 10 % chance of a random unowned `common` cosmetic; tx id `ctx_questChest_{uid}_{dayKey}` | `{coins, doubled, itemId?}` |
 | `purchaseShopItem` | `{itemId, requestId}` | catalog price (config can override by id), checks `proOnly`, `minRank`, `founders` window, not owned; writes `inventory.owned` | `{itemId, owned}` |
@@ -321,7 +337,7 @@ Chest open rate and doubled share.
 ## Revision 3 deltas (after the Opus review; these override the sections above)
 
 - **Quest events the server already sees are counted on the server.** `recordWallpaperAction` (`download`, `set`, `share`, only when the action counted), `onFavouriteWritten` (favourite added), `recordWallpaperView` (`view_wallpaper`) call `progressQuestForUser(uid, event)` from `functions/src/quests.ts`. The `progressQuest` callable accepts only `view_wotd`, `colour_search`, `view_trending` from the client (and sync). The `set_wall` quest counts `set` or `download` ("Set or save a wallpaper"); the weekly quest is "Save or set 5 walls".
-- **Numbers.** `questChestMin 5`, `questChestMax 15`, `weeklyQuestCoins 30`. Gift pass costs 50. Only the first 3 ads a day grant XP; referrals grant coins, no XP. The leaderboard skips accounts younger than 7 days.
+- **Numbers.** `questChestMin 5`, `questChestMax 15`, `weeklyQuestCoins 30`. Gift pass costs 50. Ads, referrals and spins grant coins or their configured cosmetic prizes without XP. The leaderboard skips accounts younger than 7 days.
 - **Legacy pricing window.** `pricingVersion` below 2 gets legacy prices only while `flags.legacyPricingUntil` (default `2027-01-31T00:00:00Z`) is in the future. After that everyone pays v2.
 - **Pass and grace bypass never need `allowPremiumBypass`.** Grace applies to `wallpaperDownload` only. `unlockPremiumPreview` also honours the premium pass.
 - **`coinState.adsToday {day, count}`** is written by the ad credit so the client can label the first ad of the day correctly.

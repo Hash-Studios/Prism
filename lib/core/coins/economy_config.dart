@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -58,6 +59,7 @@ class EconomySpend {
     this.boostWall = 100,
     this.giftPremiumPass = 50,
     this.drawTicket = 20,
+    this.spinWheel = 10,
   });
 
   factory EconomySpend.fromMap(Map<String, dynamic> m) {
@@ -79,6 +81,7 @@ class EconomySpend {
       boostWall: _int(m['boostWall'], d.boostWall),
       giftPremiumPass: _int(m['giftPremiumPass'], d.giftPremiumPass),
       drawTicket: _int(m['drawTicket'], d.drawTicket),
+      spinWheel: _int(m['spinWheel'], d.spinWheel),
     );
   }
 
@@ -98,6 +101,9 @@ class EconomySpend {
   final int boostWall;
   final int giftPremiumPass;
   final int drawTicket;
+
+  /// What a paid spin of the wheel costs.
+  final int spinWheel;
 }
 
 class SpinSegment {
@@ -128,6 +134,8 @@ class EconomyAward {
       SpinSegment(coins: 75, weight: 10),
       SpinSegment(coins: 100, weight: 5),
     ],
+    this.spinWheel = defaultWheel,
+    this.spinWheelMaxPerDay = 5,
     this.questCoins = 2,
     this.questXp = 25,
     this.questChestMin = 5,
@@ -179,6 +187,8 @@ class EconomyAward {
       proSpin: segments != null && segments.fold<double>(0, (double sum, SpinSegment s) => sum + s.weight) > 0
           ? List<SpinSegment>.unmodifiable(segments)
           : d.proSpin,
+      spinWheel: parseWheel(m['spinWheel']) ?? d.spinWheel,
+      spinWheelMaxPerDay: award('spinWheelMaxPerDay', d.spinWheelMaxPerDay),
       questCoins: award('questCoins', d.questCoins),
       questXp: award('questXp', d.questXp),
       questChestMin: questChestMin,
@@ -205,6 +215,12 @@ class EconomyAward {
   final int streakChestMax;
   final double proStreakMultiplier;
   final List<SpinSegment> proSpin;
+
+  /// The wheel in wheel order, clockwise. Index 0 sits under the pointer at rest.
+  final List<WheelSegment> spinWheel;
+
+  /// Paid spins per UTC day. The free Pro spin does not count.
+  final int spinWheelMaxPerDay;
   final int questCoins;
   final int questXp;
   final int questChestMin;

@@ -169,15 +169,22 @@ void main() {
       ],
       'weeks': <Object?>[],
     };
-    firestore.docs['usersv2/${backend.userId}/private/economy'] = <String, dynamic>{'rev': 5, 'creator': creator};
-    await coins.refreshCreatorProgress();
-    expect(coins.creatorNotifier.value.progress?.approvedWalls, 0);
     firestore.docs['usersv2/${backend.userId}/private/economy'] = <String, dynamic>{
-      'rev': 4,
-      'creator': <String, dynamic>{...creator, 'approvedWalls': 99},
+      'rev': 5,
+      'creator': creator,
+      'spinWheel': <String, Object>{'dayKey': economyDayKey(DateTime.now()), 'paid': 2, 'freeUsed': true},
     };
     await coins.refreshCreatorProgress();
     expect(coins.creatorNotifier.value.progress?.approvedWalls, 0);
+    expect(coins.spinWheelNotifier.value.paidSpinsLeft, 3);
+    firestore.docs['usersv2/${backend.userId}/private/economy'] = <String, dynamic>{
+      'rev': 4,
+      'creator': <String, dynamic>{...creator, 'approvedWalls': 99},
+      'spinWheel': <String, Object>{'dayKey': economyDayKey(DateTime.now()), 'paid': 0, 'freeUsed': false},
+    };
+    await coins.refreshCreatorProgress();
+    expect(coins.creatorNotifier.value.progress?.approvedWalls, 0);
+    expect(coins.spinWheelNotifier.value.paidSpinsLeft, 3);
     firestore.privateEconomyError = FirestoreError(code: 'unavailable', message: 'offline');
     await coins.refreshCreatorProgress();
     expect(coins.creatorNotifier.value.status.name, 'unavailable');

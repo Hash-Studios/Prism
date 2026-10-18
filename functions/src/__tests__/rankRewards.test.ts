@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test, {beforeEach} from "node:test";
 import {badgeIo, checkBadges} from "../badges";
-import {awardCoins, claimProSpin} from "../coinsCallables";
+import {awardCoins, claimProSpin, spinWheel} from "../coinsCallables";
 import {DEFAULT_ECONOMY, resetEconomyCache, weekKey} from "../economy";
 import {buildQuestState} from "../questCatalog";
 import {openQuestChest, progressQuest} from "../quests";
@@ -178,14 +178,14 @@ test("fixed activity XP paths persist newly crossed rank rewards with their exis
   }
 });
 
-test("ad, Pro spin and legacy bonus keep coins and quest progress without XP or rank grants", async (t) => {
-  for (const path of ["ad", "spin", "legacy"] as const) {
+test("ad, Pro spin, wheel and legacy bonus keep coins and quest progress without XP or rank grants", async (t) => {
+  for (const path of ["ad", "spin", "wheel", "legacy"] as const) {
     for (const xp of [499, 6000]) {
       await t.test(`${path}/${xp}`, async (sub) => {
         resetEconomyCache();
         sub.mock.timers.enable({apis: ["Date"], now: NOW});
         sub.mock.method(Math, "random", () => 0);
-        const quests = buildQuestState(null, NOW, path === "spin");
+        const quests = buildQuestState(null, NOW, path === "spin" || path === "wheel");
         const xpWeek = {weekKey: weekKey(NOW), xp: 100};
         const inventory = {owned: {frame_ring: 17}};
         const store = installFakeDb(sub, {
@@ -193,11 +193,14 @@ test("ad, Pro spin and legacy bonus keep coins and quest progress without XP or 
           [PRIVATE]: {rev: 5, quests, passes: {premiumPassUntil: 123}, inventory},
           "economyConfig/current": {xp: {perCoinEarned: 10}},
         });
-        const result = path === "spin" ? await call(claimProSpin, {requestId: "spin-request-1"}) :
-          await call(awardCoins, {action: path === "ad" ? "rewardedAd" : "proDailyBonus",
-            requestId: "award-request-1", sourceTag: "test.rank_reward", reason: "test"});
-        assert.equal(result.delta, 20);
-        assert.equal(store.get(USER)?.coins, 120);
+        const result = path === "wheel" ? await call(spinWheel, {requestId: "wheel-request-1", maxCost: 0}) :
+          path === "spin" ? await call(claimProSpin, {requestId: "spin-request-1"}) :
+            await call(awardCoins, {action: path === "ad" ? "rewardedAd" : "proDailyBonus",
+              requestId: "award-request-1", sourceTag: "test.rank_reward", reason: "test"});
+        const coins = path === "wheel" ? DEFAULT_ECONOMY.award.spinWheel[0] : null;
+        const delta = coins?.kind === "coins" ? coins.coins : 20;
+        assert.equal(result.delta, delta);
+        assert.equal(store.get(USER)?.coins, 100 + delta);
         assert.equal(result.xpAwarded, 0);
         assert.equal(result.xp, xp);
         assert.equal(store.get(USER)?.xp, xp);

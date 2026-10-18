@@ -35,7 +35,6 @@ import 'package:Prism/features/public_profile/domain/repositories/public_profile
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/quests/quests.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
-import 'package:Prism/features/rewards/views/widgets/pro_spin_card.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/shop.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
@@ -259,7 +258,7 @@ void main() {
       },
     );
 
-    // 4. Chest sheet and Pro spin card
+    // 4. Chest sheet
     qaScreen('chest_sheet', (QaShot shot) async {
       await shot.pump(
         Scaffold(
@@ -275,34 +274,6 @@ void main() {
       await shot.tester.tap(find.text('open'));
       await shot.settle(frames: 8);
       await shot.save('chest_sheet');
-    });
-
-    qaScreen('spin_card', pro: true, height: 280, (QaShot shot) async {
-      shot.backend.onCall = (String name, Map<String, dynamic> params) async => <String, Object>{
-        'success': true,
-        'changed': true,
-        'coins': 50,
-        'segment': 2,
-        'previousBalance': 340,
-        'currentBalance': 390,
-        'delta': 50,
-        'reason': 'pro_spin',
-      };
-      await shot.pump(
-        const Scaffold(
-          body: Align(
-            alignment: Alignment.topCenter,
-            child: Padding(padding: EdgeInsets.all(PrismSpace.page), child: ProSpinCard()),
-          ),
-        ),
-      );
-      await shot.save('spin_card_before');
-      await shot.tester.tap(find.text('Spin'));
-      await shot.tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-      await shot.tester.pump();
-      await shot.tester.pump(const Duration(milliseconds: 100));
-      await shot.settle(frames: 12);
-      await shot.save('spin_card_after');
     });
 
     // 5. Shop

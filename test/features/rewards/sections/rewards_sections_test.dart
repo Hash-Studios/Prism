@@ -9,7 +9,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/features/rewards/views/widgets/pro_spin_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
@@ -146,20 +145,22 @@ void main() {
     expect(find.text('Wallpaper download'), findsNothing);
   });
 
-  testWidgets('earn section lists the Pro spin and the Pro streak multiplier only for Pro users', (tester) async {
+  testWidgets('earn section lists the free daily spin and the Pro streak multiplier only for Pro users', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(400, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
-    expect(find.text('Pro spin'), findsNothing);
+    expect(find.text('Free daily spin'), findsNothing);
     expect(find.textContaining('Pro earns'), findsNothing);
     expect(find.text('Day 7 chest'), findsOneWidget);
     expect(find.text('+${CoinPolicy.streakChestMin} to +${CoinPolicy.streakChestMax}'), findsOneWidget);
 
     app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.dark));
-    final range = proSpinRange();
-    expect(find.text('Pro spin'), findsOneWidget);
-    expect(find.text('+${range.low} to +${range.high}'), findsOneWidget);
+    expect(find.text('Free daily spin'), findsOneWidget);
+    expect(find.text('Once a day'), findsOneWidget);
+    expect(find.text('Up to +100'), findsOneWidget);
     expect(find.text('Open Prism every day. Pro earns x1.5.'), findsOneWidget);
   });
 

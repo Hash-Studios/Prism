@@ -1,6 +1,8 @@
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'spin_wheel_test_helpers.dart';
+
 void main() {
   test('defaults mirror the server defaults', () {
     const EconomyConfig c = EconomyConfig.defaults;
@@ -14,6 +16,9 @@ void main() {
     expect(c.award.questChestMax, 15);
     expect(c.award.weeklyQuestCoins, 30);
     expect(c.award.proSpin.map((SpinSegment s) => s.coins), <int>[20, 30, 50, 75, 100]);
+    expect(c.spend.spinWheel, 10);
+    expect(c.award.spinWheelMaxPerDay, 5);
+    expect(describeWheel(c.award.spinWheel), defaultWheelLines);
     expect(c.xp.ranks.map((RankDef r) => r.id), <String>['bronze', 'silver', 'gold', 'prism']);
     expect(c.flags.drawEnabled, isFalse);
     expect(c.flags.legacyPricingUntil, '2027-01-31T00:00:00Z');
@@ -77,6 +82,86 @@ void main() {
       },
     });
     expect(c.award.proSpin, hasLength(5));
+  });
+
+  group('spin wheel', () {
+    EconomyConfig parse({Object? price, Object? cap, Object? wheel, bool absent = false}) =>
+        EconomyConfig.fromMap(<String, dynamic>{
+          if (!absent) ...<String, dynamic>{
+            'spend': <String, dynamic>{'spinWheel': price},
+            'award': <String, dynamic>{'spinWheelMaxPerDay': cap, 'spinWheel': wheel},
+          },
+        });
+
+    test('a valid price, cap and table are read', () {
+      final EconomyConfig c = parse(
+        price: 15,
+        cap: 3,
+        wheel: <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 7, 'weight': 2},
+          <String, Object>{'kind': 'coins', 'coins': 40, 'weight': 1.5},
+          <String, Object>{'kind': 'cosmetic', 'fallbackCoins': 1, 'weight': 1},
+        ],
+      );
+      expect(c.spend.spinWheel, 15);
+      expect(c.award.spinWheelMaxPerDay, 3);
+      expect(describeWheel(c.award.spinWheel), <String>['coins 7 x2', 'coins 40 x1', 'cosmetic 1 x1']);
+    });
+
+    test('zero is a valid price and a valid cap', () {
+      final EconomyConfig c = parse(price: 0, cap: 0);
+      expect((c.spend.spinWheel, c.award.spinWheelMaxPerDay), (0, 0));
+    });
+
+    test('a doc without the fields gives the defaults', () {
+      for (final EconomyConfig c in <EconomyConfig>[
+        parse(absent: true),
+        parse(),
+        EconomyConfig.fromMap(<String, dynamic>{'spend': <String, dynamic>{}, 'award': <String, dynamic>{}}),
+      ]) {
+        expect((c.spend.spinWheel, c.award.spinWheelMaxPerDay), (10, 5));
+        expect(describeWheel(c.award.spinWheel), defaultWheelLines);
+      }
+    });
+
+    test('a malformed price falls back to 10', () {
+      for (final Object? bad in <Object?>[-1, 10001, 'ten', true, double.nan]) {
+        expect(parse(price: bad).spend.spinWheel, 10, reason: '$bad');
+      }
+    });
+
+    test('a malformed cap falls back to 5', () {
+      for (final Object? bad in <Object?>[-1, 1001, 'five', false, double.infinity]) {
+        expect(parse(cap: bad).award.spinWheelMaxPerDay, 5, reason: '$bad');
+      }
+    });
+
+    test('a malformed table falls back to the default wheel and leaves price and cap alone', () {
+      final List<Object?> bad = <Object?>[
+        'wheel',
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 10, 'weight': 18},
+          <String, Object>{'kind': 'xp', 'xp': 25, 'weight': 22},
+        ],
+        <Object>[],
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 1},
+        ],
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 0},
+          <String, Object>{'kind': 'coins', 'coins': 6, 'weight': 0},
+        ],
+        <Map<String, Object>>[
+          <String, Object>{'kind': 'coins', 'coins': 5, 'weight': 1},
+          <String, Object>{'kind': 'coins', 'coins': 2000, 'weight': 1},
+        ],
+      ];
+      for (final Object? wheel in bad) {
+        final EconomyConfig c = parse(price: 12, cap: 4, wheel: wheel);
+        expect(describeWheel(c.award.spinWheel), defaultWheelLines, reason: '$wheel');
+        expect((c.spend.spinWheel, c.award.spinWheelMaxPerDay), (12, 4));
+      }
+    });
   });
 
   test('money sinks can never be in the Pro bypass set', () {

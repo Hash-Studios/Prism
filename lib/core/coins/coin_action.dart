@@ -9,10 +9,10 @@ enum CoinEarnAction {
   profileCompletion,
   proDailyBonus,
   refund,
-  proSpin,
   quest,
   questChest,
   streakChest,
+  spinWheel,
 }
 
 enum CoinSpendAction {
@@ -30,6 +30,7 @@ enum CoinSpendAction {
   giftPremiumPass,
   drawTicket,
   shopItem,
+  spinWheel,
 }
 
 extension CoinEarnActionX on CoinEarnAction {
@@ -50,13 +51,13 @@ extension CoinEarnActionX on CoinEarnAction {
       case CoinEarnAction.profileCompletion:
         return CoinPolicy.profileCompletion;
       case CoinEarnAction.proDailyBonus:
-      case CoinEarnAction.proSpin:
         return CoinPolicy.proDailyBonus;
       case CoinEarnAction.quest:
         return CoinPolicy.questCoins;
       case CoinEarnAction.questChest:
         return CoinPolicy.questChestMin;
       case CoinEarnAction.refund:
+      case CoinEarnAction.spinWheel:
         return 0;
     }
   }
@@ -94,6 +95,8 @@ extension CoinSpendActionX on CoinSpendAction {
         return CoinPolicy.drawTicket;
       case CoinSpendAction.shopItem:
         return 0;
+      case CoinSpendAction.spinWheel:
+        return CoinPolicy.spinWheelPrice;
     }
   }
 }
