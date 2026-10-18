@@ -19,10 +19,12 @@ Future<Rect> _boxRect(WidgetTester tester, double width) async {
 }
 
 void main() {
-  testWidgets('a phone page body takes the full width', (tester) async {
-    final Rect rect = await _boxRect(tester, 393);
-    expect(rect.left, 0);
-    expect(rect.width, 393);
+  testWidgets('phone page bodies keep their full widths', (tester) async {
+    for (final double width in <double>[320, 393, 480]) {
+      final Rect rect = await _boxRect(tester, width);
+      expect(rect.left, 0);
+      expect(rect.width, width);
+    }
   });
 
   testWidgets('a tablet page body is a centred 640 column', (tester) async {
@@ -60,5 +62,64 @@ void main() {
     tester.view.physicalSize = const Size(1376, 900);
     await tester.pump();
     expect(identical(tester.state(find.byType(TextField)), before), isTrue);
+  });
+
+  testWidgets('resizing a page preserves text and scroll position', (tester) async {
+    addTearDown(tester.view.reset);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(393, 600);
+    final ScrollController scrollController = ScrollController();
+    addTearDown(scrollController.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PrismPage(
+          title: 'Resize state',
+          headerBottom: const TextField(key: Key('field')),
+          body: ListView(
+            key: const Key('list'),
+            controller: scrollController,
+            children: <Widget>[
+              for (int index = 0; index < 12; index++) SizedBox(height: 100, child: Text('Row $index')),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.enterText(find.byKey(const Key('field')), 'keep this text');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    scrollController.jumpTo(300);
+    await tester.pump();
+    final State<StatefulWidget> fieldState = tester.state(find.byKey(const Key('field')));
+    final double scrollOffset = scrollController.offset;
+
+    tester.view.physicalSize = const Size(1376, 600);
+    await tester.pump();
+
+    expect(identical(tester.state(find.byKey(const Key('field'))), fieldState), isTrue);
+    expect(find.text('keep this text'), findsOneWidget);
+    expect(scrollController.offset, scrollOffset);
+  });
+
+  testWidgets('tablet body and footer columns share a center with safe-area insets', (tester) async {
+    tester.view.physicalSize = const Size(1376, 900);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewPadding = const FakeViewPadding(left: 24, right: 36);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: PrismPage(
+          title: 'Aligned footer',
+          body: SizedBox.expand(key: Key('body')),
+          bottomBar: SizedBox(width: double.infinity, height: 48, key: Key('footer')),
+        ),
+      ),
+    );
+
+    final Rect body = tester.getRect(find.byKey(const Key('body')));
+    final Rect footer = tester.getRect(find.byKey(const Key('footer')));
+    expect(body.width, 640);
+    expect(footer.width, 640);
+    expect(body.center.dx, footer.center.dx);
   });
 }

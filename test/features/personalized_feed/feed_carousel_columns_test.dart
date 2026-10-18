@@ -27,6 +27,7 @@ void main() {
     expect(feedCarouselColumns(599), 1);
     expect(feedCarouselColumns(744), 1);
     expect(feedCarouselColumns(834), 1);
+    expect(feedCarouselColumns(960), 2);
     expect(feedCarouselColumns(1032), 2);
     expect(feedCarouselColumns(1280), 2);
     expect(feedCarouselColumns(1376), 2);
