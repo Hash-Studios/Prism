@@ -18,6 +18,7 @@ import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.da
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -179,7 +180,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
       if (bannerImage.trim().isNotEmpty)
         FeedHeroCard(
           image: PrismImageTile(url: bannerImage, memCacheHeight: memCacheHeight),
-          semanticLabel: bannerTitle.isEmpty ? 'Announcement' : bannerTitle,
+          semanticLabel: bannerTitle.isEmpty ? context.l10n.wallpaperFeedAnnouncement : bannerTitle,
           title: bannerTitle,
           onTap: _openBanner,
         ),
@@ -258,7 +259,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
           fallbackUrl: wall.wallpaper.fullUrl,
           memCacheHeight: memCacheHeight,
         ),
-        semanticLabel: wall.semanticLabel,
+        semanticLabel: wall.semanticLabel(context.l10n),
         tag: tag,
         badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
         onTap: () => _openWall(wall, index, source),

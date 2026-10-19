@@ -1,4 +1,6 @@
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +13,9 @@ void main() {
     final key = GlobalKey();
     Future<void> pump() => tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: ConnectivityWidget(offline: true, key: key)),
       ),
     );
@@ -28,6 +33,9 @@ void main() {
     final key = GlobalKey();
     Future<void> pump(bool reduce) => tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: reduce),
           child: Scaffold(body: ConnectivityWidget(offline: true, key: key)),
@@ -43,7 +51,13 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
   testWidgets('the banner slides in after a second while offline and stays', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget(offline: true))));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: ConnectivityWidget(offline: true)),
+      ),
+    );
     expect(find.text('No internet connection'), findsOneWidget);
     expect(tester.widget<SlideTransition>(_slide).position.value.dy, -1.5);
 
@@ -58,6 +72,9 @@ void main() {
   testWidgets('the banner hides on recovery and shows again when the connection drops', (tester) async {
     Future<void> pump({required bool offline}) => tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: ConnectivityWidget(offline: offline)),
       ),
     );
@@ -78,15 +95,33 @@ void main() {
   });
 
   testWidgets('an online start never shows the banner', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget(offline: false))));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: ConnectivityWidget(offline: false)),
+      ),
+    );
     await tester.pump(const Duration(seconds: 12));
 
     expect(tester.widget<SlideTransition>(_slide).position.value.dy, -1.5);
   });
 
   testWidgets('leaving the screen before the timer fires cancels it', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget(offline: true))));
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: ConnectivityWidget(offline: true)),
+      ),
+    );
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: SizedBox()),
+      ),
+    );
 
     await tester.pump(const Duration(seconds: 12));
 
@@ -97,6 +132,9 @@ void main() {
     final handle = tester.ensureSemantics();
     Future<void> pump({required bool offline}) => tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: ConnectivityWidget(offline: offline)),
       ),
     );
@@ -118,6 +156,9 @@ void main() {
   testWidgets('the banner says back online for two seconds, then leaves', (tester) async {
     Future<void> pump({required bool offline}) => tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: ConnectivityWidget(offline: offline)),
       ),
     );
@@ -142,6 +183,9 @@ void main() {
   testWidgets('dropping again while back online shows the offline message at once', (tester) async {
     Future<void> pump({required bool offline}) => tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: ConnectivityWidget(offline: offline)),
       ),
     );
@@ -162,6 +206,9 @@ void main() {
   testWidgets('recovering before the banner showed does not flash back online', (tester) async {
     Future<void> pump({required bool offline}) => tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: ConnectivityWidget(offline: offline)),
       ),
     );
@@ -176,35 +223,41 @@ void main() {
   });
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
-    testWidgets('${option.label}: banner text is at least 12 sp and passes 4.5 in both states', (tester) async {
-      Future<void> pump({required bool offline}) => tester.pumpWidget(
-        MaterialApp(
-          theme: option.theme,
-          home: Scaffold(body: ConnectivityWidget(offline: offline)),
-        ),
-      );
+    testWidgets(
+      '${prismThemeDisplayName(option, AppLocalizationsEn())}: banner text is at least 12 sp and passes 4.5 in both states',
+      (tester) async {
+        Future<void> pump({required bool offline}) => tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
 
-      Future<void> expectReadable(String text) async {
-        final Text label = tester.widget<Text>(find.text(text));
-        final Color background =
-            (tester
-                        .widget<DecoratedBox>(
-                          find.ancestor(of: find.text(text), matching: find.byType(DecoratedBox)).first,
-                        )
-                        .decoration
-                    as BoxDecoration)
-                .color!;
-        expect(label.style!.fontSize, greaterThanOrEqualTo(12));
-        expect(contrastRatio(label.style!.color!, background), greaterThanOrEqualTo(4.5), reason: text);
-      }
+            theme: option.theme,
+            home: Scaffold(body: ConnectivityWidget(offline: offline)),
+          ),
+        );
 
-      await pump(offline: true);
-      await expectReadable('No internet connection');
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pumpAndSettle();
-      await pump(offline: false);
-      await expectReadable('Back online');
-      await tester.pumpWidget(const SizedBox());
-    });
+        Future<void> expectReadable(String text) async {
+          final Text label = tester.widget<Text>(find.text(text));
+          final Color background =
+              (tester
+                          .widget<DecoratedBox>(
+                            find.ancestor(of: find.text(text), matching: find.byType(DecoratedBox)).first,
+                          )
+                          .decoration
+                      as BoxDecoration)
+                  .color!;
+          expect(label.style!.fontSize, greaterThanOrEqualTo(12));
+          expect(contrastRatio(label.style!.color!, background), greaterThanOrEqualTo(4.5), reason: text);
+        }
+
+        await pump(offline: true);
+        await expectReadable('No internet connection');
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pumpAndSettle();
+        await pump(offline: false);
+        await expectReadable('Back online');
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
   }
 }

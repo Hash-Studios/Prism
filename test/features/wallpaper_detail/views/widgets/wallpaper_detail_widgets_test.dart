@@ -9,6 +9,8 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_butto
 import 'package:Prism/features/wallpaper_detail/views/widgets/similar_wallpapers_strip.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +28,11 @@ FeedItemEntity _wall(String id) => FeedItemEntity.prism(
   ),
 );
 
-Widget _host(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _host(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
 
 typedef _TagScene = ({String theme, String over, Color backdrop});
 
@@ -117,6 +123,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
             child: child!,
@@ -235,10 +244,13 @@ void main() {
         final PrismThemeOption option = <PrismThemeOption>[
           ...prismLightThemes,
           ...prismDarkThemes,
-        ].firstWhere((PrismThemeOption o) => o.label == scene.theme);
+        ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == scene.theme);
         final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             theme: theme,
             home: Scaffold(
               body: ColoredBox(

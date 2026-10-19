@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/logger/logger.dart';
@@ -47,6 +48,7 @@ class WallpaperSetContext {
 void reportWallpaperSetResult(
   BuildContext? context,
   WallpaperSetResult result, {
+  required AppLocalizations l10n,
   required WallpaperTarget target,
   ScaffoldMessengerState? messenger,
   WallpaperSetContext setContext = const WallpaperSetContext(),
@@ -59,23 +61,24 @@ void reportWallpaperSetResult(
   final BuildContext? live = context != null && context.mounted ? context : null;
   final ScaffoldMessengerState? host = messenger ?? (live == null ? null : ScaffoldMessenger.maybeOf(live));
   final ScaffoldMessengerState? snackHost = host != null && host.mounted ? host : null;
+  final String message = result.localizedMessage(l10n);
   if (result.isSuccess) {
     if (live != null) showGlintToast(live);
-    _showSuccess(snackHost, result, target, onMatchAccent);
+    _showSuccess(snackHost, result, target, onMatchAccent, l10n);
     return;
   }
   if (result.isInfo) {
     if (snackHost == null) {
-      toasts.success(result.message, haptic: false);
+      toasts.success(message, haptic: false);
       return;
     }
     snackHost
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(result.message)));
+      ..showSnackBar(SnackBar(content: Text(message)));
     return;
   }
   if (snackHost == null || !result.canRetry || onRetry == null) {
-    toasts.error(result.message);
+    toasts.error(message);
     return;
   }
   final WallpaperTarget retryTarget = result.failedTarget ?? target;
@@ -83,9 +86,9 @@ void reportWallpaperSetResult(
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        content: Text(result.message),
+        content: Text(message),
         action: SnackBarAction(
-          label: result.isPartial ? 'Retry ${_screenLabel(retryTarget)}' : 'Try again',
+          label: result.isPartial ? l10n.coreRetryOnScreen(_screenLabel(retryTarget, l10n)) : l10n.coreTryAgain,
           onPressed: () => onRetry(retryTarget),
         ),
       ),
@@ -120,10 +123,11 @@ void _showSuccess(
   WallpaperSetResult result,
   WallpaperTarget target,
   VoidCallback? onMatchAccent,
+  AppLocalizations l10n,
 ) {
   final bool canUndo = result.restore.isNotEmpty && !_autoRotateOn();
   if (messenger == null || (!canUndo && onMatchAccent == null)) {
-    toasts.success(result.message);
+    toasts.success(result.localizedMessage(l10n));
     return;
   }
   messenger
@@ -132,6 +136,7 @@ void _showSuccess(
       SnackBar(
         duration: _successSnackBarDuration,
         content: _SuccessContent(
+          l10n: l10n,
           onMatchAccent: onMatchAccent == null
               ? null
               : () {
@@ -141,8 +146,8 @@ void _showSuccess(
         ),
         action: canUndo
             ? SnackBarAction(
-                label: 'Undo',
-                onPressed: () => unawaited(undoWallpaperSet(result, target: target)),
+                label: l10n.coreUndo,
+                onPressed: () => unawaited(undoWallpaperSet(result, target: target, l10n: l10n)),
               )
             : null,
       ),
@@ -150,21 +155,22 @@ void _showSuccess(
 }
 
 class _SuccessContent extends StatelessWidget {
-  const _SuccessContent({required this.onMatchAccent});
+  const _SuccessContent({required this.onMatchAccent, required this.l10n});
 
   final VoidCallback? onMatchAccent;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
     final VoidCallback? match = onMatchAccent;
-    if (match == null) return const Text('Wallpaper set');
+    if (match == null) return Text(l10n.coreWallpaperSet);
     return Row(
       children: <Widget>[
-        const Expanded(child: Text('Wallpaper set')),
+        Expanded(child: Text(l10n.coreWallpaperSet)),
         TextButton(
           onPressed: match,
           style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.inversePrimary),
-          child: const Text('Match accent'),
+          child: Text(l10n.coreMatchAccent),
         ),
       ],
     );
@@ -173,7 +179,11 @@ class _SuccessContent extends StatelessWidget {
 
 /// Sets the wall that was there before [result] and removes the history rows the set wrote.
 /// Returns true when every screen was restored.
-Future<bool> undoWallpaperSet(WallpaperSetResult result, {required WallpaperTarget target}) async {
+Future<bool> undoWallpaperSet(
+  WallpaperSetResult result, {
+  required WallpaperTarget target,
+  required AppLocalizations l10n,
+}) async {
   bool restored = result.restore.isNotEmpty;
   for (final WallpaperRestore entry in result.restore) {
     final WallpaperSetResult back = await WallpaperService.setWallpaper(
@@ -206,9 +216,9 @@ Future<bool> undoWallpaperSet(WallpaperSetResult result, {required WallpaperTarg
     logger.w('Wallpaper undo analytics failed', error: error);
   }
   if (restored) {
-    toasts.info('Previous wallpaper restored');
+    toasts.info(l10n.corePreviousWallpaperRestored);
   } else {
-    toasts.error("Couldn't restore the previous wallpaper. Set it again from Wallpaper history.");
+    toasts.error(l10n.coreRestorePreviousWallpaperFailed);
   }
   return restored;
 }
@@ -223,8 +233,8 @@ bool _autoRotateOn() {
   }
 }
 
-String _screenLabel(WallpaperTarget target) => switch (target) {
-  WallpaperTarget.home => 'home screen',
-  WallpaperTarget.lock => 'lock screen',
-  WallpaperTarget.both => 'both screens',
+String _screenLabel(WallpaperTarget target, AppLocalizations l10n) => switch (target) {
+  WallpaperTarget.home => l10n.coreHomeScreen,
+  WallpaperTarget.lock => l10n.coreLockScreen,
+  WallpaperTarget.both => l10n.coreBothScreens,
 };

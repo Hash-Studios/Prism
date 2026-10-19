@@ -12,24 +12,81 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart'
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_preview.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 
-enum _LiveMode {
-  photo('Make it live'),
-  gradients('Gradients'),
-  video('Video');
-
-  const _LiveMode(this.label);
-
-  final String label;
-}
+enum _LiveMode { photo, gradients, video }
 
 enum _UnlockChoice { coins, pro }
+
+String _liveModeLabel(AppLocalizations l10n, _LiveMode mode) => switch (mode) {
+  _LiveMode.photo => l10n.wallpaperLiveModePhoto,
+  _LiveMode.gradients => l10n.wallpaperLiveModeGradients,
+  _LiveMode.video => l10n.wallpaperLiveModeVideo,
+};
+
+String _liveOutcomeMessage(AppLocalizations l10n, LiveApplyOutcome outcome) => switch (outcome.status) {
+  LiveApplyStatus.applied => l10n.wallpaperLiveApplied,
+  LiveApplyStatus.confirmInPreview => l10n.wallpaperLiveConfirmPreview,
+  LiveApplyStatus.cancelled => '',
+  LiveApplyStatus.unsupported => l10n.wallpaperLiveUnsupported,
+  LiveApplyStatus.proRequired => l10n.wallpaperLiveProStyleRequired,
+  LiveApplyStatus.failed => switch (outcome.failure) {
+    LiveApplyFailure.setFailed || null => l10n.wallpaperLiveErrorGeneric,
+    LiveApplyFailure.keepPrismOpen => l10n.wallpaperLiveKeepPrismOpen,
+    LiveApplyFailure.textureDownloadFailed => l10n.wallpaperLiveTextureDownloadFailed,
+    LiveApplyFailure.texturePreparationFailed => l10n.wallpaperLiveTexturePrepareFailed,
+    LiveApplyFailure.textureTooDetailed => l10n.wallpaperLiveTextureTooDetailed,
+    LiveApplyFailure.videoReadFailed => l10n.wallpaperLiveVideoReadFailed,
+    LiveApplyFailure.videoTooLarge => l10n.wallpaperLiveVideoTooLarge,
+    LiveApplyFailure.fileTooLarge => l10n.wallpaperLiveErrorTooLarge,
+    LiveApplyFailure.imageTooLarge || LiveApplyFailure.imageTooLargeForDevice => l10n.wallpaperLiveErrorImageTooLarge,
+    LiveApplyFailure.wallpaperNotAllowed => l10n.wallpaperLiveErrorNotAllowed,
+    LiveApplyFailure.outOfMemory => l10n.wallpaperLiveErrorMemory,
+    LiveApplyFailure.timeout => l10n.wallpaperLiveErrorTimeout,
+    LiveApplyFailure.invalidVideo => l10n.wallpaperLiveErrorVideo,
+    LiveApplyFailure.sourceUnavailable => l10n.wallpaperLiveErrorReadFile,
+    LiveApplyFailure.permissionDenied => l10n.wallpaperLiveErrorPermission,
+    LiveApplyFailure.styleUnavailable => l10n.wallpaperLiveErrorStyle,
+    LiveApplyFailure.systemPreviewUnavailable => l10n.wallpaperLiveErrorPreview,
+  },
+};
+
+String _motionStyleLabel(AppLocalizations l10n, MotionStyle style) => switch (style) {
+  MotionStyle.drift => l10n.wallpaperLiveStyleDrift,
+  MotionStyle.breathe => l10n.wallpaperLiveStyleBreathe,
+  MotionStyle.ripple => l10n.wallpaperLiveStyleRipple,
+  MotionStyle.shimmer => l10n.wallpaperLiveStyleShimmer,
+};
+
+String _motionStyleDescription(AppLocalizations l10n, MotionStyle style) => switch (style) {
+  MotionStyle.drift => l10n.wallpaperLiveStyleDriftDescription,
+  MotionStyle.breathe => l10n.wallpaperLiveStyleBreatheDescription,
+  MotionStyle.ripple => l10n.wallpaperLiveStyleRippleDescription,
+  MotionStyle.shimmer => l10n.wallpaperLiveStyleShimmerDescription,
+};
+
+String _gradientStyleLabel(AppLocalizations l10n, GradientStyle style) => switch (style) {
+  GradientStyle.aurora => l10n.wallpaperLiveStyleAurora,
+  GradientStyle.mesh => l10n.wallpaperLiveStyleMesh,
+  GradientStyle.waves => l10n.wallpaperLiveStyleWaves,
+  GradientStyle.plasma => l10n.wallpaperLiveStylePlasma,
+  GradientStyle.starfield => l10n.wallpaperLiveStyleStarfield,
+};
+
+String _gradientStyleDescription(AppLocalizations l10n, GradientStyle style) => switch (style) {
+  GradientStyle.aurora => l10n.wallpaperLiveStyleAuroraDescription,
+  GradientStyle.mesh => l10n.wallpaperLiveStyleMeshDescription,
+  GradientStyle.waves => l10n.wallpaperLiveStyleWavesDescription,
+  GradientStyle.plasma => l10n.wallpaperLiveStylePlasmaDescription,
+  GradientStyle.starfield => l10n.wallpaperLiveStyleStarfieldDescription,
+};
 
 /// The paid styles the signed-in user unlocked with coins, each with the end of its unlock.
 Map<String, DateTime> liveStyleUnlocks() => CoinsService.instance.currentPasses.liveStyles;
@@ -109,7 +166,10 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
-              content: Text(outcome.message, style: TextStyle(color: outcome.isError ? scheme.onError : null)),
+              content: Text(
+                _liveOutcomeMessage(context.l10n, outcome),
+                style: TextStyle(color: outcome.isError ? scheme.onError : null),
+              ),
               backgroundColor: outcome.isError ? scheme.error : null,
             ),
           );
@@ -120,8 +180,8 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   (String id, String label) get _lockedStyle {
     final LiveWallpaperState state = context.read<LiveWallpaperBloc>().state;
     return _mode == _LiveMode.photo
-        ? (state.motionStyle.name, state.motionStyle.label)
-        : (state.gradientStyle.name, state.gradientStyle.label);
+        ? (state.motionStyle.name, _motionStyleLabel(context.l10n, state.motionStyle))
+        : (state.gradientStyle.name, _gradientStyleLabel(context.l10n, state.gradientStyle));
   }
 
   Future<void> _offerUnlock(LiveWallpaperBloc bloc) async {
@@ -130,16 +190,19 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => PrismSheetBody(
-        title: '$label is a paid style',
-        message: 'Unlock it for 7 days with coins, or get Prism Pro for every style.',
+        title: context.l10n.wallpaperLiveUnlockStyleTitle(label),
+        message: context.l10n.wallpaperLiveUnlockStyleBody,
         actions: <Widget>[
           PrismButton(
-            label: 'Unlock $label for 7 days · ${CoinPolicy.liveWallpaperStyle} coins',
+            label: context.l10n.wallpaperLiveUnlockStyleAction(
+              label,
+              NumberFormat.decimalPattern(context.l10n.localeName).format(CoinPolicy.liveWallpaperStyle),
+            ),
             expand: true,
             onPressed: () => Navigator.of(sheetContext).pop(_UnlockChoice.coins),
           ),
           PrismButton(
-            label: 'See Prism Pro',
+            label: context.l10n.wallpaperSeePrismPro,
             expand: true,
             variant: PrismButtonVariant.ghost,
             onPressed: () => Navigator.of(sheetContext).pop(_UnlockChoice.pro),
@@ -162,11 +225,11 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
         if (!mounted) return;
         if (result.success) {
           bloc.add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()));
-          toasts.success('$label is unlocked for 7 days.');
+          toasts.success(context.l10n.wallpaperLiveStyleUnlocked(label));
         } else if (result.insufficientBalance) {
-          toasts.error('Not enough coins. Earn coins in Rewards.');
+          toasts.error(context.l10n.wallpaperInsufficientCoins);
         } else {
-          toasts.error("Couldn't unlock $label. Try again.");
+          toasts.error(context.l10n.wallpaperLiveUnlockError(label));
         }
       case _UnlockChoice.pro:
         await PaywallOrchestrator.instance.presentOrRequireSignIn(
@@ -208,7 +271,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'Live wallpapers',
+      title: context.l10n.wallpaperLiveTitle,
       body: BlocConsumer<LiveWallpaperBloc, LiveWallpaperState>(
         listenWhen: (previous, current) => current.outcome != null && previous.outcome != current.outcome,
         listener: (context, state) => _onOutcome(context, state.outcome!),
@@ -219,9 +282,9 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
             case LiveWallpaperStatus.unsupported:
               return GlintState(
                 kind: GlintStateKind.empty,
-                title: 'Live wallpapers are not available',
-                body: 'They need an Android phone that supports OpenGL live wallpapers.',
-                actionLabel: 'Back',
+                title: context.l10n.wallpaperLiveUnavailableTitle,
+                body: context.l10n.wallpaperLiveUnavailableBody,
+                actionLabel: context.l10n.wallpaperBack,
                 onAction: () => Navigator.of(context).maybePop(),
               );
             case LiveWallpaperStatus.ready:
@@ -249,7 +312,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text(mode.label),
+                    label: Text(_liveModeLabel(context.l10n, mode)),
                     selected: mode == _mode,
                     onSelected: (_) {
                       PrismHaptics.selection();
@@ -264,10 +327,10 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
           child: shadersOff || videoOff
               ? GlintState(
                   kind: GlintStateKind.empty,
-                  title: 'Not available on this device',
+                  title: context.l10n.wallpaperLiveDeviceUnavailable,
                   body: videoOff
-                      ? 'This device cannot play a video as a wallpaper.'
-                      : 'This device cannot run shader live wallpapers. Try Video.',
+                      ? context.l10n.wallpaperLiveVideoUnsupported
+                      : context.l10n.wallpaperLiveShaderUnsupported,
                 )
               : SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -304,7 +367,11 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
       _LiveMode.gradients => state.isLocked(state.gradientStyle.name, isFree: state.gradientStyle.isFree),
       _LiveMode.video => false,
     };
-    return locked ? 'Unlock · ${CoinPolicy.liveWallpaperStyle} coins' : 'Set live wallpaper';
+    return locked
+        ? context.l10n.wallpaperLiveUnlockCoins(
+            NumberFormat.decimalPattern(context.l10n.localeName).format(CoinPolicy.liveWallpaperStyle),
+          )
+        : context.l10n.wallpaperLiveSetAction;
   }
 }
 
@@ -320,7 +387,9 @@ class _PhotoSection extends StatelessWidget {
     return Column(
       children: [
         LiveStylePreview(
-          semanticLabel: '${state.motionStyle.label} preview',
+          semanticLabel: context.l10n.wallpaperLiveApplyPhotoDescription(
+            _motionStyleLabel(context.l10n, state.motionStyle),
+          ),
           child: CachedNetworkImage(
             imageUrl: imageUrl,
             fit: BoxFit.cover,
@@ -332,12 +401,12 @@ class _PhotoSection extends StatelessWidget {
         LiveStylePicker<MotionStyle>(
           values: MotionStyle.values,
           selected: state.motionStyle,
-          label: (style) => style.label,
+          label: (style) => _motionStyleLabel(context.l10n, style),
           isLocked: (style) => state.isLocked(style.name, isFree: style.isFree),
           onSelected: (style) => bloc.add(LiveWallpaperEvent.motionSelected(style)),
         ),
         const SizedBox(height: 8),
-        _Description(text: state.motionStyle.description),
+        _Description(text: _motionStyleDescription(context.l10n, state.motionStyle)),
         _BatterySaver(state: state),
       ],
     );
@@ -365,19 +434,21 @@ class _GradientSection extends StatelessWidget {
     return Column(
       children: [
         LiveStylePreview(
-          semanticLabel: '${state.gradientStyle.label} preview',
+          semanticLabel: context.l10n.wallpaperLiveGradientDescription(
+            _gradientStyleLabel(context.l10n, state.gradientStyle),
+          ),
           child: DecoratedBox(decoration: BoxDecoration(gradient: liveGradientPreview(state.gradientStyle, palette))),
         ),
         const SizedBox(height: 16),
         LiveStylePicker<GradientStyle>(
           values: GradientStyle.values,
           selected: state.gradientStyle,
-          label: (style) => style.label,
+          label: (style) => _gradientStyleLabel(context.l10n, style),
           isLocked: (style) => state.isLocked(style.name, isFree: style.isFree),
           onSelected: (style) => bloc.add(LiveWallpaperEvent.gradientSelected(style)),
         ),
         const SizedBox(height: 8),
-        _Description(text: state.gradientStyle.description),
+        _Description(text: _gradientStyleDescription(context.l10n, state.gradientStyle)),
         const SizedBox(height: 12),
         _SeedSwatches(seeds: seeds, selected: seedIndex, onSelected: onSeedSelected),
         _BatterySaver(state: state),
@@ -403,7 +474,10 @@ class _SeedSwatches extends StatelessWidget {
           Semantics(
             button: true,
             selected: index == selected,
-            label: 'Gradient colour ${index + 1} of ${seeds.length}',
+            label: context.l10n.wallpaperLiveGradientSwatch(
+              NumberFormat.decimalPattern(context.l10n.localeName).format(index + 1),
+              NumberFormat.decimalPattern(context.l10n.localeName).format(seeds.length),
+            ),
             child: InkResponse(
               onTap: () => onSelected(index),
               radius: 28,
@@ -438,7 +512,7 @@ class _VideoSection extends StatelessWidget {
     return Column(
       children: [
         LiveStylePreview(
-          semanticLabel: path == null ? 'No video chosen' : 'Chosen video',
+          semanticLabel: path == null ? context.l10n.wallpaperLiveNoVideo : context.l10n.wallpaperLiveVideoChosen,
           child: ColoredBox(
             color: theme.cardColor,
             child: Center(
@@ -463,10 +537,12 @@ class _VideoSection extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: state.applying ? null : onChoose,
           icon: const Icon(Icons.video_file_outlined),
-          label: Text(path == null ? 'Choose a video' : 'Choose another video'),
+          label: Text(
+            path == null ? context.l10n.wallpaperLiveChooseVideo : context.l10n.wallpaperLiveChooseAnotherVideo,
+          ),
         ),
         const SizedBox(height: 8),
-        const _Description(text: 'Plays on your home screen with the sound off. Up to 256 MB.'),
+        _Description(text: context.l10n.wallpaperLiveVideoDescription),
       ],
     );
   }
@@ -498,8 +574,8 @@ class _BatterySaver extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text('Battery saver', style: TextStyle(color: theme.colorScheme.secondary)),
-      subtitle: Text(state.batterySaver ? '15 frames per second' : '30 frames per second'),
+      title: Text(context.l10n.wallpaperLiveBatterySaver, style: TextStyle(color: theme.colorScheme.secondary)),
+      subtitle: Text(context.l10n.wallpaperLiveFps(state.batterySaver ? 15 : 30)),
       value: state.batterySaver,
       onChanged: (value) => context.read<LiveWallpaperBloc>().add(LiveWallpaperEvent.batterySaverChanged(value)),
     );
@@ -539,7 +615,7 @@ class _ApplyBar extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Android opens a preview. Tap Set wallpaper there.',
+              context.l10n.wallpaperLivePreviewInstruction,
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.6)),
             ),
           ],

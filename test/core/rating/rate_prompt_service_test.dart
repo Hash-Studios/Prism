@@ -2,6 +2,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/rating/rate_prompt_service.dart';
 import 'package:Prism/core/rating/rate_prompt_sheet.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,6 +10,9 @@ Future<BuildContext> _pumpContext(WidgetTester tester) async {
   late BuildContext captured;
   await tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: Builder(
         builder: (context) {
           captured = context;

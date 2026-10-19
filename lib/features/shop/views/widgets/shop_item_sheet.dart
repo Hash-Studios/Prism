@@ -10,6 +10,7 @@ import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
 import 'package:Prism/features/shop/views/widgets/shop_labels.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -64,10 +65,10 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     final bool changed = await AppIconChannel.setIcon(item.id);
     if (!mounted) return;
     if (changed) {
-      toasts.success('${item.name} icon is on');
+      toasts.success(context.l10n.economyShopIconEnabled(shopItemName(item, context.l10n)));
       Navigator.of(context).pop();
     } else {
-      toasts.error('Could not change the icon');
+      toasts.error(context.l10n.economyShopChangeIconFailed);
     }
   }
 
@@ -90,21 +91,23 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     );
   }
 
-  String? _message(ShopState state, ShopAvailability availability, bool owned, int missing) {
+  String? _message(AppLocalizations l10n, ShopState state, ShopAvailability availability, bool owned, int missing) {
     if (owned) {
-      return item.proOnly && item.slot != null && !state.premium ? 'Wearing this needs Pro.' : null;
+      return item.proOnly && item.slot != null && !state.premium ? l10n.economyShopWearingNeedsPro : null;
     }
     if (item.rankReward != null) {
       return availability == ShopAvailability.rankLocked
-          ? 'Earned at ${shopRankName(item.rankReward!)} rank with lifetime XP.'
-          : 'Rank reached. Your reward is syncing.';
+          ? l10n.economyShopEarnedAtLifetimeXp(shopRankName(item.rankReward!, l10n))
+          : l10n.economyShopRankReachedSyncing;
     }
     return switch (availability) {
-      ShopAvailability.soldOut => 'This limited item is sold out.',
-      ShopAvailability.proOnly => 'Only Pro members can buy this.',
-      ShopAvailability.rankLocked => 'Reach ${shopRankName(item.requiredRank ?? '')} rank to buy this.',
-      ShopAvailability.available when missing > 0 => 'You need $missing more coins.',
-      ShopAvailability.available when item.founders => 'Limited. On sale until ${shopUntilLabel() ?? 'soon'}.',
+      ShopAvailability.soldOut => l10n.economyShopSoldOut,
+      ShopAvailability.proOnly => l10n.economyShopProOnly,
+      ShopAvailability.rankLocked => l10n.economyShopReachRankToBuy(shopRankName(item.requiredRank ?? '', l10n)),
+      ShopAvailability.available when missing > 0 => l10n.economyShopCoinsShort(missing),
+      ShopAvailability.available when item.founders => l10n.economyShopSaleUntil(
+        shopUntilLabel(l10n) ?? l10n.economySoon,
+      ),
       ShopAvailability.available => null,
     };
   }
@@ -113,12 +116,16 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     final bool loading = state.loadingItemId == item.id;
     if (owned) {
       return switch (item.kind) {
-        ShopItemKind.theme => <Widget>[PrismButton(label: 'Use theme', expand: true, onPressed: _useTheme)],
-        ShopItemKind.appIcon => <Widget>[PrismButton(label: 'Use icon', expand: true, onPressed: _useIcon)],
+        ShopItemKind.theme => <Widget>[
+          PrismButton(label: context.l10n.economyShopUseTheme, expand: true, onPressed: _useTheme),
+        ],
+        ShopItemKind.appIcon => <Widget>[
+          PrismButton(label: context.l10n.economyShopUseIcon, expand: true, onPressed: _useIcon),
+        ],
         _ => <Widget>[
           if (state.isEquipped(item))
             PrismButton(
-              label: 'Unequip',
+              label: context.l10n.economyShopUnequip,
               expand: true,
               variant: PrismButtonVariant.tonal,
               loading: loading,
@@ -126,7 +133,7 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
             )
           else
             PrismButton(
-              label: 'Equip',
+              label: context.l10n.economyShopEquip,
               expand: true,
               loading: loading,
               onPressed: item.proOnly && !state.premium ? null : () => _equip(equip: true),
@@ -137,7 +144,9 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     if (item.rankReward != null) {
       return <Widget>[
         PrismButton(
-          label: availability == ShopAvailability.rankLocked ? 'Earn XP' : 'Sync reward',
+          label: availability == ShopAvailability.rankLocked
+              ? context.l10n.economyShopEarnXp
+              : context.l10n.economyShopSyncReward,
           expand: true,
           variant: PrismButtonVariant.tonal,
           loading: loading,
@@ -149,21 +158,33 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     }
     return switch (availability) {
       ShopAvailability.soldOut => const <Widget>[],
-      ShopAvailability.proOnly => <Widget>[PrismButton(label: 'Get Pro', expand: true, onPressed: _getPro)],
+      ShopAvailability.proOnly => <Widget>[
+        PrismButton(label: context.l10n.economyGetPro, expand: true, onPressed: _getPro),
+      ],
       ShopAvailability.rankLocked => <Widget>[
-        PrismButton(label: 'Earn coins', expand: true, variant: PrismButtonVariant.tonal, onPressed: _earnCoins),
+        PrismButton(
+          label: context.l10n.economyEarnCoins,
+          expand: true,
+          variant: PrismButtonVariant.tonal,
+          onPressed: _earnCoins,
+        ),
       ],
       ShopAvailability.available when state.balance >= price => <Widget>[
         PrismButton(
-          label: 'Buy for $price',
+          label: context.l10n.economyShopBuyFor(price),
           expand: true,
           loading: loading,
           onPressed: () => context.read<ShopBloc>().add(ShopEvent.purchaseRequested(item.id)),
         ),
       ],
       ShopAvailability.available => <Widget>[
-        PrismButton(label: watchAdOptionLabel(), expand: true, onPressed: _watchAndBuy),
-        PrismButton(label: 'Earn coins', expand: true, variant: PrismButtonVariant.ghost, onPressed: _earnCoins),
+        PrismButton(label: watchAdOptionLabel(context.l10n), expand: true, onPressed: _watchAndBuy),
+        PrismButton(
+          label: context.l10n.economyEarnCoins,
+          expand: true,
+          variant: PrismButtonVariant.ghost,
+          onPressed: _earnCoins,
+        ),
       ],
     };
   }
@@ -175,7 +196,8 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
           current.notice != null && !identical(previous.notice, current.notice),
       listener: (BuildContext context, ShopState state) {
         final ShopNotice notice = state.notice!;
-        notice.success ? toasts.success(notice.message) : toasts.error(notice.message);
+        final String message = shopNoticeMessage(notice, context.l10n);
+        notice.success ? toasts.success(message) : toasts.error(message);
       },
       builder: (BuildContext context, ShopState state) {
         final int price = shopPriceFor(item);
@@ -183,8 +205,8 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
         final ShopAvailability availability = state.availability(item);
         final int missing = (price - state.balance).clamp(0, price);
         return PrismSheetBody(
-          title: item.name,
-          message: _message(state, availability, owned, missing),
+          title: shopItemName(item, context.l10n),
+          message: _message(context.l10n, state, availability, owned, missing),
           centered: true,
           scrollable: true,
           actions: _actions(state, availability, owned, price),
@@ -198,14 +220,14 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
               if (!owned && item.rankReward == null && availability != ShopAvailability.soldOut) ...<Widget>[
                 const SizedBox(height: PrismSpace.md),
                 Semantics(
-                  label: '$price coins',
+                  label: context.l10n.economyCoins(price),
                   excludeSemantics: true,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       const PrismCoinIcon(size: 22),
                       const SizedBox(width: PrismSpace.xs),
-                      Text('$price', style: PrismTextStyles.numeral(context, 24)),
+                      Text(formatLocalizedNumber(price, context.l10n), style: PrismTextStyles.numeral(context, 24)),
                     ],
                   ),
                 ),
@@ -216,4 +238,23 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
       },
     );
   }
+}
+
+String shopNoticeMessage(ShopNotice notice, AppLocalizations l10n) {
+  final ShopItem? item = shopItem(notice.itemId);
+  final String name = item == null ? l10n.economyUnknownCosmetic : shopItemName(item, l10n);
+  final String rank = shopRankName(notice.rankId ?? '', l10n);
+  return switch (notice.kind) {
+    ShopNoticeKind.rankRewardSynced => l10n.economyShopRankRewardSynced(name),
+    ShopNoticeKind.purchased => l10n.economyShopPurchased(name),
+    ShopNoticeKind.alreadyOwned => l10n.economyShopAlreadyOwned,
+    ShopNoticeKind.proOnly => l10n.economyShopProOnly,
+    ShopNoticeKind.rankLocked => l10n.economyShopRankLocked(rank),
+    ShopNoticeKind.soldOut => l10n.economyShopSoldOut,
+    ShopNoticeKind.insufficient => l10n.economyShopNeedMoreCoins,
+    ShopNoticeKind.purchaseFailed => l10n.economyShopPurchaseFailed,
+    ShopNoticeKind.equipped => l10n.economyShopEquipped(name),
+    ShopNoticeKind.unequipped => l10n.economyShopUnequipped(name),
+    ShopNoticeKind.equipFailed => l10n.economyShopEquipFailed,
+  };
 }

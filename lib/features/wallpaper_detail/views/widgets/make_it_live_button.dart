@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:flutter/material.dart';
 
@@ -40,7 +41,7 @@ class _MakeItLiveButtonState extends State<MakeItLiveButton> {
   Widget build(BuildContext context) {
     if (!_supported) return const SizedBox.shrink();
     return PrismButton(
-      label: 'Make it live',
+      label: context.l10n.wallpaperMakeItLive,
       icon: Icons.motion_photos_on_outlined,
       variant: PrismButtonVariant.tonal,
       size: PrismButtonSize.compact,
@@ -91,7 +92,7 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
     if (!_supported) return const SizedBox.shrink();
     final Widget chip = Semantics(
       button: true,
-      label: 'Make it live',
+      label: context.l10n.wallpaperMakeItLive,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -116,7 +117,7 @@ class _MakeItLiveChipState extends State<MakeItLiveChip> {
                         const Icon(Icons.motion_photos_on_outlined, size: 16, color: Colors.white),
                         const SizedBox(width: 6),
                         Text(
-                          'Live',
+                          context.l10n.wallpaperLive,
                           style: PrismTextStyles.caption(
                             context,
                           ).copyWith(color: Colors.white, fontWeight: FontWeight.w700),

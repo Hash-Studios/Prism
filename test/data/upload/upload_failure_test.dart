@@ -1,4 +1,5 @@
 import 'package:Prism/data/upload/upload_failure.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,34 +7,38 @@ UploadFailure _failure(String code, String message) =>
     UploadFailure.from(FirebaseFunctionsException(code: code, message: message));
 
 void main() {
+  final AppLocalizationsEn l10n = AppLocalizationsEn();
   test('weekly limit maps to a paywall failure', () {
     final failure = _failure('resource-exhausted', 'Free weekly wallpaper upload limit reached.');
-    expect(failure.message, 'You reached this week’s free upload limit.');
+    expect(failure.message(l10n), 'You reached this week’s free upload limit.');
     expect(failure.weeklyLimit, isTrue);
   });
 
   test('daily limit does not offer the paywall', () {
     final failure = _failure('resource-exhausted', 'Daily upload limit reached.');
-    expect(failure.message, 'You reached today’s upload limit. Try again tomorrow.');
+    expect(failure.message(l10n), 'You reached today’s upload limit. Try again tomorrow.');
     expect(failure.weeklyLimit, isFalse);
   });
 
   test('in progress uploads get a wait message', () {
     final failure = _failure('resource-exhausted', 'Upload is already in progress.');
-    expect(failure.message, contains('already in progress'));
+    expect(failure.message(l10n), contains('already in progress'));
     expect(failure.weeklyLimit, isFalse);
   });
 
   test('size and type errors have clear messages', () {
-    expect(_failure('invalid-argument', 'File is too large.').message, oversizeUploadMessage);
-    expect(_failure('invalid-argument', 'Only image files are allowed.').message, contains('JPG, PNG, WebP or HEIC'));
-    expect(_failure('invalid-argument', 'Invalid file path.').message, genericUploadFailureMessage);
+    expect(_failure('invalid-argument', 'File is too large.').message(l10n), l10n.coreUploadFailureOversize);
+    expect(
+      _failure('invalid-argument', 'Only image files are allowed.').message(l10n),
+      contains('JPG, PNG, WebP or HEIC'),
+    );
+    expect(_failure('invalid-argument', 'Invalid file path.').message(l10n), l10n.coreUploadFailureGeneric);
   });
 
   test('other errors fall back to the generic message', () {
-    expect(_failure('internal', 'GitHub request failed (500).').message, genericUploadFailureMessage);
-    expect(UploadFailure.from(StateError('boom')).message, genericUploadFailureMessage);
-    expect(_failure('unauthenticated', 'Sign in to upload files.').message, 'Sign in again to upload.');
+    expect(_failure('internal', 'GitHub request failed (500).').message(l10n), l10n.coreUploadFailureGeneric);
+    expect(UploadFailure.from(StateError('boom')).message(l10n), l10n.coreUploadFailureGeneric);
+    expect(_failure('unauthenticated', 'Sign in to upload files.').message(l10n), l10n.coreUploadFailureSignIn);
   });
 
   test('upload names carry the uid and time and keep the thumb_ prefix', () {

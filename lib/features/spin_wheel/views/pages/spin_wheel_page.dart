@@ -22,6 +22,7 @@ import 'package:Prism/features/spin_wheel/views/widgets/wheel_geometry.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_machine.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_odds_sheet.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -251,7 +252,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
       _shortOverride = result.refusal == SpinRefusal.insufficientBalance;
     });
     if (result.refusal == SpinRefusal.priceChanged) {
-      toasts.info('The price changed. Check it and spin again.');
+      toasts.info(context.l10n.economySpinPriceChanged);
     }
   }
 
@@ -261,12 +262,12 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
       _balance = before;
       _delta = 0;
     });
-    toasts.error("Couldn't reach Prism. Try again.");
+    toasts.error(context.l10n.errorNetwork);
   }
 
   Future<void> _getCoins() => showGetCoinsSheet(
     context,
-    message: 'A spin costs ${_status.price} coins. You have $_balance. Watch a video to earn more.',
+    message: context.l10n.economySpinShortBalanceMessage(_status.price, _balance),
     sourceTag: 'coins.spin_wheel.rewarded_ad',
     upsellSource: 'spin_wheel_rewarded_ad',
   );
@@ -352,7 +353,10 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
           SizedBox(
             height: _StageLayout.titleBand,
             child: Center(
-              child: Semantics(header: true, child: Text('Spin the wheel', style: PrismTextStyles.display(context))),
+              child: Semantics(
+                header: true,
+                child: Text(context.l10n.economySpinTheWheel, style: PrismTextStyles.display(context)),
+              ),
             ),
           ),
           SizedBox(
@@ -422,7 +426,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
           const SizedBox(height: PrismSpace.sm),
           OddsPill(onTap: () => unawaited(showWheelOdds(context, _segments))),
           const SizedBox(height: PrismSpace.xxs),
-          Text(spinsLeftCaption(_status), style: PrismTextStyles.caption(context)),
+          Text(spinsLeftCaption(context.l10n, _status), style: PrismTextStyles.caption(context)),
           if (!pro) ...<Widget>[
             const SizedBox(height: PrismSpace.md),
             Padding(
@@ -445,9 +449,9 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     final bool free = _status.freeSpinAvailable;
     if (_spinInFlight) {
       return SpinButton(
-        label: 'SPIN',
-        semanticLabel: 'Spinning',
-        caption: free ? 'Free spin' : null,
+        label: context.l10n.economySpin,
+        semanticLabel: context.l10n.economySpinning,
+        caption: free ? context.l10n.economyFreeSpin : null,
         price: free ? null : _status.nextCost,
         pressed: true,
         onPressed: null,
@@ -455,22 +459,22 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
     }
     return switch (action) {
       SpinAction.spin => SpinButton(
-        label: 'SPIN',
-        semanticLabel: free ? 'Spin, free spin' : 'Spin, ${_status.nextCost} coins',
-        caption: free ? 'Free spin' : null,
+        label: context.l10n.economySpin,
+        semanticLabel: free ? context.l10n.economySpinFree : context.l10n.economySpinPrice(_status.nextCost),
+        caption: free ? context.l10n.economyFreeSpin : null,
         price: free ? null : _status.nextCost,
         onPressed: _onSpin,
       ),
       SpinAction.getCoins => SpinButton(
-        label: 'Get coins',
-        semanticLabel: 'Get coins. A spin costs ${_status.price} coins',
-        caption: 'A spin costs ${_status.price} coins',
+        label: context.l10n.economyGetCoins,
+        semanticLabel: context.l10n.economyGetCoinsForSpin(_status.price),
+        caption: context.l10n.economySpinCosts(_status.price),
         onPressed: _onSpin,
       ),
-      SpinAction.capped => const SpinButton(
-        label: 'Back tomorrow',
-        semanticLabel: 'Back tomorrow',
-        caption: 'All spins used',
+      SpinAction.capped => SpinButton(
+        label: context.l10n.economyBackTomorrow,
+        semanticLabel: context.l10n.economyBackTomorrow,
+        caption: context.l10n.economyAllSpinsUsed,
         onPressed: null,
       ),
     };
@@ -503,7 +507,7 @@ class _ProRow extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return PrismCard(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.sm),
-      semanticLabel: 'Pro members get a free spin every day',
+      semanticLabel: context.l10n.economyProDailyFreeSpin,
       onTap: onTap,
       child: Row(
         children: <Widget>[
@@ -511,7 +515,7 @@ class _ProRow extends StatelessWidget {
           const SizedBox(width: PrismSpace.sm),
           Expanded(
             child: Text(
-              'Pro members get a free spin every day',
+              context.l10n.economyProDailyFreeSpin,
               style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14),
             ),
           ),

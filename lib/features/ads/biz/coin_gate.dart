@@ -4,6 +4,8 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/biz/coin_gate_port.dart';
 import 'package:Prism/features/ads/biz/rewarded_ad_flow.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -131,9 +133,9 @@ class CoinGateSpec {
     this.repromptOnNudgeSpendInsufficient = true,
     this.creditAfterUnmount = true,
     this.refundOnFailure = true,
-    this.adErrorMessage = 'Unable to credit coins right now.',
-    this.spendErrorMessage = 'Unable to process coins right now.',
-    this.failureLabel = 'Download failed',
+    this.adErrorMessage,
+    this.spendErrorMessage,
+    this.failureLabel,
     this.refundReason = 'download_failed_refund',
     this.onAttempt,
     this.onWatchChosen,
@@ -192,9 +194,9 @@ class CoinGateSpec {
   final bool refundOnFailure;
 
   /// Error text for rewarded-ad credit or upsell exceptions. Unchanged credits use the standard credit error.
-  final String adErrorMessage;
-  final String spendErrorMessage;
-  final String failureLabel;
+  final String? adErrorMessage;
+  final String? spendErrorMessage;
+  final String? failureLabel;
   final String refundReason;
   final void Function(String spendTag)? onAttempt;
   final VoidCallback? onWatchChosen;
@@ -216,11 +218,13 @@ class CoinGateSpec {
 
 /// One place for the premium bypass, spend, low-balance sheet, rewarded ad, credit, retry, refund sequence.
 class CoinGate {
-  CoinGate(this._port);
+  CoinGate(this._port, {AppLocalizations? l10n}) : _l10n = l10n ?? AppLocalizationsEn();
 
-  factory CoinGate.forContext(BuildContext context) => CoinGate(AppCoinGatePort(() => context.read<AdsBloc>()));
+  factory CoinGate.forContext(BuildContext context) =>
+      CoinGate(AppCoinGatePort(() => context.read<AdsBloc>()), l10n: context.l10n);
 
   final CoinGatePort _port;
+  final AppLocalizations _l10n;
 
   /// [startInsufficient] opens the low-balance prompt first when the balance is short, as after an ad that did not
   /// cover the cost.
@@ -347,7 +351,7 @@ class CoinGate {
     required String upsellSource,
     required bool Function() isMounted,
     bool creditAfterUnmount = true,
-    String adErrorMessage = 'Unable to credit coins right now.',
+    String? adErrorMessage,
   }) async {
     if (!isMounted()) {
       return false;
@@ -358,13 +362,13 @@ class CoinGate {
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
       if (isMounted()) {
-        _port.showError(adFailureMessage(null));
+        _port.showError(adFailureMessage(_l10n, null));
       }
       return false;
     }
     if (!watched.earned) {
       if (isMounted()) {
-        _port.showError(adFailureMessage(watched.failure));
+        _port.showError(adFailureMessage(_l10n, watched.failure));
       }
       return false;
     }
@@ -377,16 +381,16 @@ class CoinGate {
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
       if (isMounted()) {
-        _port.showError(adErrorMessage);
+        _port.showError(adErrorMessage ?? _l10n.economyAdCreditFailure);
       }
       return false;
     }
     if (!credit.changed) {
       if (isMounted()) {
         if (credit.unknownOutcomeTransactionId.isNotEmpty) {
-          _port.showInfo(rewardPendingMessage);
+          _port.showInfo(rewardPendingMessage(_l10n));
         } else {
-          _port.showError(creditFailureMessage(credit));
+          _port.showError(creditFailureMessage(_l10n, credit));
         }
       }
       return false;
@@ -397,7 +401,7 @@ class CoinGate {
       } catch (error, stackTrace) {
         _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
         if (isMounted()) {
-          _port.showError(adErrorMessage);
+          _port.showError(adErrorMessage ?? _l10n.economyAdCreditFailure);
         }
         return false;
       }
@@ -446,7 +450,7 @@ class CoinGate {
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: tag, error: error, stackTrace: stackTrace);
       if (spec.isMounted()) {
-        _port.showError(spec.spendErrorMessage);
+        _port.showError(spec.spendErrorMessage ?? _l10n.economyCoinSpendFailed);
       }
       return CoinGateResult.spendFailed;
     }
@@ -455,7 +459,7 @@ class CoinGate {
         return CoinGateResult.insufficient;
       }
       if (spec.isMounted()) {
-        _port.showError(spec.spendErrorMessage);
+        _port.showError(spec.spendErrorMessage ?? _l10n.economyCoinSpendFailed);
       }
       return CoinGateResult.spendFailed;
     }
@@ -516,7 +520,9 @@ class CoinGate {
       if (refund.success && refund.changed) {
         await _clear(tag, txId);
         if (spec.isMounted()) {
-          _port.showSuccess('${spec.failureLabel}. ${refund.delta} coins refunded.');
+          _port.showSuccess(
+            _l10n.economyCoinGateRefunded(spec.failureLabel ?? _l10n.economyDownloadFailedLabel, refund.delta),
+          );
         }
         return CoinGateResult.failedRefunded;
       }
@@ -526,7 +532,7 @@ class CoinGate {
     }
     await _release(tag, txId);
     if (spec.isMounted()) {
-      _port.showError('${spec.failureLabel}. Your refund could not be confirmed.');
+      _port.showError(_l10n.economyCoinGateRefundUnconfirmed(spec.failureLabel ?? _l10n.economyDownloadFailedLabel));
     }
     return CoinGateResult.failedNotRefunded;
   }
@@ -551,17 +557,17 @@ class CoinGate {
 }
 
 /// What to tell the user when no rewarded ad played.
-String adFailureMessage(AdFailureReason? reason) => switch (reason) {
-  AdFailureReason.consent => 'Ads are off. Change this in Settings > Privacy.',
-  AdFailureReason.noFill => 'No ad is available right now. Try again later.',
-  AdFailureReason.offline => 'You are offline. Check your connection and try again.',
-  _ => 'Ad was not completed.',
+String adFailureMessage(AppLocalizations l10n, AdFailureReason? reason) => switch (reason) {
+  AdFailureReason.consent => l10n.economyAdsOffPrivacy,
+  AdFailureReason.noFill => l10n.economyAdUnavailable,
+  AdFailureReason.offline => l10n.economyAdOffline,
+  _ => l10n.economyAdNotCompleted,
 };
 
-const String rewardPendingMessage = 'We could not confirm your reward yet. The coins arrive when you are back online.';
+String rewardPendingMessage(AppLocalizations l10n) => l10n.economyAdRewardPending;
 
 /// What to tell the user when a watched ad did not add coins.
-String creditFailureMessage(CoinMutationResult credit) => switch (credit.reason) {
-  'rewarded_ad_limit' => 'Daily limit reached. Back tomorrow.',
-  _ => 'Unable to credit coins right now.',
+String creditFailureMessage(AppLocalizations l10n, CoinMutationResult credit) => switch (credit.reason) {
+  'rewarded_ad_limit' => l10n.economyAdDailyLimit,
+  _ => l10n.economyAdCreditFailure,
 };

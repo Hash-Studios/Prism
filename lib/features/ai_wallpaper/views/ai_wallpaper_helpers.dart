@@ -5,12 +5,31 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 const Duration aiAssetTransferTimeout = Duration(seconds: 30);
+
+String aiStyleLabel(AppLocalizations l10n, AiStylePreset style) => switch (style) {
+  AiStylePreset.anime => l10n.economyAiStyleAnime,
+  AiStylePreset.minimal => l10n.economyAiStyleMinimal,
+  AiStylePreset.cyberpunk => l10n.economyAiStyleCyberpunk,
+  AiStylePreset.watercolor => l10n.economyAiStyleWatercolor,
+  AiStylePreset.meshGradient => l10n.economyAiStyleMeshGradient,
+  AiStylePreset.abstract => l10n.economyAiStyleAbstract,
+  AiStylePreset.nature => l10n.economyAiStyleNature,
+};
+
+String aiQualityLabel(AppLocalizations l10n, AiQualityTier tier) => switch (tier) {
+  AiQualityTier.fast => l10n.economyAiQualityFast,
+  AiQualityTier.balanced => l10n.economyAiQualityBalanced,
+  AiQualityTier.quality => l10n.economyAiQualityHigh,
+};
 
 bool isAiOfflineOrNetworkError(Object error) {
   if (error is SocketException ||
@@ -31,19 +50,17 @@ bool isAiOfflineOrNetworkError(Object error) {
   return false;
 }
 
-String aiHistoryFailureMessage(Object error) => isAiOfflineOrNetworkError(error)
-    ? "You're offline or the network failed. Pull to refresh when you're back."
-    : "Couldn't load history. Pull to refresh.";
+String aiHistoryFailureMessage(AppLocalizations l10n, Object error) =>
+    isAiOfflineOrNetworkError(error) ? l10n.economyAiOfflineHistory : l10n.economyAiHistoryFailed;
 
-String aiGenerateFailureMessage(Object error) {
-  if (error is AiGenerationApiException) return aiGenerationErrorCopy(error);
-  if (isAiOfflineOrNetworkError(error)) return 'No connection. Check your network and try again.';
-  return 'Something went wrong. Try again.';
+String aiGenerateFailureMessage(AppLocalizations l10n, Object error) {
+  if (error is AiGenerationApiException) return aiGenerationErrorCopy(l10n, error);
+  if (isAiOfflineOrNetworkError(error)) return l10n.economyAiNoConnection;
+  return l10n.economyAiGenerateGenericFailure;
 }
 
-String aiDownloadFailureMessage(Object error) => isAiOfflineOrNetworkError(error)
-    ? 'No connection. Check your network and try again.'
-    : "Couldn't save that file. Try again.";
+String aiDownloadFailureMessage(AppLocalizations l10n, Object error) =>
+    isAiOfflineOrNetworkError(error) ? l10n.economyAiNoConnection : l10n.economyAiSaveFailed;
 
 /// True when [generated] is shaped differently enough from [targetSize] ("1080x2400") that the crop will show.
 bool isAiAspectRatioMismatch({required AiGenerationRecord generated, required String targetSize}) {

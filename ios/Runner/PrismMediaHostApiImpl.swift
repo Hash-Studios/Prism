@@ -73,7 +73,7 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
         completion(.success(DownloadItemsResult(success: true, items: paths)))
       } catch {
         completion(.success(DownloadItemsResult(
-          success: false, items: [], errorCode: "LIST_FAILED", message: error.localizedDescription
+          success: false, items: [], errorCode: "LIST_FAILED"
         )))
       }
     }
@@ -85,10 +85,10 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
         let removed = try await files.clear()
         completion(.success(removed
           ? OperationResult(success: true)
-          : OperationResult(success: false, errorCode: "NO_DOWNLOADS", message: "No downloads found.")))
+          : OperationResult(success: false, errorCode: "NO_DOWNLOADS")))
       } catch {
         completion(.success(OperationResult(
-          success: false, errorCode: "CLEAR_FAILED", message: error.localizedDescription
+          success: false, errorCode: "CLEAR_FAILED"
         )))
       }
     }
@@ -100,10 +100,10 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
         let removed = try await files.delete(path: path)
         completion(.success(removed
           ? OperationResult(success: true)
-          : OperationResult(success: false, errorCode: "NOT_FOUND", message: "Download not found.")))
+          : OperationResult(success: false, errorCode: "NOT_FOUND")))
       } catch {
         completion(.success(OperationResult(
-          success: false, errorCode: "DELETE_FAILED", message: error.localizedDescription
+          success: false, errorCode: "DELETE_FAILED"
         )))
       }
     }
@@ -123,7 +123,7 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
   private func failure(_ error: Error) -> OperationResult {
     let mediaError = error as? PrismMediaError
     return OperationResult(
-      success: false, errorCode: mediaError?.code ?? "EXCEPTION", message: error.localizedDescription
+      success: false, errorCode: mediaError?.code ?? "EXCEPTION"
     )
   }
 

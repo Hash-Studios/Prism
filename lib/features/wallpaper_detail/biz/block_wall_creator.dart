@@ -9,6 +9,7 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_ent
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/widgets.dart';
 
@@ -35,7 +36,7 @@ Future<void> blockWallCreator(BuildContext context, FeedItemEntity entity) async
     logger.w('Block creator: could not load the profile', error: error);
   }
   if (profile == null || profile.id.trim().isEmpty || profile.email.trim().isEmpty) {
-    toasts.error("Couldn't find this creator. Try again.");
+    toasts.error(context.l10n.wallpaperBlockCreatorNotFound);
     return;
   }
   if (!context.mounted) return;

@@ -18,6 +18,7 @@ import 'package:Prism/features/daily_chest/views/widgets/chest_box.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_odds_sheet.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_reveal_card.dart';
 import 'package:Prism/features/spin_wheel/spin_wheel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
@@ -273,7 +274,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       _priceOverride = refused.price ?? _priceOverride;
       _phase = _idlePhase();
     });
-    if (refused.refusal == ChestRefusal.priceChanged) toasts.info('The price changed. Check it and open again.');
+    if (refused.refusal == ChestRefusal.priceChanged) toasts.info(context.l10n.economyChestPriceChanged);
   }
 
   void _onFailed() {
@@ -283,12 +284,12 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       _balance = _balanceSource.value;
       _delta = 0;
     });
-    toasts.error("Couldn't reach Prism. Try again.");
+    toasts.error(context.l10n.economyChestOpenFailed);
   }
 
   Future<void> _getCoins(DailyChestStatus status) => showGetCoinsSheet(
     context,
-    message: 'The chest costs ${status.price} coins. You have $_balance. Watch a video to earn more.',
+    message: context.l10n.economyChestNeedCoins(status.price, _balance),
     sourceTag: 'coins.daily_chest.rewarded_ad',
     upsellSource: 'daily_chest_rewarded_ad',
   );
@@ -433,7 +434,10 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
                 opacity: titleGone ? 0 : 1,
                 duration: fade,
                 curve: PrismCurves.exit,
-                child: Semantics(header: true, child: Text('Daily chest', style: PrismTextStyles.display(context))),
+                child: Semantics(
+                  header: true,
+                  child: Text(context.l10n.economyDailyChest, style: PrismTextStyles.display(context)),
+                ),
               ),
             ),
           ),
@@ -524,14 +528,14 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
                 : Column(
                     children: <Widget>[
                       Text(
-                        chestCostLine(status, now: _now),
+                        chestCostLine(context.l10n, status, now: _now),
                         textAlign: TextAlign.center,
                         style: PrismTextStyles.body(context).copyWith(height: 1.4),
                       ),
                       if (!status.opened) ...<Widget>[
                         const SizedBox(height: PrismSpace.xxs),
                         Text(
-                          chestBonusLine(bonusDone: bonusDone),
+                          chestBonusLine(context.l10n, bonusDone: bonusDone),
                           textAlign: TextAlign.center,
                           style: PrismTextStyles.caption(context),
                         ),
@@ -544,31 +548,47 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
         // The button is 58 high. Past 1.15 its label and the price under it no longer fit.
         MediaQuery.withClampedTextScaling(
           maxScaleFactor: 1.15,
-          child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 232), child: _button(status)),
+          child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 232), child: _button(context, status)),
         ),
       ],
     );
   }
 
-  Widget _button(DailyChestStatus? status) {
+  Widget _button(BuildContext context, DailyChestStatus? status) {
     if (status == null) {
-      return const SpinButton(label: 'Open', semanticLabel: 'Open the chest. Loading', onPressed: null);
+      return SpinButton(
+        label: context.l10n.economyOpen,
+        semanticLabel: context.l10n.economyOpenChestLoading,
+        onPressed: null,
+      );
     }
     final bool free = status.free;
     final int? price = free ? null : status.nextCost;
-    final String label = free ? 'Open free' : 'Open';
-    final String semantic = free ? 'Open the chest, free' : 'Open the chest, ${status.nextCost} coins';
+    final String label = free ? context.l10n.economyOpenFree : context.l10n.economyOpen;
+    final String semantic = free
+        ? context.l10n.economyOpenChestFree
+        : context.l10n.economyOpenChestCost(status.nextCost);
     if (_busy) {
-      return SpinButton(label: label, semanticLabel: 'Opening', price: price, pressed: true, onPressed: null);
+      return SpinButton(
+        label: label,
+        semanticLabel: context.l10n.economyOpening,
+        price: price,
+        pressed: true,
+        onPressed: null,
+      );
     }
     return switch (_action!) {
       ChestAction.open => SpinButton(label: label, semanticLabel: semantic, price: price, onPressed: _onOpen),
       ChestAction.getCoins => SpinButton(
-        label: 'Get coins',
-        semanticLabel: 'Get coins. The chest costs ${status.price} coins',
+        label: context.l10n.economyGetCoins,
+        semanticLabel: context.l10n.economyGetCoinsChestCost(status.price),
         onPressed: _onOpen,
       ),
-      ChestAction.spent => const SpinButton(label: 'Back tomorrow', semanticLabel: 'Back tomorrow', onPressed: null),
+      ChestAction.spent => SpinButton(
+        label: context.l10n.economyBackTomorrow,
+        semanticLabel: context.l10n.economyBackTomorrow,
+        onPressed: null,
+      ),
     };
   }
 
@@ -582,11 +602,11 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            PrismButton(label: 'Done', expand: true, onPressed: _close),
+            PrismButton(label: context.l10n.actionDone, expand: true, onPressed: _close),
             if (cosmetic) ...<Widget>[
               const SizedBox(height: PrismSpace.xs),
               PrismButton(
-                label: 'See it in the Shop',
+                label: context.l10n.economySeeItInShop,
                 expand: true,
                 variant: PrismButtonVariant.ghost,
                 onPressed: () => unawaited(_openShop()),

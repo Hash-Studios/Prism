@@ -8,6 +8,7 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
@@ -16,6 +17,7 @@ import 'package:Prism/features/auto_rotate/views/auto_rotate_entitlement.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
@@ -24,48 +26,47 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-const Map<int, String> _intervalLabels = <int, String>{
-  15: 'Every 15 min (battery heavy)',
-  30: 'Every 30 min',
-  60: 'Every hour',
-  180: 'Every 3 hours',
-  360: 'Every 6 hours',
-  720: 'Every 12 hours',
-  1440: 'Every day',
-  4320: 'Every 3 days',
-  10080: 'Every week',
+String _intervalLabel(AppLocalizations l10n, int interval) => switch (interval) {
+  15 => l10n.wallpaperAutoRotateInterval15,
+  30 => l10n.wallpaperAutoRotateInterval30,
+  60 => l10n.wallpaperAutoRotateIntervalHour,
+  180 => l10n.wallpaperAutoRotateInterval3Hours,
+  360 => l10n.wallpaperAutoRotateInterval6Hours,
+  720 => l10n.wallpaperAutoRotateInterval12Hours,
+  1440 => l10n.wallpaperAutoRotateIntervalDay,
+  4320 => l10n.wallpaperAutoRotateInterval3Days,
+  10080 => l10n.wallpaperAutoRotateIntervalWeek,
+  _ => throw ArgumentError.value(interval, 'interval'),
 };
 
-const Map<WallpaperTarget, String> _targetLabels = <WallpaperTarget, String>{
-  WallpaperTarget.home: 'Home screen',
-  WallpaperTarget.lock: 'Lock screen',
-  WallpaperTarget.both: 'Both',
+String _targetLabel(AppLocalizations l10n, WallpaperTarget target) => switch (target) {
+  WallpaperTarget.home => l10n.wallpaperAutoRotateHomeScreen,
+  WallpaperTarget.lock => l10n.wallpaperAutoRotateLockScreen,
+  WallpaperTarget.both => l10n.wallpaperAutoRotateBothScreens,
 };
 
-const Map<AutoRotateSource, String> _sourceLabels = <AutoRotateSource, String>{
-  AutoRotateSource.favourites: 'Favourites',
-  AutoRotateSource.downloads: 'Downloads',
-  AutoRotateSource.category: 'Category',
-  AutoRotateSource.wallOfTheDay: 'Wall of the Day',
-  AutoRotateSource.history: 'History',
+String _sourceLabel(AppLocalizations l10n, AutoRotateSource source) => switch (source) {
+  AutoRotateSource.favourites => l10n.wallpaperAutoRotateSourceFavourites,
+  AutoRotateSource.downloads => l10n.wallpaperAutoRotateSourceDownloads,
+  AutoRotateSource.category => l10n.wallpaperAutoRotateSourceCategory,
+  AutoRotateSource.wallOfTheDay => l10n.wallpaperAutoRotateSourceWotd,
+  AutoRotateSource.history => l10n.wallpaperAutoRotateSourceHistory,
 };
 
-const String _batteryTipSteps = 'Open Settings, then Apps, Prism, Battery. Set battery use to Unrestricted.';
-
-String _sourceNoun(AutoRotateConfig config) => switch (config.source) {
-  AutoRotateSource.favourites => 'favourites',
-  AutoRotateSource.downloads => 'downloads',
-  AutoRotateSource.category => '${config.categoryName} wallpapers',
-  AutoRotateSource.wallOfTheDay => 'Wall of the Day picks',
-  AutoRotateSource.history => 'wallpapers from your history',
+String _sourceNoun(AppLocalizations l10n, AutoRotateConfig config) => switch (config.source) {
+  AutoRotateSource.favourites => l10n.wallpaperAutoRotateNounFavourites,
+  AutoRotateSource.downloads => l10n.wallpaperAutoRotateNounDownloads,
+  AutoRotateSource.category => l10n.wallpaperAutoRotateNounCategory(categoryDisplayName(config.categoryName, l10n)),
+  AutoRotateSource.wallOfTheDay => l10n.wallpaperAutoRotateNounWotd,
+  AutoRotateSource.history => l10n.wallpaperAutoRotateNounHistory,
 };
 
-String _tooFewText(AutoRotateSource source) => switch (source) {
-  AutoRotateSource.favourites => 'Favourite at least 2 wallpapers to rotate them.',
-  AutoRotateSource.downloads => 'Download at least 2 wallpapers to rotate them.',
-  AutoRotateSource.category => 'This category has fewer than 2 wallpapers. Pick another one.',
-  AutoRotateSource.wallOfTheDay => 'There are not enough past picks yet.',
-  AutoRotateSource.history => 'Set at least 2 wallpapers from Prism to rotate them.',
+String _tooFewText(AppLocalizations l10n, AutoRotateSource source) => switch (source) {
+  AutoRotateSource.favourites => l10n.wallpaperAutoRotateTooFewFavourites,
+  AutoRotateSource.downloads => l10n.wallpaperAutoRotateTooFewDownloads,
+  AutoRotateSource.category => l10n.wallpaperAutoRotateTooFewCategory,
+  AutoRotateSource.wallOfTheDay => l10n.wallpaperAutoRotateTooFewWotd,
+  AutoRotateSource.history => l10n.wallpaperAutoRotateTooFewHistory,
 };
 
 List<String> _urlsOf(FavouriteWallsState state) => state.items.map((item) => item.fullUrl).toList(growable: false);
@@ -156,12 +157,12 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'Auto-rotate',
+      title: context.l10n.wallpaperAutoRotateTitle,
       body: !_isAndroid
           ? _Message(
               kind: GlintStateKind.empty,
-              text: 'Auto-rotate is only available on Android.',
-              buttonLabel: 'Back',
+              text: context.l10n.wallpaperAutoRotateAndroidOnly,
+              buttonLabel: context.l10n.wallpaperBack,
               onPressed: () {
                 context.router.maybePop();
               },
@@ -171,32 +172,32 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                 if (state.status.isRunning && !state.config.enabled) {
                   return _Message(
                     kind: GlintStateKind.error,
-                    text: 'Could not stop wallpaper rotation.',
-                    buttonLabel: 'Try again',
+                    text: context.l10n.wallpaperAutoRotateStopError,
+                    buttonLabel: context.l10n.wallpaperTryAgain,
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(false)),
                   );
                 }
                 if (state.status.isRunning && state.config.enabled && state.status.lastError != null) {
                   return _Message(
                     kind: GlintStateKind.error,
-                    text: 'Could not change wallpaper.',
-                    buttonLabel: 'Change now',
+                    text: context.l10n.wallpaperAutoRotateChangeError,
+                    buttonLabel: context.l10n.wallpaperChangeNow,
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.rotateNowPressed()),
                   );
                 }
                 if (state.status.lastError != null) {
                   return _Message(
                     kind: GlintStateKind.error,
-                    text: 'Could not update auto-rotate.',
-                    buttonLabel: 'Turn off',
+                    text: context.l10n.wallpaperAutoRotateUpdateError,
+                    buttonLabel: context.l10n.wallpaperTurnOff,
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(false)),
                   );
                 }
                 if (_initializationFailed) {
                   return _Message(
                     kind: GlintStateKind.error,
-                    text: 'Could not load auto-rotate settings.',
-                    buttonLabel: 'Try again',
+                    text: context.l10n.wallpaperAutoRotateLoadError,
+                    buttonLabel: context.l10n.wallpaperTryAgain,
                     onPressed: _start,
                   );
                 }
@@ -205,8 +206,8 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                 if (state.startFailed) {
                   return _Message(
                     kind: GlintStateKind.error,
-                    text: 'Could not start wallpaper rotation.',
-                    buttonLabel: 'Try again',
+                    text: context.l10n.wallpaperAutoRotateStartError,
+                    buttonLabel: context.l10n.wallpaperTryAgain,
                     onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(true)),
                   );
                 }
@@ -262,11 +263,11 @@ class _ProPromptState extends State<_ProPrompt> {
           passUntil: result.passUntil,
         ),
       );
-      toasts.success('Auto-rotate is on for 7 days.');
+      toasts.success(context.l10n.wallpaperAutoRotatePassEnabled);
     } else if (result.insufficientBalance) {
-      toasts.error('Not enough coins. Earn coins in Rewards.');
+      toasts.error(context.l10n.wallpaperInsufficientCoins);
     } else {
-      toasts.error("Couldn't unlock auto-rotate. Try again.");
+      toasts.error(context.l10n.wallpaperAutoRotateUnlockError);
     }
   }
 
@@ -283,26 +284,26 @@ class _ProPromptState extends State<_ProPrompt> {
               const Glint(),
               const SizedBox(height: PrismSpace.md),
               Text(
-                'Auto-rotate is a Prism Pro feature.',
+                context.l10n.wallpaperAutoRotateProTitle,
                 textAlign: TextAlign.center,
                 style: PrismTextStyles.cardTitle(context),
               ),
               const SizedBox(height: PrismSpace.xxs),
               Text(
-                'Try it for 7 days with coins, or get Prism Pro.',
+                context.l10n.wallpaperAutoRotateProBody,
                 textAlign: TextAlign.center,
                 style: PrismTextStyles.body(context),
               ),
               const SizedBox(height: PrismSpace.md),
               PrismButton(
-                label: '7-day pass · ${CoinPolicy.autoRotatePass7d} coins',
+                label: context.l10n.wallpaperAutoRotatePassPurchase(CoinPolicy.autoRotatePass7d),
                 expand: true,
                 loading: _buying,
                 onPressed: () => unawaited(_buyPass()),
               ),
               const SizedBox(height: PrismSpace.xs),
               PrismButton(
-                label: 'See Prism Pro',
+                label: context.l10n.wallpaperSeePrismPro,
                 expand: true,
                 variant: PrismButtonVariant.ghost,
                 onPressed: () {
@@ -326,13 +327,14 @@ class _Controls extends StatelessWidget {
 
   final AutoRotateState state;
 
-  String _statusText() {
-    if (state.startFailed) return 'Could not start. Try again.';
-    if (state.starting) return 'Starting';
-    if (!state.config.enabled) return 'Off';
+  String _statusText(AppLocalizations l10n) {
+    if (state.startFailed) return l10n.wallpaperAutoRotateCouldNotStart;
+    if (state.starting) return l10n.wallpaperAutoRotateStarting;
+    if (!state.config.enabled) return l10n.wallpaperAutoRotateOff;
     final int next = state.status.nextRunEpochMs;
-    if (!state.status.isRunning || next <= 0) return 'Scheduled';
-    return 'Next change around ${DateFormat.jm().format(DateTime.fromMillisecondsSinceEpoch(next))}';
+    if (!state.status.isRunning || next <= 0) return l10n.wallpaperAutoRotateScheduled;
+    final String time = DateFormat.jm(l10n.localeName).format(DateTime.fromMillisecondsSinceEpoch(next));
+    return l10n.wallpaperAutoRotateNextChange(time);
   }
 
   /// When the 7-day pass ends. Null for Pro users and when no pass is active.
@@ -354,7 +356,7 @@ class _Controls extends StatelessWidget {
         PrismSectionHeader(
           title: title,
           small: true,
-          padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
+          padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xl, 0, PrismSpace.xs),
         ),
         child,
       ],
@@ -376,17 +378,18 @@ class _Controls extends StatelessWidget {
     final int cached = status.cachedCount.clamp(0, status.totalCount);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
+      padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
       children: <Widget>[
         PrismGroup(
           children: <Widget>[
             PrismSwitchRow(
               icon: Icons.autorenew_rounded,
-              title: 'Auto-rotate wallpapers',
+              title: context.l10n.wallpaperAutoRotateTitle,
               subtitle: state.loadingSource
-                  ? 'Loading wallpapers'
-                  : '${state.sourceCount} ${_sourceNoun(config)} in the mix'
-                        '${state.sourcesCapped ? '. Using your first 100.' : ''}',
+                  ? context.l10n.wallpaperAutoRotateLoadingWalls
+                  : state.sourcesCapped
+                  ? context.l10n.wallpaperAutoRotateMixCapped(state.sourceCount, _sourceNoun(context.l10n, config))
+                  : context.l10n.wallpaperAutoRotateMix(state.sourceCount, _sourceNoun(context.l10n, config)),
               value: config.enabled || state.starting,
               onChanged: canToggle ? (value) => bloc.add(AutoRotateEvent.toggled(value)) : null,
             ),
@@ -394,27 +397,29 @@ class _Controls extends StatelessWidget {
         ),
         if (_passEnd() case final DateTime end)
           Padding(
-            padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.sm, PrismSpace.xs, 0),
+            padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.sm, PrismSpace.xs, 0),
             child: Text(
-              'Pass active until ${DateFormat.MMMd().add_jm().format(end.toLocal())}',
+              context.l10n.wallpaperAutoRotateEnabledUntil(
+                DateFormat.MMMd(context.l10n.localeName).add_jm().format(end.toLocal()),
+              ),
               style: PrismTextStyles.caption(context),
             ),
           ),
         if (state.starting)
-          _ProgressRow(label: 'Preparing ${state.sourceCount} wallpapers')
+          _ProgressRow(label: context.l10n.wallpaperAutoRotatePreparing(state.sourceCount))
         else if (caching && cached < status.totalCount)
           _ProgressRow(
-            label: 'Downloaded $cached of ${status.totalCount} wallpapers',
+            label: context.l10n.wallpaperAutoRotateDownloadedCount(cached, status.totalCount),
             value: cached / status.totalCount,
           ),
         if (state.sourceLoadFailed)
           Padding(
             padding: const EdgeInsets.only(top: PrismSpace.sm),
             child: _Notice(
-              text: 'Could not load wallpapers. Check your connection.',
+              text: context.l10n.wallpaperAutoRotateSourceLoadError,
               actions: <Widget>[
                 PrismButton(
-                  label: 'Try again',
+                  label: context.l10n.wallpaperTryAgain,
                   variant: PrismButtonVariant.tonal,
                   size: PrismButtonSize.compact,
                   onPressed: () => bloc.add(const AutoRotateEvent.toggled(true)),
@@ -426,17 +431,17 @@ class _Controls extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: PrismSpace.sm),
             child: _Notice(
-              text: _tooFewText(config.source),
+              text: _tooFewText(context.l10n, config.source),
               actions: <Widget>[
                 switch (config.source) {
                   AutoRotateSource.favourites => PrismButton(
-                    label: 'Open favourites',
+                    label: context.l10n.wallpaperAutoRotateOpenFavourites,
                     variant: PrismButtonVariant.tonal,
                     size: PrismButtonSize.compact,
                     onPressed: () => context.router.push(const FavouriteWallpaperRoute()),
                   ),
                   AutoRotateSource.downloads => PrismButton(
-                    label: 'Open downloads',
+                    label: context.l10n.wallpaperAutoRotateOpenDownloads,
                     variant: PrismButtonVariant.tonal,
                     size: PrismButtonSize.compact,
                     onPressed: () => context.router.push(const DownloadRoute()),
@@ -448,23 +453,21 @@ class _Controls extends StatelessWidget {
           ),
         if (state.showBatteryTip)
           section(
-            'Keep it running',
+            context.l10n.wallpaperAutoRotateKeepRunning,
             _Notice(
-              text:
-                  'If wallpapers stop changing, set battery use for Prism to Unrestricted. '
-                  'Open settings, then Apps, Prism, Battery.',
+              text: context.l10n.wallpaperAutoRotateBatteryTip,
               actions: <Widget>[
                 PrismButton(
-                  label: 'Copy steps',
+                  label: context.l10n.wallpaperAutoRotateCopySteps,
                   variant: PrismButtonVariant.tonal,
                   size: PrismButtonSize.compact,
                   onPressed: () {
-                    unawaited(Clipboard.setData(const ClipboardData(text: _batteryTipSteps)));
-                    toasts.info('Steps copied.');
+                    unawaited(Clipboard.setData(ClipboardData(text: context.l10n.wallpaperAutoRotateBatterySteps)));
+                    toasts.info(context.l10n.wallpaperAutoRotateStepsCopied);
                   },
                 ),
                 PrismButton(
-                  label: 'Got it',
+                  label: context.l10n.wallpaperAutoRotateGotIt,
                   variant: PrismButtonVariant.ghost,
                   size: PrismButtonSize.compact,
                   onPressed: () => bloc.add(const AutoRotateEvent.batteryTipDismissed()),
@@ -473,13 +476,13 @@ class _Controls extends StatelessWidget {
             ),
           ),
         section(
-          'Source',
+          context.l10n.wallpaperAutoRotateSourceLabel,
           chips(
             <AutoRotateSource, String>{
-              ..._sourceLabels,
+              for (final AutoRotateSource source in AutoRotateSource.values) source: _sourceLabel(context.l10n, source),
               AutoRotateSource.category: config.source == AutoRotateSource.category
-                  ? 'Category: ${config.categoryName}'
-                  : 'Category',
+                  ? '${context.l10n.wallpaperAutoRotateSourceCategory}: ${categoryDisplayName(config.categoryName, context.l10n)}'
+                  : context.l10n.wallpaperAutoRotateSourceCategory,
             },
             config.source,
             (v) => v == AutoRotateSource.category
@@ -488,15 +491,22 @@ class _Controls extends StatelessWidget {
           ),
         ),
         section(
-          'Change',
-          chips(_intervalLabels, config.intervalMinutes, (v) => bloc.add(AutoRotateEvent.intervalChanged(v))),
+          context.l10n.wallpaperAutoRotateChangeLabel,
+          chips(
+            <int, String>{
+              for (final int interval in <int>[15, 30, 60, 180, 360, 720, 1440, 4320, 10080])
+                interval: _intervalLabel(context.l10n, interval),
+            },
+            config.intervalMinutes,
+            (v) => bloc.add(AutoRotateEvent.intervalChanged(v)),
+          ),
         ),
         section(
-          'Apply to',
+          context.l10n.wallpaperAutoRotateApplyTo,
           chips(
             <WallpaperTarget, String>{
-              for (final MapEntry<WallpaperTarget, String> entry in _targetLabels.entries)
-                if (state.supportedTargets.contains(entry.key)) entry.key: entry.value,
+              for (final WallpaperTarget target in WallpaperTarget.values)
+                if (state.supportedTargets.contains(target)) target: _targetLabel(context.l10n, target),
             },
             config.target,
             (v) => bloc.add(AutoRotateEvent.targetChanged(v)),
@@ -507,36 +517,36 @@ class _Controls extends StatelessWidget {
           children: <Widget>[
             PrismSwitchRow(
               icon: Icons.shuffle_rounded,
-              title: 'Shuffle',
-              subtitle: 'Random order instead of one after another',
+              title: context.l10n.wallpaperAutoRotateShuffle,
+              subtitle: context.l10n.wallpaperAutoRotateShuffleDescription,
               value: config.shuffle,
               onChanged: (value) => bloc.add(AutoRotateEvent.shuffleChanged(value)),
             ),
             PrismSwitchRow(
               icon: Icons.power_rounded,
-              title: 'Only while charging',
-              subtitle: 'Change when plugged in, at most once per interval',
+              title: context.l10n.wallpaperAutoRotateChargingOnly,
+              subtitle: context.l10n.wallpaperAutoRotateChargingDescription,
               value: config.chargingOnly,
               onChanged: (value) => bloc.add(AutoRotateEvent.chargingOnlyChanged(value)),
             ),
           ],
         ),
         section(
-          'Status',
+          context.l10n.wallpaperAutoRotateStatusLabel,
           PrismGroup(
             children: <Widget>[
-              PrismRow(icon: Icons.schedule_rounded, title: _statusText()),
+              PrismRow(icon: Icons.schedule_rounded, title: _statusText(context.l10n)),
               if (caching && cached >= status.totalCount)
                 PrismRow(
                   icon: Icons.check_circle_outline_rounded,
-                  title: '$cached of ${status.totalCount} wallpapers ready',
+                  title: context.l10n.wallpaperAutoRotateReadyCount(cached, status.totalCount),
                 ),
             ],
           ),
         ),
         const SizedBox(height: PrismSpace.sm),
         PrismButton(
-          label: 'Change now',
+          label: context.l10n.wallpaperChangeNow,
           icon: Icons.skip_next_rounded,
           variant: PrismButtonVariant.tonal,
           expand: true,
@@ -553,7 +563,7 @@ Future<void> _pickCategory(BuildContext context, String current) async {
     context: context,
     isScrollControlled: true,
     builder: (sheetContext) => PrismSheetBody(
-      title: 'Pick a category',
+      title: context.l10n.wallpaperAutoRotatePickCategory,
       scrollable: true,
       child: PrismGroup(
         children: <Widget>[
@@ -605,7 +615,7 @@ class _ProgressRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.sm, PrismSpace.xs, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.sm, PrismSpace.xs, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[

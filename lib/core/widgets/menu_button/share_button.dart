@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -19,7 +20,7 @@ class ShareButton extends StatefulWidget {
   final String? url;
   final String thumbUrl;
   final String? contextLine;
-  final Future<String?> Function(String id, WallpaperSource source, String? url, String thumbUrl) createLink;
+  final Future<String?> Function(String id, WallpaperSource source, String? url, String thumbUrl)? createLink;
   final Future<ShareCardResult> Function(
     BuildContext context, {
     required String imageUrl,
@@ -36,7 +37,7 @@ class ShareButton extends StatefulWidget {
     required this.url,
     required this.thumbUrl,
     this.contextLine,
-    this.createLink = createDynamicLink,
+    this.createLink,
     this.shareCard = shareWallpaperCard,
     this.labelled = false,
     super.key,
@@ -57,8 +58,8 @@ class _ShareButtonState extends State<ShareButton> {
   @override
   Widget build(BuildContext context) {
     return CircularMenuButton(
-      label: 'Share',
-      caption: widget.labelled ? 'Share' : null,
+      label: context.l10n.coreShare,
+      caption: widget.labelled ? context.l10n.coreShare : null,
       onTap: () {
         PrismHaptics.tap();
         logger.d('Share');
@@ -89,14 +90,17 @@ class _ShareButtonState extends State<ShareButton> {
     try {
       final String itemId = id ?? '';
       final bool isBundledStarter = BundledWallpapers.isStarterIdentity(itemId, source);
+      final AppLocalizations l10n = context.l10n;
       final String canonicalLink = isBundledStarter
-          ? 'This bundled wallpaper is available in the Prism app.'
+          ? l10n.coreShareWallpaperGeneric
           : canonicalWallpaperLink(id: itemId, source: source, url: url, thumbUrl: thumbUrl);
       String link = canonicalLink;
       if (!isBundledStarter) {
         try {
           link =
-              await createLink(itemId, source, url, thumbUrl).timeout(const Duration(milliseconds: 750)) ??
+              await (createLink?.call(itemId, source, url, thumbUrl) ??
+                      createDynamicLink(itemId, source, url, thumbUrl, l10n: l10n))
+                  .timeout(const Duration(milliseconds: 750)) ??
               canonicalLink;
         } on TimeoutException catch (error, stackTrace) {
           logger.w('Short link timed out; sharing canonical wallpaper URL.', error: error, stackTrace: stackTrace);
@@ -122,7 +126,7 @@ class _ShareButtonState extends State<ShareButton> {
                 sourceContext: 'wallpaper_screen',
               ),
             );
-            toasts.error("Couldn't share this wallpaper right now.");
+            toasts.error(l10n.coreWallpaperShareFailed);
           }
           return;
         }
@@ -154,7 +158,7 @@ class _ShareButtonState extends State<ShareButton> {
           sourceContext: 'wallpaper_screen',
         ),
       );
-      if (mounted) toasts.error("Couldn't share this wallpaper. Try again.");
+      if (mounted) toasts.error(context.l10n.coreWallpaperShareRetryFailed);
     } finally {
       if (mounted) {
         setState(() {

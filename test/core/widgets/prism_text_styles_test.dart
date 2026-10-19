@@ -1,3 +1,4 @@
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +36,9 @@ void main() {
       late Map<String, TextStyle> resolved;
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: theme,
           themeAnimationDuration: Duration.zero,
           home: Builder(

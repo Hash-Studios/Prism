@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/core/purchases/upload_quota.dart';
+import 'package:Prism/l10n/l10n.dart';
 
 /// Most images one Prism Pro batch can hold.
 const int maxProBatchSize = 10;
@@ -35,9 +36,9 @@ class UploadBatch {
     if (hasNext) index++;
   }
 
-  String get summary {
+  String summary(AppLocalizations l10n) {
     final int notSent = total - submittedCount;
-    final String sent = '$submittedCount of $total wallpapers submitted';
-    return notSent == 0 ? sent : '$sent. $notSent not sent.';
+    final String sent = l10n.wallpaperUploadBatchSummarySubmitted(submittedCount, total);
+    return notSent == 0 ? sent : l10n.wallpaperUploadBatchSummaryNotSent(sent, notSent);
   }
 }

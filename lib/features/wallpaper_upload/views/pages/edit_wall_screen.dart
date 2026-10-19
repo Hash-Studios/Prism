@@ -6,6 +6,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/edit_adjustments_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:extended_image/extended_image.dart';
@@ -77,9 +78,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
   Future<void> _confirmDiscard() async {
     final bool discard = await showPrismConfirm(
       context,
-      title: 'Discard your edits?',
-      message: 'Your changes will be lost.',
-      confirmLabel: 'Discard',
+      title: context.l10n.wallpaperUploadDiscardEditsTitle,
+      message: context.l10n.wallpaperUploadDiscardEditsBody,
+      confirmLabel: context.l10n.wallpaperDiscard,
       destructive: true,
     );
     if (discard && mounted) Navigator.pop(context);
@@ -94,13 +95,22 @@ class _EditWallScreenState extends State<EditWallScreen> {
       },
       child: PrismPage(
         title: widget.batch?.isMulti == true
-            ? 'Edit wallpaper ${widget.batch!.position} of ${widget.batch!.total}'
-            : 'Edit wallpaper',
+            ? context.l10n.wallpaperUploadEditBatch(widget.batch!.position, widget.batch!.total)
+            : context.l10n.wallpaperEditTitle,
         onBack: () => Navigator.maybePop(context),
         actions: <Widget>[
-          PrismIconButton(icon: Icons.restart_alt_rounded, tooltip: 'Reset adjustments', onPressed: _resetAdjustments),
+          PrismIconButton(
+            icon: Icons.restart_alt_rounded,
+            tooltip: context.l10n.wallpaperUploadResetAdjustments,
+            onPressed: _resetAdjustments,
+          ),
         ],
-        bottomBar: PrismButton(label: 'Save', expand: true, loading: _saving, onPressed: _saving ? null : crop),
+        bottomBar: PrismButton(
+          label: context.l10n.wallpaperSave,
+          expand: true,
+          loading: _saving,
+          onPressed: _saving ? null : crop,
+        ),
         body: Column(
           children: <Widget>[
             Expanded(
@@ -168,7 +178,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     final Rect? rect = state?.getCropRect();
     final EditActionDetails? action = state?.editAction;
     if (state == null || rect == null || action == null) {
-      toasts.error('Could not save your edits. Try again.');
+      toasts.error(context.l10n.wallpaperUploadEditSaveError);
       return;
     }
     setState(() => _saving = true);
@@ -194,14 +204,14 @@ class _EditWallScreenState extends State<EditWallScreen> {
       final Uint8List? result = await ImageEditor.editImage(image: img, imageEditorOption: option);
       if (!mounted) return;
       if (result == null) {
-        toasts.error('Could not save your edits. Try again.');
+        toasts.error(context.l10n.wallpaperUploadEditSaveError);
         return;
       }
 
       widget.image.writeAsBytesSync(result);
       await context.router.replace(UploadWallRoute(image: widget.image, batch: widget.batch));
     } catch (_) {
-      if (mounted) toasts.error('Could not save your edits. Try again.');
+      if (mounted) toasts.error(context.l10n.wallpaperUploadEditSaveError);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

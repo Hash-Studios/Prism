@@ -3,6 +3,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -20,10 +21,10 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   static const double _slot = 48;
 
   static const List<_NavTabConfig> _tabs = <_NavTabConfig>[
-    _NavTabConfig(label: 'Home', icon: JamIcons.home_f, value: NavTabValue.home),
-    _NavTabConfig(label: 'Search', icon: JamIcons.search, value: NavTabValue.search),
-    _NavTabConfig(label: 'Rewards', icon: JamIcons.gift_f, value: NavTabValue.streak),
-    _NavTabConfig(label: 'Collections', icon: JamIcons.grid_f, value: NavTabValue.collection),
+    _NavTabConfig(icon: JamIcons.home_f, value: NavTabValue.home),
+    _NavTabConfig(icon: JamIcons.search, value: NavTabValue.search),
+    _NavTabConfig(icon: JamIcons.gift_f, value: NavTabValue.streak),
+    _NavTabConfig(icon: JamIcons.grid_f, value: NavTabValue.collection),
   ];
 
   TabsRouter? _tabsRouter;
@@ -117,11 +118,11 @@ class _TabButton extends StatelessWidget {
       child: Semantics(
         button: true,
         selected: isActive,
-        label: config.label,
+        label: config.label(context),
         excludeSemantics: true,
         onTap: onPressed,
         child: Tooltip(
-          message: config.label,
+          message: config.label(context),
           excludeFromSemantics: true,
           child: PressScale(
             scale: 0.92,
@@ -154,10 +155,16 @@ class _TabButton extends StatelessWidget {
 }
 
 class _NavTabConfig {
-  const _NavTabConfig({required this.label, required this.icon, required this.value});
+  const _NavTabConfig({required this.icon, required this.value});
 
   /// The same glyph in both states, as on the current app. The active tab shows through the circle and the full ink.
-  final String label;
   final IconData icon;
   final NavTabValue value;
+
+  String label(BuildContext context) => switch (value) {
+    NavTabValue.home => context.l10n.wallpaperNavHome,
+    NavTabValue.search => context.l10n.wallpaperNavSearch,
+    NavTabValue.streak => context.l10n.wallpaperNavRewards,
+    NavTabValue.collection => context.l10n.wallpaperNavCollections,
+  };
 }

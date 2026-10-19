@@ -8,8 +8,9 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
-// ignore: implementation_imports
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +19,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/offline_asset_fixture.dart';
+
+final AppLocalizationsEn _l10n = AppLocalizationsEn();
 
 class _Client implements WallpaperClient {
   _Client({this.status = aw.WallpaperOperationStatus.applied});
@@ -124,12 +127,16 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
               onPressed: () => reportWallpaperSetResult(
                 context,
                 result,
+                l10n: _l10n,
                 target: target,
                 setContext: setContext,
                 onRetry: onRetry,
@@ -350,6 +357,9 @@ void main() {
     late ScaffoldMessengerState messenger;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: Builder(
             builder: (context) {
@@ -363,14 +373,15 @@ void main() {
 
     reportWallpaperSetResult(
       null,
-      const WallpaperSetResult(WallpaperSetStatus.failed, 'Timed out.', errorCode: 'timeout'),
+      const WallpaperSetResult(WallpaperSetStatus.failed, 'native error text', errorCode: 'timeout'),
+      l10n: _l10n,
       target: WallpaperTarget.home,
       messenger: messenger,
       onRetry: (_) {},
     );
     await tester.pump();
 
-    expect(find.text('Timed out.'), findsOneWidget);
+    expect(find.text(_l10n.coreWallpaperErrorTimeout), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
     await tester.pump(const Duration(seconds: 5));
   });

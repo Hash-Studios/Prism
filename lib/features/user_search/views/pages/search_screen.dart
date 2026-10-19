@@ -20,6 +20,7 @@ import 'package:Prism/features/user_search/views/widgets/search_discovery_widget
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -254,11 +255,11 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  Widget _header() {
+  Widget _header(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismHeader(title: 'Search', showBack: false),
+        PrismHeader(title: context.l10n.accountSearch, showBack: false),
         Padding(
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.xs, PrismSpace.sm),
           child: Row(
@@ -268,7 +269,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   key: _fieldKey,
                   controller: searchController,
                   focusNode: _focus,
-                  hint: 'Search wallpapers',
+                  hint: context.l10n.accountSearchWallpapers,
                   onChanged: (text) {
                     if (text.trim().isEmpty && isSubmitted) {
                       _backToDiscover();
@@ -289,7 +290,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 smallSize: 8,
                 alignment: AlignmentDirectional.topEnd,
                 offset: const Offset(-8, 8),
-                child: PrismIconButton(icon: Icons.tune_rounded, tooltip: 'Filters', onPressed: _openFilters),
+                child: PrismIconButton(
+                  icon: Icons.tune_rounded,
+                  tooltip: context.l10n.accountFilters,
+                  onPressed: _openFilters,
+                ),
               ),
             ],
           ),
@@ -308,9 +313,9 @@ class _SearchScreenState extends State<SearchScreen> {
         if (snapshot.hasError) {
           return RefreshableGlintState(
             kind: GlintStateKind.error,
-            title: "Couldn't search right now",
-            body: 'Check your connection and try again.',
-            actionLabel: 'Try again',
+            title: context.l10n.accountCouldNotSearchRightNow,
+            body: context.l10n.accountCheckConnectionTryAgain,
+            actionLabel: context.l10n.accountTryAgain,
             onAction: () => _triggerSearch(_submittedQuery),
             onRefresh: () async => _triggerSearch(_submittedQuery),
           );
@@ -321,17 +326,22 @@ class _SearchScreenState extends State<SearchScreen> {
         }
         if (page.results.isEmpty && page.prismResults.isEmpty) {
           final bool filtered = _filters != const SearchFilters();
-          final String listed = <String>[
+          final List<String> activeFilters = <String>[
             if (_filters.color != null) _filters.color!.name.toLowerCase(),
-            if (_filters.depthOnly) 'Depth Effect',
-          ].join(' ');
+            if (_filters.depthOnly) context.l10n.accountDepthEffect,
+          ];
+          final String emptyTitle = _submittedQuery.isNotEmpty
+              ? filtered
+                    ? context.l10n.accountNoWallpapersForQueryWithFilters(_submittedQuery)
+                    : context.l10n.accountNoWallpapersFoundForQuery(_submittedQuery)
+              : filtered
+              ? context.l10n.accountNoWallpapersForFilters(activeFilters.join(' '))
+              : context.l10n.accountNoWallpapersFound;
           return GlintState(
             kind: GlintStateKind.empty,
-            title: _submittedQuery.isEmpty
-                ? 'No $listed wallpapers found'
-                : 'No wallpapers found for "$_submittedQuery"',
-            body: filtered ? 'Try fewer filters.' : 'Try a shorter or a different word.',
-            actionLabel: filtered ? 'Reset filters' : null,
+            title: emptyTitle,
+            body: filtered ? context.l10n.accountTryFewerFilters : context.l10n.accountTryShorterOrDifferentWord,
+            actionLabel: filtered ? context.l10n.accountResetFilters : null,
             onAction: filtered ? _resetFilters : null,
           );
         }
@@ -367,7 +377,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      _header(),
+                      _header(context),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
                         child: Row(
@@ -375,7 +385,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             if (_submittedQuery.isNotEmpty)
                               Expanded(
                                 child: Text(
-                                  'Results for "$_submittedQuery"',
+                                  context.l10n.accountResultsForQuery(_submittedQuery),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: PrismTextStyles.caption(context),
@@ -383,7 +393,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                             if (_filters.color != null)
                               Tooltip(
-                                message: 'Clear colour',
+                                message: context.l10n.accountClearColour,
                                 child: PrismChip(
                                   label: _filters.color!.name,
                                   selected: true,
@@ -394,8 +404,12 @@ class _SearchScreenState extends State<SearchScreen> {
                             if (_filters.color != null && _filters.depthOnly) const SizedBox(width: PrismSpace.xs),
                             if (_filters.depthOnly)
                               Tooltip(
-                                message: 'Clear Depth Effect',
-                                child: PrismChip(label: 'Depth Effect', selected: true, onTap: _clearDepth),
+                                message: context.l10n.accountClearDepthEffect,
+                                child: PrismChip(
+                                  label: context.l10n.accountDepthEffect,
+                                  selected: true,
+                                  onTap: _clearDepth,
+                                ),
                               ),
                           ],
                         ),
@@ -404,7 +418,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ],
                   )
                 : SearchDiscoveryWidget(
-                    header: _header(),
+                    header: _header(context),
                     tags: curatedSearchTags,
                     selectedTag: searchController.text,
                     recentSearches: _recentSearches,

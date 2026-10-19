@@ -13,14 +13,20 @@ import 'package:Prism/features/in_app_notifications/domain/notification_grouping
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_row.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Shorter expanded-row text: names for followers/wall-live; day label for uniform WOTD bodies.
-String? _compactLineForGroupedChild(InAppNotificationTitleGroup group, InAppNotificationEntity n) {
+String? _compactLineForGroupedChild(
+  InAppNotificationTitleGroup group,
+  InAppNotificationEntity n, {
+  required AppLocalizations l10n,
+  required Locale locale,
+}) {
   switch (group.kind) {
-    case NotificationKind.follower:
+    case InAppNotificationKind.follower:
       final String? name = followerDisplayNameFromBody(n.body);
       if (name != null && name.isNotEmpty) {
         return name;
@@ -31,12 +37,12 @@ String? _compactLineForGroupedChild(InAppNotificationTitleGroup group, InAppNoti
       }
       final String title = n.title.trim();
       return title.isEmpty ? null : title;
-    case NotificationKind.wallLive || NotificationKind.wallApproved:
+    case InAppNotificationKind.wallLive || InAppNotificationKind.wallApproved:
       final String? creator = wallLiveCreatorNameFromBody(n.body);
       return creator != null && creator.isNotEmpty ? creator : null;
-    case NotificationKind.wallOfTheDay when notificationGroupHasUniformBody(group):
-      return wallOfTheDayRowDayLabel(n.createdAt);
-    case NotificationKind.wallOfTheDay || NotificationKind.generic:
+    case InAppNotificationKind.wallOfTheDay when notificationGroupHasUniformBody(group):
+      return wallOfTheDayRowDayLabel(n.createdAt, l10n: l10n, locale: locale);
+    case InAppNotificationKind.wallOfTheDay || InAppNotificationKind.generic:
       return null;
   }
 }
@@ -88,11 +94,12 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
 
   /// Asks first. The snack bar then offers Undo, which puts every removed notification back.
   Future<void> _clearInbox(int count) async {
+    final AppLocalizations l10n = context.l10n;
     final bool confirmed = await showPrismConfirm(
       context,
-      title: count == 1 ? 'Clear 1 notification?' : 'Clear $count notifications?',
-      message: 'This removes them from this device.',
-      confirmLabel: 'Clear inbox',
+      title: count == 1 ? l10n.notifClearOneTitle : l10n.notifClearManyTitle(count),
+      message: l10n.notifClearDeviceMessage,
+      confirmLabel: l10n.notifClearInbox,
       destructive: true,
     );
     if (!confirmed || !mounted) return;
@@ -103,7 +110,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     PrismHaptics.tap();
     analytics.track(NotificationClearAllConfirmedEvent(count: removed.length));
     bloc.add(const InAppNotificationsEvent.clearRequested());
-    _showUndoSnackBar(context, 'Inbox cleared', removed);
+    _showUndoSnackBar(context, l10n.notifInboxCleared, removed);
   }
 
   void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {
@@ -114,7 +121,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         SnackBar(
           content: Text(message),
           action: SnackBarAction(
-            label: 'Undo',
+            label: context.l10n.notifUndo,
             onPressed: () => bloc.add(InAppNotificationsEvent.restoreRequested(items: removed)),
           ),
         ),
@@ -125,26 +132,27 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
   Widget build(BuildContext context) {
     return BlocBuilder<InAppNotificationsBloc, InAppNotificationsState>(
       builder: (context, state) {
+        final AppLocalizations l10n = context.l10n;
         final notifications = state.items;
         final bool initialLoading =
             (state.status == LoadStatus.initial || state.status == LoadStatus.loading) && notifications.isEmpty;
         return PrismPage(
-          title: 'Notifications',
+          title: l10n.notifTitle,
           actions: <Widget>[
             if (state.unreadCount > 0)
               PrismIconButton(
                 icon: Icons.done_all_rounded,
-                tooltip: 'Mark all as read',
+                tooltip: l10n.notifMarkAllRead,
                 onPressed: () {
                   PrismHaptics.tap();
                   context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
                 },
               ),
-            PrismIconButton(icon: Icons.tune_rounded, tooltip: 'Notification preferences', onPressed: _openPreferences),
+            PrismIconButton(icon: Icons.tune_rounded, tooltip: l10n.notifPreferences, onPressed: _openPreferences),
             if (!initialLoading && notifications.isNotEmpty)
               PrismIconButton(
                 icon: Icons.delete_sweep_rounded,
-                tooltip: 'Clear inbox',
+                tooltip: l10n.notifClearInboxAction,
                 onPressed: () => unawaited(_clearInbox(notifications.length)),
               ),
           ],
@@ -160,24 +168,28 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     if (state.status == LoadStatus.failure && notifications.isEmpty) {
       return GlintState(
         kind: GlintStateKind.error,
-        title: "We couldn't load your notifications",
-        body: 'Check your connection and try again.',
-        actionLabel: 'Try again',
+        title: context.l10n.notifLoadErrorTitle,
+        body: context.l10n.errorNetwork,
+        actionLabel: context.l10n.actionRetry,
         onAction: _refresh,
       );
     }
     if (notifications.isEmpty) {
-      return const GlintState(
+      return GlintState(
         kind: GlintStateKind.nothingNew,
-        title: 'No notifications',
-        body: 'New followers, approvals and the Wall of the Day show up here.',
+        title: context.l10n.notifEmptyTitle,
+        body: context.l10n.notifEmptyBody,
       );
     }
     final List<InAppNotificationTitleGroup> groups = groupInAppNotificationsByTitle(notifications);
     final List<Object> entries = <Object>[];
     String? lastDay;
     for (final InAppNotificationTitleGroup group in groups) {
-      final String day = wallOfTheDayRowDayLabel(group.items.first.createdAt);
+      final String day = wallOfTheDayRowDayLabel(
+        group.items.first.createdAt,
+        l10n: context.l10n,
+        locale: Localizations.localeOf(context),
+      );
       if (day != lastDay) {
         entries.add(day);
         lastDay = day;
@@ -246,7 +258,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
           NotificationItemDismissedEvent(type: notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
         );
         context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
-        _showUndoSnackBar(context, 'Notification removed', <InAppNotificationEntity>[notification]);
+        _showUndoSnackBar(context, context.l10n.notifRemoved, <InAppNotificationEntity>[notification]);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
@@ -265,7 +277,10 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
   Widget _dismissibleGroup(BuildContext context, InAppNotificationTitleGroup group) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool expanded = _expandedNotificationGroups.contains(group.key);
-    final String title = cleanNotificationTitle(group.displayTitle);
+    final AppLocalizations l10n = context.l10n;
+    final Locale locale = Localizations.localeOf(context);
+    final String groupTitle = group.displayTitle(l10n);
+    final String title = cleanNotificationTitle(groupTitle);
     final InAppNotificationEntity first = group.items.first;
     return Dismissible(
       key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
@@ -276,7 +291,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
             ids: group.items.map((InAppNotificationEntity e) => e.id).toList(),
           ),
         );
-        _showUndoSnackBar(context, '${group.items.length} notifications removed', group.items);
+        _showUndoSnackBar(context, l10n.notifGroupNotificationsRemoved(group.items.length), group.items);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
@@ -288,8 +303,13 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
           Semantics(
             button: true,
             expanded: expanded,
-            label:
-                '$title. ${groupedListCountActionLine(group, expanded: expanded)}. ${expanded ? 'Expanded' : 'Collapsed'}. ${group.unreadCount > 0 ? 'Has unread. ' : ''}Activate to ${expanded ? 'collapse' : 'expand'}.',
+            label: l10n.notifGroupSemantics(
+              title,
+              groupedListCountActionLine(group, expanded: expanded, l10n: l10n),
+              expanded ? l10n.notifExpanded : l10n.notifCollapsed,
+              group.unreadCount > 0 ? l10n.notifHasUnread : '',
+              expanded ? l10n.notifActivateToCollapse : l10n.notifActivateToExpand,
+            ),
             child: Material(
               type: MaterialType.transparency,
               child: InkWell(
@@ -309,7 +329,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        NotificationIconTile(title: group.displayTitle, body: first.body),
+                        NotificationIconTile(title: groupTitle, body: first.body),
                         const SizedBox(width: PrismSpace.sm),
                         Expanded(
                           child: Column(
@@ -317,7 +337,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                             children: <Widget>[
                               NotificationTitleLine(
                                 title: title,
-                                time: notificationTimeLabel(first.createdAt),
+                                time: notificationTimeLabel(first.createdAt, l10n: l10n, locale: locale),
                                 unread: group.unreadCount > 0,
                                 trailing: Padding(
                                   padding: const EdgeInsets.only(left: PrismSpace.xxs),
@@ -335,13 +355,13 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                groupedListCountActionLine(group, expanded: expanded),
+                                groupedListCountActionLine(group, expanded: expanded, l10n: l10n),
                                 style: PrismTextStyles.caption(context),
                               ),
                               if (!expanded) ...<Widget>[
                                 const SizedBox(height: PrismSpace.xxs),
                                 Text(
-                                  collapsedGroupSummaryLine(group),
+                                  collapsedGroupSummaryLine(group, l10n),
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                   style: PrismTextStyles.body(context),
@@ -369,7 +389,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                             context,
                             n,
                             compactInGroup: true,
-                            compactBodyOverride: _compactLineForGroupedChild(group, n),
+                            compactBodyOverride: _compactLineForGroupedChild(group, n, l10n: l10n, locale: locale),
                           ),
                         )
                         .toList(growable: false),
@@ -398,13 +418,13 @@ class _StaleBanner extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Text(
-              "Couldn't load new notifications. What you see below is saved on this device.",
+              context.l10n.notifOfflineSaved,
               style: PrismTextStyles.body(context).copyWith(color: cs.onErrorContainer),
             ),
           ),
           const SizedBox(width: PrismSpace.xs),
           PrismButton(
-            label: 'Try again',
+            label: context.l10n.actionRetry,
             variant: PrismButtonVariant.ghost,
             size: PrismButtonSize.compact,
             onPressed: onRetry,

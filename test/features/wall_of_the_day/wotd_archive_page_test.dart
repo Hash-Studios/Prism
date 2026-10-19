@@ -13,6 +13,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_archive_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
 import 'package:Prism/features/wall_of_the_day/views/pages/wotd_archive_page.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +66,9 @@ void main() {
     whenListen(bloc, stream ?? const Stream<WotdArchiveState>.empty(), initialState: state);
     return tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
@@ -90,11 +94,11 @@ void main() {
       ),
     );
 
-    expect(find.text('Sun 4 Jan'), findsOneWidget);
-    expect(find.text('Sat 3 Jan'), findsOneWidget);
+    expect(find.text('Jan 4, 2026'), findsOneWidget);
+    expect(find.text('Jan 3, 2026'), findsOneWidget);
     expect(
-      tester.getTopLeft(find.text('Sun 4 Jan')).dy,
-      lessThanOrEqualTo(tester.getTopLeft(find.text('Sat 3 Jan')).dy),
+      tester.getTopLeft(find.text('Jan 4, 2026')).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.text('Jan 3, 2026')).dy),
     );
   });
 

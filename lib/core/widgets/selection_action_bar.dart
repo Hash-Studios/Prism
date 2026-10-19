@@ -1,4 +1,5 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Top row shown while a grid is in multi-select mode: a close button and the selected count.
@@ -17,7 +18,7 @@ class SelectionHeader extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'Cancel selection',
+            tooltip: context.l10n.coreCancelSelection,
             icon: Icon(JamIcons.close, color: theme.colorScheme.secondary),
             onPressed: onCancel,
           ),
@@ -26,7 +27,7 @@ class SelectionHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$count selected',
+                  context.l10n.coreSelectCount(count),
                   style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.secondary),
                 ),
                 if (hint != null)

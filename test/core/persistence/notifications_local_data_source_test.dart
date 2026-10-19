@@ -81,6 +81,35 @@ void main() {
     expect((await local.readAll()).single.id, 'other');
   });
 
+  test('structured notification copy survives a local cache round trip', () async {
+    final DurableJsonStore store = DurableJsonStore('notifications_copy', directory: directory);
+    final NotificationsLocalDataSource local = NotificationsLocalDataSource.withStore(store)..setOwner('account-a');
+    final InAppNotificationEntity item = InAppNotificationEntity(
+      id: 'localized-notification',
+      title: 'A new Drop is live',
+      pageName: 'drop',
+      body: '2 walls, this week only.',
+      imageUrl: '',
+      arguments: const <Object>[],
+      url: '',
+      createdAt: DateTime.utc(2026, 10, 19),
+      read: false,
+      copyKind: 'dropLive',
+      copyArgs: const <String, Object?>{
+        'wallCount': 2,
+        'metadata': <String, Object?>{'source': 'weekly'},
+      },
+    );
+
+    await local.writeAll(<InAppNotificationEntity>[item]);
+
+    final NotificationsLocalDataSource afterRestart = NotificationsLocalDataSource.withStore(store)
+      ..setOwner('account-a');
+    final InAppNotificationEntity restored = (await afterRestart.readAll()).single;
+    expect(restored.copyKind, 'dropLive');
+    expect(restored.copyArgs, item.copyArgs);
+  });
+
   test(
     'upsert retains newest notifications within the encoded byte cap and preserves read state and fetch cursor',
     () async {

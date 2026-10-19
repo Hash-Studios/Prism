@@ -5,6 +5,8 @@ import 'package:Prism/features/rewards/domain/rank_progress.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +31,9 @@ void main() {
     double textScale = 1,
   }) => tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       theme: theme ?? kLightTheme,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
@@ -49,7 +54,13 @@ void main() {
   );
 
   testWidgets('earned reward is syncing until authoritative inventory confirms it', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: RankProgressCard())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: RankProgressCard()),
+      ),
+    );
     CoinsService.instance.xpNotifier.value = XpStatus(xp: 500, weekXp: 25, rank: EconomyConfig.current.rankFor(500));
     await tester.pump();
     expect(find.text('Aurora name glow earned'), findsOneWidget);
@@ -78,7 +89,13 @@ void main() {
   });
 
   testWidgets('public rank opens explanation without a private inventory claim', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: RankInfoChip(xp: 2500))));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: RankInfoChip(xp: 2500)),
+      ),
+    );
     await tester.tap(find.text('Gold'));
     await tester.pumpAndSettle();
     expect(find.text('XP, ranks & rewards'), findsOneWidget);
@@ -98,6 +115,9 @@ void main() {
     CoinsService.instance.inventoryNotifier.value = const Inventory(owned: owned);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: SingleChildScrollView(child: RankProgressCard())),
       ),
     );
@@ -119,7 +139,7 @@ void main() {
       ),
     );
     await pump(tester, xp: 300, config: config);
-    expect(find.text('Curator'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyRankUnknown), findsOneWidget);
     expect(find.text('Highest rank reached'), findsOneWidget);
     expect(find.textContaining('Prism'), findsNothing);
     expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, 1);
@@ -127,7 +147,13 @@ void main() {
 
   testWidgets('a config refresh recomputes the live rank and keeps next rank distinct from reward', (tester) async {
     CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 70});
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: RankProgressCard())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: RankProgressCard()),
+      ),
+    );
     EconomyConfig.current = const EconomyConfig(
       xp: EconomyXp(
         ranks: <RankDef>[
@@ -138,7 +164,15 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('30 XP to Collector'), findsOneWidget);
+    expect(
+      find.text(
+        AppLocalizationsEn().economyXpToRank(
+          formatLocalizedNumber(30, AppLocalizationsEn()),
+          AppLocalizationsEn().economyRankUnknown,
+        ),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Next reward: Aurora name glow'), findsOneWidget);
     expect(find.text('Yours automatically at Silver · 700 XP'), findsOneWidget);
     CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 800});

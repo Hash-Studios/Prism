@@ -4,6 +4,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +29,9 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: SizedBox(
             width: 90,
@@ -50,6 +54,9 @@ void main() {
     // A landscape box, as on the Wall of the Day card. Both sizes would squash a portrait wallpaper into it.
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: SizedBox(
             width: 360,
@@ -68,6 +75,9 @@ void main() {
   testWidgets('WallpaperTile forwards its retained decode-height argument', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: SizedBox(width: 90, height: 120, child: WallpaperTile(item: _item, index: 0, memCacheHeight: 360)),
         ),
@@ -83,7 +93,13 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const MaterialApp(home: WallpaperTile(item: _item, index: 0, crossAxisCount: 3)));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperTile(item: _item, index: 0, crossAxisCount: 3),
+      ),
+    );
 
     expect(tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).memCacheHeight, 400);
   });

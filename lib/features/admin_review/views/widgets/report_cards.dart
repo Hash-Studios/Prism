@@ -3,8 +3,10 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/admin_review/biz/admin_review_localization.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -53,6 +55,7 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
   }
 
   Future<void> _openWallpaperDetail(BuildContext context) async {
+    final AppLocalizations l10n = context.l10n;
     final PageRouteInfo? route = await const NotificationRouteMapper().fromRoute(
       route: 'wall',
       wallId: widget.targetDocId,
@@ -66,25 +69,27 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
     if (route != null) {
       await context.router.push(route);
     } else {
-      toasts.error('Wallpaper not found');
+      toasts.error(l10n.adminWallpaperNotFound);
     }
   }
 
   Future<void> _keepWallpaper() async {
     if (_isKeeping) return;
+    final AppLocalizations l10n = context.l10n;
     setState(() => _isKeeping = true);
     try {
       await widget.repository.markContentReportReviewed(widget.report.id, resolution: 'dismissed');
-      toasts.success('Report dismissed. Wallpaper kept.');
+      toasts.success(l10n.adminReportDismissedKept);
     } catch (e, st) {
       logger.e('mark report dismissed failed', tag: 'AdminReview', error: e, stackTrace: st);
-      toasts.error('Could not dismiss the report. Try again.');
+      toasts.error(l10n.adminReportDismissFailed);
     } finally {
       if (mounted) setState(() => _isKeeping = false);
     }
   }
 
   Future<void> _removeWallpaper() {
+    final AppLocalizations l10n = context.l10n;
     return widget.onConfirmRemoveWithReason(
       onSubmit: (String reason) async {
         final bool removed = await widget.repository.rejectWallByFirestoreDocumentId(
@@ -93,9 +98,9 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
         );
         await widget.repository.markContentReportReviewed(widget.report.id, resolution: 'content_removed');
         if (removed) {
-          toasts.success('Wallpaper removed');
+          toasts.success(l10n.adminWallpaperRemoved);
         } else {
-          toasts.success('Wallpaper was already gone. Report closed.');
+          toasts.success(l10n.adminWallpaperAlreadyGone);
         }
       },
     );
@@ -122,7 +127,7 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
                     url: snap.data?['wallpaper_thumb']?.toString() ?? '',
                     width: 72,
                     height: 128,
-                    semanticLabel: 'Open wallpaper',
+                    semanticLabel: context.l10n.adminOpenWallpaper,
                     onTap: () => _openWallpaperDetail(context),
                   );
                 },
@@ -132,18 +137,23 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    const PrismTag(label: 'Wallpaper report', tone: PrismTone.warning),
+                    PrismTag(label: context.l10n.adminWallpaperReport, tone: PrismTone.warning),
                     const SizedBox(height: PrismSpace.xs),
                     Text(
-                      widget.reason.isEmpty ? 'No reason given' : widget.reason,
+                      widget.reason.isEmpty
+                          ? context.l10n.adminNoReasonGiven
+                          : adminReviewReportReasonLabel(widget.reason, context.l10n),
                       style: PrismTextStyles.cardTitle(context),
                     ),
                     const SizedBox(height: PrismSpace.xs),
-                    ModerationFact(label: 'Reported', value: widget.timeStr.isEmpty ? 'Unknown' : widget.timeStr),
-                    ModerationFact(label: 'Target', value: widget.targetDocId),
                     ModerationFact(
-                      label: 'Reporter',
-                      value: widget.reporterUid.isEmpty ? 'Unknown' : widget.reporterUid,
+                      label: context.l10n.adminReported,
+                      value: widget.timeStr.isEmpty ? context.l10n.adminUnknown : widget.timeStr,
+                    ),
+                    ModerationFact(label: context.l10n.adminTarget, value: widget.targetDocId),
+                    ModerationFact(
+                      label: context.l10n.adminReporter,
+                      value: widget.reporterUid.isEmpty ? context.l10n.adminUnknown : widget.reporterUid,
                     ),
                   ],
                 ),
@@ -155,7 +165,7 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
             children: <Widget>[
               PrismIconButton(
                 icon: Icons.open_in_new_rounded,
-                tooltip: 'Open wallpaper',
+                tooltip: context.l10n.adminOpenWallpaper,
                 filled: true,
                 onPressed: () => _openWallpaperDetail(context),
               ),
@@ -167,13 +177,16 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
                   runSpacing: PrismSpace.xs,
                   children: <Widget>[
                     PrismButton(
-                      label: 'Keep wallpaper',
+                      label: context.l10n.adminKeepWallpaper,
                       variant: PrismButtonVariant.tonal,
                       size: PrismButtonSize.compact,
                       loading: _isKeeping,
                       onPressed: _keepWallpaper,
                     ),
-                    ModerationDangerButton(label: 'Remove', onPressed: _isKeeping ? null : _removeWallpaper),
+                    ModerationDangerButton(
+                      label: context.l10n.adminRemove,
+                      onPressed: _isKeeping ? null : _removeWallpaper,
+                    ),
                   ],
                 ),
               ),
@@ -215,13 +228,14 @@ class _GenericReportCardState extends State<GenericReportCard> {
 
   Future<void> _markReviewed() async {
     if (_busy) return;
+    final AppLocalizations l10n = context.l10n;
     setState(() => _busy = true);
     try {
       await widget.repository.markContentReportReviewed(widget.report.id);
-      toasts.success('Marked reviewed');
+      toasts.success(l10n.adminMarkedReviewed);
     } catch (e, st) {
       logger.e('mark report failed', tag: 'AdminReview', error: e, stackTrace: st);
-      toasts.error('Could not mark the report reviewed. Try again.');
+      toasts.error(l10n.adminMarkReviewedFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -237,20 +251,38 @@ class _GenericReportCardState extends State<GenericReportCard> {
           if (widget.contentType.isNotEmpty) ...<Widget>[
             Align(
               alignment: Alignment.centerLeft,
-              child: PrismTag(label: '${widget.contentType} report'),
+              child: PrismTag(
+                label: context.l10n.adminContentTypeReport(
+                  adminReviewContentTypeLabel(widget.contentType, context.l10n),
+                ),
+              ),
             ),
             const SizedBox(height: PrismSpace.xs),
           ],
-          Text(widget.reason.isEmpty ? 'No reason given' : widget.reason, style: PrismTextStyles.cardTitle(context)),
+          Text(
+            widget.reason.isEmpty
+                ? context.l10n.adminNoReasonGiven
+                : adminReviewReportReasonLabel(widget.reason, context.l10n),
+            style: PrismTextStyles.cardTitle(context),
+          ),
           const SizedBox(height: PrismSpace.xs),
-          ModerationFact(label: 'Reported', value: widget.timeStr.isEmpty ? 'Unknown' : widget.timeStr),
-          ModerationFact(label: 'Target', value: widget.targetDocId.isEmpty ? 'Unknown' : widget.targetDocId),
-          ModerationFact(label: 'Reporter', value: widget.reporterUid.isEmpty ? 'Unknown' : widget.reporterUid),
+          ModerationFact(
+            label: context.l10n.adminReported,
+            value: widget.timeStr.isEmpty ? context.l10n.adminUnknown : widget.timeStr,
+          ),
+          ModerationFact(
+            label: context.l10n.adminTarget,
+            value: widget.targetDocId.isEmpty ? context.l10n.adminUnknown : widget.targetDocId,
+          ),
+          ModerationFact(
+            label: context.l10n.adminReporter,
+            value: widget.reporterUid.isEmpty ? context.l10n.adminUnknown : widget.reporterUid,
+          ),
           const SizedBox(height: PrismSpace.xxs),
           Align(
             alignment: Alignment.centerRight,
             child: PrismButton(
-              label: 'Mark reviewed',
+              label: context.l10n.adminMarkReviewed,
               variant: PrismButtonVariant.tonal,
               size: PrismButtonSize.compact,
               loading: _busy,

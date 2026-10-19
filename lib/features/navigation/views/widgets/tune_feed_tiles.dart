@@ -1,6 +1,7 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ class LearnedPill extends StatelessWidget {
     final String label = '${term[0].toUpperCase()}${term.substring(1)}';
     const BorderRadius barRadius = BorderRadius.all(Radius.circular(PrismBottomSheet.dragHandleRadius));
     return Semantics(
-      label: 'Learned: $label, ${(strength * 100).round()} percent',
+      label: context.l10n.wallpaperInterestLearnedLabel(label, (strength * 100).round()),
       excludeSemantics: true,
       child: DecoratedBox(
         decoration: BoxDecoration(color: cs.onSurface.withValues(alpha: 0.06), borderRadius: barRadius),
@@ -70,7 +71,10 @@ class InterestTile extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: 'Interest: ${interest.name}, ${selected ? 'selected' : 'not selected'}',
+      label: context.l10n.wallpaperInterestSelectedLabel(
+        interest.name,
+        selected ? context.l10n.wallpaperSelected : context.l10n.wallpaperNotSelected,
+      ),
       onTap: onTap,
       excludeSemantics: true,
       child: PressScale(

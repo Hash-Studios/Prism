@@ -5,6 +5,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -160,7 +161,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
         child: Align(
           alignment: AlignmentDirectional.bottomEnd,
           child: IconButton(
-            tooltip: 'Retry image',
+            tooltip: context.l10n.coreRetryImage,
             onPressed: _retrying ? null : _retry,
             icon: const Icon(Icons.refresh_rounded),
             color: Theme.of(context).colorScheme.onSurface,

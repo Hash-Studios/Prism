@@ -7,16 +7,17 @@ import 'package:flutter/material.dart';
 
 /// A diagonal repeating "PRISM DROP" mark. [opacity] scales its base alpha, so it can fade out.
 class DropWatermarkPainter extends CustomPainter {
-  const DropWatermarkPainter({required this.opacity});
+  const DropWatermarkPainter({required this.opacity, required this.label});
 
   final double opacity;
+  final String label;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (opacity <= 0) return;
     final TextPainter text = TextPainter(
       text: TextSpan(
-        text: 'PRISM DROP',
+        text: label,
         style: TextStyle(
           fontFamily: PrismFonts.proximaNova,
           color: DropPalette.ink.withValues(alpha: 0.13 * opacity),
@@ -44,7 +45,7 @@ class DropWatermarkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(DropWatermarkPainter oldDelegate) => oldDelegate.opacity != opacity;
+  bool shouldRepaint(DropWatermarkPainter oldDelegate) => oldDelegate.opacity != opacity || oldDelegate.label != label;
 }
 
 /// One gold sheen band sweeping the screen diagonally. [progress] runs 0 to 1 and paints nothing at either end.

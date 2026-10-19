@@ -1,4 +1,5 @@
 import 'package:Prism/features/theme_mode/theme_mode.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -24,10 +25,10 @@ ThemeData withPrismAccent(ThemeData baseTheme, int accentColorValue) {
   );
 }
 
-String _modeAbsoluteLabel(ThemeMode mode) => switch (mode) {
-  ThemeMode.light => 'Light',
-  ThemeMode.dark => 'Dark',
-  ThemeMode.system => 'System (Light/Dark)',
+String _modeAbsoluteLabel(AppLocalizations l10n, ThemeMode mode) => switch (mode) {
+  ThemeMode.light => l10n.wallpaperThemeModeLight,
+  ThemeMode.dark => l10n.wallpaperThemeModeDark,
+  ThemeMode.system => l10n.wallpaperThemeModeSystem,
 };
 
 extension PrismThemeContextX on BuildContext {
@@ -59,7 +60,8 @@ extension PrismThemeContextX on BuildContext {
 
   ThemeMode prismThemeMode({bool listen = true}) => _themeState(listen).mode;
 
-  String prismModeAbs({bool listen = true}) => _modeAbsoluteLabel(_themeState(listen).mode);
+  String prismModeAbs(AppLocalizations l10n, {bool listen = true}) =>
+      _modeAbsoluteLabel(l10n, _themeState(listen).mode);
 
   void setPrismThemeMode(ThemeMode mode) {
     read<ThemeBloc>().add(ThemeEvent.modeChanged(mode: mode));

@@ -2,9 +2,9 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
-import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -43,6 +43,8 @@ void main() {
     whenListen(bloc, const Stream<ReviewBatchState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) =>
             MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
         home: const SwipeReviewScreen(),
@@ -146,8 +148,15 @@ void main() {
     await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
     await tester.pumpAndSettle();
     verify(
-      () =>
-          bloc.add(any(that: isA<ReviewBatchSwipeRejected>().having((e) => e.reason, 'reason', rejectReasons[1].text))),
+      () => bloc.add(
+        any(
+          that: isA<ReviewBatchSwipeRejected>().having(
+            (e) => e.reason,
+            'reason',
+            'The image has a watermark. Upload a version without it.',
+          ),
+        ),
+      ),
     ).called(1);
   });
 

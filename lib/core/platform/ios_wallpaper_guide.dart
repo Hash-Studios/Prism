@@ -2,6 +2,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,15 +33,16 @@ Future<void> showIosSetWallpaperGuide(BuildContext context, {WallDepthTier? dept
 }
 
 /// The toast after a save. Once the guide has shown this session, the toast carries the Depth Effect step instead.
-String savedWallpaperMessage({WallDepthTier? depthTier}) {
+String savedWallpaperMessage({required AppLocalizations l10n, WallDepthTier? depthTier}) {
   final String? tip = IosWallpaperGuideSession.shown && showDepthEffectUi
       ? switch (depthTier) {
-          WallDepthTier.auto => 'Depth Effect turns on by itself.',
-          WallDepthTier.menu => 'In the Lock Screen editor, tap ••• then Depth\u00A0Effect.',
+          WallDepthTier.auto => l10n.coreDepthEffectAutoTip,
+          WallDepthTier.menu => l10n.coreDepthEffectMenuTip,
           WallDepthTier.none || null => null,
         }
       : null;
-  return tip == null ? wallpaperSavedMessage : '$wallpaperSavedMessage $tip';
+  final String saved = wallpaperSavedMessage(l10n);
+  return tip == null ? saved : l10n.coreWallpaperSavedWithTip(saved, tip);
 }
 
 /// Shows a snackbar with an Open settings action after iOS refused access to Photos.
@@ -52,8 +54,8 @@ void showPhotosPermissionDenied(BuildContext context) {
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        content: const Text('Allow Prism to add photos in Settings to save wallpapers.'),
-        action: SnackBarAction(label: 'Open settings', onPressed: () => _launch('app-settings:')),
+        content: Text(context.l10n.corePhotosPermissionMessage),
+        action: SnackBarAction(label: context.l10n.coreOpenSettings, onPressed: () => _launch('app-settings:')),
       ),
     );
 }
@@ -71,19 +73,23 @@ class IosWallpaperGuideSheet extends StatelessWidget {
 
   final WallDepthTier? depthTier;
 
-  static const List<String> steps = <String>['Open Photos.', 'Tap Share.', 'Tap Use as Wallpaper.'];
+  static List<String> steps(AppLocalizations l10n) => <String>[
+    l10n.corePhotosStepOpen,
+    l10n.corePhotosStepShare,
+    l10n.corePhotosStepUseAsWallpaper,
+  ];
 
-  static String? _depthStepFor(WallDepthTier? tier) => switch (tier) {
-    WallDepthTier.auto =>
-      'Depth Effect turns on by itself. On iOS\u00A018 or older, keep widgets off the space under the clock.',
-    WallDepthTier.menu => 'Tap ••• then Depth\u00A0Effect.',
+  static String? _depthStepFor(WallDepthTier? tier, AppLocalizations l10n) => switch (tier) {
+    WallDepthTier.auto => l10n.coreDepthEffectAutoLongTip,
+    WallDepthTier.menu => l10n.coreDepthEffectMenuShortTip,
     WallDepthTier.none || null => null,
   };
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final List<String> steps = <String>[...IosWallpaperGuideSheet.steps, ?_depthStepFor(depthTier)];
+    final AppLocalizations l10n = context.l10n;
+    final List<String> steps = <String>[...IosWallpaperGuideSheet.steps(l10n), ?_depthStepFor(depthTier, l10n)];
     final ColorScheme scheme = theme.colorScheme;
     return SafeArea(
       child: Padding(
@@ -92,10 +98,10 @@ class IosWallpaperGuideSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Set it as your wallpaper', style: theme.textTheme.displaySmall),
+            Text(l10n.coreSetItAsWallpaper, style: theme.textTheme.displaySmall),
             const SizedBox(height: 4),
             Text(
-              'iOS does not let apps change your wallpaper. Finish in Photos:',
+              l10n.coreIosWallpaperGuideBody,
               style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
@@ -124,12 +130,12 @@ class IosWallpaperGuideSheet extends StatelessWidget {
                   PrismHaptics.tap();
                   _launch('photos-redirect://');
                 },
-                child: const Text('Open Photos'),
+                child: Text(l10n.coreOpenPhotos),
               ),
             ),
             SizedBox(
               width: double.infinity,
-              child: TextButton(onPressed: () => Navigator.of(context).maybePop(), child: const Text('Done')),
+              child: TextButton(onPressed: () => Navigator.of(context).maybePop(), child: Text(l10n.coreDone)),
             ),
           ],
         ),

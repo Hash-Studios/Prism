@@ -9,12 +9,14 @@ import 'package:Prism/features/daily_chest/domain/chest_odds.dart';
 import 'package:Prism/features/daily_chest/domain/chest_phase.dart';
 import 'package:Prism/features/daily_chest/domain/chest_tiers.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 DailyChestStatus _status({bool opened = false, int questsLeft = 2, int price = 8}) =>
     DailyChestStatus(opened: opened, questsLeft: questsLeft, price: price);
 
 void main() {
+  final AppLocalizationsEn l10n = AppLocalizationsEn();
   group('the phase table', () {
     test('every phase has a marker and the spans run on from one to the next', () {
       final List<ChestMarker> markers = <ChestMarker>[
@@ -82,7 +84,7 @@ void main() {
         <int>[0xFF34D399, 0xFF38BDF8, 0xFFA78BFA, 0xFFF5B83D],
       );
       expect(
-        <String>[for (final ChestTier t in ChestTier.values) t.label],
+        <String>[for (final ChestTier t in ChestTier.values) t.label(AppLocalizationsEn())],
         <String>['Common', 'Rare', 'Epic', 'Legendary'],
       );
     });
@@ -116,41 +118,41 @@ void main() {
 
   group('copy', () {
     test('the reset label counts to the next UTC midnight', () {
-      expect(chestResetIn(DateTime.utc(2026, 10, 18, 18, 48)), '5h 12m');
-      expect(chestResetIn(DateTime.utc(2026, 10, 18, 22)), '2h');
-      expect(chestResetIn(DateTime.utc(2026, 10, 18, 23, 20)), '40m');
-      expect(chestResetIn(DateTime.utc(2026, 10, 18, 23, 59, 30)), '1m');
-      expect(chestResetIn(DateTime.utc(2026, 10, 31, 12)), '12h');
+      expect(chestResetIn(l10n, DateTime.utc(2026, 10, 18, 18, 48)), '5h 12m');
+      expect(chestResetIn(l10n, DateTime.utc(2026, 10, 18, 22)), '2h');
+      expect(chestResetIn(l10n, DateTime.utc(2026, 10, 18, 23, 20)), '40m');
+      expect(chestResetIn(l10n, DateTime.utc(2026, 10, 18, 23, 59, 30)), '1m');
+      expect(chestResetIn(l10n, DateTime.utc(2026, 10, 31, 12)), '12h');
     });
 
     test('the reset label reads a local time as UTC', () {
       final DateTime local = DateTime.parse('2026-10-18T18:48:00-05:00');
-      expect(chestResetIn(local), '12m');
+      expect(chestResetIn(l10n, local), '12m');
     });
 
     test('the cost line says what the chest costs now', () {
       final DateTime now = DateTime.utc(2026, 10, 18, 18, 48);
-      expect(chestCostLine(_status(questsLeft: 0), now: now), 'Your quests made it free today.');
-      expect(chestCostLine(_status(), now: now), 'Open it for 8 coins, or finish 2 more quests to open it free.');
+      expect(chestCostLine(l10n, _status(questsLeft: 0), now: now), 'Your quests made it free today.');
+      expect(chestCostLine(l10n, _status(), now: now), 'Open it for 8 coins, or finish 2 more quests to open it free.');
       expect(
-        chestCostLine(_status(questsLeft: 1), now: now),
+        chestCostLine(l10n, _status(questsLeft: 1), now: now),
         'Open it for 8 coins, or finish 1 more quest to open it free.',
       );
-      expect(chestCostLine(_status(opened: true), now: now), 'Opened. A new chest in 5h 12m.');
+      expect(chestCostLine(l10n, _status(opened: true), now: now), 'Opened. A new chest in 5h 12m.');
     });
 
     test('the bonus line says whether the chest doubles', () {
-      expect(chestBonusLine(bonusDone: true), 'Bonus quest done: your coins are doubled.');
-      expect(chestBonusLine(bonusDone: false), "Do today's bonus quest first to double your coins.");
+      expect(chestBonusLine(l10n, bonusDone: true), 'Bonus quest done: your coins are doubled.');
+      expect(chestBonusLine(l10n, bonusDone: false), "Do today's bonus quest first to double your coins.");
     });
 
     test('the row subtitle follows the state', () {
-      expect(chestRowSubtitle(_status(opened: true)), 'Opened. A new one tomorrow.');
-      expect(chestRowSubtitle(_status(questsLeft: 0)), 'Free today');
-      expect(chestRowSubtitle(_status(questsLeft: 3)), '8 coins, or free after 3 more quests');
-      expect(chestRowSubtitle(_status(questsLeft: 1)), '8 coins, or free after 1 more quest');
-      expect(chestRowSubtitle(_status(opened: true), doubled: true), 'Opened and doubled. A new one tomorrow.');
-      expect(chestRowSubtitle(_status(questsLeft: 3), doubled: true), '8 coins, or free after 3 more quests');
+      expect(chestRowSubtitle(l10n, _status(opened: true)), 'Opened. A new one tomorrow.');
+      expect(chestRowSubtitle(l10n, _status(questsLeft: 0)), 'Free today');
+      expect(chestRowSubtitle(l10n, _status(questsLeft: 3)), '8 coins, or free after 3 more quests');
+      expect(chestRowSubtitle(l10n, _status(questsLeft: 1)), '8 coins, or free after 1 more quest');
+      expect(chestRowSubtitle(l10n, _status(opened: true), doubled: true), 'Opened and doubled. A new one tomorrow.');
+      expect(chestRowSubtitle(l10n, _status(questsLeft: 3), doubled: true), '8 coins, or free after 3 more quests');
     });
   });
 

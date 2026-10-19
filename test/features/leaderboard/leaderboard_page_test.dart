@@ -8,6 +8,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/leaderboard/biz/bloc/leaderboard_bloc.j.dart';
 import 'package:Prism/features/leaderboard/domain/entities/leaderboard_entry.dart';
 import 'package:Prism/features/leaderboard/views/pages/leaderboard_page.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -68,6 +70,8 @@ void main() {
     whenListen(bloc, states, initialState: state);
     return tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
           child: child!,
@@ -103,7 +107,7 @@ void main() {
     expect(find.textContaining('Resets Monday 00:00 UTC · '), findsOneWidget);
     expect(find.text('Top 50 · updated about every 3 hours'), findsOneWidget);
     expect(find.text('Ana'), findsOneWidget);
-    expect(find.text('1200 XP'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyXp(1200)), findsOneWidget);
     expect(find.text('Silver'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
@@ -187,7 +191,7 @@ void main() {
     states.add(loaded(global: const <LeaderboardEntry>[_ana]));
     await tester.pump();
 
-    expect(find.text('1200 XP'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyXp(1200)), findsOneWidget);
     expect(find.text('40 XP'), findsNothing);
     expect(find.text('Top 50 · updated about every 3 hours'), findsOneWidget);
     expect(find.text('Your score is included. Follow creators to compare weekly XP.'), findsNothing);
@@ -267,13 +271,13 @@ void main() {
       states.add(loaded(global: const <LeaderboardEntry>[_ana]));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
-      expect(find.text('1200 XP'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyXp(1200)), findsOneWidget);
       expect(find.byType(RefreshProgressIndicator), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }
 
   test('resetCaption counts down to Monday 00:00 UTC', () {
-    expect(resetCaption(DateTime.utc(2026, 10, 17, 20)), 'Resets Monday 00:00 UTC · 1d 4h left');
+    expect(resetCaption(AppLocalizationsEn(), DateTime.utc(2026, 10, 17, 20)), 'Resets Monday 00:00 UTC · 1d 4h left');
   });
 }

@@ -1,4 +1,5 @@
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Optional title, category and tags for a wallpaper that goes to review. Every field can stay empty.
@@ -52,18 +53,27 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text('Details (optional)', style: theme.textTheme.titleSmall?.copyWith(color: colors.onSurface)),
+        Text(
+          context.l10n.wallpaperUploadDetailsOptional,
+          style: theme.textTheme.titleSmall?.copyWith(color: colors.onSurface),
+        ),
         const SizedBox(height: 12),
         TextField(
           controller: _title,
           maxLength: maxSubmissionTitleLength,
           textCapitalization: TextCapitalization.sentences,
           textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(labelText: 'Title', hintText: 'Name your wallpaper'),
+          decoration: InputDecoration(
+            labelText: context.l10n.wallpaperTitle,
+            hintText: context.l10n.wallpaperUploadTitleHint,
+          ),
           onChanged: (_) => _emit(),
         ),
         const SizedBox(height: 8),
-        Text('Category', style: theme.textTheme.labelLarge?.copyWith(color: colors.onSurfaceVariant)),
+        Text(
+          context.l10n.wallpaperCategory,
+          style: theme.textTheme.labelLarge?.copyWith(color: colors.onSurfaceVariant),
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -85,11 +95,13 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
           enabled: !tagsFull,
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
-            labelText: 'Tags',
-            hintText: tagsFull ? 'You added $maxSubmissionTags tags' : 'Add a tag, then tap Done',
-            helperText: 'Up to $maxSubmissionTags. Tags help people find your wallpaper.',
+            labelText: context.l10n.wallpaperUploadTags,
+            hintText: tagsFull
+                ? context.l10n.wallpaperUploadMaxTagsReached(maxSubmissionTags)
+                : context.l10n.wallpaperUploadAddTagHint,
+            helperText: context.l10n.wallpaperUploadTagsHelp(maxSubmissionTags),
             suffixIcon: IconButton(
-              tooltip: 'Add tag',
+              tooltip: context.l10n.wallpaperUploadAddTag,
               icon: const Icon(Icons.add),
               onPressed: tagsFull ? null : () => _addTags(_tagInput.text),
             ),
@@ -107,7 +119,7 @@ class _SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
               for (final String tag in _tags)
                 InputChip(
                   label: Text(tag),
-                  deleteButtonTooltipMessage: 'Remove tag $tag',
+                  deleteButtonTooltipMessage: context.l10n.wallpaperUploadRemoveTag(tag),
                   onDeleted: () => _removeTag(tag),
                 ),
             ],

@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/features/admin_review/views/widgets/notification_scoreboard_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/notification_retention.dart';
 import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/scoreboard_row.dart';
@@ -505,7 +506,13 @@ void main() {
     getIt.registerSingleton<FirestoreClient>(firestore);
     addTearDown(getIt.reset);
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: NotificationScoreboardCard())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: NotificationScoreboardCard()),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final FirestoreQuerySpec spec = firestore.querySpecs.single;
@@ -527,6 +534,9 @@ void main() {
     firestore.onQuery = (_) => const <FakeDocRow>[];
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: NotificationScoreboardCard(key: ValueKey<String>('fresh-mount'))),
       ),
     );

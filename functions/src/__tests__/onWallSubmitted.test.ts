@@ -68,7 +68,7 @@ test("a wall of an unknown owner keeps its fields", async (t) => {
 test("a premium submission notifies the admins and a free one does not", async (t) => {
   const premium = setup(t, {name: "Maker", premium: true}, wall());
   await fire(premium.store);
-  assert.deepEqual(premium.topics, ["u_adm1"]);
+  assert.deepEqual(premium.topics.sort(), ["u_adm1", "u_adm1_loc_v1"]);
 
   const free = setup(t, {name: "Maker", premium: false}, wall());
   await fire(free.store);

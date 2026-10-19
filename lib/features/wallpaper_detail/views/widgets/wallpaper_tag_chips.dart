@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:Prism/l10n/l10n.dart';
 
 /// Tag chips that open a search for the tapped tag. The fill is solid, blended over the panel colour, so a tag reads
 /// the same whatever shows through the panel.
@@ -20,7 +21,7 @@ class WallpaperTagChips extends StatelessWidget {
         for (final String tag in tags)
           ActionChip(
             label: Text(tag),
-            tooltip: 'Search $tag',
+            tooltip: context.l10n.wallpaperSearchTag(tag),
             onPressed: () => onTagTap(tag),
             backgroundColor: tonalFill == null
                 ? null

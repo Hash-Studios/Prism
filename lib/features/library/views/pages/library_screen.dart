@@ -9,6 +9,7 @@ import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
 import 'package:Prism/features/library/views/widgets/recently_set_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
@@ -16,13 +17,15 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 enum LibraryTab {
-  favourites('Favourites'),
-  downloads('Downloads'),
-  history('History');
+  favourites,
+  downloads,
+  history;
 
-  const LibraryTab(this.label);
-
-  final String label;
+  String label(AppLocalizations l10n) => switch (this) {
+    LibraryTab.favourites => l10n.wallpaperLibraryFavourites,
+    LibraryTab.downloads => l10n.wallpaperLibraryDownloads,
+    LibraryTab.history => l10n.wallpaperLibraryHistory,
+  };
 }
 
 /// Favourites, Downloads and History in one place. History is Android only, because iOS cannot set a wallpaper.
@@ -95,7 +98,10 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
           icon: Icon(JamIcons.chevron_left, color: scheme.secondary),
           onPressed: () => Navigator.maybePop(context),
         ),
-        title: Text('Library', style: theme.textTheme.displaySmall?.copyWith(color: scheme.secondary)),
+        title: Text(
+          context.l10n.wallpaperLibraryTitle,
+          style: theme.textTheme.displaySmall?.copyWith(color: scheme.secondary),
+        ),
         actions: const [OfflineChip(), SizedBox(width: 12)],
         bottom: _ClampedTabBar(
           TabBar(
@@ -107,7 +113,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
             labelPadding: const EdgeInsets.symmetric(horizontal: 4),
             indicatorColor: prismReadableInk(theme),
             dividerColor: scheme.secondary.withValues(alpha: 0.08),
-            tabs: [for (final LibraryTab tab in _tabs) Tab(text: tab.label)],
+            tabs: [for (final LibraryTab tab in _tabs) Tab(text: tab.label(context.l10n))],
           ),
         ),
       ),
@@ -162,9 +168,9 @@ class _HistoryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlintState(
       kind: GlintStateKind.empty,
-      title: 'Wallpaper history',
-      body: 'The wallpapers you set, so you can set them again.',
-      actionLabel: 'Open history',
+      title: context.l10n.wallpaperLibraryHistoryTitle,
+      body: context.l10n.wallpaperLibraryHistoryBody,
+      actionLabel: context.l10n.wallpaperLibraryOpenHistory,
       onAction: () => context.router.push(const WallpaperHistoryRoute()),
     );
   }

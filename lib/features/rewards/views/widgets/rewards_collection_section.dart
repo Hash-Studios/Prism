@@ -14,6 +14,7 @@ import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/features/streak/streak_unlock.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -55,20 +56,20 @@ class _CollectionBody extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const PrismSectionHeader(
-              title: 'Streak collection',
+            PrismSectionHeader(
+              title: context.l10n.economyStreakCollection,
               padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.xxs),
             ),
-            Text('Wallpapers you unlock by keeping your streak.', style: PrismTextStyles.caption(context)),
+            Text(context.l10n.economyStreakCollectionDescription, style: PrismTextStyles.caption(context)),
             const SizedBox(height: PrismSpace.sm),
             if (loading)
               const _CollectionSkeleton()
             else if (failed)
               PrismInlineState(
                 icon: Icons.cloud_off_rounded,
-                title: "Couldn't load the collection",
-                body: 'Check your connection and try again.',
-                actionLabel: 'Try again',
+                title: context.l10n.economyCollectionLoadFailed,
+                body: context.l10n.errorNetwork,
+                actionLabel: context.l10n.actionRetry,
                 onAction: () => context.read<StreakShopBloc>().add(const StreakShopLoaded()),
               )
             else
@@ -148,31 +149,32 @@ class _CollectionCard extends StatelessWidget {
   final PrismWallpaper wallpaper;
   final bool unlocked;
 
-  String get _caption {
+  String _caption(AppLocalizations l10n) {
     final int? days = wallpaper.requiredStreakDays;
     final int? coins = wallpaper.streakShopCoinCost;
     if (days != null) {
-      return unlocked ? 'Unlocked at $days days' : 'Unlocks at $days days';
+      return unlocked ? l10n.economyCollectionUnlockedAtDays(days) : l10n.economyCollectionUnlocksAtDays(days);
     }
     if (coins != null) {
-      return unlocked ? 'Unlocked with coins' : 'Unlocks at $coins coins';
+      return unlocked ? l10n.economyCollectionUnlockedWithCoins : l10n.economyCollectionUnlocksAtCoins(coins);
     }
-    return unlocked ? 'Unlocked' : 'Locked';
+    return unlocked ? l10n.economyDropUnlocked : l10n.economyDropLocked;
   }
 
-  String get _lockedMessage {
+  String _lockedMessage(AppLocalizations l10n) {
     final int? days = wallpaper.requiredStreakDays;
     final int? coins = wallpaper.streakShopCoinCost;
     if (days != null) {
-      return 'Keep your streak for $days days to unlock this.${coins != null ? ' Or have $coins coins.' : ''}';
+      return l10n.economyCollectionKeepStreakMessage(days, coins ?? 0, (coins != null).toString());
     }
     if (coins != null) {
-      return 'Have $coins coins to unlock this.';
+      return l10n.economyCollectionNeedCoinsMessage(coins);
     }
-    return "You haven't met the unlock requirements yet.";
+    return l10n.economyCollectionRequirementsUnmet;
   }
 
   void _onTap(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     if (unlocked) {
       PrismHaptics.tap();
       context.router.root.push(
@@ -187,10 +189,10 @@ class _CollectionCard extends StatelessWidget {
       context: context,
       useSafeArea: true,
       builder: (sheetContext) => PrismSheetBody(
-        title: 'Still locked',
-        message: _lockedMessage,
+        title: l10n.economyCollectionStillLocked,
+        message: _lockedMessage(l10n),
         actions: <Widget>[
-          PrismButton(label: 'Got it', expand: true, onPressed: () => Navigator.of(sheetContext).pop()),
+          PrismButton(label: l10n.economyGotIt, expand: true, onPressed: () => Navigator.of(sheetContext).pop()),
         ],
       ),
     );
@@ -198,11 +200,15 @@ class _CollectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final String category = (wallpaper.core.category ?? '').isEmpty ? 'Wallpaper' : wallpaper.core.category!;
+    final String category = (wallpaper.core.category ?? '').isEmpty
+        ? l10n.wallpaperImageSemanticLabel
+        : wallpaper.core.category!;
+    final String caption = _caption(l10n);
     return Semantics(
       button: true,
-      label: '$category, ${unlocked ? 'unlocked' : 'locked'}, $_caption',
+      label: l10n.economyCollectionItemSemantics(category, unlocked.toString(), caption),
       excludeSemantics: true,
       onTap: () => _onTap(context),
       child: PressScale(
@@ -239,7 +245,7 @@ class _CollectionCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: PrismSpace.xs - 2),
-              Text(_caption, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
+              Text(caption, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
             ],
           ),
         ),

@@ -1,5 +1,3 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -15,6 +13,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -162,12 +161,18 @@ void main() {
     ImagePickerPlatform.instance = picker;
     final opened = <EditWallRouteArgs>[];
     final router = _PanelRouter(opened.add, draftStore: _EmptyUploadDraftStore());
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await router.navigatePath('/');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Open panel'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Upload a wallpaper'));
+    await tester.tap(find.text('Upload wallpaper'));
     await tester.pumpAndSettle();
     return opened;
   }
@@ -231,7 +236,13 @@ void main() {
     ImagePickerPlatform.instance = picker;
     final resumed = <UploadWallRouteArgs>[];
     final router = _PanelRouter((_) {}, onResume: resumed.add, draftStore: drafts);
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await router.navigatePath('/');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Open panel'));

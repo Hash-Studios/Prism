@@ -1,16 +1,37 @@
 enum LiveApplyStatus { applied, confirmInPreview, cancelled, failed, unsupported, proRequired }
 
+enum LiveApplyFailure {
+  setFailed,
+  keepPrismOpen,
+  textureDownloadFailed,
+  texturePreparationFailed,
+  textureTooDetailed,
+  videoReadFailed,
+  videoTooLarge,
+  fileTooLarge,
+  imageTooLarge,
+  imageTooLargeForDevice,
+  wallpaperNotAllowed,
+  outOfMemory,
+  timeout,
+  invalidVideo,
+  sourceUnavailable,
+  permissionDenied,
+  styleUnavailable,
+  systemPreviewUnavailable,
+}
+
 class LiveApplyOutcome {
-  const LiveApplyOutcome(this.status, this.message);
+  const LiveApplyOutcome(this.status, {this.failure});
 
-  const LiveApplyOutcome.confirmInPreview() : this(LiveApplyStatus.confirmInPreview, 'Confirm in the system preview.');
+  const LiveApplyOutcome.confirmInPreview() : this(LiveApplyStatus.confirmInPreview);
 
-  const LiveApplyOutcome.proRequired() : this(LiveApplyStatus.proRequired, 'This style is part of Prism Pro.');
+  const LiveApplyOutcome.proRequired() : this(LiveApplyStatus.proRequired);
 
-  const LiveApplyOutcome.failed(String message) : this(LiveApplyStatus.failed, message);
+  const LiveApplyOutcome.failed(LiveApplyFailure failure) : this(LiveApplyStatus.failed, failure: failure);
 
   final LiveApplyStatus status;
-  final String message;
+  final LiveApplyFailure? failure;
 
   bool get isError => status == LiveApplyStatus.failed || status == LiveApplyStatus.unsupported;
 }

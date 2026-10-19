@@ -15,9 +15,9 @@ import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wall_of_the_day_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-// ignore: depend_on_referenced_packages
 import 'package:file/file.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -89,6 +89,9 @@ void main() {
   Future<void> pumpTile(WidgetTester tester, {String thumbnailUrl = thumbnail, String fullUrl = full}) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: SizedBox(
           width: 120,
           height: 240,
@@ -158,6 +161,9 @@ void main() {
     respond(full, success: true);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: SizedBox(
           width: 120,
           height: 240,
@@ -184,6 +190,9 @@ void main() {
     respond(thumbnail, success: true);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: SizedBox(
             width: 320,
@@ -212,6 +221,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WotdBloc>.value(value: bloc, child: const WallOfTheDayCard()),
       ),
     );
@@ -230,6 +242,9 @@ void main() {
     respond(thumbnail, success: false);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: SizedBox(width: 120, height: 240, child: PrismImageTile(url: thumbnail)),
       ),
     );
@@ -247,6 +262,9 @@ void main() {
   testWidgets('an empty URL with no fallback stays a skeleton and offers no retry', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: SizedBox(width: 120, height: 240, child: PrismImageTile(url: '')),
       ),
     );
@@ -260,6 +278,9 @@ void main() {
     respond(thumbnail, success: true);
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: SizedBox(
           width: 120,
           height: 240,

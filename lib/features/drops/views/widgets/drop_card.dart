@@ -10,6 +10,7 @@ import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -59,8 +60,11 @@ class DropCardView extends StatelessWidget {
             scale: 0.98,
             child: Semantics(
               button: true,
-              label:
-                  'The Drop, ${drop.endsInLabel(state.now)}, ${state.unlockedCount} of ${drop.count} collected. Preview',
+              label: context.l10n.economyDropCardSemantics(
+                drop.endsInLabel(context.l10n, state.now),
+                state.unlockedCount,
+                drop.count,
+              ),
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
@@ -101,10 +105,10 @@ class _Details extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text('THE DROP · ${dropWeekLabel(drop.weekKey)}', style: dropCapsStyle(size: 10, spacing: 2)),
+        Text(context.l10n.economyDropHeader(dropWeekLabel(drop.weekKey)), style: dropCapsStyle(size: 10, spacing: 2)),
         const SizedBox(height: 6),
         Text(
-          drop.title,
+          drop.displayTitle(context.l10n),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
@@ -121,7 +125,7 @@ class _Details extends StatelessWidget {
           children: <Widget>[
             Expanded(
               child: Text(
-                '${state.unlockedCount}/${drop.count} collected',
+                context.l10n.economyDropCollected(state.unlockedCount, drop.count),
                 style: const TextStyle(
                   fontFamily: PrismFonts.proximaNova,
                   fontSize: 12,
@@ -147,7 +151,7 @@ class _PreviewPill extends StatelessWidget {
       decoration: BoxDecoration(gradient: DropPalette.foil, borderRadius: BorderRadius.circular(PrismRadius.xl)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        child: Text('Preview', style: dropCapsStyle(spacing: 0.8, color: DropPalette.obsidian)),
+        child: Text(context.l10n.economyDropPreview, style: dropCapsStyle(spacing: 0.8, color: DropPalette.obsidian)),
       ),
     );
   }

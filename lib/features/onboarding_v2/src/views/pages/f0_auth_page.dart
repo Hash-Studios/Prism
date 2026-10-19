@@ -9,6 +9,7 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_terms_
 import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_buttons.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_staggered_fade.dart';
 import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/foundation.dart';
@@ -57,11 +58,11 @@ class _F0AuthPageState extends State<F0AuthPage> {
     super.dispose();
   }
 
-  void _gated(VoidCallback action, {_Provider? provider}) {
+  void _gated(BuildContext context, VoidCallback action, {_Provider? provider}) {
     if (!widget.termsAccepted) {
       _shake.shake();
       PrismHaptics.warning();
-      toasts.error('Please agree to the Terms and Privacy policy first.');
+      toasts.error(context.l10n.onboardingTermsRequired);
       return;
     }
     setState(() => _provider = provider);
@@ -129,12 +130,15 @@ class _F0AuthPageState extends State<F0AuthPage> {
                             const Spacer(),
                             WelcomeStaggeredFade(
                               delay: PrismDurations.stagger,
-                              child: Semantics(header: true, child: Text('Your screen, reimagined.', style: headline)),
+                              child: Semantics(
+                                header: true,
+                                child: Text(context.l10n.onboardingWelcomeHeadline, style: headline),
+                              ),
                             ),
                             const SizedBox(height: PrismSpace.sm),
                             WelcomeStaggeredFade(
                               delay: PrismDurations.stagger * 2,
-                              child: Text('Millions of premium wallpapers from top artists.', style: body),
+                              child: Text(context.l10n.onboardingWelcomeDescription, style: body),
                             ),
                             const SizedBox(height: PrismSpace.xl),
                             WelcomeStaggeredFade(
@@ -168,27 +172,27 @@ class _F0AuthPageState extends State<F0AuthPage> {
                                     children: <Widget>[
                                       if (ios) ...<Widget>[
                                         WelcomePrimaryButton(
-                                          label: 'Continue with Apple',
+                                          label: context.l10n.onboardingContinueApple,
                                           icon: Icons.apple,
                                           loading: busy && _provider == _Provider.apple,
                                           onPressed: busy
                                               ? null
-                                              : () => _gated(widget.onApple, provider: _Provider.apple),
+                                              : () => _gated(context, widget.onApple, provider: _Provider.apple),
                                         ),
                                         const SizedBox(height: PrismSpace.sm),
                                       ],
                                       WelcomePrimaryButton(
-                                        label: 'Continue with Google',
+                                        label: context.l10n.onboardingContinueGoogle,
                                         icon: JamIcons.google,
                                         style: ios ? WelcomeButtonStyle.glass : WelcomeButtonStyle.solid,
                                         loading: busy && _provider != _Provider.apple,
                                         onPressed: busy
                                             ? null
-                                            : () => _gated(widget.onGoogle, provider: _Provider.google),
+                                            : () => _gated(context, widget.onGoogle, provider: _Provider.google),
                                       ),
                                       WelcomeTextButton(
-                                        label: 'Browse without an account',
-                                        onPressed: () => _gated(widget.onBrowse),
+                                        label: context.l10n.onboardingBrowseGuest,
+                                        onPressed: () => _gated(context, widget.onBrowse),
                                       ),
                                     ],
                                   );
@@ -230,7 +234,7 @@ class _Wordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Prism',
+      label: context.l10n.appTitle,
       child: ExcludeSemantics(
         child: MediaQuery.withNoTextScaling(
           child: Row(
@@ -242,7 +246,7 @@ class _Wordmark extends StatelessWidget {
                 colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
               ),
               const SizedBox(width: PrismSpace.xs),
-              Text('prism', style: PrismTextStyles.brandName.copyWith(fontSize: 22)),
+              Text(context.l10n.appTitle.toLowerCase(), style: PrismTextStyles.brandName.copyWith(fontSize: 22)),
             ],
           ),
         ),

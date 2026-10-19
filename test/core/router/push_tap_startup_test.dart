@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/push_tap_startup.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,7 +11,13 @@ import '../../support/stub_app_router.dart';
 void main() {
   testWidgets('waitForStartupEnd has no time limit and finishes when the stack leaves startup', (tester) async {
     final router = StubAppRouter();
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await tester.pumpAndSettle();
     unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
     await tester.pumpAndSettle();
@@ -27,7 +34,13 @@ void main() {
 
   testWidgets('waitForStartupEnd returns at once when startup is over, and false when unmounted', (tester) async {
     final router = StubAppRouter();
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await tester.pumpAndSettle();
     unawaited(router.replaceAll([const DashboardRoute()]));
     await tester.pumpAndSettle();
@@ -38,7 +51,13 @@ void main() {
 
   testWidgets('waitForStartupEnd gives up with false when the owner is gone at the next router change', (tester) async {
     final router = StubAppRouter();
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await tester.pumpAndSettle();
     unawaited(router.replaceAll([OnboardingV2ShellRoute()]));
     await tester.pumpAndSettle();

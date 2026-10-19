@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,6 +8,9 @@ void main() {
     int taps = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: CircularMenuButton(
             label: 'Share',
@@ -30,6 +34,9 @@ void main() {
   testWidgets('toggle buttons such as Favourite announce whether they are on', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: CircularMenuButton(label: 'Favourite', isLoading: false, selected: true, child: Icon(Icons.favorite)),
         ),
@@ -45,6 +52,9 @@ void main() {
   testWidgets('a caption shows under a 48 point circle without changing the semantics label', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: CircularMenuButton(
             label: 'Report',
@@ -68,6 +78,9 @@ void main() {
   testWidgets('a loading button shows a spinner and keeps its icon', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: CircularMenuButton(label: 'Edit', isLoading: true, child: Icon(Icons.edit)),
         ),
@@ -83,6 +96,9 @@ void main() {
     int taps = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: FlatMenuButtons(
             child: CircularMenuButton(
@@ -113,6 +129,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: theme,
         home: const Center(
           child: FlatMenuButtons(

@@ -1,13 +1,14 @@
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/l10n/l10n.dart';
 
 /// What screen readers say for a wallpaper tile in any grid.
-String wallpaperSemanticLabel(String? author) {
+String wallpaperSemanticLabel(String? author, AppLocalizations l10n) {
   final String name = author?.trim() ?? '';
-  return name.isEmpty ? 'Wallpaper' : 'Wallpaper by $name';
+  return name.isEmpty ? l10n.coreWallpaperSemanticLabel : l10n.coreWallpaperBySemanticLabel(name);
 }
 
-/// What a user reads when a wallpaper cannot be loaded. The raw error goes to the log, never to the screen.
-const String wallpaperLoadFailureMessage = "Couldn't load this wallpaper. Check your connection and try again.";
+/// Diagnostic label for wallpaper lookup failures. Views choose localized copy from failure type and code.
+const String wallpaperLoadFailureMessage = 'Wallpaper lookup failed';
 
 final RegExp _wallhavenCropPath = RegExp('^/(?:lg|small)/');
 

@@ -14,6 +14,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart' show supportEmail;
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -24,10 +25,15 @@ import 'package:github/github.dart';
 
 /// A mailto link with the app version and platform in the body so reports carry the context.
 @visibleForTesting
-String buildFeedbackLink({required String version, required String build, required String platform}) {
+String buildFeedbackLink({
+  required String version,
+  required String build,
+  required String platform,
+  required String subject,
+}) {
   final String body = '\n\n---\nPrism $version+$build\n$platform';
   final String query = <String, String>{
-    'subject': 'Prism feedback',
+    'subject': subject,
     'body': body,
   }.entries.map((MapEntry<String, String> e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
   return 'mailto:$supportEmail?$query';
@@ -75,9 +81,9 @@ Future<bool> _openOrExplain(BuildContext context, String target, {required Strin
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: Text("Couldn't open $address"),
+        content: Text(context.l10n.accountCouldNotOpenAddress(address)),
         action: SnackBarAction(
-          label: 'Copy',
+          label: context.l10n.accountCopy,
           onPressed: () => Clipboard.setData(ClipboardData(text: address)),
         ),
       ),
@@ -176,10 +182,10 @@ class _AboutScreenState extends State<AboutScreen> {
       children: <Widget>[
         Image.asset('assets/images/prism.webp', height: 70),
         const SizedBox(height: PrismSpace.sm),
-        Text('Prism Wallpapers', textAlign: TextAlign.center, style: PrismTextStyles.rowTitle(context)),
+        Text(context.l10n.accountAppName, textAlign: TextAlign.center, style: PrismTextStyles.rowTitle(context)),
         Semantics(
           button: true,
-          label: 'Version $_version',
+          label: context.l10n.accountVersionLabel(_version),
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _onVersionTap,
@@ -187,54 +193,75 @@ class _AboutScreenState extends State<AboutScreen> {
               constraints: const BoxConstraints(minHeight: 44),
               child: Center(
                 widthFactor: 1,
-                child: Text('Version $_version', textAlign: TextAlign.center, style: PrismTextStyles.caption(context)),
+                child: Text(
+                  context.l10n.accountVersionLabel(_version),
+                  textAlign: TextAlign.center,
+                  style: PrismTextStyles.caption(context),
+                ),
               ),
             ),
           ),
         ),
-        Text('A feature-rich wallpaper manager.', textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+        Text(
+          context.l10n.accountWallpaperManagerTagline,
+          textAlign: TextAlign.center,
+          style: PrismTextStyles.body(context),
+        ),
         const SizedBox(height: PrismSpace.md),
         Wrap(
           alignment: WrapAlignment.center,
           spacing: PrismSpace.xs,
           runSpacing: PrismSpace.xs,
           children: <Widget>[
-            const ActionButton(
+            ActionButton(
               icon: JamIcons.github,
-              text: 'GITHUB',
+              text: context.l10n.accountSocialGithub,
               link: 'https://www.github.com/Hash-Studios/Prism',
             ),
-            ActionButton(icon: Icons.star_rounded, text: 'RATE', link: _storeLink),
+            ActionButton(icon: Icons.star_rounded, text: context.l10n.accountRateApp, link: _storeLink),
             ActionButton(
               icon: Icons.mail_outline_rounded,
-              text: 'FEEDBACK',
+              text: context.l10n.accountFeedback,
               link: buildFeedbackLink(
                 version: app_state.currentAppVersion,
                 build: app_state.currentAppVersionCode,
                 platform: '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+                subject: context.l10n.accountFeedbackSubject,
               ),
               onLaunchFailed: (BuildContext context) =>
                   unawaited(showReportProblemSheet(context, source: 'about_feedback')),
             ),
             ActionButton(
               icon: Icons.refresh_rounded,
-              text: "WHAT'S NEW",
+              text: context.l10n.accountWhatsNewAction,
               link: '',
               onTap: (BuildContext context) => showChangelog(context),
             ),
-            const ActionButton(
+            ActionButton(
               icon: Icons.privacy_tip_rounded,
-              text: 'PRIVACY',
+              text: context.l10n.accountPrivacyAction,
               link: 'https://prismwalls.com/privacy',
             ),
-            const ActionButton(icon: Icons.description_rounded, text: 'TERMS', link: 'https://prismwalls.com/terms'),
-            const ActionButton(icon: JamIcons.twitter, text: 'TWITTER', link: 'https://twitter.com/PrismWallpapers'),
-            const ActionButton(
+            ActionButton(
+              icon: Icons.description_rounded,
+              text: context.l10n.accountTermsAction,
+              link: 'https://prismwalls.com/terms',
+            ),
+            ActionButton(
+              icon: JamIcons.twitter,
+              text: context.l10n.accountSocialTwitter,
+              link: 'https://twitter.com/PrismWallpapers',
+            ),
+            ActionButton(
               icon: JamIcons.instagram,
-              text: 'INSTAGRAM',
+              text: context.l10n.accountSocialInstagram,
               link: 'https://www.instagram.com/prismwallpapers',
             ),
-            const ActionButton(icon: JamIcons.paper_plane, text: 'TELEGRAM', link: 'http://t.me/PrismWallpapers'),
+            ActionButton(
+              icon: JamIcons.paper_plane,
+              text: context.l10n.accountSocialTelegram,
+              link: 'http://t.me/PrismWallpapers',
+            ),
           ],
         ),
       ],
@@ -251,7 +278,7 @@ class _AboutScreenState extends State<AboutScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (contributors.isEmpty)
-          Text('No contributors to show yet.', style: PrismTextStyles.body(context))
+          Text(context.l10n.accountNoContributors, style: PrismTextStyles.body(context))
         else
           Row(
             children: <Widget>[
@@ -265,14 +292,14 @@ class _AboutScreenState extends State<AboutScreen> {
         if (rest.isNotEmpty) ...<Widget>[
           const SizedBox(height: PrismSpace.md),
           _hairline(context),
-          const PrismSectionHeader(title: 'Other Contributors'),
+          PrismSectionHeader(title: context.l10n.accountOtherContributors),
           PrismGroup(
             children: <Widget>[
               for (final Contributor c in rest)
                 PrismRow(
                   leading: PrismAvatar(url: c.avatarUrl, name: c.login, size: 40),
-                  title: c.login ?? 'Contributor',
-                  subtitle: _commits(c.contributions),
+                  title: c.login ?? context.l10n.accountContributor,
+                  subtitle: _commits(context, c.contributions),
                   showChevron: false,
                   onTap: () => _openContributorLink(c),
                 ),
@@ -304,7 +331,7 @@ class _AboutScreenState extends State<AboutScreen> {
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'About',
+      title: context.l10n.accountAbout,
       onBack: () {
         _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'about_screen_close');
         context.router.maybePop();
@@ -312,7 +339,7 @@ class _AboutScreenState extends State<AboutScreen> {
       bottomBar: Padding(
         padding: const EdgeInsets.only(top: PrismSpace.xs),
         child: Text(
-          'Made with ❤ in India with Flutter!',
+          context.l10n.accountMadeWithLoveInIndia,
           textAlign: TextAlign.center,
           style: PrismTextStyles.caption(context),
         ),
@@ -323,7 +350,7 @@ class _AboutScreenState extends State<AboutScreen> {
           _header(context),
           const SizedBox(height: PrismSpace.md),
           _hairline(context),
-          const PrismSectionHeader(title: 'The Team'),
+          PrismSectionHeader(title: context.l10n.accountTheTeam),
           FutureBuilder<List<Contributor>>(
             future: _contributors,
             builder: (context, snapshot) {
@@ -331,9 +358,9 @@ class _AboutScreenState extends State<AboutScreen> {
                   snapshot.connectionState == ConnectionState.waiting ||
                   snapshot.connectionState == ConnectionState.none;
               if (waiting) {
-                return const SizedBox(
+                return SizedBox(
                   height: 250,
-                  child: GlintState(kind: GlintStateKind.loading, title: 'Loading the team'),
+                  child: GlintState(kind: GlintStateKind.loading, title: context.l10n.accountLoadingTeam),
                 );
               }
               _trackContributorsLoaded(snapshot);
@@ -342,8 +369,8 @@ class _AboutScreenState extends State<AboutScreen> {
                   height: 250,
                   child: GlintState(
                     kind: GlintStateKind.error,
-                    title: "Couldn't load the team",
-                    actionLabel: 'Try again',
+                    title: context.l10n.accountCouldNotLoadTeam,
+                    actionLabel: context.l10n.accountTryAgain,
                     onAction: () => setState(() {
                       _contributors = _fetchContributors();
                     }),
@@ -363,7 +390,7 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 }
 
-String _commits(int? count) => count == 1 ? '1 commit' : '${count ?? 0} commits';
+String _commits(BuildContext context, int? count) => context.l10n.accountCommitCount(count ?? 0);
 
 class _TeamMember extends StatelessWidget {
   const _TeamMember({required this.contributor, required this.size});
@@ -373,11 +400,11 @@ class _TeamMember extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String login = contributor.login ?? 'Contributor';
+    final String login = contributor.login ?? context.l10n.accountContributor;
     return PressScale(
       child: Semantics(
         button: true,
-        label: '$login, ${_commits(contributor.contributions)}',
+        label: context.l10n.accountContributorCommitCount(login, contributor.contributions ?? 0),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
@@ -407,7 +434,7 @@ class _TeamMember extends StatelessWidget {
                 style: PrismTextStyles.rowTitle(context),
               ),
               Text(
-                _commits(contributor.contributions),
+                _commits(context, contributor.contributions),
                 textAlign: TextAlign.center,
                 style: PrismTextStyles.caption(context),
               ),

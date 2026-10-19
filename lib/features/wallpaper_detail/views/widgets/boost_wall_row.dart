@@ -7,6 +7,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -37,20 +38,20 @@ class _BoostWallRowState extends State<BoostWallRow> {
 
   bool get _active => _boostedUntil?.isAfter(DateTime.now()) ?? false;
 
-  String _time(DateTime when) => DateFormat.MMMd().add_jm().format(when.toLocal());
+  String _time(DateTime when, BuildContext context) =>
+      DateFormat.MMMd(context.l10n.localeName).add_jm().format(when.toLocal());
 
   Future<void> _boost() async {
     if (_busy) return;
     if (_active) {
-      toasts.info('Already boosted until ${_time(_boostedUntil!)}.');
+      toasts.info(context.l10n.wallpaperBoostAlreadyUntil(_time(_boostedUntil!, context)));
       return;
     }
     final bool confirmed = await showPrismConfirm(
       context,
-      title: 'Boost to Trending',
-      message:
-          'Show this wallpaper in the Home carousel and at the top of Trending for 24 hours for ${CoinPolicy.boostWall} coins.',
-      confirmLabel: 'Boost for ${CoinPolicy.boostWall} coins',
+      title: context.l10n.wallpaperBoostTitle,
+      message: context.l10n.wallpaperBoostConfirmMessage(CoinPolicy.boostWall),
+      confirmLabel: context.l10n.wallpaperBoostConfirmButton(CoinPolicy.boostWall),
     );
     if (!confirmed || !mounted) return;
     setState(() => _busy = true);
@@ -65,23 +66,23 @@ class _BoostWallRowState extends State<BoostWallRow> {
     switch (result.outcome) {
       case BoostOutcome.boosted:
         unawaited(analytics.track(BoostPurchasedEvent(wallId: widget.wall.id)));
-        toasts.success('Boosted. It is live on Home and in Trending.');
+        toasts.success(context.l10n.wallpaperBoostedSuccess);
       case BoostOutcome.active:
-        toasts.info('Already boosted.');
+        toasts.info(context.l10n.wallpaperBoostAlready);
       case BoostOutcome.slotsFull:
         final DateTime? next = result.nextFreeAt;
         toasts.error(
           next == null
-              ? 'All boost slots are taken. Try again later.'
-              : 'All boost slots are taken. The next one frees up ${_time(next)}.',
+              ? context.l10n.wallpaperBoostSlotsTaken
+              : context.l10n.wallpaperBoostSlotsTakenUntil(_time(next, context)),
         );
       case BoostOutcome.insufficient:
-        toasts.error('Not enough coins. Earn coins in Rewards.');
+        toasts.error(context.l10n.wallpaperInsufficientCoins);
       case BoostOutcome.notOwner:
       case BoostOutcome.notApproved:
-        toasts.error('Only approved wallpapers you uploaded can be boosted.');
+        toasts.error(context.l10n.wallpaperBoostOnlyApproved);
       case BoostOutcome.failed:
-        toasts.error("Couldn't boost this wallpaper. Try again.");
+        toasts.error(context.l10n.wallpaperBoostFailed);
     }
   }
 
@@ -90,10 +91,10 @@ class _BoostWallRowState extends State<BoostWallRow> {
     final DateTime? until = _boostedUntil;
     return PrismRow(
       icon: Icons.bolt_rounded,
-      title: 'Boost to Trending',
+      title: context.l10n.wallpaperBoostTitle,
       subtitle: _active && until != null
-          ? 'Boosted until ${_time(until)}'
-          : '24 hours at the top · ${CoinPolicy.boostWall} coins',
+          ? context.l10n.wallpaperBoostedUntil(_time(until, context))
+          : context.l10n.wallpaperBoostDurationAndCost(CoinPolicy.boostWall),
       onTap: _busy ? null : () => unawaited(_boost()),
     );
   }

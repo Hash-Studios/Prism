@@ -5,6 +5,8 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +19,7 @@ void main() {
   const MethodChannel hapticsChannel = MethodChannel('prism/haptics');
   const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
   final List<String> haptics = <String>[];
+  final AppLocalizationsEn l10n = AppLocalizationsEn();
 
   setUp(() {
     PrismHaptics.enabled = true;
@@ -46,8 +49,14 @@ void main() {
       await UploadQuota.incrementWeeklyUploads();
     }
 
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: UploadBottomPanel())));
-    await tester.tap(find.text('Upload a wallpaper'));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: UploadBottomPanel()),
+      ),
+    );
+    await tester.tap(find.text(l10n.wallpaperUploadTitle));
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['error']);

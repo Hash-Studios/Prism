@@ -20,6 +20,7 @@ import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_links_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/spin_wheel/spin_wheel.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -101,7 +102,7 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
     // Coin callables need auth; guests (iOS browse without an account) sign in first.
     if (!app_state.prismUser.loggedIn) {
       return PrismPage(
-        title: 'Rewards',
+        title: context.l10n.economyRewardsTitle,
         showBack: widget.showBack,
         onBack: _back,
         body: const SignInPrompt(feature: 'rewards'),
@@ -112,7 +113,7 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
         ? PrismSpace.xxl + MediaQuery.paddingOf(context).bottom
         : PrismSpace.bottomBarClearance;
     return PrismPage(
-      title: 'Rewards',
+      title: context.l10n.economyRewardsTitle,
       showBack: widget.showBack,
       onBack: _back,
       actions: <Widget>[

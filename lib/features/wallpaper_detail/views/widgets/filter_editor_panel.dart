@@ -4,8 +4,10 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// The bottom half of the wallpaper editor: a Filters tab with a strip of filter thumbnails and an Adjust tab with
 /// five sliders. It holds no state: the editor owns the filter stack and the adjustments.
@@ -53,9 +55,9 @@ class FilterEditorPanel extends StatelessWidget {
               TabBar(
                 onTap: (_) => PrismHaptics.selection(),
                 indicatorSize: TabBarIndicatorSize.label,
-                tabs: const [
-                  Tab(text: 'Filters'),
-                  Tab(text: 'Adjust'),
+                tabs: [
+                  Tab(text: context.l10n.wallpaperFilterTabFilters),
+                  Tab(text: context.l10n.wallpaperFilterTabAdjustments),
                 ],
               ),
               Expanded(child: TabBarView(children: [_buildFiltersTab(context, cs), _buildAdjustTab(context, cs)])),
@@ -71,7 +73,7 @@ class FilterEditorPanel extends StatelessWidget {
       _buildTile(
         context,
         cs,
-        name: 'None',
+        name: context.l10n.wallpaperFilterOriginal,
         selected: stack.isEmpty,
         order: 0,
         onTap: () {
@@ -96,7 +98,13 @@ class FilterEditorPanel extends StatelessWidget {
           _buildTile(
             context,
             cs,
-            name: effect.name,
+            name: switch (effect.name) {
+              'Sharpen' => context.l10n.wallpaperFilterEffectSharpen,
+              'High Pass' => context.l10n.wallpaperFilterEffectHighPass,
+              'Edge' => context.l10n.wallpaperFilterEffectEdge,
+              'Emboss' => context.l10n.wallpaperFilterEffectEmboss,
+              _ => effect.name,
+            },
             selected: stack.contains(effect),
             order: stack.indexOf(effect) + 1,
             onTap: () => onToggle(effect),
@@ -157,9 +165,9 @@ class FilterEditorPanel extends StatelessWidget {
                       ),
                     ),
                     if (selected)
-                      Positioned(
+                      PositionedDirectional(
                         top: PrismSpace.xxs,
-                        right: PrismSpace.xxs,
+                        end: PrismSpace.xxs,
                         child: Container(
                           width: 18,
                           height: 18,
@@ -167,7 +175,7 @@ class FilterEditorPanel extends StatelessWidget {
                           decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
                           child: stack.length > 1
                               ? Text(
-                                  '$order',
+                                  NumberFormat.decimalPattern(context.l10n.localeName).format(order),
                                   style: PrismTextStyles.caption(
                                     context,
                                   ).copyWith(color: cs.onPrimary, fontSize: 10, fontWeight: FontWeight.w700),
@@ -195,21 +203,23 @@ class FilterEditorPanel extends StatelessWidget {
 
   Widget _buildAdjustTab(BuildContext context, ColorScheme cs) {
     final WallpaperAdjustments a = adjustments;
-    String signed(double v) => v.round() > 0 ? '+${v.round()}' : '${v.round()}';
+    final NumberFormat numberFormat = NumberFormat.decimalPattern(context.l10n.localeName);
+    String localizedNumber(double value) => numberFormat.format(value.round());
+    String signed(double value) => value.round() > 0 ? '+${localizedNumber(value)}' : localizedNumber(value);
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
       children: [
         if (!effectsAvailable)
-          Text('Lightness is unavailable on this device.', style: PrismTextStyles.caption(context)),
+          Text(context.l10n.wallpaperFilterLightnessUnavailable, style: PrismTextStyles.caption(context)),
         _adjustRow(
           context,
           cs,
           icon: Icons.blur_on_rounded,
-          label: 'Blur',
+          label: context.l10n.wallpaperFilterBlur,
           value: a.blur * 100,
           min: 0,
           max: 100,
-          text: '${(a.blur * 100).round()}',
+          text: localizedNumber(a.blur * 100),
           onChanged: (v) => onAdjust((current) => current.copyWith(blur: v / 100)),
           onReset: () => onAdjust((current) => current.copyWith(blur: 0)),
         ),
@@ -217,11 +227,11 @@ class FilterEditorPanel extends StatelessWidget {
           context,
           cs,
           icon: Icons.palette_outlined,
-          label: 'Hue',
+          label: context.l10n.wallpaperFilterHue,
           value: a.hue,
           min: -180,
           max: 180,
-          text: '${a.hue.round()}°',
+          text: '${localizedNumber(a.hue)}°',
           onChanged: (v) => onAdjust((current) => current.copyWith(hue: v)),
           onReset: () => onAdjust((current) => current.copyWith(hue: 0)),
         ),
@@ -229,7 +239,7 @@ class FilterEditorPanel extends StatelessWidget {
           context,
           cs,
           icon: JamIcons.water_drop,
-          label: 'Saturation',
+          label: context.l10n.wallpaperFilterSaturation,
           value: a.saturation * 100,
           min: -100,
           max: 100,
@@ -241,7 +251,7 @@ class FilterEditorPanel extends StatelessWidget {
           context,
           cs,
           icon: Icons.light_mode_outlined,
-          label: 'Lightness',
+          label: context.l10n.wallpaperFilterLightness,
           value: a.lightness * 100,
           min: -100,
           max: 100,
@@ -254,7 +264,7 @@ class FilterEditorPanel extends StatelessWidget {
           context,
           cs,
           icon: JamIcons.brightness,
-          label: 'Brightness',
+          label: context.l10n.wallpaperFilterBrightness,
           value: a.brightness * 100,
           min: -100,
           max: 100,
@@ -290,7 +300,7 @@ class FilterEditorPanel extends StatelessWidget {
               SizedBox(
                 width: 84,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: PrismSpace.xs),
+                  padding: const EdgeInsetsDirectional.only(start: PrismSpace.xs),
                   child: Text(label, style: PrismTextStyles.rowTitle(context)),
                 ),
               ),
@@ -304,7 +314,7 @@ class FilterEditorPanel extends StatelessWidget {
               value: value.clamp(min, max),
               min: min,
               max: max,
-              semanticFormatterCallback: (v) => '${v.round()}',
+              semanticFormatterCallback: (v) => NumberFormat.decimalPattern(context.l10n.localeName).format(v.round()),
               onChanged: enabled ? onChanged : null,
               onChangeEnd: (_) => PrismHaptics.selection(),
             ),
@@ -312,7 +322,7 @@ class FilterEditorPanel extends StatelessWidget {
         ),
         SizedBox(
           width: 44,
-          child: Text(text, textAlign: TextAlign.right, style: PrismTextStyles.body(context)),
+          child: Text(text, textAlign: TextAlign.end, style: PrismTextStyles.body(context)),
         ),
       ],
     );

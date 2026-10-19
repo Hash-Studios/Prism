@@ -4,6 +4,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/spin_wheel/domain/bulb_pattern.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_motion.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
@@ -33,13 +34,13 @@ class SpinWheelCard extends StatelessWidget {
         final VoidCallback open = onOpen ?? () => unawaited(showSpinWheel(context));
         final bool canSpin = status.canSpin;
         final String caption = !canSpin
-            ? 'Back tomorrow'
+            ? context.l10n.economyBackTomorrow
             : status.freeSpinAvailable
-            ? 'Your free spin is ready'
-            : '${status.price} coins a spin. Win up to ${maxWheelCoins(wheel)} coins or a cosmetic';
+            ? context.l10n.economyFreeSpinReady(status.paidSpinsLeft)
+            : context.l10n.economySpinCardCaption(status.price, maxWheelCoins(wheel));
         return PrismCard(
           onTap: open,
-          semanticLabel: 'Spin the wheel. $caption',
+          semanticLabel: context.l10n.economySpinWheelCardSemantics(caption),
           child: Row(
             children: <Widget>[
               _MiniWheel(segments: wheel),
@@ -48,7 +49,7 @@ class SpinWheelCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Spin the wheel', style: PrismTextStyles.cardTitle(context)),
+                    Text(context.l10n.economySpinTheWheel, style: PrismTextStyles.cardTitle(context)),
                     const SizedBox(height: PrismSpace.xxs),
                     Text(caption, style: PrismTextStyles.caption(context)),
                   ],
@@ -57,7 +58,7 @@ class SpinWheelCard extends StatelessWidget {
               if (canSpin) ...<Widget>[
                 const SizedBox(width: PrismSpace.sm),
                 PrismButton(
-                  label: status.freeSpinAvailable ? 'Free spin' : 'Spin',
+                  label: status.freeSpinAvailable ? context.l10n.economyFreeSpin : context.l10n.economySpin,
                   size: PrismButtonSize.compact,
                   onPressed: open,
                 ),

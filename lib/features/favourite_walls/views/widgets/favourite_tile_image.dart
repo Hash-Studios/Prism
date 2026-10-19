@@ -1,6 +1,7 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +46,7 @@ class FavouriteTileImage extends StatelessWidget {
           children: [
             Icon(JamIcons.picture, color: theme.hintColor, size: 24),
             const SizedBox(height: 4),
-            Text('Unavailable', style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+            Text(context.l10n.wallpaperUnavailable, style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
             const SizedBox(height: 40),
           ],
         ),

@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -65,6 +66,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
   @override
   Widget build(BuildContext context) {
     final bool canCrop = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final AppLocalizations l10n = context.l10n;
     return FutureBuilder<aw.WallpaperCapabilities>(
       future: _capabilities,
       builder: (context, snapshot) {
@@ -77,8 +79,8 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
             supported(WallpaperTarget.home) &&
             supported(WallpaperTarget.lock);
         return PrismSheetBody(
-          title: 'Set wallpaper',
-          message: supported(WallpaperTarget.both) ? 'Both sets it on your home screen and lock screen.' : null,
+          title: l10n.coreSetWallpaper,
+          message: supported(WallpaperTarget.both) ? l10n.coreBothSetsScreens : null,
           scrollable: true,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -87,15 +89,23 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
               _Header(thumbnailUrl: widget.thumbnailUrl, notes: widget.notes),
               PrismGroup(
                 children: <Widget>[
-                  PrismRow(icon: Icons.home_rounded, title: 'Home Screen', onTap: () => _select(WallpaperTarget.home)),
+                  PrismRow(
+                    icon: Icons.home_rounded,
+                    title: l10n.coreHomeScreen,
+                    onTap: () => _select(WallpaperTarget.home),
+                  ),
                   if (supported(WallpaperTarget.lock))
                     PrismRow(
                       icon: Icons.lock_rounded,
-                      title: 'Lock Screen',
+                      title: l10n.coreLockScreen,
                       onTap: () => _select(WallpaperTarget.lock),
                     ),
                   if (supported(WallpaperTarget.both))
-                    PrismRow(icon: Icons.layers_rounded, title: 'Both', onTap: () => _select(WallpaperTarget.both)),
+                    PrismRow(
+                      icon: Icons.layers_rounded,
+                      title: l10n.coreBoth,
+                      onTap: () => _select(WallpaperTarget.both),
+                    ),
                 ],
               ),
               if (widget.canAdjust) ...<Widget>[
@@ -104,8 +114,8 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                   children: <Widget>[
                     PrismRow(
                       icon: JamIcons.set_square,
-                      title: 'Adjust position and preview',
-                      subtitle: 'Pan, zoom and dim before you set it.',
+                      title: l10n.coreAdjustPositionPreview,
+                      subtitle: l10n.coreAdjustPositionPreviewBody,
                       onTap: () {
                         PrismHaptics.tap();
                         widget.onSelected(const SetWallpaperChoice.adjust());
@@ -114,8 +124,8 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                     if (canPair)
                       PrismRow(
                         icon: JamIcons.picture,
-                        title: 'Different wallpaper for lock screen',
-                        subtitle: 'This one goes on the home screen.',
+                        title: l10n.coreDifferentLockWallpaper,
+                        subtitle: l10n.coreThisGoesOnHome,
                         onTap: () {
                           PrismHaptics.tap();
                           widget.onSelected(SetWallpaperChoice.pair(fit: _fit));
@@ -130,8 +140,8 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                 runSpacing: PrismSpace.xs,
                 children: <Widget>[
                   for (final (WallpaperFit fit, String label) in <(WallpaperFit, String)>[
-                    (WallpaperFit.fill, 'Fill screen'),
-                    (WallpaperFit.whole, 'Fit whole image'),
+                    (WallpaperFit.fill, l10n.coreFillScreen),
+                    (WallpaperFit.whole, l10n.coreFitWholeImage),
                   ])
                     PrismChip(
                       label: label,
@@ -146,15 +156,15 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
                   if (canCrop)
                     PrismSwitchRow(
                       icon: Icons.crop_rounded,
-                      title: 'Crop and position...',
-                      subtitle: 'Choose the exact area in the system editor.',
+                      title: l10n.coreCropAndPosition,
+                      subtitle: l10n.coreChooseSystemEditorArea,
                       value: _cropFirst,
                       onChanged: (value) => setState(() => _cropFirst = value),
                     ),
                   PrismSwitchRow(
                     icon: Icons.bookmark_border_rounded,
-                    title: 'Always use this',
-                    subtitle: 'Next time, Set uses the screen you pick and skips this sheet.',
+                    title: l10n.coreAlwaysUseThis,
+                    subtitle: l10n.coreAlwaysUseThisBody,
                     value: _alwaysUse,
                     onChanged: (value) => setState(() => _alwaysUse = value),
                   ),

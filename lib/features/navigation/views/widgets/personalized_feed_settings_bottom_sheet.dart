@@ -13,6 +13,7 @@ import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart'
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
@@ -138,13 +139,13 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
       await _tasteSignals.clear();
     } catch (_) {
       if (!mounted) return;
-      toasts.error('Could not clear history. Try again.');
+      toasts.error(context.l10n.wallpaperFeedClearHistoryError);
       return;
     }
     if (!mounted) return;
     personalizedFeedSettingsRevision.value += 1;
     setState(() => _learned = TasteProfile.empty);
-    toasts.success('Learning history cleared');
+    toasts.success(context.l10n.wallpaperFeedLearningHistoryCleared);
   }
 
   Future<void> _save() async {
@@ -162,7 +163,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
       if (!mounted) return;
     }
     setState(() => _saving = false);
-    toasts.error('Could not save feed settings. Try again.');
+    toasts.error(context.l10n.wallpaperFeedSaveError);
   }
 
   @override
@@ -170,20 +171,25 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     return FractionallySizedBox(
       heightFactor: PrismBottomSheet.maxHeightFactor,
       child: PrismSheetBody(
-        title: 'Tune your feed',
-        message: 'Prism learns from what you open, save and set.',
+        title: context.l10n.wallpaperFeedTuneTitle,
+        message: context.l10n.wallpaperFeedTuneDescription,
         scrollable: true,
         actions: <Widget>[
           Row(
             children: <Widget>[
               PrismButton(
-                label: 'Reset',
+                label: context.l10n.wallpaperReset,
                 variant: PrismButtonVariant.ghost,
                 onPressed: _saving ? null : _resetToDefaults,
               ),
               const SizedBox(width: PrismSpace.sm),
               Expanded(
-                child: PrismButton(label: 'Save', expand: true, loading: _saving, onPressed: _canSave ? _save : null),
+                child: PrismButton(
+                  label: context.l10n.wallpaperSave,
+                  expand: true,
+                  loading: _saving,
+                  onPressed: _canSave ? _save : null,
+                ),
               ),
             ],
           ),
@@ -208,15 +214,15 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   Widget _buildLearned(BuildContext context) {
     final List<String> terms = _learned.topTerms(PrismBottomSheet.learnedTermCount);
     if (terms.isEmpty) {
-      return Text('Open, save and set walls to teach your feed.', style: PrismTextStyles.body(context));
+      return Text(context.l10n.wallpaperFeedLearningEmpty, style: PrismTextStyles.body(context));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _SectionLabel(
-          title: 'Learned from you',
+          title: context.l10n.wallpaperFeedLearnedFromYou,
           trailing: PrismButton(
-            label: 'Clear',
+            label: context.l10n.wallpaperClear,
             variant: PrismButtonVariant.ghost,
             size: PrismButtonSize.compact,
             onPressed: _clearLearned,
@@ -240,11 +246,11 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     final TextStyle label = _SectionLabel.style(context);
     return <Widget>[
       _SectionLabel(
-        title: 'Starting points',
+        title: context.l10n.wallpaperFeedStartingPoints,
         trailing: AnimatedDefaultTextStyle(
           duration: context.motion(PrismDurations.fast),
           style: label.copyWith(color: belowMin ? cs.error : cs.onSurfaceVariant),
-          child: Text('$count picked'),
+          child: Text(context.l10n.wallpaperFeedPickedCount(count)),
         ),
       ),
       AnimatedSwitcher(
@@ -254,7 +260,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
                 key: const ValueKey<bool>(true),
                 padding: const EdgeInsets.only(bottom: PrismSpace.xs),
                 child: Text(
-                  'Pick at least ${OnboardingV2Config.minInterests}',
+                  context.l10n.wallpaperFeedPickAtLeast(OnboardingV2Config.minInterests),
                   style: PrismTextStyles.caption(context).copyWith(color: cs.error),
                 ),
               )
@@ -282,11 +288,15 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
 
   List<Widget> _buildDiscovery(BuildContext context) {
     return <Widget>[
-      const _SectionLabel(title: 'Discovery'),
+      _SectionLabel(title: context.l10n.wallpaperFeedDiscovery),
       PrismSegmented<FeedMix>(
         values: FeedMix.values,
         selected: _feedMix,
-        labelOf: (FeedMix mix) => mix.label,
+        labelOf: (FeedMix mix) => switch (mix) {
+          FeedMix.familiar => context.l10n.wallpaperFeedMixFamiliar,
+          FeedMix.balanced => context.l10n.wallpaperFeedMixBalanced,
+          FeedMix.adventurous => context.l10n.wallpaperFeedMixAdventurous,
+        },
         onChanged: (FeedMix mix) => setState(() => _feedMix = mix),
       ),
       const SizedBox(height: PrismSpace.sm),
@@ -296,9 +306,9 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
           key: ValueKey<FeedMix>(_feedMix),
           width: double.infinity,
           child: Text(switch (_feedMix) {
-            FeedMix.familiar => 'Mostly what you already love.',
-            FeedMix.balanced => 'Your taste, with a few surprises.',
-            FeedMix.adventurous => 'More walls from outside your taste.',
+            FeedMix.familiar => context.l10n.wallpaperFeedMixFamiliarDescription,
+            FeedMix.balanced => context.l10n.wallpaperFeedMixBalancedDescription,
+            FeedMix.adventurous => context.l10n.wallpaperFeedMixAdventurousDescription,
           }, style: PrismTextStyles.body(context)),
         ),
       ),

@@ -43,7 +43,7 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     try {
       texturePath = await _texturePreparer.prepare(imageUrl, screenAspectRatio);
     } on LiveTextureException catch (error) {
-      return LiveApplyOutcome.failed(error.message);
+      return LiveApplyOutcome.failed(error.failure);
     }
     return _applyShader(LiveShaderSources.motion(style, palette), <aw.WallpaperSource>[
       aw.WallpaperSource.filePath(texturePath),
@@ -68,27 +68,27 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     try {
       return liveApplyOutcomeFromResult(await aw.AsyncWallpaper.setOpenGlLiveWallpaper(request));
     } catch (_) {
-      return const LiveApplyOutcome.failed("Couldn't set the live wallpaper. Try again.");
+      return const LiveApplyOutcome.failed(LiveApplyFailure.setFailed);
     }
   }
 
   @override
-  Future<String?> validateVideo(String path) async {
+  Future<LiveApplyFailure?> validateVideo(String path) async {
     try {
       final File file = File(path);
-      if (!await file.exists()) return "Couldn't read that video. Pick it again.";
+      if (!await file.exists()) return LiveApplyFailure.videoReadFailed;
       if (await file.length() > maxVideoBytes) {
-        return 'That video is larger than 256 MB. Pick a shorter clip.';
+        return LiveApplyFailure.videoTooLarge;
       }
       return null;
     } catch (_) {
-      return "Couldn't read that video. Pick it again.";
+      return LiveApplyFailure.videoReadFailed;
     }
   }
 
   @override
   Future<LiveApplyOutcome> applyVideo(String path) async {
-    final String? problem = await validateVideo(path);
+    final LiveApplyFailure? problem = await validateVideo(path);
     if (problem != null) return LiveApplyOutcome.failed(problem);
     final aw.VideoWallpaperRequest request = aw.VideoWallpaperRequest(source: aw.WallpaperSource.filePath(path));
     try {
@@ -98,7 +98,7 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
       }
       return liveApplyOutcomeFromResult(await aw.AsyncWallpaper.openLiveWallpaperPreview(request));
     } catch (_) {
-      return const LiveApplyOutcome.failed("Couldn't set the live wallpaper. Try again.");
+      return const LiveApplyOutcome.failed(LiveApplyFailure.setFailed);
     }
   }
 }

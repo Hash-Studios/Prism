@@ -1,12 +1,16 @@
 import 'dart:io';
 
 import 'package:Prism/core/startup/notification_channels.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-void main() {
+void main() async {
+  final AppLocalizations l10n = await AppLocalizations.delegate.load(const Locale('en'));
+  final List<NotificationChannelSpec> specs = notificationChannelSpecs(l10n);
   final Map<String, NotificationChannelSpec> byId = <String, NotificationChannelSpec>{
-    for (final NotificationChannelSpec spec in notificationChannelSpecs) spec.id: spec,
+    for (final NotificationChannelSpec spec in specs) spec.id: spec,
   };
 
   test('every channel id in the backend has a channel', () {
@@ -38,7 +42,7 @@ void main() {
   });
 
   test('channel ids are unique and downloads stay quiet', () {
-    expect(byId.length, notificationChannelSpecs.length);
+    expect(byId.length, specs.length);
     expect(byId['downloads']?.playSound, isFalse);
   });
 }

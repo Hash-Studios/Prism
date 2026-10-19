@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -16,21 +17,21 @@ Future<RatePromptChoice> showRatePromptSheet(BuildContext context) async {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('Enjoying Prism?', style: PrismTextStyles.cardTitle(sheetContext)),
+          Text(sheetContext.l10n.coreRatePromptQuestion, style: PrismTextStyles.cardTitle(sheetContext)),
           const SizedBox(height: 20),
           Row(
             children: <Widget>[
               Expanded(
                 child: TextButton(
                   onPressed: () => Navigator.of(sheetContext).pop(RatePromptChoice.notReally),
-                  child: const Text('Not really'),
+                  child: Text(sheetContext.l10n.coreRatePromptNo),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
                   onPressed: () => Navigator.of(sheetContext).pop(RatePromptChoice.yes),
-                  child: const Text('Yes'),
+                  child: Text(sheetContext.l10n.coreRatePromptYes),
                 ),
               ),
             ],

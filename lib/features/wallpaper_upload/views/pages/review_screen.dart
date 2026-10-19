@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/wall_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +18,11 @@ class ReviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PrismPage(title: 'Your uploads', onBack: () => Navigator.maybePop(context), body: const _WallReview());
+    return PrismPage(
+      title: context.l10n.wallpaperUploadYourUploads,
+      onBack: () => Navigator.maybePop(context),
+      body: const _WallReview(),
+    );
   }
 }
 
@@ -81,9 +86,9 @@ class _WallReviewState extends State<_WallReview> {
           if (pending.hasError && rejected.hasError) {
             return GlintState(
               kind: GlintStateKind.error,
-              title: "Couldn't load your uploads",
-              body: 'Check your connection, then try again.',
-              actionLabel: 'Try again',
+              title: context.l10n.wallpaperUploadReviewLoadError,
+              body: context.l10n.wallpaperCheckConnection,
+              actionLabel: context.l10n.wallpaperTryAgain,
               onAction: _retry,
             );
           }
@@ -92,9 +97,9 @@ class _WallReviewState extends State<_WallReview> {
           if (pending.hasData && rejected.hasData && pendingDocs.isEmpty && rejectedDocs.isEmpty) {
             return GlintState(
               kind: GlintStateKind.empty,
-              title: 'Nothing here yet',
-              body: 'Wallpapers you upload show their review status here.',
-              actionLabel: 'Upload a wallpaper',
+              title: context.l10n.wallpaperUploadReviewEmptyTitle,
+              body: context.l10n.wallpaperUploadReviewEmptyBody,
+              actionLabel: context.l10n.wallpaperUploadTitle,
               onAction: _openUploadSheet,
             );
           }
@@ -102,19 +107,19 @@ class _WallReviewState extends State<_WallReview> {
             padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xxl),
             children: <Widget>[
               ..._section(
-                title: 'In review',
+                title: context.l10n.wallpaperUploadInReview,
                 snapshot: pending,
                 docs: pendingDocs,
                 rejected: false,
-                error: "Couldn't load your submissions.",
+                error: context.l10n.wallpaperUploadReviewSectionError,
                 first: true,
               ),
               ..._section(
-                title: 'Rejected',
+                title: context.l10n.wallpaperUploadRejected,
                 snapshot: rejected,
                 docs: rejectedDocs,
                 rejected: true,
-                error: "Couldn't load your rejected submissions.",
+                error: context.l10n.wallpaperUploadRejectedSectionError,
                 first: pendingDocs.isEmpty && !pending.hasError,
               ),
             ],
@@ -144,7 +149,7 @@ class _WallReviewState extends State<_WallReview> {
           children: <Widget>[
             Expanded(child: Text(error, style: PrismTextStyles.body(context))),
             PrismButton(
-              label: 'Try again',
+              label: context.l10n.wallpaperTryAgain,
               variant: PrismButtonVariant.ghost,
               size: PrismButtonSize.compact,
               onPressed: _retry,

@@ -2,6 +2,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/session/data/report_problem_service.dart';
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -170,6 +171,9 @@ void main() {
     Future<void> openSheet(WidgetTester tester, ReportProblemService service) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Builder(
             builder: (context) => TextButton(
               onPressed: () => showReportProblemSheet(context, source: 'test', service: service),

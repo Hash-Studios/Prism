@@ -12,6 +12,8 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -72,6 +74,9 @@ void main() {
   Future<void> pumpTile(WidgetTester tester, PrismWallpaper wall, {Widget? overlay}) {
     return tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<FavouriteWallsBloc>.value(
           value: bloc,
           child: Scaffold(
@@ -133,7 +138,10 @@ void main() {
         expect(find.byType(DepthTag), findsOneWidget);
         expect(find.text('Depth'), findsOneWidget);
         // The tile merges its badges into one node, so the label is part of what the tile reads out.
-        expect(find.bySemanticsLabel(RegExp(DepthTag.semanticLabel)), findsOneWidget);
+        expect(
+          tester.getSemantics(find.byType(DepthTag)).label,
+          contains(AppLocalizationsEn().coreDepthEffectBadgeSemantic),
+        );
         semantics.dispose();
       });
     }

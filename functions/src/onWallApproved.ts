@@ -5,6 +5,7 @@ import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {db, findUserByEmail, REGION, str} from "./common";
 import {isStudioWall} from "./studio/process";
+import {notificationCopyPayload} from "./notificationCatalog";
 import {
   emailHash,
   emailToTopic,
@@ -49,20 +50,27 @@ export const onWallApproved = onDocumentUpdated(
     const wallThumb = str(after.wallpaper_thumb);
 
     if (!artistEmail) {
-      logger.warn("onWallApproved: wall has no artist email, skipping.", {wallId});
+      logger.warn("onWallApproved: wall has no artist email, skipping.", {
+        wallId,
+      });
       return;
     }
 
     if (!(await claimApprovalNotice(event.data?.after.ref))) {
-      logger.info("onWallApproved: approval already announced, skipping.", {wallId});
+      logger.info("onWallApproved: approval already announced, skipping.", {
+        wallId,
+      });
       return;
     }
 
     const artist = await resolveUserByEmail(artistEmail);
     const artistPayload = {
-      title: "Your wallpaper is live! 🎉",
-      body: `"${wallTitle}" has been approved and is now visible to everyone.`,
-      data: {route: "wall", wall_id: wallId},
+      ...notificationCopyPayload({kind: "wallApprovedForArtist", wallTitle}),
+      data: {
+        route: "wall",
+        wall_id: wallId,
+        notification_kind: "wall_approved",
+      },
       imageUrl: wallThumb || undefined,
       modifier: artistEmail,
       channelId: "posts",
@@ -77,18 +85,32 @@ export const onWallApproved = onDocumentUpdated(
       legacyToken: artistData?.fcmToken,
     });
 
-    logger.info("onWallApproved: artist notification sent.", {wallId, artistHash: emailHash(artistEmail)});
+    logger.info("onWallApproved: artist notification sent.", {
+      wallId,
+      artistHash: emailHash(artistEmail),
+    });
 
     // Followers subscribe to <email prefix>_posts (followersTopicFromEmail). Newer builds subscribe to posts_<uid>,
     // which cannot collide across creators. Both topics get the push, with one collapse key.
     // Push only: an in-app doc would show the artist a duplicate.
-    const followersTopics = [`${emailToTopic(artistEmail)}_posts`, ...(artist ? [postsTopic(artist.id)] : [])];
+    const followersTopics = [
+      `${emailToTopic(artistEmail)}_posts`,
+      ...(artist ? [postsTopic(artist.id)] : []),
+    ];
     const collapseKey = postsCollapseKey(artistEmail);
     for (const topic of followersTopics) {
       await sendNotification({
-        title: `New wall by ${artistName}`,
-        body: `"${wallTitle}" is now live on Prism.`,
-        data: {route: "wall", wall_id: wallId, artist_email: artistEmail},
+        ...notificationCopyPayload({
+          kind: "wallLiveForFollowers",
+          artistName,
+          wallTitle,
+        }),
+        data: {
+          route: "wall",
+          wall_id: wallId,
+          artist_email: artistEmail,
+          notification_kind: "wall_live",
+        },
         imageUrl: wallThumb || undefined,
         modifier: artistEmail,
         channelId: "posts",
@@ -105,46 +127,71 @@ export const onWallApproved = onDocumentUpdated(
     });
 
     for (const email of await getAdminEmails()) {
-      await sendToUserByEmail({
-        title: "Wall approved ✅",
-        body: `"${wallTitle}" by ${artistName} is now live.`,
-        data: {route: "wall", wall_id: wallId},
-        imageUrl: wallThumb || undefined,
-        modifier: email,
-        channelId: "posts",
-        scoreKind: "moderation",
-      }, email);
+      await sendToUserByEmail(
+        {
+          ...notificationCopyPayload({
+            kind: "wallApprovedForAdmin",
+            wallTitle,
+            artistName,
+          }),
+          data: {
+            route: "wall",
+            wall_id: wallId,
+            notification_kind: "wall_approved",
+          },
+          imageUrl: wallThumb || undefined,
+          modifier: email,
+          channelId: "posts",
+          scoreKind: "moderation",
+        },
+        email,
+      );
     }
   },
 );
 
 /** Same key on every followers push of one creator, short enough for apns-collapse-id (64 bytes). */
 export function postsCollapseKey(artistEmail: string): string {
-  const hash = createHash("sha1").update(artistEmail.trim().toLowerCase()).digest("hex").slice(0, 16);
+  const hash = createHash("sha1")
+    .update(artistEmail.trim().toLowerCase())
+    .digest("hex")
+    .slice(0, 16);
   return `posts_${hash}`;
 }
 
 /** Stamps the wall once, so a retried or repeated approval event sends no second set of pushes. */
-async function claimApprovalNotice(ref: admin.firestore.DocumentReference | undefined): Promise<boolean> {
+async function claimApprovalNotice(
+  ref: admin.firestore.DocumentReference | undefined,
+): Promise<boolean> {
   if (!ref) return true;
   try {
     return await db.runTransaction(async (tx) => {
       const current = await tx.get(ref);
       if (current.data()?.approvedNotifiedAt != null) return false;
-      tx.update(ref, {approvedNotifiedAt: admin.firestore.FieldValue.serverTimestamp()});
+      tx.update(ref, {
+        approvedNotifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
       return true;
     });
   } catch (err) {
-    logger.warn("onWallApproved: could not stamp the approval, sending anyway.", {err});
+    logger.warn(
+      "onWallApproved: could not stamp the approval, sending anyway.",
+      {err},
+    );
     return true;
   }
 }
 
-async function resolveUserByEmail(email: string): ReturnType<typeof findUserByEmail> {
+async function resolveUserByEmail(
+  email: string,
+): ReturnType<typeof findUserByEmail> {
   try {
     return await findUserByEmail(email);
   } catch (err) {
-    logger.warn("onWallApproved: could not resolve artist uid.", {emailHash: emailHash(email), err});
+    logger.warn("onWallApproved: could not resolve artist uid.", {
+      emailHash: emailHash(email),
+      err,
+    });
     return null;
   }
 }

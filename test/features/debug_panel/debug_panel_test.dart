@@ -8,6 +8,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/storage_viewer_page.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,8 @@ AppLogRecord _record(int n, AppLogLevel level, String message, {String? tag, Obj
 );
 
 Widget _app(Widget home) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
   builder: (context, child) =>
       MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
   home: home,
@@ -58,7 +61,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Still poses'), findsOneWidget);
-      expect(find.text('calm'), findsOneWidget);
+      expect(find.text('Calm'), findsOneWidget);
       expect(find.text('Empty list'), findsOneWidget);
     });
   });
@@ -87,7 +90,7 @@ void main() {
       await tester.tap(find.widgetWithText(PrismChip, 'ERR'));
       await tester.pump();
       expect(find.text('Upload failed'), findsNothing);
-      expect(find.text('1 entries'), findsOneWidget);
+      expect(find.text('1 entry'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(PrismChip, 'ERR'));
       await tester.enterText(find.byType(TextField), 'upload');
@@ -125,7 +128,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Clear'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Clear logs'));
+      await tester.tap(find.text('Clear'));
       await tester.pumpAndSettle();
       expect(find.text('Session started'), findsNothing);
       expect(find.text('No logs'), findsOneWidget);

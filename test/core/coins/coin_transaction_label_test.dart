@@ -1,6 +1,12 @@
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+late AppLocalizations _l10n;
+
+String _label(CoinTransactionEntry entry) => coinTransactionLabel(entry, _l10n);
 
 CoinTransactionEntry _tx(String action, {String? reason, String description = ''}) => CoinTransactionEntry(
   id: 'ctx_$action',
@@ -18,6 +24,10 @@ CoinTransactionEntry _tx(String action, {String? reason, String description = ''
 );
 
 void main() {
+  setUpAll(() async {
+    _l10n = await loadAppLocalizations(const Locale('en'));
+  });
+
   test('maps every known action to a short label', () {
     const expected = <String, String>{
       'streakBonus': 'Week bonus',
@@ -48,34 +58,34 @@ void main() {
       'drawTicket': 'Draw ticket',
       'shopItem': 'Shop',
     };
-    expected.forEach((action, label) => expect(coinTransactionLabel(_tx(action)), label));
+    expected.forEach((action, label) => expect(_label(_tx(action)), label));
   });
 
   test('a legacy day 7 streak bonus reads as the chest', () {
-    expect(coinTransactionLabel(_tx('streakBonus', reason: 'streak_day_7_chest')), 'Day 7 chest');
-    expect(coinTransactionLabel(_tx('streakBonus')), 'Week bonus');
+    expect(_label(_tx('streakBonus', reason: 'streak_day_7_chest')), 'Day 7 chest');
+    expect(_label(_tx('streakBonus')), 'Week bonus');
   });
 
   test('shop purchases show the item name', () {
-    expect(coinTransactionLabel(_tx('shopItem', description: 'Aurora frame')), 'Aurora frame');
+    expect(_label(_tx('shopItem', description: 'Aurora frame')), 'Aurora frame');
   });
 
   test('daily login shows the streak day from the reason', () {
-    expect(coinTransactionLabel(_tx('dailyLogin', reason: 'daily_login')), 'Daily streak');
-    expect(coinTransactionLabel(_tx('dailyLogin', reason: 'streak_mid_cycle_day_4')), 'Daily streak, day 4');
-    expect(coinTransactionLabel(_tx('dailyLogin', reason: 'streak_day_7_daily')), 'Daily streak, day 7');
+    expect(_label(_tx('dailyLogin', reason: 'daily_login')), 'Daily streak');
+    expect(_label(_tx('dailyLogin', reason: 'streak_mid_cycle_day_4')), 'Daily streak, day 4');
+    expect(_label(_tx('dailyLogin', reason: 'streak_day_7_daily')), 'Day 7 chest');
   });
 
   test('refunds name what was refunded', () {
-    expect(coinTransactionLabel(_tx('refund', reason: 'refund_premiumFilter')), 'Refund: Premium filter');
-    expect(coinTransactionLabel(_tx('refund', reason: 'ai_generation_failed_refund')), 'Refund: AI wallpaper');
-    expect(coinTransactionLabel(_tx('refund', reason: 'download_failed_refund')), 'Refund: Wallpaper download');
-    expect(coinTransactionLabel(_tx('refund')), 'Refund: Coins returned');
+    expect(_label(_tx('refund', reason: 'refund_premiumFilter')), 'Refund: Premium filter');
+    expect(_label(_tx('refund', reason: 'ai_generation_failed_refund')), 'Refund: AI wallpaper');
+    expect(_label(_tx('refund', reason: 'download_failed_refund')), 'Refund: Wallpaper download');
+    expect(_label(_tx('refund')), 'Refund: Coins returned');
   });
 
-  test('unknown actions are humanised, never raw', () {
-    expect(coinTransactionLabel(_tx('someNewThing')), 'Some new thing');
-    expect(coinTransactionLabel(_tx('content_abc_def')), 'Content abc def');
-    expect(coinTransactionLabel(_tx('')), 'Coins');
+  test('unknown actions use a localized generic label and never expose IDs', () {
+    expect(_label(_tx('someNewThing')), 'Coins');
+    expect(_label(_tx('content_abc_def')), 'Coins');
+    expect(_label(_tx('')), 'Coins');
   });
 }

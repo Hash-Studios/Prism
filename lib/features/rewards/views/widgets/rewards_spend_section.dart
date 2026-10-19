@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -31,95 +32,96 @@ class RewardsSpendSection extends StatelessWidget {
     final String? graceNote = graceLeft <= 0
         ? null
         : graceLeft == CoinPolicy.graceDownloads
-        ? 'first $graceLeft free'
-        : '$graceLeft free left';
+        ? context.l10n.economyFirstDownloadsFree(graceLeft)
+        : context.l10n.economyFreeDownloadsLeft(graceLeft);
     final List<_SpendTile> tiles = <_SpendTile>[
       _SpendTile(
         icon: Icons.auto_awesome_rounded,
-        label: 'AI wallpaper',
-        price: 'from $aiFrom',
-        spokenPrice: 'from $aiFrom coins',
+        label: context.l10n.economyAiWallpaper,
+        price: context.l10n.economyPriceFrom(aiFrom),
+        spokenPrice: context.l10n.economyPriceFromCoins(aiFrom),
         onTap: () => context.router.root.push(AiTabRoute()),
       ),
       _SpendTile(
         icon: Icons.lock_open_rounded,
-        label: 'Drops',
-        price: '$dropWall a wall',
-        spokenPrice: '$dropWall coins a wall',
+        label: context.l10n.economyDrops,
+        price: context.l10n.economyPriceCoinsPerWall(dropWall),
+        spokenPrice: context.l10n.economyPriceCoinsPerWallSemantics(dropWall),
         onTap: () => context.router.root.push(const DropsRoute()),
       ),
       _SpendTile(
         icon: Icons.storefront_outlined,
-        label: 'Shop',
-        price: 'from $shopFrom',
-        spokenPrice: 'from $shopFrom coins',
+        label: context.l10n.economyShopTitle,
+        price: context.l10n.economyPriceFrom(shopFrom),
+        spokenPrice: context.l10n.economyPriceFromCoins(shopFrom),
         onTap: () => context.router.root.push(const ShopRoute()),
       ),
       _SpendTile(
         icon: Icons.workspace_premium_rounded,
-        label: 'Premium collection',
-        price: '${CoinPolicy.premiumPreview24h} for 24 h',
-        spokenPrice: '${CoinPolicy.premiumPreview24h} coins for 24 hours',
+        label: context.l10n.economyPremiumCollection,
+        price: context.l10n.economyPriceForHours(CoinPolicy.premiumPreview24h, 24),
+        spokenPrice: context.l10n.economyPriceCoinsForHours(CoinPolicy.premiumPreview24h, 24),
         onTap: () =>
             context.router.root.navigate(const DashboardRoute(children: <PageRouteInfo>[CollectionTabRoute()])),
       ),
       _SpendTile(
         icon: Icons.rocket_launch_outlined,
-        label: 'Boost',
+        label: context.l10n.economyBoost,
         price: '${CoinPolicy.boostWall}',
-        spokenPrice: '${CoinPolicy.boostWall} coins',
+        spokenPrice: context.l10n.economyPriceCoins(CoinPolicy.boostWall),
         onTap: () => _showInfo(
           context,
-          title: 'Boost',
-          body:
-              'Put one of your approved wallpapers at the front of Trending. A boost costs ${CoinPolicy.boostWall} coins. '
-              'Open your wallpaper and tap Boost.',
+          title: context.l10n.economyBoost,
+          body: context.l10n.economyBoostInfo(CoinPolicy.boostWall),
           showPro: false,
         ),
       ),
       _SpendTile(
         icon: Icons.card_giftcard_rounded,
-        label: 'Gift a pass',
+        label: context.l10n.economyGiftPass,
         price: '${CoinPolicy.giftPremiumPass}',
-        spokenPrice: '${CoinPolicy.giftPremiumPass} coins',
+        spokenPrice: context.l10n.economyPriceCoins(CoinPolicy.giftPremiumPass),
         onTap: () => _showInfo(
           context,
-          title: 'Gift a pass',
-          body:
-              'Give a friend 24 hours of Pro content for ${CoinPolicy.giftPremiumPass} coins. '
-              'Open their profile and tap Gift a 24 h pass.',
+          title: context.l10n.economyGiftPass,
+          body: context.l10n.economyGiftPassInfo(CoinPolicy.giftPremiumPass),
           showPro: false,
         ),
       ),
       _SpendTile(
         icon: Icons.ac_unit_rounded,
-        label: 'Streak freeze',
+        label: context.l10n.economyStreakFreeze,
         price: '${CoinPolicy.streakFreezeCost}',
-        spokenPrice: '${CoinPolicy.streakFreezeCost} coins',
+        spokenPrice: context.l10n.economyPriceCoins(CoinPolicy.streakFreezeCost),
         onTap: onStreakFreeze,
         haptic: false,
       ),
       _SpendTile(
         icon: Icons.download_rounded,
-        label: 'Downloads',
+        label: context.l10n.economyDownloads,
         price: '${CoinPolicy.wallpaperDownload}',
         note: graceNote,
-        spokenPrice: '${CoinPolicy.wallpaperDownload} coins${graceNote == null ? '' : ', $graceNote'}',
+        spokenPrice: context.l10n.economyPriceCoinsWithNote(
+          CoinPolicy.wallpaperDownload,
+          (graceNote != null).toString(),
+          graceNote ?? '',
+        ),
         onTap: () => _showInfo(
           context,
-          title: 'Downloads',
-          body:
-              'Each wallpaper download costs ${CoinPolicy.wallpaperDownload} coins.'
-              '${graceNote == null ? '' : ' Your first ${CoinPolicy.graceDownloads} are free.'} '
-              'Pro makes downloads free.',
+          title: context.l10n.economyDownloads,
+          body: context.l10n.economyDownloadsInfo(
+            CoinPolicy.wallpaperDownload,
+            CoinPolicy.graceDownloads,
+            (graceNote != null).toString(),
+          ),
         ),
       ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(
-          title: 'Use your coins',
+        PrismSectionHeader(
+          title: context.l10n.economyUseYourCoins,
           padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
         ),
         for (int i = 0; i < tiles.length; i += 2) ...<Widget>[
@@ -149,7 +151,7 @@ class RewardsSpendSection extends StatelessWidget {
         actions: <Widget>[
           if (showPro)
             PrismButton(
-              label: 'See Pro',
+              label: sheetContext.l10n.economySeePro,
               expand: true,
               onPressed: () {
                 Navigator.of(sheetContext).pop();
@@ -161,7 +163,7 @@ class RewardsSpendSection extends StatelessWidget {
               },
             ),
           PrismButton(
-            label: 'Close',
+            label: sheetContext.l10n.actionClose,
             expand: true,
             variant: showPro ? PrismButtonVariant.ghost : PrismButtonVariant.primary,
             onPressed: () => Navigator.of(sheetContext).pop(),
@@ -203,7 +205,7 @@ class _SpendTile extends StatelessWidget {
 
     return PrismCard(
       onTap: onTap == null ? null : handleTap,
-      semanticLabel: '$label, $spokenPrice',
+      semanticLabel: context.l10n.economySpendItemSemantics(label, spokenPrice),
       padding: const EdgeInsets.all(14),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 76),

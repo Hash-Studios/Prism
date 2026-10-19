@@ -3,6 +3,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -81,8 +82,8 @@ class _RecentSearches extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         PrismSectionHeader(
-          title: 'Recent searches',
-          actionLabel: 'Clear',
+          title: context.l10n.accountRecentSearches,
+          actionLabel: context.l10n.accountClear,
           onAction: onClear,
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xxs),
           small: true,
@@ -142,8 +143,8 @@ class _FindCreatorsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return PrismRow(
       icon: Icons.person_search_rounded,
-      title: 'Find creators',
-      subtitle: 'Search Prism users by name',
+      title: context.l10n.accountFindCreators,
+      subtitle: context.l10n.accountSearchPrismUsersByName,
       onTap: () {
         PrismHaptics.tap();
         context.router.push(const UserSearchRoute());
@@ -166,13 +167,13 @@ class _DepthEffectRow extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Depth Effect, subject in front of the clock',
+      label: context.l10n.accountDepthEffectClockSemanticLabel,
       excludeSemantics: true,
       onTap: open,
       child: PrismRow(
         icon: Icons.layers_rounded,
-        title: 'Depth Effect',
-        subtitle: 'Subject in front of the clock',
+        title: context.l10n.accountDepthEffect,
+        subtitle: context.l10n.accountSubjectInFrontOfClock,
         onTap: open,
       ),
     );

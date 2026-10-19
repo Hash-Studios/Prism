@@ -1,6 +1,5 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
@@ -58,6 +57,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(onPressed: () => googleSignInPopUp(context, () {}), child: const Text('Open sign-in')),

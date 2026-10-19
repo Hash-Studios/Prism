@@ -705,6 +705,14 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
+  gh.factory<_i872.PersonalizedFeedBloc>(
+    () => _i872.PersonalizedFeedBloc(
+      gh<_i212.FetchPersonalizedFeedUseCase>(),
+      gh<_i567.PersonalizedFeedRepository>(),
+      gh<_i112.UserBlockRepository>(),
+      gh<_i96.DropsRepository>(),
+    ),
+  );
   gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
     () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
   );
@@ -723,14 +731,6 @@ _i174.GetIt initGetIt(
     () => _i502.FirstWallpaperService(
       gh<_i563.CategoryFeedRepository>(),
       gh<_i489.WallOfTheDayRepository>(),
-    ),
-  );
-  gh.factory<_i872.PersonalizedFeedBloc>(
-    () => _i872.PersonalizedFeedBloc(
-      gh<_i212.FetchPersonalizedFeedUseCase>(),
-      gh<_i567.PersonalizedFeedRepository>(),
-      gh<_i112.UserBlockRepository>(),
-      gh<_i96.DropsRepository>(),
     ),
   );
   gh.factory<_i408.AutoRotateBloc>(

@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,6 +11,9 @@ void main() {
     late int result;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) {
             result = gridTileDecodeHeight(context, crossAxisCount: columns);

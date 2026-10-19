@@ -1,6 +1,7 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_max_width.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +43,7 @@ class PrismHeader extends StatelessWidget {
             if (showBack) ...<Widget>[
               PrismIconButton(
                 icon: Icons.arrow_back_rounded,
-                tooltip: 'Back',
+                tooltip: context.l10n.coreBack,
                 onPressed: onBack ?? () => context.router.maybePop(),
               ),
               const SizedBox(width: PrismSpace.xxs),

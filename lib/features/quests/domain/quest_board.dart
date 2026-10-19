@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
@@ -27,17 +28,18 @@ class QuestTileModel {
     required this.reward,
   });
 
-  factory QuestTileModel.of(QuestItem item, QuestScope scope, EconomyAward award) => QuestTileModel(
-    id: item.id,
-    info: questInfo(item.id),
-    scope: scope,
-    progress: item.progress,
-    target: item.target,
-    done: item.claimed,
-    reward: scope == QuestScope.weekly
-        ? QuestReward(coins: award.weeklyQuestCoins, xp: award.weeklyQuestXp)
-        : QuestReward(coins: award.questCoins, xp: award.questXp),
-  );
+  factory QuestTileModel.of(QuestItem item, QuestScope scope, EconomyAward award, AppLocalizations l10n) =>
+      QuestTileModel(
+        id: item.id,
+        info: questInfo(item.id, l10n),
+        scope: scope,
+        progress: item.progress,
+        target: item.target,
+        done: item.claimed,
+        reward: scope == QuestScope.weekly
+            ? QuestReward(coins: award.weeklyQuestCoins, xp: award.weeklyQuestXp)
+            : QuestReward(coins: award.questCoins, xp: award.questXp),
+      );
 
   final String id;
   final QuestInfo info;
@@ -72,17 +74,25 @@ class QuestBoard {
 
   /// Null when [quests] is not for [today], or has no daily quest: there is no board to show then.
   /// [price] is what the chest costs before the quests are done.
-  static QuestBoard? of(QuestState quests, EconomyAward award, {required String today, required int price}) {
+  static QuestBoard? of(
+    QuestState quests,
+    EconomyAward award, {
+    required String today,
+    required int price,
+    required AppLocalizations l10n,
+  }) {
     final DailyChestStatus? chest = DailyChestStatus.fromQuests(quests, today: today, price: price);
     if (chest == null) return null;
     final QuestItem? bonus = quests.bonus;
     final QuestItem? weekly = quests.weekly;
     return QuestBoard(
-      daily: <QuestTileModel>[for (final QuestItem q in quests.items) QuestTileModel.of(q, QuestScope.daily, award)],
+      daily: <QuestTileModel>[
+        for (final QuestItem q in quests.items) QuestTileModel.of(q, QuestScope.daily, award, l10n),
+      ],
       chest: chest,
       doubled: quests.chestDoubled,
       booster: bonus == null ? null : ChestBooster.of(bonus),
-      weekly: weekly == null ? null : QuestTileModel.of(weekly, QuestScope.weekly, award),
+      weekly: weekly == null ? null : QuestTileModel.of(weekly, QuestScope.weekly, award, l10n),
     );
   }
 
@@ -116,8 +126,8 @@ DateTime nextWeeklyReset(DateTime now) {
 }
 
 /// "4d 2h", "13h 40m" or "40m". Never less than "1m".
-String formatCountdown(Duration left) {
-  if (left.inDays >= 1) return '${left.inDays}d ${left.inHours % 24}h';
-  if (left.inHours >= 1) return '${left.inHours}h ${left.inMinutes % 60}m';
-  return '${math.max(1, left.inMinutes)}m';
+String formatCountdown(AppLocalizations l10n, Duration left) {
+  if (left.inDays >= 1) return l10n.economyCountdownDaysHours(left.inDays, left.inHours % 24);
+  if (left.inHours >= 1) return l10n.economyCountdownHoursMinutes(left.inHours, left.inMinutes % 60);
+  return l10n.economyCountdownMinutes(math.max(1, left.inMinutes));
 }

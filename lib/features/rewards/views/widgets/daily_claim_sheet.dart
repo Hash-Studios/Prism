@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/rewards/views/widgets/streak_cycle_strip.dart';
 import 'package:Prism/features/streak/data/streak_rescue_service.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -119,16 +120,16 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
         return;
       case StreakRescueOutcome.unavailable:
         toasts.error(switch (result.reason) {
-          'streak_rescue_cooldown' => 'You can restore one streak every 30 days.',
-          'streak_rescue_expired' => 'The 48 hours to restore this streak are over.',
-          _ => "This streak can't be restored now.",
+          'streak_rescue_cooldown' => context.l10n.economyStreakRescueCooldown,
+          'streak_rescue_expired' => context.l10n.economyStreakRescueExpired,
+          _ => context.l10n.economyStreakRescueUnavailable,
         });
         setState(() {
           _restoring = false;
           _offer = null;
         });
       case StreakRescueOutcome.failed:
-        toasts.error("Couldn't restore your streak. Try again.");
+        toasts.error(context.l10n.economyStreakRescueFailed);
         setState(() => _restoring = false);
     }
   }
@@ -142,46 +143,51 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
     return GlintMood.happy;
   }
 
-  ({String title, String? sub, bool showReward}) get _copy {
+  ({String title, String? sub, bool showReward}) _copy(AppLocalizations l10n) {
     final StreakClaimResult r = widget.result;
     final int? restored = _restoredCount;
     if (restored != null) {
-      return (title: 'Your streak is back', sub: 'You are on $restored days again.', showReward: false);
+      return (title: l10n.economyStreakRestored, sub: l10n.economyStreakRestoredCount(restored), showReward: false);
     }
     if (r.streakBroken) {
       return (
-        title: 'Your streak reset',
-        sub: 'You were on ${r.previousStreakCount} days. Start again today, +${r.totalReward} coins.',
+        title: l10n.economyStreakReset,
+        sub: l10n.economyStreakResetMessage(r.previousStreakCount, r.totalReward),
         showReward: false,
       );
     }
     if (r.freezesUsed > 0) {
       return (
-        title: 'A freeze saved your ${r.streakCount}-day streak',
-        sub: '${r.freezesLeft} ${r.freezesLeft == 1 ? 'freeze' : 'freezes'} left',
+        title: l10n.economyStreakFreezeSaved(r.streakCount),
+        sub: l10n.economyStreakFreezesLeft(r.freezesLeft),
         showReward: true,
       );
     }
     final bool chest = r.isChest;
     if (r.milestone != null) {
-      return (title: '${r.milestone}-day streak!', sub: chest ? 'Day 7 chest' : null, showReward: true);
-    }
-    if (r.isWeekComplete) {
       return (
-        title: chest ? 'Day 7 chest' : 'Week complete!',
-        sub: 'Day ${r.streakCount} of your streak',
+        title: l10n.economyDayStreakMilestone(r.milestone!),
+        sub: chest ? l10n.economyDay7Chest : null,
         showReward: true,
       );
     }
-    return (title: 'Day ${r.streakCount}', sub: null, showReward: true);
+    if (r.isWeekComplete) {
+      return (
+        title: chest ? l10n.economyDay7Chest : l10n.economyWeekComplete,
+        sub: l10n.economyStreakDayNumber(r.streakCount),
+        showReward: true,
+      );
+    }
+    return (title: l10n.economyDayLabel(r.streakCount), sub: null, showReward: true);
   }
 
-  String? get _breakdown {
+  String? _breakdown(AppLocalizations l10n) {
     final StreakClaimResult r = widget.result;
     final List<String> parts = <String>[
-      '+${r.dailyReward} today',
-      if (r.streakBonusReward > 0) '+${r.streakBonusReward} Day 7 chest',
-      if (r.proBonusReward > 0) '+${r.proBonusReward} x${EconomyConfig.current.award.proStreakMultiplier} Pro',
+      l10n.economyStreakDailyReward(r.dailyReward),
+      if (r.streakBonusReward > 0) l10n.economyStreakChestReward(r.streakBonusReward),
+      if (r.proBonusReward > 0)
+        l10n.economyStreakProReward(r.proBonusReward, EconomyConfig.current.award.proStreakMultiplier.toString()),
     ];
     return parts.length > 1 ? parts.join(' · ') : null;
   }
@@ -190,8 +196,8 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
   Widget build(BuildContext context) {
     final StreakClaimResult r = widget.result;
     final bool small = MediaQuery.sizeOf(context).height < _kSmallScreenHeight;
-    final ({String title, String? sub, bool showReward}) copy = _copy;
-    final String? breakdown = _breakdown;
+    final ({String title, String? sub, bool showReward}) copy = _copy(context.l10n);
+    final String? breakdown = _breakdown(context.l10n);
     final Widget glint = AnimatedBuilder(
       animation: _c,
       builder: (context, child) {
@@ -205,13 +211,13 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
     );
     final bool offerOpen = _offer != null && _restoredCount == null;
     final PrismButton seeRewards = PrismButton(
-      label: r.streakBroken ? 'Get a freeze for next time' : 'See rewards',
+      label: r.streakBroken ? context.l10n.economyGetFreezeNextTime : context.l10n.economySeeRewards,
       expand: true,
       variant: r.streakBroken && !offerOpen ? PrismButtonVariant.primary : PrismButtonVariant.ghost,
       onPressed: _restoring ? null : () => Navigator.of(context).pop(_ClaimSheetExit.seeRewards),
     );
     final PrismButton done = PrismButton(
-      label: _restoredCount != null || !r.streakBroken ? 'Nice' : 'OK',
+      label: _restoredCount != null || !r.streakBroken ? context.l10n.economyNice : context.l10n.actionDone,
       expand: true,
       variant: offerOpen
           ? PrismButtonVariant.tonal
@@ -250,7 +256,10 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
                   animation: _c,
                   builder: (context, _) {
                     final double t = const Interval(0.1, 0.6, curve: PrismCurves.enter).transform(_c.value);
-                    return Text('+${(r.totalReward * t).round()}', style: PrismTextStyles.numeral(context, 44));
+                    return Text(
+                      '+${formatLocalizedNumber((r.totalReward * t).round(), context.l10n)}',
+                      style: PrismTextStyles.numeral(context, 44),
+                    );
                   },
                 ),
               ],
@@ -299,7 +308,7 @@ class _RescueCard extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      'Restore your ${offer.count}-day streak · $kStreakRescueCost coins',
+                      context.l10n.economyRestoreStreak(offer.count, kStreakRescueCost),
                       style: PrismTextStyles.rowTitle(context),
                     ),
                   ),
@@ -309,11 +318,14 @@ class _RescueCard extends StatelessWidget {
               ),
               if (short) ...<Widget>[
                 const SizedBox(height: PrismSpace.xxs),
-                Text('You have $balance. You need $kStreakRescueCost.', style: PrismTextStyles.caption(context)),
+                Text(
+                  context.l10n.economyStreakRestoreShort(balance, kStreakRescueCost),
+                  style: PrismTextStyles.caption(context),
+                ),
               ],
               const SizedBox(height: PrismSpace.sm),
               PrismButton(
-                label: short ? 'Earn coins' : 'Restore',
+                label: short ? context.l10n.economyEarnCoins : context.l10n.economyRestore,
                 expand: true,
                 loading: busy,
                 size: PrismButtonSize.compact,

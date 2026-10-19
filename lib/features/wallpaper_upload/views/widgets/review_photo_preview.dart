@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
@@ -46,7 +47,7 @@ class ReviewPhotoPreview extends StatelessWidget {
                   const Icon(Icons.broken_image_rounded, size: 40, color: Colors.white70),
                   const SizedBox(height: PrismSpace.sm),
                   Text(
-                    "Couldn't load the full image.",
+                    context.l10n.wallpaperUploadFullImageError,
                     style: PrismTextStyles.body(context).copyWith(color: Colors.white),
                   ),
                 ],
@@ -60,7 +61,7 @@ class ReviewPhotoPreview extends StatelessWidget {
                 alignment: AlignmentDirectional.topStart,
                 child: PrismIconButton(
                   icon: Icons.close_rounded,
-                  tooltip: 'Close',
+                  tooltip: context.l10n.actionClose,
                   onImage: true,
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),

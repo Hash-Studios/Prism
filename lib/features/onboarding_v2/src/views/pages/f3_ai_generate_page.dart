@@ -4,6 +4,7 @@ import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_skip_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -148,7 +149,7 @@ class _IdlePlaceholder extends StatelessWidget {
             Icon(Icons.auto_awesome_rounded, color: Colors.black.withValues(alpha: 0.35), size: 40),
             const SizedBox(height: 12),
             Text(
-              'tap generate to create\nyour unique wallpaper',
+              context.l10n.onboardingAiGeneratePrompt,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: OnboardingTypography.sans,
@@ -176,7 +177,7 @@ class _LoadingView extends StatelessWidget {
             const Glint(mood: GlintMood.curious, size: 64),
             const SizedBox(height: 16),
             Text(
-              'crafting your wallpaper…',
+              context.l10n.onboardingAiGenerating,
               style: TextStyle(
                 fontFamily: OnboardingTypography.sans,
                 fontSize: 14,
@@ -224,7 +225,7 @@ class _FailureView extends StatelessWidget {
             const Glint(mood: GlintMood.sad, size: 64),
             const SizedBox(height: 12),
             Text(
-              'something went wrong.\ntap generate to try again.',
+              context.l10n.onboardingAiGenerateError,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: OnboardingTypography.sans,

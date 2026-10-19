@@ -1,0 +1,156 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Get a wallpaper from %1$@" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get a wallpaper from %1$@"}}}
+    },
+    "Get a %1$@ wallpaper" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get a %1$@ wallpaper"}}}
+    },
+    "Wallpaper source" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wallpaper source"}}}
+    },
+    "Wall of the Day" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wall of the Day"}}}
+    },
+    "Random favourite" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Random favourite"}}}
+    },
+    "No favourites yet. Open Prism and tap the heart on a wallpaper." : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "No favourites yet. Open Prism and tap the heart on a wallpaper."}}}
+    },
+    "Could not load the Wall of the Day. Check your connection." : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not load the Wall of the Day. Check your connection."}}}
+    },
+    "Could not load your favourite wallpaper. Check your connection." : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Could not load your favourite wallpaper. Check your connection."}}}
+    },
+    "This wallpaper is in a format that Shortcuts cannot use." : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "This wallpaper is in a format that Shortcuts cannot use."}}}
+    },
+    "Get Prism Wallpaper" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Get Prism Wallpaper"}}}
+    },
+    "Gets a Prism wallpaper. Pass it to the Set Wallpaper action." : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Gets a Prism wallpaper. Pass it to the Set Wallpaper action."}}}
+    },
+    "Source" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Source"}}}
+    },
+    "notif_push_wall_approved_for_artist_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper is live! 🎉"}}}
+    },
+    "notif_push_wall_approved_for_artist_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" has been approved and is now visible to everyone."}}}
+    },
+    "notif_push_wall_approved_for_artist_body_untitled" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper has been approved and is now visible to everyone."}}}
+    },
+    "notif_push_wall_live_for_followers_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New wall by %1$@"}}}
+    },
+    "notif_push_wall_live_for_followers_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" is now live on Prism."}}}
+    },
+    "notif_push_wall_approved_for_admin_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wall approved ✅"}}}
+    },
+    "notif_push_wall_approved_for_admin_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "\"%1$@\" by %2$@ is now live."}}}
+    },
+    "notif_push_new_follower_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "You have a new follower! 🎉"}}}
+    },
+    "notif_push_new_follower_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ is now following you."}}}
+    },
+    "notif_push_streak_reminder_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your streak is about to break!"}}}
+    },
+    "notif_push_streak_reminder_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Open Prism now to keep your login streak alive 🔥"}}}
+    },
+    "notif_push_wotd_for_creator_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your wallpaper is the Wall of the Day"}}}
+    },
+    "notif_push_wotd_for_creator_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Prism picked your wallpaper for everyone today. Thank you for sharing it."}}}
+    },
+    "notif_push_wotd_for_audience_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Today's Wall of the Day is here"}}}
+    },
+    "notif_push_wotd_for_audience_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@"}}}
+    },
+    "notif_push_wotd_for_audience_body_untitled" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Open Prism to see today's Wall of the Day."}}}
+    },
+    "notif_push_win_back7_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your feed has new walls"}}}
+    },
+    "notif_push_win_back7_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Fresh wallpapers landed while you were away."}}}
+    },
+    "notif_push_win_back14_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New walls are waiting"}}}
+    },
+    "notif_push_win_back14_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Come see what creators added this fortnight."}}}
+    },
+    "notif_push_win_back30_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New AI styles to try"}}}
+    },
+    "notif_push_win_back30_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Make a wallpaper that feels like you."}}}
+    },
+    "notif_push_win_back60_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Prism misses you"}}}
+    },
+    "notif_push_win_back60_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Your next favourite wall is a tap away."}}}
+    },
+    "notif_push_drop_live_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A new Drop is live"}}}
+    },
+    "notif_push_drop_live_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Wallpapers in this week's Drop: %1$@. Preview the Drop before it closes."}}}
+    },
+    "notif_push_drop_last_call_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Last call on this week's Drop"}}}
+    },
+    "notif_push_drop_last_call_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ ends in %2$@ h. Wallpapers are unavailable for a month afterward."}}}
+    },
+    "notif_push_draw_winner_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "You won the Prism Draw"}}}
+    },
+    "notif_push_draw_winner_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "One month of Pro and the Prism frame are yours."}}}
+    },
+    "notif_push_gift_received_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ sent you a 24-hour Pro pass"}}}
+    },
+    "notif_push_gift_received_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Premium collections and premium walls are open until tomorrow."}}}
+    },
+    "notif_push_report_needs_review_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Report waiting for review"}}}
+    },
+    "notif_push_report_needs_review_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A content report has been waiting for review for over 12 hours."}}}
+    },
+    "notif_push_new_content_report_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New content report"}}}
+    },
+    "notif_push_new_content_report_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "A new content report is ready for review."}}}
+    },
+    "notif_push_wall_submitted_for_review_title" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New Premium Wall for review! 🎉"}}}
+    },
+    "notif_push_wall_submitted_for_review_body" : {
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "New post by %1$@ (%2$@) is up for review."}}}
+    }
+  },
+  "version" : "1.0"
+}

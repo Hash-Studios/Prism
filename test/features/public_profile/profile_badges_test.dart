@@ -12,6 +12,8 @@ import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dar
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +22,8 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/profile_user_fixture.dart';
+
+final AppLocalizationsEn _l10n = AppLocalizationsEn();
 
 class _MockProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
@@ -78,6 +82,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: ThemeData(fontFamily: 'Proxima Nova'),
         home: const ProfileScreen(),
       ),
@@ -90,7 +97,15 @@ void main() {
       testWidgets('all earned badges fit the $width profile header, links: $hasLinks', (tester) async {
         app_state.prismUser.badges = <model.Badge>[
           for (final info in badgeCatalog)
-            model.Badge(id: info.id, name: info.name, description: '', awardedAt: '', imageUrl: '', color: '', url: ''),
+            model.Badge(
+              id: info.id,
+              name: info.name(_l10n),
+              description: info.description(_l10n),
+              awardedAt: '',
+              imageUrl: '',
+              color: '',
+              url: '',
+            ),
         ];
         if (hasLinks) app_state.prismUser.links = <String, String>{'github': 'https://example.com'};
 

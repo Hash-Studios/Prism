@@ -1,4 +1,7 @@
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
+import 'package:Prism/features/in_app_notifications/domain/notification_copy.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 /// Key used to merge notifications that share the same trimmed title.
@@ -19,32 +22,32 @@ class InAppNotificationTitleGroup {
   int get unreadCount => items.where((InAppNotificationEntity e) => !e.read).length;
 
   /// Row title: first item’s title, or a generic label when empty.
-  String get displayTitle {
-    final t = items.first.title.trim();
-    return t.isEmpty ? 'Notification' : items.first.title;
+  String displayTitle(AppLocalizations l10n) {
+    final String title = localizedNotificationCopy(items.first, l10n).title;
+    return title.trim().isEmpty ? l10n.notifGenericTitle : title;
   }
 
-  /// What kind of push this group holds, guessed from its title and body wording.
-  NotificationKind get kind {
-    final String title = displayTitle.toLowerCase();
+  /// Classifies structured notifications first; English text parsing remains for records written by older builds.
+  InAppNotificationKind get kind {
+    final InAppNotificationKind? structuredKind = items.first.kind;
+    if (structuredKind != null) return structuredKind;
+    final String title = items.first.title.toLowerCase();
     final String body = items.first.body.toLowerCase();
     if (title.contains('follow') || body.contains('following you') || body.contains('followed you')) {
-      return NotificationKind.follower;
+      return InAppNotificationKind.follower;
     }
     if (body.contains('is now live') && body.contains(' by ')) {
-      return NotificationKind.wallLive;
+      return InAppNotificationKind.wallLive;
     }
     if (title.contains('wall') && title.contains('approv')) {
-      return NotificationKind.wallApproved;
+      return InAppNotificationKind.wallApproved;
     }
     if (title.contains('wall of the day')) {
-      return NotificationKind.wallOfTheDay;
+      return InAppNotificationKind.wallOfTheDay;
     }
-    return NotificationKind.generic;
+    return InAppNotificationKind.generic;
   }
 }
-
-enum NotificationKind { follower, wallLive, wallApproved, wallOfTheDay, generic }
 
 /// Creator segment from `"Title" by Name is now live.` (best-effort).
 String? wallLiveCreatorNameFromBody(String body) {
@@ -81,25 +84,35 @@ _RelativeDay _relativeDay(DateTime local, DateTime now) {
 }
 
 /// Short day label for WOTD child rows (avoids repeating identical body text).
-String wallOfTheDayRowDayLabel(DateTime createdAt, {DateTime? now}) {
+String wallOfTheDayRowDayLabel(
+  DateTime createdAt, {
+  required AppLocalizations l10n,
+  required Locale locale,
+  DateTime? now,
+}) {
   final DateTime local = createdAt.toLocal();
   return switch (_relativeDay(local, (now ?? DateTime.now()).toLocal())) {
-    _RelativeDay.today => 'Today',
-    _RelativeDay.yesterday => 'Yesterday',
-    _RelativeDay.thisYear => DateFormat.MMMd().format(local),
-    _RelativeDay.earlier => DateFormat.yMMMd().format(local),
+    _RelativeDay.today => l10n.notifToday,
+    _RelativeDay.yesterday => l10n.notifYesterday,
+    _RelativeDay.thisYear => DateFormat.MMMd(locale.toString()).format(local),
+    _RelativeDay.earlier => DateFormat.yMMMd(locale.toString()).format(local),
   };
 }
 
 /// Time stamp on a notification row: `3:05 PM`, `Yesterday, 3:05 PM`, `Mar 4` or `Mar 4, 2024`.
-String notificationTimeLabel(DateTime createdAt, {DateTime? now}) {
+String notificationTimeLabel(
+  DateTime createdAt, {
+  required AppLocalizations l10n,
+  required Locale locale,
+  DateTime? now,
+}) {
   final DateTime local = createdAt.toLocal();
-  final String time = DateFormat('h:mm a').format(local);
+  final String time = DateFormat.jm(locale.toString()).format(local);
   return switch (_relativeDay(local, (now ?? DateTime.now()).toLocal())) {
     _RelativeDay.today => time,
-    _RelativeDay.yesterday => 'Yesterday, $time',
-    _RelativeDay.thisYear => DateFormat.MMMd().format(local),
-    _RelativeDay.earlier => DateFormat.yMMMd().format(local),
+    _RelativeDay.yesterday => l10n.notifYesterdayAt(time),
+    _RelativeDay.thisYear => DateFormat.MMMd(locale.toString()).format(local),
+    _RelativeDay.earlier => DateFormat.yMMMd(locale.toString()).format(local),
   };
 }
 
@@ -117,21 +130,25 @@ String? followerDisplayNameFromBody(String body) {
 }
 
 /// Second line under the group title: contextual count + expand/collapse action.
-String groupedListCountActionLine(InAppNotificationTitleGroup group, {required bool expanded}) {
+String groupedListCountActionLine(
+  InAppNotificationTitleGroup group, {
+  required bool expanded,
+  required AppLocalizations l10n,
+}) {
   final int n = group.items.length;
-  final String action = expanded ? 'Hide' : 'Show all';
+  final String action = expanded ? l10n.notifGroupHide : l10n.notifGroupShowAll;
   final String label = switch (group.kind) {
-    NotificationKind.follower => n == 1 ? 'new follower' : 'new followers',
-    NotificationKind.wallLive => n == 1 ? 'wall went live' : 'walls went live',
-    NotificationKind.wallApproved => n == 1 ? 'approval' : 'approvals',
-    NotificationKind.wallOfTheDay => n == 1 ? 'daily pick' : 'daily picks',
-    NotificationKind.generic => n == 1 ? 'notification' : 'notifications',
+    InAppNotificationKind.follower => l10n.notifGroupFollowers(n),
+    InAppNotificationKind.wallLive => l10n.notifGroupWallLive(n),
+    InAppNotificationKind.wallApproved => l10n.notifGroupApprovals(n),
+    InAppNotificationKind.wallOfTheDay => l10n.notifGroupDailyPicks(n),
+    InAppNotificationKind.generic => l10n.notifGroupNotifications(n),
   };
-  return '$n $label · $action';
+  return l10n.notifGroupCountAction(n, label, action);
 }
 
 /// Collapsed preview under the count line (multi-item groups only).
-String collapsedGroupSummaryLine(InAppNotificationTitleGroup group) {
+String collapsedGroupSummaryLine(InAppNotificationTitleGroup group, AppLocalizations l10n) {
   final int n = group.items.length;
   final String firstBody = group.items.first.body.trim();
   if (n < 2) {
@@ -141,33 +158,33 @@ String collapsedGroupSummaryLine(InAppNotificationTitleGroup group) {
     return group.items.first.title.trim();
   }
   switch (group.kind) {
-    case NotificationKind.follower:
+    case InAppNotificationKind.follower:
       final String? name = followerDisplayNameFromBody(firstBody);
       if (name != null && name.isNotEmpty) {
-        return n == 2 ? '$name and 1 other followed you.' : '$name and ${n - 1} others followed you.';
+        return l10n.notifGroupFollowerSummary(name, n - 1);
       }
-    case NotificationKind.wallLive || NotificationKind.wallApproved:
+    case InAppNotificationKind.wallLive || InAppNotificationKind.wallApproved:
       final String? creator = wallLiveCreatorNameFromBody(firstBody);
       if (creator != null && creator.isNotEmpty) {
-        return n == 2 ? 'From $creator and 1 other creator.' : 'From $creator and ${n - 1} other creators.';
+        return l10n.notifGroupCreatorSummary(creator, n - 1);
       }
-      return 'Several creators—expand to see each wall.';
-    case NotificationKind.wallOfTheDay when notificationGroupHasUniformBody(group):
-      return 'Each row is a different day; times are on the right.';
-    case NotificationKind.wallOfTheDay || NotificationKind.generic:
+      return l10n.notifGroupSeveralCreators;
+    case InAppNotificationKind.wallOfTheDay when notificationGroupHasUniformBody(group):
+      return l10n.notifGroupDayRows;
+    case InAppNotificationKind.wallOfTheDay || InAppNotificationKind.generic:
       break;
   }
   if (firstBody.isEmpty) {
-    return '$n notifications in this group.';
+    return l10n.notifGroupSummaryCount(n);
   }
   if (notificationGroupHasUniformBody(group)) {
-    return 'Same message sent $n times—compare timestamps to see when.';
+    return l10n.notifGroupSameMessage(n);
   }
   final String short = firstBody.length > 52 ? '${firstBody.substring(0, 49)}…' : firstBody;
   if (n == 2) {
-    return '$short and 1 more.';
+    return l10n.notifGroupAndMore(short, n - 1);
   }
-  return '$short and ${n - 1} more.';
+  return l10n.notifGroupAndMore(short, n - 1);
 }
 
 /// Expects [sortedNewestFirst] (e.g. from repository). Returns groups sorted by

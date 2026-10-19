@@ -12,6 +12,7 @@ import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/views/widgets/collection_card.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -78,6 +79,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
           child: const Scaffold(body: CollectionsGrid()),
@@ -125,6 +129,9 @@ void main() {
       when(() => bloc.state).thenReturn(CategoryFeedState.initial());
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: BlocProvider<CategoryFeedBloc>.value(
             value: bloc,
             child: const Scaffold(body: CollectionsGrid()),
@@ -154,6 +161,9 @@ void main() {
     when(() => bloc.state).thenReturn(CategoryFeedState.initial());
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
           child: const Scaffold(body: CollectionsGrid()),
@@ -190,6 +200,9 @@ void main() {
     when(() => bloc.state).thenReturn(CategoryFeedState.initial());
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<CategoryFeedBloc>.value(
           value: bloc,
           child: const Scaffold(body: CollectionsGrid()),
@@ -199,7 +212,13 @@ void main() {
 
     await tester.tap(find.byType(CollectionCard).first);
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox(),
+      ),
+    );
     firestore.response.complete(null);
     await tester.pump();
 
@@ -224,6 +243,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,

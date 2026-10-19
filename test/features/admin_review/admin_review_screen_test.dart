@@ -7,10 +7,10 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -114,6 +114,8 @@ void main() {
   late _RecordingFirestoreClient firestore;
 
   Widget app(Widget home, {MediaQueryData? media}) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     builder: (BuildContext context, Widget? child) =>
         MediaQuery(data: (media ?? MediaQuery.of(context)).copyWith(disableAnimations: true), child: child!),
     home: home,
@@ -338,12 +340,12 @@ void main() {
     reports.add(const <FirestoreDocument>[
       FirestoreDocument('report-a', <String, dynamic>{
         'contentType': 'wall',
-        'reason': 'A',
+        'reason': 'copyright',
         'targetFirestoreDocId': 'wall-a',
       }),
       FirestoreDocument('report-b', <String, dynamic>{
         'contentType': 'wall',
-        'reason': 'B',
+        'reason': 'sexual',
         'targetFirestoreDocId': 'wall-b',
       }),
     ]);
@@ -363,26 +365,26 @@ void main() {
       expect(tester.widget<CachedNetworkImage>(preview).imageUrl, 'https://example.com/$wallId.png');
     }
 
-    expectReportPreview('A', 'wall-a');
-    expectReportPreview('B', 'wall-b');
+    expectReportPreview('Copyright / ownership', 'wall-a');
+    expectReportPreview('Sexual or adult content', 'wall-b');
 
     reports.add(const <FirestoreDocument>[
       FirestoreDocument('report-b', <String, dynamic>{
         'contentType': 'wall',
-        'reason': 'B',
+        'reason': 'sexual',
         'targetFirestoreDocId': 'wall-b',
       }),
       FirestoreDocument('report-a', <String, dynamic>{
         'contentType': 'wall',
-        'reason': 'A',
+        'reason': 'copyright',
         'targetFirestoreDocId': 'wall-a',
       }),
     ]);
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
 
-    expectReportPreview('A', 'wall-a');
-    expectReportPreview('B', 'wall-b');
+    expectReportPreview('Copyright / ownership', 'wall-a');
+    expectReportPreview('Sexual or adult content', 'wall-b');
     expect(firestore.requestedWallIds, containsAll(<String>['wall-a', 'wall-b']));
     expect(find.text('Keep wallpaper'), findsNWidgets(2));
     await tester.tap(find.text('Notifications'));
@@ -412,7 +414,7 @@ void main() {
     await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
     await tester.pumpAndSettle();
 
-    expect(find.text('Spam'), findsOneWidget);
+    expect(find.text('Spam or misleading'), findsOneWidget);
     expect(find.text('user report'), findsOneWidget);
     await tester.tap(find.text('Mark reviewed'));
     await tester.pumpAndSettle();
@@ -551,12 +553,15 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Watermark'));
     await tester.pump();
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, rejectReasons[1].text);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'The image has a watermark. Upload a version without it.',
+    );
 
     await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
     await tester.pumpAndSettle();
 
-    expect(repository.lastRejectReason, rejectReasons[1].text);
+    expect(repository.lastRejectReason, 'The image has a watermark. Upload a version without it.');
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -568,7 +573,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Blurry'));
     await tester.pump();
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, rejectReasons[2].text);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'The image is blurry or heavily compressed. Upload a sharper version.',
+    );
 
     await tester.tap(find.text('Other'));
     await tester.pump();
@@ -648,7 +656,10 @@ void main() {
     await tester.tap(find.text('Duplicate'));
     await tester.pump();
 
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, rejectReasons[4].text);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'This wallpaper is a duplicate of one that is already on Prism.',
+    );
     await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
     await tester.pumpAndSettle();
     expect(repository.rejections, 1);

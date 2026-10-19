@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -123,7 +124,7 @@ class PremiumStarBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Premium',
+      label: context.l10n.wallpaperPremium,
       child: DecoratedBox(
         decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(PrismRadius.pill)),
         child: Padding(

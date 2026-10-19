@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collection_card.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// The collections tab: Prism collections first, then the wallpaper categories.
@@ -33,7 +34,7 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    const Widget header = PrismHeader(title: 'Collections', showBack: false);
+    final Widget header = PrismHeader(title: context.l10n.wallpaperLibraryCollections, showBack: false);
     return ColoredBox(
       color: Theme.of(context).colorScheme.surface,
       child: SafeArea(
@@ -42,10 +43,10 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
           future: _collectionsFuture,
           builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
-              return const Column(
+              return Column(
                 children: <Widget>[
                   header,
-                  Expanded(child: CollectionsSkeleton()),
+                  const Expanded(child: CollectionsSkeleton()),
                 ],
               );
             }
@@ -65,13 +66,13 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: <Widget>[
-                    const SliverToBoxAdapter(child: header),
+                    SliverToBoxAdapter(child: header),
                     SliverFillRemaining(
                       child: GlintState(
                         kind: GlintStateKind.offline,
-                        title: "Can't reach the servers",
-                        body: 'Check your connection and try again.',
-                        actionLabel: 'Try again',
+                        title: context.l10n.wallpaperServerUnavailable,
+                        body: context.l10n.wallpaperCheckConnection,
+                        actionLabel: context.l10n.wallpaperTryAgain,
                         onAction: () {
                           PrismHaptics.tap();
                           unawaited(retry());
@@ -82,7 +83,7 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
                 ),
               );
             }
-            return const CollectionsGrid(header: header);
+            return CollectionsGrid(header: header);
           },
         ),
       ),

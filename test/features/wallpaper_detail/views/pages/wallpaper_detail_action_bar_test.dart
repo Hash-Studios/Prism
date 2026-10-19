@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/constants/app_constants.dart' as app_constants;
-import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -31,6 +31,8 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -40,8 +42,8 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/coins_test_backend.dart';
+import '../../../../support/in_memory_local_store.dart';
 import '../../../../support/offline_asset_fixture.dart';
 
 class _DetailTestAssetStore extends OfflineAssetStore {
@@ -173,6 +175,9 @@ void main() {
     whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
           child: WallpaperDetailScreen(entity: state.entity),
@@ -502,7 +507,9 @@ void main() {
         final Map<Object?, Object?> arguments = Map<Object?, Object?>.from(
           call.arguments as Map<Object?, Object?>? ?? {},
         );
-        final String expectedMessage = nativeSaveSucceeds ? wallpaperSavedMessage : 'No space';
+        final String expectedMessage = nativeSaveSucceeds
+            ? wallpaperSavedMessage(AppLocalizationsEn())
+            : AppLocalizationsEn().economyAiDownloadFailed;
         if (call.method == 'showToast' && arguments['msg'] == expectedMessage) {
           if (!saveFeedback.isCompleted) saveFeedback.complete();
           if (!nativeSaveSucceeds && !failureToast.isCompleted) failureToast.complete();

@@ -4,32 +4,56 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
 import {sendNotification, sendToUserByEmail} from "./notificationHelper";
 import {db, REGION, utcDateString} from "./common";
+import {notificationCopyPayload} from "./notificationCatalog";
 
-const DEFAULT_PREMIUM_COLLECTIONS = ["space", "abstract", "flat", "mesh gradients", "fluids"];
+const DEFAULT_PREMIUM_COLLECTIONS = [
+  "space",
+  "abstract",
+  "flat",
+  "mesh gradients",
+  "fluids",
+];
 const BUCKET_STEP_MINUTES = 15;
 const PUSH_LOCAL_MINUTE = 9 * 60;
 const MAX_PICK_AGE_MS = 30 * 60 * 60 * 1000;
 
 /** Walls that a free user cannot open are never the free daily pick. */
-export function isWotdEligible(wall: admin.firestore.DocumentData, premiumCollections: string[]): boolean {
+export function isWotdEligible(
+  wall: admin.firestore.DocumentData,
+  premiumCollections: string[],
+): boolean {
   if (wall.is_streak_exclusive === true) return false;
-  const collections: unknown[] = Array.isArray(wall.collections) ? wall.collections : [];
-  return !collections.some((c) => premiumCollections.includes(String(c).trim()));
+  const collections: unknown[] = Array.isArray(wall.collections) ?
+    wall.collections :
+    [];
+  return !collections.some((c) =>
+    premiumCollections.includes(String(c).trim()),
+  );
 }
 
 /** Parses the app's Remote Config list format: `["a", "b"]` or `a, b`. */
 export function parseCollectionList(raw: string): string[] {
-  return raw.replace(/["[\]]/g, "").split(",").map((e) => e.trim()).filter((e) => e.length > 0);
+  return raw
+    .replace(/["[\]]/g, "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter((e) => e.length > 0);
 }
 
 async function premiumCollections(): Promise<string[]> {
   try {
     const template = await admin.remoteConfig().getTemplate();
-    const value = (template.parameters?.premiumCollections?.defaultValue as {value?: string} | undefined)?.value;
+    const value = (
+      template.parameters?.premiumCollections?.defaultValue as
+        { value?: string } | undefined
+    )?.value;
     const parsed = value ? parseCollectionList(value) : [];
     return parsed.length > 0 ? parsed : DEFAULT_PREMIUM_COLLECTIONS;
   } catch (err) {
-    logger.warn("Could not read premiumCollections from Remote Config; using the app defaults.", {err});
+    logger.warn(
+      "Could not read premiumCollections from Remote Config; using the app defaults.",
+      {err},
+    );
     return DEFAULT_PREMIUM_COLLECTIONS;
   }
 }
@@ -44,18 +68,28 @@ export function wotdBucketTopic(offsetMinutes: number): string {
 
 /** UTC offsets (minutes, in 15 minute steps, -12:00 to +14:00) where it is 09:00 local at `nowMs`. */
 export function offsetsAtNineLocal(nowMs: number): number[] {
-  const utcMinutes = Math.round((nowMs / 60_000 % 1440) / BUCKET_STEP_MINUTES) * BUCKET_STEP_MINUTES;
+  const utcMinutes =
+    Math.round(((nowMs / 60_000) % 1440) / BUCKET_STEP_MINUTES) *
+    BUCKET_STEP_MINUTES;
   const base = (((PUSH_LOCAL_MINUTE - utcMinutes) % 1440) + 1440) % 1440;
-  return [base, base - 1440].filter((offset) => offset >= -720 && offset <= 840);
+  return [base, base - 1440].filter(
+    (offset) => offset >= -720 && offset <= 840,
+  );
 }
 
 function isRecentPick(date: unknown, nowMs: number, maxAgeMs: number): boolean {
-  return date instanceof admin.firestore.Timestamp && nowMs - date.toMillis() < maxAgeMs && date.toMillis() <= nowMs;
+  return (
+    date instanceof admin.firestore.Timestamp &&
+    nowMs - date.toMillis() < maxAgeMs &&
+    date.toMillis() <= nowMs
+  );
 }
 
 function isSameUtcDay(date: unknown, now: Date): boolean {
-  return date instanceof admin.firestore.Timestamp && date.toDate().toISOString().slice(0, 10) ===
-    now.toISOString().slice(0, 10);
+  return (
+    date instanceof admin.firestore.Timestamp &&
+    date.toDate().toISOString().slice(0, 10) === now.toISOString().slice(0, 10)
+  );
 }
 
 /**
@@ -86,10 +120,16 @@ export const wallOfTheDay = onSchedule(
     const data = (await currentRef.get()).data();
     if (data && isSameUtcDay(data.date, new Date())) {
       if (data.pushedAt == null) {
-        logger.info("Today's wall of the day is set but not announced; announcing it.", {wallId: data.wallId});
+        logger.info(
+          "Today's wall of the day is set but not announced; announcing it.",
+          {wallId: data.wallId},
+        );
         await announce(String(data.wallId ?? ""));
       } else {
-        logger.info("Today's wall of the day is already set and announced; skipping.", {wallId: data.wallId});
+        logger.info(
+          "Today's wall of the day is already set and announced; skipping.",
+          {wallId: data.wallId},
+        );
       }
       await sendDueBuckets(slotMs);
       return;
@@ -98,7 +138,8 @@ export const wallOfTheDay = onSchedule(
     try {
       if (data) {
         // Archive pointer only: `past_picks/{yyyy-MM-dd}` holds wallId + date for dedup queries.
-        const archiveDate = firestoreTimestampToDateString(data.date) ?? yesterdayDateString();
+        const archiveDate =
+          firestoreTimestampToDateString(data.date) ?? yesterdayDateString();
         const archivePayload = {
           wallId: data.wallId ?? "",
           date: data.date ?? admin.firestore.Timestamp.now(),
@@ -109,7 +150,9 @@ export const wallOfTheDay = onSchedule(
         });
       }
     } catch (err) {
-      logger.warn("Could not archive current wall (may not exist yet).", {err});
+      logger.warn("Could not archive current wall (may not exist yet).", {
+        err,
+      });
     }
 
     const excludedWallIds = new Set<string>();
@@ -128,7 +171,10 @@ export const wallOfTheDay = onSchedule(
         if (wid) excludedWallIds.add(wid);
       });
     } catch (err) {
-      logger.warn("Could not fetch past_picks for dedup; proceeding without exclusion.", {err});
+      logger.warn(
+        "Could not fetch past_picks for dedup; proceeding without exclusion.",
+        {err},
+      );
     }
 
     // Pick a random approved wall, retrying up to MAX_RETRIES times to avoid one from the last 30 days.
@@ -163,12 +209,18 @@ export const wallOfTheDay = onSchedule(
 
         if (!snap.empty) {
           const doc = snap.docs[0];
-          if (!excludedWallIds.has(doc.id) && isWotdEligible(doc.data(), premium)) {
+          if (
+            !excludedWallIds.has(doc.id) &&
+            isWotdEligible(doc.data(), premium)
+          ) {
             newWall = doc.data();
             newWallId = doc.id;
-            logger.info(`Selected wall on attempt ${attempt + 1} at offset ${randomOffset}.`, {
-              wallId: newWallId,
-            });
+            logger.info(
+              `Selected wall on attempt ${attempt + 1} at offset ${randomOffset}.`,
+              {
+                wallId: newWallId,
+              },
+            );
             break;
           }
           logger.info(
@@ -189,7 +241,9 @@ export const wallOfTheDay = onSchedule(
         .limit(100)
         .get();
 
-      const eligible = fallbackSnap.docs.filter((doc) => isWotdEligible(doc.data(), premium));
+      const eligible = fallbackSnap.docs.filter((doc) =>
+        isWotdEligible(doc.data(), premium),
+      );
       const pick = eligible.find((doc) => !excludedWallIds.has(doc.id));
       if (pick) {
         newWall = pick.data();
@@ -198,9 +252,12 @@ export const wallOfTheDay = onSchedule(
         // Last-resort: the latest eligible wall, even if it was a recent pick.
         newWall = eligible[0].data();
         newWallId = eligible[0].id;
-        logger.warn("Last-resort fallback: all eligible newest walls were recent picks; using latest.", {
-          wallId: newWallId,
-        });
+        logger.warn(
+          "Last-resort fallback: all eligible newest walls were recent picks; using latest.",
+          {
+            wallId: newWallId,
+          },
+        );
       }
     }
 
@@ -235,27 +292,42 @@ async function announce(wallId: string): Promise<void> {
   if (!delivered) {
     throw new Error("Wall of the day push failed.");
   }
-  await db.collection("wall_of_the_day").doc("current").update({pushedAt: admin.firestore.Timestamp.now()});
+  await db
+    .collection("wall_of_the_day")
+    .doc("current")
+    .update({pushedAt: admin.firestore.Timestamp.now()});
   logger.info("WOTD notification sent and in-app doc written.", {wallId});
   await notifyCreator(wallId, creatorEmail, payload.data.url, payload.imageUrl);
 }
 
 /** Tells the creator that the wall is today's pick. The fixed doc id and collapse key make a retry replace the first notice. */
-async function notifyCreator(wallId: string, creatorEmail: string, url: string, imageUrl?: string): Promise<void> {
+async function notifyCreator(
+  wallId: string,
+  creatorEmail: string,
+  url: string,
+  imageUrl?: string,
+): Promise<void> {
   if (!creatorEmail) return;
   const day = utcDateString();
   try {
-    await sendToUserByEmail({
-      title: "Your wallpaper is the Wall of the Day",
-      body: "Prism picked your wallpaper for everyone today. Thank you for sharing it.",
-      data: {route: "wall_of_the_day", wall_id: wallId, url},
-      imageUrl,
-      modifier: creatorEmail,
-      channelId: "wall_of_the_day",
-      scoreKind: "wotd_creator",
-      collapseKey: `wotd_creator_${day}`,
-      docId: `wotd_creator_${day}`,
-    }, creatorEmail);
+    await sendToUserByEmail(
+      {
+        ...notificationCopyPayload({kind: "wotdForCreator"}),
+        data: {
+          route: "wall_of_the_day",
+          wall_id: wallId,
+          url,
+          notification_kind: "wall_of_the_day",
+        },
+        imageUrl,
+        modifier: creatorEmail,
+        channelId: "wall_of_the_day",
+        scoreKind: "wotd_creator",
+        collapseKey: `wotd_creator_${day}`,
+        docId: `wotd_creator_${day}`,
+      },
+      creatorEmail,
+    );
   } catch (err) {
     logger.warn("WOTD creator notice failed.", {wallId, err});
   }
@@ -264,22 +336,30 @@ async function notifyCreator(wallId: string, creatorEmail: string, url: string, 
 async function wotdPushPayload(wallId: string): Promise<{
   title: string;
   body: string;
-  data: {route: string; wall_id: string; url: string};
+  message: ReturnType<typeof notificationCopyPayload>["message"];
+  data: {
+    route: string;
+    wall_id: string;
+    url: string;
+    notification_kind: "wall_of_the_day";
+  };
   imageUrl?: string;
   channelId: string;
   creatorEmail: string;
 }> {
   const wall = (await db.collection("walls").doc(wallId).get()).data() ?? {};
-  const wallTitle = (wall.title as string | undefined)?.trim() || "Check it out";
+  const wallTitle = (wall.title as string | undefined)?.trim() || "";
+  const copy = notificationCopyPayload({kind: "wotdForAudience", wallTitle});
   const wallpaperUrl = String(wall.wallpaper_url ?? "");
   const thumbnailUrl = String(wall.wallpaper_thumb ?? "");
   // Share links resolve walls by their `id` field, which is not the doc id.
-  const shareId = typeof wall.id === "string" && wall.id.trim() ? wall.id.trim() : wallId;
+  const shareId =
+    typeof wall.id === "string" && wall.id.trim() ? wall.id.trim() : wallId;
   return {
-    title: "Today's Wall of the Day is here",
-    body: wallTitle,
+    ...copy,
     data: {
       route: "wall_of_the_day",
+      notification_kind: "wall_of_the_day",
       wall_id: wallId,
       url: wallShareUrl({wallId: shareId, wallpaperUrl, thumbnailUrl}),
     },
@@ -295,8 +375,10 @@ function bucketDeliveriesRef() {
   return db.collection("wall_of_the_day").doc(BUCKET_DELIVERIES_DOC);
 }
 
-type BucketEntry = {wallId: string; date: string; claimId: string};
-type BucketClaim = {won: false} | {won: true; wallId: string; claimId: string; previous: unknown};
+type BucketEntry = { wallId: string; date: string; claimId: string };
+type BucketClaim =
+  | { won: false }
+  | { won: true; wallId: string; claimId: string; previous: unknown };
 
 function bucketWallId(entry: unknown): string | undefined {
   if (typeof entry === "string") return entry;
@@ -305,7 +387,10 @@ function bucketWallId(entry: unknown): string | undefined {
 }
 
 function bucketDate(entry: unknown): string | undefined {
-  const date = typeof entry === "object" && entry !== null ? (entry as Partial<BucketEntry>).date : undefined;
+  const date =
+    typeof entry === "object" && entry !== null ?
+      (entry as Partial<BucketEntry>).date :
+      undefined;
   return typeof date === "string" ? date : undefined;
 }
 
@@ -319,30 +404,65 @@ async function claimBucket(topic: string, nowMs: number): Promise<BucketClaim> {
   const currentRef = db.collection("wall_of_the_day").doc("current");
   return db.runTransaction(async (tx): Promise<BucketClaim> => {
     const current = (await tx.get(currentRef)).data();
-    const buckets = (await tx.get(ref)).data()?.buckets as Record<string, unknown> | undefined;
-    if (!current?.wallId || !isRecentPick(current.date, nowMs, MAX_PICK_AGE_MS)) {
-      logger.warn("sendDueBuckets: no recent pick; skipping.", {topic, wallId: current?.wallId ?? null});
+    const buckets = (await tx.get(ref)).data()?.buckets as
+      Record<string, unknown> | undefined;
+    if (
+      !current?.wallId ||
+      !isRecentPick(current.date, nowMs, MAX_PICK_AGE_MS)
+    ) {
+      logger.warn("sendDueBuckets: no recent pick; skipping.", {
+        topic,
+        wallId: current?.wallId ?? null,
+      });
       return {won: false};
     }
     const wallId = String(current.wallId);
-    const date = (current.date as admin.firestore.Timestamp).toDate().toISOString().slice(0, 10);
+    const date = (current.date as admin.firestore.Timestamp)
+      .toDate()
+      .toISOString()
+      .slice(0, 10);
     const previous = buckets?.[topic];
     const storedDate = bucketDate(previous);
-    if (storedDate !== undefined ? storedDate >= date : bucketWallId(previous) === wallId) return {won: false};
+    if (
+      storedDate !== undefined ?
+        storedDate >= date :
+        bucketWallId(previous) === wallId
+    ) {
+      return {won: false};
+    }
     const claimId = randomUUID();
-    tx.set(ref, {buckets: {[topic]: {wallId, date, claimId} satisfies BucketEntry}}, {merge: true});
+    tx.set(
+      ref,
+      {buckets: {[topic]: {wallId, date, claimId} satisfies BucketEntry}},
+      {merge: true},
+    );
     return {won: true, wallId, claimId, previous};
   });
 }
 
 /** Undoes a claim after a failed send, unless another run has already replaced it. */
-async function releaseBucket(topic: string, claimId: string, previous: unknown): Promise<void> {
+async function releaseBucket(
+  topic: string,
+  claimId: string,
+  previous: unknown,
+): Promise<void> {
   const ref = bucketDeliveriesRef();
   await db.runTransaction(async (tx) => {
-    const buckets = (await tx.get(ref)).data()?.buckets as Record<string, unknown> | undefined;
+    const buckets = (await tx.get(ref)).data()?.buckets as
+      Record<string, unknown> | undefined;
     const stored = buckets?.[topic] as Partial<BucketEntry> | undefined;
-    if (typeof stored !== "object" || stored === null || stored.claimId !== claimId) return;
-    tx.set(ref, {buckets: {[topic]: previous ?? admin.firestore.FieldValue.delete()}}, {merge: true});
+    if (
+      typeof stored !== "object" ||
+      stored === null ||
+      stored.claimId !== claimId
+    ) {
+      return;
+    }
+    tx.set(
+      ref,
+      {buckets: {[topic]: previous ?? admin.firestore.FieldValue.delete()}},
+      {merge: true},
+    );
   });
 }
 
@@ -358,7 +478,10 @@ function scheduledAtMs(scheduleTime: string): number {
  * call it.
  */
 async function sendDueBuckets(slotMs: number): Promise<void> {
-  const payloads = new Map<string, Awaited<ReturnType<typeof wotdPushPayload>>>();
+  const payloads = new Map<
+    string,
+    Awaited<ReturnType<typeof wotdPushPayload>>
+  >();
   for (const offset of offsetsAtNineLocal(slotMs)) {
     const topic = wotdBucketTopic(offset);
     const claim = await claimBucket(topic, Date.now());
@@ -374,12 +497,18 @@ async function sendDueBuckets(slotMs: number): Promise<void> {
         payloads.set(claim.wallId, payload);
       }
       delivered = await sendNotification({
-        ...payload, modifier: "all", fcmTarget: {topic}, pushOnly: true, scoreKind: "wotd",
+        ...payload,
+        modifier: "all",
+        fcmTarget: {topic},
+        pushOnly: true,
+        scoreKind: "wotd",
       });
     } finally {
       if (!delivered) await releaseBucket(topic, claim.claimId, claim.previous);
     }
-    if (!delivered) throw new Error(`Wall of the day bucket push failed for ${topic}.`);
+    if (!delivered) {
+      throw new Error(`Wall of the day bucket push failed for ${topic}.`);
+    }
     logger.info("sendDueBuckets: sent.", {topic, wallId: claim.wallId});
   }
 }

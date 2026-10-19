@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,6 +31,9 @@ void main() {
     WallpaperImpressionSession session = WallpaperImpressionSession(requestId: 'first');
     Future<void> show() => tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Align(alignment: Alignment.topLeft, child: tile(session)),
       ),
     );
@@ -54,6 +58,9 @@ void main() {
     final WallpaperImpressionSession session = WallpaperImpressionSession();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: SingleChildScrollView(
           controller: vertical,
           child: Column(
@@ -92,6 +99,9 @@ void main() {
     final WallpaperImpressionSession session = WallpaperImpressionSession();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: navigator,
         home: Scaffold(
           body: SingleChildScrollView(

@@ -4,6 +4,7 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/logger/logger.dart';
@@ -112,31 +113,28 @@ class PairPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final AppLocalizations l10n = context.l10n;
     return SizedBox(
       height: MediaQuery.sizeOf(context).height * 0.7,
       child: DefaultTabController(
         length: PairSource.values.length,
         child: Column(
           children: <Widget>[
-            Text('Pick a lock screen wallpaper', style: theme.textTheme.displaySmall),
+            Text(l10n.corePairPickerTitle, style: theme.textTheme.displaySmall),
             const SizedBox(height: 8),
-            const TabBar(
+            TabBar(
               tabs: <Widget>[
-                Tab(text: 'Favourites'),
-                Tab(text: 'Downloads'),
-                Tab(text: 'History'),
+                Tab(text: l10n.corePairPickerFavourites),
+                Tab(text: l10n.corePairPickerDownloads),
+                Tab(text: l10n.corePairPickerHistory),
               ],
             ),
             Expanded(
               child: TabBarView(
                 children: <Widget>[
-                  _PairGrid(
-                    source: PairSource.favourites,
-                    load: () async => favourites,
-                    emptyText: 'No favourites yet.',
-                  ),
-                  _PairGrid(source: PairSource.downloads, load: loadDownloads, emptyText: 'No downloads yet.'),
-                  _PairGrid(source: PairSource.history, load: () async => history, emptyText: 'No history yet.'),
+                  _PairGrid(source: PairSource.favourites, load: () async => favourites),
+                  _PairGrid(source: PairSource.downloads, load: loadDownloads),
+                  _PairGrid(source: PairSource.history, load: () async => history),
                 ],
               ),
             ),
@@ -148,15 +146,20 @@ class PairPickerSheet extends StatelessWidget {
 }
 
 class _PairGrid extends StatelessWidget {
-  const _PairGrid({required this.source, required this.load, required this.emptyText});
+  const _PairGrid({required this.source, required this.load});
 
   final PairSource source;
   final Future<List<PairCandidate>> Function() load;
-  final String emptyText;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final AppLocalizations l10n = context.l10n;
+    final String emptyText = switch (source) {
+      PairSource.favourites => l10n.corePairPickerNoFavourites,
+      PairSource.downloads => l10n.corePairPickerNoDownloads,
+      PairSource.history => l10n.corePairPickerNoHistory,
+    };
     return FutureBuilder<List<PairCandidate>>(
       future: load(),
       builder: (context, snapshot) {
@@ -182,7 +185,7 @@ class _PairGrid extends StatelessWidget {
             final PairCandidate item = items[index];
             return Semantics(
               button: true,
-              label: 'Use this wallpaper for the lock screen',
+              label: l10n.corePairPickerUseWallpaper,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () => Navigator.of(context).pop(PairPick(source: source, candidate: item)),

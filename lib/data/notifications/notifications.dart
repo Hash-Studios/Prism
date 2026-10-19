@@ -149,6 +149,7 @@ DateTime _createdAtFrom(Object? value) {
 InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
   final Map<String, dynamic> data = toJsonMap(raw['data']);
   final Map<String, dynamic> notification = toJsonMap(raw['notification']);
+  final Map<String, dynamic> message = toJsonMap(raw['message']);
   final DateTime createdAt = _createdAtFrom(raw['createdAt']).toUtc();
   final String title = notification['title']?.toString() ?? '';
   final String body = notification['body']?.toString() ?? '';
@@ -156,6 +157,14 @@ InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
   final String url = data['url']?.toString() ?? '';
   final String imageUrl = data['imageUrl']?.toString().trim() ?? '';
   final Object? arguments = data['arguments'];
+  final InAppNotificationKind? kind = switch (data['notification_kind']) {
+    'follower' => InAppNotificationKind.follower,
+    'wall_live' => InAppNotificationKind.wallLive,
+    'wall_approved' => InAppNotificationKind.wallApproved,
+    'wall_of_the_day' => InAppNotificationKind.wallOfTheDay,
+    'generic' => InAppNotificationKind.generic,
+    _ => null,
+  };
   return InAppNotificationEntity(
     id: buildInAppNotificationId(title: title, body: body, pageName: pageName, url: url, createdAt: createdAt),
     title: title,
@@ -169,6 +178,9 @@ InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
     route: data['route']?.toString(),
     wallId: data['wall_id']?.toString(),
     followerEmail: (data['follower_email'] ?? data['profile_identifier'] ?? data['username'])?.toString(),
+    kind: kind,
+    copyKind: message['kind']?.toString() ?? data['notification_copy_kind']?.toString(),
+    copyArgs: toJsonMap(message['args']).cast<String, Object?>(),
   );
 }
 

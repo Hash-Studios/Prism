@@ -1,6 +1,7 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
 
@@ -18,9 +19,9 @@ class SignInPrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlintState(
       kind: GlintStateKind.empty,
-      title: 'Sign in to use $feature',
-      body: 'Your account keeps your coins, favourites and uploads in one place.',
-      actionLabel: 'Sign in',
+      title: context.l10n.coreSignInFeatureTitle(feature),
+      body: context.l10n.coreSignInFeatureBody,
+      actionLabel: context.l10n.coreSignInPromptAction,
       onAction: () {
         PrismHaptics.tap();
         googleSignInPopUp(context, () => main.RestartWidget.restartApp(context));

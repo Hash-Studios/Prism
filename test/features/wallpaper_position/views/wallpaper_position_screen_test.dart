@@ -11,8 +11,8 @@ import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_plac
 import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart';
 import 'package:Prism/features/wallpaper_position/views/pages/wallpaper_position_screen.dart';
 import 'package:Prism/features/wallpaper_position/views/widgets/placement_preview.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
-// ignore: implementation_imports
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -126,6 +126,9 @@ void main() {
     });
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(padding: deviceInsets, viewPadding: deviceInsets),
           child: child!,
@@ -170,7 +173,7 @@ void main() {
     expect(find.text('Reset'), findsOneWidget);
     expect(find.text('Home screen'), findsOneWidget);
     expect(find.text('Lock screen'), findsOneWidget);
-    expect(find.text('Both'), findsOneWidget);
+    expect(find.text('Both screens'), findsOneWidget);
     expect(find.text('Approximate. Your launcher may differ.'), findsOneWidget);
   });
 

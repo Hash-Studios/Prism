@@ -1,4 +1,5 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -23,7 +24,7 @@ class OnboardingLoadFailure extends StatelessWidget {
               onRetry();
             },
             child: Text(
-              'Try again',
+              context.l10n.onboardingRecoveryRetry,
               style: OnboardingTypography.body.copyWith(
                 color: OnboardingColors.textOnDark,
                 decoration: TextDecoration.underline,

@@ -1,3 +1,5 @@
+enum InAppNotificationKind { follower, wallLive, wallApproved, wallOfTheDay, generic }
+
 class InAppNotificationEntity {
   const InAppNotificationEntity({
     required this.id,
@@ -12,6 +14,9 @@ class InAppNotificationEntity {
     this.route,
     this.wallId,
     this.followerEmail,
+    this.kind,
+    this.copyKind,
+    this.copyArgs = const <String, Object?>{},
   });
 
   final String id;
@@ -26,6 +31,9 @@ class InAppNotificationEntity {
   final String? route;
   final String? wallId;
   final String? followerEmail;
+  final InAppNotificationKind? kind;
+  final String? copyKind;
+  final Map<String, Object?> copyArgs;
 
   InAppNotificationEntity copyWith({
     String? id,
@@ -40,6 +48,9 @@ class InAppNotificationEntity {
     String? route,
     String? wallId,
     String? followerEmail,
+    InAppNotificationKind? kind,
+    String? copyKind,
+    Map<String, Object?>? copyArgs,
   }) {
     return InAppNotificationEntity(
       id: id ?? this.id,
@@ -54,6 +65,9 @@ class InAppNotificationEntity {
       route: route ?? this.route,
       wallId: wallId ?? this.wallId,
       followerEmail: followerEmail ?? this.followerEmail,
+      kind: kind ?? this.kind,
+      copyKind: copyKind ?? this.copyKind,
+      copyArgs: copyArgs ?? this.copyArgs,
     );
   }
 }

@@ -12,6 +12,7 @@ import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -172,13 +173,13 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     return BlocProvider.value(
       value: _bloc,
       child: PrismPage(
-        title: 'Swipe review',
+        title: context.l10n.adminSwipeReview,
         actions: [
           BlocBuilder<ReviewBatchBloc, ReviewBatchState>(
             builder: (context, state) => Padding(
               padding: const EdgeInsets.only(right: PrismSpace.xs),
               child: Text(
-                '${state.walls.isEmpty ? 0 : state.currentIndex + 1}/${state.walls.length}',
+                context.l10n.adminReviewProgress(state.walls.isEmpty ? 0 : state.currentIndex + 1, state.walls.length),
                 style: PrismTextStyles.caption(context),
               ),
             ),
@@ -187,14 +188,14 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
         bottomBar: BlocBuilder<ReviewBatchBloc, ReviewBatchState>(builder: (context, state) => _buildBottomBar(state)),
         body: BlocListener<ReviewBatchBloc, ReviewBatchState>(
           listenWhen: (previous, current) => current.undoCount > previous.undoCount,
-          listener: (context, state) => toasts.success('Undo successful'),
+          listener: (context, state) => toasts.success(context.l10n.adminUndoSuccessful),
           child: BlocConsumer<ReviewBatchBloc, ReviewBatchState>(
             listener: (context, state) {
               if (state.status == ReviewBatchStatus.error && state.errorMessage != null) {
-                toasts.error(state.errorMessage!);
+                toasts.error(context.l10n.adminBatchActionFailed);
               }
               if (state.status == ReviewBatchStatus.batchComplete) {
-                toasts.success('Batch complete. Loading the next batch.');
+                toasts.success(context.l10n.adminBatchCompleteLoading);
                 _bloc.add(const ReviewBatchNextBatchRequested());
               }
             },
@@ -238,12 +239,12 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       children: [
         Expanded(
           child: Semantics(
-            label: 'Wallpaper to review',
+            label: context.l10n.adminWallpaperToReview,
             customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
-              const CustomSemanticsAction(label: 'Approve'): () => _dismissFromSemantics(approve: true),
-              const CustomSemanticsAction(label: 'Reject'): () => _dismissFromSemantics(approve: false),
+              CustomSemanticsAction(label: context.l10n.adminApprove): () => _dismissFromSemantics(approve: true),
+              CustomSemanticsAction(label: context.l10n.adminReject): () => _dismissFromSemantics(approve: false),
               if (canReserveForDrop(currentWall))
-                const CustomSemanticsAction(label: 'Reserve for Drop'): _reserveForDrop,
+                CustomSemanticsAction(label: context.l10n.adminReserveForDrop): _reserveForDrop,
             },
             child: Stack(
               alignment: Alignment.center,
@@ -312,7 +313,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
         ),
         Padding(
           padding: const EdgeInsets.only(top: PrismSpace.xxs, bottom: PrismSpace.xs),
-          child: Text('Swipe right to approve, left to reject', style: PrismTextStyles.caption(context)),
+          child: Text(context.l10n.adminSwipeInstructions, style: PrismTextStyles.caption(context)),
         ),
       ],
     );
@@ -339,7 +340,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       children: [
         _ActionButton(
           icon: Icons.undo_rounded,
-          label: 'Undo',
+          label: context.l10n.adminUndo,
           enabled: state.canUndo,
           onTap: () {
             PrismHaptics.tap();
@@ -348,7 +349,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
         ),
         _ActionButton(
           icon: Icons.open_in_full_rounded,
-          label: 'View',
+          label: context.l10n.adminView,
           enabled: state.hasMoreWalls,
           onTap: () {
             final wall = state.currentWall;
@@ -360,13 +361,13 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
         if (state.currentWall case final FirestoreDocument wall when canReserveForDrop(wall))
           _ActionButton(
             icon: Icons.auto_awesome_motion_outlined,
-            label: 'Reserve',
-            semanticLabel: 'Reserve for Drop',
+            label: context.l10n.adminReserve,
+            semanticLabel: context.l10n.adminReserveForDrop,
             onTap: _reserveForDrop,
           ),
         _ActionButton(
           icon: Icons.skip_next_rounded,
-          label: 'Skip',
+          label: context.l10n.adminSkip,
           enabled: state.hasMoreWalls,
           onTap: () {
             PrismHaptics.tap();
@@ -375,8 +376,8 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
         ),
         _ActionButton(
           icon: Icons.view_list_rounded,
-          label: 'List',
-          semanticLabel: 'Back to the review list',
+          label: context.l10n.adminList,
+          semanticLabel: context.l10n.adminBackToReviewList,
           onTap: () {
             context.router.maybePop();
           },
@@ -388,9 +389,9 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   Widget _buildEmptyState() {
     return GlintState(
       kind: GlintStateKind.nothingNew,
-      title: 'All caught up',
-      body: 'No wallpapers pending review.',
-      actionLabel: 'Refresh',
+      title: context.l10n.adminAllCaughtUp,
+      body: context.l10n.adminNoWallpapersPending,
+      actionLabel: context.l10n.adminRefresh,
       onAction: () {
         PrismHaptics.tap();
         _bloc.add(const ReviewBatchLoadRequested());
@@ -401,9 +402,9 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   Widget _buildBatchComplete(ReviewBatchState state) {
     return GlintState(
       kind: GlintStateKind.nothingNew,
-      title: 'Batch complete',
-      body: '${state.totalPending} wallpapers remaining',
-      actionLabel: 'Load next batch',
+      title: context.l10n.adminBatchComplete,
+      body: context.l10n.adminWallpapersRemaining(state.totalPending),
+      actionLabel: context.l10n.adminLoadNextBatch,
       onAction: () {
         PrismHaptics.tap();
         _bloc.add(const ReviewBatchNextBatchRequested());

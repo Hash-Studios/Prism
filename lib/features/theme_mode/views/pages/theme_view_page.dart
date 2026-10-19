@@ -15,6 +15,7 @@ import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
@@ -135,13 +136,13 @@ class _ThemeViewState extends State<ThemeView> {
         appBar: AppBar(
           actions: <Widget>[
             IconButton(
-              tooltip: 'Done',
+              tooltip: context.l10n.actionDone,
               icon: Icon(JamIcons.check, size: 30, color: Theme.of(context).colorScheme.onSurface),
               onPressed: () => Navigator.pop(context),
             ),
           ],
           elevation: 0,
-          title: Text('Themes', style: _titleStyle(Theme.of(context).colorScheme.onSurface)),
+          title: Text(context.l10n.wallpaperThemeTitle, style: _titleStyle(Theme.of(context).colorScheme.onSurface)),
         ),
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: LayoutBuilder(
@@ -169,14 +170,14 @@ class _ThemeViewState extends State<ThemeView> {
                     },
                     leading: const Icon(JamIcons.brightness),
                     title: Text(
-                      'Theme Preference',
+                      context.l10n.wallpaperThemePreference,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                         fontFamily: 'Proxima Nova',
                       ),
                     ),
-                    subtitle: Text(context.prismModeAbs(), style: const TextStyle(fontSize: 12)),
+                    subtitle: Text(context.prismModeAbs(context.l10n), style: const TextStyle(fontSize: 12)),
                   ),
                   Center(
                     child: Container(
@@ -211,7 +212,7 @@ class _ThemeViewState extends State<ThemeView> {
                   ),
                   const Divider(),
                   if (showLight) ...[
-                    const _SectionTitle('Light Themes'),
+                    _SectionTitle(context.l10n.wallpaperThemeLightThemes),
                     _ThemeChipRow(
                       themes: prismLightThemes,
                       selectedId: context.prismLightThemeId(),
@@ -223,7 +224,7 @@ class _ThemeViewState extends State<ThemeView> {
                     ),
                   ],
                   if (showDark) ...[
-                    const _SectionTitle('Dark Themes'),
+                    _SectionTitle(context.l10n.wallpaperThemeDarkThemes),
                     _ThemeChipRow(
                       themes: prismDarkThemes,
                       selectedId: context.prismDarkThemeId(),
@@ -243,11 +244,11 @@ class _ThemeViewState extends State<ThemeView> {
                         PrismHaptics.selection();
                         _setMatchSystemAccent(enabled);
                       },
-                      title: const Text('Match system colour'),
-                      subtitle: const Text('Use the accent colour of your phone', style: TextStyle(fontSize: 12)),
+                      title: Text(context.l10n.wallpaperMatchSystemColour),
+                      subtitle: Text(context.l10n.wallpaperUsePhoneAccent, style: const TextStyle(fontSize: 12)),
                     ),
                   if (showLight) ...[
-                    const _SectionTitle('Light Accent Color'),
+                    _SectionTitle(context.l10n.wallpaperThemeLightAccent),
                     _AccentRow(
                       selected: lightAccent,
                       onSelect: (color) {
@@ -258,7 +259,7 @@ class _ThemeViewState extends State<ThemeView> {
                     ),
                   ],
                   if (showDark) ...[
-                    const _SectionTitle('Dark Accent Color'),
+                    _SectionTitle(context.l10n.wallpaperThemeDarkAccent),
                     _AccentRow(
                       selected: darkAccent,
                       onSelect: (color) {
@@ -338,12 +339,12 @@ class _ThemeChipRow extends StatelessWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: themes.length,
-        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+        padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 0),
         itemBuilder: (context, index) {
           final PrismThemeOption option = themes[index];
           final bool locked = _locked(option, inventory);
           return Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+            padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 8, 4),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: MaterialButton(
@@ -373,17 +374,17 @@ class _ThemeChipRow extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.all(4.0),
                             child: Text(
-                              option.label,
+                              prismThemeDisplayName(option, context.l10n),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: _chipLabelStyle(option.theme.colorScheme.onSurface),
                             ),
                           ),
                           if (locked)
-                            const Flexible(
+                            Flexible(
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
-                                child: PrismTag(label: 'Locked', icon: Icons.lock_rounded),
+                                child: PrismTag(label: context.l10n.coreThemeLocked, icon: Icons.lock_rounded),
                               ),
                             ),
                         ],
@@ -429,13 +430,13 @@ class _AccentRow extends StatelessWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: prismAccentSwatches.length,
-        padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+        padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 8, 0),
         itemBuilder: (context, index) {
           final Color color = prismAccentSwatches[index];
           return Semantics(
             button: true,
             selected: selected == color,
-            label: 'Accent colour ${index + 1} of ${prismAccentSwatches.length}',
+            label: context.l10n.coreThemeAccentSemanticLabel(index + 1, prismAccentSwatches.length),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () {
@@ -445,7 +446,7 @@ class _AccentRow extends StatelessWidget {
               child: Stack(
                 children: [
                   Container(
-                    margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+                    margin: const EdgeInsetsDirectional.fromSTEB(8, 8, 0, 8),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: selected == color
@@ -459,7 +460,7 @@ class _AccentRow extends StatelessWidget {
                   ),
                   if (selected == color)
                     Container(
-                      margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+                      margin: const EdgeInsetsDirectional.fromSTEB(8, 8, 0, 8),
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         shape: BoxShape.circle,
@@ -489,8 +490,7 @@ class _PreferencePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    const String message =
-        'Select your preferred theme mode. System mode automatically switches between light and dark depending on your device mode.';
+    final String message = context.l10n.wallpaperThemePreferenceDescription;
     final TextStyle messageStyle = TextStyle(fontSize: 13, color: colors.onSurface);
     final double height = MediaQuery.of(context).size.height / 2 > 400 ? MediaQuery.of(context).size.height / 2 : 400;
 
@@ -525,22 +525,25 @@ class _PreferencePanel extends StatelessWidget {
                     ),
                   ],
                 ),
-                Text('Theme Preference', style: _panelTitleStyle(Theme.of(context).colorScheme.onSurface)),
+                Text(
+                  context.l10n.wallpaperThemePreference,
+                  style: _panelTitleStyle(Theme.of(context).colorScheme.onSurface),
+                ),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     _PreferenceOption(
-                      label: 'System',
+                      label: context.l10n.wallpaperThemeModeSystem,
                       selected: selected == ThemeMode.system,
                       onTap: () => onSelected(ThemeMode.system),
                     ),
                     _PreferenceOption(
-                      label: 'Light',
+                      label: context.l10n.wallpaperThemeModeLight,
                       selected: selected == ThemeMode.light,
                       onTap: () => onSelected(ThemeMode.light),
                     ),
                     _PreferenceOption(
-                      label: 'Dark',
+                      label: context.l10n.wallpaperThemeModeDark,
                       selected: selected == ThemeMode.dark,
                       onTap: () => onSelected(ThemeMode.dark),
                     ),

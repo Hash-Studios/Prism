@@ -19,6 +19,7 @@ import 'package:Prism/features/favourite_walls/data/favourites_sync_service.dart
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_favourites_store.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -36,21 +37,21 @@ class WrongAccountException implements Exception {
   String toString() => 'WrongAccountException: selected $selectedEmail but expected $expectedEmail';
 }
 
-const String genericSignInErrorMessage = 'Something went wrong, please try again!';
+String genericSignInErrorMessage(AppLocalizations l10n) => l10n.coreGenericSignInError;
 
 /// The toast text for a Google sign-in error that is not a cancellation.
-String googleSignInErrorMessage(Object error, {TargetPlatform? platform}) {
+String googleSignInErrorMessage(Object error, AppLocalizations l10n, {TargetPlatform? platform}) {
   final String message = error.toString();
   final bool isPlayServicesError =
       (platform ?? defaultTargetPlatform) == TargetPlatform.android &&
       (message.contains('providerConfigurationError') || message.contains('no provider dependencies'));
   if (isPlayServicesError) {
-    return 'Google Play services on this device cannot sign in.';
+    return l10n.coreGooglePlayServicesSignInError;
   }
   if (error is GoogleSignInException && error.code == GoogleSignInExceptionCode.unknownError) {
-    return 'Google sign-in failed. Check your connection and try again.';
+    return l10n.coreGoogleSignInNetworkError;
   }
-  return genericSignInErrorMessage;
+  return genericSignInErrorMessage(l10n);
 }
 
 class GoogleAuth {

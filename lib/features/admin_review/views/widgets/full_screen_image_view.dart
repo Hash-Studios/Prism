@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -56,7 +57,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
               child: Center(
                 child: Semantics(
                   image: true,
-                  label: 'Wallpaper, full screen',
+                  label: context.l10n.adminWallpaperFullScreen,
                   child: CachedNetworkImage(
                     key: ValueKey<int>(_attempt),
                     imageUrl: widget.imageUrl,
@@ -74,12 +75,12 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
                           const Icon(Icons.broken_image_outlined, color: Colors.white, size: 48),
                           const SizedBox(height: PrismSpace.sm),
                           Text(
-                            'Could not load the wallpaper',
+                            context.l10n.adminCouldNotLoadWallpaper,
                             style: PrismTextStyles.body(context).copyWith(color: Colors.white),
                           ),
                           const SizedBox(height: PrismSpace.sm),
                           PrismButton(
-                            label: 'Try again',
+                            label: context.l10n.adminTryAgain,
                             variant: PrismButtonVariant.tonal,
                             size: PrismButtonSize.compact,
                             onPressed: () => setState(() => _attempt++),
@@ -99,7 +100,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
                 alignment: Alignment.topLeft,
                 child: PrismIconButton(
                   icon: Icons.close_rounded,
-                  tooltip: 'Close',
+                  tooltip: context.l10n.adminClose,
                   onImage: true,
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),

@@ -146,7 +146,11 @@ class FcmTokenService {
     await (client ?? firestoreClient).setDoc(
       '${FirebaseCollections.usersV2}/$userId/private',
       'session',
-      <String, dynamic>{'fcmToken': token},
+      <String, dynamic>{
+        'fcmToken': token,
+        'notificationLocalizationVersion': 1,
+        'notificationLocalizationToken': token,
+      },
       merge: true,
       sourceTag: 'fcm_token.sync',
     );

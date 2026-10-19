@@ -2,31 +2,17 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('every preset except Other has creator-facing text without an email or blame', () {
-    expect(rejectReasons.map((r) => r.label), <String>[
-      'Low resolution',
-      'Watermark',
-      'Blurry',
-      'Copyright',
-      'Duplicate',
-      'Not a wallpaper',
-      'Other',
-    ]);
-    for (final reason in rejectReasons.where((r) => r.label != 'Other')) {
-      expect(reason.text, isNotEmpty, reason: reason.label);
-      expect(reason.text, isNot(contains('@')), reason: reason.label);
-    }
-    expect(rejectReasons.last.text, isEmpty);
-  });
-
   Future<void> openSheet(WidgetTester tester, Future<void> Function(String reason) onSubmit) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () => showRejectReasonSheet(context, onSubmit: onSubmit),
@@ -39,16 +25,45 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a chip fills the text and Other clears it', (tester) async {
+  test('rejection reasons stay in their stable UI order', () {
+    expect(rejectReasons, <RejectReason>[
+      RejectReason.lowResolution,
+      RejectReason.watermark,
+      RejectReason.blurry,
+      RejectReason.copyright,
+      RejectReason.duplicate,
+      RejectReason.notWallpaper,
+      RejectReason.other,
+    ]);
+  });
+
+  testWidgets('each preset uses its intended creator-facing text without email or blame', (tester) async {
+    const List<(String, String)> presets = <(String, String)>[
+      ('Low resolution', 'The resolution is too low. Upload an image with at least 1080 px on the short side.'),
+      ('Watermark', 'The image has a watermark. Upload a version without it.'),
+      ('Blurry', 'The image is blurry or heavily compressed. Upload a sharper version.'),
+      (
+        'Copyright',
+        'This image may be the work of someone else. Upload only wallpapers you made or have the rights to.',
+      ),
+      ('Duplicate', 'This wallpaper is a duplicate of one that is already on Prism.'),
+      ('Not a wallpaper', 'This image does not work as a phone wallpaper. Use a portrait image that fills the screen.'),
+    ];
     await openSheet(tester, (_) async {});
 
-    await tester.tap(find.text('Watermark'));
-    await tester.pump();
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, rejectReasons[1].text);
-
+    final TextField field = tester.widget<TextField>(find.byType(TextField));
+    for (final (String label, String copy) in presets) {
+      expect(find.text(label), findsOneWidget);
+      expect(copy, isNot(contains('@')), reason: label);
+      expect(copy.toLowerCase(), isNot(contains('you failed')), reason: label);
+      await tester.tap(find.text(label));
+      await tester.pump();
+      expect(field.controller!.text, copy, reason: label);
+    }
+    expect(find.text('Other'), findsOneWidget);
     await tester.tap(find.text('Other'));
     await tester.pump();
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    expect(field.controller!.text, isEmpty);
   });
 
   testWidgets('the sheet submits the picked reason, which is how a swipe reject reads it', (tester) async {
@@ -60,7 +75,7 @@ void main() {
     await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
     await tester.pumpAndSettle();
 
-    expect(result, rejectReasons[4].text);
+    expect(result, 'This wallpaper is a duplicate of one that is already on Prism.');
     expect(find.byType(PrismSheetBody), findsNothing);
   });
 

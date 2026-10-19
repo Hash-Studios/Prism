@@ -1,3 +1,4 @@
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -19,60 +20,73 @@ class NotificationChannelSpec {
 
 /// Every channel id the server sends to, plus `downloads`. The server sets `priority: high` on the ones marked
 /// high here, so the channel must allow a heads-up banner or the setting has no effect.
-const List<NotificationChannelSpec> notificationChannelSpecs = <NotificationChannelSpec>[
+List<NotificationChannelSpec> notificationChannelSpecs(AppLocalizations l10n) => <NotificationChannelSpec>[
   NotificationChannelSpec(
     'followers',
-    'Followers',
-    'Get notifications for new followers.',
+    l10n.notifChannelFollowers,
+    l10n.notifChannelFollowersDescription,
     importance: Importance.high,
   ),
-  NotificationChannelSpec('recommendations', 'Recommendations', 'Get notifications for recommendations from Prism.'),
-  NotificationChannelSpec('posts', 'Posts', 'Get notifications for posts from artists you follow.'),
+  NotificationChannelSpec(
+    'recommendations',
+    l10n.notifChannelRecommendations,
+    l10n.notifChannelRecommendationsDescription,
+  ),
+  NotificationChannelSpec('posts', l10n.notifChannelPosts, l10n.notifChannelPostsDescription),
   NotificationChannelSpec(
     'downloads',
-    'Downloads',
-    'Get notifications for download progress of wallpapers.',
+    l10n.notifChannelDownloads,
+    l10n.notifChannelDownloadsDescription,
     playSound: false,
   ),
   NotificationChannelSpec(
     'wall_of_the_day',
-    'Wall of the Day',
-    'Daily featured wallpaper notification at 9 AM.',
+    l10n.notifChannelWotd,
+    l10n.notifChannelWotdDescription,
     importance: Importance.high,
   ),
   NotificationChannelSpec(
     'drops',
-    'Weekly Drops',
-    'When a new Drop is live and before it ends.',
+    l10n.notifChannelDrops,
+    l10n.notifChannelDropsDescription,
     importance: Importance.high,
   ),
   NotificationChannelSpec(
     'streak_reminder',
-    'Streak reminders',
-    '8 PM reminder to keep your login streak alive.',
+    l10n.notifChannelStreaks,
+    l10n.notifChannelStreaksDescription,
     importance: Importance.high,
   ),
   NotificationChannelSpec(
     'moderation',
-    'Moderation',
-    'Reports and review requests for Prism admins.',
+    l10n.notifChannelModeration,
+    l10n.notifChannelModerationDescription,
     importance: Importance.high,
   ),
-  NotificationChannelSpec('gifts', 'Gifts', 'A friend sent you a Pro pass.', importance: Importance.high),
-  NotificationChannelSpec('draw', 'Prism Draw', 'Draw results and prizes.', importance: Importance.high),
+  NotificationChannelSpec(
+    'gifts',
+    l10n.notifChannelGifts,
+    l10n.notifChannelGiftsDescription,
+    importance: Importance.high,
+  ),
+  NotificationChannelSpec('draw', l10n.notifChannelDraw, l10n.notifChannelDrawDescription, importance: Importance.high),
 ];
 
 /// Creates the channels on Android. Android keeps the name and importance of a channel that exists, so a new
 /// importance reaches new installs only.
-Future<void> createNotificationChannels(FlutterLocalNotificationsPlugin plugin) async {
+Future<void> createNotificationChannels(FlutterLocalNotificationsPlugin plugin, AppLocalizations l10n) async {
   if (defaultTargetPlatform != TargetPlatform.android) return;
   final AndroidFlutterLocalNotificationsPlugin? android = plugin
       .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
   if (android == null) return;
   await android.createNotificationChannelGroup(
-    const AndroidNotificationChannelGroup('notifications', 'Notifications', description: 'All Prism Notifications'),
+    AndroidNotificationChannelGroup(
+      'notifications',
+      l10n.notifChannelGroup,
+      description: l10n.notifChannelGroupDescription,
+    ),
   );
-  for (final NotificationChannelSpec spec in notificationChannelSpecs) {
+  for (final NotificationChannelSpec spec in notificationChannelSpecs(l10n)) {
     await android.createNotificationChannel(
       AndroidNotificationChannel(
         spec.id,

@@ -8,7 +8,7 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
   LiveCapabilities capabilities = const LiveCapabilities(supportsShaders: true, supportsVideo: true);
   Object? capabilitiesError;
   LiveApplyOutcome outcome = const LiveApplyOutcome.confirmInPreview();
-  String? videoProblem;
+  LiveApplyFailure? videoProblem;
 
   final List<MotionStyle> motionApplies = <MotionStyle>[];
   final List<GradientStyle> gradientApplies = <GradientStyle>[];
@@ -50,7 +50,7 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
   }
 
   @override
-  Future<String?> validateVideo(String path) async => videoProblem;
+  Future<LiveApplyFailure?> validateVideo(String path) async => videoProblem;
 
   @override
   Future<LiveApplyOutcome> applyVideo(String path) async {

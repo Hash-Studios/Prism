@@ -2,6 +2,7 @@ import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +42,9 @@ void main() {
     SearchFilters? result;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async => result = await showSearchFilterSheet(context, const SearchFilters()),
@@ -65,6 +69,9 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: withPrismChipTheme(ThemeData()),
         home: Builder(
           builder: (context) => TextButton(
@@ -91,6 +98,9 @@ void main() {
   testWidgets('the sheet opens on the root navigator, above a nested tab navigator', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Navigator(
           onGenerateRoute: (_) => MaterialPageRoute<void>(
             builder: (context) => TextButton(
@@ -117,6 +127,9 @@ void main() {
     }) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: theme,
           home: Builder(
             builder: (context) => TextButton(
@@ -228,6 +241,9 @@ void main() {
     Future<void> openSheet(WidgetTester tester, SearchFilters initial, void Function(SearchFilters?) onResult) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Builder(
             builder: (context) => TextButton(
               onPressed: () async => onResult(await showSearchFilterSheet(context, initial)),

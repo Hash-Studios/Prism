@@ -20,7 +20,7 @@ DropEntity? dropFromMap(Map<String, dynamic> data, String weekKey) {
   ];
   return DropEntity(
     weekKey: weekKey,
-    title: parseString(data['title'], fallback: 'Weekly Drop'),
+    title: parseString(data['title'], fallback: ''),
     startsAt: startsAt,
     endsAt: endsAt,
     priceWall: parseIntOr(data['priceWall']),

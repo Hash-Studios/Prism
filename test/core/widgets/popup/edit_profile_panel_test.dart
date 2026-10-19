@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,6 +45,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () =>
@@ -222,12 +226,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Link type'), findsOneWidget);
-    expect(find.text('Github'), findsOneWidget);
+    expect(find.text('GitHub'), findsOneWidget);
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
 
-    await tester.tap(find.text('Github'));
+    await tester.tap(find.text('GitHub'));
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('Link type, Github'), findsOneWidget);
+    expect(find.bySemanticsLabel('Link type, GitHub'), findsOneWidget);
   });
 
   testWidgets('leaving with unsaved changes asks before discarding', (tester) async {

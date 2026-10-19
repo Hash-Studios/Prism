@@ -6,6 +6,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +21,9 @@ import '../../support/profile_user_fixture.dart';
 class _RecordingMessaging extends FakeFirebaseMessaging {
   final List<String> subscribed = <String>[];
   final List<String> unsubscribed = <String>[];
+
+  @override
+  Future<String?> getAPNSToken() async => 'test-apns-token';
 
   @override
   Future<void> subscribeToTopic(String topic) async => subscribed.add(topic);
@@ -92,6 +96,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(body: NotificationSettingsSheet(permissions: permissions)),
       ),
     );
@@ -146,7 +153,7 @@ void main() {
     expect(find.text('Notifications are off for Prism.'), findsNothing);
   });
 
-  testWidgets('the Weekly Drops switch is on by default and leaves the drops topic when turned off', (tester) async {
+  testWidgets('the Weekly Drops switch is on by default and leaves drop topics when turned off', (tester) async {
     final permissions = _FakePermissions(granted: true);
     await pumpSheet(tester, permissions);
 
@@ -158,14 +165,14 @@ void main() {
     await tester.pump();
 
     expect(settings.get<bool>('dropsSubscriber', defaultValue: true), isFalse);
-    expect(permissions.fakeMessaging.unsubscribed, <String>['drops']);
+    expect(permissions.fakeMessaging.unsubscribed, <String>['drops', 'drops_loc_v1']);
 
     await tester.tap(find.text('Weekly Drops'));
     await tester.pump();
     await tester.pump();
 
     expect(settings.get<bool>('dropsSubscriber', defaultValue: false), isTrue);
-    expect(permissions.fakeMessaging.subscribed, <String>['drops']);
+    expect(permissions.fakeMessaging.subscribed, <String>['drops_loc_v1']);
   });
 
   testWidgets('turning a switch off never asks for permission', (tester) async {
@@ -260,6 +267,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: theme,
         home: Scaffold(body: NotificationSettingsSheet(permissions: _FakePermissions(granted: true))),
       ),

@@ -1,5 +1,3 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:async';
 import 'dart:io';
 
@@ -23,6 +21,7 @@ import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -172,6 +171,9 @@ void main() {
   Future<void> mount(WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MultiBlocProvider(
           providers: [
             BlocProvider<AdsBloc>.value(value: ads),
@@ -200,14 +202,22 @@ void main() {
 
   testWidgets('a returning signed-in user stores the startup token and re-syncs on refresh', (tester) async {
     await mount(tester);
-    expect(client.writes.single.data, <String, dynamic>{'fcmToken': 'initial-token'});
-    expect(subscribed, containsAll(<String>['u_u1', 'user']));
+    expect(client.writes.single.data, <String, dynamic>{
+      'fcmToken': 'initial-token',
+      'notificationLocalizationVersion': 1,
+      'notificationLocalizationToken': 'initial-token',
+    });
+    expect(subscribed, containsAll(<String>['u_u1_loc_v1', 'user_loc_v1']));
     subscribed.clear();
 
     await refresh(tester);
 
-    expect(client.writes.last.data, <String, dynamic>{'fcmToken': 'refreshed-token'});
-    expect(subscribed, containsAll(<String>['u_u1', 'user']));
+    expect(client.writes.last.data, <String, dynamic>{
+      'fcmToken': 'refreshed-token',
+      'notificationLocalizationVersion': 1,
+      'notificationLocalizationToken': 'refreshed-token',
+    });
+    expect(subscribed, containsAll(<String>['u_u1_loc_v1', 'user_loc_v1']));
     await tester.pumpWidget(const SizedBox());
   }, variant: _ios);
 

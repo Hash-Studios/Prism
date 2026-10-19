@@ -1,6 +1,7 @@
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/preview/phone_screen_overlay.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -17,6 +18,7 @@ class PreviewHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final bool still = MediaQuery.disableAnimationsOf(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
@@ -59,7 +61,7 @@ class PreviewHeader extends StatelessWidget {
                     children: <Widget>[
                       if (wall.by.isNotEmpty)
                         Text(
-                          'by ${wall.by}',
+                          l10n.economyDropByCreator(wall.by),
                           style: const TextStyle(
                             color: DropPalette.inkMuted,
                             fontSize: 13,
@@ -91,10 +93,10 @@ class _CloseButton extends StatelessWidget {
     return SizedBox.square(
       dimension: 44,
       child: Tooltip(
-        message: 'Close preview',
+        message: context.l10n.economyClosePreview,
         child: Semantics(
           button: true,
-          label: 'Close preview',
+          label: context.l10n.economyClosePreview,
           excludeSemantics: true,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -124,20 +126,21 @@ class _OwnedMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(PrismRadius.pill),
         border: Border.all(color: DropPalette.gold.withValues(alpha: 0.6)),
       ),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Icon(Icons.check_rounded, size: 12, color: DropPalette.gold),
             SizedBox(width: 3),
             Text(
-              'Owned',
+              l10n.economyOwned,
               style: TextStyle(color: DropPalette.gold, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6),
             ),
           ],
@@ -171,7 +174,9 @@ class PreviewModeToggle extends StatelessWidget {
             AnimatedAlign(
               duration: slide,
               curve: Curves.easeOutCubic,
-              alignment: mode == DropPreviewMode.lockScreen ? Alignment.centerLeft : Alignment.centerRight,
+              alignment: mode == DropPreviewMode.lockScreen
+                  ? AlignmentDirectional.centerStart
+                  : AlignmentDirectional.centerEnd,
               child: FractionallySizedBox(
                 widthFactor: 0.5,
                 heightFactor: 1,
@@ -187,12 +192,12 @@ class PreviewModeToggle extends StatelessWidget {
             Row(
               children: <Widget>[
                 _Segment(
-                  'Lock screen',
+                  context.l10n.economyLockScreen,
                   mode == DropPreviewMode.lockScreen,
                   () => onChanged(DropPreviewMode.lockScreen),
                 ),
                 _Segment(
-                  'Home screen',
+                  context.l10n.economyHomeScreen,
                   mode == DropPreviewMode.homeScreen,
                   () => onChanged(DropPreviewMode.homeScreen),
                 ),

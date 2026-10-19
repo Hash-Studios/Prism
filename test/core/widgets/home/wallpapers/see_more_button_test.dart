@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,6 +8,9 @@ void main() {
   Future<void> pumpButton(WidgetTester tester, VoidCallback func, {bool isDark = false, bool loading = false}) {
     return tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: ThemeData(brightness: isDark ? Brightness.dark : Brightness.light),
         home: Scaffold(
           body: SeeMoreButton(seeMoreLoader: loading, func: func),
@@ -28,6 +32,9 @@ void main() {
     int calls = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SizedBox(
             width: 240,

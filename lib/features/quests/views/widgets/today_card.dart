@@ -10,6 +10,7 @@ import 'package:Prism/features/quests/domain/quest_board.dart';
 import 'package:Prism/features/quests/views/widgets/chest_banner.dart';
 import 'package:Prism/features/quests/views/widgets/quest_tile.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -76,8 +77,7 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
         listener: (context, state) {
           final int coins = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.coins);
           final int xp = state.awards.fold<int>(0, (int sum, QuestAward a) => sum + a.xp);
-          final String reward = <String>[if (coins > 0) '+$coins coins', if (xp > 0) '+$xp XP'].join(' · ');
-          toasts.success(reward.isEmpty ? 'Quest done' : 'Quest done: $reward');
+          toasts.success(context.l10n.economyQuestDoneMessage(coins, xp));
           context.read<QuestsBloc>().add(const QuestsEvent.awardsShown());
         },
         child: BlocBuilder<QuestsBloc, QuestsState>(
@@ -93,6 +93,7 @@ class _TodayCardState extends State<TodayCard> with WidgetsBindingObserver {
                   EconomyConfig.current.award,
                   today: economyDayKey(now),
                   price: CoinPolicy.dailyChestPrice,
+                  l10n: context.l10n,
                 );
                 if (board == null) return const SizedBox.shrink();
                 return _TodayView(board: board, now: now, onOpenSpin: widget.onOpenSpin);
@@ -130,7 +131,7 @@ class _TodayView extends StatelessWidget {
           QuestTile(
             key: ValueKey<String>(weekly.id),
             quest: weekly,
-            endsIn: formatCountdown(nextWeeklyReset(now).difference(now)),
+            endsIn: formatCountdown(context.l10n, nextWeeklyReset(now).difference(now)),
           ),
         ],
       ],
@@ -149,7 +150,10 @@ class _Header extends StatelessWidget {
     return Row(
       children: <Widget>[
         Expanded(
-          child: Semantics(header: true, child: Text('Daily quests', style: PrismTextStyles.sectionTitle(context))),
+          child: Semantics(
+            header: true,
+            child: Text(context.l10n.economyDailyQuests, style: PrismTextStyles.sectionTitle(context)),
+          ),
         ),
         const SizedBox(width: PrismSpace.sm),
         MediaQuery.withClampedTextScaling(
@@ -167,7 +171,7 @@ class _Header extends StatelessWidget {
                   Icon(Icons.schedule_rounded, size: 14, color: cs.onSurfaceVariant),
                   const SizedBox(width: PrismSpace.xxs),
                   Text(
-                    'New in ${formatCountdown(untilReset)}',
+                    context.l10n.economyQuestNewIn(formatCountdown(context.l10n, untilReset)),
                     style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w700),
                   ),
                 ],

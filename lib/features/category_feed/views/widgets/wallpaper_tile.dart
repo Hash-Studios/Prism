@@ -14,6 +14,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -101,7 +102,7 @@ class WallpaperTile extends StatelessWidget {
         url: item.thumbnailUrl,
         fallbackUrl: item.fullUrl,
         heroTag: heroTag,
-        semanticLabel: item.semanticLabel,
+        semanticLabel: item.semanticLabel(context.l10n),
         memCacheHeight: decodeHeight,
         overlay: _overlay(),
         onTap: () {

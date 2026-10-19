@@ -1,11 +1,15 @@
 import 'package:Prism/core/widgets/animated/favourite_icon.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Widget host({bool reduce = false, required Widget child}) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+
     home: MediaQuery(
       data: MediaQueryData(disableAnimations: reduce),
       child: Scaffold(body: child),
@@ -81,6 +85,9 @@ void main() {
     late BuildContext context;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (c) {
             context = c;

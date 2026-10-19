@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -25,7 +26,7 @@ class OnboardingSkipButton extends StatelessWidget {
         ),
         child: Semantics(
           button: true,
-          label: 'Skip',
+          label: context.l10n.onboardingSkip,
           excludeSemantics: true,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -35,7 +36,7 @@ class OnboardingSkipButton extends StatelessWidget {
             },
             child: Padding(
               padding: const EdgeInsets.all(_tapPadding),
-              child: Text('skip', style: OnboardingTypography.skip.copyWith(color: color)),
+              child: Text(context.l10n.onboardingSkipLower, style: OnboardingTypography.skip.copyWith(color: color)),
             ),
           ),
         ),
