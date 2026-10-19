@@ -457,6 +457,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       userId,
       (data, _) => data,
       sourceTag: 'personalized.user_doc_by_id',
+      preferCacheFirst: true,
     );
     if (doc != null) {
       return doc;
