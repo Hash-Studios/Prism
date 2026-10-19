@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:Prism/core/widgets/prism/prism_toast.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +15,9 @@ double _contrast(Color a, Color b) {
 }
 
 Widget _constrained(Widget child, {required double width, double scale = 1}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   home: MediaQuery(
     data: MediaQueryData(size: Size(width, 800), textScaler: TextScaler.linear(scale)),
     child: Scaffold(
@@ -72,6 +76,9 @@ void main() {
     bool submitted = false;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
             context,
@@ -112,6 +119,9 @@ void main() {
     String? selected;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
             size: const Size(375, 800),
@@ -186,7 +196,13 @@ void main() {
         ),
       );
       if (useDefaultController) page = DefaultTabController(length: 2, child: page);
-      await tester.pumpWidget(MaterialApp(home: page));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: page,
+        ),
+      );
       await tester.drag(find.text('Row 0'), const Offset(0, -160));
       await tester.pumpAndSettle();
       Finder hairline = find.byWidgetPredicate((Widget widget) => widget is AnimatedOpacity && widget.opacity == 1);
@@ -214,6 +230,9 @@ void main() {
     bool confirmed = false;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
             context,
@@ -249,6 +268,9 @@ void main() {
   testWidgets('PrismHeader grows to show its title at text scale 3', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(3)),
           child: Scaffold(
@@ -270,6 +292,9 @@ void main() {
     final key = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: key,
         builder: (context, child) =>
             MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
@@ -288,6 +313,9 @@ void main() {
     final key = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: key,
         home: const Scaffold(body: SizedBox()),
       ),
@@ -308,6 +336,9 @@ void main() {
     final key = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: key,
         home: const Scaffold(body: SizedBox()),
       ),
@@ -325,6 +356,9 @@ void main() {
     final key = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: key,
         home: const Scaffold(body: SizedBox()),
       ),
@@ -342,6 +376,9 @@ void main() {
     final firstKey = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: firstKey,
         home: const Scaffold(body: SizedBox()),
       ),
@@ -355,6 +392,9 @@ void main() {
     final secondKey = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: secondKey,
         home: const Scaffold(body: SizedBox()),
       ),
@@ -378,6 +418,9 @@ void main() {
         ];
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             theme: ThemeData(colorScheme: scheme),
             themeAnimationDuration: Duration.zero,
             home: Scaffold(

@@ -70,6 +70,8 @@ String get currentAppVersion => _runtimeAppVersion;
 String get currentAppVersionCode => _runtimeAppVersionCode;
 
 String get topImageLink => startupConfig?.topImageLink ?? app_constants.defaultTopImageLink;
+
+/// Returns Remote Config campaign copy, or an empty sentinel for localized presentation copy.
 String get bannerText => startupConfig?.bannerText ?? app_constants.defaultBannerText;
 bool get bannerTextOn => startupConfig?.bannerTextOn ?? app_constants.defaultBannerTextOn;
 String get bannerURL => startupConfig?.bannerUrl ?? app_constants.defaultBannerUrl;

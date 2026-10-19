@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -96,7 +97,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       ),
     );
     if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
-      toasts.error('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+      toasts.error(context.l10n.wallpaperUploadFreeQuotaMessage(UploadQuota.freeUploadsPerWeek));
       if (mounted) {
         Navigator.of(context).pop();
         await PaywallOrchestrator.instance.present(
@@ -130,7 +131,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     final Color chevron = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35);
 
     final Widget content = PrismSheetBody(
-      title: 'Create',
+      title: context.l10n.wallpaperUploadCreateTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -138,28 +139,28 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             children: <Widget>[
               PrismRow(
                 icon: Icons.photo_library_rounded,
-                title: 'Upload a wallpaper',
-                subtitle: 'From your gallery',
+                title: context.l10n.wallpaperUploadTitle,
+                subtitle: context.l10n.wallpaperUploadFromGallery,
                 onTap: _onWallpaperTap,
               ),
               if (_visibleDraft case final draft?)
                 PrismRow(
                   icon: Icons.drafts_rounded,
-                  title: 'Resume saved upload',
+                  title: context.l10n.wallpaperUploadResumeDraft,
                   subtitle: draft.metadata.title.isEmpty
-                      ? 'Continue editing your saved wallpaper'
+                      ? context.l10n.wallpaperUploadContinueDraft
                       : draft.metadata.title,
                   onTap: _resumeLatestDraft,
                 ),
               PrismRow(
                 icon: Icons.auto_awesome_rounded,
-                title: 'AI wallpaper',
-                subtitle: 'Describe a scene and generate a phone wallpaper',
+                title: context.l10n.economyAiWallpaper,
+                subtitle: context.l10n.wallpaperUploadAiSubtitle,
                 onTap: _onAiTap,
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    const PrismTag(label: 'New', tone: PrismTone.accent),
+                    PrismTag(label: context.l10n.wallpaperNew, tone: PrismTone.accent),
                     const SizedBox(width: PrismSpace.xxs),
                     Icon(Icons.chevron_right_rounded, size: 20, color: chevron),
                   ],
@@ -170,12 +171,15 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
           const SizedBox(height: PrismSpace.md),
           if (!isPremium) ...<Widget>[
             Text(
-              '${UploadQuota.remainingFreeUploadsThisWeek()} of ${UploadQuota.freeUploadsPerWeek} free uploads left this week',
+              context.l10n.wallpaperUploadQuotaRemaining(
+                UploadQuota.remainingFreeUploadsThisWeek(),
+                UploadQuota.freeUploadsPerWeek,
+              ),
               style: caption,
             ),
             const SizedBox(height: PrismSpace.xxs),
           ],
-          Text('Only upload original, high-quality wallpapers. Do not upload content from other apps.', style: caption),
+          Text(context.l10n.wallpaperUploadOriginalContentGuideline, style: caption),
         ],
       ),
     );

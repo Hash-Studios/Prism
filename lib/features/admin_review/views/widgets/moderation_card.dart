@@ -1,6 +1,7 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -42,12 +43,13 @@ class _ModerationCardState extends State<ModerationCard> {
 
   Future<void> _toggleReserve() async {
     if (_isReserving) return;
+    final AppLocalizations l10n = context.l10n;
     setState(() => _isReserving = true);
     try {
       await widget.onToggleReserve!();
     } catch (error, stackTrace) {
       logger.e('Admin drop reserve failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
-      toasts.error('Could not update the Drop reserve. Try again.');
+      toasts.error(l10n.adminReserveUpdateFailed);
     } finally {
       if (mounted) setState(() => _isReserving = false);
     }
@@ -65,7 +67,7 @@ class _ModerationCardState extends State<ModerationCard> {
     } catch (error, stackTrace) {
       logger.e('Admin approval failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
       if (mounted) {
-        setState(() => _approvalError = 'Approval failed. Check your connection, then try again.');
+        setState(() => _approvalError = context.l10n.adminApprovalFailed);
       }
     } finally {
       if (mounted) {
@@ -94,7 +96,7 @@ class _ModerationCardState extends State<ModerationCard> {
                   url: widget.previewUrl,
                   width: 96,
                   height: 170,
-                  semanticLabel: 'View full wallpaper',
+                  semanticLabel: context.l10n.adminViewFullWallpaper,
                   onTap: openFull,
                 ),
                 const SizedBox(width: PrismSpace.sm),
@@ -123,7 +125,7 @@ class _ModerationCardState extends State<ModerationCard> {
                   child: Text(_approvalError!, style: PrismTextStyles.body(context).copyWith(color: cs.error)),
                 ),
                 PrismButton(
-                  label: 'Retry',
+                  label: context.l10n.adminRetry,
                   variant: PrismButtonVariant.ghost,
                   size: PrismButtonSize.compact,
                   onPressed: _isApproving ? null : _approve,
@@ -136,7 +138,7 @@ class _ModerationCardState extends State<ModerationCard> {
             children: <Widget>[
               PrismIconButton(
                 icon: Icons.open_in_full_rounded,
-                tooltip: 'View full wallpaper',
+                tooltip: context.l10n.adminViewFullWallpaper,
                 filled: true,
                 onPressed: openFull,
               ),
@@ -147,17 +149,17 @@ class _ModerationCardState extends State<ModerationCard> {
                   spacing: PrismSpace.xs,
                   runSpacing: PrismSpace.xs,
                   children: <Widget>[
-                    ModerationDangerButton(label: 'Reject', onPressed: locked ? null : widget.onReject),
+                    ModerationDangerButton(label: context.l10n.adminReject, onPressed: locked ? null : widget.onReject),
                     if (widget.onToggleReserve != null)
                       PrismButton(
-                        label: widget.reserved ? 'Unreserve' : 'Reserve',
+                        label: widget.reserved ? context.l10n.adminUnreserve : context.l10n.adminReserve,
                         variant: PrismButtonVariant.tonal,
                         size: PrismButtonSize.compact,
                         loading: _isReserving,
                         onPressed: locked ? null : _toggleReserve,
                       ),
                     PrismButton(
-                      label: _isApproved ? 'Approved' : 'Approve',
+                      label: _isApproved ? context.l10n.adminApproved : context.l10n.adminApprove,
                       size: PrismButtonSize.compact,
                       loading: _isApproving,
                       onPressed: locked ? null : _approve,

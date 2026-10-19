@@ -1,6 +1,7 @@
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -36,18 +37,18 @@ class PreviewBottomBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (owned)
-            _GoldButton(label: 'Open', onTap: onOpen)
+            _GoldButton(label: context.l10n.economyOpen, onTap: onOpen)
           else if (ended)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: PrismSpace.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: PrismSpace.md),
               child: Text(
-                'This Drop has ended',
+                context.l10n.economyDropEndedHeadline,
                 style: TextStyle(color: DropPalette.inkMuted, fontSize: 15, fontWeight: FontWeight.w600),
               ),
             )
           else
             _GoldButton(
-              label: 'Unlock for ${drop.wallPrice(isPro: isPro)}',
+              label: context.l10n.economyDropUnlockFor(drop.wallPrice(isPro: isPro)),
               trailing: const PrismCoinIcon(),
               loading: busy,
               onTap: onUnlock,
@@ -57,8 +58,8 @@ class PreviewBottomBar extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                _Countdown(label: drop.endsInLabel(now), urgent: phase == DropPhase.lastCall),
-                if (isPro) ...<Widget>[const SizedBox(width: PrismSpace.sm), const _ProTag()],
+                _Countdown(label: drop.endsInLabel(context.l10n, now), urgent: phase == DropPhase.lastCall),
+                if (isPro) ...<Widget>[const SizedBox(width: PrismSpace.sm), _ProTag()],
               ],
             ),
           ],
@@ -81,8 +82,8 @@ class _Countdown extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         if (urgent) ...<Widget>[
-          const Text(
-            'Last call',
+          Text(
+            context.l10n.economyDropLastCallLabel,
             style: TextStyle(color: DropPalette.urgent, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.4),
           ),
           const SizedBox(width: 6),
@@ -116,10 +117,10 @@ class _ProTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(PrismRadius.pill),
         border: Border.all(color: DropPalette.gold.withValues(alpha: 0.6)),
       ),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: Text(
-          'Pro price',
+          context.l10n.economyProPrice,
           style: TextStyle(color: DropPalette.gold, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6),
         ),
       ),

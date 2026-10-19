@@ -6,6 +6,7 @@ import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,6 +33,9 @@ void main() {
     when(() => bloc.state).thenReturn(InAppNotificationsState.initial().copyWith(unreadCount: unread));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<InAppNotificationsBloc>.value(
           value: bloc,
           child: const Scaffold(
@@ -106,14 +110,20 @@ void main() {
     Future<void> pumpSheet(WidgetTester tester, {required bool premium}) async {
       getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
       app_state.prismUser = app_constants.createGuestPrismUser()..premium = premium;
-      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: UploadBottomPanel())));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: UploadBottomPanel()),
+        ),
+      );
     }
 
     testWidgets('offers an upload and an AI wallpaper, and shows the weekly quota to free users', (tester) async {
       await pumpSheet(tester, premium: false);
 
       expect(find.text('Create'), findsOneWidget);
-      expect(find.text('Upload a wallpaper'), findsOneWidget);
+      expect(find.text('Upload wallpaper'), findsOneWidget);
       expect(find.text('AI wallpaper'), findsOneWidget);
       expect(find.text('New'), findsOneWidget);
       expect(find.text('3 of 3 free uploads left this week'), findsOneWidget);
@@ -124,7 +134,7 @@ void main() {
       await pumpSheet(tester, premium: true);
 
       expect(find.textContaining('free uploads left'), findsNothing);
-      expect(find.text('Upload a wallpaper'), findsOneWidget);
+      expect(find.text('Upload wallpaper'), findsOneWidget);
     });
   });
 }

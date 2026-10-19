@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
+import {notificationCopyPayload} from "./notificationCatalog";
 import {type NotificationData, sendToUserByEmail} from "./notificationHelper";
 import {db, REGION} from "./common";
 
@@ -17,14 +18,24 @@ const HOLD_REPORTER_COUNT = 3;
 const MIN_REPORTER_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Number of reporters, each counted once, whose account is older than 7 days. A failed lookup does not count. */
-async function countTrustedReporters(reporterUids: Set<string>, nowMs: number): Promise<number> {
+async function countTrustedReporters(
+  reporterUids: Set<string>,
+  nowMs: number,
+): Promise<number> {
   let trusted = 0;
   for (const uid of reporterUids) {
     try {
-      const created = Date.parse((await admin.auth().getUser(uid)).metadata.creationTime);
-      if (Number.isFinite(created) && nowMs - created > MIN_REPORTER_AGE_MS) trusted += 1;
+      const created = Date.parse(
+        (await admin.auth().getUser(uid)).metadata.creationTime,
+      );
+      if (Number.isFinite(created) && nowMs - created > MIN_REPORTER_AGE_MS) {
+        trusted += 1;
+      }
     } catch (err) {
-      logger.warn("onContentReportCreated: could not read a reporter account.", {reporterUid: uid, err});
+      logger.warn(
+        "onContentReportCreated: could not read a reporter account.",
+        {reporterUid: uid, err},
+      );
     }
   }
   return trusted;
@@ -35,7 +46,8 @@ async function countTrustedReporters(reporterUids: Set<string>, nowMs: number): 
  * An admin re-approves it from the review screen. Returns true when this call held the wall.
  */
 async function holdWallAfterReports(wallId: string): Promise<boolean> {
-  const reports = await db.collection("contentReports")
+  const reports = await db
+    .collection("contentReports")
     .where("contentType", "==", "wall")
     .where("targetFirestoreDocId", "==", wallId)
     .get();
@@ -45,7 +57,11 @@ async function holdWallAfterReports(wallId: string): Promise<boolean> {
     if (uid) reporters.add(uid);
   }
   if (reporters.size < HOLD_REPORTER_COUNT) return false;
-  if ((await countTrustedReporters(reporters, Date.now())) < HOLD_REPORTER_COUNT) return false;
+  if (
+    (await countTrustedReporters(reporters, Date.now())) < HOLD_REPORTER_COUNT
+  ) {
+    return false;
+  }
 
   const wallRef = db.collection("walls").doc(wallId);
   return db.runTransaction(async (tx) => {
@@ -83,10 +99,16 @@ export const onContentReportCreated = onDocumentCreated(
     if (contentType === "wall" && targetId.length > 0) {
       try {
         if (await holdWallAfterReports(targetId)) {
-          logger.warn("onContentReportCreated: wall held for review after reports.", {reportId, targetId});
+          logger.warn(
+            "onContentReportCreated: wall held for review after reports.",
+            {reportId, targetId},
+          );
         }
       } catch (err) {
-        logger.error("onContentReportCreated: could not check the report count.", {reportId, targetId, err});
+        logger.error(
+          "onContentReportCreated: could not check the report count.",
+          {reportId, targetId, err},
+        );
       }
     }
 
@@ -95,24 +117,36 @@ export const onContentReportCreated = onDocumentCreated(
 
     const adminEmails = await getAdminEmails();
     if (adminEmails.length === 0) {
-      logger.error("onContentReportCreated: no admin emails configured in config/adminNotifications.", {
-        reportId,
-        contentType,
-      });
+      logger.error(
+        "onContentReportCreated: no admin emails configured in config/adminNotifications.",
+        {
+          reportId,
+          contentType,
+        },
+      );
       return;
     }
 
-    const title = "New content report";
-    const body = `${contentType} · ${reason} · doc ${targetId.slice(0, 32)}${targetId.length > 32 ? "…" : ""}`;
+    const copy = notificationCopyPayload({
+      kind: "newContentReport",
+      contentType,
+      reason,
+      targetId: `${targetId.slice(0, 32)}${targetId.length > 32 ? "…" : ""}`,
+    });
 
     let wallThumbUrl = "";
     if (contentType === "wall" && targetId.length > 0) {
       try {
         const wallSnap = await db.collection("walls").doc(targetId).get();
         const w = wallSnap.data();
-        wallThumbUrl = (w?.wallpaper_thumb ?? w?.wallpaper_url ?? "").toString().trim();
+        wallThumbUrl = (w?.wallpaper_thumb ?? w?.wallpaper_url ?? "")
+          .toString()
+          .trim();
       } catch (err) {
-        logger.warn("onContentReportCreated: could not load wall for thumbnail.", {err, targetId});
+        logger.warn(
+          "onContentReportCreated: could not load wall for thumbnail.",
+          {err, targetId},
+        );
       }
     }
 
@@ -137,15 +171,17 @@ export const onContentReportCreated = onDocumentCreated(
       };
 
     for (const adminEmail of adminEmails) {
-      await sendToUserByEmail({
-        title,
-        body,
-        data: notificationData,
-        ...(wallThumbUrl ? {imageUrl: wallThumbUrl} : {}),
-        modifier: adminEmail,
-        channelId: "moderation",
-        scoreKind: "moderation",
-      }, adminEmail);
+      await sendToUserByEmail(
+        {
+          ...copy,
+          data: notificationData,
+          ...(wallThumbUrl ? {imageUrl: wallThumbUrl} : {}),
+          modifier: adminEmail,
+          channelId: "moderation",
+          scoreKind: "moderation",
+        },
+        adminEmail,
+      );
     }
 
     const webhookUrl = process.env.CONTENT_REPORT_WEBHOOK_URL?.trim();
@@ -155,7 +191,7 @@ export const onContentReportCreated = onDocumentCreated(
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({
-            text: `[Prism] ${title}: ${body} (reportId=${reportId})`,
+            text: `[Prism] ${copy.title}: ${copy.body} (reportId=${reportId})`,
             reportId,
             contentType,
             targetId,
@@ -164,7 +200,9 @@ export const onContentReportCreated = onDocumentCreated(
           }),
         });
         if (!res.ok) {
-          logger.warn("onContentReportCreated: webhook non-OK", {status: res.status});
+          logger.warn("onContentReportCreated: webhook non-OK", {
+            status: res.status,
+          });
         }
       } catch (err) {
         logger.error("onContentReportCreated: webhook failed", {err});

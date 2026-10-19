@@ -1,3 +1,5 @@
+import 'package:Prism/l10n/l10n.dart';
+
 /// Smallest short side, in pixels, that still looks sharp as a phone wallpaper.
 const int recommendedShortSide = 1080;
 
@@ -10,11 +12,11 @@ List<UploadQualityWarning> uploadQualityWarnings({required int width, required i
 ];
 
 String uploadQualityWarningText(
-  UploadQualityWarning warning, {
+  AppLocalizations l10n, {
+  required UploadQualityWarning warning,
   required int width,
   required int height,
 }) => switch (warning) {
-  UploadQualityWarning.lowResolution =>
-    'This image is ${width}x$height. It can look soft on a phone. $recommendedShortSide px on the short side is best.',
-  UploadQualityWarning.landscape => 'This image is wide. Phone wallpapers look best in portrait.',
+  UploadQualityWarning.lowResolution => l10n.wallpaperUploadQualityLowResolution(width, height, recommendedShortSide),
+  UploadQualityWarning.landscape => l10n.wallpaperUploadQualityLandscape,
 };

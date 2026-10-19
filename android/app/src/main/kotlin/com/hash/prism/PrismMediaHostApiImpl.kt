@@ -48,7 +48,10 @@ internal class PrismMediaHostApiImpl(
                 withImage(request.link, request.isLocalFile) { image ->
                     val folder = if (request.kind == SaveMediaKind.SETUP) "Prism Setups" else "Prism"
                     publish(image, folder, "prism_${UUID.randomUUID()}")
-                    mainHandler.post { Toast.makeText(context, "Saved in Pictures/$folder!", Toast.LENGTH_SHORT).show() }
+                    mainHandler.post {
+                        Toast.makeText(context, context.getString(R.string.media_saved_in_pictures, folder), Toast.LENGTH_SHORT)
+                            .show()
+                    }
                     OperationResult(success = true)
                 }
             }
@@ -75,14 +78,13 @@ internal class PrismMediaHostApiImpl(
 
     private fun withWritePermission(callback: (Result<OperationResult>) -> Unit, task: () -> Unit) {
         if (closed) {
-            callback(Result.success(OperationResult(success = false, errorCode = "ENGINE_DETACHED", message = ENGINE_DETACHED_MESSAGE)))
+            callback(Result.success(OperationResult(success = false, errorCode = "ENGINE_DETACHED")))
             return
         }
         if (hasStorageAccess()) task() else requestStoragePermission?.invoke { granted ->
             if (granted) task() else callback(Result.success(OperationResult(
                 success = false,
                 errorCode = "STORAGE_PERMISSION_REQUIRED",
-                message = "Allow storage access to save wallpapers on this Android version",
             )))
         }
     }
@@ -154,7 +156,7 @@ internal class PrismMediaHostApiImpl(
 
     override fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit) {
         runInBackground(callback, {
-            DownloadItemsResult(success = false, items = emptyList(), errorCode = mediaFailureCode("LIST_FAILED", it), message = mediaFailureMessage(it))
+            DownloadItemsResult(success = false, items = emptyList(), errorCode = mediaFailureCode("LIST_FAILED", it))
         }) {
             check(hasStorageAccess()) { "Storage access is required to read legacy downloads" }
             val items = mutableListOf<String>()
@@ -204,7 +206,7 @@ internal class PrismMediaHostApiImpl(
                 }
             }
             if (deleted > 0) OperationResult(success = true)
-            else OperationResult(success = false, errorCode = "NO_DOWNLOADS", message = "No downloads found")
+            else OperationResult(success = false, errorCode = "NO_DOWNLOADS")
         }
     }
 
@@ -213,7 +215,7 @@ internal class PrismMediaHostApiImpl(
             check(hasStorageAccess()) { "Storage access is required to delete downloads" }
             val deleted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) deleteMediaStoreDownload(path) else deleteLegacyDownload(path)
             if (deleted) OperationResult(success = true)
-            else OperationResult(success = false, errorCode = "NOT_FOUND", message = "Download not found")
+            else OperationResult(success = false, errorCode = "NOT_FOUND")
         }
     }
 
@@ -334,4 +336,4 @@ internal fun mediaFailureMessage(error: Throwable): String = when {
 }
 
 private fun operationError(code: String, error: Throwable) =
-    OperationResult(success = false, errorCode = mediaFailureCode(code, error), message = mediaFailureMessage(error))
+    OperationResult(success = false, errorCode = mediaFailureCode(code, error))

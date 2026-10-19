@@ -6,7 +6,9 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
@@ -318,17 +320,14 @@ void main() {
 
     test('tells the user when no paywall can be shown', () async {
       final result = await orchestrator.present(placement: PaywallPlacement.lowBalance, source: 'test');
+      final AppLocalizations messages = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
 
       expect(const <PaywallResultValue>{
         PaywallResultValue.notPresented,
         PaywallResultValue.noOffering,
         PaywallResultValue.rcError,
       }, contains(result));
-      expect(toasts, <String>[PaywallOrchestrator.plansUnavailableMessage]);
-      expect(
-        PaywallOrchestrator.plansUnavailableMessage,
-        'Plans are not available right now. Check your connection and try again.',
-      );
+      expect(toasts, <String>[messages.premiumPagePlansUnavailable]);
     });
   });
 

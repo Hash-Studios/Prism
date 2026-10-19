@@ -4,6 +4,7 @@ import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -39,16 +40,16 @@ class BadgeCelebrateSheet extends StatelessWidget {
           children: <Widget>[
             Glint(mood: GlintMood.celebrate, size: small ? 88 : 140),
             const SizedBox(height: 8),
-            Text('New badge', style: PrismTextStyles.caption(context)),
+            Text(context.l10n.economyNewBadge, style: PrismTextStyles.caption(context)),
             const SizedBox(height: 4),
             Text(
-              info?.name ?? 'Badge earned',
+              info?.name(context.l10n) ?? context.l10n.economyBadgeEarned,
               textAlign: TextAlign.center,
               style: PrismTextStyles.sheetHeadline(context),
             ),
             if (info != null) ...<Widget>[
               const SizedBox(height: 4),
-              Text(info.description, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+              Text(info.description(context.l10n), textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
             ],
             if (badge.coins > 0) ...<Widget>[
               const SizedBox(height: 20),
@@ -57,7 +58,10 @@ class BadgeCelebrateSheet extends StatelessWidget {
                 children: <Widget>[
                   const PrismCoinIcon(size: 32),
                   const SizedBox(width: 10),
-                  Text('+${badge.coins}', style: PrismTextStyles.numeral(context, 44)),
+                  Text(
+                    '+${formatLocalizedNumber(badge.coins, context.l10n)}',
+                    style: PrismTextStyles.numeral(context, 44),
+                  ),
                 ],
               ),
             ],
@@ -71,7 +75,7 @@ class BadgeCelebrateSheet extends StatelessWidget {
                   shape: const StadiumBorder(),
                   textStyle: PrismTextStyles.rowTitle(context),
                 ),
-                child: const Text('Nice'),
+                child: Text(context.l10n.economyNice),
               ),
             ),
             const SizedBox(height: 4),
@@ -80,7 +84,10 @@ class BadgeCelebrateSheet extends StatelessWidget {
                 PrismHaptics.tap();
                 Navigator.of(context).pop(true);
               },
-              child: Text('See badges', style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary)),
+              child: Text(
+                context.l10n.economySeeBadges,
+                style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary),
+              ),
             ),
           ],
         ),

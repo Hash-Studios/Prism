@@ -7,6 +7,7 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_ent
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -82,7 +83,13 @@ void main() {
     getIt.registerSingleton<UserBlockRepository>(blockRepository);
     addTearDown(() => tester.pumpWidget(const SizedBox()));
 
-    await tester.pumpWidget(const MaterialApp(home: ProfileScreen(profileIdentifier: 'creator@example.com')));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ProfileScreen(profileIdentifier: 'creator@example.com'),
+      ),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
   }

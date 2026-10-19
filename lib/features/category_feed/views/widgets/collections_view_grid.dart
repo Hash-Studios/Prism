@@ -17,6 +17,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -51,7 +52,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       await refreshCollectionWithName();
     } catch (error, stackTrace) {
       logger.w('Failed to refresh the collection.', error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't refresh. Pull down to try again.");
+      toasts.error(context.l10n.wallpaperCollectionRefreshError);
     }
     if (mounted) setState(() => _loadMoreFailed = false);
   }
@@ -97,10 +98,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> walls = anyCollectionWalls;
     if (walls.isEmpty && !collectionHasMore) {
-      return const GlintState(
+      return GlintState(
         kind: GlintStateKind.empty,
-        title: 'Nothing in this collection yet',
-        body: 'New wallpapers are added often. Check back soon.',
+        title: context.l10n.wallpaperCollectionsEmptyTitle,
+        body: context.l10n.wallpaperCollectionsEmptyBody,
       );
     }
     final bool showFooter = collectionHasMore;
@@ -204,7 +205,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                 fallbackUrl: wallpaperUrl,
                 memCacheHeight: decodeHeight,
                 heroTag: prismHeroTag(this, index, wallId),
-                semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by')),
+                semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by'), context.l10n),
                 overlay: depthTagFor(depthTierOf(entity)),
                 onTap: () {
                   PrismHaptics.tap();

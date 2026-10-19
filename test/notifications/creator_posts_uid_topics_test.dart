@@ -97,24 +97,28 @@ void main() {
       knownUids: <String, String>{'ana@example.com': 'uidAna'},
     );
 
-    expect(messaging.subscribed, unorderedEquals(<String>['Ana_posts', 'posts_uidAna']));
+    expect(messaging.subscribed, unorderedEquals(<String>['Ana_posts_loc_v1', 'posts_uidAna_loc_v1']));
     expect(profiles.reads, isEmpty);
   });
 
   test('without a known uid the profile is read once and the uid is cached', () async {
     await setCreatorPostsTopics(messaging, <String>['ana@example.com'], subscribed: true, sourceTag: 'test');
-    expect(messaging.subscribed, unorderedEquals(<String>['ana_posts', 'posts_uidAna']));
+    expect(messaging.subscribed, unorderedEquals(<String>['ana_posts_loc_v1', 'posts_uidAna_loc_v1']));
     expect(profiles.reads, <String>['ana@example.com']);
 
+    messaging.unsubscribed.clear();
     await setCreatorPostsTopics(messaging, <String>['ana@example.com'], subscribed: false, sourceTag: 'test');
-    expect(messaging.unsubscribed, unorderedEquals(<String>['ana_posts', 'posts_uidAna']));
+    expect(
+      messaging.unsubscribed,
+      unorderedEquals(<String>['ana_posts', 'ana_posts_loc_v1', 'posts_uidAna', 'posts_uidAna_loc_v1']),
+    );
     expect(profiles.reads, hasLength(1));
   });
 
   test('a creator without a profile keeps only the legacy topic', () async {
     await setCreatorPostsTopics(messaging, <String>['ghost@example.com'], subscribed: true, sourceTag: 'test');
 
-    expect(messaging.subscribed, <String>['ghost_posts']);
+    expect(messaging.subscribed, <String>['ghost_posts_loc_v1']);
   });
 
   test('a failed profile read does not block the legacy topic', () async {
@@ -122,7 +126,7 @@ void main() {
 
     await setCreatorPostsTopics(messaging, <String>['ana@example.com'], subscribed: true, sourceTag: 'test');
 
-    expect(messaging.subscribed, <String>['ana_posts']);
+    expect(messaging.subscribed, <String>['ana_posts_loc_v1']);
   });
 
   test('sync is retried next launch when a uid read failed, and done once reads work', () async {
@@ -141,7 +145,7 @@ void main() {
 
     profiles.failing = false;
     await sync();
-    expect(messaging.subscribed, containsAll(<String>['ana_posts', 'posts_uidAna']));
+    expect(messaging.subscribed, containsAll(<String>['ana_posts_loc_v1', 'posts_uidAna_loc_v1']));
 
     messaging.subscribed.clear();
     await sync();

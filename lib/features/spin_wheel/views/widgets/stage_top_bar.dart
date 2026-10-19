@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 class StageTopBar extends StatelessWidget {
@@ -22,7 +23,12 @@ class StageTopBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
         child: Row(
           children: <Widget>[
-            PrismIconButton(icon: Icons.close_rounded, tooltip: 'Close', filled: true, onPressed: onClose),
+            PrismIconButton(
+              icon: Icons.close_rounded,
+              tooltip: context.l10n.actionClose,
+              filled: true,
+              onPressed: onClose,
+            ),
             const Spacer(),
             CoinBalancePill(balance: balance, delta: delta, low: low),
             const SizedBox(width: PrismSpace.xs),

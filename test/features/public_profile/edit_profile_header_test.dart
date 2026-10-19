@@ -1,4 +1,5 @@
 import 'package:Prism/features/public_profile/views/widgets/edit_profile_header.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +16,9 @@ void main() {
   Future<void> pumpHeader(WidgetTester tester, {String? coverUrl}) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: SingleChildScrollView(
             child: EditProfileHeader(

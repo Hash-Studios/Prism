@@ -1,13 +1,47 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/widgets.dart';
 
-class ProfileLinkKind {
-  const ProfileLinkKind(this.name, this.placeholder, this.icon, this.validator);
+enum ProfileLinkType {
+  behance('behance'),
+  bioLink('bio.link'),
+  buyMeACoffee('buymeacoffee'),
+  custom('custom link'),
+  deviantArt('deviantart'),
+  dribbble('dribbble'),
+  email('email'),
+  github('github'),
+  gitlab('gitlab'),
+  instagram('instagram'),
+  linkedin('linkedin'),
+  linktree('linktree'),
+  medium('medium'),
+  patreon('patreon'),
+  paypal('paypal'),
+  reddit('reddit'),
+  spotify('spotify'),
+  telegram('telegram'),
+  trello('trello'),
+  twitch('twitch'),
+  twitter('twitter'),
+  unsplash('unsplash'),
+  youtube('youtube');
 
-  final String name;
+  const ProfileLinkType(this.wireName);
+
+  /// Stable key used by profile documents and link validation.
+  final String wireName;
+}
+
+class ProfileLinkKind {
+  const ProfileLinkKind(this.type, this.placeholder, this.icon, this.validator);
+
+  final ProfileLinkType type;
   final String placeholder;
   final IconData icon;
   final String validator;
+
+  /// Stable key used by profile documents and link validation.
+  String get name => type.wireName;
 }
 
 const String customLinkName = 'custom link';
@@ -17,29 +51,29 @@ const int minUsernameLength = 3;
 
 /// Every link type a profile can carry, sorted by [ProfileLinkKind.name].
 const List<ProfileLinkKind> profileLinkKinds = <ProfileLinkKind>[
-  ProfileLinkKind('behance', 'https://behance.net/username', JamIcons.behance, 'behance.net'),
-  ProfileLinkKind('bio.link', 'https://bio.link/username', JamIcons.world, 'bio.link'),
-  ProfileLinkKind('buymeacoffee', 'https://buymeacoff.ee/username', JamIcons.coffee, 'buymeacoff.ee'),
-  ProfileLinkKind('custom link', '', JamIcons.link, ''),
-  ProfileLinkKind('deviantart', 'https://deviantart.com/username', JamIcons.deviantart, 'deviantart'),
-  ProfileLinkKind('dribbble', 'https://dribbble.com/username', JamIcons.basketball, 'dribbble'),
-  ProfileLinkKind('email', 'your@email.com', JamIcons.inbox, '@'),
-  ProfileLinkKind('github', 'https://github.com/username', JamIcons.github, 'github'),
-  ProfileLinkKind('gitlab', 'https://gitlab.com/username', JamIcons.gitlab, 'gitlab'),
-  ProfileLinkKind('instagram', 'https://instagram.com/username', JamIcons.instagram, 'instagram'),
-  ProfileLinkKind('linkedin', 'https://linkedin.com/in/username', JamIcons.linkedin, 'linkedin'),
-  ProfileLinkKind('linktree', 'https://linktr.ee/username', JamIcons.tree_alt, 'linktr.ee'),
-  ProfileLinkKind('medium', 'https://username.medium.com/', JamIcons.medium, 'medium'),
-  ProfileLinkKind('patreon', 'https://patreon.com/username', JamIcons.patreon, 'patreon'),
-  ProfileLinkKind('paypal', 'https://paypal.me/username', JamIcons.paypal, 'paypal'),
-  ProfileLinkKind('reddit', 'https://reddit.com/user/username', JamIcons.reddit, 'reddit'),
-  ProfileLinkKind('spotify', 'https://open.spotify.com/user/username', JamIcons.spotify, 'open.spotify'),
-  ProfileLinkKind('telegram', 'https://t.me/username', JamIcons.paper_plane, 't.me'),
-  ProfileLinkKind('trello', 'https://trello.com/username', JamIcons.trello, 'trello'),
-  ProfileLinkKind('twitch', 'https://twitch.tv/username', JamIcons.twitch, 'twitch.tv'),
-  ProfileLinkKind('twitter', 'https://twitter.com/username', JamIcons.twitter, 'twitter'),
-  ProfileLinkKind('unsplash', 'https://unsplash.com/username', JamIcons.unsplash, 'unsplash'),
-  ProfileLinkKind('youtube', 'https://youtube.com/channel/username', JamIcons.youtube, 'youtube'),
+  ProfileLinkKind(ProfileLinkType.behance, 'https://behance.net/username', JamIcons.behance, 'behance.net'),
+  ProfileLinkKind(ProfileLinkType.bioLink, 'https://bio.link/username', JamIcons.world, 'bio.link'),
+  ProfileLinkKind(ProfileLinkType.buyMeACoffee, 'https://buymeacoff.ee/username', JamIcons.coffee, 'buymeacoff.ee'),
+  ProfileLinkKind(ProfileLinkType.custom, '', JamIcons.link, ''),
+  ProfileLinkKind(ProfileLinkType.deviantArt, 'https://deviantart.com/username', JamIcons.deviantart, 'deviantart'),
+  ProfileLinkKind(ProfileLinkType.dribbble, 'https://dribbble.com/username', JamIcons.basketball, 'dribbble'),
+  ProfileLinkKind(ProfileLinkType.email, 'your@email.com', JamIcons.inbox, '@'),
+  ProfileLinkKind(ProfileLinkType.github, 'https://github.com/username', JamIcons.github, 'github'),
+  ProfileLinkKind(ProfileLinkType.gitlab, 'https://gitlab.com/username', JamIcons.gitlab, 'gitlab'),
+  ProfileLinkKind(ProfileLinkType.instagram, 'https://instagram.com/username', JamIcons.instagram, 'instagram'),
+  ProfileLinkKind(ProfileLinkType.linkedin, 'https://linkedin.com/in/username', JamIcons.linkedin, 'linkedin'),
+  ProfileLinkKind(ProfileLinkType.linktree, 'https://linktr.ee/username', JamIcons.tree_alt, 'linktr.ee'),
+  ProfileLinkKind(ProfileLinkType.medium, 'https://username.medium.com/', JamIcons.medium, 'medium'),
+  ProfileLinkKind(ProfileLinkType.patreon, 'https://patreon.com/username', JamIcons.patreon, 'patreon'),
+  ProfileLinkKind(ProfileLinkType.paypal, 'https://paypal.me/username', JamIcons.paypal, 'paypal'),
+  ProfileLinkKind(ProfileLinkType.reddit, 'https://reddit.com/user/username', JamIcons.reddit, 'reddit'),
+  ProfileLinkKind(ProfileLinkType.spotify, 'https://open.spotify.com/user/username', JamIcons.spotify, 'open.spotify'),
+  ProfileLinkKind(ProfileLinkType.telegram, 'https://t.me/username', JamIcons.paper_plane, 't.me'),
+  ProfileLinkKind(ProfileLinkType.trello, 'https://trello.com/username', JamIcons.trello, 'trello'),
+  ProfileLinkKind(ProfileLinkType.twitch, 'https://twitch.tv/username', JamIcons.twitch, 'twitch.tv'),
+  ProfileLinkKind(ProfileLinkType.twitter, 'https://twitter.com/username', JamIcons.twitter, 'twitter'),
+  ProfileLinkKind(ProfileLinkType.unsplash, 'https://unsplash.com/username', JamIcons.unsplash, 'unsplash'),
+  ProfileLinkKind(ProfileLinkType.youtube, 'https://youtube.com/channel/username', JamIcons.youtube, 'youtube'),
 ];
 
 IconData profileLinkIcon(String name) {

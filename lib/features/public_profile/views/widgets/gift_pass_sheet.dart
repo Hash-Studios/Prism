@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -30,23 +31,24 @@ class _GiftPassSheetState extends State<GiftPassSheet> {
       unawaited(analytics.track(GiftSentEvent(recipientUid: widget.recipientUid)));
     }
     if (!mounted) return;
+    final AppLocalizations l10n = context.l10n;
     Navigator.of(context).pop();
     final String name = widget.recipientName;
     switch (result.outcome) {
       case GiftOutcome.sent:
-        toasts.success('Pass sent to $name.');
+        toasts.success(l10n.accountPassSentToPerson(name));
       case GiftOutcome.insufficient:
-        toasts.error('Not enough coins. Earn coins in Rewards.');
+        toasts.error(l10n.accountNotEnoughCoinsEarnInRewards);
       case GiftOutcome.limit:
-        toasts.info('Gift limit reached for now. Try again tomorrow.');
+        toasts.info(l10n.accountGiftLimitReached);
       case GiftOutcome.recipientPremium:
-        toasts.info('$name already has Pro.');
+        toasts.info(l10n.accountPersonAlreadyHasPro(name));
       case GiftOutcome.senderTooNew:
-        toasts.info('Gifts open when your account is 7 days old.');
+        toasts.info(l10n.accountGiftsOpenAfterSevenDays);
       case GiftOutcome.blocked:
-        toasts.info("You can't send a gift to this account.");
+        toasts.info(l10n.accountCannotGiftThisAccount);
       case GiftOutcome.failed:
-        toasts.error("Couldn't send the gift. Try again.");
+        toasts.error(l10n.accountCouldNotSendGift);
     }
   }
 
@@ -66,15 +68,18 @@ class _GiftPassSheetState extends State<GiftPassSheet> {
         return PopScope(
           canPop: !_sending,
           child: PrismSheetBody(
-            title: 'Gift a 24-hour Pro pass',
-            message:
-                '${widget.recipientName} gets premium collections and premium walls until tomorrow. '
-                'Costs $price coins.',
+            title: context.l10n.accountGiftPassTitle,
+            message: context.l10n.accountGiftPassMessage(widget.recipientName, price),
             actions: <Widget>[
-              PrismButton(label: 'Send gift', expand: true, loading: _sending, onPressed: short ? null : _send),
+              PrismButton(
+                label: context.l10n.accountSendGift,
+                expand: true,
+                loading: _sending,
+                onPressed: short ? null : _send,
+              ),
               if (short)
                 PrismButton(
-                  label: 'Earn coins',
+                  label: context.l10n.accountEarnCoins,
                   expand: true,
                   variant: PrismButtonVariant.ghost,
                   onPressed: _earnCoins,

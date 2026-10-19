@@ -2,22 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:intl/intl.dart';
-
-/// Superscript ordinal suffix for a day of the month: 1ˢᵗ, 2ⁿᵈ, 3ʳᵈ, 4ᵗʰ, 11ᵗʰ.
-String ordinalSuffix(int day) {
-  if (day >= 11 && day <= 13) return 'ᵗʰ';
-  return switch (day % 10) {
-    1 => 'ˢᵗ',
-    2 => 'ⁿᵈ',
-    3 => 'ʳᵈ',
-    _ => 'ᵗʰ',
-  };
-}
-
-/// Time of day in the device 12 or 24 hour style.
-String formatClockTime(DateTime time, {required bool use24Hour}) =>
-    DateFormat(use24Hour ? 'HH:mm' : 'h:mm').format(time);
 
 /// How big the layer is drawn compared with a full screen. A phone-shaped frame on a smaller area scales down.
 double _layerScale(BuildContext context, BoxConstraints constraints) {
@@ -57,7 +43,7 @@ class LockPreviewLayer extends StatelessWidget {
   Widget build(BuildContext context) {
     final DateTime time = now ?? DateTime.now();
     final bool use24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
-    final String clock = formatClockTime(time, use24Hour: use24Hour);
+    final String clock = DateFormat(use24Hour ? 'HH:mm' : 'h:mm', context.l10n.localeName).format(time);
     return LayoutBuilder(
       builder: (context, constraints) {
         final double scale = _layerScale(context, constraints);
@@ -71,7 +57,7 @@ class LockPreviewLayer extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    DateFormat('EEEE d MMMM').format(time),
+                    DateFormat.MMMMEEEEd(context.l10n.localeName).format(time),
                     style: TextStyle(
                       color: textColor,
                       fontFamily: 'CupertinoSystemText',
@@ -112,7 +98,7 @@ class LockPreviewLayer extends StatelessWidget {
               ),
               SizedBox(height: 5 * scale),
               Text(
-                "${DateFormat('EEEE').format(time)}, ${DateFormat('MMMM').format(time)} ${time.day}",
+                DateFormat.MMMMEEEEd(context.l10n.localeName).format(time),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: textColor,
@@ -154,7 +140,7 @@ class HomePreviewLayer extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    "${DateFormat('EEEE').format(time)},",
+                    DateFormat.EEEE(context.l10n.localeName).format(time),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: textColor,
@@ -165,7 +151,7 @@ class HomePreviewLayer extends StatelessWidget {
                   ),
                   SizedBox(height: 5 * scale),
                   Text(
-                    "${DateFormat('MMMM').format(time)} ${time.day}${ordinalSuffix(time.day)}",
+                    DateFormat.MMMMd(context.l10n.localeName).format(time),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: textColor,

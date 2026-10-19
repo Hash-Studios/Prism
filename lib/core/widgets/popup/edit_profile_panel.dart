@@ -9,13 +9,14 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/profile/profile_link_type_label.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/public_profile/views/widgets/edit_profile_header.dart';
 import 'package:Prism/features/public_profile/views/widgets/edit_profile_link_field.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -39,7 +40,7 @@ class EditProfilePanel extends StatefulWidget {
 }
 
 class _EditProfilePanelState extends State<EditProfilePanel> {
-  static const String _usernameRule = 'Use $minUsernameLength or more letters, numbers or underscores (_).';
+  String get _usernameRule => context.l10n.coreEditUsernameRule(minUsernameLength);
 
   final TextEditingController linkController = TextEditingController();
   late TextEditingController bioController;
@@ -113,12 +114,13 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   /// Asks before removing [removeWhat], then runs [remove].
-  Future<void> _confirmRemove(Future<void> Function() remove, String removeWhat) async {
+  Future<void> _confirmRemove(Future<void> Function() remove, String removeWhat, {String? title}) async {
+    final AppLocalizations l10n = context.l10n;
     final bool ok = await showPrismConfirm(
       context,
-      title: 'Remove $removeWhat?',
-      message: "This can't be undone.",
-      confirmLabel: 'Remove',
+      title: title ?? l10n.coreEditRemoveTitle(removeWhat),
+      message: l10n.corePopupCannotUndo,
+      confirmLabel: l10n.coreEditRemoveConfirm,
       destructive: true,
     );
     if (ok && mounted) await remove();
@@ -159,8 +161,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool get _hasUnsavedChanges => pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit || usernameEdit;
 
   Future<void> _saveProfile() async {
+    final AppLocalizations l10n = context.l10n;
     if (usernameEdit && available != true) {
-      toasts.error('Pick an available username.');
+      toasts.error(l10n.coreChooseUsername);
       return;
     }
     setState(() => isLoading = true);
@@ -206,11 +209,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       await CoinsService.instance.maybeAwardProfileCompletion();
       if (mounted) {
         Navigator.pop(context);
-        toasts.success("Profile updated");
+        toasts.success(l10n.coreProfileUpdated);
       }
     } catch (e) {
       logger.d(e.toString());
-      toasts.error('Could not save your profile. Please try again.');
+      toasts.error(l10n.coreProfileSaveFailed);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -228,9 +231,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       _usernameError = value.isEmpty || value == app_state.prismUser.username
           ? null
           : !longEnough
-          ? 'Use at least $minUsernameLength characters.'
+          ? context.l10n.coreEditUsernameMinLength(minUsernameLength)
           : !validChars
-          ? 'Use letters, numbers and underscores only.'
+          ? context.l10n.coreEditUsernameChars
           : null;
       isCheckingUsername = valid && value != app_state.prismUser.username;
       usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
@@ -248,18 +251,20 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       setState(() {
         available = isAvailable;
         isCheckingUsername = false;
-        if (isAvailable == false) _usernameError = 'That username is taken.';
+        if (isAvailable == false) _usernameError = context.l10n.coreEditUsernameTaken;
       });
-      if (isAvailable == null) toasts.error("Couldn't check the username. Try again.");
+      if (isAvailable == null) toasts.error(context.l10n.coreUsernameCheckFailed);
     });
   }
 
   String? get _linkError => _invalidLinks.contains(_link.name) ? _linkErrorText(_link) : null;
 
+  String _linkDisplayName(ProfileLinkKind kind) => profileLinkTypeLabel(context.l10n, kind.type);
+
   String _linkErrorText(ProfileLinkKind kind) => switch (kind.name) {
-    'email' => 'Enter a valid email address.',
-    customLinkName => 'Enter a valid link.',
-    _ => 'Enter a valid ${kind.name} link.',
+    'email' => context.l10n.coreEditEmailInvalid,
+    customLinkName => context.l10n.coreEditLinkInvalid,
+    _ => context.l10n.coreEditKindLinkInvalid(_linkDisplayName(kind)),
   };
 
   Future<void> _pickLinkKind() async {
@@ -285,11 +290,12 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> _confirmDiscard() async {
+    final AppLocalizations l10n = context.l10n;
     final bool discard = await showPrismConfirm(
       context,
-      title: 'Discard changes?',
-      message: 'Your edits have not been saved.',
-      confirmLabel: 'Discard',
+      title: l10n.coreEditDiscardTitle,
+      message: l10n.coreEditDiscardBody,
+      confirmLabel: l10n.corePopupDiscard,
       destructive: true,
     );
     if (discard && mounted) Navigator.pop(context);
@@ -315,7 +321,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                   key: ValueKey(available),
                   color: available! ? cs.primary : cs.error,
                   size: 22,
-                  semanticLabel: available! ? 'Username available' : 'Username taken',
+                  semanticLabel: available!
+                      ? context.l10n.coreEditUsernameAvailable
+                      : context.l10n.coreEditUsernameTakenSemantic,
                 ),
         ),
       ),
@@ -325,6 +333,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final AppLocalizations l10n = context.l10n;
     const double fieldGap = PrismSpace.md;
     return PopScope(
       canPop: !_hasUnsavedChanges || isLoading,
@@ -332,9 +341,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         if (!didPop) _confirmDiscard();
       },
       child: PrismPage(
-        title: 'Edit profile',
+        title: l10n.coreEditProfile,
         bottomBar: PrismButton(
-          label: 'Save changes',
+          label: l10n.coreSaveChanges,
           expand: true,
           loading: isLoading,
           onPressed: _hasChanges ? _saveProfile : null,
@@ -363,7 +372,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                   app_state.prismUser.coverPhoto = null;
                   app_state.persistPrismUser();
                   await _updateCurrentUser(<String, dynamic>{"coverPhoto": null}, 'profile.edit.removeCoverPhoto');
-                }, 'cover photo'),
+                }, l10n.corePopupCoverPhoto),
                 onChangePhoto: () => _pickImage((file) {
                   _pfp = file;
                   pfpEdit = true;
@@ -376,7 +385,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     PrismTextField(
-                      label: 'Name',
+                      label: l10n.coreName,
                       controller: nameController,
                       textCapitalization: TextCapitalization.words,
                       textInputAction: TextInputAction.next,
@@ -386,10 +395,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                     ),
                     const SizedBox(height: fieldGap),
                     PrismTextField(
-                      label: 'Username',
+                      label: l10n.coreUsername,
                       controller: usernameController,
                       prefixIcon: Icons.alternate_email_rounded,
-                      helper: available == true ? 'Username is available.' : _usernameRule,
+                      helper: available == true ? l10n.coreEditUsernameAvailable : _usernameRule,
                       error: _usernameError,
                       suffix: _availabilityIndicator(cs),
                       autocorrect: false,
@@ -398,8 +407,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                     ),
                     const SizedBox(height: fieldGap),
                     PrismTextField(
-                      label: 'Bio',
-                      hint: 'Tell people about yourself…',
+                      label: l10n.coreBio,
+                      hint: l10n.coreEditBioHint,
                       controller: bioController,
                       maxLength: 150,
                       minLines: 3,
@@ -409,17 +418,21 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           ? null
                           : PrismIconButton(
                               icon: Icons.close_rounded,
-                              tooltip: 'Remove bio',
+                              tooltip: l10n.coreRemoveBio,
                               iconSize: 20,
-                              onPressed: () => _confirmRemove(() async {
-                                setState(() {
-                                  bioController.text = '';
-                                  bioEdit = false;
-                                });
-                                app_state.prismUser.bio = '';
-                                app_state.persistPrismUser();
-                                await _updateCurrentUser(<String, dynamic>{"bio": ""}, 'profile.edit.clearBio');
-                              }, 'bio'),
+                              onPressed: () => _confirmRemove(
+                                () async {
+                                  setState(() {
+                                    bioController.text = '';
+                                    bioEdit = false;
+                                  });
+                                  app_state.prismUser.bio = '';
+                                  app_state.persistPrismUser();
+                                  await _updateCurrentUser(<String, dynamic>{"bio": ""}, 'profile.edit.clearBio');
+                                },
+                                l10n.coreBio,
+                                title: l10n.coreEditRemoveBioTitle,
+                              ),
                             ),
                       onChanged: (value) => setState(() {
                         bioEdit = value.isNotEmpty && value != app_state.prismUser.bio;
@@ -445,7 +458,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                         await _updateCurrentUser(<String, dynamic>{
                           "links": app_state.prismUser.links,
                         }, 'profile.edit.removeLink');
-                      }, '${_link.name.inCaps} link'),
+                      }, l10n.coreEditProfileLink(_linkDisplayName(_link))),
                     ),
                   ],
                 ),

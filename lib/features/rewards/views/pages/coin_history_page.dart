@@ -5,6 +5,7 @@ import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/rewards/data/coin_history_repository.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +14,10 @@ import 'package:intl/intl.dart';
 enum _HistoryFilter { earned, spent, refunds }
 
 extension on _HistoryFilter {
-  String get label => switch (this) {
-    _HistoryFilter.earned => 'Earned',
-    _HistoryFilter.spent => 'Spent',
-    _HistoryFilter.refunds => 'Refunds',
+  String label(AppLocalizations l10n) => switch (this) {
+    _HistoryFilter.earned => l10n.economyCoinHistoryEarned,
+    _HistoryFilter.spent => l10n.economyCoinHistorySpent,
+    _HistoryFilter.refunds => l10n.economyCoinHistoryRefunds,
   };
 
   bool matches(CoinTransactionEntry e) => switch (this) {
@@ -102,6 +103,7 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final _HistoryFilter? filter = _filter;
     final List<CoinTransactionEntry> shown = _visible(_items);
@@ -109,7 +111,10 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
       backgroundColor: scheme.surface,
       appBar: AppBar(
         backgroundColor: scheme.surface,
-        title: Semantics(header: true, child: Text('Coin history', style: PrismTextStyles.screenTitle(context))),
+        title: Semantics(
+          header: true,
+          child: Text(l10n.economyCoinHistoryTitle, style: PrismTextStyles.screenTitle(context)),
+        ),
       ),
       body: SafeArea(
         child: CustomScrollView(
@@ -122,7 +127,7 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
                   children: <Widget>[
                     for (final _HistoryFilter option in _HistoryFilter.values)
                       FilterChip(
-                        label: Text(option.label),
+                        label: Text(option.label(l10n)),
                         selected: filter == option,
                         onSelected: (selected) {
                           PrismHaptics.selection();
@@ -139,14 +144,16 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
               )
             else if (_failed && _items.isEmpty)
               SliverToBoxAdapter(
-                child: _Message(text: "Couldn't load your coin history.", onRetry: _load),
+                child: _Message(text: l10n.economyCoinHistoryLoadFailed, onRetry: _load),
               )
             else if (_items.isEmpty && !_hasMore)
-              const SliverToBoxAdapter(child: _Message(text: 'No coin activity yet.'))
+              SliverToBoxAdapter(child: _Message(text: l10n.economyCoinHistoryEmpty))
             else ...<Widget>[
               if (shown.isEmpty)
                 SliverToBoxAdapter(
-                  child: _Message(text: _hasMore ? 'Nothing here in the rows loaded so far.' : 'Nothing here yet.'),
+                  child: _Message(
+                    text: _hasMore ? l10n.economyCoinHistoryNoLoadedRows : l10n.economyCoinHistoryNothingHere,
+                  ),
                 )
               else
                 SliverPadding(
@@ -163,7 +170,7 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Center(
                     child: _failed
-                        ? TextButton(onPressed: _load, child: const Text('Try again'))
+                        ? TextButton(onPressed: _load, child: Text(l10n.economyAiTryAgain))
                         : _loadingMore
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                         : _hasMore
@@ -172,7 +179,7 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
                               PrismHaptics.tap();
                               _load();
                             },
-                            child: Text('Show more', style: PrismTextStyles.rowTitle(context)),
+                            child: Text(l10n.economyShowMore, style: PrismTextStyles.rowTitle(context)),
                           )
                         : const SizedBox.shrink(),
                   ),
@@ -195,12 +202,13 @@ class _Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Row(
         children: <Widget>[
           Expanded(child: Text(text, style: PrismTextStyles.body(context))),
-          if (onRetry != null) TextButton(onPressed: onRetry, child: const Text('Try again')),
+          if (onRetry != null) TextButton(onPressed: onRetry, child: Text(l10n.economyAiTryAgain)),
         ],
       ),
     );
@@ -214,17 +222,29 @@ class _HistoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final Color amountColor = entry.isCredit ? scheme.tertiary : scheme.onSurface.withValues(alpha: 0.6);
-    final String amount = entry.delta > 0 ? '+${entry.delta}' : '${entry.delta}';
-    final String label = coinTransactionLabel(entry);
-    final String date = DateFormat('d MMM y, h:mm a').format(entry.createdAt.toLocal());
+    final String formattedDelta = formatLocalizedNumber(entry.delta.abs(), l10n);
+    final String amount = entry.delta > 0 ? '+$formattedDelta' : '-$formattedDelta';
+    final String label = coinTransactionLabel(entry, l10n);
+    final String date = DateFormat.yMMMd(
+      Localizations.localeOf(context).toLanguageTag(),
+    ).add_jm().format(entry.createdAt.toLocal());
     final String description = entry.description.trim();
     final bool showDescription = description.isNotEmpty && description.toLowerCase() != label.toLowerCase();
-    final String balance = 'Balance ${entry.balanceAfter}';
+    final String balance = l10n.economyCoinBalance(entry.balanceAfter);
     return Semantics(
       container: true,
-      label: '$label, ${showDescription ? '$description, ' : ''}$date, $amount coins, $balance',
+      label: l10n.economyCoinHistoryRowSemantics(
+        label,
+        description,
+        showDescription.toString(),
+        date,
+        amount,
+        entry.delta.abs(),
+        balance,
+      ),
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),

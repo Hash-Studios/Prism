@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// The tint and stamp that grow over the top card while it is dragged: green "Approve" to the right, red "Reject"
@@ -48,7 +49,7 @@ class SwipeActionOverlay extends StatelessWidget {
                         Icon(approve ? Icons.check_rounded : Icons.close_rounded, color: tone, size: 28),
                         const SizedBox(width: PrismSpace.xs),
                         Text(
-                          approve ? 'Approve' : 'Reject',
+                          approve ? context.l10n.adminApprove : context.l10n.adminReject,
                           style: PrismTextStyles.sheetHeadline(context).copyWith(color: Colors.white),
                         ),
                       ],

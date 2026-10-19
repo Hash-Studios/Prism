@@ -15,6 +15,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -89,14 +90,16 @@ class _WotdCardContent extends StatelessWidget {
             fallbackUrl: entity.url,
             memCacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
           ),
-          semanticLabel: photographer.isEmpty ? 'Wall of the day' : 'Wall of the day by $photographer',
-          title: photographer.isEmpty ? null : 'by $photographer',
+          semanticLabel: photographer.isEmpty
+              ? context.l10n.wallpaperWotdTitle
+              : context.l10n.wallpaperWotdByPhotographer(photographer),
+          title: photographer.isEmpty ? null : context.l10n.wallpaperWotdByline(photographer),
           textEndInset: _pillEnd + _pillWidth(context) - PrismSpace.md + PrismSpace.sm,
           tag: ClipRRect(
             borderRadius: BorderRadius.circular(PrismRadius.pill),
             child: ColoredBox(
               color: cs.surfaceContainerHigh,
-              child: const PrismTag(label: 'Wall of the day'),
+              child: PrismTag(label: context.l10n.wallpaperWotdTitle),
             ),
           ),
           onTap: () {
@@ -126,7 +129,7 @@ TextStyle _pillLabelStyle(BuildContext context) =>
 /// The width of the pill: 14 and 8 of padding, a 2 gap, an 18 chevron and the label.
 double _pillWidth(BuildContext context) {
   final TextPainter label = TextPainter(
-    text: TextSpan(text: 'Past picks', style: _pillLabelStyle(context)),
+    text: TextSpan(text: context.l10n.wallpaperWotdPastPicks, style: _pillLabelStyle(context)),
     textDirection: Directionality.of(context),
     textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.5),
     maxLines: 1,
@@ -151,7 +154,7 @@ class _PastPicksPill extends StatelessWidget {
       button: true,
       container: true,
       excludeSemantics: true,
-      label: 'See past walls of the day',
+      label: context.l10n.wallpaperWotdSeePast,
       onTap: onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -176,7 +179,7 @@ class _PastPicksPill extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Text('Past picks', maxLines: 1, style: _pillLabelStyle(context)),
+                          Text(context.l10n.wallpaperWotdPastPicks, maxLines: 1, style: _pillLabelStyle(context)),
                           const SizedBox(width: 2),
                           const Icon(Icons.chevron_right_rounded, size: 18, color: PrismColors.onPrimary),
                         ],

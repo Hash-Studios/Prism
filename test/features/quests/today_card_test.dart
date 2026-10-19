@@ -6,6 +6,8 @@ import 'package:Prism/features/daily_chest/daily_chest.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/views/widgets/chest_banner.dart';
 import 'package:Prism/features/quests/views/widgets/today_card.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -47,6 +49,9 @@ void main() {
     getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo)..clock = clock ?? DateTime.now);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
         navigatorObservers: observers,
         home: Scaffold(
@@ -79,7 +84,7 @@ void main() {
 
   testWidgets('shows nothing until the quests load', (tester) async {
     await pumpCard(tester, null);
-    expect(find.text('Daily quests'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyDailyQuests), findsNothing);
   });
 
   testWidgets('paid: shows the header, the quest tiles, the chest with its price and the weekly tile', (tester) async {
@@ -96,33 +101,98 @@ void main() {
     );
 
     expect(repo.refreshes, 1);
-    expect(find.text('Daily quests'), findsOneWidget);
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.economyDailyQuests), findsOneWidget);
     expect(resetCountdown(), findsOneWidget);
-    expect(find.bySemanticsLabel('Set or save a wallpaper, done. Pays 2 coins and 25 XP'), findsOneWidget);
-    expect(find.bySemanticsLabel('Favourite 3 walls, 1 of 3. Pays 2 coins and 25 XP'), findsOneWidget);
-    expect(find.bySemanticsLabel("Open today's Wall of the Day, 0 of 1. Pays 2 coins and 25 XP"), findsOneWidget);
     expect(
       find.bySemanticsLabel(
-        RegExp(
-          r'^Save or set 5 walls, 2 of 5\. Pays 30 coins and 150 XP\. This week, ends in (\d+d \d+h|\d+h \d+m|\d+m)$',
+        l10n.economyQuestTileSemantics(
+          l10n.economyQuestSetWall,
+          'true',
+          1,
+          1,
+          2,
+          25,
+          'true',
+          'true',
+          'false',
+          '',
+          'false',
         ),
       ),
       findsOneWidget,
     );
-    expect(find.text('Daily chest'), findsOneWidget);
-    expect(find.text('${CoinPolicy.dailyChestPrice} coins, or free after 2 more quests'), findsOneWidget);
-    expect(find.text('Opening it gives 10 XP.'), findsOneWidget);
     expect(
       find.bySemanticsLabel(
-        'Daily chest, ready to open. 1 of 3 quests done. 8 coins, or free after 2 more quests. Opening it gives 10 XP.',
+        l10n.economyQuestTileSemantics(
+          l10n.economyQuestFav3,
+          'false',
+          1,
+          3,
+          2,
+          25,
+          'true',
+          'true',
+          'false',
+          '',
+          'false',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(
+        l10n.economyQuestTileSemantics(
+          l10n.economyQuestWotd,
+          'false',
+          0,
+          1,
+          2,
+          25,
+          'true',
+          'true',
+          'false',
+          '',
+          'false',
+        ),
+      ),
+      findsOneWidget,
+    );
+    final String weeklySemanticsPrefix = l10n.economyQuestTileSemantics(
+      l10n.economyQuestWeeklySet5,
+      'false',
+      2,
+      5,
+      30,
+      150,
+      'true',
+      'true',
+      'true',
+      '',
+      'true',
+    );
+    expect(
+      find.bySemanticsLabel(RegExp('^${RegExp.escape(weeklySemanticsPrefix)}' + r'(\d+d \d+h|\d+h \d+m|\d+m)$')),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.economyDailyChestTitle), findsOneWidget);
+    expect(find.text(l10n.economyChestPriceFreeAfter(CoinPolicy.dailyChestPrice, 2)), findsOneWidget);
+    expect(find.text(l10n.economyChestXpLine(10)), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        l10n.economyDailyChestSemantics(
+          l10n.economyChestReadyPaid(1, 3),
+          l10n.economyChestPriceFreeAfter(8, 2),
+          'true',
+          l10n.economyChestXpLine(10),
+        ),
       ),
       findsOneWidget,
     );
     expect(find.text('Open'), findsOneWidget);
     expect(find.text('Finish 3 quests to open it'), findsNothing);
-    expect(find.textContaining('Watch a video'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyWatchVideo), findsOneWidget);
     expect(find.text('Do this first to double your chest'), findsOneWidget);
-    expect(find.text('Watch'), findsOneWidget);
     expect(tester.takeException(), isNull);
     handle.dispose();
   });
@@ -171,17 +241,28 @@ void main() {
     EconomyConfig.current = const EconomyConfig(spend: EconomySpend(dailyChest: 12));
     await tester.pump();
 
-    expect(find.text('12 coins, or free after 3 more quests'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyChestPriceFreeAfter(12, 3)), findsOneWidget);
   });
 
   testWidgets('free: the chest is free today, with its XP, and the box still loops', (tester) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed());
 
-    expect(find.text('Free today'), findsOneWidget);
-    expect(find.text('Opening it gives 10 XP.'), findsOneWidget);
-    expect(find.bySemanticsLabel('Daily chest, ready to open. Free today. Opening it gives 10 XP.'), findsOneWidget);
-    expect(find.text('Do this first to double your chest'), findsOneWidget);
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.economyChestFreeToday), findsOneWidget);
+    expect(find.text(l10n.economyChestXpLine(10)), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        l10n.economyDailyChestSemantics(
+          l10n.economyChestReady,
+          l10n.economyChestFreeToday,
+          'true',
+          l10n.economyChestXpLine(10),
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.economyChestDoFirst), findsOneWidget);
     final ChestBox box = tester.widget<ChestBox>(find.byType(ChestBox));
     expect(box.phase, ChestPhase.ready);
     expect(tester.getSize(chestSlot()), const Size.square(88));
@@ -193,7 +274,7 @@ void main() {
     EconomyConfig.current = const EconomyConfig(xp: EconomyXp(activities: EconomyXpActivities(questChest: 0)));
     await tester.pump();
 
-    expect(find.text('Free today'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyChestFreeToday), findsOneWidget);
     expect(find.textContaining('XP.'), findsNothing);
   });
 
@@ -220,15 +301,21 @@ void main() {
     await pumpCard(tester, allClaimed(chestOpened: true));
 
     expect(find.text('Open'), findsNothing);
-    expect(find.text('Opened. A new one tomorrow.'), findsOneWidget);
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.economyChestOpenedTomorrow), findsOneWidget);
     expect(find.textContaining('XP.'), findsNothing);
     expect(find.descendant(of: find.byType(ChestBanner), matching: find.byIcon(Icons.check_rounded)), findsOneWidget);
-    expect(find.bySemanticsLabel('Daily chest, opened. Opened. A new one tomorrow.'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        l10n.economyDailyChestSemantics(l10n.economyChestOpened, l10n.economyChestOpenedTomorrow, 'false', ''),
+      ),
+      findsOneWidget,
+    );
     final ChestBox box = tester.widget<ChestBox>(find.byType(ChestBox));
     expect(box.phase, ChestPhase.spent);
     expect(tester.getSize(chestSlot()), const Size.square(88));
     expect(find.text('Watch'), findsNothing);
-    expect(find.text('Do this first to double your chest'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyChestDoFirst), findsNothing);
     handle.dispose();
   });
 
@@ -236,8 +323,14 @@ void main() {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed(chestOpened: true, chestDoubled: true));
 
-    expect(find.text('Opened and doubled. A new one tomorrow.'), findsOneWidget);
-    expect(find.bySemanticsLabel('Daily chest, opened. Opened and doubled. A new one tomorrow.'), findsOneWidget);
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.economyChestOpenedDoubledTomorrow), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        l10n.economyDailyChestSemantics(l10n.economyChestOpened, l10n.economyChestOpenedDoubledTomorrow, 'false', ''),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Watch'), findsNothing);
     handle.dispose();
   });
@@ -245,8 +338,9 @@ void main() {
   testWidgets('a claimed booster on a free chest says the chest is doubled', (tester) async {
     await pumpCard(tester, allClaimed(chestDoubled: true));
 
-    expect(find.text('Chest doubled'), findsOneWidget);
-    expect(find.text('Your bonus is done'), findsOneWidget);
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.economyChestDoubled), findsOneWidget);
+    expect(find.text(l10n.economyChestBonusDone), findsOneWidget);
     expect(find.text('Watch'), findsNothing);
     expect(find.text('Open'), findsOneWidget);
   });
@@ -256,7 +350,7 @@ void main() {
     await pumpCard(tester, questState(bonus: questItem('pro_spin', QuestEvent.proSpin)), onOpenSpin: () => taps++);
 
     expect(find.text('Take your free spin'), findsOneWidget);
-    await tester.tap(find.text('Spin'));
+    await tester.tap(find.text(AppLocalizationsEn().economySpin));
     expect(taps, 1);
   });
 
@@ -279,9 +373,36 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.bySemanticsLabel(RegExp('Pays 7 coins and 41 XP')), findsNWidgets(3));
-    expect(find.bySemanticsLabel(RegExp('Pays 90 coins and 305 XP')), findsOneWidget);
-    expect(find.text('Do this first to double your chest'), findsOneWidget);
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(
+      find.bySemanticsLabel(
+        RegExp(
+          RegExp.escape(
+            l10n
+                .economyQuestTileSemantics('', '', 0, 0, 7, 41, 'true', 'true', 'false', '', 'false')
+                .split('. ')
+                .skip(1)
+                .join('. '),
+          ),
+        ),
+      ),
+      findsNWidgets(3),
+    );
+    expect(
+      find.bySemanticsLabel(
+        RegExp(
+          RegExp.escape(
+            l10n
+                .economyQuestTileSemantics('', '', 0, 0, 90, 305, 'true', 'true', 'false', '', 'false')
+                .split('. ')
+                .skip(1)
+                .join('. '),
+          ),
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.economyChestDoFirst), findsOneWidget);
     handle.dispose();
   });
 
@@ -294,7 +415,7 @@ void main() {
     ];
     await tester.pump();
     await tester.pump();
-    expect(toasts, <String>['Quest done: +22 coins · +98 XP']);
+    expect(toasts, <String>[AppLocalizationsEn().economyQuestDoneMessage(22, 98)]);
 
     repo.awards.value = const <QuestAward>[QuestAward(id: 'set_wall', coins: 0, xp: 43)];
     await tester.pump();
@@ -322,6 +443,9 @@ void main() {
     getIt.registerFactory<QuestsBloc>(() => QuestsBloc(repo));
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
@@ -345,7 +469,7 @@ void main() {
     testWidgets('paid fits 390px at text scale 2.4 (${brightness.name})', (tester) async {
       await pumpScaled(tester, boards['paid']!, brightness, width: 390, textScale: 2.4);
       expect(tester.takeException(), isNull);
-      expect(find.text('Daily quests'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyDailyQuests), findsOneWidget);
     });
   }
 
@@ -408,9 +532,37 @@ void main() {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpCard(tester, allClaimed());
 
-    expect(find.bySemanticsLabel('Set or save a wallpaper, done. Pays 2 coins and 25 XP'), findsOneWidget);
-    expect(find.bySemanticsLabel('Daily chest, ready to open. Free today. Opening it gives 10 XP.'), findsOneWidget);
-    expect(find.bySemanticsLabel('Open'), findsOneWidget);
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(
+      find.bySemanticsLabel(
+        l10n.economyQuestTileSemantics(
+          l10n.economyQuestSetWall,
+          'true',
+          1,
+          1,
+          2,
+          25,
+          'true',
+          'true',
+          'false',
+          '',
+          'false',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(
+        l10n.economyDailyChestSemantics(
+          l10n.economyChestReady,
+          l10n.economyChestFreeToday,
+          'true',
+          l10n.economyChestXpLine(10),
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel(l10n.economyOpen), findsOneWidget);
     handle.dispose();
   });
 }

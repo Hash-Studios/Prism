@@ -1,5 +1,6 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/l10n/l10n.dart';
 
 /// The tier in `walls.depth.tier`, from the detector or an admin. Null when the wall was not checked.
 WallDepthTier? wallDepthTier(FirestoreDocument wall) {
@@ -7,11 +8,11 @@ WallDepthTier? wallDepthTier(FirestoreDocument wall) {
   return depth is Map ? WallDepthTier.parse(depth['tier']) : null;
 }
 
-String depthTierLabel(WallDepthTier? tier) => switch (tier) {
-  WallDepthTier.auto => 'Auto',
-  WallDepthTier.menu => 'Menu',
-  WallDepthTier.none => 'None',
-  null => 'Not checked',
+String depthTierLabel(AppLocalizations l10n, WallDepthTier? tier) => switch (tier) {
+  WallDepthTier.auto => l10n.adminDepthTierAuto,
+  WallDepthTier.menu => l10n.adminDepthTierMenu,
+  WallDepthTier.none => l10n.adminDepthTierNone,
+  null => l10n.adminDepthTierNotChecked,
 };
 
 /// The update for an admin pick. Dotted paths keep the detector's `kind`, `top` and `v`. A wall that was never

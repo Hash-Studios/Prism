@@ -1,4 +1,5 @@
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Earned badges as small icons under the bio. Empty when the user has none this app version knows.
@@ -24,9 +25,9 @@ class ProfileBadgeRow extends StatelessWidget {
         children: <Widget>[
           for (final BadgeInfo info in badges)
             Tooltip(
-              message: info.name,
+              message: info.name(context.l10n),
               child: Semantics(
-                label: '${info.name} badge',
+                label: context.l10n.economyBadgeName(info.name(context.l10n)),
                 excludeSemantics: true,
                 child: Container(
                   width: 32,

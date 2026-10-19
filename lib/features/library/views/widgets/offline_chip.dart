@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// A small "Offline" chip. It shows nothing while the device is online.
@@ -43,8 +44,8 @@ class _OfflineChipState extends State<OfflineChip> {
   Widget build(BuildContext context) {
     if (!_offline) return const SizedBox.shrink();
     return Semantics(
-      label: 'Offline',
-      child: const Chip(avatar: Icon(Icons.cloud_off_rounded), label: Text('Offline')),
+      label: context.l10n.wallpaperOffline,
+      child: Chip(avatar: const Icon(Icons.cloud_off_rounded), label: Text(context.l10n.wallpaperOffline)),
     );
   }
 }

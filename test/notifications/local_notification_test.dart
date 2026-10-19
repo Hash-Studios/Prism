@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/local_notification.dart';
 import 'package:firebase_messaging_platform_interface/firebase_messaging_platform_interface.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,10 @@ Map<String, Object?> _response(String payload) => <String, Object?>{
 };
 
 void main() {
+  late AppLocalizations l10n;
+  setUpAll(() async {
+    l10n = await AppLocalizations.delegate.load(const Locale('en'));
+  });
   test('startup init does not ask for iOS notification permission', () {
     const settings = LocalNotification.darwinSettings;
 
@@ -29,15 +34,15 @@ void main() {
   });
 
   group('downloadedTitle', () {
-    test('starts at one wall', () {
-      expect(LocalNotification.downloadedTitle(null), '1 wall downloaded.');
-      expect(LocalNotification.downloadedTitle('Downloading Wallpaper'), '1 wall downloaded.');
+    test('uses the supplied total count', () {
+      expect(LocalNotification.downloadedTitle(1, l10n), '1 wall downloaded.');
+      expect(LocalNotification.downloadedTitle(120, l10n), '120 walls downloaded.');
     });
 
-    test('counts up from the previous title', () {
-      expect(LocalNotification.downloadedTitle('1 wall downloaded.'), '2 walls downloaded.');
-      expect(LocalNotification.downloadedTitle('9 walls downloaded.'), '10 walls downloaded.');
-      expect(LocalNotification.downloadedTitle('12 walls downloaded.'), '13 walls downloaded.');
+    test('formats counts without reading digits from localized copy', () {
+      expect(LocalNotification.downloadedTitle(2, l10n), '2 walls downloaded.');
+      expect(LocalNotification.downloadedTitle(10, l10n), '10 walls downloaded.');
+      expect(LocalNotification.downloadedTitle(13, l10n), '13 walls downloaded.');
     });
   });
 
@@ -85,6 +90,24 @@ void main() {
     setUp(AndroidFlutterLocalNotificationsPlugin.registerWith);
     tearDown(() => messenger.setMockMethodCallHandler(_channel, null));
 
+    testWidgets('download summary increments the count stored in its payload', (tester) async {
+      Map<Object?, Object?>? shown;
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        if (call.method == 'getActiveNotifications') {
+          return <Map<String, Object?>>[
+            <String, Object?>{'id': 1, 'title': '10 walls downloaded.', 'payload': '{"kind":"downloaded","count":9}'},
+          ];
+        }
+        if (call.method == 'show') shown = call.arguments as Map<Object?, Object?>;
+        return true;
+      });
+
+      await LocalNotification().cancelDownloadNotification(l10n);
+
+      expect(shown?['title'], '10 walls downloaded.');
+      expect(jsonDecode(shown?['payload']! as String), <String, Object>{'kind': 'downloaded', 'count': 10});
+    });
+
     testWidgets('the payload keeps the full push data, not only the route', (tester) async {
       Map<Object?, Object?>? shown;
       messenger.setMockMethodCallHandler(_channel, (call) async {
@@ -101,6 +124,7 @@ void main() {
           },
           notification: RemoteNotification(title: 'WOTD', body: 'New wall'),
         ),
+        localizations: l10n,
       );
 
       expect(jsonDecode(shown!['payload']! as String), <String, dynamic>{
@@ -124,14 +148,95 @@ void main() {
         ),
       );
 
-      await LocalNotification().showPushNotification(push);
-      await LocalNotification().showPushNotification(push);
+      await LocalNotification().showPushNotification(push, localizations: l10n);
+      await LocalNotification().showPushNotification(push, localizations: l10n);
 
       expect(shown, hasLength(2));
       expect(shown[0]['id'], shown[1]['id']);
       final platformSpecifics = shown[0]['platformSpecifics']! as Map<Object?, Object?>;
       expect(platformSpecifics['tag'], 'follow_ana');
       expect(platformSpecifics['onlyAlertOnce'], isTrue);
+    });
+
+    testWidgets('a structured foreground push uses the active language copy', (tester) async {
+      Map<Object?, Object?>? shown;
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        if (call.method == 'show') shown = call.arguments as Map<Object?, Object?>;
+        return true;
+      });
+
+      await LocalNotification().showPushNotification(
+        const RemoteMessage(
+          data: <String, dynamic>{
+            'route': 'follower',
+            'notification_copy_kind': 'newFollower',
+            'notification_args': '{"followerName":"Ana"}',
+          },
+          notification: RemoteNotification(title: 'Legacy title', body: 'Legacy body'),
+        ),
+        localizations: l10n,
+      );
+
+      expect(shown?['title'], 'You have a new follower! 🎉');
+      expect(shown?['body'], 'Ana is now following you.');
+    });
+
+    testWidgets('a native-key data-only push shows localized title and body', (tester) async {
+      Map<Object?, Object?>? shown;
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        if (call.method == 'show') shown = call.arguments as Map<Object?, Object?>;
+        return true;
+      });
+
+      await LocalNotification().showPushNotification(
+        const RemoteMessage(
+          data: <String, dynamic>{
+            'route': 'follower',
+            'notification_copy_kind': 'newFollower',
+            'notification_args': '{"followerName":"Ana"}',
+          },
+        ),
+        localizations: l10n,
+      );
+
+      expect(shown?['title'], 'You have a new follower! 🎉');
+      expect(shown?['body'], 'Ana is now following you.');
+    });
+
+    testWidgets('an unknown data-only push does not show an empty banner', (tester) async {
+      Map<Object?, Object?>? shown;
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        if (call.method == 'show') shown = call.arguments as Map<Object?, Object?>;
+        return true;
+      });
+
+      await LocalNotification().showPushNotification(
+        const RemoteMessage(data: <String, dynamic>{'route': 'unknown'}),
+        localizations: l10n,
+      );
+
+      expect(shown, isNull);
+    });
+
+    testWidgets('an unknown typed data-only push does not show an empty banner', (tester) async {
+      Map<Object?, Object?>? shown;
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        if (call.method == 'show') shown = call.arguments as Map<Object?, Object?>;
+        return true;
+      });
+
+      await LocalNotification().showPushNotification(
+        const RemoteMessage(
+          data: <String, dynamic>{
+            'route': 'unknown',
+            'notification_copy_kind': 'futureNotificationKind',
+            'notification_args': '{}',
+          },
+        ),
+        localizations: l10n,
+      );
+
+      expect(shown, isNull);
     });
 
     testWidgets('a tap routes the push data, and a legacy route-only payload still works', (tester) async {
@@ -145,6 +250,7 @@ void main() {
         '{"route":"follower","url":"https://prismwalls.com/user/bob"}',
         'notifications',
         'downloaded',
+        '{"kind":"downloaded","count":3}',
         'downloadProgress',
       ]) {
         await messenger.handlePlatformMessage(
@@ -161,6 +267,7 @@ void main() {
         <String, dynamic>{'route': 'follower', 'url': 'https://prismwalls.com/user/bob'},
         <String, dynamic>{'route': 'notifications'},
         <String, dynamic>{'route': '/downloads'},
+        <String, dynamic>{'route': '/downloads'},
       ]);
     });
 
@@ -175,7 +282,13 @@ void main() {
       final notification = LocalNotification();
       final received = <Map<String, dynamic>>[];
       notification.onPushTap = (data) async => received.add(data);
-      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SizedBox(),
+        ),
+      );
 
       await notification.fetchNotificationData();
       expect(received, <Map<String, dynamic>>[
@@ -200,17 +313,26 @@ void main() {
       final notification = LocalNotification();
       final received = <Map<String, dynamic>>[];
       notification.onPushTap = (data) async => received.add(data);
-      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SizedBox(),
+        ),
+      );
 
       await notification.fetchNotificationData();
 
       expect(received, isEmpty);
     });
 
-    testWidgets('a cold downloads launch uses the shared callback once and waits for it', (tester) async {
+    testWidgets('a cold downloads launch dispatches the compatible route payload once', (tester) async {
       messenger.setMockMethodCallHandler(_channel, (call) async {
         if (call.method == 'getNotificationAppLaunchDetails') {
-          return <String, Object?>{'notificationLaunchedApp': true, 'notificationResponse': _response('downloaded')};
+          return <String, Object?>{
+            'notificationLaunchedApp': true,
+            'notificationResponse': _response('{"kind":"downloaded","count":3}'),
+          };
         }
         return true;
       });
@@ -224,6 +346,7 @@ void main() {
       var completed = false;
       final Future<void> fetch = notification.fetchNotificationData().whenComplete(() => completed = true);
       await tester.pump();
+
       expect(completed, isFalse);
       expect(received, <Map<String, dynamic>>[
         <String, dynamic>{'route': '/downloads'},
@@ -232,6 +355,8 @@ void main() {
       await tester.pump();
       await fetch;
       expect(completed, isTrue);
+
+      // RestartWidget re-creates the app state, which calls this again with the same launch details.
       await notification.fetchNotificationData();
       expect(received, hasLength(1));
     });
@@ -249,13 +374,13 @@ void main() {
       notification
         ..onPushTap = ((data) async => firstTaps.add(data))
         ..onForegroundPush = (() => foregroundPushes += 100)
-        ..listenForPushMessages();
+        ..listenForPushMessages(localizations: () async => l10n);
 
       // RestartWidget: the new app state sets its callbacks and listens again.
       notification
         ..onPushTap = ((data) async => taps.add(data))
         ..onForegroundPush = (() => foregroundPushes++)
-        ..listenForPushMessages();
+        ..listenForPushMessages(localizations: () async => l10n);
 
       FirebaseMessagingPlatform.onMessageOpenedApp.add(const RemoteMessage(data: <String, dynamic>{'route': 'wall'}));
       FirebaseMessagingPlatform.onMessage.add(

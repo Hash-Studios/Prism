@@ -85,16 +85,28 @@ Permission rules:
 
 ### Posts topics
 
-A follow stores the creator email only. The app joins two topics for each followed creator:
+A follow stores the creator email only. The app joins localized variants of two topics for each followed creator:
 
-- `<email prefix>_posts`. Older servers use it. Creators with the same email prefix share it.
-- `posts_<creator uid>`. It is unique per creator.
+- `<email prefix>_posts_loc_v1`. Creators with the same email prefix share it. Legacy clients use `<email prefix>_posts`.
+- `posts_<creator uid>_loc_v1`. It is unique per creator. Legacy clients use `posts_<creator uid>`.
 
 The uid comes from the caller when it knows it. Else the app reads the public profile once (`PublicProfileRepository.watchProfile`, 8 s limit) and keeps the email-to-uid pair in the settings key `creatorUidByEmail`. Unfollow, sign-out and the Posts switch leave both topics. One uid read never repeats.
 
 ### Foreground pushes
 
 `LocalNotification.showPushNotification` shows a banner for a push that arrives while the app is open. The id is the hash of the Android `tag` of the push. When there is no tag, it is the hash of title, body and data. It is masked to 31 bits. The server sends a personal push twice (user topic and token). Both get the same id and tag, so the second banner replaces the first. `onlyAlertOnce` stops a second sound.
+
+### Notification copy and adding a language
+
+Known server notifications store a stable `message.kind` and argument map in the inbox document and push data. The inbox and foreground banner resolve those values through `lib/features/in_app_notifications/domain/notification_copy.dart` and `AppLocalizations`. Android and iOS also receive native FCM localization keys, so the OS selects background banner copy from the device locale. Historical notifications and admin-authored campaigns retain their stored text because their copy is not a known template. The notification cache preserves the kind and arguments.
+
+Topic subscriptions use the `_loc_v1` suffix for clients with native notification resources. During the migration, Functions send each topic push to both the legacy topic and its `_loc_v1` topic. Typed copy keeps the English `notification` fallback on the legacy send and omits those fields on the localized send so Android and iOS can resolve their native resource keys. Literal campaigns are delivered to both topics with their authored text. Both sends share a collapse key. The app subscribes to the localized topic, then removes its legacy subscription; sign-out removes both. Deploy the Functions update before releasing the app so new clients never depend on a server that only sends to legacy topics.
+
+Direct-token localization is enabled only when `usersv2/{uid}/private/session` contains `notificationLocalizationVersion: 1` and `notificationLocalizationToken` equal to the current `fcmToken`. The app writes those fields together when syncing a token. Comparing the marker token avoids treating a token written by an older client as localization-capable when a stale version field remains in the merged session document. Session reads and writes remain owner-only under `firestore.rules`.
+
+To add a locale, add its `app_<locale>.arb` catalog beside `lib/l10n/app_en.arb`, translate every notification key with the same ICU placeholder names and types, add the locale to the app's supported locales through `flutter gen-l10n`, and translate every `notif_push_*` entry in Android `values-<locale>/strings.xml` and iOS `Localizable.xcstrings`. Keep each value as a complete sentence template with positional placeholders for dynamic arguments. Native FCM resources do not evaluate Flutter ICU plurals, so count-bearing Drop copy uses count-neutral sentence templates with the number passed as a placeholder. The OS device locale selects localized copy for topic pushes too, so no per-user locale field is needed.
+
+For each new notification template, add its English copy to `lib/l10n/app_en.arb`, map the kind and typed arguments in `notification_copy.dart` and `functions/src/notificationCatalog.ts`, and add its native keys and argument mapping in `nativeNotificationLocalization`. User-authored campaign copy remains literal. Run `make l10n-check`, Functions tests, and notification tests. Resource coverage and positional argument counts are checked in `functions/src/__tests__/notificationHelper.test.ts`.
 
 ### Links and share text
 
@@ -115,7 +127,7 @@ Cloud Function event
    |
    +-- inbox doc in Firestore `notifications` (unless push only)
    |
-   +-- personal push -> topic u_<uid>  and  FCM token(s) from
+   +-- personal push -> topic u_<uid> and u_<uid>_loc_v1, plus FCM token(s) from
    |                    usersv2/{uid}/private/session (fallback usersv2.fcmToken)
    |
    +-- Wall of the Day -> topic wall_of_the_day_utc_<p|m><hh><mm> (every 15 min)
@@ -126,22 +138,22 @@ Cloud Function event
 
 | Rule | Detail |
 |---|---|
-| Personal pushes | `sendToUser` in `functions/src/notificationHelper.ts` sends to the uid topic `u_<uid>` and to the FCM token. Both pushes share one `collapseKey`, so the device shows one. |
+| Personal pushes | `sendToUser` sends each topic-targeted notification to `u_<uid>` and `u_<uid>_loc_v1`, and sends to the current FCM token. All deliveries for one event share one `collapseKey`, so one device replaces duplicate deliveries. |
 | Email topic | Used only when no user doc matches the email. The topic is shared by every address with the same prefix. |
 | Who uses it | Follow, wall approved, wall submitted (admins), content report (admins), win-back, campaign with an email, inbox entry with an email. |
 | Badge | The server no longer sets `aps.badge`. The iOS app clears the badge on its own. |
 | Approval push | `onWallApproved` stamps `approvedNotifiedAt` in a transaction. A retried event sends nothing. |
-| Followers push | `onWallApproved` sends the new-wall push to the legacy topic `<email prefix>_posts` and to the topic `posts_<uid>`. Both pushes share the collapse key `posts_<hash>`. The email prefix topic is shared by creators with the same prefix. The new topic is not. Clients that subscribe to `posts_<uid>` need a later app release. |
+| Followers push | `onWallApproved` sends the new-wall push to both generations of the legacy topic `<email prefix>_posts` and uid topic `posts_<uid>`. Each pair shares a collapse key, and all deliveries for one event use `posts_<hash>`. The email prefix topic is shared by creators with the same prefix. |
 | Wall of the Day creator notice | After the public push, the creator of the pick gets a personal push and an inbox doc `wotd_creator_<utc date>`. A failure never fails the public push. |
 | Wall of the Day slot | `wallOfTheDay` and `sendWallOfTheDayBuckets` pick the buckets from the scheduled time of the run. A late run still sends to its own slot. |
 | Follow inbox doc | `onFollowCreated` writes one doc with a fixed id (`follow_<hash>_<uid>`). A retry rewrites the same doc. |
 | Wall of the Day pick | `wallOfTheDay` runs at 03:30 UTC, retries 2 times, skips when today's pick exists. It skips streak-exclusive walls and walls in premium collections. |
-| Wall of the Day push | `sendWallOfTheDayBuckets` runs every 15 minutes. It sends to the topic of each UTC offset where it is 09:00 local. |
+| Wall of the Day push | `sendWallOfTheDayBuckets` runs every 15 minutes. It sends to both topic generations for each UTC offset where it is 09:00 local. |
 | Legacy topic | `wallOfTheDay` also sends to topic `wall_of_the_day` at 03:30 UTC for old clients. |
 | Streak reminder | `sendStreakReminders` runs every 15 minutes, `timeoutSeconds: 540`. It handles users in chunks of 25 with `Promise.allSettled`, in pages of 200. It writes the sent marker first and rolls it back if the push fails. |
 | Win-back | `sendWinBackPushes` runs every 15 minutes. It sends to the UTC offsets where it is 18:00 local. Steps are 7, 14, 30, and 60 days since `lastAppOpenAt`. Each step stays open for 2 days. Day 7 and 14 open the feed, day 30 opens AI, and day 60 opens Wall of the Day. The Android channel is `recommendations`. The Recommendations switch (`marketingPushes`) still gates it. A missed evening sends the next day, once. Deploy the `usersv2` index on `appOpenTimezoneOffsetMinutes` + `lastAppOpenAt` before this query, or the job fails. |
 | Last app open | A signed-in open writes `lastAppOpenAt` (server timestamp) and `appOpenTimezoneOffsetMinutes` (offset rounded to 15 minutes), at most every 15 minutes. A user with no last open is not eligible for win-back. |
-| Scoreboard | Daily counts are split across `metrics/notificationScoreboard/days/{utc date}_{00-31}`: sends, accepts, fails, taps, next-day returns, and permission results. Accepts are FCM API accepts. A personal push to the uid topic and the token counts as two. Admins see the sum of those shards for the last 14 UTC dates on the Notifications tab. |
+| Scoreboard | Daily counts are split across `metrics/notificationScoreboard/days/{utc date}_{00-31}`: sends, accepts, fails, taps, next-day returns, and permission results. Accepts are FCM API accepts. Every FCM message counts as an attempt: a personal push with both topic generations and a token counts as three. Admins see the sum of those shards for the last 14 UTC dates on the Notifications tab. |
 
 ### Wall of the Day topics
 
@@ -172,7 +184,7 @@ Cloud Function event
 
 ## Deploy order
 
-Deploy the backend before the client. The exact steps are in `docs/features/backend-deploy.md`.
+Deploy the backend before the client. The notification topic migration requires the dual-topic sender to be live before clients switch subscriptions to `_loc_v1`. The exact steps are in `docs/features/backend-deploy.md`.
 
 1. Firestore indexes.
 2. Cloud Functions (`sendWallOfTheDayBuckets` is new).
@@ -208,7 +220,7 @@ If the client ships first, new builds leave `wall_of_the_day`. The bucket topic 
 10. On a fresh install, finish onboarding to the first wallpaper step. Make sure that the OS prompt shows once.
 11. Signed out, open "Notification preferences". Make sure that Followers, Posts and Streak reminders show "Sign in to turn on" once they are off, and that Recommendations still works.
 12. Signed in, turn off Recommendations. Make sure that `usersv2/{uid}/private/session.marketingPushes` is `false`.
-13. Follow a creator. Make sure that the device joins `<prefix>_posts` and `posts_<uid>`. Unfollow and make sure that it leaves both.
+13. Follow a creator. Make sure that the device joins `<prefix>_posts_loc_v1` and `posts_<uid>_loc_v1` and leaves their legacy variants. Unfollow and make sure that it leaves all four topics.
 14. Open About, then PRIVACY and TERMS. Make sure that the web pages open in the browser, not the Not found page.
 15. Send the same personal push while the app is open. Make sure that one banner shows.
 

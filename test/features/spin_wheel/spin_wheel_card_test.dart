@@ -1,5 +1,7 @@
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_wheel_card.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,9 @@ void main() {
   Future<void> pumpCard(WidgetTester tester, SpinWheelStatus status, {List<WheelSegment>? segments}) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: kLightTheme,
         home: Scaffold(
           body: Padding(
@@ -30,16 +35,16 @@ void main() {
     await pumpCard(tester, const SpinWheelStatus(freeSpinAvailable: true, paidSpinsLeft: 5, price: 10));
 
     expect(find.text('Spin the wheel'), findsOneWidget);
-    expect(find.text('Your free spin is ready'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyFreeSpinReady(5)), findsOneWidget);
     expect(find.text('Free spin'), findsOneWidget);
-    expect(find.text('Spin'), findsNothing);
+    expect(find.text(AppLocalizationsEn().economySpin), findsNothing);
   });
 
   testWidgets('everyone else sees the price, the best prize and a Spin button', (tester) async {
     await pumpCard(tester, const SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 3, price: 10));
 
     expect(find.text('10 coins a spin. Win up to 100 coins or a cosmetic'), findsOneWidget);
-    expect(find.text('Spin'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economySpin), findsOneWidget);
     expect(find.text('Free spin'), findsNothing);
   });
 
@@ -69,6 +74,9 @@ void main() {
     int opened = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: kLightTheme,
         home: Scaffold(
           body: SpinWheelCard(
@@ -83,7 +91,7 @@ void main() {
 
     await tester.tap(find.text('Spin the wheel'));
     expect(opened, 1);
-    await tester.tap(find.text('Spin'));
+    await tester.tap(find.text(AppLocalizationsEn().economySpin));
     expect(opened, 2);
   });
 
@@ -91,6 +99,9 @@ void main() {
     int opened = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: kLightTheme,
         home: Scaffold(
           body: SpinWheelCard(
@@ -113,17 +124,20 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: kLightTheme,
         home: Scaffold(
           body: SpinWheelCard(status: status, onOpen: () {}),
         ),
       ),
     );
-    expect(find.text('Your free spin is ready'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyFreeSpinReady(5)), findsOneWidget);
 
     status.value = const SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 5, price: 10);
     await tester.pump();
-    expect(find.text('Your free spin is ready'), findsNothing);
-    expect(find.text('Spin'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyFreeSpinReady(5)), findsNothing);
+    expect(find.text(AppLocalizationsEn().economySpin), findsOneWidget);
   });
 }

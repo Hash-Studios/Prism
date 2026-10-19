@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -32,6 +33,9 @@ void main() {
       final Map<String, Map<Color, double>> contrasts = <String, Map<Color, double>>{};
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: option.theme,
           home: Builder(
             builder: (context) {

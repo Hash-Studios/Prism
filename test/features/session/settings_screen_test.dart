@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:Prism/auth/badge_model.dart' as prism;
 import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
-import 'package:Prism/core/account/account_copy.dart';
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -27,6 +26,8 @@ import 'package:Prism/features/navigation/views/widgets/personalized_feed_settin
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as app_main;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart';
@@ -36,7 +37,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mocktail/mocktail.dart';
-// ignore: depend_on_referenced_packages
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../support/coins_test_backend.dart';
@@ -159,7 +159,13 @@ void main() {
 
   testWidgets('haptics switch persists off and enabling it plays one selection', (tester) async {
     useTallSurface(tester);
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
     expect(haptics, isEmpty);
     await tester.tap(find.text('Haptic feedback'));
     await tester.pump();
@@ -170,7 +176,13 @@ void main() {
     expect(haptics, isEmpty);
 
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
     expect(switchOf(tester, 'Haptic feedback').value, isFalse);
     await tester.tap(find.text('Haptic feedback'));
     await tester.pump();
@@ -183,7 +195,13 @@ void main() {
     final pendingRestore = Completer<Object?>();
     messenger.setMockMethodCallHandler(purchasesChannel, (call) => pendingRestore.future);
     useTallSurface(tester);
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
     await tester.scrollUntilVisible(find.text('Restore purchases'), 300, scrollable: find.byType(Scrollable).first);
     await tester.ensureVisible(find.text('Restore purchases'));
     await tester.pumpAndSettle();
@@ -208,7 +226,13 @@ void main() {
       unawaited(pendingRestore.future.catchError((Object _) => null));
       messenger.setMockMethodCallHandler(purchasesChannel, (call) => pendingRestore.future);
       useTallSurface(tester);
-      await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SettingsScreen(),
+        ),
+      );
       await tester.scrollUntilVisible(find.text('Restore purchases'), 300, scrollable: find.byType(Scrollable).first);
       await tester.ensureVisible(find.text('Restore purchases'));
       await tester.pumpAndSettle();
@@ -286,7 +310,13 @@ void main() {
         ],
       );
       useTallSurface(tester);
-      await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+      await tester.pumpWidget(
+        const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SettingsScreen(),
+        ),
+      );
       await tester.scrollUntilVisible(find.text('Restore purchases'), 300, scrollable: find.byType(Scrollable).first);
       await tester.ensureVisible(find.text('Restore purchases'));
       await tester.pumpAndSettle();
@@ -330,6 +360,9 @@ void main() {
       useTallSurface(tester);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: BlocProvider<FavouriteWallsBloc>.value(value: bloc, child: const SettingsScreen()),
         ),
       );
@@ -360,7 +393,13 @@ void main() {
 
   testWidgets('personalise section lists the Android rows and no dead download quality row', (tester) async {
     useTallSurface(tester);
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
 
     expect(find.text('Personalise'), findsOneWidget);
     expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
@@ -380,7 +419,13 @@ void main() {
     final Future<int?> Function() originalVersion = iosMajorVersion;
     iosMajorVersion = () async => 16;
     addTearDown(() => iosMajorVersion = originalVersion);
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
     await tester.pump();
 
     expect(find.text('Personalise'), findsOneWidget);
@@ -397,7 +442,13 @@ void main() {
     final Future<int?> Function() originalVersion = iosMajorVersion;
     iosMajorVersion = () async => 15;
     addTearDown(() => iosMajorVersion = originalVersion);
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
     await tester.pump();
 
     expect(find.text('Personalise'), findsNothing);
@@ -410,7 +461,13 @@ void main() {
     final Future<int?> Function() originalVersion = iosMajorVersion;
     iosMajorVersion = () => version.future;
     addTearDown(() => iosMajorVersion = originalVersion);
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
     await tester.pump();
     expect(find.text('Change automatically'), findsNothing);
 
@@ -422,7 +479,13 @@ void main() {
 
   testWidgets('the default action for Set is saved from the sheet', (tester) async {
     useTallSurface(tester);
-    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SettingsScreen(),
+      ),
+    );
     final settings = getIt<SettingsLocalDataSource>();
     expect(settings.get<String>(PersistenceKeys.defaultApplyTarget, defaultValue: 'ask'), 'ask');
     expect(find.text('Ask every time'), findsOneWidget);
@@ -450,6 +513,9 @@ void main() {
     when(() => bloc.state).thenReturn(CategoryFeedState.initial());
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<CategoryFeedBloc>.value(value: bloc, child: const SettingsScreen()),
       ),
     );
@@ -463,17 +529,23 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   test('storage sizes read in B, KB, MB and GB', () {
-    expect(formatStorageBytes(512), '512 B');
-    expect(formatStorageBytes(2048), '2 KB');
-    expect(formatStorageBytes(5 * 1024 * 1024 + 512 * 1024), '5.5 MB');
-    expect(formatStorageBytes(3 * 1024 * 1024 * 1024), '3.00 GB');
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(formatStorageBytes(l10n, 512), '512 B');
+    expect(formatStorageBytes(l10n, 2048), '2 KB');
+    expect(formatStorageBytes(l10n, 5 * 1024 * 1024 + 512 * 1024), '5.5 MB');
+    expect(formatStorageBytes(l10n, 3 * 1024 * 1024 * 1024), '3.00 GB');
   });
 
   Future<void> pumpSettings(WidgetTester tester, {ThemeData? theme}) async {
     useTallSurface(tester);
     await tester.pumpWidget(
       app_main.RestartWidget(
-        child: MaterialApp(theme: theme, home: const SettingsScreen()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: theme,
+          home: const SettingsScreen(),
+        ),
       ),
     );
     await tester.pump();
@@ -494,7 +566,7 @@ void main() {
       await openDeleteDialog(tester);
 
       expect(find.textContaining('Your uploaded wallpapers will remain visible as "Deleted Account"'), findsOneWidget);
-      expect(find.text(deleteAccountReauthNote), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().accountDeleteAccountReauthNote), findsOneWidget);
       expect(find.text('You will confirm with Google or Apple next.'), findsOneWidget);
       expect(find.textContaining('setups'), findsNothing);
       expect(find.textContaining('This action cannot be undone.'), findsOneWidget);
@@ -597,7 +669,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(messages, <String>[logoutFailedMessage]);
+      expect(messages, <String>[AppLocalizationsEn().accountLogoutFailed]);
       await tester.pump(const Duration(seconds: 1));
     });
 
@@ -611,7 +683,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(messages, <String>[logoutFailedMessage]);
+      expect(messages, <String>[AppLocalizationsEn().accountLogoutFailed]);
       await tester.pump(const Duration(seconds: 1));
     });
 
@@ -1052,6 +1124,9 @@ void main() {
     useTallSurface(tester);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<CategoryFeedBloc>.value(value: bloc, child: const SettingsScreen()),
       ),
     );

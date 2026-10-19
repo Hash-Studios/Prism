@@ -3,11 +3,14 @@ import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_background.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_buttons.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/welcome_staggered_fade.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _app({required bool reduceMotion, required Widget child}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
   theme: prismDarkThemes.first.theme,
   builder: (context, app) => MediaQuery(
     data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
@@ -89,6 +92,8 @@ void main() {
     testWidgets('keeps a warm fill if the welcome wallpaper cannot decode', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: SizedBox(width: 393, height: 852, child: WelcomeArt(assetPath: 'assets/images/does_not_exist.webp')),
         ),
       );
@@ -129,6 +134,8 @@ void main() {
     testWidgets('screen readers hear the button label once', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Center(
             child: WelcomePrimaryButton(label: 'Continue with Google', onPressed: () {}),
           ),
@@ -152,6 +159,8 @@ void main() {
     testWidgets('an icon renders next to the label only when provided', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Center(
             child: WelcomePrimaryButton(label: 'Continue with Apple', icon: Icons.apple, onPressed: () {}),
           ),
@@ -162,6 +171,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Center(
             child: WelcomePrimaryButton(label: 'Continue with Google', onPressed: () {}),
           ),

@@ -15,6 +15,7 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/main.dart' as app;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -449,6 +450,9 @@ void main() {
       BlocProvider<AutoRotateBloc>.value(
         value: bloc,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Scaffold(
             body: app.RestartWidget(
               child: Builder(
@@ -555,5 +559,9 @@ Widget _listenerTree(AutoRotateBloc autoRotateBloc, SessionBloc sessionBloc, Fav
         BlocProvider<SessionBloc>.value(value: sessionBloc),
         BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
       ],
-      child: const MaterialApp(home: AutoRotateSessionListener(child: SizedBox())),
+      child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AutoRotateSessionListener(child: SizedBox()),
+      ),
     );

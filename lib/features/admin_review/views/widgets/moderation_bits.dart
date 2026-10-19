@@ -1,5 +1,6 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +16,7 @@ class ModerationFact extends StatelessWidget {
     final TextStyle caption = PrismTextStyles.caption(context);
     return Semantics(
       container: true,
-      label: '$label: $value',
+      label: context.l10n.adminFactLabel(label, value),
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 6),

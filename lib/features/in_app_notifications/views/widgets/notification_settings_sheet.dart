@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -109,6 +110,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   /// Returns whether notifications may be delivered, asking the system once if they are off.
   Future<bool> _ensurePermission() async {
+    final String permissionOffMessage = context.l10n.notifPermissionOff;
     if (_permissionGranted == true) return true;
     bool granted;
     try {
@@ -117,7 +119,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
       return true;
     }
     if (mounted) setState(() => _permissionGranted = granted);
-    if (!granted) toasts.error('Notifications are off. Turn them on in system settings first.');
+    if (!granted) toasts.error(permissionOffMessage);
     return granted;
   }
 
@@ -131,7 +133,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
           reason: AnalyticsReasonValue.notSignedIn,
         ),
       );
-      toasts.error('Sign in to change this setting.');
+      toasts.error(context.l10n.notifSignInToChange);
       return;
     }
     if (value && !await _ensurePermission()) return;
@@ -151,9 +153,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
           children: <Widget>[
             Icon(Icons.notifications_off_outlined, color: cs.onSurface),
             const SizedBox(width: PrismSpace.sm),
-            Expanded(child: Text('Notifications are off for Prism.', style: PrismTextStyles.body(context))),
+            Expanded(child: Text(context.l10n.notifPermissionOffForApp, style: PrismTextStyles.body(context))),
             PrismButton(
-              label: 'Open settings',
+              label: context.l10n.notifOpenSettings,
               variant: PrismButtonVariant.ghost,
               size: PrismButtonSize.compact,
               onPressed: () => widget.permissions.openSystemSettings(),
@@ -176,7 +178,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     return PrismSwitchRow(
       icon: icon,
       title: title,
-      subtitle: needsSignInToTurnOn ? 'Sign in to turn on' : subtitle,
+      subtitle: needsSignInToTurnOn ? context.l10n.notifSignInToTurnOn : subtitle,
       value: value,
       onChanged: needsSignInToTurnOn ? null : onChanged,
     );
@@ -185,7 +187,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
   @override
   Widget build(BuildContext context) {
     return PrismSheetBody(
-      title: 'Notification preferences',
+      title: context.l10n.notifPreferences,
       scrollable: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -195,30 +197,30 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
             children: <Widget>[
               _toggle(
                 icon: Icons.wb_sunny_rounded,
-                title: 'Wall of the Day',
-                subtitle: 'A daily wallpaper pick.',
+                title: context.l10n.notifSettingWotd,
+                subtitle: context.l10n.notifSettingWotdDescription,
                 value: _wotd,
                 onChanged: (bool value) => _change(value, () => _setWotd(value)),
               ),
               _toggle(
                 icon: Icons.auto_awesome_rounded,
-                title: 'Weekly Drops',
-                subtitle: 'Alerts when a new Drop is live and before it ends.',
+                title: context.l10n.notifSettingDrops,
+                subtitle: context.l10n.notifSettingDropsDescription,
                 value: _drops,
                 onChanged: (bool value) => _change(value, () => _setDrops(value)),
               ),
               _toggle(
                 icon: Icons.person_add_rounded,
-                title: 'Followers',
-                subtitle: 'Alerts when someone new follows you.',
+                title: context.l10n.notifSettingFollowers,
+                subtitle: context.l10n.notifSettingFollowersDescription,
                 value: _followers,
                 needsSignIn: true,
                 onChanged: (bool value) => _change(value, () => _setFollowers(value), needsSignIn: true),
               ),
               _toggle(
                 icon: Icons.photo_library_rounded,
-                title: 'Posts',
-                subtitle: 'Alerts when creators you follow share new work.',
+                title: context.l10n.notifSettingPosts,
+                subtitle: context.l10n.notifSettingPostsDescription,
                 value: _posts,
                 needsSignIn: true,
                 onChanged: _followers
@@ -227,15 +229,15 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
               ),
               _toggle(
                 icon: Icons.lightbulb_rounded,
-                title: 'Recommendations',
-                subtitle: 'Tips, news and wallpaper picks from Prism.',
+                title: context.l10n.notifSettingRecommendations,
+                subtitle: context.l10n.notifSettingRecommendationsDescription,
                 value: _recommendations,
                 onChanged: (bool value) => _change(value, () => _setRecommendations(value)),
               ),
               _toggle(
                 icon: Icons.local_fire_department_rounded,
-                title: 'Streak reminders',
-                subtitle: 'Evening heads-up around 8 PM if your login streak is about to break.',
+                title: context.l10n.notifSettingStreaks,
+                subtitle: context.l10n.notifSettingStreaksDescription,
                 value: _streakReminders,
                 needsSignIn: true,
                 onChanged: (bool value) => _change(value, () => _setStreakReminders(value), needsSignIn: true),

@@ -6,6 +6,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -46,6 +48,9 @@ void main() {
   Future<void> pumpSplash(WidgetTester tester, ThemeMode mode, ThemeData light, ThemeData dark) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: light,
         darkTheme: dark,
         themeMode: mode,
@@ -59,25 +64,28 @@ void main() {
       .color;
 
   for (final option in [...prismLightThemes, ...prismDarkThemes]) {
-    testWidgets('splash uses ${option.label} even when the system brightness differs', (tester) async {
-      final isLight = option.theme.brightness == Brightness.light;
-      final expectedBackground = _themeBackgrounds[option.id]!;
-      const accent = Color(0xFF123456);
-      final theme = option.theme.copyWith(colorScheme: option.theme.colorScheme.copyWith(primary: accent));
-      expect(theme.primaryColor, expectedBackground);
-      expect(theme.colorScheme.primary, accent);
-      tester.platformDispatcher.platformBrightnessTestValue = isLight ? Brightness.dark : Brightness.light;
-      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    testWidgets(
+      'splash uses ${prismThemeDisplayName(option, AppLocalizationsEn())} even when the system brightness differs',
+      (tester) async {
+        final isLight = option.theme.brightness == Brightness.light;
+        final expectedBackground = _themeBackgrounds[option.id]!;
+        const accent = Color(0xFF123456);
+        final theme = option.theme.copyWith(colorScheme: option.theme.colorScheme.copyWith(primary: accent));
+        expect(theme.primaryColor, expectedBackground);
+        expect(theme.colorScheme.primary, accent);
+        tester.platformDispatcher.platformBrightnessTestValue = isLight ? Brightness.dark : Brightness.light;
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
 
-      await pumpSplash(
-        tester,
-        isLight ? ThemeMode.light : ThemeMode.dark,
-        isLight ? theme : prismLightThemes.first.theme,
-        isLight ? prismDarkThemes.first.theme : theme,
-      );
+        await pumpSplash(
+          tester,
+          isLight ? ThemeMode.light : ThemeMode.dark,
+          isLight ? theme : prismLightThemes.first.theme,
+          isLight ? prismDarkThemes.first.theme : theme,
+        );
 
-      expect(splashColor(tester), expectedBackground);
-    });
+        expect(splashColor(tester), expectedBackground);
+      },
+    );
   }
 
   testWidgets('system mode updates the splash when system brightness changes', (tester) async {

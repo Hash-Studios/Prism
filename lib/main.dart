@@ -71,6 +71,7 @@ import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wotd_quick_tile_listener.dart';
 import 'package:Prism/firebase_options.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
 import 'package:Prism/notifications/notification_signals.dart';
@@ -89,6 +90,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 late LocalNotification localNotification;
@@ -157,6 +159,7 @@ Future<void> main() async {
         HttpsCallable.perfSink = (String name, int ms, bool ok) =>
             PerformanceProbe.emit(kind: 'callable', name: name, durationMs: ms, success: ok);
       }
+      await initializeDateFormatting();
       unawaited(
         app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
           logger.w(
@@ -657,7 +660,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   Future<void> _configureLocalNotificationChannels() async {
     try {
-      await createNotificationChannels(localNotification.flutterLocalNotificationsPlugin);
+      final AppLocalizations messages = await loadAppLocalizations(PlatformDispatcher.instance.locale);
+      await createNotificationChannels(localNotification.flutterLocalNotificationsPlugin, messages);
     } catch (e, st) {
       logger.w('Failed to configure local notification channels.', error: e, stackTrace: st);
     }
@@ -705,7 +709,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     if (!firebaseReady) return;
 
     // Foreground messages and taps on background pushes. It calls the callbacks set in initState.
-    localNotification.listenForPushMessages();
+    localNotification.listenForPushMessages(
+      localizations: () => loadAppLocalizations(PlatformDispatcher.instance.locale),
+    );
 
     // Launched from terminated state by tapping a notification.
     FirebaseMessaging.instance
@@ -890,6 +896,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
               listenable: DebugFlags.instance,
               builder: (context, _) => MaterialApp.router(
                 debugShowCheckedModeBanner: false,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
                 builder: (context, child) {
                   app_state.notchSize = MediaQuery.paddingOf(context).top;
                   final ThemeData theme = Theme.of(context);

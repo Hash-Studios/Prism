@@ -2,6 +2,7 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_coin_gate_port.dart';
@@ -437,7 +438,7 @@ void main() {
     port.awardUnknownOutcome = 'award_u_r';
     expect(await CoinGate(port).run(spec()), CoinGateResult.cancelled);
     expect(port.errors, isEmpty);
-    expect(port.infos, <String>[rewardPendingMessage]);
+    expect(port.infos, <String>[rewardPendingMessage(AppLocalizationsEn())]);
   });
 
   test('the spend carries the ledger label and the download marker link', () async {

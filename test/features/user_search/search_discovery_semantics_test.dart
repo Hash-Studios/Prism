@@ -1,6 +1,7 @@
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -42,7 +43,13 @@ void main() {
     final router = _DiscoveryRouter();
     final SemanticsHandle semantics = tester.ensureSemantics();
     try {
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
       await router.navigatePath('/');
       await tester.pumpAndSettle();
 
@@ -64,7 +71,13 @@ void main() {
     final router = _DiscoveryRouter();
     final SemanticsHandle semantics = tester.ensureSemantics();
     try {
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
       await router.navigatePath('/');
       await tester.pumpAndSettle();
 

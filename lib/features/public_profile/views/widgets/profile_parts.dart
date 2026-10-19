@@ -48,7 +48,7 @@ class ProfileSkeleton extends StatelessWidget {
             left: PrismSpace.xs,
             child: PrismIconButton(
               icon: Icons.arrow_back_rounded,
-              tooltip: 'Back',
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               onImage: true,
               onPressed: () => context.router.maybePop(),
             ),

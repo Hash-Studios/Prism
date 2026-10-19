@@ -6,9 +6,10 @@ import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_card_renderer.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:share_plus/share_plus.dart';
@@ -23,19 +24,31 @@ void main() {
 
   Future<void> pumpContext(WidgetTester tester) async {
     await tester.pumpWidget(
-      Builder(
-        builder: (BuildContext c) {
-          context = c;
-          return const SizedBox();
-        },
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (BuildContext c) {
+            context = c;
+            return const SizedBox();
+          },
+        ),
       ),
     );
   }
 
-  Future<File> okRender({required String imageUrl, required String link, String? contextLine}) async =>
-      File('card.png');
-  Future<File> failRender({required String imageUrl, required String link, String? contextLine}) async =>
-      throw StateError('no image');
+  Future<File> okRender({
+    required String imageUrl,
+    required String link,
+    required String brandName,
+    String? contextLine,
+  }) async => File('card.png');
+  Future<File> failRender({
+    required String imageUrl,
+    required String link,
+    required String brandName,
+    String? contextLine,
+  }) => Future<File>.error(StateError('no image'));
 
   testWidgets('an unavailable original shares only the link without an image decode', (tester) async {
     await pumpContext(tester);
@@ -43,20 +56,22 @@ void main() {
       final OfflineAssetFixture assets = await OfflineAssetFixture.create(cacheMissByDefault: true);
       assets.install();
       const String source = 'https://example.test/not-saved.jpg';
-      when(() => assets.cacheManager.getSingleFile(source)).thenAnswer((_) async {
-        throw const OfflineAssetUnavailableException(source);
-      });
+      when(
+        () => assets.cacheManager.getSingleFile(source),
+      ).thenAnswer((_) => Future.error(const OfflineAssetUnavailableException(source)));
       var textCalls = 0;
       try {
         final ShareCardResult result = await shareWallpaperCard(
           context,
           imageUrl: source,
           link: 'https://prismwalls.com/share?id=not-saved',
-          render: ({required String imageUrl, required String link, String? contextLine}) => renderShareCardFile(
-            imageUrl: imageUrl,
-            link: link,
-            resolveImage: (_) async => fail('An unavailable original must not enter the image decoder.'),
-          ),
+          render: ({required String imageUrl, required String link, required String brandName, String? contextLine}) =>
+              renderShareCardFile(
+                imageUrl: imageUrl,
+                link: link,
+                brandName: brandName,
+                resolveImage: (_) async => fail('An unavailable original must not enter the image decoder.'),
+              ),
           sendCard: ({required String text, required File file, required BuildContext context}) async =>
               fail('An unavailable original must not be sent as a card.'),
           sendText: ({required String text, required BuildContext context}) async {
@@ -76,7 +91,12 @@ void main() {
   testWidgets('the card never gets a context line that holds an email address', (tester) async {
     await pumpContext(tester);
     final List<String?> lines = <String?>[];
-    Future<File> recordingRender({required String imageUrl, required String link, String? contextLine}) async {
+    Future<File> recordingRender({
+      required String imageUrl,
+      required String link,
+      required String brandName,
+      String? contextLine,
+    }) async {
       lines.add(contextLine);
       return File('card.png');
     }
@@ -212,7 +232,9 @@ void main() {
         context,
         imageUrl: 'u',
         link: 'https://x.test/a',
-        render: ({required String imageUrl, required String link, String? contextLine}) async => card,
+        render:
+            ({required String imageUrl, required String link, required String brandName, String? contextLine}) async =>
+                card,
         sendCard: ({required String text, required File file, required BuildContext context}) async {
           existedDuringSend = await file.exists();
           return _shared;
@@ -235,7 +257,9 @@ void main() {
         context,
         imageUrl: 'u',
         link: 'https://x.test/a',
-        render: ({required String imageUrl, required String link, String? contextLine}) async => card,
+        render:
+            ({required String imageUrl, required String link, required String brandName, String? contextLine}) async =>
+                card,
         sendCard: ({required String text, required File file, required BuildContext context}) async =>
             throw StateError('share failed'),
         sendText: ({required String text, required BuildContext context}) async => _shared,
@@ -248,21 +272,32 @@ void main() {
 
   testWidgets('deletes the rendered file when the context unmounts before sharing', (tester) async {
     await pumpContext(tester);
-    await tester.pumpWidget(const SizedBox());
+    final Directory dir = (await tester.runAsync(() => Directory.systemTemp.createTemp('prism_share_test_')))!;
+    final File card = File('${dir.path}/card.png')..writeAsStringSync('image');
+    final Completer<File> rendered = Completer<File>();
+    final Completer<void> renderStarted = Completer<void>();
+    var sent = false;
+    late Future<ShareCardResult> sharing;
     await tester.runAsync(() async {
-      final Directory dir = await Directory.systemTemp.createTemp('prism_share_test_');
-      final File card = File('${dir.path}/card.png')..writeAsStringSync('image');
-      var sent = false;
-      await shareWallpaperCard(
+      sharing = shareWallpaperCard(
         context,
         imageUrl: 'u',
         link: 'https://x.test/a',
-        render: ({required String imageUrl, required String link, String? contextLine}) async => card,
+        render: ({required String imageUrl, required String link, required String brandName, String? contextLine}) {
+          renderStarted.complete();
+          return rendered.future;
+        },
         sendCard: ({required String text, required File file, required BuildContext context}) async {
           sent = true;
           return _shared;
         },
       );
+    });
+    await renderStarted.future;
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(() async {
+      rendered.complete(card);
+      expect(await sharing, (format: ShareFormatValue.text, dismissed: false));
       expect(sent, isFalse);
       expect(await card.exists(), isFalse);
       await dir.delete();
@@ -281,7 +316,7 @@ void main() {
             boundary = context.findAncestorRenderObjectOfType<RenderRepaintBoundary>();
             return _DisposeProbe(
               onDispose: () => disposed = true,
-              child: ShareCard(wallpaper: wall, logo: logo, link: 'https://prismwalls.com'),
+              child: ShareCard(wallpaper: wall, logo: logo, link: 'https://prismwalls.com', brandName: 'Prism'),
             );
           },
         ),
@@ -308,6 +343,7 @@ void main() {
       final File file = await renderShareCardFile(
         imageUrl: 'unused',
         link: 'https://prismwalls.com',
+        brandName: 'Prism',
         wallpaperProvider: MemoryImage(panoramaBytes),
         logoProvider: MemoryImage(logoBytes),
         resolveImage: (ImageProvider provider) async {
@@ -333,6 +369,7 @@ void main() {
         renderShareCardFile(
           imageUrl: 'unused',
           link: 'https://prismwalls.com',
+          brandName: 'Prism',
           wallpaperProvider: const AssetImage('provided-wallpaper'),
           resolveImage: (ImageProvider provider) async {
             resolutions++;
@@ -352,6 +389,7 @@ void main() {
     final Future<File> render = renderShareCardFile(
       imageUrl: 'unused',
       link: 'https://prismwalls.com',
+      brandName: 'Prism',
       wallpaperProvider: provider,
     );
     final Future<void> expectation = expectLater(render, throwsA(isA<TimeoutException>()));
@@ -368,7 +406,7 @@ void main() {
       final ui.Image wall = await createTestImage(width: 54, height: 96);
       final ui.Image logo = await createTestImage(width: 10, height: 10);
       final ByteData? bytes = await paintShareCard(
-        ShareCard(wallpaper: wall, logo: logo, link: 'https://prismwalls.com', contextLine: 'by A'),
+        ShareCard(wallpaper: wall, logo: logo, link: 'https://prismwalls.com', brandName: 'Prism', contextLine: 'by A'),
       );
       expect(bytes, isNotNull);
       final ui.Codec codec = await ui.instantiateImageCodec(bytes!.buffer.asUint8List());

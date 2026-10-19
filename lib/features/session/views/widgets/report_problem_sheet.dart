@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -39,14 +40,19 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
   bool _sharing = false;
 
   Future<void> _share(String report) async {
+    final AppLocalizations l10n = context.l10n;
     setState(() => _sharing = true);
     String result = 'shared';
     try {
-      await widget.service.share(report);
+      await widget.service.share(
+        report,
+        subject: l10n.accountProblemReportShareSubject,
+        shareText: l10n.accountProblemReportSharePrompt,
+      );
     } catch (error, stackTrace) {
       result = 'failed';
       logger.w('Could not share the problem report.', error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't share the report. Try again.");
+      toasts.error(l10n.accountCouldNotShareReport);
     }
     unawaited(analytics.track(ReportProblemSharedEvent(result: result)));
     if (!mounted) return;
@@ -63,20 +69,16 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('Report a problem', style: PrismTextStyles.cardTitle(context)),
+          Text(context.l10n.accountReportAProblem, style: PrismTextStyles.cardTitle(context)),
           const SizedBox(height: 8),
-          Text(
-            'This report has your app version, device and recent logs. It has no email address or sign-in tokens. '
-            'Read it, then share it with $supportEmail.',
-            style: theme.textTheme.bodySmall,
-          ),
+          Text(context.l10n.accountReportPreviewNotice(supportEmail), style: theme.textTheme.bodySmall),
           const SizedBox(height: 12),
           Flexible(
             child: FutureBuilder<String>(
               future: _report,
               builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
                 if (snapshot.hasError) {
-                  return Text("Couldn't build the report. Try again.", style: theme.textTheme.bodyMedium);
+                  return Text(context.l10n.accountCouldNotBuildReport, style: theme.textTheme.bodyMedium);
                 }
                 final String? report = snapshot.data;
                 if (report == null) {
@@ -111,13 +113,16 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
                     Row(
                       children: <Widget>[
                         Expanded(
-                          child: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: Text(context.l10n.accountCancel),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: FilledButton(
                             onPressed: _sharing ? null : () => unawaited(_share(report)),
-                            child: const Text('Share'),
+                            child: Text(context.l10n.accountShare),
                           ),
                         ),
                       ],

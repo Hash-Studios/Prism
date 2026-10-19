@@ -2,6 +2,7 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// A modal bottom sheet with the app's shared shape, colour and open and close animation.
@@ -147,10 +148,11 @@ Future<bool> showPrismConfirm(
   required String title,
   required String confirmLabel,
   String? message,
-  String cancelLabel = 'Cancel',
+  String? cancelLabel,
   bool destructive = false,
   GlintMood? mood,
 }) async {
+  final String resolvedCancelLabel = cancelLabel ?? context.l10n.coreCancel;
   final bool? ok = await showPrismSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -167,7 +169,7 @@ Future<bool> showPrismConfirm(
           onPressed: () => Navigator.of(sheetContext).pop(true),
         ),
         PrismButton(
-          label: cancelLabel,
+          label: resolvedCancelLabel,
           expand: true,
           variant: PrismButtonVariant.ghost,
           onPressed: () => Navigator.of(sheetContext).pop(false),

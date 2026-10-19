@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -14,6 +14,7 @@ import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -82,7 +83,13 @@ class _UploadRouteHost extends StatelessWidget {
 /// Opens [route] from a host page inside a real [AppRouter], so a successful submit can push [ReviewRoute].
 Future<void> pumpRoutedUpload(WidgetTester tester, UploadWallRoute Function() route) async {
   final router = _TestAppRouter(route);
-  await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+  await tester.pumpWidget(
+    MaterialApp.router(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router.config(),
+    ),
+  );
   await router.navigatePath('/');
   await tester.pumpAndSettle();
   await tester.tap(find.text('Open uploader'));
@@ -155,6 +162,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -261,6 +271,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -356,6 +369,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -506,6 +522,9 @@ void main() {
     for (final theme in themes) {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: theme,
           themeAnimationDuration: Duration.zero,
           home: UploadWallScreen(image: image, prepareImageForTesting: () async {}),
@@ -533,6 +552,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -573,6 +595,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -615,6 +640,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -671,6 +699,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -709,6 +740,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -735,7 +769,13 @@ void main() {
     await tester.pump();
     expect(uploadCalls, 2);
 
-    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox(),
+      ),
+    );
     thumbnailUpload.completeError(StateError('request failed'));
     await tester.pump();
     await tester.pump();
@@ -751,6 +791,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -771,7 +814,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Upload did not finish'), findsOneWidget);
 
-    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox(),
+      ),
+    );
     await tester.pump();
     expect(deletedFiles, ['pixel.png']);
     expect(tester.takeException(), isNull);
@@ -785,6 +834,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -936,6 +988,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -982,6 +1037,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -1033,6 +1091,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -1086,6 +1147,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -1147,6 +1211,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(image: image, prepareImageForTesting: () async {}),
       ),
     );
@@ -1174,6 +1241,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -1211,6 +1281,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {
@@ -1298,6 +1371,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -1326,6 +1402,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           prepareImageForTesting: () async {},
@@ -1353,6 +1432,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: UploadWallScreen(
           image: image,
           uploadFileForTesting: ({required isThumbnail}) async {

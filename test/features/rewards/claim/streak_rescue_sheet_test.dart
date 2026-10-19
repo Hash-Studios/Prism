@@ -4,6 +4,8 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_sheet.dart';
 import 'package:Prism/features/streak/data/streak_rescue_service.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -66,6 +68,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -94,7 +99,7 @@ void main() {
 
     expect(find.text('Restore your 9-day streak · 100 coins'), findsOneWidget);
     expect(find.text('Restore'), findsOneWidget);
-    expect(find.text('OK'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().actionDone), findsOneWidget);
     expect(find.text('Get a freeze for next time'), findsOneWidget);
     expect(mood(tester), GlintMood.sad);
     expect(analytics.events.whereType<StreakRescueOfferedEvent>().single.streakCount, 9);

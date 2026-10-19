@@ -5,6 +5,8 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -76,6 +78,9 @@ class _FakeTabsRouter extends ChangeNotifier implements TabsRouter {
 }
 
 Widget _host(_FakeTabsRouter router, Widget child, {bool reduceMotion = false}) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   builder: (context, app) => MediaQuery(
     data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
     child: app!,
@@ -190,7 +195,7 @@ void main() {
         reduceMotion: true,
       ),
     );
-    final Finder toTop = find.bySemanticsLabel('Scroll to top');
+    final Finder toTop = find.bySemanticsLabel(AppLocalizationsEn().navigationScrollToTop);
     expect(toTop, findsNothing);
 
     await tester.drag(find.byType(ListView), const Offset(0, -600));
@@ -206,7 +211,13 @@ void main() {
 
   testWidgets('tapping the active tab again pops that tab back to its root', (tester) async {
     final router = _TestRouter();
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Search'));
@@ -228,7 +239,13 @@ void main() {
 
   testWidgets('tapping another tab switches to it', (tester) async {
     final router = _TestRouter();
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Collections'));
@@ -238,19 +255,31 @@ void main() {
   });
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
-    testWidgets('${option.label}: active and inactive icons are readable with the real theme', (tester) async {
-      final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
-      await tester.pumpWidget(MaterialApp.router(theme: theme, routerConfig: _TestRouter().config()));
-      await tester.pumpAndSettle();
+    testWidgets(
+      '${prismThemeDisplayName(option, AppLocalizationsEn())}: active and inactive icons are readable with the real theme',
+      (tester) async {
+        final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
+        await tester.pumpWidget(
+          MaterialApp.router(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: theme,
+            routerConfig: _TestRouter().config(),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      final Color pill = theme.primaryColor;
-      final Icon active = tester.widget<Icon>(find.descendant(of: find.byTooltip('Home'), matching: find.byType(Icon)));
-      final Icon inactive = tester.widget<Icon>(
-        find.descendant(of: find.byTooltip('Search'), matching: find.byType(Icon)),
-      );
+        final Color pill = theme.primaryColor;
+        final Icon active = tester.widget<Icon>(
+          find.descendant(of: find.byTooltip('Home'), matching: find.byType(Icon)),
+        );
+        final Icon inactive = tester.widget<Icon>(
+          find.descendant(of: find.byTooltip('Search'), matching: find.byType(Icon)),
+        );
 
-      expect(contrastRatio(active.color!, pill), greaterThanOrEqualTo(4.5));
-      expect(contrastRatio(Color.alphaBlend(inactive.color!, pill), pill), greaterThanOrEqualTo(3));
-    });
+        expect(contrastRatio(active.color!, pill), greaterThanOrEqualTo(4.5));
+        expect(contrastRatio(Color.alphaBlend(inactive.color!, pill), pill), greaterThanOrEqualTo(3));
+      },
+    );
   }
 }

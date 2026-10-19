@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Debug tab: every [GlintMood], moving or as its still pose, on a light or dark card.
@@ -13,17 +14,30 @@ class _MascotGalleryPageState extends State<MascotGalleryPage> {
   bool _still = false;
   bool _darkCard = true;
 
-  static const Map<GlintMood, String> _useCase = <GlintMood, String>{
-    GlintMood.calm: 'Empty list',
-    GlintMood.happy: 'Wallpaper set or saved',
-    GlintMood.celebrate: 'Streak, coins, purchase',
-    GlintMood.love: 'Favourite added',
-    GlintMood.surprised: 'Wall of the Day, notification',
-    GlintMood.curious: 'Loading, search',
-    GlintMood.proud: 'Streak kept today',
-    GlintMood.worried: 'Offline, streak at risk',
-    GlintMood.sad: 'Error, streak lost',
-    GlintMood.sleepy: 'Nothing new',
+  String _useCase(GlintMood mood, AppLocalizations l10n) => switch (mood) {
+    GlintMood.calm => l10n.debugEmptyList,
+    GlintMood.happy => l10n.debugWallpaperSetSaved,
+    GlintMood.celebrate => l10n.debugStreakCoinsPurchase,
+    GlintMood.love => l10n.debugFavouriteAdded,
+    GlintMood.surprised => l10n.debugWotdNotification,
+    GlintMood.curious => l10n.debugLoadingSearch,
+    GlintMood.proud => l10n.debugStreakKeptToday,
+    GlintMood.worried => l10n.debugOfflineStreakRisk,
+    GlintMood.sad => l10n.debugErrorStreakLost,
+    GlintMood.sleepy => l10n.debugNothingNew,
+  };
+
+  String _moodLabel(GlintMood mood, AppLocalizations l10n) => switch (mood) {
+    GlintMood.calm => l10n.debugMoodCalm,
+    GlintMood.happy => l10n.debugMoodHappy,
+    GlintMood.celebrate => l10n.debugMoodCelebrate,
+    GlintMood.love => l10n.debugMoodLove,
+    GlintMood.surprised => l10n.debugMoodSurprised,
+    GlintMood.curious => l10n.debugMoodCurious,
+    GlintMood.proud => l10n.debugMoodProud,
+    GlintMood.worried => l10n.debugMoodWorried,
+    GlintMood.sad => l10n.debugMoodSad,
+    GlintMood.sleepy => l10n.debugMoodSleepy,
   };
 
   @override
@@ -50,8 +64,8 @@ class _MascotGalleryPageState extends State<MascotGalleryPage> {
                     PrismGroup(
                       children: [
                         PrismSwitchRow(
-                          title: 'Still poses',
-                          subtitle: 'Shows the reduce-motion pose of each mood',
+                          title: context.l10n.debugStillPoses,
+                          subtitle: context.l10n.debugReduceMotionPose,
                           value: _still,
                           onChanged: (bool v) => setState(() => _still = v),
                         ),
@@ -61,7 +75,7 @@ class _MascotGalleryPageState extends State<MascotGalleryPage> {
                     PrismSegmented<bool>(
                       values: const <bool>[false, true],
                       selected: _darkCard,
-                      labelOf: (bool dark) => dark ? 'Dark card' : 'Light card',
+                      labelOf: (bool dark) => dark ? context.l10n.debugDarkCard : context.l10n.debugLightCard,
                       onChanged: (bool v) => setState(() => _darkCard = v),
                     ),
                   ],
@@ -99,9 +113,12 @@ class _MascotGalleryPageState extends State<MascotGalleryPage> {
                               ),
                             ),
                             const SizedBox(height: PrismSpace.xxs),
-                            Text(mood.name, style: PrismTextStyles.rowTitle(context).copyWith(color: label)),
                             Text(
-                              _useCase[mood] ?? '',
+                              _moodLabel(mood, context.l10n),
+                              style: PrismTextStyles.rowTitle(context).copyWith(color: label),
+                            ),
+                            Text(
+                              _useCase(mood, context.l10n),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,

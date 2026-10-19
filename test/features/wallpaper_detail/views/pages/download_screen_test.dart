@@ -12,6 +12,7 @@ import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -66,7 +67,13 @@ void main() {
   });
 
   Future<void> pumpScreen(WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(home: DownloadScreen()));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: DownloadScreen(),
+      ),
+    );
     await tester.pump();
     await tester.pump();
   }
@@ -324,7 +331,14 @@ void main() {
       colorScheme: const ColorScheme.dark(onSurfaceVariant: Colors.orange),
       hintColor: Colors.purple,
     );
-    await tester.pumpWidget(MaterialApp(theme: theme, home: DownloadScreen()));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: theme,
+        home: DownloadScreen(),
+      ),
+    );
     await tester.pump();
     await tester.pump();
 

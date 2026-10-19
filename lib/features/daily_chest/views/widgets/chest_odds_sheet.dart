@@ -4,6 +4,7 @@ import 'package:Prism/features/daily_chest/domain/chest_odds.dart';
 import 'package:Prism/features/daily_chest/domain/chest_tiers.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/features/spin_wheel/spin_wheel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Lists every slot of the chest with its odds in percent, grouped by tier.
@@ -14,11 +15,11 @@ Future<void> showChestOdds(BuildContext context, List<WheelSegment> slots) {
     useSafeArea: true,
     isScrollControlled: true,
     builder: (BuildContext sheetContext) => PrismSheetBody(
-      title: 'The odds',
-      message: 'Every chest pays something.',
+      title: context.l10n.economyOddsTitle,
+      message: context.l10n.economyEveryChestPays,
       actions: <Widget>[
         PrismButton(
-          label: 'Close',
+          label: context.l10n.actionClose,
           expand: true,
           variant: PrismButtonVariant.ghost,
           onPressed: () => Navigator.of(sheetContext).pop(),
@@ -36,9 +37,9 @@ Future<void> showChestOdds(BuildContext context, List<WheelSegment> slots) {
                 for (final WheelOdds o in group.rows)
                   PrismRow(
                     leading: prizeIcon(o.prize),
-                    title: prizeTitle(o.prize),
-                    subtitle: prizeNote(o.prize),
-                    value: oddsLabel(o.percent),
+                    title: prizeTitle(o.prize, context.l10n),
+                    subtitle: prizeNote(o.prize, context.l10n),
+                    value: oddsLabel(o.percent, context.l10n),
                   ),
               ],
             ),
@@ -58,7 +59,10 @@ class _TierHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       header: true,
-      label: '${group.tier.label}, ${oddsLabel(group.percent)}',
+      label: context.l10n.economyOddsTierSemantics(
+        group.tier.label(context.l10n),
+        oddsLabel(group.percent, context.l10n),
+      ),
       excludeSemantics: true,
       child: Row(
         children: <Widget>[
@@ -67,8 +71,8 @@ class _TierHeader extends StatelessWidget {
             child: const SizedBox.square(dimension: 10),
           ),
           const SizedBox(width: PrismSpace.xs),
-          Expanded(child: Text(group.tier.label, style: PrismTextStyles.rowTitle(context))),
-          Text(oddsLabel(group.percent), style: PrismTextStyles.caption(context)),
+          Expanded(child: Text(group.tier.label(context.l10n), style: PrismTextStyles.rowTitle(context))),
+          Text(oddsLabel(group.percent, context.l10n), style: PrismTextStyles.caption(context)),
         ],
       ),
     );

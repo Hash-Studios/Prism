@@ -5,6 +5,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -28,6 +29,7 @@ const String _changelogCacheKey = 'remote_changelog_markdown_cache';
 
 /// Opens the "What's new" sheet. [func] runs when the sheet closes.
 void showChangelog(BuildContext context, [VoidCallback? func]) {
+  final AppLocalizations l10n = context.l10n;
   showPrismSheet<void>(
     context: context,
     useRootNavigator: true,
@@ -35,12 +37,12 @@ void showChangelog(BuildContext context, [VoidCallback? func]) {
     builder: (sheetContext) => ConstrainedBox(
       constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85),
       child: PrismSheetBody(
-        title: "What's new",
-        message: 'You are on version $currentAppVersion.',
+        title: l10n.corePopupWhatsNew,
+        message: l10n.corePopupAppVersion(currentAppVersion),
         scrollable: true,
         actions: <Widget>[
           PrismButton(
-            label: 'See the full changelog',
+            label: l10n.coreSeeFullChangelog,
             variant: PrismButtonVariant.ghost,
             expand: true,
             onPressed: () => openPrismLink(sheetContext, 'https://bit.ly/prismchanges'),
@@ -177,9 +179,9 @@ class _ChangelogListState extends State<_ChangelogList> {
           ? SizedBox(height: 220, child: PrismSkeleton.rows(rows: 4, avatar: false, padding: EdgeInsets.zero))
           : GlintState(
               kind: GlintStateKind.error,
-              title: 'Could not load the changelog',
-              body: 'Check your connection and try again.',
-              actionLabel: 'Try again',
+              title: context.l10n.coreCouldNotLoadChangelog,
+              body: context.l10n.accountCheckConnectionTryAgain,
+              actionLabel: context.l10n.coreRetry,
               onAction: () => unawaited(_loadRemoteChangelog()),
               padding: const EdgeInsets.symmetric(vertical: PrismSpace.md),
             );
@@ -214,7 +216,7 @@ class _ChangeVersion extends StatelessWidget {
         Flexible(child: Text(number, style: PrismTextStyles.cardTitle(context))),
         if (isLatest) ...<Widget>[
           const SizedBox(width: PrismSpace.xs),
-          const PrismTag(label: 'Latest', tone: PrismTone.accent),
+          PrismTag(label: context.l10n.coreChangelogLatest, tone: PrismTone.accent),
         ],
       ],
     );

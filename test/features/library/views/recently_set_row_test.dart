@@ -1,5 +1,6 @@
 import 'package:Prism/features/library/views/widgets/recently_set_row.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,6 +16,9 @@ AppliedWallpaper _item(String id, {String? fullUrl, DateTime? at}) => AppliedWal
 void main() {
   Future<void> pumpRow(WidgetTester tester, List<AppliedWallpaper> items) => tester.pumpWidget(
     MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: Scaffold(body: RecentlySetRow(items: items)),
     ),
   );

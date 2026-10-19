@@ -18,6 +18,8 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -144,6 +146,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(
             _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
@@ -181,6 +186,9 @@ void main() {
     String? sharedImageUrl;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(
             _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
@@ -253,6 +261,9 @@ void main() {
     var shareCalls = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(
             _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
@@ -308,6 +319,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(
             _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
@@ -348,6 +362,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
           shareCard: (_, {required imageUrl, required link, contextLine}) async {
@@ -394,6 +411,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
           shareCard: (_, {required imageUrl, required link, contextLine}) async {
@@ -432,6 +452,9 @@ void main() {
     final Completer<ShareCardResult> share = Completer<ShareCardResult>();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
           shareCard: (_, {required imageUrl, required link, contextLine}) => share.future,
@@ -443,7 +466,13 @@ void main() {
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     share.complete((format: ShareFormatValue.card, dismissed: false));
     await tester.pump();
 
@@ -500,6 +529,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(
             _record(),
@@ -514,7 +546,13 @@ void main() {
     );
     await tester.pump();
     expect(historyRequested, isTrue);
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     history.complete(<AiGenerationRecord>[_record()]);
     await tester.pump();
 
@@ -549,15 +587,27 @@ void main() {
       app_state.prismUser = app_constants.createGuestPrismUser();
     });
 
-    await tester.pumpWidget(MaterialApp(home: AiWallpaperTabPage(repository: repository)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: repository),
+      ),
+    );
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('Submit wallpaper for community review'), findsOneWidget);
+    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsOneWidget);
 
-    final submitButton = find.bySemanticsLabel('Submit wallpaper for community review');
+    final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     metadata.complete(_emptyMetadata);
     await tester.pump();
 
@@ -586,10 +636,14 @@ void main() {
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
     await tester.pumpWidget(
-      MaterialApp(home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record(), metadata))),
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record(), metadata)),
+      ),
     );
     await tester.pumpAndSettle();
-    final submitButton = find.bySemanticsLabel('Submit wallpaper for community review');
+    final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
     await tester.pump();
@@ -627,6 +681,9 @@ void main() {
     var submissions = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: repository,
           submitForTesting: () async {
@@ -637,11 +694,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final submitButton = find.bySemanticsLabel('Submit wallpaper for community review');
+    final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
     await tester.pumpAndSettle();
 
     expect(submissions, 1);
@@ -649,7 +706,7 @@ void main() {
     await tester.pumpAndSettle();
     await refresh;
 
-    expect(find.bySemanticsLabel('Submit wallpaper for community review'), findsNothing);
+    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsNothing);
     expect(submissions, 1);
     expect(toastCalls, isNotEmpty);
   });
@@ -677,6 +734,9 @@ void main() {
     var submissions = 0;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(_record(), metadata),
           submitForTesting: () async {
@@ -689,18 +749,18 @@ void main() {
     await tester.pumpAndSettle();
 
     Future<void> submitOnce() async {
-      final button = find.bySemanticsLabel('Submit wallpaper for community review');
+      final button = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
       await tester.ensureVisible(button);
       await tester.tap(button);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Submit for review'));
+      await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
       await tester.pumpAndSettle();
     }
 
     await submitOnce();
-    expect(find.bySemanticsLabel('Submit wallpaper for community review'), findsOneWidget);
+    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsOneWidget);
     await submitOnce();
-    expect(find.bySemanticsLabel('Submit wallpaper for community review'), findsNothing);
+    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsNothing);
     expect(find.textContaining('Submission status is unconfirmed'), findsOneWidget);
     expect(submissions, 2);
     expect(toastCalls, isNotEmpty);
@@ -725,6 +785,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(_record(), metadata),
           submitForTesting: () => submission.future,
@@ -732,11 +795,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final submitButton = find.bySemanticsLabel('Submit wallpaper for community review');
+    final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
     await tester.pump();
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-2'
@@ -744,7 +807,7 @@ void main() {
     submission.complete(WallSubmissionResult.submitted);
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('Submit wallpaper for community review'), findsNothing);
+    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsNothing);
     expect(analytics.events.whereType<AiSubmitStartedEvent>(), hasLength(1));
     expect(analytics.events.whereType<AiSubmitSuccessEvent>(), hasLength(1));
   });
@@ -768,17 +831,26 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(repository: repository, submitForTesting: () => submission.future),
       ),
     );
     await tester.pumpAndSettle();
-    final submitButton = find.bySemanticsLabel('Submit wallpaper for community review');
+    final submitButton = find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview);
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text(AppLocalizationsEn().economyAiSubmitForReview));
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     submission.complete(WallSubmissionResult.submitted);
     await tester.pump();
 

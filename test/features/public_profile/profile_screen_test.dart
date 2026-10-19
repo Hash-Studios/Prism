@@ -17,6 +17,8 @@ import 'package:Prism/features/public_profile/domain/repositories/public_profile
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -141,7 +143,13 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(MaterialApp(home: ProfileScreen(profileIdentifier: identifier)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ProfileScreen(profileIdentifier: identifier),
+      ),
+    );
     // Glint and skeletons loop, so pump a bounded time instead of settling.
     await tester.pump(const Duration(milliseconds: 400));
   }
@@ -186,7 +194,13 @@ void main() {
       tester.view.physicalSize = const Size(800, 2400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router.config(),
+        ),
+      );
       await router.navigatePath('/');
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -253,7 +267,13 @@ void main() {
       bio: 'Hello',
       links: <String, String>{'github': 'https://github.com/a', 'twitter': 'https://twitter.com/a'},
     )..name = 'Me Myself';
-    await tester.pumpWidget(const MaterialApp(home: ProfileScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ProfileScreen(),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(tester.takeException(), isNull);
@@ -283,7 +303,13 @@ void main() {
       },
     )..name = name;
 
-    await tester.pumpWidget(const MaterialApp(home: ProfileScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ProfileScreen(),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(tester.takeException(), isNull);
@@ -332,7 +358,13 @@ void main() {
       initialState: PublicProfileState.initial().copyWith(email: 'ana@example.com', status: LoadStatus.success),
     );
 
-    await tester.pumpWidget(const MaterialApp(home: ProfileScreen(profileIdentifier: 'ana@example.com')));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ProfileScreen(profileIdentifier: 'ana@example.com'),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 400));
     repository.profiles.add(longProfile);
     await tester.pump(const Duration(milliseconds: 400));
@@ -513,9 +545,10 @@ void main() {
       await pumpScreen(tester);
 
       expect(find.byType(RankProgressCard), findsOneWidget);
-      expect(find.text('1\u00A0240 lifetime XP'), findsOneWidget);
-      expect(find.text('760 XP to Gold'), findsOneWidget);
-      expect(find.text('Next reward: Gold frame'), findsOneWidget);
+      final AppLocalizationsEn l10n = AppLocalizationsEn();
+      expect(find.text(l10n.economyLifetimeXp('1,240')), findsOneWidget);
+      expect(find.text(l10n.economyXpToRank('760', l10n.economyRankGold)), findsOneWidget);
+      expect(find.text(l10n.economyNextReward('Gold frame')), findsOneWidget);
       expect(find.byType(RankInfoChip), findsNothing);
     });
 

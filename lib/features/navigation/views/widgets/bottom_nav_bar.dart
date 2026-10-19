@@ -1,5 +1,6 @@
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_fab.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart' as floating;
@@ -25,7 +26,7 @@ class BottomBar extends StatelessWidget {
         iconWidth: 32,
         iconHeight: 32,
       ),
-      iconTooltip: 'Scroll to top',
+      iconTooltip: context.l10n.navigationScrollToTop,
       icon: (width, height) => Icon(JamIcons.arrow_up, color: theme.colorScheme.secondary, size: 16),
       body: child ?? const SizedBox.shrink(),
       child: const Align(

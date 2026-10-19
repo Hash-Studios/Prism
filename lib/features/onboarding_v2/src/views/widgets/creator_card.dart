@@ -1,9 +1,9 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_starter_creator_entity.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -103,7 +103,7 @@ class _CardContent extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     Text(
-                      '${formatCompactCount(creator.followerCount)} followers',
+                      context.l10n.onboardingFollowerCount(creator.followerCount),
                       style: TextStyle(
                         fontFamily: OnboardingTypography.sans,
                         color: Colors.white.withValues(alpha: 0.55),
@@ -160,7 +160,7 @@ class _FollowButton extends StatelessWidget {
       child: AnimatedSwitcher(
         duration: context.motion(const Duration(milliseconds: 140)),
         child: Text(
-          isSelected ? 'following' : 'follow',
+          isSelected ? context.l10n.onboardingFollowing : context.l10n.onboardingFollow,
           key: ValueKey(isSelected),
           style: OnboardingTypography.cta.copyWith(
             color: Colors.white,

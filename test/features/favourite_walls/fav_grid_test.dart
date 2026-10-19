@@ -24,6 +24,8 @@ import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_u
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -82,6 +84,9 @@ void main() {
     addTearDown(tester.view.reset);
     return tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: theme,
         home: BlocProvider<FavouriteWallsBloc>.value(
           value: bloc,
@@ -185,7 +190,7 @@ void main() {
       final PrismThemeOption option = <PrismThemeOption>[
         ...prismLightThemes,
         ...prismDarkThemes,
-      ].firstWhere((PrismThemeOption o) => o.label == label);
+      ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == label);
       return withPrismAccent(option.theme, option.defaultAccentValue);
     }
 
@@ -481,7 +486,7 @@ void main() {
       verifyNever(() => clearUseCase(any()));
 
       await openMenu(tester, 'Clear all favourites');
-      await tester.tap(find.widgetWithText(PrismButton, 'Clear all'));
+      await tester.tap(find.text('Clear all favourites'));
       await settle(tester);
       final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
       expect(params.wallIds, <String>['a', 'b']);
@@ -501,7 +506,7 @@ void main() {
       await pumpLoaded(tester);
 
       await openMenu(tester, 'Clear all favourites');
-      await tester.tap(find.widgetWithText(PrismButton, 'Clear all'));
+      await tester.tap(find.text('Clear all favourites'));
       await settle(tester);
 
       expect(toasts, contains("Couldn't clear favourites. Try again."));

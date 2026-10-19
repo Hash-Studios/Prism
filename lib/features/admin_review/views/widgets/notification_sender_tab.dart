@@ -3,25 +3,30 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/views/widgets/notification_scoreboard_card.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 enum _Audience {
-  all('all', 'All users', Icons.people_rounded),
-  premium('premium', 'Premium users', Icons.star_rounded),
-  free('free', 'Free users', Icons.person_rounded),
-  custom('custom', 'Specific user (email)', Icons.alternate_email_rounded);
+  all('all', Icons.people_rounded),
+  premium('premium', Icons.star_rounded),
+  free('free', Icons.person_rounded),
+  custom('custom', Icons.alternate_email_rounded);
 
-  const _Audience(this.value, this.label, this.icon);
+  const _Audience(this.value, this.icon);
 
   final String value;
-  final String label;
   final IconData icon;
-}
 
-typedef _Option = ({String value, String label});
+  String label(AppLocalizations l10n) => switch (this) {
+    _Audience.all => l10n.adminAllUsers,
+    _Audience.premium => l10n.adminPremiumUsers,
+    _Audience.free => l10n.adminFreeUsers,
+    _Audience.custom => l10n.adminSpecificUser,
+  };
+}
 
 /// The Notifications tab: compose a push notification, pick who gets it, and queue it for the Cloud Function.
 class NotificationSenderTab extends StatefulWidget {
@@ -44,12 +49,15 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
   String? _bodyError;
   String? _emailError;
 
-  static const List<_Option> _routeOptions = <_Option>[
-    (value: 'announcement', label: 'Announcement (inbox)'),
-    (value: 'wall_of_the_day', label: 'Wall of the Day'),
-    (value: 'follower', label: 'Followers screen'),
-    (value: 'wall', label: 'Wall or upload'),
-  ];
+  static const List<String> _routeOptions = <String>['announcement', 'wall_of_the_day', 'follower', 'wall'];
+
+  String _routeLabel(String value, AppLocalizations l10n) => switch (value) {
+    'announcement' => l10n.adminAnnouncementInbox,
+    'wall_of_the_day' => l10n.adminWallOfTheDay,
+    'follower' => l10n.adminFollowersScreen,
+    'wall' => l10n.adminWallOrUpload,
+    _ => value,
+  };
 
   bool get _isCustomTarget => _audience == _Audience.custom;
 
@@ -65,14 +73,14 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
   bool _validate() {
     final String email = _targetEmailController.text.trim();
     setState(() {
-      _titleError = _titleController.text.trim().isEmpty ? 'Title is required' : null;
-      _bodyError = _bodyController.text.trim().isEmpty ? 'Body is required' : null;
+      _titleError = _titleController.text.trim().isEmpty ? context.l10n.adminTitleRequired : null;
+      _bodyError = _bodyController.text.trim().isEmpty ? context.l10n.adminBodyRequired : null;
       _emailError = !_isCustomTarget
           ? null
           : email.isEmpty
-          ? 'Email is required'
+          ? context.l10n.adminEmailRequired
           : !email.contains('@')
-          ? 'Enter a valid email'
+          ? context.l10n.adminValidEmailRequired
           : null;
     });
     return _titleError == null && _bodyError == null && _emailError == null;
@@ -83,9 +91,9 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
     if (!_isCustomTarget) {
       final bool ok = await showPrismConfirm(
         context,
-        title: 'Send to ${_audience.label.toLowerCase()}?',
-        message: 'This notification goes out to everyone in this group. You cannot take it back.',
-        confirmLabel: 'Send notification',
+        title: context.l10n.adminSendToAudience(_audience.label(context.l10n).toLowerCase()),
+        message: context.l10n.adminNotificationIrreversible,
+        confirmLabel: context.l10n.adminSendNotification,
       );
       if (!ok || !mounted) return;
     }
@@ -107,7 +115,7 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
         'requestedAt': DateTime.now().millisecondsSinceEpoch,
       }, sourceTag: 'admin.send_notification');
       if (mounted) {
-        toasts.success('Notification queued. The Cloud Function will send it shortly.');
+        toasts.success(context.l10n.adminNotificationQueued);
         _titleController.clear();
         _bodyController.clear();
         _imageUrlController.clear();
@@ -116,7 +124,7 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
       }
     } catch (e, st) {
       logger.e('Admin notification send failed', tag: 'AdminNotif', error: e, stackTrace: st);
-      if (mounted) toasts.error('Could not queue the notification. Try again.');
+      if (mounted) toasts.error(context.l10n.adminNotificationQueueFailed);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -138,7 +146,7 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
               children: <Widget>[
                 PrismTextField(
                   controller: _titleController,
-                  label: 'Title',
+                  label: context.l10n.adminTitleLabel,
                   maxLength: 65,
                   error: _titleError,
                   textCapitalization: TextCapitalization.sentences,
@@ -147,7 +155,7 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
                 const SizedBox(height: PrismSpace.sm),
                 PrismTextField(
                   controller: _bodyController,
-                  label: 'Body',
+                  label: context.l10n.adminBodyLabel,
                   minLines: 2,
                   maxLines: 4,
                   maxLength: 200,
@@ -158,7 +166,7 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
                 const SizedBox(height: PrismSpace.sm),
                 PrismTextField(
                   controller: _imageUrlController,
-                  label: 'Image URL (optional)',
+                  label: context.l10n.adminImageUrlOptional,
                   hint: 'https://',
                   keyboardType: TextInputType.url,
                   autocorrect: false,
@@ -166,14 +174,14 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
               ],
             ),
           ),
-          const PrismSectionHeader(title: 'Audience', small: true, padding: _sectionPadding),
+          PrismSectionHeader(title: context.l10n.accountAudience, small: true, padding: _sectionPadding),
           Wrap(
             spacing: PrismSpace.xs,
             runSpacing: PrismSpace.xs,
             children: <Widget>[
               for (final _Audience opt in _Audience.values)
                 PrismChip(
-                  label: opt.label,
+                  label: opt.label(context.l10n),
                   icon: opt.icon,
                   selected: opt == _audience,
                   onTap: () => setState(() {
@@ -187,24 +195,24 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
             const SizedBox(height: PrismSpace.sm),
             PrismTextField(
               controller: _targetEmailController,
-              label: 'User email',
-              hint: 'user@example.com',
+              label: context.l10n.adminUserEmail,
+              hint: context.l10n.adminEmailExample,
               error: _emailError,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               onChanged: (_) => setState(() => _emailError = null),
             ),
           ],
-          const PrismSectionHeader(title: 'Opens', small: true, padding: _sectionPadding),
+          PrismSectionHeader(title: context.l10n.accountOpens, small: true, padding: _sectionPadding),
           Wrap(
             spacing: PrismSpace.xs,
             runSpacing: PrismSpace.xs,
             children: <Widget>[
-              for (final _Option opt in _routeOptions)
+              for (final String opt in _routeOptions)
                 PrismChip(
-                  label: opt.label,
-                  selected: opt.value == _route,
-                  onTap: () => setState(() => _route = opt.value),
+                  label: _routeLabel(opt, context.l10n),
+                  selected: opt == _route,
+                  onTap: () => setState(() => _route = opt),
                 ),
             ],
           ),
@@ -222,7 +230,7 @@ class _NotificationSenderTabState extends State<NotificationSenderTab> {
           ),
           const SizedBox(height: PrismSpace.xl),
           PrismButton(
-            label: 'Send notification',
+            label: context.l10n.adminSendNotification,
             icon: Icons.send_rounded,
             expand: true,
             loading: _isSending,
@@ -255,7 +263,11 @@ class _NotificationPreviewCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const PrismSectionHeader(title: 'Preview', small: true, padding: _NotificationSenderTabState._sectionPadding),
+        PrismSectionHeader(
+          title: context.l10n.accountPreview,
+          small: true,
+          padding: _NotificationSenderTabState._sectionPadding,
+        ),
         PrismCard(
           padding: const EdgeInsets.all(PrismSpace.sm),
           child: Row(

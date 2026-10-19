@@ -1,4 +1,6 @@
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -29,6 +31,14 @@ void main() {
     expect(paletteColorById('teal')!.name, 'Teal');
     expect(paletteColorById('cyan'), isNull);
     expect(paletteColorById(null), isNull);
+  });
+
+  test('palette display names come from localized color copy without changing ids', () {
+    final AppLocalizations l10n = AppLocalizationsEn();
+
+    expect(prismPaletteColorDisplayName(paletteColorById('red')!, l10n), 'Red');
+    expect(prismPaletteColorDisplayName(paletteColorById('grey')!, l10n), 'Grey');
+    expect(paletteColorById('red')!.id, 'red');
   });
 
   test('every palette colour is its own nearest colour', () {

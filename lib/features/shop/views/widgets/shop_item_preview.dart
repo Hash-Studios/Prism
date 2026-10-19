@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:Prism/features/shop/domain/cosmetic_styles.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -192,7 +193,7 @@ class _GlowPreview extends StatelessWidget {
         blendMode: BlendMode.srcIn,
         shaderCallback: (Rect bounds) => LinearGradient(colors: style.colors).createShader(bounds),
         child: Text(
-          'Glint',
+          context.l10n.economyShopGlowPreviewName,
           maxLines: 1,
           style: PrismTextStyles.cardTitle(context).copyWith(
             fontSize: size * 0.3,

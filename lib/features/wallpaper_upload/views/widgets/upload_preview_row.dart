@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -67,10 +68,10 @@ class UploadPreviewRow extends StatelessWidget {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    _Fact(label: 'Resolution', value: formatResolution(resolution!)),
+                    _Fact(label: context.l10n.wallpaperUploadResolution, value: formatResolution(resolution!)),
                     if (size != null) ...<Widget>[
                       const SizedBox(height: PrismSpace.md),
-                      _Fact(label: 'Size', value: formatFileSize(size!)),
+                      _Fact(label: context.l10n.wallpaperUploadFileSize, value: formatFileSize(size!)),
                     ],
                   ],
                 ),

@@ -13,6 +13,8 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -92,7 +94,13 @@ void main() {
       ..premium = premium;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     CoinsService.instance.balanceNotifier.value = 100;
-    await tester.pumpWidget(MaterialApp(home: AiWallpaperTabPage(repository: _FakeRepository(history))));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: _FakeRepository(history)),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -100,7 +108,7 @@ void main() {
     await pumpPage(tester);
 
     expect(find.text('AI wallpaper'), findsOneWidget);
-    expect(find.text('Describe a scene'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyAiDescribeScene), findsOneWidget);
     expect(find.text('Style'), findsOneWidget);
     expect(find.text('Anime'), findsOneWidget);
     expect(find.text('Quality'), findsWidgets);
@@ -118,7 +126,7 @@ void main() {
     await tester.enterText(find.byType(TextField), '');
     await tester.pump();
 
-    expect(find.text('Describe a scene to generate.'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyAiDescribeScene), findsNWidgets(2));
     expect(tester.widget<PrismButton>(find.byType(PrismButton).last).onPressed, isNull);
   });
 
@@ -144,13 +152,13 @@ void main() {
     expect(after, isNot(before));
   });
 
-  testWidgets('short on coins, the main button sends the user to get coins and says why', (tester) async {
+  testWidgets('short on coins, the main button offers coins and says why', (tester) async {
     await pumpPage(tester);
 
     CoinsService.instance.balanceNotifier.value = 0;
     await tester.pump();
 
-    expect(find.text('Get coins'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyEarnCoins), findsOneWidget);
     expect(find.text('Generate'), findsNothing);
     expect(find.text('You need ${AiQualityTier.fast.coinCost} coins. You have 0.'), findsOneWidget);
   });
@@ -175,10 +183,10 @@ void main() {
     expect(find.text('Save'), findsOneWidget);
     expect(find.text('Try another'), findsOneWidget);
     expect(find.byTooltip('Set as wallpaper'), findsOneWidget);
-    expect(find.bySemanticsLabel('Submit wallpaper for community review'), findsOneWidget);
+    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiSubmitForReview), findsOneWidget);
     expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Save')).variant, PrismButtonVariant.primary);
     expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Generate')).variant, PrismButtonVariant.tonal);
-    expect(find.bySemanticsLabel('Generation from 1 Jan'), findsOneWidget);
+    expect(find.bySemanticsLabel(AppLocalizationsEn().economyAiGenerationFrom('Jan 1')), findsOneWidget);
   });
 
   testWidgets('a guest sees a sign-in prompt and no compose controls', (tester) async {
@@ -191,6 +199,9 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) =>
             MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
         home: AiWallpaperTabPage(repository: _FakeRepository(const <AiGenerationRecord>[])),

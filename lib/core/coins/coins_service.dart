@@ -36,6 +36,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/rewards/domain/creator_progress.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cloud_functions/cloud_functions.dart';
@@ -327,11 +328,11 @@ class StreakClaimResult {
 enum StreakFreezeOutcome { success, insufficientBalance, atCap, unavailable, failed }
 
 class StreakFreezePurchase {
-  const StreakFreezePurchase(this.outcome, {this.freezes = 0, this.message = ''});
+  const StreakFreezePurchase(this.outcome, {this.freezes = 0, this.errorCode = ''});
 
   final StreakFreezeOutcome outcome;
   final int freezes;
-  final String message;
+  final String errorCode;
 
   bool get isSuccess => outcome == StreakFreezeOutcome.success;
 }
@@ -1394,7 +1395,10 @@ class CoinsService with WidgetsBindingObserver {
       final CoinMutationResult result;
       if (isReward) {
         result = await award(CoinEarnAction.rewardedAd, sourceTag: 'coins.reward.retry', requestId: key);
-        if (result.changed) toasts.success('Your ad reward was added.');
+        if (result.changed) {
+          final AppLocalizations l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+          toasts.success(l10n.coreWallpaperSavedToast);
+        }
       } else {
         final CoinSpendAction action =
             CoinSpendAction.values.asNameMap()[entry['action']?.toString()] ?? CoinSpendAction.aiGeneration;
@@ -1601,7 +1605,10 @@ class CoinsService with WidgetsBindingObserver {
         transactionId: entry.txId,
         reason: 'download_failed_refund',
       );
-      if (refund.changed) toasts.info('Your last download did not finish. Coins returned.');
+      if (refund.changed) {
+        final AppLocalizations l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        toasts.info(l10n.coreDownloadNotFinishedCoinsReturned);
+      }
       if (app_state.prismUser.id != userId) break;
       if (refund.changed || !_isRetryableRefundFailure(refund)) resolved.add(entry.txId);
     }
@@ -1859,7 +1866,7 @@ class CoinsService with WidgetsBindingObserver {
 
   Future<StreakFreezePurchase> buyStreakFreeze() async {
     if (!_canMutateCoins()) {
-      return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'not_logged_in');
+      return const StreakFreezePurchase(StreakFreezeOutcome.failed, errorCode: 'not_logged_in');
     }
     final String userId = app_state.prismUser.id;
     final SettingsLocalDataSource settings = _settings;
@@ -1879,7 +1886,7 @@ class CoinsService with WidgetsBindingObserver {
     try {
       if (settings.isOpen) await settings.set(pendingKey, requestId);
       if (!_canMutateCoins() || userId != app_state.prismUser.id) {
-        return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'session_changed');
+        return const StreakFreezePurchase(StreakFreezeOutcome.failed, errorCode: 'session_changed');
       }
       final HttpsCallable callable = appFunctions.httpsCallable('buyStreakFreeze');
       final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{'requestId': requestId});
@@ -1888,7 +1895,7 @@ class CoinsService with WidgetsBindingObserver {
         await clearPending();
       }
       if (!_canMutateCoins() || userId != app_state.prismUser.id) {
-        return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'session_changed');
+        return const StreakFreezePurchase(StreakFreezeOutcome.failed, errorCode: 'session_changed');
       }
       final int freezes = _clampFreezes(parseIntOr(data['streakFreezes']));
       _applyLocalBalance(parseIntOr(data['currentBalance']), delta: parseIntOr(data['delta']));
@@ -1923,15 +1930,15 @@ class CoinsService with WidgetsBindingObserver {
       return StreakFreezePurchase(
         StreakFreezeOutcome.failed,
         freezes: freezes,
-        message: data['reason']?.toString() ?? '',
+        errorCode: data['reason']?.toString() ?? '',
       );
     } on FirebaseFunctionsException catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.buy_streak_freeze.callable', error: error, stackTrace: stackTrace);
       if (error.code == 'not-found' || error.code == 'unimplemented') {
         await clearPending();
-        return StreakFreezePurchase(StreakFreezeOutcome.unavailable, message: error.code);
+        return StreakFreezePurchase(StreakFreezeOutcome.unavailable, errorCode: error.code);
       }
-      return StreakFreezePurchase(StreakFreezeOutcome.failed, message: error.message ?? error.code);
+      return StreakFreezePurchase(StreakFreezeOutcome.failed, errorCode: error.code);
     } catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.buy_streak_freeze.callable', error: error, stackTrace: stackTrace);
       return const StreakFreezePurchase(StreakFreezeOutcome.failed);

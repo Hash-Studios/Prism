@@ -2,6 +2,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -67,23 +68,41 @@ class EditAdjustmentsCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              PrismIconButton(icon: Icons.flip_rounded, tooltip: 'Flip', onPressed: onFlip),
+              PrismIconButton(icon: Icons.flip_rounded, tooltip: context.l10n.wallpaperUploadFlip, onPressed: onFlip),
               PrismIconButton(
                 icon: Icons.rotate_left_rounded,
-                tooltip: 'Rotate left',
+                tooltip: context.l10n.wallpaperUploadRotateLeft,
                 onPressed: () => onRotate(false),
               ),
               PrismIconButton(
                 icon: Icons.rotate_right_rounded,
-                tooltip: 'Rotate right',
+                tooltip: context.l10n.wallpaperUploadRotateRight,
                 onPressed: () => onRotate(true),
               ),
             ],
           ),
           Divider(height: PrismSpace.lg, color: cs.onSurface.withValues(alpha: 0.08)),
-          _SliderRow(label: 'Saturation', value: saturation, min: 0, max: 2, onChanged: onSaturation),
-          _SliderRow(label: 'Brightness', value: brightness, min: -1, max: 1, onChanged: onBrightness),
-          _SliderRow(label: 'Contrast', value: contrast, min: 0, max: 4, onChanged: onContrast),
+          _SliderRow(
+            label: context.l10n.wallpaperUploadSaturation,
+            value: saturation,
+            min: 0,
+            max: 2,
+            onChanged: onSaturation,
+          ),
+          _SliderRow(
+            label: context.l10n.wallpaperUploadBrightness,
+            value: brightness,
+            min: -1,
+            max: 1,
+            onChanged: onBrightness,
+          ),
+          _SliderRow(
+            label: context.l10n.wallpaperUploadContrast,
+            value: contrast,
+            min: 0,
+            max: 4,
+            onChanged: onContrast,
+          ),
         ],
       ),
     );

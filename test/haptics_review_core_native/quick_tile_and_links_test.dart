@@ -1,11 +1,10 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -78,7 +77,13 @@ void main() {
 
   testWidgets('failed quick tile save plays error, not success', (tester) async {
     // Load with a working store: a failed first write makes the redesigned screen show its load error instead.
-    await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: QuickTileSettingsScreen(),
+      ),
+    );
     await tester.pumpAndSettle();
     SharedPreferences.setMockInitialValues(<String, Object>{});
     SharedPreferencesStorePlatform.instance = _FailingPreferences();
@@ -93,7 +98,13 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('quick tile changes save on their own and stay quiet', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: QuickTileSettingsScreen(),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Save'), findsNothing);
     await tester.tap(find.text('Lock').first);
@@ -106,7 +117,13 @@ void main() {
 
   testWidgets('rejected quick tile writes report failure without a success haptic', (tester) async {
     // Load with a working store: a failed first write makes the redesigned screen show its load error instead.
-    await tester.pumpWidget(const MaterialApp(home: QuickTileSettingsScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: QuickTileSettingsScreen(),
+      ),
+    );
     await tester.pumpAndSettle();
     SharedPreferences.setMockInitialValues(<String, Object>{});
     SharedPreferencesStorePlatform.instance = _RejectedPreferences();

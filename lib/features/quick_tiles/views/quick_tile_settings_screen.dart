@@ -16,11 +16,13 @@ import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, visibleForTesting;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 @RoutePage()
@@ -59,11 +61,10 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
     analytics.track(QuickTileAddRequestedEvent(tile: tile.name, result: result.name));
     if (!mounted) return;
     final String message = switch (result) {
-      QuickSettingsAddResult.added => 'Tile added to Quick Settings.',
-      QuickSettingsAddResult.alreadyAdded => 'This tile is already in Quick Settings.',
-      QuickSettingsAddResult.notAdded => 'Tile not added. You can add it any time.',
-      QuickSettingsAddResult.unsupported ||
-      QuickSettingsAddResult.error => 'Could not add the tile. Add it by hand from the Quick Settings edit screen.',
+      QuickSettingsAddResult.added => context.l10n.wallpaperQuickTileAdded,
+      QuickSettingsAddResult.alreadyAdded => context.l10n.wallpaperQuickTileAlreadyAdded,
+      QuickSettingsAddResult.notAdded => context.l10n.wallpaperQuickTileNotAdded,
+      QuickSettingsAddResult.unsupported || QuickSettingsAddResult.error => context.l10n.wallpaperQuickTileAddError,
     };
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -121,7 +122,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
     } catch (e, stackTrace) {
       logger.e('Failed to save quick tile settings', error: e, stackTrace: stackTrace);
       if (!mounted) return;
-      toasts.error('Could not save quick tile settings');
+      toasts.error(context.l10n.wallpaperQuickTileSaveError);
     }
   }
 
@@ -152,7 +153,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PrismPage(title: 'Quick tiles', body: _body(context));
+    return PrismPage(title: context.l10n.wallpaperQuickTilesTitle, body: _body(context));
   }
 
   Widget _body(BuildContext context) {
@@ -160,9 +161,9 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
     if (_loadFailed) {
       return GlintState(
         kind: GlintStateKind.error,
-        title: "Couldn't load your quick tiles",
-        body: 'Check your connection and try again.',
-        actionLabel: 'Try again',
+        title: context.l10n.wallpaperQuickTilesLoadError,
+        body: context.l10n.wallpaperCheckConnection,
+        actionLabel: context.l10n.wallpaperTryAgain,
         onAction: () {
           setState(() {
             _loading = true;
@@ -176,8 +177,8 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
       padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
       children: <Widget>[
         _TileCard(
-          title: 'Shuffle wallpaper tile',
-          description: 'Tap the tile to apply a random wallpaper from the category you pick.',
+          title: context.l10n.wallpaperQuickShuffleTitle,
+          description: context.l10n.wallpaperQuickShuffleDescription,
           category: Wrap(
             spacing: PrismSpace.xs,
             runSpacing: PrismSpace.xs,
@@ -205,8 +206,8 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
         ),
         const SizedBox(height: PrismSpace.md),
         _TileCard(
-          title: 'Wall of the Day tile',
-          description: "Applies today's Wall of the Day. Open Prism once a day to cache the latest one.",
+          title: context.l10n.wallpaperQuickWotdTitle,
+          description: context.l10n.wallpaperQuickWotdDescription,
           value: _wotdTarget,
           onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.wotd) : null,
           onChanged: (v) {
@@ -216,8 +217,8 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
         ),
         const SizedBox(height: PrismSpace.md),
         _TileCard(
-          title: 'Random favourite tile',
-          description: 'Applies a random wallpaper from your favourites. Sign in and favourite some wallpapers first.',
+          title: context.l10n.wallpaperQuickFavouriteTitle,
+          description: context.l10n.wallpaperQuickFavouriteDescription,
           value: _favsTarget,
           onAddToQuickSettings: _canAddTile ? () => _addTile(QuickTileKind.favs) : null,
           onChanged: (v) {
@@ -226,7 +227,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
           },
         ),
         const SizedBox(height: PrismSpace.md),
-        const _HowToCard(),
+        _HowToCard(),
       ],
     );
   }
@@ -279,20 +280,20 @@ class _TileCard extends StatelessWidget {
           Text(description, style: PrismTextStyles.body(context)),
           if (category != null) ...<Widget>[
             const SizedBox(height: PrismSpace.md),
-            Text('Category', style: PrismTextStyles.rowTitle(context)),
+            Text(context.l10n.wallpaperCategory, style: PrismTextStyles.rowTitle(context)),
             const SizedBox(height: PrismSpace.xs),
             category!,
           ],
           const SizedBox(height: PrismSpace.md),
-          Text('Apply to', style: PrismTextStyles.rowTitle(context)),
+          Text(context.l10n.wallpaperApplyTo, style: PrismTextStyles.rowTitle(context)),
           const SizedBox(height: PrismSpace.xs),
           PrismSegmented<WallpaperTarget>(
             values: const <WallpaperTarget>[WallpaperTarget.home, WallpaperTarget.lock, WallpaperTarget.both],
             selected: value,
             labelOf: (t) => switch (t) {
-              WallpaperTarget.home => 'Home',
-              WallpaperTarget.lock => 'Lock',
-              WallpaperTarget.both => 'Both',
+              WallpaperTarget.home => context.l10n.wallpaperQuickTargetHome,
+              WallpaperTarget.lock => context.l10n.wallpaperQuickTargetLock,
+              WallpaperTarget.both => context.l10n.wallpaperQuickTargetBoth,
             },
             iconOf: (t) => switch (t) {
               WallpaperTarget.home => Icons.home_rounded,
@@ -304,7 +305,7 @@ class _TileCard extends StatelessWidget {
           if (onAddToQuickSettings != null) ...<Widget>[
             const SizedBox(height: PrismSpace.md),
             PrismButton(
-              label: 'Add to Quick Settings',
+              label: context.l10n.wallpaperQuickAddAction,
               icon: Icons.add_rounded,
               variant: PrismButtonVariant.tonal,
               size: PrismButtonSize.compact,
@@ -320,12 +321,6 @@ class _TileCard extends StatelessWidget {
 class _HowToCard extends StatelessWidget {
   const _HowToCard();
 
-  static const List<String> _steps = <String>[
-    'Pull down the notification shade twice.',
-    'Tap the pencil or edit icon.',
-    'Find the Prism tiles and drag them to your active tiles.',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
@@ -333,9 +328,13 @@ class _HowToCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('How to add a tile', style: PrismTextStyles.cardTitle(context)),
+          Text(context.l10n.wallpaperQuickHowToTitle, style: PrismTextStyles.cardTitle(context)),
           const SizedBox(height: PrismSpace.sm),
-          for (int i = 0; i < _steps.length; i++)
+          for (final (int i, String step) in <String>[
+            context.l10n.wallpaperQuickStepShade,
+            context.l10n.wallpaperQuickStepEdit,
+            context.l10n.wallpaperQuickStepFindPrism,
+          ].indexed)
             Padding(
               padding: EdgeInsets.only(top: i == 0 ? 0 : PrismSpace.sm),
               child: Row(
@@ -347,7 +346,7 @@ class _HowToCard extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(color: cs.onSurface.withValues(alpha: 0.08), shape: BoxShape.circle),
                     child: Text(
-                      '${i + 1}',
+                      NumberFormat.decimalPattern(context.l10n.localeName).format(i + 1),
                       style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -355,7 +354,7 @@ class _HowToCard extends StatelessWidget {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(_steps[i], style: PrismTextStyles.body(context)),
+                      child: Text(step, style: PrismTextStyles.body(context)),
                     ),
                   ),
                 ],

@@ -23,6 +23,7 @@ void main() {
               wallpaper: wall,
               logo: logo,
               link: 'https://prismwalls.com/s/abc',
+              brandName: 'Prism',
               contextLine: contextLine,
             ),
           ),
@@ -64,7 +65,7 @@ void main() {
 
         Future<Uint8List> render({required String link, String? contextLine}) async {
           final ByteData? bytes = await paintShareCard(
-            ShareCard(wallpaper: wall, logo: logo, link: link, contextLine: contextLine),
+            ShareCard(wallpaper: wall, logo: logo, link: link, brandName: 'Prism', contextLine: contextLine),
           );
           expect(bytes, isNotNull);
           return bytes!.buffer.asUint8List();

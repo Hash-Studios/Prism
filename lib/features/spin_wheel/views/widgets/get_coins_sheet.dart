@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
@@ -15,18 +16,18 @@ Future<void> showGetCoinsSheet(
       await showPrismSheet<bool>(
         context: context,
         builder: (BuildContext sheetContext) => PrismSheetBody(
-          title: 'Not enough coins',
+          title: sheetContext.l10n.economyNotEnoughCoins,
           message: message,
           mood: GlintMood.worried,
           centered: true,
           actions: <Widget>[
             PrismButton(
-              label: 'Watch a video (+${CoinsService.instance.adsRewardNow})',
+              label: sheetContext.l10n.economyWatchVideoRewardCoins(CoinsService.instance.adsRewardNow),
               expand: true,
               onPressed: () => Navigator.of(sheetContext).pop(true),
             ),
             PrismButton(
-              label: 'Not now',
+              label: sheetContext.l10n.economyNotNow,
               expand: true,
               variant: PrismButtonVariant.ghost,
               onPressed: () => Navigator.of(sheetContext).pop(false),
@@ -41,7 +42,7 @@ Future<void> showGetCoinsSheet(
     sourceTag: sourceTag,
     upsellSource: upsellSource,
     isMounted: () => context.mounted,
-    adErrorMessage: 'Ad was not completed.',
+    adErrorMessage: context.l10n.economyAdNotCompleted,
   );
-  if (credited) toasts.success('+$reward coins');
+  if (credited) toasts.success(context.l10n.economyCoinsEarned(reward));
 }

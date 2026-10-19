@@ -8,6 +8,7 @@ import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_header.dart';
 import 'package:Prism/features/drops/views/widgets/drop_vault.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,10 +34,10 @@ class _DropsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return PrismPage(
       maxContentWidth: double.infinity,
-      title: 'Weekly Drop',
+      title: context.l10n.economyWeeklyDrop,
       body: BlocConsumer<DropsBloc, DropsState>(
         listenWhen: (previous, current) => current.lastResult != null && current.lastResult != previous.lastResult,
-        listener: (context, state) => toastUnlockResult(state.lastResult!),
+        listener: (context, state) => toastUnlockResult(context, state.lastResult!),
         builder: (context, state) {
           if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
             return const LoadingCards();
@@ -44,9 +45,9 @@ class _DropsView extends StatelessWidget {
           if (state.status == LoadStatus.failure) {
             return GlintState(
               kind: GlintStateKind.error,
-              title: "Couldn't load the Drop",
-              body: 'Check your connection and try again.',
-              actionLabel: 'Try again',
+              title: context.l10n.economyDropLoadFailed,
+              body: context.l10n.errorNetwork,
+              actionLabel: context.l10n.actionRetry,
               onAction: () => context.read<DropsBloc>().add(const DropsEvent.refreshed()),
             );
           }
@@ -69,13 +70,13 @@ class _DropsBody extends StatelessWidget {
     return CustomScrollView(
       slivers: <Widget>[
         if (drop == null || !live)
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: SizedBox(
               height: 320,
               child: GlintState(
                 kind: GlintStateKind.nothingNew,
-                title: 'No Drop right now',
-                body: 'The next Drop lands Monday.',
+                title: context.l10n.economyNoDropNow,
+                body: context.l10n.economyNextDropMonday,
               ),
             ),
           )

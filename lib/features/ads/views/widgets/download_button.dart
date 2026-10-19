@@ -31,6 +31,7 @@ import 'package:Prism/features/startup/services/notification_permission_prompt_s
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -211,8 +212,8 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String? label = widget.label;
     if (label == null && !widget.primary) {
       return CircularMenuButton(
-        label: 'Download',
-        caption: widget.labelled ? 'Download' : null,
+        label: context.l10n.economyDownload,
+        caption: widget.labelled ? context.l10n.economyDownload : null,
         onTap: _handleTap,
         isLoading: isLoading,
         child: const Icon(JamIcons.download),
@@ -221,25 +222,29 @@ class _DownloadButtonState extends State<DownloadButton> {
     final String text;
     final String semantics;
     if (label == null) {
-      text = 'Download';
-      semantics = 'Download';
+      text = context.l10n.economyDownload;
+      semantics = context.l10n.economyDownload;
     } else if (_saved && _savedOwner == app_state.prismUser.id) {
-      text = 'Saved';
-      semantics = 'Saved. Already in Downloads';
+      text = context.l10n.economyDownloadSaved;
+      semantics = context.l10n.economyDownloadSavedInDownloads;
     } else if (app_state.prismUser.premium) {
-      text = 'Free with Pro';
-      semantics = '$label. Free with Pro';
+      text = context.l10n.economyDownloadFreeWithPro;
+      semantics = context.l10n.economyDownloadFreeWithProSemantics(label);
     } else if (_isGuest) {
       text = label;
       semantics = label;
     } else if (_downloadIsFree(widget.isPremiumContent)) {
       final int left = CoinsService.instance.graceDownloadsLeft;
-      text = widget.isPremiumContent ? '$label · Free' : '$label · Free · $left left';
-      semantics = widget.isPremiumContent ? '$label. Free with your pass' : '$label. Free, $left free downloads left';
+      text = widget.isPremiumContent
+          ? context.l10n.economyDownloadFreeFor(label)
+          : context.l10n.economyDownloadFreeLeftFor(label, left);
+      semantics = widget.isPremiumContent
+          ? context.l10n.economyDownloadFreeWithPassSemantics(label)
+          : context.l10n.economyDownloadFreeDownloadsLeftSemantics(label, left);
     } else {
       final int cost = _downloadSpendAction.cost();
-      text = '$label · $cost';
-      semantics = '$label. Costs $cost coins';
+      text = context.l10n.economyDownloadCost(label, cost);
+      semantics = context.l10n.economyDownloadCostSemantics(label, cost);
     }
     if (widget.primary) {
       return Semantics(
@@ -263,14 +268,15 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<void> _handleTap({bool playTapHaptic = true}) async {
+    final AppLocalizations l10n = context.l10n;
     if (isLoading) {
-      toasts.error('Wait for download to complete!');
+      toasts.error(context.l10n.economyDownloadWaitForCurrent);
       return;
     }
 
     final String link = widget.link?.trim() ?? '';
     if (link.isEmpty) {
-      toasts.error('No download link available.');
+      toasts.error(context.l10n.economyDownloadLinkUnavailable);
       return;
     }
     if (playTapHaptic) PrismHaptics.tap();
@@ -321,7 +327,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         ),
       );
       if (variant != null) {
-        _preparedSource = await runPrepareSource(variant.prepare);
+        _preparedSource = await runPrepareSource(variant.prepare, l10n: l10n);
         if (_preparedSource == null || !mounted) {
           _track(
             DownloadResultEvent(
@@ -349,13 +355,13 @@ class _DownloadButtonState extends State<DownloadButton> {
         } catch (error, stackTrace) {
           logger.w('Could not resolve bundled starter wallpaper', error: error, stackTrace: stackTrace);
           _track(const DownloadResultEvent(result: 'failed', reason: 'starter_source_failed', stage: 'prepare'));
-          toasts.error("Couldn't download! Please retry.");
+          toasts.error(l10n.economyAiDownloadFailed);
           unawaited(RatePromptService.instance.recordFailure());
           return;
         }
         if (starter == null) {
           _track(const DownloadResultEvent(result: 'failed', reason: 'starter_source_unavailable', stage: 'prepare'));
-          toasts.error("Couldn't download! Please retry.");
+          toasts.error(l10n.economyAiDownloadFailed);
           unawaited(RatePromptService.instance.recordFailure());
           return;
         }
@@ -462,17 +468,17 @@ class _DownloadButtonState extends State<DownloadButton> {
     final int cost = _tapSpendAction.cost();
     final _SavedChoice? choice = await showCoinGateSheet<_SavedChoice>(
       context,
-      title: 'Already in Downloads',
+      title: context.l10n.economyDownloadAlreadyInDownloads,
       cost: 0,
-      message: (_) => 'You saved this wallpaper before.',
+      message: (_) => context.l10n.economyDownloadSavedBefore,
       options: <CoinGateOption<_SavedChoice>>[
-        const CoinGateOption(label: 'Open', value: _SavedChoice.open),
+        CoinGateOption(label: context.l10n.economyOpen, value: _SavedChoice.open),
         CoinGateOption(
           label: localOriginal != null
-              ? 'Save local copy'
+              ? context.l10n.economyDownloadSaveLocalCopy
               : free
-              ? 'Download again'
-              : 'Download again (-$cost coins)',
+              ? context.l10n.economyDownloadAgain
+              : context.l10n.economyDownloadAgainCost(cost),
           value: _SavedChoice.again,
           outlined: true,
         ),
@@ -493,7 +499,7 @@ class _DownloadButtonState extends State<DownloadButton> {
 
   void _cancelAfterAccountSwitch() {
     _track(const DownloadResultEvent(result: 'cancelled', reason: 'account_changed', stage: 'gate'));
-    toasts.error('Account changed. Please try saving again.');
+    toasts.error(context.l10n.economyDownloadAccountChanged);
   }
 
   Future<File?> _previouslyAcquiredLocalOriginal(_DownloadTap tap) async {
@@ -568,12 +574,12 @@ class _DownloadButtonState extends State<DownloadButton> {
   Future<void> _showGuestPremiumPrompt() async {
     final _GuestProChoice? choice = await showCoinGateSheet<_GuestProChoice>(
       context,
-      title: 'Pro wallpaper',
+      title: context.l10n.economyProWallpaper,
       cost: 0,
-      message: (_) => 'Sign in to save this wallpaper with coins, or get Prism Pro.',
-      options: const <CoinGateOption<_GuestProChoice>>[
-        CoinGateOption(label: 'Sign in', value: _GuestProChoice.signIn),
-        CoinGateOption(label: 'Get Pro', value: _GuestProChoice.pro, outlined: true),
+      message: (_) => context.l10n.economyDownloadProGuestMessage,
+      options: <CoinGateOption<_GuestProChoice>>[
+        CoinGateOption(label: context.l10n.economySignIn, value: _GuestProChoice.signIn),
+        CoinGateOption(label: context.l10n.economyGetPro, value: _GuestProChoice.pro, outlined: true),
       ],
     );
     if (!mounted) return;
@@ -618,26 +624,29 @@ class _DownloadButtonState extends State<DownloadButton> {
   Future<CoinGateChoice> _chooseLowBalanceAction(CoinGatePrompt prompt) async {
     final int missing = prompt.missing;
     final int? adsLeft = prompt.adsRemaining;
-    final String adNote = !prompt.adsAllowed
-        ? ' Ads are off. Change this in Settings > Privacy.'
-        : (adsLeft != null && adsLeft <= 0 ? ' Daily limit reached. Back tomorrow.' : '');
+    final String adState = !prompt.adsAllowed ? 'disabled' : (adsLeft != null && adsLeft <= 0 ? 'limit' : 'none');
     final CoinGateChoice? choice = await showCoinGateSheet<CoinGateChoice>(
       context,
-      title: 'Not enough coins',
+      title: context.l10n.economyNotEnoughCoins,
       cost: prompt.cost,
       message: (int sheetMissing) {
-        final String need = 'You need ${sheetMissing > 0 ? sheetMissing : missing} more coins to save this wallpaper.';
         final int adReward = CoinsService.instance.adsRewardNow;
-        final String perAd = sheetMissing > adReward && prompt.canWatchAd ? ' Each ad adds $adReward.' : '';
-        return '$need$perAd$adNote';
+        return context.l10n.economyDownloadCoinsNeeded(
+          sheetMissing > 0 ? sheetMissing : missing,
+          adReward,
+          prompt.canWatchAd ? 'true' : 'false',
+          adState,
+        );
       },
       options: <CoinGateOption<CoinGateChoice>>[
         if (prompt.canWatchAd)
           CoinGateOption(
-            label: '${watchAdOptionLabel()}${adsLeft == null ? '' : ' · $adsLeft left today'}',
+            label: adsLeft == null
+                ? watchAdOptionLabel(context.l10n)
+                : context.l10n.economyWatchVideoRewardAdsLeft(adsLeft),
             value: CoinGateChoice.watchAd,
           ),
-        const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+        CoinGateOption(label: context.l10n.economyUpgradeToPro, value: CoinGateChoice.upgrade, outlined: true),
       ],
     );
     return choice ?? CoinGateChoice.cancel;
@@ -681,13 +690,14 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<bool> _performDownload({File? cachedOriginalForRestore}) async {
+    final AppLocalizations l10n = context.l10n;
     final _DownloadTap tap = _tap;
     final String link = tap.link;
     final String? sourceContext = tap.sourceContext;
     final bool premiumContent = tap.isPremiumContent;
     final VoidCallback? onDownloaded = tap.onDownloaded;
     if (link.isEmpty) {
-      toasts.error('No download link available.');
+      toasts.error(context.l10n.economyDownloadLinkUnavailable);
       return false;
     }
     final bool prepared = _preparedSource != null;
@@ -718,7 +728,11 @@ class _DownloadButtonState extends State<DownloadButton> {
         if (isPhotosPermissionDenied(result.errorCode)) {
           if (mounted) showPhotosPermissionDenied(context);
         } else {
-          toasts.error(result.message ?? "Couldn't download! Please retry.");
+          toasts.error(
+            result.errorCode == 'STORAGE_PERMISSION_REQUIRED'
+                ? l10n.wallpaperDownloadsLoadHelp
+                : l10n.economyAiDownloadFailed,
+          );
           unawaited(RatePromptService.instance.recordFailure());
         }
         return false;
@@ -731,13 +745,13 @@ class _DownloadButtonState extends State<DownloadButton> {
       } else {
         logger.e('Download failed', error: e);
       }
-      toasts.error("Couldn't download! Please retry.");
+      toasts.error(l10n.economyAiDownloadFailed);
       unawaited(RatePromptService.instance.recordFailure());
       return false;
     } catch (e, stackTrace) {
       _failureReason = 'unexpected';
       logger.e('Unexpected download failure', error: e, stackTrace: stackTrace);
-      toasts.error('Something went wrong!');
+      toasts.error(l10n.errorGeneric);
       unawaited(RatePromptService.instance.recordFailure());
       return false;
     }
@@ -792,7 +806,9 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
     }
     try {
-      toasts.success(savedWallpaperMessage(depthTier: tap.depthTier));
+      // This async save may finish after the owning page is disposed. Keep the
+      // localized copy captured before the first await for the global toast.
+      toasts.success(savedWallpaperMessage(l10n: l10n, depthTier: tap.depthTier));
       onDownloaded?.call();
     } catch (e, stackTrace) {
       logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
@@ -896,7 +912,7 @@ class _GuestAdGateSheetState extends State<_GuestAdGateSheet> {
     final RewardedAdResult watched = await watchRewardedAdResult(context.read<AdsBloc>());
     if (mounted) setState(() => _watching = false);
     if (!watched.earned) {
-      toasts.error(adFailureMessage(watched.failure));
+      toasts.error(adFailureMessage(context.l10n, watched.failure));
       return;
     }
     if (!mounted) return;
@@ -908,15 +924,15 @@ class _GuestAdGateSheetState extends State<_GuestAdGateSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return PrismSheetBody(
-      title: 'Download this wallpaper',
-      message: widget.adsAllowed
-          ? 'Watch a small video ad to download this wallpaper.'
-          : 'Watch a small video ad to download this wallpaper. Ads are off. Change this in Settings > Privacy.',
+      title: l10n.economyDownloadThisWallpaper,
+      message: widget.adsAllowed ? l10n.economyDownloadWatchAdMessage : l10n.economyDownloadWatchAdPrivacyMessage,
       actions: <Widget>[
-        if (widget.adsAllowed) PrismButton(label: 'Watch ad', expand: true, loading: _watching, onPressed: _watch),
+        if (widget.adsAllowed)
+          PrismButton(label: l10n.economyWatchAd, expand: true, loading: _watching, onPressed: _watch),
         PrismButton(
-          label: 'Buy premium',
+          label: l10n.economyBuyPremium,
           expand: true,
           variant: widget.adsAllowed ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
           onPressed: _watching ? null : widget.onBuyPremium,

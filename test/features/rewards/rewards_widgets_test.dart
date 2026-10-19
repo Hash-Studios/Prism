@@ -18,6 +18,8 @@ import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -50,6 +52,9 @@ PrismWallpaper _shopWallpaper() => const PrismWallpaper(
 );
 
 Widget _app(ThemeData theme, Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   theme: theme,
   home: Scaffold(body: SingleChildScrollView(child: child)),
 );
@@ -84,6 +89,9 @@ void main() {
   testWidgets('standalone guest rewards can navigate back', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -127,7 +135,14 @@ void main() {
     getIt.registerFactory<BadgesBloc>(() => badges);
     _registerEconomyBlocs();
     getIt.registerSingleton<FirestoreClient>(CoinsTestFirestore());
-    await tester.pumpWidget(MaterialApp(theme: kDarkTheme, home: const RewardsPage(showBack: false)));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kDarkTheme,
+        home: const RewardsPage(showBack: false),
+      ),
+    );
     await tester.pump();
     await tester.pump();
     expect(find.bySemanticsLabel('240 Prism coins'), findsWidgets);
@@ -158,6 +173,9 @@ void main() {
     getIt.registerSingleton<FirestoreClient>(CoinsTestFirestore());
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: kLightTheme,
         home: RewardsPage(showBack: false, scrollToEarn: scrollToEarn),
       ),
@@ -200,6 +218,9 @@ void main() {
       ]) {
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
             home: Scaffold(
               body: MediaQuery(
@@ -255,6 +276,9 @@ void main() {
       getIt.registerSingleton<FirestoreClient>(firestore);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: brightness == Brightness.light ? kLightTheme : kDarkTheme,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
@@ -281,9 +305,13 @@ void main() {
       await tester.pump();
       expect(find.text('Watch a video'), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await tester.scrollUntilVisible(find.text('Unlocked at 7 days'), 200, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(
+        find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pump();
-      expect(find.text('Unlocked at 7 days'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.scrollUntilVisible(find.text('Show more'), 200, scrollable: find.byType(Scrollable).first);
       await tester.pump();
@@ -311,6 +339,9 @@ void main() {
     addTearDown(reduce.dispose);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: ValueListenableBuilder<bool>(
           valueListenable: reduce,
           builder: (context, reduced, _) => MediaQuery(
@@ -364,7 +395,10 @@ void main() {
       svc.xpNotifier.value = XpStatus(xp: 1240, weekXp: 40, rank: EconomyConfig.current.rankFor(1240));
       await _pump(tester, theme, const RankProgressCard());
       expect(find.text('Silver'), findsOneWidget);
-      expect(find.text('1\u00A0240 lifetime XP'), findsOneWidget);
+      expect(
+        find.text(AppLocalizationsEn().economyLifetimeXp(formatLocalizedNumber(1240, AppLocalizationsEn()))),
+        findsOneWidget,
+      );
       expect(find.text('760 XP to Gold'), findsOneWidget);
       final LinearProgressIndicator bar = tester.widget(find.byType(LinearProgressIndicator));
       expect(bar.value, closeTo((1240 - 500) / (2000 - 500), 0.001));
@@ -442,6 +476,9 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: theme,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),

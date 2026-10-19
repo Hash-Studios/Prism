@@ -6,6 +6,7 @@ import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.da
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
 import 'package:Prism/features/wallpaper_history/views/pages/wallpaper_history_screen.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -34,7 +35,13 @@ void main() {
   );
 
   testWidgets('empty history shows the empty state without a clear action', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: WallpaperHistoryScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperHistoryScreen(),
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(GlintState), findsOneWidget);
@@ -45,7 +52,13 @@ void main() {
   testWidgets('lists applied wallpapers newest first with target labels', (tester) async {
     await record('a', 'home', DateTime(2026, 1, 1, 9));
     await record('b', 'lock', DateTime(2026, 1, 2, 9));
-    await tester.pumpWidget(const MaterialApp(home: WallpaperHistoryScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperHistoryScreen(),
+      ),
+    );
     await tester.pump();
 
     final List<AppliedWallpaperTile> tiles = tester
@@ -58,7 +71,13 @@ void main() {
 
   testWidgets('Clear history asks first and empties the list on confirm', (tester) async {
     await record('a', 'home', DateTime(2026, 1, 1, 9));
-    await tester.pumpWidget(const MaterialApp(home: WallpaperHistoryScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperHistoryScreen(),
+      ),
+    );
     await tester.pump();
 
     await tester.tap(find.text('Clear history'));
@@ -81,7 +100,13 @@ void main() {
     await record('a', 'home', DateTime(2026, 1, 1, 9));
     await record('b', 'lock', DateTime(2026, 1, 2, 9));
     await record('c', 'home', DateTime(2026, 1, 3, 9));
-    await tester.pumpWidget(const MaterialApp(home: WallpaperHistoryScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperHistoryScreen(),
+      ),
+    );
     await tester.pump();
 
     final Iterable<String> current = tester
@@ -95,7 +120,14 @@ void main() {
   testWidgets('the Current badge is an accent pill with a label that reads on the accent', (tester) async {
     await record('a', 'home', DateTime(2026, 1, 1, 9));
     final ThemeData theme = ThemeData(colorScheme: const ColorScheme.light(primary: Color(0xFFE57697)));
-    await tester.pumpWidget(MaterialApp(theme: theme, home: const WallpaperHistoryScreen()));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: theme,
+        home: const WallpaperHistoryScreen(),
+      ),
+    );
     await tester.pump();
 
     final DecoratedBox badge = tester.widget<DecoratedBox>(
@@ -111,7 +143,13 @@ void main() {
   testWidgets('a both row is current for both screens with one badge', (tester) async {
     await record('a', 'home', DateTime(2026, 1, 1, 9));
     await record('b', 'both', DateTime(2026, 1, 2, 9));
-    await tester.pumpWidget(const MaterialApp(home: WallpaperHistoryScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: WallpaperHistoryScreen(),
+      ),
+    );
     await tester.pump();
 
     expect(find.text('Current'), findsOneWidget);
@@ -120,7 +158,13 @@ void main() {
   testWidgets('a long press removes the row and Undo brings it back', (tester) async {
     await record('a', 'home', DateTime(2026, 1, 1, 9));
     await record('b', 'lock', DateTime(2026, 1, 2, 9));
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: WallpaperHistoryScreen())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: WallpaperHistoryScreen()),
+      ),
+    );
     await tester.pump();
 
     await tester.longPress(find.byKey(const ValueKey('b')).first);
@@ -137,7 +181,13 @@ void main() {
 
   testWidgets('a swipe removes the row', (tester) async {
     await record('a', 'home', DateTime(2026, 1, 1, 9));
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: WallpaperHistoryScreen())));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: WallpaperHistoryScreen()),
+      ),
+    );
     await tester.pump();
 
     await tester.drag(find.byType(AppliedWallpaperTile), const Offset(-400, 0));

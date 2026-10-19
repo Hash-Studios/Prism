@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/scoreboard_row.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +55,7 @@ class _NotificationScoreboardCardState extends State<NotificationScoreboardCard>
     } catch (error, stackTrace) {
       logger.w('Notification scoreboard failed to load.', tag: 'AdminReview', error: error, stackTrace: stackTrace);
       if (!mounted) return;
-      setState(() => _error = 'Could not load notification counts.');
+      setState(() => _error = context.l10n.adminNotificationCountsLoadError);
     }
   }
 
@@ -65,19 +66,16 @@ class _NotificationScoreboardCardState extends State<NotificationScoreboardCard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text('Last 14 days', style: PrismTextStyles.sectionTitle(context)),
+          Text(context.l10n.adminLast14Days, style: PrismTextStyles.sectionTitle(context)),
           const SizedBox(height: PrismSpace.xxs),
-          Text(
-            'Accepted means Firebase took the push. A push to the account topic and the device token counts twice. It is not a view.',
-            style: PrismTextStyles.caption(context),
-          ),
+          Text(context.l10n.adminNotificationCountExplanation, style: PrismTextStyles.caption(context)),
           const SizedBox(height: PrismSpace.sm),
           if (_error != null)
             Text(_error!, style: PrismTextStyles.body(context))
           else if (days == null)
-            Text('Loading notification counts.', style: PrismTextStyles.caption(context))
+            Text(context.l10n.adminLoadingNotificationCounts, style: PrismTextStyles.caption(context))
           else if (days.isEmpty)
-            Text('No notification counts yet.', style: PrismTextStyles.body(context))
+            Text(context.l10n.adminNoNotificationCounts, style: PrismTextStyles.body(context))
           else
             for (final ScoreboardDay day in days) ...<Widget>[
               Text(formatScoreboardLine(day), style: PrismTextStyles.caption(context)),

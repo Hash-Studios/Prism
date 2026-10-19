@@ -13,6 +13,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -87,7 +88,13 @@ void main() {
   Future<_DetailTestRouter> pumpRouter(WidgetTester tester, {PageRouteInfo? initialRoute}) async {
     final router = _DetailTestRouter();
     final config = router.config(deepLinkBuilder: initialRoute == null ? null : (_) => DeepLink.single(initialRoute));
-    await tester.pumpWidget(MaterialApp.router(routerConfig: config));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: config,
+      ),
+    );
     if (initialRoute == null) {
       await router.navigatePath('/');
       await tester.pumpAndSettle();
@@ -194,7 +201,7 @@ void main() {
 
     expect(router.current.name, WallpaperDetailRoute.name);
     expect(find.byType(GlintState), findsOneWidget);
-    blocs.single.states.add(const WallpaperDetailError(message: 'Wallpaper not found'));
+    blocs.single.states.add(const WallpaperDetailError(failure: WallpaperDetailLoadFailure.notFound));
     await tester.pump();
     expect(find.text("Couldn't load this wallpaper"), findsOneWidget);
     expect(find.text('Wallpaper not found'), findsOneWidget);

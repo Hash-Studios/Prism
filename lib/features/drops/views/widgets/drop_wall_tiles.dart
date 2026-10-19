@@ -13,6 +13,7 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/painters/foil_sheen_painter.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -94,6 +95,7 @@ class DropPreviewHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final Color gold = dropEyebrowColor(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: PrismSpace.sm),
@@ -102,7 +104,7 @@ class DropPreviewHint extends StatelessWidget {
         children: <Widget>[
           Icon(Icons.visibility_outlined, size: 14, color: gold),
           const SizedBox(width: PrismSpace.xs),
-          Text('Tap to preview', style: dropCapsStyle(size: 10, spacing: 1.8, color: gold)),
+          Text(l10n.economyDropTapToPreview, style: dropCapsStyle(size: 10, spacing: 1.8, color: gold)),
         ],
       ),
     );
@@ -144,18 +146,16 @@ class _DropWallTileState extends State<DropWallTile> {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     final String state = widget.unlocked
-        ? 'Unlocked'
+        ? l10n.economyDropUnlocked
         : widget.missed
-        ? 'Missed'
-        : 'Locked';
-    final String by = widget.wall.by.isEmpty ? '' : ' by ${widget.wall.by}';
-    return PrismWallTile(
-      url: widget.wall.thumb,
-      semanticLabel: '$state wall ${widget.serial}$by',
-      onTap: widget.onTap,
-      overlay: _overlay(),
-    );
+        ? l10n.economyDropMissed
+        : l10n.economyDropLocked;
+    final String label = widget.wall.by.isEmpty
+        ? l10n.economyDropWallSemantics(state, widget.serial)
+        : l10n.economyDropWallBySemantics(state, widget.serial, widget.wall.by);
+    return PrismWallTile(url: widget.wall.thumb, semanticLabel: label, onTap: widget.onTap, overlay: _overlay());
   }
 
   Widget _overlay() {
@@ -199,7 +199,10 @@ class _DropWallTileState extends State<DropWallTile> {
                     DropSeal(struck: widget.missed),
                     if (widget.missed) ...<Widget>[
                       const SizedBox(height: PrismSpace.xs),
-                      Text('Missed', style: dropCapsStyle(size: 10, spacing: 1.8, color: DropPalette.inkMuted)),
+                      Text(
+                        AppLocalizations.of(context).economyDropMissed,
+                        style: dropCapsStyle(size: 10, spacing: 1.8, color: DropPalette.inkMuted),
+                      ),
                     ],
                   ],
                 ),
@@ -242,6 +245,7 @@ class _OwnedMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
@@ -263,7 +267,7 @@ class _OwnedMark extends StatelessWidget {
                   children: <Widget>[
                     const Icon(Icons.check_rounded, size: 12, color: DropPalette.gold),
                     const SizedBox(width: 4),
-                    Text('Owned', style: dropCapsStyle(size: 10, spacing: 1.2)),
+                    Text(l10n.economyOwned, style: dropCapsStyle(size: 10, spacing: 1.2)),
                   ],
                 ),
               ),

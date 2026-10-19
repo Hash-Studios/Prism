@@ -111,6 +111,17 @@ format-check: ensure-fvm
 analyze: ensure-fvm env-guard
 	@$(FLUTTER) analyze --no-pub $(ANALYZE_FLAGS)
 
+.PHONY: l10n-gen l10n-check
+l10n-gen: ensure-fvm
+	@$(FLUTTER) gen-l10n
+
+l10n-check: ensure-fvm
+	@python3 tool/check_l10n.py
+	@$(FLUTTER) gen-l10n
+	@git diff --exit-code -- lib/l10n/generated
+	@$(DART) run tool/l10n_audit.dart --check --summary
+	@$(FLUTTER) test tool/l10n_audit_test.dart
+
 analytics-gen: ensure-fvm
 	@$(DART) run tool/generate_analytics_schema.dart
 	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) lib/core/analytics/events/generated/analytics_events.g.dart
@@ -301,7 +312,7 @@ update-flutter: ensure-fvm
 repo-assets-check:
 	@python3 tool/check_repo_assets.py
 
-ci: get format-check guard-test env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check test
+ci: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check test
 
 .PHONY: native-android-check native-ios-check
 native-android-check: get
@@ -326,7 +337,7 @@ native-ios-check: get
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
-		$(FLUTTER) test $(TEST_FLAGS); \
+		$(FLUTTER) test $(TEST_FLAGS) && \
 		$(FLUTTER) test $(TEST_FLAGS) --dart-define=dart.vm.product=true --dart-define=PRISM_PERF_AUTODRIVE=true test/core/debug/performance_probe_release_test.dart test/core/platform/cloud_functions_perf_test.dart; \
 	else \
 		echo "No test files found, skipping."; \

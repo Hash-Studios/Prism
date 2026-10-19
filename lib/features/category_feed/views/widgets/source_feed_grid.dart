@@ -15,6 +15,7 @@ import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart'
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/category_feed_refresh.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -88,9 +89,9 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
       final bool failed = state.status == LoadStatus.failure;
       return RefreshableGlintState(
         kind: failed ? GlintStateKind.error : GlintStateKind.empty,
-        title: failed ? "Couldn't load wallpapers" : 'No wallpapers here yet',
-        body: failed ? 'Check your connection and try again.' : 'New ones land often. Check back soon.',
-        actionLabel: failed ? 'Try again' : 'Refresh',
+        title: failed ? context.l10n.wallpaperFeedWallsLoadError : context.l10n.wallpaperCategoryFeedEmptyTitle,
+        body: failed ? context.l10n.wallpaperCheckConnection : context.l10n.wallpaperCategoryFeedEmptyBody,
+        actionLabel: failed ? context.l10n.wallpaperTryAgain : context.l10n.wallpaperRefresh,
         onAction: () => unawaited(_refresh()),
         onRefresh: _refresh,
       );

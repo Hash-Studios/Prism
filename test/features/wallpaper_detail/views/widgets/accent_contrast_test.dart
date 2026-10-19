@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,6 +18,9 @@ void main() {
   testWidgets('PrimaryActionPill uses the same foreground as onColor', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: ThemeData(colorScheme: const ColorScheme.light(primary: midGrey)),
         home: const PrimaryActionPill(icon: Icons.check, label: 'Set', semanticLabel: 'Set', isLoading: false),
       ),

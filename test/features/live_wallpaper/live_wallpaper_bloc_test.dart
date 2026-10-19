@@ -212,14 +212,14 @@ void main() {
 
   group('video', () {
     test('a video the repository rejects is not kept, and the reason is shown', () async {
-      repository.videoProblem = 'That video is larger than 256 MB. Pick a shorter clip.';
+      repository.videoProblem = LiveApplyFailure.videoTooLarge;
       final LiveWallpaperBloc bloc = build()
         ..add(const LiveWallpaperEvent.started(isPro: false))
         ..add(const LiveWallpaperEvent.videoPicked('/tmp/big.mp4'));
       await settle();
       expect(bloc.state.videoPath, isNull);
       expect(bloc.state.outcome?.status, LiveApplyStatus.failed);
-      expect(bloc.state.outcome?.message, contains('256 MB'));
+      expect(bloc.state.outcome?.failure, LiveApplyFailure.videoTooLarge);
       await bloc.close();
     });
 
@@ -267,7 +267,7 @@ void main() {
     });
 
     test('reports a failed apply', () async {
-      repository.outcome = const LiveApplyOutcome.failed('nope');
+      repository.outcome = const LiveApplyOutcome.failed(LiveApplyFailure.setFailed);
       final LiveWallpaperBloc bloc = build(imageUrl: null)
         ..add(const LiveWallpaperEvent.started(isPro: false))
         ..add(LiveWallpaperEvent.gradientApplied(palette: palette));

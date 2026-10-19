@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/local_store.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:injectable/injectable.dart';
 
@@ -223,6 +224,8 @@ class NotificationsLocalDataSource {
     'route': item.route,
     'wallId': item.wallId,
     'followerEmail': item.followerEmail,
+    'copyKind': item.copyKind,
+    'copyArgs': item.copyArgs,
   };
 
   InAppNotificationEntity _decode(Map raw) {
@@ -249,6 +252,8 @@ class NotificationsLocalDataSource {
       route: map['route']?.toString(),
       wallId: map['wallId']?.toString(),
       followerEmail: map['followerEmail']?.toString(),
+      copyKind: map['copyKind']?.toString(),
+      copyArgs: toJsonMap(map['copyArgs']).cast<String, Object?>(),
     );
   }
 }

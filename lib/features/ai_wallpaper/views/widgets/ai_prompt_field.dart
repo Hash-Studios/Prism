@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_field.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -24,6 +25,7 @@ class AiPromptField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -31,7 +33,7 @@ class AiPromptField extends StatelessWidget {
           controller: controller,
           focusNode: focusNode,
           enabled: enabled,
-          hint: 'Describe a scene',
+          hint: l10n.economyAiDescribeScene,
           minLines: 4,
           maxLines: 6,
           textInputAction: TextInputAction.done,
@@ -42,9 +44,9 @@ class AiPromptField extends StatelessWidget {
           spacing: PrismSpace.xs,
           children: <Widget>[
             Tooltip(
-              message: 'Shuffle a new example description',
+              message: l10n.economyAiShuffleMessage,
               child: PrismButton(
-                label: 'Shuffle',
+                label: l10n.economyAiShuffle,
                 icon: Icons.shuffle_rounded,
                 variant: PrismButtonVariant.ghost,
                 size: PrismButtonSize.compact,
@@ -52,9 +54,9 @@ class AiPromptField extends StatelessWidget {
               ),
             ),
             Tooltip(
-              message: 'Use this scene in your description (editable)',
+              message: l10n.economyAiSceneIdeaMessage,
               child: PrismButton(
-                label: 'Scene idea',
+                label: l10n.economyAiSceneIdea,
                 icon: Icons.lightbulb_outline_rounded,
                 variant: PrismButtonVariant.ghost,
                 size: PrismButtonSize.compact,

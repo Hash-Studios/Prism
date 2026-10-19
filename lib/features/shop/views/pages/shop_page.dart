@@ -6,15 +6,16 @@ import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_sheet.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-String _kindLabel(ShopItemKind kind) => switch (kind) {
-  ShopItemKind.theme => 'Themes',
-  ShopItemKind.appIcon => 'Icons',
-  ShopItemKind.frame => 'Frames',
-  ShopItemKind.nameGlow => 'Glows',
+String _kindLabel(ShopItemKind kind, AppLocalizations l10n) => switch (kind) {
+  ShopItemKind.theme => l10n.economyShopThemes,
+  ShopItemKind.appIcon => l10n.economyShopIcons,
+  ShopItemKind.frame => l10n.economyShopFrames,
+  ShopItemKind.nameGlow => l10n.economyShopGlows,
 };
 
 @RoutePage()
@@ -40,7 +41,7 @@ class _ShopView extends StatelessWidget {
         final List<ShopItem> items = state.items;
         final DateTime now = DateTime.now();
         return PrismPage(
-          title: 'Shop',
+          title: context.l10n.economyShopTitle,
           actions: <Widget>[
             ValueListenableBuilder<int>(
               valueListenable: CoinsService.instance.balanceNotifier,
@@ -56,7 +57,7 @@ class _ShopView extends StatelessWidget {
                   child: PrismSegmented<ShopItemKind>(
                     values: ShopItemKind.values,
                     selected: state.kind,
-                    labelOf: _kindLabel,
+                    labelOf: (ShopItemKind kind) => _kindLabel(kind, context.l10n),
                     onChanged: (ShopItemKind kind) => context.read<ShopBloc>().add(ShopEvent.kindChanged(kind)),
                   ),
                 ),

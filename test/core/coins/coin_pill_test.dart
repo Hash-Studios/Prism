@@ -1,9 +1,13 @@
 import 'package:Prism/core/widgets/coins/coin_pill.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _app(ThemeData theme, Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   theme: theme,
   home: Scaffold(body: Center(child: child)),
 );

@@ -17,11 +17,19 @@ abstract final class ShareCardStyle {
 
 /// Branded 1080x1920 card: the wallpaper (cover crop) with a quiet bottom band for logo, context line and link.
 class ShareCard extends StatelessWidget {
-  const ShareCard({required this.wallpaper, required this.logo, required this.link, this.contextLine, super.key});
+  const ShareCard({
+    required this.wallpaper,
+    required this.logo,
+    required this.link,
+    required this.brandName,
+    this.contextLine,
+    super.key,
+  });
 
   final ui.Image wallpaper;
   final ui.Image logo;
   final String link;
+  final String brandName;
   final String? contextLine;
 
   @override
@@ -72,7 +80,7 @@ class ShareCard extends StatelessWidget {
                         filterQuality: FilterQuality.high,
                       ),
                       const SizedBox(width: 24),
-                      const Text('Prism', style: TextStyle(fontSize: 64, fontWeight: FontWeight.w700)),
+                      Text(brandName, style: const TextStyle(fontSize: 64, fontWeight: FontWeight.w700)),
                     ],
                   ),
                   if (line != null && line.isNotEmpty) ...<Widget>[

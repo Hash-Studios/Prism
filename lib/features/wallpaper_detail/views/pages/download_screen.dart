@@ -15,10 +15,12 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:share_plus/share_plus.dart';
 
@@ -26,27 +28,31 @@ enum _DownloadsStatus { loading, ready, error }
 
 enum _DownloadSort { newest, oldest, name }
 
-String _sortLabel(_DownloadSort sort) => switch (sort) {
-  _DownloadSort.newest => 'Newest',
-  _DownloadSort.oldest => 'Oldest',
-  _DownloadSort.name => 'Name',
+String _sortLabel(AppLocalizations l10n, _DownloadSort sort) => switch (sort) {
+  _DownloadSort.newest => l10n.wallpaperDownloadSortNewest,
+  _DownloadSort.oldest => l10n.wallpaperDownloadSortOldest,
+  _DownloadSort.name => l10n.wallpaperDownloadSortName,
 };
 
 typedef _FileMeta = ({DateTime modified, int bytes});
 
 /// A short size such as "820 KB" or "12.4 MB".
-String _formatDownloadSize(int bytes) {
-  if (bytes < 1024) return '$bytes B';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).round()} KB';
-  if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+String _formatDownloadSize(AppLocalizations l10n, int bytes) {
+  final NumberFormat number = NumberFormat.decimalPattern(l10n.localeName);
+  if (bytes < 1024) return '${number.format(bytes)} B';
+  if (bytes < 1024 * 1024) return '${number.format((bytes / 1024).round())} KB';
+  if (bytes < 1024 * 1024 * 1024) return '${number.format(bytes / (1024 * 1024))} MB';
+  return '${number.format(bytes / (1024 * 1024 * 1024))} GB';
 }
 
 @RoutePage()
 class DownloadScreen extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      const PrismPage(title: 'Downloads', maxContentWidth: double.infinity, body: DownloadsBody());
+  Widget build(BuildContext context) => PrismPage(
+    title: context.l10n.wallpaperDownloadsTitle,
+    maxContentWidth: double.infinity,
+    body: const DownloadsBody(),
+  );
 }
 
 /// The downloads list without a page frame, so the Library tabs can host it.
@@ -97,7 +103,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
       }
     }
     if (found == null) {
-      if (files.isNotEmpty) toasts.error("Couldn't refresh downloads. Try again.");
+      if (files.isNotEmpty) toasts.error(context.l10n.wallpaperDownloadsRefreshError);
       setState(() => _status = files.isEmpty ? _DownloadsStatus.error : _DownloadsStatus.ready);
     } else {
       final Set<String> paths = found.map((file) => file.path).toSet();
@@ -176,15 +182,19 @@ class _DownloadsBodyState extends State<DownloadsBody> {
         await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(paths.length == 1 ? 'Delete this download?' : 'Delete ${paths.length} downloads?'),
+            title: Text(
+              paths.length == 1
+                  ? context.l10n.wallpaperDeleteOneDownloadTitle
+                  : context.l10n.wallpaperDeleteManyDownloadsTitle(paths.length),
+            ),
             content: Text(
               paths.length == 1
-                  ? 'It is removed from this device. You can download it again later.'
-                  : 'They are removed from this device. You can download them again later.',
+                  ? context.l10n.wallpaperDeleteOneDownloadBody
+                  : context.l10n.wallpaperDeleteManyDownloadsBody,
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-              TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+              TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.l10n.actionCancel)),
+              TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(context.l10n.wallpaperDelete)),
             ],
           ),
         ) ??
@@ -216,7 +226,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
     }
     if (deleted.length < paths.length) {
       final int failed = paths.length - deleted.length;
-      toasts.error(failed == 1 ? "Couldn't delete 1 download." : "Couldn't delete $failed downloads.");
+      toasts.error(context.l10n.wallpaperDownloadsDeleteError(failed));
     }
     unawaited(readData());
   }
@@ -224,6 +234,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
   Future<void> _shareSelected() async {
     final List<String> paths = _selected.toList(growable: false);
     if (paths.isEmpty) return;
+    final AppLocalizations l10n = context.l10n;
     PrismHaptics.tap();
     final RenderObject? box = context.findRenderObject();
     final Rect origin = box is RenderBox && box.hasSize ? box.localToGlobal(Offset.zero) & box.size : Rect.zero;
@@ -236,7 +247,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
       );
     } catch (error, stackTrace) {
       logger.e('Could not share downloads', error: error, stackTrace: stackTrace);
-      toasts.error("Couldn't share. Try again.");
+      toasts.error(l10n.wallpaperDownloadsShareError);
     }
   }
 
@@ -257,9 +268,9 @@ class _DownloadsBodyState extends State<DownloadsBody> {
 
   String get _summary {
     final int count = files.length;
-    final String label = count == 1 ? '1 download' : '$count downloads';
+    final String label = context.l10n.wallpaperDownloadCount(count);
     final int bytes = _meta.values.fold(0, (sum, meta) => sum + meta.bytes);
-    return bytes > 0 ? '$label · ${_formatDownloadSize(bytes)}' : label;
+    return bytes > 0 ? '$label · ${_formatDownloadSize(context.l10n, bytes)}' : label;
   }
 
   Widget _toolbar(BuildContext context) {
@@ -270,13 +281,13 @@ class _DownloadsBodyState extends State<DownloadsBody> {
         children: <Widget>[
           Expanded(child: Text(_summary, style: PrismTextStyles.caption(context))),
           PopupMenuButton<_DownloadSort>(
-            tooltip: 'Sort downloads',
+            tooltip: context.l10n.wallpaperSortDownloads,
             icon: Icon(Icons.sort_rounded, color: cs.onSurface),
             initialValue: _sort,
             onSelected: (sort) => setState(() => _sort = sort),
             itemBuilder: (context) => <PopupMenuEntry<_DownloadSort>>[
               for (final _DownloadSort sort in _DownloadSort.values)
-                PopupMenuItem<_DownloadSort>(value: sort, child: Text(_sortLabel(sort))),
+                PopupMenuItem<_DownloadSort>(value: sort, child: Text(_sortLabel(context.l10n, sort))),
             ],
           ),
         ],
@@ -300,9 +311,9 @@ class _DownloadsBodyState extends State<DownloadsBody> {
         return _message(
           GlintState(
             kind: GlintStateKind.error,
-            title: "Couldn't load your downloads",
-            body: 'Check your storage access and try again.',
-            actionLabel: 'Try again',
+            title: context.l10n.wallpaperDownloadsLoadError,
+            body: context.l10n.wallpaperDownloadsLoadHelp,
+            actionLabel: context.l10n.wallpaperTryAgain,
             onAction: () => unawaited(_retry()),
           ),
         );
@@ -311,9 +322,9 @@ class _DownloadsBodyState extends State<DownloadsBody> {
           return _message(
             GlintState(
               kind: GlintStateKind.empty,
-              title: 'No downloads yet',
-              body: 'Wallpapers you download are kept here.',
-              actionLabel: 'Browse wallpapers',
+              title: context.l10n.wallpaperDownloadsEmptyTitle,
+              body: context.l10n.wallpaperDownloadsEmptyBody,
+              actionLabel: context.l10n.wallpaperBrowseWallpapers,
               onAction: () => context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
             ),
           );
@@ -363,7 +374,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
             SelectionActionBar(
               actions: <Widget>[
                 CircularMenuButton(
-                  label: 'Delete',
+                  label: context.l10n.wallpaperDelete,
                   isLoading: false,
                   onTap: () => unawaited(_deleteSelected()),
                   child: Icon(Icons.delete_outline_rounded, color: cs.onSurface, size: 20),
@@ -371,7 +382,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
                 if (_selected.length == 1 && !hideSetWallpaperUi)
                   SetWallpaperButton(url: _selected.first, onSet: _exitSelection),
                 CircularMenuButton(
-                  label: 'Share',
+                  label: context.l10n.wallpaperShare,
                   isLoading: false,
                   onTap: () => unawaited(_shareSelected()),
                   child: Icon(Icons.ios_share_rounded, color: cs.onSurface, size: 20),
@@ -408,7 +419,7 @@ class _DownloadTile extends StatelessWidget {
         button: true,
         image: true,
         selected: selected,
-        label: 'Downloaded wallpaper',
+        label: context.l10n.wallpaperDownloadedWallpaper,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
@@ -442,7 +453,7 @@ class _DownloadTile extends StatelessWidget {
                     ),
                     child: selected
                         ? Align(
-                            alignment: Alignment.topRight,
+                            alignment: AlignmentDirectional.topEnd,
                             child: Padding(
                               padding: const EdgeInsets.all(PrismSpace.xs),
                               child: CircleAvatar(

@@ -10,6 +10,7 @@ import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Asks how to unlock [wall]: this one, or every wall left. [onUnlock] gets the wall id, or null for the pack.
@@ -91,19 +92,19 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
       builder: (context, balance, _) {
         final bool short = balance < wallPrice;
         return PrismSheetBody(
-          title: widget.wall.title.isEmpty ? widget.drop.title : widget.wall.title,
-          message: widget.wall.by.isEmpty ? null : 'by ${widget.wall.by}',
+          title: widget.wall.title.isEmpty ? widget.drop.displayTitle(context.l10n) : widget.wall.title,
+          message: widget.wall.by.isEmpty ? null : context.l10n.economyDropByCreator(widget.wall.by),
           scrollable: true,
           actions: <Widget>[
             PrismButton(
-              label: 'Unlock this wall for $wallPrice',
+              label: context.l10n.economyDropUnlockWall(wallPrice),
               expand: true,
               trailing: const PrismCoinIcon(size: 18),
               onPressed: _watching ? null : () => widget.onUnlock(widget.wall.id),
             ),
             if (widget.remaining > 1)
               PrismButton(
-                label: 'Unlock the pack for $packPrice',
+                label: context.l10n.economyDropUnlockPack(packPrice),
                 expand: true,
                 variant: PrismButtonVariant.tonal,
                 trailing: const PrismCoinIcon(size: 18),
@@ -111,7 +112,7 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
               ),
             if (short)
               PrismButton(
-                label: watchAdOptionLabel(),
+                label: watchAdOptionLabel(context.l10n),
                 expand: true,
                 variant: PrismButtonVariant.tonal,
                 loading: _watching,
@@ -119,7 +120,7 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
               ),
             if (short)
               PrismButton(
-                label: 'Earn coins',
+                label: context.l10n.economyEarnCoins,
                 expand: true,
                 variant: PrismButtonVariant.ghost,
                 onPressed: widget.onEarn,
@@ -152,7 +153,7 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
                         padding: const EdgeInsets.all(PrismSpace.sm),
                         child: Row(
                           children: <Widget>[
-                            Text('THE DROP', style: dropCapsStyle(size: 10, spacing: 2)),
+                            Text(context.l10n.economyDropBrandTitle, style: dropCapsStyle(size: 10, spacing: 2)),
                             const Spacer(),
                             Text(serial, style: dropCapsStyle(size: 10, spacing: 1.2, color: DropPalette.goldLight)),
                           ],
@@ -168,10 +169,10 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
                 children: <Widget>[
                   const PrismCoinIcon(size: 16),
                   const SizedBox(width: PrismSpace.xxs),
-                  Text('You have $balance coins', style: PrismTextStyles.caption(context)),
+                  Text(context.l10n.economyYouHaveCoins(balance), style: PrismTextStyles.caption(context)),
                   if (isPro) ...<Widget>[
                     const SizedBox(width: PrismSpace.xs),
-                    const PrismTag(label: 'Pro price', tone: PrismTone.accent),
+                    PrismTag(label: context.l10n.economyProPrice, tone: PrismTone.accent),
                   ],
                 ],
               ),

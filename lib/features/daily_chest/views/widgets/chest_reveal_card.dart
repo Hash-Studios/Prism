@@ -7,6 +7,7 @@ import 'package:Prism/features/quests/domain/quest_catalog.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
 import 'package:Prism/features/spin_wheel/spin_wheel.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:flutter/material.dart';
 
@@ -27,15 +28,16 @@ class ChestRevealCard extends StatelessWidget {
   /// The cosmetic itself is not doubled, only coins are.
   bool get _showsDouble => won.doubled && !_isCosmetic;
 
-  String get _semanticLabel {
-    final String prize = _isCosmetic ? 'a new ${_kindLabel(_item)}: ${_itemName()}' : '${won.win.coins} coins';
-    final String xp = won.win.xp > 0 ? ' Plus ${won.win.xp} XP.' : '';
-    return '${won.tier.label}. You won $prize.${_showsDouble ? ' Doubled by your bonus quest.' : ''}$xp';
+  String _semanticLabel(AppLocalizations l10n) {
+    final String prize = _isCosmetic
+        ? l10n.economyChestNewCosmetic(_kindLabel(l10n, _item), _itemName(l10n))
+        : l10n.economyChestCoinsPrize(won.win.coins);
+    return l10n.economyChestPrizeSemantics(won.tier.label(l10n), prize, _showsDouble ? 'true' : 'false', won.win.xp);
   }
 
-  String _itemName() {
+  String _itemName(AppLocalizations l10n) {
     final ShopItem? item = _item;
-    return item?.name ?? cosmeticName(won.win.itemId!);
+    return item == null ? cosmeticName(l10n) : shopItemName(item, l10n);
   }
 
   @override
@@ -45,7 +47,7 @@ class ChestRevealCard extends StatelessWidget {
     final TextStyle caption = PrismTextStyles.caption(context);
     return Semantics(
       liveRegion: true,
-      label: _semanticLabel,
+      label: _semanticLabel(context.l10n),
       excludeSemantics: true,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -64,15 +66,15 @@ class ChestRevealCard extends StatelessWidget {
               if (_isCosmetic) _cosmetic(context) else _amount(context),
               if (won.prize is CosmeticPrize && !_isCosmetic) ...<Widget>[
                 const SizedBox(height: PrismSpace.xxs),
-                Text('You own every cosmetic', style: caption),
+                Text(context.l10n.economyChestOwnEveryCosmetic, style: caption),
               ],
               if (_showsDouble) ...<Widget>[
                 const SizedBox(height: PrismSpace.xxs),
-                Text('Doubled by your bonus quest', style: caption),
+                Text(context.l10n.economyChestDoubledByBonus, style: caption),
               ],
               if (won.win.xp > 0) ...<Widget>[
                 const SizedBox(height: PrismSpace.xxs),
-                Text('+${won.win.xp} XP', style: caption),
+                Text(context.l10n.economyXpAwarded(won.win.xp), style: caption),
               ],
             ],
           ),
@@ -106,12 +108,15 @@ class ChestRevealCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(
-                _itemName(),
+                _itemName(context.l10n),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: PrismTextStyles.sectionTitle(context),
               ),
-              Text('New ${_kindLabel(item)}', style: PrismTextStyles.caption(context)),
+              Text(
+                context.l10n.economyChestNewKind(_kindLabel(context.l10n, item)),
+                style: PrismTextStyles.caption(context),
+              ),
             ],
           ),
         ),
@@ -120,12 +125,12 @@ class ChestRevealCard extends StatelessWidget {
   }
 }
 
-String _kindLabel(ShopItem? item) => switch (item?.kind) {
-  ShopItemKind.theme => 'theme',
-  ShopItemKind.appIcon => 'app icon',
-  ShopItemKind.frame => 'frame',
-  ShopItemKind.nameGlow => 'name glow',
-  null => 'cosmetic',
+String _kindLabel(AppLocalizations l10n, ShopItem? item) => switch (item?.kind) {
+  ShopItemKind.theme => l10n.economyCosmeticTheme,
+  ShopItemKind.appIcon => l10n.economyCosmeticAppIcon,
+  ShopItemKind.frame => l10n.economyCosmeticFrame,
+  ShopItemKind.nameGlow => l10n.economyCosmeticNameGlow,
+  null => l10n.economyCosmetic,
 };
 
 class _TierChip extends StatelessWidget {
@@ -141,7 +146,7 @@ class _TierChip extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: 3),
         child: Text(
-          tier.label,
+          tier.label(context.l10n),
           style: PrismTextStyles.caption(context).copyWith(color: prismOnColor(fill), fontWeight: FontWeight.w700),
         ),
       ),

@@ -49,6 +49,26 @@ void main() {
     }
   });
 
+  test('the Quick Settings tile setup hint comes from a translatable Android resource', () {
+    final String strings = File('android/app/src/main/res/values/strings.xml').readAsStringSync();
+    final String tileSource = File(
+      'android/app/src/main/kotlin/com/hash/prism/WallpaperTileService.kt',
+    ).readAsStringSync();
+    expect(strings, contains('name="tile_setup_subtitle"'));
+    expect(tileSource, contains('getString(R.string.tile_setup_subtitle)'));
+    expect(tileSource, isNot(contains('"Open Prism to set up"')));
+  });
+
+  test('the media save confirmation uses a folder placeholder in an Android string resource', () {
+    final String strings = File('android/app/src/main/res/values/strings.xml').readAsStringSync();
+    final String mediaSource = File(
+      'android/app/src/main/kotlin/com/hash/prism/PrismMediaHostApiImpl.kt',
+    ).readAsStringSync();
+    expect(strings, contains('name="media_saved_in_pictures">Saved in Pictures/%1\$s!</string>'));
+    expect(mediaSource, contains('getString(R.string.media_saved_in_pictures, folder)'));
+    expect(mediaSource, isNot(contains(r'"Saved in Pictures/$folder!"')));
+  });
+
   group('launcher icons', () {
     const List<String> aliases = <String>['.IconNoir', '.IconGlass', '.IconSunset', '.IconMono'];
 

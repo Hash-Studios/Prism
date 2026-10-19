@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -102,36 +103,41 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
   }
 
   Future<void> _copyAllData() async {
+    final AppLocalizations l10n = context.l10n;
     if (_rawContent.isEmpty) {
-      toasts.error('No telemetry data to copy');
+      toasts.error(l10n.adminNoTelemetryData);
       return;
     }
     await Clipboard.setData(ClipboardData(text: _rawContent));
-    toasts.success('Copied to clipboard. Paste elsewhere to analyze.');
+    toasts.success(l10n.adminTelemetryCopied);
   }
 
   @override
   Widget build(BuildContext context) {
     return PrismPage(
-      title: 'Firestore telemetry',
+      title: context.l10n.adminFirestoreTelemetry,
       actions: <Widget>[
-        PrismIconButton(icon: Icons.refresh_rounded, tooltip: 'Refresh', onPressed: _loading ? null : _loadTelemetry),
+        PrismIconButton(
+          icon: Icons.refresh_rounded,
+          tooltip: context.l10n.adminRefresh,
+          onPressed: _loading ? null : _loadTelemetry,
+        ),
       ],
       body: _loading
           ? PrismSkeleton.cards(height: 140)
           : _error != null
           ? GlintState(
               kind: GlintStateKind.error,
-              title: 'Could not read telemetry',
+              title: context.l10n.adminTelemetryReadError,
               body: _error,
-              actionLabel: 'Try again',
+              actionLabel: context.l10n.adminTryAgain,
               onAction: _loadTelemetry,
             )
           : _rawContent.isEmpty
-          ? const GlintState(
+          ? GlintState(
               kind: GlintStateKind.empty,
-              title: 'No telemetry yet',
-              body: 'Use the app to generate Firestore events.',
+              title: context.l10n.adminNoTelemetryYet,
+              body: context.l10n.adminUseAppForEvents,
             )
           : RefreshIndicator(
               onRefresh: () {
@@ -145,41 +151,41 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
                   PrismCard(
                     child: Column(
                       children: <Widget>[
-                        _StatRow('Total events', '$_totalEvents'),
-                        _StatRow('Estimated document reads', '$_docReads'),
-                        _StatRow('Estimated document writes', '$_docWrites'),
+                        _StatRow(context.l10n.adminTotalEvents, '$_totalEvents'),
+                        _StatRow(context.l10n.adminEstimatedDocumentReads, '$_docReads'),
+                        _StatRow(context.l10n.adminEstimatedDocumentWrites, '$_docWrites'),
                       ],
                     ),
                   ),
                   const SizedBox(height: PrismSpace.sm),
                   PrismButton(
-                    label: 'Copy all data',
+                    label: context.l10n.adminCopyAllData,
                     icon: Icons.copy_rounded,
                     variant: PrismButtonVariant.tonal,
                     expand: true,
                     onPressed: _copyAllData,
                   ),
                   _StatsSection(
-                    title: 'By collection',
+                    title: context.l10n.adminByCollection,
                     rows: <PrismRow>[
                       for (final e in _byCollection)
                         PrismRow(
                           icon: Icons.folder_outlined,
                           title: _middleEllipsis(e.key),
                           subtitle:
-                              '${_count(e.value.reads, 'read')} · ${_count(e.value.writes, 'write')} · ${_count(e.value.ops, 'op')}',
+                              '${context.l10n.adminReadCount(e.value.reads)} · ${context.l10n.adminWriteCount(e.value.writes)} · ${context.l10n.adminOperationCount(e.value.ops)}',
                         ),
                     ],
                   ),
                   _StatsSection(
-                    title: 'By operation',
+                    title: context.l10n.adminByOperation,
                     rows: <PrismRow>[
                       for (final e in _byOperation)
                         PrismRow(icon: Icons.bolt_rounded, title: e.key, value: '${e.value}'),
                     ],
                   ),
                   _StatsSection(
-                    title: 'By source (top 15)',
+                    title: context.l10n.adminBySourceTop15,
                     rows: <PrismRow>[
                       for (final e in _bySourceTag.take(15))
                         PrismRow(icon: Icons.sell_outlined, title: _middleEllipsis(e.key), value: '${e.value}'),
@@ -191,8 +197,6 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
     );
   }
 }
-
-String _count(int n, String noun) => '$n $noun${n == 1 ? '' : 's'}';
 
 /// Keeps the start and end of a long path, such as a user document path, and drops the middle.
 String _middleEllipsis(String text, {int max = 40}) {

@@ -63,22 +63,22 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
 
   ShopNotice _purchaseNotice(ShopItem item, ShopPurchaseOutcome outcome) => switch (outcome) {
     ShopPurchaseOutcome.purchased || ShopPurchaseOutcome.owned when item.rankReward != null => ShopNotice(
-      '${item.name} rank reward synced',
+      ShopNoticeKind.rankRewardSynced,
       success: true,
+      itemId: item.id,
     ),
-    ShopPurchaseOutcome.purchased => ShopNotice('${item.name} is yours', success: true),
-    ShopPurchaseOutcome.owned => const ShopNotice('You already own this', success: true),
-    ShopPurchaseOutcome.proOnly => const ShopNotice('This item is for Pro members', success: false),
+    ShopPurchaseOutcome.purchased => ShopNotice(ShopNoticeKind.purchased, success: true, itemId: item.id),
+    ShopPurchaseOutcome.owned => ShopNotice(ShopNoticeKind.alreadyOwned, success: true, itemId: item.id),
+    ShopPurchaseOutcome.proOnly => ShopNotice(ShopNoticeKind.proOnly, success: false, itemId: item.id),
     ShopPurchaseOutcome.rankLocked => ShopNotice(
-      'Reach ${shopRankName(item.requiredRank ?? '')} rank to unlock this',
+      ShopNoticeKind.rankLocked,
       success: false,
+      itemId: item.id,
+      rankId: item.requiredRank,
     ),
-    ShopPurchaseOutcome.expired => const ShopNotice('This limited item is sold out', success: false),
-    ShopPurchaseOutcome.insufficient => const ShopNotice('You need more coins for this', success: false),
-    ShopPurchaseOutcome.failed => ShopNotice(
-      item.rankReward != null ? 'Could not sync this reward. Try again.' : 'Could not buy this. Try again.',
-      success: false,
-    ),
+    ShopPurchaseOutcome.expired => ShopNotice(ShopNoticeKind.soldOut, success: false, itemId: item.id),
+    ShopPurchaseOutcome.insufficient => ShopNotice(ShopNoticeKind.insufficient, success: false, itemId: item.id),
+    ShopPurchaseOutcome.failed => ShopNotice(ShopNoticeKind.purchaseFailed, success: false, itemId: item.id),
   };
 
   Future<void> _onEquip(_EquipRequested event, Emitter<ShopState> emit) async {
@@ -94,8 +94,12 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
       _snapshot().copyWith(
         loadingItemId: null,
         notice: done
-            ? ShopNotice(event.equip ? '${item.name} equipped' : '${item.name} removed', success: true)
-            : const ShopNotice('Could not change this. Try again.', success: false),
+            ? ShopNotice(
+                event.equip ? ShopNoticeKind.equipped : ShopNoticeKind.unequipped,
+                success: true,
+                itemId: item.id,
+              )
+            : ShopNotice(ShopNoticeKind.equipFailed, success: false, itemId: item.id),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:equatable/equatable.dart';
 
 /// One wall of a Drop, as the planner snapshotted it. It has no full url: that comes with the unlock.
@@ -62,6 +63,8 @@ class DropEntity extends Equatable {
     return endsAt.difference(now) <= lastCallWindow ? DropPhase.lastCall : DropPhase.live;
   }
 
+  String displayTitle(AppLocalizations l10n) => title.trim().isEmpty ? l10n.economyWeeklyDrop : title;
+
   int wallPrice({required bool isPro}) => proPrice(priceWall, isPro);
 
   /// The server price of the pack: every wall left at the wall price, capped by the pack price, then the Pro half.
@@ -72,12 +75,12 @@ class DropEntity extends Equatable {
   }
 
   /// "Ends in 3d 4h", down to minutes in the last hour.
-  String endsInLabel(DateTime now) {
+  String endsInLabel(AppLocalizations l10n, DateTime now) {
     final Duration left = endsAt.difference(now);
-    if (left <= Duration.zero) return 'Ended';
-    if (left.inDays > 0) return 'Ends in ${left.inDays}d ${left.inHours % 24}h';
-    if (left.inHours > 0) return 'Ends in ${left.inHours}h ${left.inMinutes % 60}m';
-    return 'Ends in ${math.max(1, left.inMinutes)}m';
+    if (left <= Duration.zero) return l10n.economyDropEnded;
+    if (left.inDays > 0) return l10n.economyDropEndsInDaysHours(left.inDays, left.inHours % 24);
+    if (left.inHours > 0) return l10n.economyDropEndsInHoursMinutes(left.inHours, left.inMinutes % 60);
+    return l10n.economyDropEndsInMinutes(math.max(1, left.inMinutes));
   }
 
   @override

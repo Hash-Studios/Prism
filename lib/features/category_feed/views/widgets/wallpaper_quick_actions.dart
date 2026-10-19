@@ -11,6 +11,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -36,25 +37,25 @@ Future<void> showWallpaperQuickActions(
         children: <Widget>[
           ListTile(
             leading: Icon(isFavourite ? Icons.favorite_rounded : Icons.favorite_border_rounded),
-            title: Text(isFavourite ? 'Unfavourite' : 'Favourite'),
+            title: Text(isFavourite ? context.l10n.wallpaperUnfavourite : context.l10n.wallpaperFavourite),
             onTap: () => Navigator.of(sheetContext).pop(_QuickAction.favourite),
           ),
           ListTile(
             leading: const Icon(Icons.link_rounded),
-            title: const Text('Share link'),
+            title: Text(context.l10n.wallpaperShareLink),
             onTap: () => Navigator.of(sheetContext).pop(_QuickAction.share),
           ),
           if (!hideSetWallpaperUi)
             ListTile(
               leading: const Icon(Icons.wallpaper_rounded),
-              title: const Text('Set as wallpaper'),
+              title: Text(context.l10n.wallpaperSetAsWallpaper),
               onTap: () => Navigator.of(sheetContext).pop(_QuickAction.set),
             ),
           if (onShowLessLikeThis != null)
             ListTile(
               leading: const Icon(Icons.visibility_off_outlined),
-              title: const Text('Show less like this'),
-              subtitle: const Text("You'll see fewer wallpapers like this."),
+              title: Text(context.l10n.wallpaperShowLessLikeThis),
+              subtitle: Text(context.l10n.wallpaperFewerLikeThisConfirmation),
               onTap: () => Navigator.of(sheetContext).pop(_QuickAction.showLess),
             ),
         ],
@@ -72,8 +73,9 @@ Future<void> showWallpaperQuickActions(
           item.source,
           item.fullUrl,
           item.thumbnailUrl,
-          title: wallpaperPreviewTitle(item),
+          title: wallpaperPreviewTitle(context.l10n, item),
           core: item.wallpaperCore,
+          l10n: context.l10n,
         ),
       );
     case _QuickAction.set:
@@ -96,6 +98,7 @@ Future<void> showWallpaperQuickActions(
 }
 
 Future<void> _toggleFavourite(BuildContext context, FeedItemEntity item, {required bool favourite}) async {
+  final AppLocalizations l10n = context.l10n;
   bool success = false;
   try {
     success = await context
@@ -105,8 +108,8 @@ Future<void> _toggleFavourite(BuildContext context, FeedItemEntity item, {requir
     logger.w('Favourite toggle from the tile menu failed', error: error, stackTrace: stackTrace);
   }
   if (success) {
-    toasts.success(favourite ? 'Added to favourites.' : 'Removed from favourites.');
+    toasts.success(favourite ? l10n.wallpaperFavouriteAddedToast : l10n.wallpaperFavouriteRemovedToast);
   } else {
-    toasts.error("Couldn't update favourites. Try again.");
+    toasts.error(l10n.coreCouldNotUpdateFavourites);
   }
 }

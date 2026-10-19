@@ -6,9 +6,10 @@ import 'dart:ui' as ui;
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -74,6 +75,9 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: SizedBox(
@@ -103,6 +107,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: SizedBox(width: 160, height: 240, child: PrismImageTile(url: localPath)),
@@ -137,6 +144,9 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: SizedBox(
             width: 200,
@@ -154,6 +164,9 @@ void main() {
 
   testWidgets('keeps the image still instead of flying a Hero under reduce motion', (tester) async {
     Widget host(bool reduce) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       home: MediaQuery(
         data: MediaQueryData(disableAnimations: reduce),
         child: const PrismImageTile(url: '', heroTag: 'wall'),

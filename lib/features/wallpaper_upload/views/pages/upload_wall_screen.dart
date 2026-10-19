@@ -22,6 +22,7 @@ import 'package:Prism/features/wallpaper_upload/views/widgets/submission_metadat
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_batch_stepper.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_checks_card.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/upload_preview_row.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -208,7 +209,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         setState(() {
           _oversize = true;
           _stage = _UploadStage.failedProcessing;
-          _errorMessage = oversizeUploadMessage;
+          _errorMessage = UploadFailure.oversize.message(context.l10n);
         });
         _trackFailure('oversize');
         return;
@@ -243,7 +244,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       if (!mounted) return;
       setState(() {
         _stage = _UploadStage.failedProcessing;
-        _errorMessage = 'We could not prepare this image. Try again or choose another image.';
+        _errorMessage = context.l10n.wallpaperUploadPrepareError;
       });
       _trackFailure('processing');
     }
@@ -361,7 +362,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       final failure = UploadFailure.from(error);
       setState(() {
         _stage = _UploadStage.failedUpload;
-        _errorMessage = failure.message;
+        _errorMessage = failure.message(context.l10n);
       });
       _trackFailure(failure.weeklyLimit ? 'weekly_limit' : 'upload');
       if (failure.weeklyLimit) unawaited(_presentUploadLimitPaywall());
@@ -444,7 +445,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       if (result == wall_store.WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
         setState(() {
           _stage = _UploadStage.failedSubmission;
-          _errorMessage = 'We could not confirm the submission. Check your review status before trying again.';
+          _errorMessage = context.l10n.wallpaperUploadSubmissionUnconfirmed;
         });
         _trackFailure('submission_unconfirmed');
         return;
@@ -457,8 +458,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         setState(() {
           _stage = _UploadStage.quotaExceeded;
           _errorMessage = deleted
-              ? 'You have reached this week’s free wallpaper upload limit.'
-              : 'You reached the upload limit, but we could not remove the uploaded files. Tap Back to try removing them again.';
+              ? context.l10n.wallpaperUploadQuotaReached
+              : context.l10n.wallpaperUploadQuotaCleanupFailed;
         });
         _trackFailure('quota_exceeded');
         return;
@@ -469,7 +470,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       if (!mounted) return;
       setState(() {
         _stage = _UploadStage.failedSubmission;
-        _errorMessage = 'We could not confirm the submission. Check your review status before trying again.';
+        _errorMessage = context.l10n.wallpaperUploadSubmissionUnconfirmed;
       });
       _trackFailure('submission');
       return;
@@ -505,7 +506,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       unawaited(router.replace(EditWallRoute(image: batch.current, batch: batch)));
       return;
     }
-    if (batch != null && batch.isMulti) toasts.info(batch.summary);
+    if (batch != null && batch.isMulti) toasts.info(batch.summary(context.l10n));
     if (batch == null || batch.submittedCount > 0) {
       showGlintToast(context);
       Navigator.pop(context);
@@ -523,7 +524,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _stage == _UploadStage.failedUpload ||
         _stage == _UploadStage.failedSubmission;
     if (_hasStagedFiles && !_submissionAttempted && !await _deleteFile()) {
-      if (mounted) toasts.error('Could not remove uploaded files. Try again.');
+      if (mounted) toasts.error(context.l10n.wallpaperUploadFilesRemoveError);
       return;
     }
     if (!mounted) return;
@@ -537,28 +538,29 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<void> _confirmExit() async {
+    final AppLocalizations l10n = context.l10n;
     final String? draftId = _draftId;
     if (draftId != null) {
       final _UploadExitChoice? choice = await showPrismSheet<_UploadExitChoice>(
         context: context,
         isScrollControlled: true,
         builder: (sheetContext) => PrismSheetBody(
-          title: 'Leave this upload?',
-          message: 'Keep your draft to resume later, or discard it and remove uploaded files.',
+          title: context.l10n.wallpaperUploadLeaveTitle,
+          message: context.l10n.wallpaperUploadLeaveBody,
           actions: <Widget>[
             PrismButton(
-              label: 'Keep draft',
+              label: context.l10n.wallpaperUploadKeepDraft,
               expand: true,
               onPressed: () => Navigator.of(sheetContext).pop(_UploadExitChoice.keepDraft),
             ),
             PrismButton(
-              label: 'Discard',
+              label: context.l10n.wallpaperDiscard,
               expand: true,
               variant: PrismButtonVariant.danger,
               onPressed: () => Navigator.of(sheetContext).pop(_UploadExitChoice.discard),
             ),
             PrismButton(
-              label: 'Cancel',
+              label: context.l10n.actionCancel,
               expand: true,
               variant: PrismButtonVariant.ghost,
               onPressed: () => Navigator.of(sheetContext).pop(_UploadExitChoice.cancel),
@@ -574,7 +576,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         if (!mounted) return;
         setState(() => _discarding = false);
         if (!saved) {
-          toasts.error('Could not save this draft. Try again.');
+          toasts.error(context.l10n.wallpaperUploadDraftSaveError);
           return;
         }
         Navigator.pop(context);
@@ -583,9 +585,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     } else {
       final bool discard = await showPrismConfirm(
         context,
-        title: 'Discard this upload?',
-        message: 'Uploaded files will be removed. Your selected image will stay on your device.',
-        confirmLabel: 'Discard',
+        title: context.l10n.wallpaperUploadDiscardTitle,
+        message: context.l10n.wallpaperUploadDiscardBody,
+        confirmLabel: context.l10n.wallpaperDiscard,
         destructive: true,
       );
       if (!discard || !mounted) return;
@@ -596,7 +598,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     if (!mounted) return;
     if (!deleted) {
       setState(() => _discarding = false);
-      toasts.error('Could not remove uploaded files. Try again.');
+      toasts.error(context.l10n.wallpaperUploadFilesRemoveError);
       return;
     }
     if (_draftId case final draftId?) {
@@ -605,7 +607,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       } catch (error, stackTrace) {
         logger.w('Upload draft could not be discarded', error: error, stackTrace: stackTrace);
         setState(() => _discarding = false);
-        toasts.error('Could not discard this upload. Try again.');
+        toasts.error(l10n.wallpaperUploadDiscardError);
         return;
       }
     }
@@ -656,14 +658,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           _stage == _UploadStage.failedSubmission);
 
   String get _stageTitle => switch (_stage) {
-    _UploadStage.processing => 'Preparing wallpaper',
-    _UploadStage.uploading => 'Uploading wallpaper',
-    _UploadStage.ready => 'Ready to submit',
-    _UploadStage.saving => 'Submitting wallpaper',
-    _UploadStage.failedProcessing => 'Image could not be prepared',
-    _UploadStage.failedUpload => 'Upload did not finish',
-    _UploadStage.failedSubmission => 'Submission did not finish',
-    _UploadStage.quotaExceeded => 'Upload limit reached',
+    _UploadStage.processing => context.l10n.wallpaperUploadStagePreparing,
+    _UploadStage.uploading => context.l10n.wallpaperUploadStageUploading,
+    _UploadStage.ready => context.l10n.wallpaperUploadStageReady,
+    _UploadStage.saving => context.l10n.wallpaperUploadStageSubmitting,
+    _UploadStage.failedProcessing => context.l10n.wallpaperUploadStagePrepareFailed,
+    _UploadStage.failedUpload => context.l10n.wallpaperUploadStageUploadFailed,
+    _UploadStage.failedSubmission => context.l10n.wallpaperUploadStageSubmissionFailed,
+    _UploadStage.quotaExceeded => context.l10n.wallpaperUploadStageQuotaReached,
   };
 
   bool get _failed =>
@@ -695,27 +697,27 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         stateOf(0),
         text(
           0,
-          pending: 'Prepare your image and a smaller preview',
-          active: 'Preparing your image and a smaller preview',
-          done: 'Image and preview are ready',
+          pending: context.l10n.wallpaperUploadPrepareCheckPending,
+          active: context.l10n.wallpaperUploadPrepareCheckActive,
+          done: context.l10n.wallpaperUploadPrepareCheckDone,
         ),
       ),
       UploadCheck(
         stateOf(1),
         text(
           1,
-          pending: 'Upload the wallpaper and its preview',
-          active: 'Uploading the wallpaper and its preview',
-          done: 'Wallpaper and preview uploaded',
+          pending: context.l10n.wallpaperUploadFilesCheckPending,
+          active: context.l10n.wallpaperUploadFilesCheckActive,
+          done: context.l10n.wallpaperUploadFilesCheckDone,
         ),
       ),
       UploadCheck(
         stateOf(2),
         text(
           2,
-          pending: 'Moderators review it before it appears in Prism',
-          active: 'Saving your submission for review',
-          done: 'Submitted for review',
+          pending: context.l10n.wallpaperUploadReviewCheckPending,
+          active: context.l10n.wallpaperUploadReviewCheckActive,
+          done: context.l10n.wallpaperUploadReviewCheckDone,
         ),
       ),
     ];
@@ -730,10 +732,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   };
 
   String get _failureActionLabel => switch (_stage) {
-    _UploadStage.failedProcessing when _oversize => 'Choose another image',
-    _UploadStage.failedSubmission => 'Retry submit',
-    _UploadStage.quotaExceeded => 'Back',
-    _ => 'Try again',
+    _UploadStage.failedProcessing when _oversize => context.l10n.wallpaperUploadChooseAnotherImage,
+    _UploadStage.failedSubmission => context.l10n.wallpaperUploadRetrySubmit,
+    _UploadStage.quotaExceeded => context.l10n.wallpaperBack,
+    _ => context.l10n.wallpaperTryAgain,
   };
 
   @override
@@ -744,13 +746,18 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     final List<Widget> bottomActions = <Widget>[
       if (!_failed)
         PrismButton(
-          label: 'Upload',
+          label: context.l10n.wallpaperUploadAction,
           expand: true,
           loading: busy,
           onPressed: !_discarding && _stage == _UploadStage.ready ? _submit : null,
         ),
       if (_canSkip)
-        PrismButton(label: 'Skip this wallpaper', variant: PrismButtonVariant.ghost, expand: true, onPressed: _skip),
+        PrismButton(
+          label: context.l10n.wallpaperUploadSkip,
+          variant: PrismButtonVariant.ghost,
+          expand: true,
+          onPressed: _skip,
+        ),
     ];
     return PopScope(
       canPop: !_isBusy && (!_hasStagedFiles || _submissionAttempted) && (_draftId == null || _submissionAttempted),
@@ -761,7 +768,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         }
       },
       child: PrismPage(
-        title: 'Upload wallpaper',
+        title: context.l10n.wallpaperUploadTitle,
         onBack: () => Navigator.maybePop(context),
         bottomBar: bottomActions.isEmpty
             ? null
@@ -788,7 +795,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               for (final UploadQualityWarning warning in _qualityWarnings) ...<Widget>[
                 const SizedBox(height: PrismSpace.sm),
                 _QualityWarningRow(
-                  text: uploadQualityWarningText(warning, width: _imageWidth!, height: _imageHeight!),
+                  text: uploadQualityWarningText(
+                    context.l10n,
+                    warning: warning,
+                    width: _imageWidth!,
+                    height: _imageHeight!,
+                  ),
                 ),
               ],
               const SizedBox(height: PrismSpace.xl),
@@ -804,7 +816,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 if (_stage == _UploadStage.failedSubmission)
                   Center(
                     child: PrismButton(
-                      label: 'Check review status',
+                      label: context.l10n.wallpaperUploadCheckReviewStatus,
                       variant: PrismButtonVariant.ghost,
                       size: PrismButtonSize.compact,
                       onPressed: () => unawaited(context.router.push(const ReviewRoute())),
@@ -814,10 +826,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 Text(_stageTitle, style: PrismTextStyles.cardTitle(context).copyWith(color: cs.onSurface)),
                 if (_stage == _UploadStage.ready) ...<Widget>[
                   const SizedBox(height: PrismSpace.xxs),
-                  Text(
-                    'Your wallpaper appears in the community after approval. Track it in Your uploads.',
-                    style: PrismTextStyles.body(context),
-                  ),
+                  Text(context.l10n.wallpaperUploadApprovalInfo, style: PrismTextStyles.body(context)),
                 ],
                 const SizedBox(height: PrismSpace.md),
                 UploadChecksCard(checks: _checks),

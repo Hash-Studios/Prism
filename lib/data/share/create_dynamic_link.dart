@@ -11,6 +11,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -19,7 +20,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 const String _shareDomain = 'prismwalls.com';
-const String _defaultPreviewTitle = 'Wallpaper on Prism';
 
 class _CanonicalLinkBuilder {
   const _CanonicalLinkBuilder();
@@ -162,6 +162,7 @@ Future<String?> createDynamicLink(
   String thumbUrl, {
   String? title,
   WallpaperCore? core,
+  required AppLocalizations l10n,
 }) async {
   try {
     final Uri canonical = Uri.parse(canonicalWallpaperLink(id: id, source: source, url: url, thumbUrl: thumbUrl));
@@ -180,8 +181,8 @@ Future<String?> createDynamicLink(
         'thumb': thumbUrl,
       },
       preview: <String, dynamic>{
-        'title': shareSafeText(title) ?? _defaultPreviewTitle,
-        'description': 'Check out this amazing wallpaper from Prism.',
+        'title': shareSafeText(title) ?? l10n.coreWallpaperPreviewTitle,
+        'description': l10n.coreWallpaperPreviewDescription,
         'image_source_url': thumbUrl,
         'provider': source.legacyProviderString,
         'wall_id': id,
@@ -209,20 +210,21 @@ Future<bool> copyWallpaperLink(
   String thumbUrl, {
   String? title,
   WallpaperCore? core,
+  required AppLocalizations l10n,
 }) async {
-  final String? link = await createDynamicLink(id, source, url, thumbUrl, title: title, core: core);
+  final String? link = await createDynamicLink(id, source, url, thumbUrl, title: title, core: core, l10n: l10n);
   if (link == null) {
-    toasts.error("Couldn't create the share link. Try again.");
+    toasts.error(l10n.coreWallpaperLinkCreateFailed);
     return false;
   }
   try {
-    await Clipboard.setData(ClipboardData(text: 'Hey check this out ➜ $link'));
+    await Clipboard.setData(ClipboardData(text: l10n.coreShareWallpaperClipboard(link)));
   } catch (error, stackTrace) {
     logger.w('Failed to copy the wallpaper link.', error: error, stackTrace: stackTrace);
-    toasts.error("Couldn't copy the link. Try again.");
+    toasts.error(l10n.coreWallpaperLinkCopyFailed);
     return false;
   }
-  toasts.success('Sharing link copied!');
+  toasts.success(l10n.coreShareLinkCopied);
   return true;
 }
 
@@ -238,23 +240,24 @@ Future<void> createUserDynamicLink(
   int? followerCount,
   int? wallpaperCount,
   List<String> gallery = const <String>[],
+  required AppLocalizations l10n,
 }) async {
   final String userIdentifier = username.trim();
   if (userIdentifier.isEmpty) {
-    toasts.info('Set a username to share your profile');
+    toasts.info(l10n.coreUsernameRequiredToShareProfile);
     if (context != null && context.mounted) unawaited(context.router.root.push(const EditProfilePanelRoute()));
     return;
   }
   try {
     final Uri canonical = _canonicalLinkBuilder.user(identifier: userIdentifier);
-    final String label = creatorLabel(name: name, username: userIdentifier);
+    final String label = creatorLabel(name: name, username: userIdentifier, fallback: l10n.accountCreatorFallback);
     final String link = await _buildShareableLink(
       type: 'user',
       canonicalUri: canonical,
       payload: <String, dynamic>{'username': userIdentifier},
       preview: <String, dynamic>{
         'title': '$label (@$userIdentifier)',
-        'description': bio.isNotEmpty ? bio : 'Check out this creator profile on Prism.',
+        'description': bio.isNotEmpty ? bio : l10n.coreCreatorPreviewDescription,
         'image_source_url': userPhoto,
         'username': userIdentifier,
         'creator_name': label,
@@ -268,7 +271,7 @@ Future<void> createUserDynamicLink(
     if (context != null && !context.mounted) {
       return;
     }
-    await ShareService.shareText(text: 'Hey check out my profile on Prism ➜ $link', context: context);
+    await ShareService.shareText(text: l10n.coreShareProfileClipboard(link), context: context);
     _trackDynamicLinkCreateResult(shareType: ShareTypeValue.user, result: EventResultValue.success);
   } catch (error, stackTrace) {
     logger.e('Failed to create user dynamic link.', error: error, stackTrace: stackTrace);
@@ -282,7 +285,12 @@ Future<void> createUserDynamicLink(
 }
 
 /// Creates the invite link. The preview reads "Name invited you to Prism" and shows the inviter's photo.
-Future<String> createSharingPrismLink(String userID, {String? inviterName, String? inviterPhoto}) async {
+Future<String> createSharingPrismLink(
+  String userID, {
+  String? inviterName,
+  String? inviterPhoto,
+  required AppLocalizations l10n,
+}) async {
   final String? who = shareSafeText(inviterName);
   final String photo = inviterPhoto?.trim() ?? '';
   try {
@@ -292,8 +300,8 @@ Future<String> createSharingPrismLink(String userID, {String? inviterName, Strin
       canonicalUri: canonical,
       payload: <String, dynamic>{'userID': userID},
       preview: <String, dynamic>{
-        'title': who == null ? 'Join Prism' : '$who invited you to Prism',
-        'description': 'Download Prism to discover beautiful wallpapers.',
+        'title': who == null ? l10n.coreJoinPrismPreviewTitle : l10n.coreInvitedToPrismTitle(who),
+        'description': l10n.coreDownloadPrismPreviewDescription,
         'creator_name': ?who,
         if (who != null && photo.isNotEmpty) 'image_source_url': photo,
       },

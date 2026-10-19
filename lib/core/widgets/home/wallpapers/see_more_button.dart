@@ -2,6 +2,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -48,7 +49,7 @@ class SeeMoreButton extends StatelessWidget {
                         Icon(failed ? Icons.refresh_rounded : Icons.add_rounded, size: 22, color: cs.onSurface),
                         const SizedBox(height: PrismSpace.xxs),
                         Text(
-                          failed ? "Couldn't load more. Tap to retry" : 'See more',
+                          failed ? context.l10n.coreLoadingMoreFailed : context.l10n.coreSeeMore,
                           textAlign: TextAlign.center,
                           style: PrismTextStyles.rowTitle(context),
                         ),

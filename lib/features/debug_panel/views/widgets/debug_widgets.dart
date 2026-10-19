@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,9 +24,9 @@ void showDebugSnackBar(BuildContext context, String message, {bool isError = fal
   isError ? toasts.error(message, haptic: false) : toasts.success(message, haptic: false);
 }
 
-void copyToClipboard(BuildContext context, String text, {String label = 'Copied'}) {
+void copyToClipboard(BuildContext context, String text, {String? label}) {
   Clipboard.setData(ClipboardData(text: text));
-  showDebugSnackBar(context, label);
+  showDebugSnackBar(context, label ?? context.l10n.debugCopied);
 }
 
 /// A search field with a search icon and a clear button that shows once there is text.
@@ -47,7 +48,11 @@ class DebugSearchField extends StatelessWidget {
         textInputAction: TextInputAction.search,
         suffix: controller.text.isEmpty
             ? null
-            : PrismIconButton(icon: Icons.close_rounded, tooltip: 'Clear search', onPressed: controller.clear),
+            : PrismIconButton(
+                icon: Icons.close_rounded,
+                tooltip: context.l10n.debugClearSearch,
+                onPressed: controller.clear,
+              ),
       ),
     );
   }

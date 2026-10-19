@@ -15,11 +15,12 @@ class PhoneScreenOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String locale = Localizations.localeOf(context).toLanguageTag();
     return LayoutBuilder(
       builder: (context, constraints) {
         final double w = constraints.maxWidth;
         final Widget screen = switch (mode) {
-          DropPreviewMode.lockScreen => _LockScreen(width: w, now: now),
+          DropPreviewMode.lockScreen => _LockScreen(width: w, now: now, locale: locale),
           DropPreviewMode.homeScreen => _HomeScreen(width: w),
         };
         return IgnorePointer(
@@ -40,10 +41,11 @@ List<Shadow> _lift(double w) => <Shadow>[
 ];
 
 class _LockScreen extends StatelessWidget {
-  const _LockScreen({required this.width, required this.now});
+  const _LockScreen({required this.width, required this.now, required this.locale});
 
   final double width;
   final DateTime now;
+  final String locale;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +74,7 @@ class _LockScreen extends StatelessWidget {
           child: Column(
             children: <Widget>[
               Text(
-                DateFormat('EEEE, d MMMM').format(now),
+                DateFormat.yMMMMEEEEd(locale).format(now),
                 style: TextStyle(
                   color: DropPalette.ink.withValues(alpha: 0.9),
                   fontSize: width * 0.052,
@@ -81,7 +83,7 @@ class _LockScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                DateFormat('H:mm').format(now),
+                DateFormat.Hm(locale).format(now),
                 style: TextStyle(
                   fontFamily: PrismFonts.fraunces,
                   color: DropPalette.ink,

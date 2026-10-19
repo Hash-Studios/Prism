@@ -1,6 +1,3 @@
-// Firebase platform-interface packages are transitive, but these fakes need them.
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -18,6 +15,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
@@ -195,7 +193,11 @@ void main() {
       ..loggedIn = true;
     CoinsService.instance.balanceNotifier.value = 100;
     await tester.pumpWidget(
-      MaterialApp(home: AiWallpaperTabPage(repository: repository ?? _FakeAiGenerationRepository(_record()))),
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: repository ?? _FakeAiGenerationRepository(_record())),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -426,7 +428,13 @@ void main() {
     final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     connection.complete(false);
     await tester.pump();
 
@@ -507,7 +515,13 @@ void main() {
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     generation.completeError(StateError('generation failed'));
     await tester.pump();
     await tester.pump();
@@ -545,7 +559,13 @@ void main() {
     await tester.tap(generate);
     await tester.pump();
     await reservationStarted.future;
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     reservation.complete(<String, Object>{
       'success': false,
       'changed': false,
@@ -588,7 +608,13 @@ void main() {
     await tester.tap(generate);
     await tester.pump();
     await reservationStarted.future;
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     reservation.complete(<String, Object>{
       'success': true,
       'changed': true,
@@ -634,6 +660,9 @@ void main() {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(
             _record(),
@@ -656,7 +685,13 @@ void main() {
     await tester.pump();
     await variationStarted.future;
     await tester.pump(const Duration(milliseconds: 1400));
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
     variation.complete(_record(id: 'variation-1'));
     await tester.pump();
     await tester.pump();
@@ -872,6 +907,9 @@ void main() {
     app_state.prismUser.premium = true;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record()), key: UniqueKey()),
       ),
     );
@@ -973,6 +1011,9 @@ void main() {
     toastCalls.clear();
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: AiWallpaperTabPage(repository: _FakeAiGenerationRepository(_record()), key: UniqueKey()),
       ),
     );

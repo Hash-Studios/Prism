@@ -31,7 +31,7 @@
         android:allowBackup="false"
         android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Prism" >
+        android:label="@string/app_name" >
         <!-- Quick Settings tile: Random from Category -->
         <service
             android:name=".MyTileService"
@@ -202,7 +202,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_noir"
-            android:label="Prism"
+            android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -309,7 +309,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_glass"
-            android:label="Prism"
+            android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -416,7 +416,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_sunset"
-            android:label="Prism"
+            android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -523,7 +523,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_mono"
-            android:label="Prism"
+            android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

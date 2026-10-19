@@ -36,6 +36,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.d
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -117,6 +118,9 @@ class _Depth {
       shot.frame(
         brightness: theme.brightness,
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           debugShowCheckedModeBanner: false,
           theme: theme,
           themeAnimationDuration: Duration.zero,
@@ -264,7 +268,11 @@ class _Depth {
     await pumpDetail(tier);
     IosWallpaperGuideSession.shown = true;
     final OverlayState overlay = tester.state<NavigatorState>(find.byType(Navigator)).overlay!;
-    showPrismToast(overlay, savedWallpaperMessage(depthTier: tier), kind: PrismToastKind.success);
+    showPrismToast(
+      overlay,
+      savedWallpaperMessage(l10n: overlay.context.l10n, depthTier: tier),
+      kind: PrismToastKind.success,
+    );
     await shot.settle(frames: 2, frameMs: 200);
   }
 

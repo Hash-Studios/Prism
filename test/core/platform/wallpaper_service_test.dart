@@ -5,6 +5,7 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:async_wallpaper/pigeon_impl_api.dart' as wallpaper_api;
 // ignore: implementation_imports
@@ -16,6 +17,8 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
 import '../../support/offline_asset_fixture.dart';
+
+final AppLocalizationsEn _l10n = AppLocalizationsEn();
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
@@ -125,7 +128,7 @@ void main() {
     );
 
     expect(result.isFailure, isTrue);
-    expect(result.message, 'This wallpaper is not saved on this device. Connect to the internet and try again.');
+    expect(result.localizedMessage(_l10n), _l10n.coreWallpaperOfflineUnavailable);
     expect(result.errorCode, 'offline_unavailable');
     expect(client.requests, isEmpty);
   });
@@ -144,7 +147,7 @@ void main() {
       recordHistory: false,
     );
 
-    expect(result.message, WallpaperService.offlineUnavailableMessage);
+    expect(result.localizedMessage(_l10n), _l10n.coreWallpaperOfflineUnavailable);
     expect(result.errorCode, 'offline_unavailable');
     expect(client.requests, isEmpty);
   });
@@ -163,7 +166,7 @@ void main() {
       recordHistory: false,
     );
 
-    expect(result.message, WallpaperService.failedMessage);
+    expect(result.localizedMessage(_l10n), _l10n.coreWallpaperErrorGeneric);
     expect(result.errorCode, 'load_failed');
     expect(client.requests, isEmpty);
   });
@@ -284,7 +287,7 @@ void main() {
     test('unsupported says the device cannot set that screen', () async {
       final WallpaperSetResult result = await run([aw.WallpaperOperationStatus.unsupported]);
       expect(result.status, WallpaperSetStatus.unsupported);
-      expect(result.message, "This device can't set that screen.");
+      expect(result.localizedMessage(_l10n), _l10n.coreDeviceCannotSetScreen);
       expect(result.canRetry, isFalse);
     });
 
@@ -431,7 +434,7 @@ void main() {
         _result(aw.WallpaperOperationStatus.failed, code: 'image-too-large'),
       ]);
       final WallpaperSetResult result = await set(client);
-      expect(result.message, 'This image is too large for your device to set.');
+      expect(result.localizedMessage(_l10n), _l10n.coreWallpaperErrorImageTooLarge);
       expect(result.canRetry, isFalse);
       expect(result.isFailure, isTrue);
       expect(client.requests, hasLength(1));
@@ -443,7 +446,7 @@ void main() {
       ]);
       final WallpaperSetResult result = await set(client);
       expect(result.status, WallpaperSetStatus.unsupported);
-      expect(result.message, 'Your device or work profile does not allow wallpaper changes.');
+      expect(result.localizedMessage(_l10n), _l10n.coreWallpaperErrorNotAllowed);
       expect(result.canRetry, isFalse);
       expect(result.isFailure, isTrue);
       expect(client.requests, hasLength(1));
@@ -451,13 +454,13 @@ void main() {
 
     test('unsupported without a code keeps the screen message', () async {
       final WallpaperSetResult result = await set(_ResultClient([_result(aw.WallpaperOperationStatus.unsupported)]));
-      expect(result.message, "This device can't set that screen.");
+      expect(result.localizedMessage(_l10n), _l10n.coreDeviceCannotSetScreen);
     });
 
     test('out-of-memory is retryable with its own message', () async {
       final _ResultClient client = _ResultClient([_result(aw.WallpaperOperationStatus.failed, code: 'out-of-memory')]);
       final WallpaperSetResult result = await set(client);
-      expect(result.message, 'Not enough memory. Close other apps and try again.');
+      expect(result.localizedMessage(_l10n), _l10n.coreWallpaperErrorMemory);
       expect(result.canRetry, isTrue);
       expect(client.requests, hasLength(2));
     });
@@ -473,7 +476,10 @@ void main() {
         ),
       ]);
       final WallpaperSetResult result = await set(client, target: WallpaperTarget.both);
-      expect(result.message, 'Home screen set. Lock screen failed.');
+      expect(
+        result.localizedMessage(_l10n),
+        _l10n.coreWallpaperPartialSet(_l10n.coreWallpaperHomeScreen, _l10n.coreWallpaperLockScreen),
+      );
       expect(result.isPartial, isTrue);
       expect(result.appliedTarget, WallpaperTarget.home);
       expect(result.failedTarget, WallpaperTarget.lock);
@@ -493,7 +499,10 @@ void main() {
         ]),
         target: WallpaperTarget.both,
       );
-      expect(result.message, 'Lock screen set. Home screen failed.');
+      expect(
+        result.localizedMessage(_l10n),
+        _l10n.coreWallpaperPartialSet(_l10n.coreWallpaperLockScreen, _l10n.coreWallpaperHomeScreen),
+      );
       expect(result.failedTarget, WallpaperTarget.home);
     });
   });

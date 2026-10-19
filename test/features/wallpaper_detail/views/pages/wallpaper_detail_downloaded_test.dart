@@ -6,8 +6,8 @@ import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
-import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -19,6 +19,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -110,6 +111,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
           child: WallpaperDetailScreen(wallId: 'wall', source: WallpaperSource.pexels, localFile: file),
@@ -142,6 +146,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
@@ -180,6 +187,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
           child: WallpaperDetailScreen(wallId: 'pexels-1', source: WallpaperSource.pexels, localFile: file),
@@ -251,6 +261,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
           child: const WallpaperDetailScreen(wallId: 'pexels-1', source: WallpaperSource.pexels),
@@ -334,7 +347,7 @@ void main() {
     final bloc = _MockWallpaperDetailBloc();
     whenListen(
       bloc,
-      Stream<WallpaperDetailState>.value(const WallpaperDetailError(message: 'offline')),
+      Stream<WallpaperDetailState>.value(const WallpaperDetailError(failure: WallpaperDetailLoadFailure.unavailable)),
       initialState: const WallpaperDetailLoading(),
     );
     final router = _MockStackRouter();
@@ -342,6 +355,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
@@ -355,7 +371,8 @@ void main() {
     await tester.pump();
 
     verifyNever(() => router.replace(any()));
-    expect(find.text('offline'), findsOneWidget);
+    expect(find.text('Couldn\'t load this wallpaper'), findsOneWidget);
+    expect(find.text('Check your connection and try again.'), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
   });
 
@@ -363,7 +380,7 @@ void main() {
     final bloc = _MockWallpaperDetailBloc();
     whenListen(
       bloc,
-      Stream<WallpaperDetailState>.value(const WallpaperDetailError(message: 'offline')),
+      Stream<WallpaperDetailState>.value(const WallpaperDetailError(failure: WallpaperDetailLoadFailure.unavailable)),
       initialState: const WallpaperDetailLoading(),
     );
     final router = _MockStackRouter();
@@ -372,6 +389,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
@@ -398,6 +418,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         navigatorKey: navigatorKey,
         home: StackRouterScope(
           controller: router,
@@ -411,7 +434,7 @@ void main() {
     );
     navigatorKey.currentState!.push<void>(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('B'))));
     await tester.pumpAndSettle();
-    states.add(const WallpaperDetailError(message: 'offline'));
+    states.add(const WallpaperDetailError(failure: WallpaperDetailLoadFailure.unavailable));
     await tester.pump();
 
     expect(find.text('B'), findsOneWidget);
@@ -425,7 +448,7 @@ void main() {
     whenListen(firstBloc, const Stream<WallpaperDetailState>.empty(), initialState: const WallpaperDetailLoading());
     whenListen(
       secondBloc,
-      Stream<WallpaperDetailState>.value(const WallpaperDetailError(message: 'offline')),
+      Stream<WallpaperDetailState>.value(const WallpaperDetailError(failure: WallpaperDetailLoadFailure.unavailable)),
       initialState: const WallpaperDetailLoading(),
     );
     final blocs = <WallpaperDetailBloc>[firstBloc, secondBloc];
@@ -436,6 +459,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: StackRouterScope(
           controller: router,
           stateHash: 0,

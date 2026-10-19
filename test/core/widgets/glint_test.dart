@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_data.dart';
 import 'package:Prism/features/debug_panel/views/pages/mascot_gallery_page.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -144,6 +146,9 @@ void main() {
   testWidgets('gallery preserves inherited reduce-motion preference', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: true),
           child: Scaffold(body: MascotGalleryPage()),
@@ -166,6 +171,9 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: MediaQuery(
             data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
             child: const Scaffold(body: MascotGalleryPage()),
@@ -181,7 +189,7 @@ void main() {
       if (exception == null && textScale == 3) {
         await tester.drag(find.byType(Scrollable).first, const Offset(0, -10000));
         await tester.pump(const Duration(milliseconds: 300));
-        expect(find.text(GlintMood.values.last.name), findsOneWidget);
+        expect(find.text(AppLocalizationsEn().debugMoodSleepy), findsOneWidget);
         final Object? scrollException = tester.takeException();
         if (scrollException != null) {
           overflows.add('$width px at text scale $textScale while scrolling: $scrollException');
@@ -195,6 +203,9 @@ void main() {
   testWidgets('gallery stops scheduling frames while its tab is hidden', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: DefaultTabController(
           length: 2,
           initialIndex: 1,

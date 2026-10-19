@@ -5,6 +5,8 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/draw/biz/bloc/draw_bloc.j.dart';
 import 'package:Prism/features/draw/domain/entities/draw_entity.dart';
 import 'package:Prism/features/draw/views/pages/draw_page.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,6 +45,8 @@ void main() {
     whenListen(bloc, const Stream<DrawState>.empty(), initialState: state);
     return tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: BlocProvider<DrawBloc>.value(value: bloc, child: const DrawPage()),
       ),
     );
@@ -91,7 +95,7 @@ void main() {
     await tester.tap(find.textContaining('Buy a ticket'), warnIfMissed: false);
 
     expect(find.text('Your tickets: 5 of 5'), findsOneWidget);
-    expect(find.text('You hold all 5 tickets this week.'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyDrawAllTicketsHeld(5)), findsOneWidget);
     verifyNever(() => bloc.add(any()));
   });
 
@@ -101,7 +105,7 @@ void main() {
 
     await tester.tap(find.textContaining('Buy a ticket'), warnIfMissed: false);
 
-    expect(find.text('Pro members are not eligible'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyDrawProNotEligible), findsOneWidget);
     verifyNever(() => bloc.add(any()));
   });
 
@@ -127,9 +131,10 @@ void main() {
   });
 
   test('drawTimeLeft counts days and hours, then hours and minutes', () {
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
     final DateTime now = DateTime.utc(2026, 10, 17, 20);
-    expect(drawTimeLeft(DateTime.utc(2026, 10, 19), now), '1d 4h');
-    expect(drawTimeLeft(DateTime.utc(2026, 10, 18, 1, 20), now), '5h 20m');
-    expect(drawTimeLeft(DateTime.utc(2026, 10, 17), now), '0m');
+    expect(drawTimeLeft(l10n, DateTime.utc(2026, 10, 19), now), '1d 4h');
+    expect(drawTimeLeft(l10n, DateTime.utc(2026, 10, 18, 1, 20), now), '5h 20m');
+    expect(drawTimeLeft(l10n, DateTime.utc(2026, 10, 17), now), '0m');
   });
 }

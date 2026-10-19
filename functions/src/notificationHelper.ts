@@ -3,6 +3,12 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db as database, findUserByEmail, str} from "./common";
 import {recordPushOutcome, scoreKindFor} from "./notificationScoreboard";
+import {
+  isNativeLocalizationTopic,
+  nativeLocalizationTopic,
+  nativeNotificationLocalization,
+  type RenderedNotificationCopy,
+} from "./notificationCatalog";
 
 export interface NotificationData extends Record<string, string> {
   route: string;
@@ -11,6 +17,7 @@ export interface NotificationData extends Record<string, string> {
 export interface NotificationPayload {
   title: string;
   body: string;
+  message?: RenderedNotificationCopy;
   data: NotificationData;
   imageUrl?: string;
   /** Determines which users see this notification in their in-app inbox.
@@ -29,6 +36,8 @@ export interface NotificationPayload {
   docId?: string;
   /** Scoreboard kind. When omitted, the route is used. Unknown routes are not counted. */
   scoreKind?: string;
+  /** Sends localized resource keys without common English strings for capable native clients. */
+  nativeLocalization?: boolean;
 }
 
 /**
@@ -41,9 +50,10 @@ export interface NotificationPayload {
  * The Firestore document schema matches what InAppNotif.fromSnapshot()
  * expects in the Flutter client.
  */
-export async function sendNotification(payload: NotificationPayload): Promise<boolean> {
+export async function sendNotification(
+  payload: NotificationPayload,
+): Promise<boolean> {
   const db = admin.firestore();
-  const messaging = admin.messaging();
 
   if (!payload.pushOnly) {
     try {
@@ -53,6 +63,14 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
           title: payload.title,
           body: payload.body,
         },
+        ...(payload.message ?
+          {
+            message: {
+              kind: payload.message.kind,
+              args: payload.message.args,
+            },
+          } :
+          {}),
         data: {
           route: payload.data.route,
           imageUrl: payload.imageUrl ?? "",
@@ -77,7 +95,10 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
         await inbox.add(doc);
       }
     } catch (err) {
-      logger.error("Failed to write notification doc to Firestore.", {err, route: payload.data.route});
+      logger.error("Failed to write notification doc to Firestore.", {
+        err,
+        route: payload.data.route,
+      });
       // Do not throw: still attempt the FCM push.
     }
   }
@@ -86,12 +107,35 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
     return true;
   }
 
-  const message = fcmMessage({...payload, fcmTarget: payload.fcmTarget});
-  const kind = scoreKindFor(payload);
+  if (
+    "topic" in payload.fcmTarget &&
+    !isNativeLocalizationTopic(payload.fcmTarget.topic)
+  ) {
+    const legacy = sendPush(payload, payload.fcmTarget);
+    const localized = sendPush(
+      {...payload, nativeLocalization: true},
+      {topic: nativeLocalizationTopic(payload.fcmTarget.topic)},
+    );
+    const results = await Promise.all([legacy, localized]);
+    return results.some(Boolean);
+  }
+  return sendPush(payload, payload.fcmTarget);
+}
 
-  if ("topic" in payload.fcmTarget && payload.modifier.includes("@")) {
-    if (payload.fcmTarget.topic === emailToTopic(payload.modifier)) {
-      logger.warn("Refusing to push a personal notification to an email-prefix topic.", {route: payload.data.route});
+async function sendPush(
+  payload: NotificationPayload,
+  fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>,
+): Promise<boolean> {
+  const messaging = admin.messaging();
+  if ("topic" in fcmTarget && payload.modifier.includes("@")) {
+    const legacyTopic = isNativeLocalizationTopic(fcmTarget.topic) ?
+      fcmTarget.topic.slice(0, -"_loc_v1".length) :
+      fcmTarget.topic;
+    if (legacyTopic === emailToTopic(payload.modifier)) {
+      logger.warn(
+        "Refusing to push a personal notification to an email-prefix topic.",
+        {route: payload.data.route},
+      );
       return true;
     }
     if (!payload.pushOnly) {
@@ -99,22 +143,22 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
         const user = await findUserByEmail(payload.modifier);
         if (isLoggedOut(user?.data())) return true;
       } catch (err) {
-        logger.error("Failed to resolve the personal notification recipient.", {err, route: payload.data.route});
+        logger.error("Failed to resolve the personal notification recipient.", {
+          err,
+          route: payload.data.route,
+        });
         return false;
       }
     }
   }
 
+  const message = fcmMessage({...payload, fcmTarget});
+  const kind = scoreKindFor(payload);
   try {
     if (kind) await recordPushOutcome(kind, "sends");
     const messageId = await messaging.send(message);
     if (kind) await recordPushOutcome(kind, "accepts");
-    logger.info("FCM push sent.", {
-      messageId,
-      route: payload.data.route,
-      kind,
-      target: payload.fcmTarget,
-    });
+    logger.info("FCM push sent.", {messageId, route: payload.data.route, kind, target: fcmTarget});
     return true;
   } catch (err) {
     if (kind) await recordPushOutcome(kind, "fails");
@@ -125,16 +169,32 @@ export async function sendNotification(payload: NotificationPayload): Promise<bo
 
 /** Builds the FCM message for a payload that has a delivery target. */
 export function fcmMessage(
-  payload: NotificationPayload & {fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>},
+  payload: NotificationPayload & {
+    fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>;
+  },
 ): admin.messaging.Message {
   const kind = scoreKindFor(payload);
+  const nativeCopy = payload.message ?
+    nativeNotificationLocalization(payload.message) :
+    null;
+  const targetIsLocalized =
+    "topic" in payload.fcmTarget &&
+    isNativeLocalizationTopic(payload.fcmTarget.topic);
+  const nativeLocalization =
+    Boolean(payload.nativeLocalization || targetIsLocalized) && Boolean(nativeCopy);
   return {
-    notification: {
-      title: payload.title,
-      body: payload.body,
-    },
+    ...(nativeLocalization ?
+      {} :
+      {notification: {title: payload.title, body: payload.body}}),
     data: {
       ...payload.data,
+      ...(payload.message ?
+        {
+          notification_kind: payload.data.notification_kind ?? "generic",
+          notification_copy_kind: payload.message.kind,
+          notification_args: JSON.stringify(payload.message.args),
+        } :
+        {}),
       ...(kind ? {push_kind: kind} : {}),
       channel_id: payload.channelId,
       ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
@@ -145,14 +205,42 @@ export function fcmMessage(
         clickAction: "FLUTTER_NOTIFICATION_CLICK",
         ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
         ...(payload.collapseKey ? {tag: payload.collapseKey} : {}),
+        ...(nativeLocalization && nativeCopy ?
+          {
+            titleLocKey: nativeCopy.titleKey,
+            ...(nativeCopy.titleArgs.length > 0 ?
+              {titleLocArgs: nativeCopy.titleArgs} :
+              {}),
+            bodyLocKey: nativeCopy.bodyKey,
+            ...(nativeCopy.bodyArgs.length > 0 ?
+              {bodyLocArgs: nativeCopy.bodyArgs} :
+              {}),
+          } :
+          {}),
       },
       priority: "high",
     },
     apns: {
-      ...(payload.collapseKey ? {headers: {"apns-collapse-id": payload.collapseKey}} : {}),
+      ...(payload.collapseKey ?
+        {headers: {"apns-collapse-id": payload.collapseKey}} :
+        {}),
       payload: {
         aps: {
           sound: "default",
+          ...(nativeLocalization && nativeCopy ?
+            {
+              alert: {
+                titleLocKey: nativeCopy.titleKey,
+                ...(nativeCopy.titleArgs.length > 0 ?
+                  {titleLocArgs: nativeCopy.titleArgs} :
+                  {}),
+                locKey: nativeCopy.bodyKey,
+                ...(nativeCopy.bodyArgs.length > 0 ?
+                  {locArgs: nativeCopy.bodyArgs} :
+                  {}),
+              },
+            } :
+            {}),
         },
       },
     },
@@ -170,20 +258,44 @@ export interface PushRecipient {
   legacyToken?: unknown;
 }
 
+export interface UserPushToken {
+  token: string;
+  nativeLocalization: boolean;
+}
+
 /** The app stores the token in private/session; older builds wrote usersv2.fcmToken. */
-export function pickFcmToken(sessionToken: unknown, legacyToken: unknown): string {
+export function pickFcmToken(
+  sessionToken: unknown,
+  legacyToken: unknown,
+): string {
   return str(sessionToken) || str(legacyToken);
 }
 
-export async function userPushTokens(uid: string, legacyToken: unknown): Promise<string[]> {
-  let sessionToken: unknown;
+export async function userPushTokens(
+  uid: string,
+  legacyToken: unknown,
+): Promise<UserPushToken[]> {
+  let session: Record<string, unknown> | undefined;
   try {
-    sessionToken = (await database.doc(`usersv2/${uid}/private/session`).get()).data()?.fcmToken;
+    session = (
+      await database.doc(`usersv2/${uid}/private/session`).get()
+    ).data();
   } catch (err) {
     logger.warn("Could not read the session FCM token.", {uid, err});
   }
-  const token = pickFcmToken(sessionToken, legacyToken);
-  return token ? [token] : [];
+  const sessionToken = str(session?.fcmToken);
+  if (sessionToken) {
+    return [
+      {
+        token: sessionToken,
+        nativeLocalization:
+          session?.notificationLocalizationVersion === 1 &&
+          session?.notificationLocalizationToken === sessionToken,
+      },
+    ];
+  }
+  const legacy = pickFcmToken("", legacyToken);
+  return legacy ? [{token: legacy, nativeLocalization: false}] : [];
 }
 
 /** Same key on every push of one event, so a device that gets the topic and the token push shows it once. */
@@ -209,38 +321,67 @@ export async function sendToUser(
   if (!pushEnabled || recipient.loggedOut) return true;
 
   if (!recipient.uid) {
-    logger.warn("No uid for the recipient, skipping the personal push.", {route: payload.data.route});
+    logger.warn("No uid for the recipient, skipping the personal push.", {
+      route: payload.data.route,
+    });
     return true;
   }
   const collapseKey = payload.collapseKey ?? personalCollapseKey(payload);
-  const targets = [
-    {topic: userIdToTopic(recipient.uid)},
-    ...(await userPushTokens(recipient.uid, recipient.legacyToken)).map((token) => ({token})),
+  const targets: Array<{
+    fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>;
+    nativeLocalization?: boolean;
+  }> = [
+    {fcmTarget: {topic: userIdToTopic(recipient.uid)}},
+    ...(await userPushTokens(recipient.uid, recipient.legacyToken)).map(
+      ({token, nativeLocalization}) => ({
+        fcmTarget: {token},
+        nativeLocalization,
+      }),
+    ),
   ];
   const results = await Promise.all(
-    targets.map((fcmTarget) => sendNotification({...payload, collapseKey, fcmTarget, pushOnly: true})),
+    targets.map(({fcmTarget, nativeLocalization}) =>
+      sendNotification({
+        ...payload,
+        collapseKey,
+        fcmTarget,
+        nativeLocalization,
+        pushOnly: true,
+      }),
+    ),
   );
   return results.some(Boolean);
 }
 
 /** Like sendToUser, for a recipient known only by email (admins, campaign and inbox audiences). */
-export async function sendToUserByEmail(payload: PersonalPayload, email: string, pushEnabled = true): Promise<boolean> {
+export async function sendToUserByEmail(
+  payload: PersonalPayload,
+  email: string,
+  pushEnabled = true,
+): Promise<boolean> {
   let user: admin.firestore.QueryDocumentSnapshot | null = null;
   try {
     user = await findUserByEmail(email);
   } catch (err) {
-    logger.warn("Could not resolve the recipient; skipping the personal push.", {emailHash: emailHash(email), err});
+    logger.warn(
+      "Could not resolve the recipient; skipping the personal push.",
+      {emailHash: emailHash(email), err},
+    );
   }
   const data = user?.data();
-  return sendToUser(payload, {
-    uid: user?.id,
-    email,
-    loggedOut: isLoggedOut(data),
-    legacyToken: data?.fcmToken,
-  }, pushEnabled);
+  return sendToUser(
+    payload,
+    {
+      uid: user?.id,
+      email,
+      loggedOut: isLoggedOut(data),
+      legacyToken: data?.fcmToken,
+    },
+    pushEnabled,
+  );
 }
 
-export function isLoggedOut(user: {loggedIn?: unknown} | undefined): boolean {
+export function isLoggedOut(user: { loggedIn?: unknown } | undefined): boolean {
   return user?.loggedIn === false;
 }
 
@@ -266,5 +407,8 @@ export function postsTopic(uid: string): string {
 
 /** Short stable id of an email for logs, so a log line never holds the address. */
 export function emailHash(email: string): string {
-  return createHash("sha1").update(email.trim().toLowerCase()).digest("hex").slice(0, 16);
+  return createHash("sha1")
+    .update(email.trim().toLowerCase())
+    .digest("hex")
+    .slice(0, 16);
 }

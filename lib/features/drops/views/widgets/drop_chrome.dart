@@ -3,8 +3,10 @@ import 'package:Prism/features/drops/views/painters/foil_sheen_painter.dart';
 import 'package:Prism/features/drops/views/painters/guilloche_painter.dart';
 import 'package:Prism/features/drops/views/painters/lock_seal_painter.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// "01 / 08": the place of a wall in its Drop, like the serial of a numbered print.
 String dropSerial(int index, int count) =>
@@ -105,12 +107,14 @@ class DropCountdown extends StatelessWidget {
   final DateTime now;
   final double digitSize;
 
-  static String parts(DropEntity drop, DateTime now) {
+  static String parts(AppLocalizations l10n, DropEntity drop, DateTime now, String locale) {
     final Duration left = drop.endsAt.difference(now);
-    if (left <= Duration.zero) return '00h 00m';
-    String two(int n) => n.toString().padLeft(2, '0');
-    final String hm = '${two(left.inHours % 24)}h ${two(left.inMinutes % 60)}m';
-    return left.inDays > 0 ? '${two(left.inDays)}d $hm' : hm;
+    final NumberFormat twoDigits = NumberFormat('00', locale);
+    if (left <= Duration.zero) return l10n.economyDropCountdownHoursMinutes('00', '00');
+    final String hours = twoDigits.format(left.inHours % 24);
+    final String minutes = twoDigits.format(left.inMinutes % 60);
+    final String hm = l10n.economyDropCountdownHoursMinutes(hours, minutes);
+    return left.inDays > 0 ? l10n.economyDropCountdownDaysHours(twoDigits.format(left.inDays), hm) : hm;
   }
 
   @override
@@ -125,31 +129,22 @@ class DropCountdown extends StatelessWidget {
       color: color,
       fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
     );
-    final TextStyle unit = digits.copyWith(
-      fontFamily: PrismFonts.proximaNova,
-      fontSize: digitSize * 0.5,
-      fontWeight: FontWeight.w700,
-      color: color.withValues(alpha: 0.6),
-    );
-    final List<InlineSpan> spans = <InlineSpan>[];
-    for (final String part in parts(drop, now).split(' ')) {
-      if (spans.isNotEmpty) spans.add(TextSpan(text: '  ', style: unit));
-      spans.add(TextSpan(text: part.substring(0, part.length - 1), style: digits));
-      spans.add(TextSpan(text: part.substring(part.length - 1), style: unit));
-    }
+    final String countdown = parts(context.l10n, drop, now, Localizations.localeOf(context).toLanguageTag());
     return Semantics(
-      label: urgent ? 'Last call, ${drop.endsInLabel(now)}' : drop.endsInLabel(now),
+      label: urgent
+          ? context.l10n.economyDropLastCall(drop.endsInLabel(context.l10n, now))
+          : drop.endsInLabel(context.l10n, now),
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              urgent ? 'Last call' : 'Ends in',
+              urgent ? context.l10n.economyDropLastCallLabel : context.l10n.economyDropEndsInLabel,
               style: dropCapsStyle(size: 10, spacing: 1.8, color: urgent ? DropPalette.urgent : DropPalette.inkMuted),
             ),
             const SizedBox(height: 6),
-            Text.rich(TextSpan(children: spans), key: const ValueKey<String>('drop.countdown')),
+            Text(countdown, key: const ValueKey<String>('drop.countdown'), style: digits),
           ],
         ),
       ),

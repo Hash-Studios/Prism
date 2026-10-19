@@ -2,6 +2,7 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/ads/biz/coin_gate_port.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -28,6 +29,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (BuildContext context) => ElevatedButton(
             onPressed: () async {

@@ -53,8 +53,8 @@ void error(String msg, {bool haptic = true}) {
 /// A neutral note: not a success and not an error.
 void info(String msg) => _show(msg, PrismToastKind.plain, _fallbackNeutral);
 
-void color(Color color) => _show(
-  'Color code copied to clipboard',
+void color(Color color, {required String message}) => _show(
+  message,
   PrismToastKind.plain,
   color,
   color: color,

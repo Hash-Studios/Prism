@@ -14,6 +14,7 @@ import 'package:Prism/features/drops/views/preview/preview_wall_page.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -80,27 +81,27 @@ class _ResolvedDropPreview extends StatelessWidget {
     return BlocBuilder<DropsBloc, DropsState>(
       builder: (context, state) {
         if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
-          return const PrismPage(
-            title: 'Drop preview',
+          return PrismPage(
+            title: context.l10n.economyDropPreviewTitle,
             body: Center(child: CircularProgressIndicator()),
           );
         }
         if (state.status == LoadStatus.failure) {
           return PrismPage(
-            title: 'Drop preview',
+            title: context.l10n.economyDropPreviewTitle,
             body: GlintState(
               kind: GlintStateKind.error,
-              title: "Couldn't load this Drop",
-              actionLabel: 'Try again',
+              title: context.l10n.economyDropLoadFailed,
+              actionLabel: context.l10n.actionRetry,
               onAction: () => context.read<DropsBloc>().add(const DropsEvent.refreshed()),
             ),
           );
         }
         final DropEntity? drop = state.drop;
         if (drop == null || drop.weekKey != weekKey || !drop.walls.any((wall) => wall.id == wallId)) {
-          return const PrismPage(
-            title: 'Drop preview',
-            body: GlintState(kind: GlintStateKind.empty, title: 'This wallpaper is unavailable'),
+          return PrismPage(
+            title: context.l10n.economyDropPreviewTitle,
+            body: GlintState(kind: GlintStateKind.empty, title: context.l10n.economyDropWallpaperUnavailable),
           );
         }
         return DropPreviewPage(key: ValueKey<String>('$weekKey/$wallId'), wallId: wallId);

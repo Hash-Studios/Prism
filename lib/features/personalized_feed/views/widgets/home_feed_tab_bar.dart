@@ -1,5 +1,6 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -129,20 +130,23 @@ class _HomeFeedTabBarState extends State<HomeFeedTabBar> {
                   onTap: _handleTap,
                   tabs: <Widget>[
                     for (final HomeFeedChip chip in HomeFeedChip.values)
-                      Tab(height: HomeFeedTabBar.height, child: _label(cs, chip)),
+                      Tab(height: HomeFeedTabBar.height, child: _label(context, cs, chip)),
                   ],
                 ),
               ),
             ),
           ),
           if (widget.isRefreshing)
-            const Positioned(
+            Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               height: 2,
               child: IgnorePointer(
-                child: LinearProgressIndicator(semanticsLabel: 'Updating', backgroundColor: Colors.transparent),
+                child: LinearProgressIndicator(
+                  semanticsLabel: context.l10n.wallpaperFeedUpdating,
+                  backgroundColor: Colors.transparent,
+                ),
               ),
             ),
         ],
@@ -150,16 +154,23 @@ class _HomeFeedTabBarState extends State<HomeFeedTabBar> {
     );
   }
 
-  Widget _label(ColorScheme cs, HomeFeedChip chip) {
+  Widget _label(BuildContext context, ColorScheme cs, HomeFeedChip chip) {
+    final String label = switch (chip) {
+      HomeFeedChip.forYou => context.l10n.wallpaperFeedTabForYou,
+      HomeFeedChip.following => context.l10n.wallpaperFeedTabFollowing,
+      HomeFeedChip.trending => context.l10n.wallpaperFeedTabTrending,
+      HomeFeedChip.latest => context.l10n.wallpaperFeedTabLatest,
+      HomeFeedChip.popular => context.l10n.wallpaperFeedTabPopular,
+    };
     if (chip != HomeFeedChip.forYou || widget.onTuneTap == null) {
-      return Text(chip.label, softWrap: false);
+      return Text(label, softWrap: false);
     }
     return Semantics(
-      hint: widget.selected == chip ? 'Double tap to open feed settings' : null,
+      hint: widget.selected == chip ? context.l10n.wallpaperFeedSettingsHint : null,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(chip.label, softWrap: false),
+          Text(label, softWrap: false),
           Icon(PrismIcons.dropdownCaret, size: 18, color: cs.onSurface.withValues(alpha: 0.6)),
         ],
       ),

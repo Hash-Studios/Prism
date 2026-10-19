@@ -5,6 +5,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/features/rewards/views/widgets/streak_cycle_strip.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -42,12 +43,12 @@ class _HeroCard extends StatelessWidget {
     final int todayDay = status.claimedToday ? cycleDay : (cycleDay >= 7 ? 1 : cycleDay + 1);
     final int nextDay = cycleDay >= 7 ? 1 : cycleDay + 1;
     final String statusLine = count == 0
-        ? 'Open Prism every day to build a streak.'
+        ? context.l10n.economyBuildStreakDaily
         : status.claimedToday
         ? nextDay == 7
-              ? 'Today is done. Come back tomorrow for your day 7 chest.'
-              : 'Today is done. Come back tomorrow for +${CoinPolicy.streakClaimRewardForDay(nextDay, isPro: isPro)} coins.'
-        : 'Open Prism today to keep your streak.';
+              ? context.l10n.economyClaimedTodayDay7Chest
+              : context.l10n.economyClaimedTodayReward(CoinPolicy.streakClaimRewardForDay(nextDay, isPro: isPro))
+        : context.l10n.economyKeepStreakToday;
     final TextStyle caption = PrismTextStyles.caption(context);
 
     return PrismCard(
@@ -61,12 +62,12 @@ class _HeroCard extends StatelessWidget {
               Expanded(
                 child: Semantics(
                   container: true,
-                  label: '$count ${count == 1 ? 'day' : 'days'} streak',
+                  label: context.l10n.economyStreakCount(count),
                   excludeSemantics: true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text('STREAK', style: PrismTextStyles.eyebrow(context)),
+                      Text(context.l10n.economyStreak, style: PrismTextStyles.eyebrow(context)),
                       const SizedBox(height: PrismSpace.xxs),
                       Wrap(
                         spacing: PrismSpace.xs,
@@ -77,15 +78,14 @@ class _HeroCard extends StatelessWidget {
                             duration: context.motion(PrismDurations.slow),
                             curve: PrismCurves.enter,
                             builder: (context, value, _) => Text(
-                              '${value.round()}',
+                              formatLocalizedNumber(value.round(), context.l10n),
                               style: PrismTextStyles.numeral(context, 64).copyWith(letterSpacing: -1),
                             ),
                           ),
-                          Text(count == 1 ? 'day' : 'days', style: PrismTextStyles.body(context)),
+                          Text(context.l10n.economyDays(count), style: PrismTextStyles.body(context)),
                         ],
                       ),
-                      if (status.best > 0)
-                        Text('Best ${status.best} ${status.best == 1 ? 'day' : 'days'}', style: caption),
+                      if (status.best > 0) Text(context.l10n.economyBestStreak(status.best), style: caption),
                     ],
                   ),
                 ),
@@ -103,7 +103,7 @@ class _HeroCard extends StatelessWidget {
               const SizedBox(width: PrismSpace.xs),
               Expanded(
                 child: Text(
-                  'Finish day 7 for a chest of +${CoinPolicy.streakChestMin} to +${CoinPolicy.streakChestMax}',
+                  context.l10n.economyFinishDay7Chest(CoinPolicy.streakChestMin, CoinPolicy.streakChestMax),
                   style: caption,
                 ),
               ),

@@ -1,5 +1,7 @@
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -15,13 +17,18 @@ class _MockNotificationsBloc extends MockBloc<InAppNotificationsEvent, InAppNoti
 
 void main() {
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
-    testWidgets('${option.label}: wordmark and logo read on the bar', (tester) async {
+    testWidgets('${prismThemeDisplayName(option, AppLocalizationsEn())}: wordmark and logo read on the bar', (
+      tester,
+    ) async {
       final bloc = _MockNotificationsBloc();
       when(() => bloc.state).thenReturn(InAppNotificationsState.initial());
       await tester.pumpWidget(
         BlocProvider<InAppNotificationsBloc>.value(
           value: bloc,
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             theme: option.theme,
             home: const Scaffold(body: PrismTopAppBar()),
           ),

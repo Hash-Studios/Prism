@@ -3,6 +3,8 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +30,9 @@ void main() {
   Future<void> open(WidgetTester tester, ThemeData theme, void Function(BuildContext) show) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: theme,
         home: Builder(
           builder: (context) => TextButton(onPressed: () => show(context), child: const Text('Open')),
@@ -41,7 +46,7 @@ void main() {
   }
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
-    group(option.label, () {
+    group(prismThemeDisplayName(option, AppLocalizationsEn()), () {
       final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
 
       testWidgets('sign in sheet: Google and Not now read on the surface', (tester) async {

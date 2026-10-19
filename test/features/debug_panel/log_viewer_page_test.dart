@@ -2,6 +2,8 @@ import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/debug_panel/views/pages/log_viewer_page.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -17,10 +19,12 @@ void main() {
       final PrismThemeOption option = <PrismThemeOption>[
         ...prismLightThemes,
         ...prismDarkThemes,
-      ].firstWhere((PrismThemeOption o) => o.label == name);
+      ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == name);
       final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: theme,
           home: Scaffold(backgroundColor: theme.primaryColor, body: const LogViewerPage()),
         ),

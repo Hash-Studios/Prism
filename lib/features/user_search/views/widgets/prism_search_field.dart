@@ -1,5 +1,6 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -95,7 +96,12 @@ class _PrismSearchFieldState extends State<PrismSearchField> {
             valueListenable: widget.controller,
             builder: (context, value, _) => value.text.isEmpty
                 ? const SizedBox(width: PrismSpace.md)
-                : PrismIconButton(icon: Icons.close_rounded, tooltip: 'Clear search', iconSize: 20, onPressed: _clear),
+                : PrismIconButton(
+                    icon: Icons.close_rounded,
+                    tooltip: context.l10n.accountClearSearch,
+                    iconSize: 20,
+                    onPressed: _clear,
+                  ),
           ),
         ],
       ),

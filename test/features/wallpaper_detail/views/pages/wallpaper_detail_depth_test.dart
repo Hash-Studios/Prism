@@ -13,6 +13,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -71,6 +72,9 @@ void main() {
     whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state);
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         themeAnimationDuration: Duration.zero,
         home: BlocProvider<WallpaperDetailBloc>.value(
           value: bloc,
@@ -96,7 +100,7 @@ void main() {
 
   for (final (WallDepthTier tier, String subtitle) in <(WallDepthTier, String)>[
     (WallDepthTier.auto, 'Your subject sits in front of the clock.'),
-    (WallDepthTier.menu, 'In the Lock Screen editor, tap ••• then Depth\u00A0Effect.'),
+    (WallDepthTier.menu, 'In the Lock Screen editor, tap ••• then Depth Effect.'),
   ]) {
     onPlatform('a ${tier.name} wall shows the Depth Effect row and passes its tier to Save', TargetPlatform.iOS, (
       tester,

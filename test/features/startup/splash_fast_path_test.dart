@@ -11,6 +11,7 @@ import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart'
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/usecases/bootstrap_app_usecase.dart';
 import 'package:Prism/features/startup/startup.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -85,6 +86,8 @@ void main() {
       BlocProvider<StartupBloc>.value(
         value: bloc,
         child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router.config(),
           builder: (context, child) => ObsoleteVersionGate(router: router, child: child!),
         ),
@@ -166,6 +169,8 @@ void main() {
       BlocProvider<StartupBloc>.value(
         value: bloc,
         child: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router.config(),
           builder: (context, child) => ObsoleteVersionGate(router: router, child: child!),
         ),
