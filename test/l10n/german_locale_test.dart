@@ -149,6 +149,18 @@ void main() {
     expect(de.economyNeedMoreCoins(1), 'Dir fehlt noch 1 Coin.');
     expect(de.economyNeedMoreCoins(1234), 'Dir fehlen noch 1.234 Coins.');
     expect(de.economyAiApplyingStyle, 'Dein Stil wird angewendet…');
+    expect(
+      de.accountPurchasesRestoredPending,
+      'Käufe wiederhergestellt. Es kann eine Minute dauern, bis Pro freigeschaltet wird.',
+    );
+    expect(
+      de.premiumPurchasePending,
+      'Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.',
+    );
+    expect(
+      de.premiumPurchaseUnconfirmed,
+      'Dein Kauf konnte nicht bestätigt werden. Versuche es in den Einstellungen mit „Käufe wiederherstellen“.',
+    );
     expect(formatLocalizedNumber(1234, de), '1.234');
     expect(DateFormat.yMMMMd(de.localeName).format(DateTime(2025, 3, 8)), '8. März 2025');
 
