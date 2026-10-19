@@ -161,6 +161,44 @@ test("a counted wallpaper view feeds the browse quest, a repeat inside the coold
   assert.equal(fake.get("questEventRate/u1_2026-01-02_view_wallpaper")?.count, 1);
 });
 
+test("a failed counter write does not record a daily view or quest, and retry stays claimed", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T10:00:00Z")});
+  const fake = installFakeDb(t, {"usersv2/u1": {coins: 0}});
+  const collection = db.collection.bind(db);
+  let failCounterWrite = true;
+  t.mock.method(db, "collection", (name: string) => {
+    const source = collection(name);
+    if (name !== "wallpaper_stats") return source;
+    return {
+      ...source,
+      doc: (id: string) => {
+        const ref = source.doc(id);
+        return {
+          ...ref,
+          set: async (...args: Parameters<typeof ref.set>) => {
+            if (failCounterWrite) {
+              failCounterWrite = false;
+              throw new Error("counter write failed");
+            }
+            return ref.set(...args);
+          },
+        };
+      },
+    };
+  });
+
+  await assert.rejects(call(), /counter write failed/);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(fake.get("wallpaper_stats/W1"), undefined);
+  assert.equal(fake.get("wallpaper_stats_daily/20260102_W1"), undefined);
+  assert.equal(fake.get("questEventRate/u1_2026-01-02_view_wallpaper"), undefined);
+
+  assert.equal((await call()).views, 0);
+  assert.equal(fake.get("wallpaper_stats/W1"), undefined);
+  assert.equal(fake.get("wallpaper_stats_daily/20260102_W1"), undefined);
+  assert.equal(fake.get("questEventRate/u1_2026-01-02_view_wallpaper"), undefined);
+});
+
 test("a second view of one wall after the cooldown, same day, does not feed the browse quest again", async (t) => {
   t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T10:00:00Z")});
   const fake = installFakeDb(t, {"usersv2/u1": {coins: 0}});
