@@ -5,6 +5,7 @@ import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
@@ -522,7 +523,11 @@ void main() {
     await tester.runAsync(backend.install);
     backend.onCall = (String name, Map<String, dynamic> params) async {
       if (name == 'progressQuest') events.add(params['event'] as String);
-      return <String, Object?>{'success': true, 'rev': 1};
+      return <String, Object?>{
+        'success': true,
+        'rev': 1,
+        'quests': <String, Object?>{'dayKey': economyDayKey(DateTime.now())},
+      };
     };
     await pumpScreen(tester);
 
@@ -540,7 +545,11 @@ void main() {
     await tester.runAsync(backend.install);
     backend.onCall = (String name, Map<String, dynamic> params) async {
       if (name == 'progressQuest') events.add(params['event'] as String);
-      return <String, Object?>{'success': true, 'rev': 1};
+      return <String, Object?>{
+        'success': true,
+        'rev': 1,
+        'quests': <String, Object?>{'dayKey': economyDayKey(DateTime.now())},
+      };
     };
     await pumpScreen(tester);
 

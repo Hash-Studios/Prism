@@ -6,6 +6,7 @@ import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/firestore/firestore_server_read.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
@@ -428,23 +429,37 @@ class EconomyConfig {
   /// keeps the config already loaded. [_loadedAt] only moves on a server read.
   static Future<void> load() async {
     try {
-      Future<Map<String, dynamic>?> read({required bool preferCacheFirst}) => firestoreClient
-          .getById<Map<String, dynamic>>(
-            FirebaseCollections.economyConfig,
-            'current',
-            (data, _) => data,
-            sourceTag: 'economy.config.load',
-            preferCacheFirst: preferCacheFirst,
-          )
-          .timeout(loadBudget);
       final Map<String, dynamic>? cached = await PerformanceProbe.measure(
         'startup',
         'economy_config.load',
-        () => read(preferCacheFirst: true),
+        () => firestoreClient
+            .getById<Map<String, dynamic>>(
+              FirebaseCollections.economyConfig,
+              'current',
+              (data, _) => data,
+              sourceTag: 'economy.config.load',
+              preferCacheFirst: true,
+            )
+            .timeout(loadBudget),
       );
       if (cached != null) current = EconomyConfig.fromMap(cached);
+    } catch (error) {
+      logger.w('Economy config cache load failed; trying the server.', tag: 'Economy', error: error);
+    }
+    try {
       current = EconomyConfig.fromMap(
-        await PerformanceProbe.measure('startup', 'economy_config.refresh', () => read(preferCacheFirst: false)),
+        await PerformanceProbe.measure(
+          'startup',
+          'economy_config.refresh',
+          () => firestoreClient
+              .getFromServer<Map<String, dynamic>>(
+                FirebaseCollections.economyConfig,
+                'current',
+                (data, _) => data,
+                sourceTag: 'economy.config.refresh',
+              )
+              .timeout(loadBudget),
+        ),
       );
       _loadedAt = DateTime.now();
     } catch (error) {

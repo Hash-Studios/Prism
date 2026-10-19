@@ -53,7 +53,10 @@ void main() {
     final List<String> calls = <String>[];
     backend.onCall = (name, _) async {
       calls.add(name);
-      return <String, Object?>{'success': false};
+      return <String, Object?>{
+        'success': true,
+        ...snapshot(coins.xpNotifier.value.xp, coins.xpNotifier.value.weekXp),
+      };
     };
     apply(snapshot(10, 10));
     apply(snapshot(20, 20));
@@ -67,6 +70,78 @@ void main() {
     apply(snapshot(520, 520));
     await Future<void>.delayed(Duration.zero);
     expect(calls, <String>['reconcileRankRewards']);
+  });
+
+  test('a same-rank XP reply retries rank rewards after a failed rank crossing sync', () async {
+    int reconciliations = 0;
+    backend.onCall = (name, _) async {
+      if (name == 'reconcileRankRewards') reconciliations++;
+      return <String, Object?>{'success': false};
+    };
+
+    apply(snapshot(520, 520));
+    await pumpEventQueue();
+    expect(reconciliations, 1);
+    apply(snapshot(530, 530));
+    await pumpEventQueue();
+
+    expect(reconciliations, 2);
+  });
+
+  test('a balance refresh retries a failed rank rewards sync', () async {
+    int reconciliations = 0;
+    backend.onCall = (name, _) async {
+      if (name == 'reconcileRankRewards') reconciliations++;
+      return <String, Object?>{'success': false};
+    };
+
+    apply(snapshot(520, 520));
+    await pumpEventQueue();
+    expect(reconciliations, 1);
+    await coins.refreshBalance();
+
+    expect(reconciliations, 2);
+  });
+
+  test('a successful rank retry stops later unchanged-rank requests', () async {
+    int reconciliations = 0;
+    backend.onCall = (name, _) async {
+      if (name == 'reconcileRankRewards') reconciliations++;
+      return <String, Object?>{
+        'success': reconciliations > 1,
+        ...snapshot(coins.xpNotifier.value.xp, coins.xpNotifier.value.weekXp),
+      };
+    };
+
+    apply(snapshot(520, 520));
+    await pumpEventQueue();
+    apply(snapshot(530, 530));
+    await pumpEventQueue();
+    apply(snapshot(540, 540));
+    await pumpEventQueue();
+
+    expect(reconciliations, 2);
+  });
+
+  test('a failed previous-owner rank sync does not dirty the next account', () async {
+    final Completer<Map<String, Object?>> response = Completer<Map<String, Object?>>();
+    int reconciliations = 0;
+    backend.onCall = (_, _) {
+      reconciliations++;
+      return response.future;
+    };
+    apply(snapshot(520, 520));
+    await pumpEventQueue();
+
+    app_state.prismUser.id = 'next-user';
+    coins.resetSession();
+    coins.applyRoutineXpReply(snapshot(20, 20), userId: 'next-user', session: coins.economySession);
+    response.complete(<String, Object?>{'success': false});
+    await pumpEventQueue();
+    coins.applyRoutineXpReply(snapshot(30, 30), userId: 'next-user', session: coins.economySession);
+    await pumpEventQueue();
+
+    expect(reconciliations, 1);
   });
 
   test('award callers apply an unchanged server receipt without deriving XP from coins', () async {

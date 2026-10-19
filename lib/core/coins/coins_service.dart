@@ -22,8 +22,8 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/firestore/firestore_server_read.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
+import 'package:Prism/core/firestore/firestore_server_read.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
@@ -463,6 +463,7 @@ class CoinsService with WidgetsBindingObserver {
   final Set<String> _spendRequestsInFlight = <String>{};
   final Map<(String, int), Future<void>> _rankRewardSyncs = <(String, int), Future<void>>{};
   final Set<(String, int)> _rankRewardSyncRequested = <(String, int)>{};
+  bool _rankRewardsNeedSync = false;
 
   /// The cached economy state belongs to the signed-in user.
   bool get _ownsEconomyState => _canMutateCoins() && _economyUserId == app_state.prismUser.id;
@@ -820,7 +821,10 @@ class CoinsService with WidgetsBindingObserver {
       await _invalidateEconomySnapshot(userId);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
-    if (userData == null) return app_state.prismUser.coins;
+    if (userData == null) {
+      if (_rankRewardsNeedSync) await reconcileRankRewards();
+      return app_state.prismUser.coins;
+    }
     final int coins = parseIntOr(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
     if (_economyMutationGeneration == mutationGeneration) {
@@ -829,6 +833,7 @@ class CoinsService with WidgetsBindingObserver {
       await _persistRootEconomySnapshot(userId, userData, includeXp: syncXp, merge: !syncXp);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
+    if (_rankRewardsNeedSync) await reconcileRankRewards();
     return coins;
   }
 
@@ -2112,6 +2117,7 @@ class CoinsService with WidgetsBindingObserver {
   void _resetEconomy(String userId, {bool resetXp = true}) {
     _economyUserId = userId;
     if (resetXp) {
+      _rankRewardsNeedSync = false;
       _xpUserId = '';
       _confirmedXp = XpStatus.empty();
       _confirmedXpWeek = '';
@@ -2225,7 +2231,7 @@ class CoinsService with WidgetsBindingObserver {
         'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': xp.weekXp},
       }, merge: true),
     );
-    if (xp.rank.min != previousRankMin) unawaited(reconcileRankRewards());
+    if (xp.rank.min != previousRankMin || _rankRewardsNeedSync) unawaited(reconcileRankRewards());
   }
 
   bool _usableXpSnapshot(Map<String, dynamic> data) {
@@ -2272,6 +2278,7 @@ class CoinsService with WidgetsBindingObserver {
     _ensureEconomyUser(userId);
     final int generation = _economySessionGeneration;
     final (String, int) key = (userId, generation);
+    _rankRewardsNeedSync = true;
     _rankRewardSyncRequested.add(key);
     final Future<void>? running = _rankRewardSyncs[key];
     if (running != null) return running;
@@ -2293,6 +2300,7 @@ class CoinsService with WidgetsBindingObserver {
           timeout: const Duration(seconds: 10),
         );
         if (!_isCurrentOwner(userId, generation)) return;
+        _rankRewardsNeedSync = reply == null || !reply.success || reply.stale;
         if (reply != null &&
             reply.success &&
             !reply.stale &&
@@ -2539,7 +2547,11 @@ class CoinsService with WidgetsBindingObserver {
     );
     if (!_isCurrentOwner(userId, generation)) return null;
     if (reply == null || reply.errorCode != null) return questsNotifier.value;
-    if (event != null && reply.success) await _markQuestReported(event, userId);
+    if (event != null && reply.success) {
+      final String? dayKey = toJsonMap(reply.data['quests'])['dayKey'] as String?;
+      if (dayKey != null) await _markQuestReported(event, userId, dayKey);
+      if (!_isCurrentOwner(userId, generation)) return null;
+    }
     bool stale = reply.stale || _staleEconomyReply(reply.data);
     if (!stale && reply.success && reply.data.containsKey('quests')) _economyMutationGeneration++;
     if (!stale) _applyQuestReply(reply.data);
@@ -2590,9 +2602,9 @@ class CoinsService with WidgetsBindingObserver {
       _settings.isOpen &&
       _settings.get<String>(_questReportedKey(event), defaultValue: '') == _questReportedValue(userId);
 
-  Future<void> _markQuestReported(QuestEvent event, String userId) async {
+  Future<void> _markQuestReported(QuestEvent event, String userId, String dayKey) async {
     if (!getIt.isRegistered<SettingsLocalDataSource>() || !_settings.isOpen) return;
-    await _settings.set(_questReportedKey(event), _questReportedValue(userId));
+    await _settings.set(_questReportedKey(event), '$userId|$dayKey');
   }
 
   /// Recomputes [spinWheelNotifier] from the cached economy, Pro and the loaded config. Every change of those calls it.

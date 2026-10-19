@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
@@ -71,6 +72,10 @@ void main() {
         failuresLeft -= 1;
         throw StateError('offline');
       }
+      return <String, dynamic>{
+        'premium': app_state.prismUser.premium,
+        'subscriptionTier': app_state.prismUser.subscriptionTier,
+      };
     },
     configurePurchases:
         configurePurchases ??
@@ -270,28 +275,113 @@ void main() {
       expect(settings.get<String>('lastSyncedSubscription.u1', defaultValue: ''), isEmpty);
     });
 
-    test('a forced sync runs for an unchanged tier without holding up the result', () async {
-      await settings.set('lastSyncedSubscription.u1', 'free|${DateTime.now().millisecondsSinceEpoch}');
+    test('a server cooldown returning Free does not cache an unconfirmed Pro tier', () async {
+      final CoinsTestBackend backend = CoinsTestBackend();
+      await backend.install();
+      app_state.prismUser = profileUser();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        const BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.cloud_functions_platform_interface.CloudFunctionsHostApi.call',
+          StandardMessageCodec(),
+        ),
+        (_) async {
+          syncCalls++;
+          return <Object?>[<String, Object?>{'premium': false, 'subscriptionTier': 'free'}];
+        },
+      );
+      final PurchasesService service = PurchasesService.forTesting(
+        addCustomerInfoListener: listeners.add,
+        configurePurchases: (_) async {},
+        getCustomerInfo: () async => _proCustomer,
+      );
+
+      await service.checkAndPersistPremium(forceSync: true);
+      await pumpEventQueue();
+      await service.checkAndPersistPremium();
+
+      expect(syncCalls, 2);
+      expect(settings.get<String>('lastSyncedSubscription.u1', defaultValue: '').split('|').first, 'free');
+    });
+
+    test('a server cooldown returning Pro does not cache an unconfirmed revocation', () async {
+      final CoinsTestBackend backend = CoinsTestBackend();
+      await backend.install();
+      app_state.prismUser = profileUser(premium: true);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        const BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.cloud_functions_platform_interface.CloudFunctionsHostApi.call',
+          StandardMessageCodec(),
+        ),
+        (_) async {
+          syncCalls++;
+          return <Object?>[<String, Object?>{'premium': true, 'subscriptionTier': 'pro'}];
+        },
+      );
+      final PurchasesService service = PurchasesService.forTesting(
+        addCustomerInfoListener: listeners.add,
+        configurePurchases: (_) async {},
+        getCustomerInfo: () async => _freeCustomer,
+      );
+
+      await service.checkAndPersistPremium(forceSync: true);
+      await pumpEventQueue();
+      await service.checkAndPersistPremium();
+
+      expect(syncCalls, 2);
+      expect(settings.get<String>('lastSyncedSubscription.u1', defaultValue: '').split('|').first, 'pro');
+    });
+
+    test('a forced sync waits for server confirmation before allowing premium actions', () async {
+      await settings.set('lastSyncedSubscription.u1', 'pro|${DateTime.now().millisecondsSinceEpoch}');
       final Completer<void> release = Completer<void>();
       int forcedCalls = 0;
       final PurchasesService service = PurchasesService.forTesting(
         addCustomerInfoListener: listeners.add,
         syncSubscription: () {
           forcedCalls++;
-          return release.future;
+          return release.future.then((_) => <String, dynamic>{'premium': true, 'subscriptionTier': 'pro'});
         },
         configurePurchases: (_) async {},
         logIn: (_) async {},
-        getCustomerInfo: () async => _freeCustomer,
+        getCustomerInfo: () async => _proCustomer,
       );
 
-      final bool premium = await service.checkAndPersistPremium(forceSync: true);
+      bool returned = false;
+      final Future<bool> premium = service.checkAndPersistPremium(forceSync: true).then((value) {
+        returned = true;
+        return value;
+      });
+      await pumpEventQueue();
 
-      expect(premium, isFalse);
       expect(forcedCalls, 1);
       expect(release.isCompleted, isFalse);
+      expect(returned, isFalse);
       release.complete();
+      expect(await premium, isTrue);
+    });
+
+    test('a forced sync does not retry as a different account after the owner switches', () async {
+      final Completer<Map<String, dynamic>> response = Completer<Map<String, dynamic>>();
+      final PurchasesService service = PurchasesService.forTesting(
+        addCustomerInfoListener: listeners.add,
+        configurePurchases: (_) async {},
+        getCustomerInfo: () async => _proCustomer,
+        syncSubscription: () {
+          syncCalls++;
+          if (syncCalls == 1) return response.future;
+          return Future<Map<String, dynamic>>.value(<String, dynamic>{'premium': true, 'subscriptionTier': 'pro'});
+        },
+      );
+
+      final Future<bool> premium = service.checkAndPersistPremium(forceSync: true);
       await pumpEventQueue();
+      app_state.prismUser = profileUser()..id = 'other-user';
+      response.completeError(StateError('offline'));
+      await pumpEventQueue();
+      await premium;
+
+      expect(syncCalls, 1);
+      expect(settings.get<String>('lastSyncedSubscription.u1', defaultValue: ''), isEmpty);
     });
   });
 

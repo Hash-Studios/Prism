@@ -33,7 +33,7 @@ class PurchasesService {
   @visibleForTesting
   PurchasesService.forTesting({
     required void Function(CustomerInfoUpdateListener listener) addCustomerInfoListener,
-    Future<void> Function()? syncSubscription,
+    Future<Map<String, dynamic>> Function()? syncSubscription,
     Duration syncRetryBackoff = Duration.zero,
     Future<void> Function(PurchasesConfiguration configuration)? configurePurchases,
     Future<void> Function(String userId)? logIn,
@@ -50,7 +50,7 @@ class PurchasesService {
   static final PurchasesService instance = PurchasesService._();
 
   final void Function(CustomerInfoUpdateListener listener) _addCustomerInfoListener;
-  final Future<void> Function()? _syncSubscriptionOverride;
+  final Future<Map<String, dynamic>> Function()? _syncSubscriptionOverride;
   final Duration _syncRetryBackoff;
   final Future<void> Function(PurchasesConfiguration configuration) _configurePurchases;
   final Future<dynamic> Function(String userId) _logIn;
@@ -68,6 +68,7 @@ class PurchasesService {
   static const Duration _subscriptionResyncAfter = Duration(hours: 24);
   static const String _lastSyncedKeyPrefix = 'lastSyncedSubscription.';
   bool? _lastPersistedPremium;
+  String? _lastPersistedUserId;
   String? _lastPersistedTier;
   DateTime? _lastPersistSubscriptionTime;
 
@@ -241,6 +242,7 @@ class PurchasesService {
     final DateTime now = DateTime.now();
     if (!force && _syncedRecently(userId, tier, now)) return;
     if (!force &&
+        _lastPersistedUserId == userId &&
         _lastPersistedPremium == isPremium &&
         _lastPersistedTier == tier.name &&
         _lastPersistSubscriptionTime != null &&
@@ -248,13 +250,18 @@ class PurchasesService {
       return;
     }
     for (int attempt = 0; attempt < 2; attempt++) {
+      if (userId != app_state.prismUser.id.trim() || !app_state.prismUser.loggedIn) return;
       try {
-        await _callSyncSubscription();
-        _lastPersistedPremium = isPremium;
-        _lastPersistedTier = tier.name;
+        final Map<String, dynamic> confirmed = await _callSyncSubscription();
+        final Object? confirmedPremium = confirmed['premium'];
+        final Object? confirmedTier = confirmed['subscriptionTier'];
+        if (confirmedPremium is! bool || confirmedTier is! String) return;
+        _lastPersistedUserId = userId;
+        _lastPersistedPremium = confirmedPremium;
+        _lastPersistedTier = confirmedTier;
         _lastPersistSubscriptionTime = now;
         try {
-          await _settings?.set('$_lastSyncedKeyPrefix$userId', '${tier.name}|${now.millisecondsSinceEpoch}');
+          await _settings?.set('$_lastSyncedKeyPrefix$userId', '$confirmedTier|${now.millisecondsSinceEpoch}');
         } catch (error, stackTrace) {
           logger.w('Unable to remember the synced subscription.', error: error, stackTrace: stackTrace);
         }
@@ -276,13 +283,14 @@ class PurchasesService {
     }
   }
 
-  Future<void> _callSyncSubscription() {
-    final Future<void> Function()? override = _syncSubscriptionOverride;
+  Future<Map<String, dynamic>> _callSyncSubscription() async {
+    final Future<Map<String, dynamic>> Function()? override = _syncSubscriptionOverride;
     if (override != null) return override();
     // The server owns `premium`/`subscriptionTier`; it derives them itself, so this callable takes no payload.
-    return appFunctions
+    final HttpsCallableResult<dynamic> result = await appFunctions
         .httpsCallable('syncSubscription', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)))
         .call<dynamic>();
+    return Map<String, dynamic>.from(result.data as Map);
   }
 
   Future<void> _syncAnalyticsSubscriptionState({required bool isPremium, required SubscriptionTier tier}) async {
@@ -292,7 +300,7 @@ class PurchasesService {
 
   /// Checks canonical + grandfathered paid entitlements; updates local user state in local persistence.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
-  /// [forceSync] syncs with the server even when the tier is unchanged, without making the caller wait for it.
+  /// [forceSync] waits for the server sync request even when the tier is unchanged.
   Future<bool> checkAndPersistPremium({bool forceSync = false}) async {
     try {
       final String requestedUserId = app_state.prismUser.id.trim();
@@ -338,16 +346,11 @@ class PurchasesService {
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
-    final Future<void> persisted = _persistSubscriptionStateToFirestore(
+    await _persistSubscriptionStateToFirestore(
       isPremium: isPremium,
       tier: tier,
       force: forceSync,
     );
-    if (forceSync) {
-      unawaited(persisted);
-    } else {
-      await persisted;
-    }
     await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
     analytics.track(
       SubscriptionEntitlementRefreshEvent(
