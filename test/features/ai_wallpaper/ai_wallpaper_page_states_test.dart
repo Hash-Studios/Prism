@@ -13,8 +13,10 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_preview_stage.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -53,6 +55,28 @@ class _FakeRepository extends Fake implements AiGenerationRepositoryImpl {
   }
 }
 
+class _StatusLocalizations extends AppLocalizationsEn {
+  @override
+  String get economyAiMatchingScreenSize => 'Localized matching';
+
+  @override
+  String get economyAiApplyingStyle => 'Localized styling';
+
+  @override
+  String get economyAiFinalizingWallpaper => 'Localized finalizing';
+}
+
+class _StatusLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+  @override
+  bool isSupported(Locale locale) => locale.languageCode == 'en';
+
+  @override
+  Future<AppLocalizations> load(Locale locale) => SynchronousFuture<AppLocalizations>(_StatusLocalizations());
+
+  @override
+  bool shouldReload(_StatusLocalizationsDelegate old) => false;
+}
+
 AiGenerationRecord _record() => AiGenerationRecord(
   id: 'generation-1',
   userId: 'user-1',
@@ -77,10 +101,32 @@ void main() {
     expect(isAiOfflineOrNetworkError(const HandshakeException('TLS handshake failed')), isTrue);
   });
 
+  testWidgets('AI generation status cycles through localized copy', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
+          _StatusLocalizationsDelegate(),
+          ...AppLocalizations.localizationsDelegates,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const Scaffold(body: Center(child: AiPreviewStage(generating: true, record: null, isPremium: false))),
+      ),
+    );
+
+    expect(find.text('Localized matching'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Localized styling'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   Future<void> pumpPage(
     WidgetTester tester, {
     List<AiGenerationRecord> history = const <AiGenerationRecord>[],
     bool premium = false,
+    _FakeRepository? repository,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
@@ -96,9 +142,10 @@ void main() {
     CoinsService.instance.balanceNotifier.value = 100;
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: AiWallpaperTabPage(repository: _FakeRepository(history)),
+        home: AiWallpaperTabPage(repository: repository ?? _FakeRepository(history)),
       ),
     );
     await tester.pumpAndSettle();
@@ -118,6 +165,63 @@ void main() {
     expect(find.text('Save'), findsNothing);
     expect(find.text('Each wallpaper you generate appears here, so you can compare or switch back.'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('generated examples are not saved and follow the active locale', (tester) async {
+    final _FakeRepository repository = _FakeRepository(const <AiGenerationRecord>[]);
+    await pumpPage(tester, repository: repository);
+    final String englishPrompt = tester.widget<TextField>(find.byType(TextField)).controller!.text;
+
+    expect(repository.prompts, isEmpty);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final String spanishPrompt = tester.widget<TextField>(find.byType(TextField)).controller!.text;
+    expect(spanishPrompt, isNot(englishPrompt));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(repository.prompts, isEmpty);
+  });
+
+  testWidgets('restored and user-edited prompts survive locale changes', (tester) async {
+    final _FakeRepository repository = _FakeRepository(const <AiGenerationRecord>[])
+      ..prompts['user-1'] = 'A saved description';
+    await pumpPage(tester, repository: repository);
+
+    expect(find.text('A saved description'), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('A saved description'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'A new user description');
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(repository.prompts['user-1'], 'A new user description');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('A new user description'), findsOneWidget);
   });
 
   testWidgets('Generate is off with a reason while the description is empty', (tester) async {
