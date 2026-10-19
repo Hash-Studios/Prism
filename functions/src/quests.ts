@@ -2,7 +2,7 @@ import {isDeepStrictEqual} from "node:util";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {coinTransactionDoc, db, int, REGION} from "./common";
+import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {
   dayKey, type EconomyConfig, grantXp, isPrice, loadEconomy, randomInt, type WheelSegment, weekKey, weightedPick,
   xpReceipt, type XpReceipt,
@@ -26,7 +26,7 @@ const EVENT_RATE = "questEventRate";
 const DAY_MS = 86_400_000;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 const EVENT_ID_HISTORY = 20;
-const CALLABLE_OPTIONS = {region: REGION, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
 
 function callerUid(request: CallableRequest<unknown>): string {
   const uid = request.auth?.uid?.trim() ?? "";
@@ -59,9 +59,11 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
   const rateRef = event ? db.collection(EVENT_RATE).doc(`${uid}_${today}_${event}`) : null;
 
   return db.runTransaction(async (tx) => {
-    const userSnap = await tx.get(userRef);
-    const privateSnap = await tx.get(privateRef);
-    const rateSnap = rateRef ? await tx.get(rateRef) : null;
+    const [userSnap, privateSnap, rateSnap] = await Promise.all([
+      tx.get(userRef),
+      tx.get(privateRef),
+      rateRef ? tx.get(rateRef) : null,
+    ]);
     if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
 
     const userData = userSnap.data() as admin.firestore.DocumentData;
@@ -201,9 +203,11 @@ export const openQuestChest = onCall(
     const chestRef = db.collection(TRANSACTIONS).doc(`ctx_questChest_${uid}_${today}`);
 
     return db.runTransaction(async (tx) => {
-      const userSnap = await tx.get(userRef);
-      const privateSnap = await tx.get(privateRef);
-      const chestSnap = await tx.get(chestRef);
+      const [userSnap, privateSnap, chestSnap] = await Promise.all([
+        tx.get(userRef),
+        tx.get(privateRef),
+        tx.get(chestRef),
+      ]);
       if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
 
       const userData = userSnap.data() as admin.firestore.DocumentData;
@@ -401,9 +405,11 @@ export const openDailyChest = onCall(
     const chestRef = db.collection(TRANSACTIONS).doc(`ctx_questChest_${uid}_${dayKey(nowMs)}`);
 
     return db.runTransaction<DailyChestReply>(async (tx) => {
-      const userSnap = await tx.get(userRef);
-      const privateSnap = await tx.get(privateRef);
-      const chestSnap = await tx.get(chestRef);
+      const [userSnap, privateSnap, chestSnap] = await Promise.all([
+        tx.get(userRef),
+        tx.get(privateRef),
+        tx.get(chestRef),
+      ]);
       if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
 
       const userData = userSnap.data() as admin.firestore.DocumentData;

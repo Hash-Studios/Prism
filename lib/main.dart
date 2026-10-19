@@ -14,6 +14,8 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
+import 'package:Prism/core/debug/perf_autodrive.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
@@ -58,6 +60,7 @@ import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
@@ -77,6 +80,7 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -150,6 +154,11 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      PerformanceProbe.mark('startup.binding_ready');
+      if (!kReleaseMode) {
+        HttpsCallable.perfSink = (String name, int ms, bool ok) =>
+            PerformanceProbe.emit(kind: 'callable', name: name, durationMs: ms, success: ok);
+      }
       await initializeDateFormatting();
       unawaited(
         app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
@@ -178,10 +187,11 @@ Future<void> main() async {
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
       if (!skipFirebaseInit) {
         FirebaseInit.setFuture(
-          Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).then((_) => true).catchError((
-            Object e,
-            StackTrace s,
-          ) {
+          PerformanceProbe.measure(
+            'startup',
+            'firebase_init',
+            () => Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).then((_) => true),
+          ).catchError((Object e, StackTrace s) {
             logger.w(
               'Firebase initialization failed; continuing without Firebase-backed startup features.',
               error: e,
@@ -211,7 +221,11 @@ Future<void> main() async {
       }
 
       // Only truly-blocking tasks remain on the critical path.
-      await Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]);
+      await PerformanceProbe.measure(
+        'startup',
+        'persistence_and_monitoring',
+        () => Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]),
+      );
 
       // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
       // lazily once Firebase background init completes.
@@ -267,7 +281,9 @@ Future<void> main() async {
         unawaited(QuickTileDefaults.mirrorWallhavenCategories(settings));
       }
 
+      PerformanceProbe.mark('startup.before_di');
       configureDependencies();
+      PerformanceProbe.mark('startup.di_ready');
       // The session repository has loaded persisted identity; set private notification stores before runApp reads them.
       final persistedUser = app_state.prismUser;
       final notificationOwner = persistedUser.loggedIn && persistedUser.id.trim().isNotEmpty
@@ -275,15 +291,27 @@ Future<void> main() async {
           : 'guest';
       getIt<NotificationsLocalDataSource>().setOwner(notificationOwner);
       getIt<NotificationTombstones>().setOwner(notificationOwner);
-      await Future.wait(<Future<void>>[
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
-        applyAllowedOrientations(),
-      ]);
+      getIt<PersonalizedFeedRepository>().warmCache();
+      unawaited(
+        Future.wait(<Future<void>>[
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
+          applyAllowedOrientations(),
+        ]).catchError((Object e, StackTrace s) {
+          logger.w('Unable to apply system UI mode or orientations.', error: e, stackTrace: s);
+          return <void>[];
+        }),
+      );
       final bool lightChrome =
           themeMode == 'Light' ||
           (themeMode == 'System' && PlatformDispatcher.instance.platformBrightness == Brightness.light);
       applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: lightChrome ? Brightness.dark : Brightness.light);
 
+      PerformanceProbe.mark('startup.run_app');
+      if (!kReleaseMode) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          PerformanceProbe.mark('startup.first_frame');
+        });
+      }
       runApp(
         LogToastOverlay(
           child: BlocProvider<AutoRotateBloc>(
@@ -704,6 +732,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     _orientationPolicyObserver = OrientationPolicyObserver();
     unawaited(_orientationPolicyObserver.start());
     _appRouter = AppRouter();
+    if (!kReleaseMode && Env.perfAutodrive) PerfAutodrive.start(_appRouter);
     _authContinuation = AuthNavigationContinuation.of(_appRouter);
     _startupGate = DeepLinkStartupGate(router: _appRouter);
     _deepLinkDispatcher = DeepLinkDispatcher(
@@ -875,7 +904,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                     data: theme.copyWith(
                       snackBarTheme: theme.snackBarTheme.copyWith(width: wide ? PrismLayout.panelWidth : null),
                     ),
-                    child: child ?? const SizedBox.shrink(),
+                    child: ObsoleteVersionGate(router: _appRouter, child: child ?? const SizedBox.shrink()),
                   );
                 },
                 routerConfig: _appRouter.config(

@@ -1,13 +1,21 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
+import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/prism_wall_search.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 
 /// [prismResults] are Prism catalogue walls that match the query by tag or category. They are empty when nothing
@@ -38,13 +46,19 @@ class WallpaperSearchService {
     this._settingsLocal,
     this._prismSearch, [
     @ignoreParam OfflineWallpaperCatalog? offlineCatalog,
-  ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance;
+    @ignoreParam FutureOr<Set<String>> Function()? blockedEmails,
+  ]) : _offlineCatalog = offlineCatalog ?? OfflineWallpaperCatalog.instance,
+       _blockedEmails = blockedEmails ?? _currentBlockedEmails;
 
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
   final SettingsLocalDataSource _settingsLocal;
   final PrismWallSearch _prismSearch;
   final OfflineWallpaperCatalog _offlineCatalog;
+  final FutureOr<Set<String>> Function() _blockedEmails;
+  final Map<String, _CachedSearch> _pageCache = <String, _CachedSearch>{};
+  static const int _pageCacheSize = 16;
+  static const Duration _pageCacheTtl = Duration(minutes: 10);
   static const Duration _cachedSearchDecisionBudget = Duration(seconds: 3);
   static const int _prismLimit = 12;
 
@@ -57,15 +71,69 @@ class WallpaperSearchService {
   /// [WallpaperSearchPage.results] and no external pagination. Throws [WallpaperSearchException] when Prism is empty too.
   /// With [SearchFilters.depthOnly] only Prism walls can match, so the page holds them as [WallpaperSearchPage.results]
   /// and never throws.
-  Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) async {
-    if (filters.depthOnly) return _depthSearch(query, filters);
+  Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) {
+    return PerformanceProbe.measure('search', 'wallpaper.search', () => _search(query, filters: filters));
+  }
+
+  Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {
+    final Set<String> blocked = await _blockedEmails();
+    if (filters.depthOnly) return _withoutBlocked(await _depthSearch(query, filters));
+    final String cacheKey = _cacheKey(query, filters, blocked);
+    final _CachedSearch? hit = _pageCache.remove(cacheKey);
+    if (hit != null && DateTime.now().isBefore(hit.expiresAt)) {
+      _pageCache[cacheKey] = hit;
+      return _withoutBlocked(hit.page);
+    }
+    final WallpaperSearchPage page = await _searchNetwork(query, filters);
+    if (page.provider != SearchProviderValue.prism && !page.isLocal) {
+      _pageCache.removeWhere((_, entry) => entry.pageKey == _paginationKey(query, filters));
+      _pageCache[cacheKey] = _CachedSearch(page, _paginationKey(query, filters), DateTime.now().add(_pageCacheTtl));
+      if (_pageCache.length > _pageCacheSize) _pageCache.remove(_pageCache.keys.first);
+    }
+    return _withoutBlocked(page);
+  }
+
+  String _cacheKey(String query, SearchFilters filters, Set<String> blocked) => jsonEncode(<Object?>[
+    query.trim(),
+    filters.portraitOnly,
+    filters.minResolution,
+    filters.sort.name,
+    filters.color?.id,
+    _settingsLocal.get<int>('WHcategories', defaultValue: 100),
+    _settingsLocal.get<int>('WHpurity', defaultValue: 100),
+    app_state.prismUser.id,
+    blocked.toList()..sort(),
+  ]);
+
+  Future<WallpaperSearchPage> _withoutBlocked(WallpaperSearchPage page) async {
+    final Set<String> blocked = await _blockedEmails();
+    if (blocked.isEmpty) return page;
+    return (
+      provider: page.provider,
+      results: BlockedCreatorsFilter.filterFeedItems(page.results, blocked),
+      prismResults: BlockedCreatorsFilter.filterFeedItems(page.prismResults, blocked),
+      isLocal: page.isLocal,
+    );
+  }
+
+  static FutureOr<Set<String>> _currentBlockedEmails() => GetIt.instance.isRegistered<UserBlockRepository>()
+      ? GetIt.instance<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: true)
+      : const <String>{};
+
+  Future<WallpaperSearchPage> _searchNetwork(String query, SearchFilters filters) async {
+    final Future<List<FeedItemEntity>> wallhavenFetch = fetchPage(
+      SearchProviderValue.wallhaven,
+      query,
+      refresh: true,
+      filters: filters,
+    )..ignore();
+    final Future<List<FeedItemEntity>> prismSearch = _prismResults(query, filters);
     List<FeedItemEntity> cachedResults = const <FeedItemEntity>[];
     try {
       cachedResults = await _localResults(query, filters);
     } catch (error) {
       logger.w('Local wallpaper catalog search failed: $error');
     }
-    final Future<List<FeedItemEntity>> prismSearch = _prismResults(query, filters);
     final Future<List<FeedItemEntity>> prism = cachedResults.isEmpty
         ? prismSearch
         : prismSearch.timeout(_cachedSearchDecisionBudget, onTimeout: () => const <FeedItemEntity>[]);
@@ -74,8 +142,8 @@ class WallpaperSearchService {
       return (
         provider: SearchProviderValue.wallhaven,
         results: cachedResults.isEmpty
-            ? await fetchPage(SearchProviderValue.wallhaven, query, refresh: true, filters: filters)
-            : await fetchPage(SearchProviderValue.wallhaven, query, refresh: true, filters: filters).timeout(
+            ? await wallhavenFetch
+            : await wallhavenFetch.timeout(
                 _cachedSearchDecisionBudget,
                 onTimeout: () {
                   usedLocalFallback = true;
@@ -193,9 +261,11 @@ class WallpaperSearchService {
     required bool refresh,
     SearchFilters filters = const SearchFilters(),
   }) async {
+    final String pageKey = _paginationKey(query, filters);
+    _pageCache.removeWhere((_, entry) => entry.pageKey == pageKey);
     if (provider == SearchProviderValue.pexels) {
       final result = await _pexelsRepository.fetchFeed(
-        categoryName: query,
+        categoryName: query.trim(),
         refresh: refresh,
         paginationKey: _paginationKey(query, filters),
         portraitOnly: filters.portraitOnly,
@@ -210,7 +280,7 @@ class WallpaperSearchService {
       );
     }
     final result = await _wallhavenRepository.fetchFeed(
-      categoryName: query,
+      categoryName: query.trim(),
       refresh: refresh,
       paginationKey: _paginationKey(query, filters),
       categories: _settingsLocal.get<int>('WHcategories', defaultValue: 100),
@@ -228,7 +298,7 @@ class WallpaperSearchService {
   }
 
   String _paginationKey(String query, SearchFilters filters) =>
-      filters.color == null ? 'search:$query' : 'search:$query:color:${filters.color!.id}';
+      filters.color == null ? 'search:${query.trim()}' : 'search:${query.trim()}:color:${filters.color!.id}';
 
   Future<List<FeedItemEntity>> _prismResults(String query, SearchFilters filters) async {
     final List<PrismWallpaper> walls = await _prismSearch.search(
@@ -242,4 +312,12 @@ class WallpaperSearchService {
         .map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall))
         .toList(growable: false);
   }
+}
+
+class _CachedSearch {
+  const _CachedSearch(this.page, this.pageKey, this.expiresAt);
+
+  final WallpaperSearchPage page;
+  final String pageKey;
+  final DateTime expiresAt;
 }

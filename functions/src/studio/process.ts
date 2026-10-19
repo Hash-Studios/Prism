@@ -2,13 +2,13 @@ import * as admin from "firebase-admin";
 import {defineSecret} from "firebase-functions/params";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import sharp from "sharp";
 import {db, int, REGION, str, utcDateString} from "../common";
 import {falKey, type WallDepth, wallDepthFor} from "../wallDepth";
 import {loadStudioConfig, type StudioIdentity} from "./config";
 import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
 import {randomWallId, type Rng} from "./ids";
 import {STUDIO_SERIES} from "./series";
+export {isStudioWall} from "./isStudioWall";
 
 export const studioSecret = defineSecret("STUDIO_SECRET");
 
@@ -28,7 +28,6 @@ const GENERATE_TIMEOUT_MS = 150_000;
 const TRANSFER_TIMEOUT_MS = 60_000;
 const RAW_ASSET_KEY = /^ai\/studio\/(raw\/)?[A-Za-z0-9_-]+\.(jpg|webp|png)$/;
 const PUBLISH_TRIES = 5;
-const DOC_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 export type CandidateStatus = "queued" | "generating" | "rejected" | "failed" | "pending_review";
 
@@ -210,6 +209,7 @@ async function updateOwnedCandidate(
 
 /** The final wallpaper (same size, mozjpeg, no metadata) and the thumbnail the app would make. */
 export async function renderWallpaper(bytes: Buffer): Promise<{wall: Buffer; thumb: Buffer; width: number; height: number}> {
+  const sharp = (await import("sharp")).default;
   const {data: wall, info} = await sharp(bytes).jpeg({quality: STUDIO_WALL_JPEG_QUALITY, mozjpeg: true})
     .toBuffer({resolveWithObject: true});
   const size = thumbSize(info.width, info.height);
@@ -357,19 +357,6 @@ function wallRecord(params: {
     studioRunId: params.runId,
     ...(params.depth ? {depth: params.depth} : {}),
   };
-}
-
-/**
- * True for a wall that processStudioCandidate made: origin "studio" and a candidate doc that points back at it.
- * A client can write `origin` on its own wall, but it cannot write studioRuns.
- */
-export async function isStudioWall(wallId: string, data: admin.firestore.DocumentData): Promise<boolean> {
-  if (data.origin !== "studio") return false;
-  const runId = str(data.studioRunId);
-  const candidateId = str(data.studioCandidateId);
-  if (!DOC_ID.test(runId) || !DOC_ID.test(candidateId)) return false;
-  const candidate = await db.collection("studioRuns").doc(runId).collection("candidates").doc(candidateId).get();
-  return candidate.data()?.wallId === wallId;
 }
 
 /**

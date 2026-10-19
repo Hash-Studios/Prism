@@ -6,6 +6,8 @@ if (!admin.apps.length) {
 
 export const db = admin.firestore();
 export const REGION = "asia-south1";
+export const US_REGION = "us-central1";
+export const CALLABLE_REGIONS = [REGION, US_REGION];
 
 export function utcDateString(d = new Date()): string {
   return d.toISOString().slice(0, 10);

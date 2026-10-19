@@ -26,6 +26,16 @@ import '../../../../support/fake_user_block_repository.dart';
 
 class _MockPrismWallpaperRepository extends Mock implements PrismWallpaperRepository {}
 
+class _DelayedFeedCache extends FakeFeedCacheLocalDataSource {
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    await release.future;
+    return super.read(source: source, scope: scope);
+  }
+}
+
 /// Serves a stale pointer from the "cache" when a caller asks for cache-first.
 class _StaleCacheFirestoreClient extends FakeFirestoreClient {
   _StaleCacheFirestoreClient({super.docs});
@@ -54,6 +64,17 @@ class _OfflinePointerFirestoreClient extends FakeFirestoreClient {
     required String sourceTag,
     bool preferCacheFirst = false,
   }) => Future<T?>.error(FirestoreError(code: 'unavailable', message: 'offline'));
+}
+
+class _NoAppPointerFirestoreClient extends FakeFirestoreClient {
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) => Future<T?>.error(FirestoreError(code: 'no-app', message: 'no app'));
 }
 
 class _DeniedPointerFirestoreClient extends FakeFirestoreClient {
@@ -494,6 +515,118 @@ void main() {
     expect(result.failure, isA<ServerFailure>());
   });
 
+  test('a no-app startup error keeps the saved pick and readCachedToday still returns it', () async {
+    final DateTime today = DateTime.now().toUtc();
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current'] = <String, dynamic>{
+      'wallId': 'wall-doc-1',
+      'date': today.toIso8601String(),
+    };
+    when(
+      () => prismRepository.fetchByDocumentId('wall-doc-1'),
+    ).thenAnswer((_) async => Result.success(_wall('wall-1')));
+    final FeedCacheLocalDataSource cache = FakeFeedCacheLocalDataSource();
+    final blockRepo = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    await WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blockRepo, feedCacheLocal: cache).fetchToday();
+
+    final early = WallOfTheDayRepositoryImpl(
+      _NoAppPointerFirestoreClient(),
+      prismRepository,
+      blockRepo,
+      feedCacheLocal: cache,
+    );
+    expect((await early.fetchToday()).data?.wallId, 'wall-1');
+
+    final restarted = WallOfTheDayRepositoryImpl(
+      _OfflinePointerFirestoreClient(),
+      prismRepository,
+      blockRepo,
+      feedCacheLocal: cache,
+    );
+    expect((await restarted.readCachedToday())?.wallId, 'wall-1');
+  });
+
+  test('readCachedToday is null when nothing is saved, without waiting for the block load', () async {
+    final blockRepo = FakeUserBlockRepository.pending();
+    final repo = WallOfTheDayRepositoryImpl(
+      firestoreClient,
+      prismRepository,
+      blockRepo,
+      feedCacheLocal: FakeFeedCacheLocalDataSource(),
+    );
+
+    expect(await repo.readCachedToday(), isNull);
+  });
+
+  test('readCachedToday excludes a creator blocked while the disk read was pending', () async {
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current']!['date'] = DateTime.now()
+        .toUtc()
+        .toIso8601String();
+    when(() => prismRepository.fetchByDocumentId('wall-doc-1')).thenAnswer(
+      (_) async => Result.success(
+        const PrismWallpaper(
+          core: WallpaperCore(
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://example.com/wall-1.jpg',
+            thumbnailUrl: 'https://example.com/wall-1-thumb.jpg',
+            authorEmail: 'creator@example.com',
+          ),
+          review: true,
+        ),
+      ),
+    );
+    final blockRepo = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+    final cache = _DelayedFeedCache();
+    final repo = WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blockRepo, feedCacheLocal: cache);
+    expect((await repo.fetchToday()).data, isNotNull);
+
+    final pending = repo.readCachedToday();
+    blockRepo.completeInitial(<String>{'creator@example.com'});
+    cache.release.complete();
+
+    expect(await pending, isNull);
+  });
+
+  test('readCachedToday waits for initial blocks before exposing a cached creator', () async {
+    firestoreClient.docs[FirebaseCollections.wallOfTheDay]!['current']!['date'] = DateTime.now()
+        .toUtc()
+        .toIso8601String();
+    when(() => prismRepository.fetchByDocumentId('wall-doc-1')).thenAnswer(
+      (_) async => Result.success(
+        const PrismWallpaper(
+          core: WallpaperCore(
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://example.com/wall-1.jpg',
+            thumbnailUrl: '',
+            authorEmail: 'creator@example.com',
+          ),
+          review: true,
+        ),
+      ),
+    );
+    final cache = FakeFeedCacheLocalDataSource();
+    await WallOfTheDayRepositoryImpl(
+      firestoreClient,
+      prismRepository,
+      FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      feedCacheLocal: cache,
+    ).fetchToday();
+    final blocks = FakeUserBlockRepository.pending();
+    bool returned = false;
+    final pending = WallOfTheDayRepositoryImpl(firestoreClient, prismRepository, blocks, feedCacheLocal: cache)
+        .readCachedToday()
+        .then((wall) {
+          returned = true;
+          return wall;
+        });
+    await Future<void>.delayed(Duration.zero);
+    expect(returned, isFalse);
+    blocks.completeInitial(<String>{'creator@example.com'});
+
+    expect(await pending, isNull);
+  });
+
   test('a permission-denied pointer tombstones the saved today snapshot across restart', () async {
     final Directory directory = Directory.systemTemp.createTempSync('wotd_denied_pointer_test');
     addTearDown(() => directory.deleteSync(recursive: true));
@@ -519,6 +652,7 @@ void main() {
       feedCacheLocal: cache,
     ).fetchToday();
     expect(denied.isFailure, isTrue);
+    expect(denied.failure?.code, 'permission-denied');
 
     final restarted = await WallOfTheDayRepositoryImpl(
       _OfflinePointerFirestoreClient(),

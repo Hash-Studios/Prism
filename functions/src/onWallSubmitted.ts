@@ -4,7 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {emailHash, sendToUserByEmail} from "./notificationHelper";
 import {findUserByEmail, REGION, str} from "./common";
-import {isStudioWall} from "./studio/process";
+import {isStudioWall} from "./studio/isStudioWall";
 import {notificationCopyPayload} from "./notificationCatalog";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";

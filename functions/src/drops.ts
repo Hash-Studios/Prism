@@ -6,7 +6,7 @@ import {
   type CallableRequest,
 } from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {coinTransactionDoc, db, int, REGION, str} from "./common";
+import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str} from "./common";
 import {isValidRequestId} from "./coinsCallables";
 import {loadEconomy, proPrice, weekBounds, weekKey} from "./economy";
 import {sendNotification} from "./notificationHelper";
@@ -177,7 +177,7 @@ const priceOr = (value: unknown, fallback: number): number => {
 };
 
 export const unlockDrop = onCall(
-  {region: REGION, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (
     request: CallableRequest<{
       weekKey?: unknown;

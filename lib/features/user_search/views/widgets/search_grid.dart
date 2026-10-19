@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/prefetch_tiles.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -86,6 +87,17 @@ class _SearchGridState extends State<SearchGrid> {
     );
   }
 
+  /// Fetches the thumbnails below the first screen of [items], at the size the tiles decode them.
+  void _prefetch(List<FeedItemEntity> items, {bool firstScreen = false}) {
+    final int columns = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
+    prefetchTileImages(
+      context,
+      items,
+      memCacheHeight: gridTileDecodeHeight(context, crossAxisCount: columns),
+      skip: firstScreen ? visibleTileCount(context, columns) : 0,
+    );
+  }
+
   EventResultValue get _loadedResult => _resultCount > 0 ? EventResultValue.success : EventResultValue.empty;
 
   Future<void> _requestNextPage() async {
@@ -117,6 +129,7 @@ class _SearchGridState extends State<SearchGrid> {
         _currentPage = nextPage;
         _hasMore = more.isNotEmpty;
       });
+      _prefetch(more);
       _trackResultsLoaded(page: nextPage, result: _loadedResult);
     } catch (error, stackTrace) {
       if (!mounted || generation != _loadGeneration) {
@@ -141,7 +154,9 @@ class _SearchGridState extends State<SearchGrid> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && widget.trackInitialResults) _trackResultsLoaded(page: 1, result: _loadedResult);
+      if (!mounted) return;
+      _prefetch(_results, firstScreen: true);
+      if (widget.trackInitialResults) _trackResultsLoaded(page: 1, result: _loadedResult);
     });
   }
 
@@ -164,6 +179,7 @@ class _SearchGridState extends State<SearchGrid> {
         _hasMore = fresh.isNotEmpty;
         _loadMoreFailed = false;
       });
+      if (fresh.isNotEmpty) _prefetch(fresh, firstScreen: true);
       _trackResultsLoaded(page: 1, result: _loadedResult);
     } catch (error, stackTrace) {
       if (!mounted || generation != _loadGeneration) return;

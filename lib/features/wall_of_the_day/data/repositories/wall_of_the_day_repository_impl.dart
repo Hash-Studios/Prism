@@ -112,10 +112,13 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       final WallOfTheDayEntity? local = transient ? await _readCachedToday(DateTime.now().toUtc(), blocked) : null;
       if (!transient) await _invalidateToday();
       return local == null
-          ? Result.error(ServerFailure("Could not load today's wallpaper: $e"))
+          ? Result.error(ServerFailure("Could not load today's wallpaper: $e", code: mapFirestoreError(e).code))
           : Result.success(local);
     }
   }
+
+  @override
+  Future<WallOfTheDayEntity?> readCachedToday() => _readCachedToday(DateTime.now().toUtc(), null);
 
   @override
   Future<Result<List<WotdPastPick>>> fetchRecent({int limit = 30}) async {
@@ -180,7 +183,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
 
   bool _isTransientFailure(Failure failure) =>
       failure is NetworkFailure ||
-      const <String>{'unavailable', 'deadline-exceeded', 'network-request-failed'}.contains(failure.code);
+      const <String>{'unavailable', 'deadline-exceeded', 'network-request-failed', 'no-app'}.contains(failure.code);
 
   List<WotdPastPick> _visiblePicks(List<WotdPastPick> picks) {
     final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
@@ -254,6 +257,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         'unavailable',
         'deadline-exceeded',
         'network-request-failed',
+        'no-app',
       }.contains(mapFirestoreError(error).code);
 
   Future<void> _rememberToday(DateTime featuredUtc, String documentId, PrismWallpaper wallpaper) async {
@@ -282,7 +286,11 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
     }
   }
 
-  Future<WallOfTheDayEntity?> _readCachedToday(DateTime todayUtc, Set<String> blocked, {String? wallDocumentId}) async {
+  Future<WallOfTheDayEntity?> _readCachedToday(
+    DateTime todayUtc,
+    Set<String>? blocked, {
+    String? wallDocumentId,
+  }) async {
     try {
       final FeedSnapshot? snapshot = await _feedCacheLocal.read(source: 'wotd', scope: 'today');
       final Map<String, dynamic> payload = toJsonMap(snapshot?.payload);
@@ -292,7 +300,11 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       final FeedItemEntity? item = decodeFeedItem(toJsonMap(payload['item']));
       if (item is! PrismFeedItem || item.wallpaper.fullUrl.isEmpty || item.wallpaper.review != true) return null;
       final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(item.wallpaper);
-      return _visibleForCaller(entity, item.wallpaper.core.authorEmail, blocked);
+      return _visibleForCaller(
+        entity,
+        item.wallpaper.core.authorEmail,
+        blocked ?? await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true),
+      );
     } catch (error) {
       logger.w('[WallOfTheDayRepository] today snapshot read failed: $error');
       return null;

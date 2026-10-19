@@ -213,7 +213,7 @@ class PaywallOrchestrator {
         return paywallResultValueFromSdkName(paywallResult.name);
       }
 
-      final bool isPremium = await PurchasesService.instance.checkAndPersistPremium();
+      final bool isPremium = await PurchasesService.instance.checkAndPersistPremium(forceSync: true);
       if (isPremium) {
         _resetAdWatchCounter();
       }
