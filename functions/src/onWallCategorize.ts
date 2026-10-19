@@ -31,7 +31,8 @@ export const onWallCategorize = onDocumentCreated(
       hasPaletteColors(data.colors) ? undefined : wallColorsFor(wallId, data),
       data.depth == null ? wallDepthFor(wallId, {url: wallpaperUrl}) : undefined,
     ]);
-    const extra: ImageFields = {...(colors ? {colors} : {}), ...(depth ? {depth} : {})};
+    const extra: ImageFields = colors ? {colors} : {};
+    await writeDepthIfAbsent(wallId, depth);
 
     if (data.category && data.category !== DEFAULT_CATEGORY) {
       logger.info("onWallCategorize: category already set", {wallId, category: data.category});
@@ -70,7 +71,31 @@ export const onWallCategorize = onDocumentCreated(
   },
 );
 
-type ImageFields = {colors?: string[]; depth?: WallDepth};
+type ImageFields = {colors?: string[]};
+
+/**
+ * The check runs for up to a minute, and an admin can set `depth` meanwhile. The transaction writes only when the
+ * wall still has none. A failure is logged, so it cannot fail the colour or category write.
+ */
+async function writeDepthIfAbsent(wallId: string, depth: WallDepth | undefined): Promise<void> {
+  if (!depth) {
+    return;
+  }
+  try {
+    const ref = db.collection("walls").doc(wallId);
+    await db.runTransaction(async (tx) => {
+      const wall = (await tx.get(ref)).data();
+      if (wall && wall.depth == null) {
+        tx.update(ref, {depth});
+      }
+    });
+  } catch (error) {
+    logger.warn("onWallCategorize: could not save depth", {
+      wallId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 
 async function updateWallpaperCategory(
   wallId: string,

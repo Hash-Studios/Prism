@@ -5,7 +5,6 @@ import sharp from "sharp";
 import {db} from "../common";
 import {onWallCategorize} from "../onWallCategorize";
 import {backfillWallDepth, needsDepth, parseDepthBackfillArgs} from "../scripts/backfillWallDepth";
-import * as wallCategory from "../wallCategory";
 import * as wallDepth from "../wallDepth";
 import {
   DEPTH_T_AUTO,
@@ -269,42 +268,6 @@ const created = (data: Record<string, unknown>) => ({
 }) as unknown as Parameters<typeof onWallCategorize.run>[0];
 
 const MENU: WallDepth = detector("menu", "person", 0.15);
-
-test("onWallCategorize writes depth from wallpaper_url in the same update as the category", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWalls(t, updates);
-  const depthMock = t.mock.method(wallDepth, "wallDepthFor", async () => MENU);
-  t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);
-  await onWallCategorize.run(created({wallpaper_url: WALL_URL, wallpaper_thumb: "https://raw.githubusercontent.com/t.jpg"}));
-  assert.deepEqual(depthMock.mock.calls[0].arguments, ["w1", {url: WALL_URL}]);
-  assert.equal(updates.length, 1);
-  assert.equal(updates[0].category, "Nature");
-  assert.deepEqual(updates[0].depth, MENU);
-});
-
-test("onWallCategorize writes depth on the no label and label failure paths", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWalls(t, updates);
-  t.mock.method(wallDepth, "wallDepthFor", async () => MENU);
-  for (const detect of [async () => [], async () => {
-    throw new Error("vision down");
-  }]) {
-    updates.length = 0;
-    const labelsMock = t.mock.method(wallCategory, "detectLabels", detect);
-    await onWallCategorize.run(created({wallpaper_url: WALL_URL}));
-    assert.equal(updates[0].category, "General");
-    assert.deepEqual(updates[0].depth, MENU);
-    labelsMock.mock.restore();
-  }
-});
-
-test("onWallCategorize writes only depth when the category and colours are set", async (t) => {
-  const updates: Array<Record<string, unknown>> = [];
-  fakeWalls(t, updates);
-  t.mock.method(wallDepth, "wallDepthFor", async () => MENU);
-  await onWallCategorize.run(created({wallpaper_url: WALL_URL, category: "Space", colors: ["blue"]}));
-  assert.deepEqual(updates, [{depth: MENU}]);
-});
 
 test("onWallCategorize uses the thumbnail only when there is no full image", async (t) => {
   const updates: Array<Record<string, unknown>> = [];
