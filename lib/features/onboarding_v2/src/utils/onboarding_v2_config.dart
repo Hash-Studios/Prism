@@ -1,4 +1,5 @@
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/l10n/generated/app_localizations.dart';
 
 class OnboardingV2Config {
   const OnboardingV2Config._();
@@ -68,55 +69,57 @@ class OnboardingV2Config {
     'dark': AiStylePreset.abstract,
   };
 
-  static const Map<AiStylePreset, List<String>> aiOnboardingPromptPool = {
-    AiStylePreset.nature: [
-      'a misty mountain range at sunrise with warm golden light',
-      'a dense evergreen forest with sun rays breaking through the canopy',
-      'a dramatic coastal cliff with crashing waves and moody sky',
-      'a calm alpine lake under a twilight sky with star reflections',
-      'a desert canyon with warm golden light and dramatic rock formations',
+  static List<String> aiOnboardingPrompts(AppLocalizations l10n, AiStylePreset style) => switch (style) {
+    AiStylePreset.nature => <String>[
+      l10n.onboardingAiPromptNature1,
+      l10n.onboardingAiPromptNature2,
+      l10n.onboardingAiPromptNature3,
+      l10n.onboardingAiPromptNature4,
+      l10n.onboardingAiPromptNature5,
     ],
-    AiStylePreset.abstract: [
-      'an abstract fractal composition with dynamic curves and vivid color',
-      'layered liquid forms with modern depth and metallic sheen',
-      'bold abstract shapes with soft edges and cinematic contrast',
-      'a surreal abstract field of floating geometry bathed in neon light',
-      'organic abstract waves with rich texture and depth of field',
+    AiStylePreset.abstract => <String>[
+      l10n.onboardingAiPromptAbstract1,
+      l10n.onboardingAiPromptAbstract2,
+      l10n.onboardingAiPromptAbstract3,
+      l10n.onboardingAiPromptAbstract4,
+      l10n.onboardingAiPromptAbstract5,
     ],
-    AiStylePreset.watercolor: [
-      'a watercolor forest valley at dawn with soft pastel mist',
-      'a hand-painted mountain lake scene in dreamy watercolor tones',
-      'soft watercolor clouds above rolling hills at golden hour',
-      'a tranquil riverbank with pastel watercolor reflections',
-      'an artistic watercolor coastline at sunset with warm hues',
+    AiStylePreset.watercolor => <String>[
+      l10n.onboardingAiPromptWatercolor1,
+      l10n.onboardingAiPromptWatercolor2,
+      l10n.onboardingAiPromptWatercolor3,
+      l10n.onboardingAiPromptWatercolor4,
+      l10n.onboardingAiPromptWatercolor5,
     ],
-    AiStylePreset.minimal: [
-      'minimal sand dunes and a single sun disk on the horizon',
-      'clean geometric mountain layers in soft muted tones',
-      'a serene monochrome ocean horizon at dusk',
-      'simple abstract lines with perfectly balanced negative space',
-      'a soft gradient sky over flat minimalist hills',
+    AiStylePreset.minimal => <String>[
+      l10n.onboardingAiPromptMinimal1,
+      l10n.onboardingAiPromptMinimal2,
+      l10n.onboardingAiPromptMinimal3,
+      l10n.onboardingAiPromptMinimal4,
+      l10n.onboardingAiPromptMinimal5,
     ],
-    AiStylePreset.anime: [
-      'an anime style city rooftop at golden hour with drifting cherry blossoms',
-      'a dreamy anime countryside train crossing under a huge cloudy sky',
-      'an anime mountain village at dusk with glowing lanterns and soft mist',
-      'a quiet anime seaside town under a pastel sunset and towering clouds',
-      'an anime starry night over a calm lake with floating lights',
+    AiStylePreset.anime => <String>[
+      l10n.onboardingAiPromptAnime1,
+      l10n.onboardingAiPromptAnime2,
+      l10n.onboardingAiPromptAnime3,
+      l10n.onboardingAiPromptAnime4,
+      l10n.onboardingAiPromptAnime5,
     ],
-    AiStylePreset.meshGradient: [
-      'a smooth mesh gradient of coral, teal and warm yellow with soft grain',
-      'a flowing mesh gradient in deep violet and electric blue with gentle glow',
-      'a pastel mesh gradient of peach, lilac and mint blending into each other',
-      'a vibrant mesh gradient sunset with layered magenta and orange tones',
-      'a calm mesh gradient of ocean blues and seafoam with subtle light bloom',
+    AiStylePreset.meshGradient => <String>[
+      l10n.onboardingAiPromptMeshGradient1,
+      l10n.onboardingAiPromptMeshGradient2,
+      l10n.onboardingAiPromptMeshGradient3,
+      l10n.onboardingAiPromptMeshGradient4,
+      l10n.onboardingAiPromptMeshGradient5,
     ],
-    AiStylePreset.cyberpunk: [
-      'a neon megacity street with wet reflections and flying vehicles',
-      'a futuristic alley with holographic billboards and teal-magenta light',
-      'a high-tech skyline at night with glowing traffic lanes',
-      'a cyberpunk rooftop overlooking a city of glowing towers',
-      'a midnight city crossing drenched in teal and magenta neon',
+    AiStylePreset.cyberpunk => <String>[
+      l10n.onboardingAiPromptCyberpunk1,
+      l10n.onboardingAiPromptCyberpunk2,
+      l10n.onboardingAiPromptCyberpunk3,
+      l10n.onboardingAiPromptCyberpunk4,
+      l10n.onboardingAiPromptCyberpunk5,
     ],
   };
+
+  static String aiOnboardingPromptFallback(AppLocalizations l10n) => l10n.onboardingAiPromptFallback;
 }

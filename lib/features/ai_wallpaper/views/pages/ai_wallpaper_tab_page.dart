@@ -102,11 +102,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   String _promptOwner = '';
   String _promptLoadingOwner = '';
   bool _promptHydrated = false;
+  bool _promptRestored = false;
   Timer? _promptSaveTimer;
 
   /// The last prompt the app wrote itself. While the field still holds it, a new style may replace it.
   String _seededPrompt = '';
   int _sceneCursor = 0;
+  AppLocalizations? _promptMessages;
 
   bool _loadingHistory = false;
   bool _historyFailed = false;
@@ -122,8 +124,20 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   @override
   void initState() {
     super.initState();
-    _setGeneratedPrompt(AiPromptPools.randomPrompt(_selectedStyle, _random));
     _loadHistory();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final AppLocalizations messages = context.l10n;
+    final bool localeChanged = _promptMessages?.localeName != messages.localeName;
+    _promptMessages = messages;
+    if (localeChanged &&
+        !_promptRestored &&
+        (_promptController.text.trim().isEmpty || _promptController.text.trim() == _seededPrompt.trim())) {
+      _setGeneratedPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
+    }
   }
 
   @override
@@ -148,7 +162,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     _promptOwner = owner;
     _promptLoadingOwner = owner;
     _promptHydrated = false;
-    _setGeneratedPrompt(AiPromptPools.randomPrompt(_selectedStyle, _random));
+    _promptRestored = false;
+    final AppLocalizations? messages = _promptMessages;
+    if (messages != null) _setGeneratedPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random));
     unawaited(_hydratePrompt(owner));
   }
 
@@ -158,6 +174,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (!mounted || owner != _localOwnerId || owner != _promptOwner) return;
       final bool stillGenerated = _promptController.text.trim() == _seededPrompt.trim();
       if (prompt != null && stillGenerated) {
+        _promptRestored = true;
         _promptController.value = TextEditingValue(
           text: prompt,
           selection: TextSelection.collapsed(offset: prompt.length),
@@ -166,7 +183,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       _promptLoadingOwner = '';
       _promptHydrated = true;
       _promptController.addListener(_onPromptChanged);
-      _savePromptNow(owner);
     } catch (error, stackTrace) {
       logger.w('Could not restore AI prompt', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       if (mounted && owner == _localOwnerId && owner == _promptOwner) {
@@ -218,12 +234,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   void _shufflePrompt() {
-    setState(() => _setGeneratedPrompt(AiPromptPools.randomPrompt(_selectedStyle, _random)));
+    final AppLocalizations? messages = _promptMessages;
+    if (messages == null) return;
+    setState(() => _setGeneratedPrompt(AiPromptPools.randomPrompt(messages, _selectedStyle, _random)));
     analytics.track(AiPromptShuffledEvent(style: _selectedStyle.apiValue));
   }
 
   void _useSceneIdea() {
-    setState(() => _setGeneratedPrompt(AiPromptPools.sceneIdea(_selectedStyle, _sceneCursor++)));
+    final AppLocalizations? messages = _promptMessages;
+    if (messages == null) return;
+    setState(() => _setGeneratedPrompt(AiPromptPools.sceneIdea(messages, _selectedStyle, _sceneCursor++)));
   }
 
   void _selectStyle(AiStylePreset style) {
@@ -671,7 +691,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         context,
         imageUrl: record.displayUrl(isPremium: app_state.prismUser.premium),
         link: 'https://prismwalls.com',
-        contextLine: 'Made with Prism AI',
+        contextLine: context.l10n.economyAiMadeWithPrism,
       );
       if (!mounted) return;
       _trackShareEvent(
@@ -886,7 +906,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         body: l10n.economyAiRolloutBody(app_state.aiRolloutPercent),
       );
     }
-    return const SignInPrompt(feature: 'AI wallpaper');
+    return SignInPrompt(feature: context.l10n.economyAiWallpaper);
   }
 
   Widget _composeBody(AiGenerationRecord? current) {

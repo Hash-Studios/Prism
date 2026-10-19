@@ -91,7 +91,7 @@ class _UserSearchState extends State<UserSearch> {
               value: _bloc,
               child: _UserSearchLoader(searchId: _searchId),
             )
-          : const SignInPrompt(feature: 'creator search'),
+          : SignInPrompt(feature: context.l10n.coreSignInCreatorSearchFeature),
     );
   }
 }

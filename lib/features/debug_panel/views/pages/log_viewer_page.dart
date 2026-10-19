@@ -194,7 +194,9 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
                 tooltip: context.l10n.debugExportFile,
                 icon: Icons.ios_share_rounded,
                 onPressed: () {
-                  SharePlus.instance.share(ShareParams(text: _formatAll(filtered), subject: 'Prism Debug Logs'));
+                  SharePlus.instance.share(
+                    ShareParams(text: _formatAll(filtered), subject: context.l10n.debugLogExportSubject),
+                  );
                 },
               ),
               PrismIconButton(tooltip: context.l10n.debugClear, icon: Icons.delete_outline_rounded, onPressed: _clear),

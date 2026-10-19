@@ -8,6 +8,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class DebugToolsPage extends StatefulWidget {
   const DebugToolsPage({super.key});
@@ -202,6 +203,7 @@ class _AnimationSpeedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double speed = DebugFlags.instance.animationSpeed;
+    final NumberFormat speedFormat = NumberFormat('0.0', context.l10n.localeName);
     return PrismCard(
       padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.sm, PrismSpace.md, PrismSpace.md),
       child: Column(
@@ -210,7 +212,7 @@ class _AnimationSpeedCard extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text(context.l10n.debugSpeed, style: PrismTextStyles.rowTitle(context))),
-              Text('${speed.toStringAsFixed(1)}×', style: PrismTextStyles.rowTitle(context)),
+              Text('${speedFormat.format(speed)}×', style: PrismTextStyles.rowTitle(context)),
             ],
           ),
           Slider(
@@ -218,7 +220,8 @@ class _AnimationSpeedCard extends StatelessWidget {
             min: 0.1,
             max: 10.0,
             divisions: 99,
-            label: '${speed.toStringAsFixed(1)}×',
+            label: '${speedFormat.format(speed)}×',
+            semanticFormatterCallback: (double value) => '${speedFormat.format(value)}×',
             onChanged: (v) => DebugFlags.instance.animationSpeed = v,
           ),
           Wrap(
@@ -227,7 +230,7 @@ class _AnimationSpeedCard extends StatelessWidget {
             children: [
               for (final double p in _presets)
                 PrismChip(
-                  label: '$p×',
+                  label: '${speedFormat.format(p)}×',
                   selected: (speed - p).abs() < 0.05,
                   onTap: () => DebugFlags.instance.animationSpeed = p,
                 ),
