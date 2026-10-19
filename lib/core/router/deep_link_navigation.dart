@@ -20,7 +20,7 @@ Future<void> acceptReferralLink(String inviterId) async {
   if (app_state.prismUser.loggedIn) {
     await CoinsService.instance.processPendingReferralIfEligible(inviterUserId: inviterId);
   } else {
-    final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+    final l10n = await loadDeviceAppLocalizations();
     toasts.success(l10n.coreReferralSaved(CoinPolicy.referral), haptic: false);
   }
 }
@@ -93,7 +93,7 @@ class DeepLinkNavigation {
       case UserLinkIntent():
         return ProfileRoute(profileIdentifier: action.profileIdentifier);
       case SetupLinkIntent():
-        final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        final l10n = await loadDeviceAppLocalizations();
         toasts.error(l10n.coreHomeScreenSetupUnavailable, haptic: false);
         return const HomeTabRoute();
       case ReferLinkIntent():

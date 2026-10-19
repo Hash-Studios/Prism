@@ -234,7 +234,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         perform: action,
         creditAfterUnmount: false,
         choose: _choosePremiumFilterAction,
-        failureLabel: 'Export failed',
+        failureLabel: context.l10n.economyExportFailedLabel,
         refundReason: 'premium_filter_export_failed_refund',
         onAttempt: (spendTag) =>
             analytics.track(CoinPremiumFilterSpendAttemptEvent(sourceTag: eventTag(spendTag), filter: filter)),
