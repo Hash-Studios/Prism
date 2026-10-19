@@ -1242,6 +1242,10 @@
   "@accountPurchasesRestored": {
     "description": "Success toast after restoring purchases."
   },
+  "accountPurchasesRestoredPending": "Käufe wiederhergestellt. Es kann eine Minute dauern, bis Pro freigeschaltet wird.",
+  "@accountPurchasesRestoredPending": {
+    "description": "Toast after a restore when the store has the purchase but the server has not confirmed Pro yet."
+  },
   "accountQuickTiles": "Schnelleinstellungen",
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
@@ -6040,6 +6044,14 @@
   "premiumPageViewPlans": "Abos ansehen",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPurchasePending": "Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.",
+  "@premiumPurchasePending": {
+    "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPurchaseUnconfirmed": "Dein Kauf konnte nicht bestätigt werden. Versuche es in den Einstellungen mit „Käufe wiederherstellen“.",
+  "@premiumPurchaseUnconfirmed": {
+    "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
   "wallpaperAccentColor": "Akzentfarbe",
   "@wallpaperAccentColor": {

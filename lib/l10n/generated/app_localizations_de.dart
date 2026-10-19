@@ -971,6 +971,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountPurchasesRestored => 'Käufe wiederhergestellt.';
 
   @override
+  String get accountPurchasesRestoredPending =>
+      'Käufe wiederhergestellt. Es kann eine Minute dauern, bis Pro freigeschaltet wird.';
+
+  @override
   String get accountQuickTiles => 'Schnelleinstellungen';
 
   @override
@@ -7288,6 +7292,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Abos ansehen';
+
+  @override
+  String get premiumPurchasePending =>
+      'Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.';
+
+  @override
+  String get premiumPurchaseUnconfirmed =>
+      'Dein Kauf konnte nicht bestätigt werden. Versuche es in den Einstellungen mit „Käufe wiederherstellen“.';
 
   @override
   String get wallpaperAccentColor => 'Akzentfarbe';
