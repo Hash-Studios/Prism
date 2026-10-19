@@ -20,4 +20,5 @@ done
 xcrun devicectl device process launch --device "$DEV" --terminate-existing com.apple.Preferences > /dev/null 2>&1 || true
 xcrun devicectl device copy from --device "$DEV" --domain-type appDataContainer --domain-identifier com.hash.prism \
   --source Documents/performance_probe.ndjson --destination "$DIR/$TAG-probe.ndjson" > /dev/null
-python3 "$HERE/parse_ios.py" "$DIR/$TAG-probe.ndjson" "$START" "$DIR/$TAG-samples.json"
+echo "$TAG $START $(python3 -c 'import datetime;print(datetime.datetime.now(datetime.timezone.utc).isoformat())')" > "$DIR/$TAG-windows.txt"
+python3 "$HERE/parse_ios.py" "$DIR/$TAG-probe.ndjson" "$DIR/$TAG-windows.txt" "$DIR"
