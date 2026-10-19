@@ -1,5 +1,31 @@
 {
   "@@locale": "hi",
+  "economyAiMatchingScreenSize": "आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…",
+  "@economyAiMatchingScreenSize": {
+    "description": "AI wallpaper generation status shown while matching the output to the device screen."
+  },
+  "economyAiApplyingStyle": "आपकी शैली लागू कर रहे हैं…",
+  "@economyAiApplyingStyle": {
+    "description": "AI wallpaper generation status shown while applying the selected style."
+  },
+  "economyAiFinalizingWallpaper": "आपके वॉलपेपर को अंतिम रूप दे रहे हैं…",
+  "@economyAiFinalizingWallpaper": {
+    "description": "AI wallpaper generation status shown while completing the wallpaper."
+  },
+  "economyAiRemixHint": "गहरा आसमान, गर्म रंग, किनारे थोड़े नरम…",
+  "@economyAiRemixHint": {
+    "description": "Example hint in the AI wallpaper remix text field."
+  },
+  "economyNeedMoreCoins": "{count, plural, one{अभी {count} कॉइन और चाहिए।} other{अभी {count} कॉइन और चाहिए।}}",
+  "@economyNeedMoreCoins": {
+    "description": "Toast shown when an action needs more coins than the user has.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
   "accountAbout": "परिचय",
   "@accountAbout": {
     "description": "About page title."

@@ -44,6 +44,13 @@ void main() {
     expect(hindi.coreRelativeTimeHoursAgo(3), '3 घंटे पहले');
     expect(hindi.coreRelativeTimeJustNow, 'अभी-अभी');
     expect(hindi.notifYesterday, 'कल');
+    expect(hindi.economyAiMatchingScreenSize, 'आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…');
+    expect(hindi.economyAiApplyingStyle, 'आपकी शैली लागू कर रहे हैं…');
+    expect(hindi.economyAiFinalizingWallpaper, 'आपके वॉलपेपर को अंतिम रूप दे रहे हैं…');
+    expect(hindi.economyAiRemixHint, 'गहरा आसमान, गर्म रंग, किनारे थोड़े नरम…');
+    expect(hindi.economyNeedMoreCoins(0), 'अभी 0 कॉइन और चाहिए।');
+    expect(hindi.economyNeedMoreCoins(1), 'अभी 1 कॉइन और चाहिए।');
+    expect(hindi.economyNeedMoreCoins(1234567), 'अभी 12,34,567 कॉइन और चाहिए।');
     expect(DateFormat.yMMMMd(hindi.localeName).format(DateTime(2025, 1, 5)), '5 जनवरी 2025');
     expect(formatLocalizedNumber(1234567, hindi), '12,34,567');
   });

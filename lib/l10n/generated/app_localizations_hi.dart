@@ -3711,11 +3711,37 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyAiHistoryFailed => 'इतिहास लोड नहीं हो सका। रीफ़्रेश करने के लिए नीचे खींचें।';
 
   @override
+  String get economyAiMatchingScreenSize => 'आपकी स्क्रीन के आकार से मेल बिठा रहे हैं…';
+
+  @override
+  String get economyAiApplyingStyle => 'आपकी शैली लागू कर रहे हैं…';
+
+  @override
+  String get economyAiFinalizingWallpaper => 'आपके वॉलपेपर को अंतिम रूप दे रहे हैं…';
+
+  @override
+  String get economyAiRemixHint => 'गहरा आसमान, गर्म रंग, किनारे थोड़े नरम…';
+
+  @override
   String economyAiNeedCoinsToGenerate(int cost) {
     final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String costString = costNumberFormat.format(cost);
 
     return 'बनाने के लिए $costString कॉइन्स चाहिए।';
+  }
+
+  @override
+  String economyNeedMoreCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'अभी $countString कॉइन और चाहिए।',
+      one: 'अभी $countString कॉइन और चाहिए।',
+    );
+    return '$_temp0';
   }
 
   @override
