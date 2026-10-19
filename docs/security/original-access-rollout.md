@@ -6,8 +6,12 @@ This code introduces protected acquisition by canonical wall identity. It does n
 
 Public wall documents contain `originalProtected: true`, `wallpaper_url: ''`, the immutable `originalGeneration`, and a preview URL.
 Original provenance and storage locations stay in the server-only `ownedAssets` manifest.
-Reviewed-wall queries include the protected marker and empty original field so Firestore can authorize the query.
+Public reads also require explicit empty `wallpaper_path`, `wallpaper_sha`, `thumb_path`, and `thumb_sha` fields.
+Thumbnail paths can reveal the corresponding original path, so clearing only the original URL is insufficient.
+Reviewed-wall queries include the protected marker and all five empty fields so Firestore can authorize the query.
 The added composite indexes support those queries.
+Pending owner/admin metadata keeps cleanup references until approval. Approval must redact those fields before public reads succeed.
+The delivery binder, signer, creator validation, and migration must use the private manifest after redaction.
 
 The server resolves current membership, Pro status, premium pass expiry, and coin prices.
 The client obtains a price-only quote before consent and caps acquisition at that price.
