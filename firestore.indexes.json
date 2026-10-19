@@ -583,6 +583,22 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "category",
           "order": "ASCENDING"
         },
@@ -610,6 +626,22 @@
         },
         {
           "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
           "order": "ASCENDING"
         },
         {
@@ -643,6 +675,22 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "review",
           "order": "ASCENDING"
         },
@@ -673,6 +721,22 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "collections",
           "arrayConfig": "CONTAINS"
         },
@@ -700,6 +764,22 @@
         },
         {
           "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
           "order": "ASCENDING"
         },
         {
@@ -733,29 +813,19 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "review",
+          "fieldPath": "wallpaper_path",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "collections",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "walls",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "originalProtected",
+          "fieldPath": "wallpaper_sha",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "wallpaper_url",
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
           "order": "ASCENDING"
         },
         {
@@ -767,6 +837,48 @@
           "order": "DESCENDING"
         },
         {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "collections",
+          "order": "DESCENDING"
+        },
+        {
           "fieldPath": "createdAt",
           "order": "DESCENDING"
         },
@@ -786,6 +898,22 @@
         },
         {
           "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
           "order": "ASCENDING"
         },
         {
@@ -815,6 +943,22 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "review",
           "order": "ASCENDING"
         },
@@ -838,6 +982,22 @@
         },
         {
           "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
           "order": "ASCENDING"
         },
         {
@@ -867,6 +1027,22 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "tags",
           "arrayConfig": "CONTAINS"
         },
@@ -890,6 +1066,22 @@
         },
         {
           "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
           "order": "ASCENDING"
         },
         {

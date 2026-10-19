@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
-import {coinTransactionDoc, db, int, REGION} from "./common";
+import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
 import {loadEconomy, type EconomyConfig} from "./economy";
 import {parseCollectionList} from "./wallOfTheDay";
 import {signOriginalDelivery} from "./ownedAssetDelivery";
@@ -55,7 +55,7 @@ async function classification(): Promise<string[]> {
   }
 }
 
-export const resolveOriginalAccess = onCall({region: REGION, cors: true, maxInstances: 10},
+export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
   async (request: CallableRequest<Input>) => {
     const uid = request.auth?.uid;
     if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {
@@ -120,8 +120,8 @@ export const resolveOriginalAccess = onCall({region: REGION, cors: true, maxInst
             typeof original.path !== "string" || !original.path || typeof original.sha !== "string" || !original.sha ||
             typeof owned.thumb?.path !== "string" || !owned.thumb.path ||
             typeof owned.thumb?.sha !== "string" || !owned.thumb.sha ||
-            wall.wallpaper_path !== original.path || wall.wallpaper_sha !== original.sha ||
-            wall.thumb_path !== owned.thumb.path || wall.thumb_sha !== owned.thumb.sha) {
+            wall.wallpaper_path !== "" || wall.wallpaper_sha !== "" ||
+            wall.thumb_path !== "" || wall.thumb_sha !== "") {
           throw new HttpsError("failed-precondition", "Protected original is unavailable or has changed.");
         }
         if (wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek) {

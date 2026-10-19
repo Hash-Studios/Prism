@@ -66,6 +66,33 @@ void main() {
     when(() => collection.doc('a')).thenReturn(doc);
   });
 
+  test('reviewed wall queries require fully redacted original provenance', () async {
+    final query = _MockQuery();
+    final snapshot = _MockQuerySnapshot();
+    when(() => collection.where('review', isEqualTo: true)).thenReturn(query);
+    when(() => query.where('originalProtected', isEqualTo: true)).thenReturn(query);
+    const redactedFields = <String>['wallpaper_url', 'wallpaper_path', 'wallpaper_sha', 'thumb_path', 'thumb_sha'];
+    for (final field in redactedFields) {
+      when(() => query.where(field, isEqualTo: '')).thenReturn(query);
+    }
+    when(() => query.get()).thenAnswer((_) async => snapshot);
+    when(() => snapshot.docs).thenReturn(<QueryDocumentSnapshot<Map<String, dynamic>>>[]);
+
+    await client.query<String>(
+      const FirestoreQuerySpec(
+        collection: 'walls',
+        sourceTag: 'test.public_redaction',
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true)],
+      ),
+      (data, id) => id,
+    );
+
+    verify(() => query.where('originalProtected', isEqualTo: true)).called(1);
+    for (final field in redactedFields) {
+      verify(() => query.where(field, isEqualTo: '')).called(1);
+    }
+  });
+
   test('serverOnly uses Source.server and never reuses an earlier result', () async {
     final snapshot = _MockQuerySnapshot();
     when(() => snapshot.docs).thenReturn([]);

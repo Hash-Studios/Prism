@@ -6,6 +6,10 @@ import {refundableDelta} from "../coinsCallables";
 import {resetEconomyCache, DEFAULT_ECONOMY} from "../economy";
 import {installFakeDb} from "./fakeDb";
 
+test("original access is available in both app callable regions", () => {
+  assert.deepEqual(resolveOriginalAccess.__endpoint.region, ["asia-south1", "us-central1"]);
+});
+
 function setup(t: Parameters<typeof installFakeDb>[0], wall = {}, user = {}, privateData = {}) {
   resetEconomyCache();
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({parameters: {
@@ -15,8 +19,8 @@ function setup(t: Parameters<typeof installFakeDb>[0], wall = {}, user = {}, pri
     generation: "v1", expiresAt: Date.now() + 60_000}));
   return installFakeDb(t, {
     "walls/document-not-asset": {id: "asset", review: true, originalProtected: true,
-      originalGeneration: "v1", collections: ["premium"], wallpaper_url: "", wallpaper_path: "original/path",
-      wallpaper_sha: "original-sha", thumb_path: "thumb/path", thumb_sha: "thumb-sha", ...wall},
+      originalGeneration: "v1", collections: ["premium"], wallpaper_url: "", wallpaper_path: "",
+      wallpaper_sha: "", thumb_path: "", thumb_sha: "", ...wall},
     "ownedAssets/asset": {status: "ready", canonicalPath: "walls/document-not-asset", incarnation: 1,
       incarnationNanos: 1_000_000, original: {generation: "v1", path: "original/path", sha: "original-sha"},
       thumb: {path: "thumb/path", sha: "thumb-sha"}},
@@ -282,8 +286,9 @@ test("quotes and acquire reject stale or substituted manifest bindings", async (
   const store = setup(t);
   const manifest = store.get("ownedAssets/asset")!;
   for (const patch of [{status: "deleted"}, {canonicalPath: "walls/other"}, {incarnation: 2}, {incarnationNanos: 2},
-    {original: {generation: "v1", path: "other/path", sha: "original-sha"}},
-    {thumb: {path: "other/thumb", sha: "thumb-sha"}}]) {
+    {original: {generation: "v1", path: "", sha: "original-sha"}},
+    {original: {generation: "v1", path: "original/path", sha: ""}},
+    {thumb: {path: "", sha: "thumb-sha"}}, {thumb: {path: "thumb/path", sha: ""}}]) {
     store.set("ownedAssets/asset", {...manifest, ...patch});
     for (const mode of ["quote", "acquire"]) {
       await assert.rejects(() => resolveOriginalAccess.run(request({mode})), {code: "failed-precondition"});
@@ -291,6 +296,26 @@ test("quotes and acquire reject stale or substituted manifest bindings", async (
   }
   assert.equal(store.get("usersv2/user")?.coins, 100);
 });
+
+for (const field of ["wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"] as const) {
+  test(`quotes and acquire reject unredacted or missing public ${field}`, async (t) => {
+    const store = setup(t);
+    const wall = store.get("walls/document-not-asset")!;
+    const privateValue = {
+      wallpaper_path: "original/path", wallpaper_sha: "original-sha", thumb_path: "thumb/path", thumb_sha: "thumb-sha",
+    }[field];
+    for (const value of [privateValue, undefined]) {
+      const updated = {...wall, [field]: value};
+      if (value === undefined) delete updated[field];
+      store.set("walls/document-not-asset", updated);
+      const before = structuredClone([...store.entries()]);
+      for (const mode of ["quote", "acquire"]) {
+        await assert.rejects(() => resolveOriginalAccess.run(request({mode})), {code: "failed-precondition"});
+      }
+      assert.deepEqual([...store.entries()], before);
+    }
+  });
+}
 
 test("quote is not an entitlement and acquisition rechecks changed price and grace", async (t) => {
   const store = setup(t, {collections: ["nature"]}, {}, {graceDownloadsUsed: 0});
