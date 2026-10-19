@@ -6992,16 +6992,16 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get notifPushWotdAudienceBodyUntitled => 'आज की वॉलपेपर देखने के लिए Prism खोलें।';
+  String get notifPushWotdAudienceBodyUntitled => 'आज का वॉलपेपर देखने के लिए Prism खोलें।';
 
   @override
-  String get notifPushWotdAudienceTitle => 'आज की वॉलपेपर आ गई';
+  String get notifPushWotdAudienceTitle => 'आज का वॉलपेपर आ गया है';
 
   @override
   String get notifPushWotdCreatorBody => 'Prism ने आज सभी के लिए आपका वॉलपेपर चुना है। इसे साझा करने के लिए धन्यवाद।';
 
   @override
-  String get notifPushWotdCreatorTitle => 'आपका वॉलपेपर आज की वॉलपेपर है';
+  String get notifPushWotdCreatorTitle => 'आपका वॉलपेपर आज का वॉलपेपर है';
 
   @override
   String get notifRead => 'पहले से पढ़ी गई';

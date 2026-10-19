@@ -5844,10 +5844,10 @@
       }
     }
   },
-  "notifPushWotdAudienceBodyUntitled": "आज की वॉलपेपर देखने के लिए Prism खोलें।",
-  "notifPushWotdAudienceTitle": "आज की वॉलपेपर आ गई",
+  "notifPushWotdAudienceBodyUntitled": "आज का वॉलपेपर देखने के लिए Prism खोलें।",
+  "notifPushWotdAudienceTitle": "आज का वॉलपेपर आ गया है",
   "notifPushWotdCreatorBody": "Prism ने आज सभी के लिए आपका वॉलपेपर चुना है। इसे साझा करने के लिए धन्यवाद।",
-  "notifPushWotdCreatorTitle": "आपका वॉलपेपर आज की वॉलपेपर है",
+  "notifPushWotdCreatorTitle": "आपका वॉलपेपर आज का वॉलपेपर है",
   "notifRead": "पहले से पढ़ी गई",
   "notifRemoved": "सूचना हटाई गई",
   "notifReportUnknownContentType": "कंटेंट",
