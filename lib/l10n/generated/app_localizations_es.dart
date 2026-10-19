@@ -9385,13 +9385,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get economyAiPromptSceneAnime1 => 'un horizonte urbano de anime sobre islas flotantes';
 
   @override
-  String get economyAiPromptSceneAnime2 => 'un samurái solitario en una calle lluviosa iluminada con neón';
+  String get economyAiPromptSceneAnime2 => 'samurái solitario en una calle lluviosa de neón';
 
   @override
-  String get economyAiPromptSceneAnime3 => 'un santuario futurista con cerezos en flor y hologramas';
+  String get economyAiPromptSceneAnime3 => 'santuario futurista, cerezos en flor y hologramas';
 
   @override
-  String get economyAiPromptSceneAnime4 => 'un mercado nocturno de anime de ensueño iluminado por faroles';
+  String get economyAiPromptSceneAnime4 => 'mercado nocturno de anime con faroles, de ensueño';
 
   @override
   String get economyAiPromptSceneAnime5 => 'un horizonte urbano de anime futurista al atardecer';
@@ -9406,26 +9406,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get economyAiPromptSceneMinimal3 => 'un sereno horizonte oceánico monocromático';
 
   @override
-  String get economyAiPromptSceneMinimal4 => 'líneas abstractas sencillas con espacios equilibrados';
+  String get economyAiPromptSceneMinimal4 => 'líneas abstractas sencillas, espacios equilibrados';
 
   @override
   String get economyAiPromptSceneMinimal5 => 'un cielo degradado sobre colinas llanas';
 
   @override
-  String get economyAiPromptSceneCyberpunk1 => 'una calle de megaciudad neón con reflejos sobre el pavimento mojado';
+  String get economyAiPromptSceneCyberpunk1 => 'calle de megaciudad neón con reflejos de lluvia';
 
   @override
   String get economyAiPromptSceneCyberpunk2 => 'un callejón futurista con carteles holográficos';
 
   @override
-  String get economyAiPromptSceneCyberpunk3 =>
-      'un horizonte urbano de alta tecnología con rutas aéreas para el tráfico';
+  String get economyAiPromptSceneCyberpunk3 => 'horizonte futurista con rutas aéreas de tráfico';
 
   @override
-  String get economyAiPromptSceneCyberpunk4 => 'una azotea ciberpunk con vistas a torres resplandecientes';
+  String get economyAiPromptSceneCyberpunk4 => 'azotea ciberpunk ante torres resplandecientes';
 
   @override
-  String get economyAiPromptSceneCyberpunk5 => 'un cruce urbano a medianoche con luces turquesa y magenta';
+  String get economyAiPromptSceneCyberpunk5 => 'cruce a medianoche con luces turquesa y magenta';
 
   @override
   String get economyAiPromptSceneWatercolor1 => 'un valle boscoso en acuarela al amanecer';
@@ -9443,34 +9442,34 @@ class AppLocalizationsEs extends AppLocalizations {
   String get economyAiPromptSceneWatercolor5 => 'una costa artística en acuarela al atardecer';
 
   @override
-  String get economyAiPromptSceneMeshGradient1 => 'un flujo suave de degradado de malla con formas superpuestas';
+  String get economyAiPromptSceneMeshGradient1 => 'flujo suave de malla degradada, formas superpuestas';
 
   @override
   String get economyAiPromptSceneMeshGradient2 => 'ondas fluidas de degradado vibrante con profundidad';
 
   @override
-  String get economyAiPromptSceneMeshGradient3 => 'formas de malla multicolor suaves y curvas delicadas';
+  String get economyAiPromptSceneMeshGradient3 => 'malla multicolor, formas suaves y curvas delicadas';
 
   @override
   String get economyAiPromptSceneMeshGradient4 => 'cintas de degradado de malla de alto contraste';
 
   @override
-  String get economyAiPromptSceneMeshGradient5 => 'un estallido pastel de degradado de malla con textura sutil';
+  String get economyAiPromptSceneMeshGradient5 => 'estallido pastel de malla degradada, textura sutil';
 
   @override
-  String get economyAiPromptSceneAbstract1 => 'una composición fractal abstracta con curvas dinámicas';
+  String get economyAiPromptSceneAbstract1 => 'composición fractal abstracta con curvas dinámicas';
 
   @override
-  String get economyAiPromptSceneAbstract2 => 'formas líquidas superpuestas con profundidad moderna';
+  String get economyAiPromptSceneAbstract2 => 'formas líquidas superpuestas, profundidad moderna';
 
   @override
   String get economyAiPromptSceneAbstract3 => 'formas abstractas llamativas con bordes suaves';
 
   @override
-  String get economyAiPromptSceneAbstract4 => 'un campo abstracto surrealista de figuras geométricas flotantes';
+  String get economyAiPromptSceneAbstract4 => 'campo surrealista de figuras geométricas flotantes';
 
   @override
-  String get economyAiPromptSceneAbstract5 => 'ondas abstractas orgánicas con contraste cinematográfico';
+  String get economyAiPromptSceneAbstract5 => 'ondas abstractas orgánicas con contraste de cine';
 
   @override
   String get economyAiPromptSceneNature1 => 'una cordillera brumosa al amanecer';
@@ -9491,7 +9490,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get economyAiPromptLightingSoftAmbient => 'luz ambiental suave';
 
   @override
-  String get economyAiPromptLightingCinematicRim => 'luz de contorno cinematográfica';
+  String get economyAiPromptLightingCinematicRim => 'luz de contorno de cine';
 
   @override
   String get economyAiPromptLightingGoldenHour => 'luz de la hora dorada';
@@ -9527,13 +9526,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get economyAiPromptQualityCrispTextures => 'texturas nítidas';
 
   @override
-  String get economyAiPromptQualityBalancedContrast => 'contraste equilibrado';
+  String get economyAiPromptQualityBalancedContrast => 'contraste armónico';
 
   @override
-  String get economyAiPromptQualityNaturalColors => 'colores vivos pero naturales';
+  String get economyAiPromptQualityNaturalColors => 'colores vivos y naturales';
 
   @override
-  String get economyAiPromptSuffix => 'fondo de pantalla vertical para teléfono, sin texto';
+  String get economyAiPromptSuffix => 'fondo vertical de móvil, sin texto';
 
   @override
   String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {
