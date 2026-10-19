@@ -26,4 +26,10 @@ The purchase sheet comes from `RevenueCatUI.presentPaywall`. Its remote template
 
 The 152-test focused suite passed at `4c041480d`. The full local run then passed the localization audit tests, search guards, environment and secret guards, and analytics checks. It was stopped when master added three purchase-status messages, so that run does not prove the merged tree.
 
-The merged-tree purchase and locale test run stalled in compilation during severe host memory pressure. A snapshot showed load above 85, 21 GiB of 23 GiB RAM used, and nearly all 11 GiB swap occupied. This thread's test process was stopped to reduce contention. Full local CI, the final purchase regression, and the Android build remain pending. Earlier tests that overlapped source generation are not final-tree proof. Hosted CI must pass on the latest PR commit separately.
+After host recovery, the merged-tree purchase and locale suite passed all 118 tests at `7bdf461f6`. It includes the Spanish purchase-status regression with French followed by Spanish in the device preference list. The log is `/tmp/prism-es-purchase-recovered.log` on this host.
+
+Hosted Flutter verification at that commit passed 5,049 tests and failed three stale English text expectations. Those expectations are updated in `cb46d8613`. Review fixes also qualify both gift-pass benefits as premium in `e91a5fd2a` and guard onboarding navigation while localized prompt loading is pending.
+
+The delayed-localization regression failed with the guard disabled. It expected the interests step after Back but observed AI generation. With the guard restored, all 292 focused tests passed on the review-fix tree. The suite includes onboarding bloc and error widgets, Rewards, Following, Spanish runtime and native resources, purchases, and settings. Logs are `/tmp/prism-es-onboarding-locale-red.log` and `/tmp/prism-es-review-focused.log`.
+
+`make file-gen` passed after the constructor change. It formatted 1,438 files and left generated outputs unchanged. Full local CI is running serially in `/tmp/prism-es-review-ci.log`. The Android build remains pending while another language thread holds the shared Gradle build slot. The push hook is skipped to avoid duplicate analysis while the full gate runs. No hosted check is disabled. Hosted CI must pass on the latest PR commit separately.
