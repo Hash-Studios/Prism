@@ -248,6 +248,96 @@ void main() {
     expect(page.results.map((wall) => wall.id), <String>['remote']);
   });
 
+  group('repeated search', () {
+    test('a repeated identical search makes no provider call and returns the same results', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => spec.sourceTag == 'PrismWallSearch.tags'
+            ? <FakeDocRow>[(id: 'd1', data: _prismDoc('p1'))]
+            : const <FakeDocRow>[],
+      );
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository, firestore: firestore);
+
+      final first = await service.search('mountain');
+      final queriesAfterFirst = firestore.querySpecs.length;
+      final second = await service.search(' mountain ');
+
+      expect(repository.calls, 1);
+      expect(firestore.querySpecs.length, queriesAfterFirst);
+      expect(second.results.map((wall) => wall.id), first.results.map((wall) => wall.id));
+      expect(second.prismResults.map((wall) => wall.id), <String>['p1']);
+    });
+
+    test('a different filter searches again', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+
+      await service.search('mountain');
+      await service.search('mountain', filters: const SearchFilters(sort: SearchSort.latest));
+
+      expect(repository.calls, 2);
+    });
+
+    test('load-more after a cached hit asks for the next page, not the first', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+
+      await service.search('mountain');
+      await service.search('mountain');
+      await service.fetchPage(SearchProviderValue.wallhaven, 'mountain', refresh: false);
+
+      expect(repository.calls, 2);
+      expect(repository.lastRefresh, isFalse);
+      expect(repository.lastPaginationKey, 'search:mountain');
+    });
+
+    test('a search after load-more starts from the first page again', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
+      final service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+
+      await service.search('mountain');
+      await service.fetchPage(SearchProviderValue.wallhaven, 'mountain', refresh: false);
+      await service.search('mountain');
+
+      expect(repository.calls, 3);
+      expect(repository.lastRefresh, isTrue);
+    });
+
+    test('a cached hit hides creators blocked after it was stored', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[(id: 'd1', data: _prismDoc('p1', email: 'later@example.com'))],
+      );
+      Set<String> blocked = <String>{};
+      final service = WallpaperSearchService(
+        _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
+        _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+        null,
+        () => blocked,
+      );
+
+      expect((await service.search('nature')).prismResults.map((wall) => wall.id), <String>['p1']);
+      blocked = <String>{'later@example.com'};
+
+      expect((await service.search('nature')).prismResults, isEmpty);
+    });
+
+    test('a failed search is not cached', () async {
+      final repository = _FakeWallhavenRepository(Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')));
+      final service = _service(
+        wallhaven: repository.result,
+        pexels: Result.error<List<PexelsWallpaper>>(const ServerFailure('500')),
+        wallhavenRepository: repository,
+      );
+
+      await expectLater(service.search('mountain'), throwsA(isA<WallpaperSearchException>()));
+      await expectLater(service.search('mountain'), throwsA(isA<WallpaperSearchException>()));
+
+      expect(repository.calls, 2);
+    });
+  });
+
   test('search returns Wallhaven results when Wallhaven answers', () async {
     final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[_wallhaven('a')]));
 
