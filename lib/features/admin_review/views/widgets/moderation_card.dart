@@ -2,9 +2,10 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
-/// A pending wallpaper: its thumbnail, who sent it, and Approve or Reject.
+/// A pending wallpaper: its thumbnail, who sent it, and Approve or Reject. Studio walls can also go to the Drop.
 class ModerationCard extends StatefulWidget {
   const ModerationCard({
     super.key,
@@ -13,6 +14,8 @@ class ModerationCard extends StatefulWidget {
     required this.facts,
     required this.onApprove,
     required this.onReject,
+    this.onToggleReserve,
+    this.reserved = false,
   });
 
   final String previewUrl;
@@ -23,6 +26,10 @@ class ModerationCard extends StatefulWidget {
   final Future<void> Function() onApprove;
   final Future<void> Function() onReject;
 
+  /// Reserves the wall for the next weekly Drop, or undoes it. Null hides the button.
+  final Future<void> Function()? onToggleReserve;
+  final bool reserved;
+
   @override
   State<ModerationCard> createState() => _ModerationCardState();
 }
@@ -31,6 +38,20 @@ class _ModerationCardState extends State<ModerationCard> {
   bool _isApproving = false;
   bool _isApproved = false;
   String? _approvalError;
+  bool _isReserving = false;
+
+  Future<void> _toggleReserve() async {
+    if (_isReserving) return;
+    setState(() => _isReserving = true);
+    try {
+      await widget.onToggleReserve!();
+    } catch (error, stackTrace) {
+      logger.e('Admin drop reserve failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
+      toasts.error('Could not update the Drop reserve. Try again.');
+    } finally {
+      if (mounted) setState(() => _isReserving = false);
+    }
+  }
 
   Future<void> _approve() async {
     if (_isApproving || _isApproved) return;
@@ -127,6 +148,14 @@ class _ModerationCardState extends State<ModerationCard> {
                   runSpacing: PrismSpace.xs,
                   children: <Widget>[
                     ModerationDangerButton(label: 'Reject', onPressed: locked ? null : widget.onReject),
+                    if (widget.onToggleReserve != null)
+                      PrismButton(
+                        label: widget.reserved ? 'Unreserve' : 'Reserve',
+                        variant: PrismButtonVariant.tonal,
+                        size: PrismButtonSize.compact,
+                        loading: _isReserving,
+                        onPressed: locked ? null : _toggleReserve,
+                      ),
                     PrismButton(
                       label: _isApproved ? 'Approved' : 'Approve',
                       size: PrismButtonSize.compact,

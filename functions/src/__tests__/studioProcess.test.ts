@@ -126,7 +126,7 @@ test("a clean candidate becomes a pending wall with the app's fields, a signatur
     resolution: "1440x3200", title: "Eclipse · Ember", category: "Space", desc: "After Dark by Prism Studio",
     review: false, collections: ["community"], tags: ["amoled", "dark", "eclipse"], isAiGenerated: true,
     aiProvider: "fal", aiModel: "fal-ai/model-v2", aiPrompt: "an eclipse, ember light", origin: "studio",
-    seriesId: "after-dark", studioCandidateId: CAND, studioRunId: RUN,
+    seriesId: "after-dark", studioCandidateId: CAND, studioRunId: RUN, dropReserved: true,
   });
 
   const signature = store.get(`studioSignatures/${CAND}`);
@@ -143,6 +143,31 @@ test("a clean candidate becomes a pending wall with the app's fields, a signatur
   await run();
   assert.equal(calls.length, 0, "a terminal candidate does nothing");
   assert.equal(walls(store).length, 1);
+});
+
+test("only the first dailyDropReserves walls of a UTC day are reserved for the Drop", async (t) => {
+  const nowMs = () => Date.parse("2026-10-19T21:00:00Z");
+  const first = setup(t, {nowMs});
+  await first.run();
+  assert.equal(walls(first.store)[0][1].dropReserved, true);
+  assert.equal(first.store.get("studioDropReserves/2026-10-19")?.count, 1);
+
+  const second = setup(t, {nowMs, seed: {"studioDropReserves/2026-10-19": {day: "2026-10-19", count: 1}}});
+  await second.run();
+  assert.equal(walls(second.store)[0][1].dropReserved, undefined);
+  assert.equal(second.store.get("studioDropReserves/2026-10-19")?.count, 1);
+
+  const nextDay = setup(t, {nowMs: () => Date.parse("2026-10-20T00:30:00Z"),
+    seed: {"studioDropReserves/2026-10-19": {day: "2026-10-19", count: 1}}});
+  await nextDay.run();
+  assert.equal(walls(nextDay.store)[0][1].dropReserved, true);
+  assert.equal(nextDay.store.get("studioDropReserves/2026-10-20")?.count, 1);
+
+  const off = setup(t, {nowMs,
+    seed: {"studioConfig/current": {generationEnabled: true, identity: IDENTITY, dailyDropReserves: 0}}});
+  await off.run();
+  assert.equal(walls(off.store)[0][1].dropReserved, undefined);
+  assert.equal(off.store.has("studioDropReserves/2026-10-19"), false);
 });
 
 test("a wall id that exists already is not overwritten; the next id is used", async (t) => {
