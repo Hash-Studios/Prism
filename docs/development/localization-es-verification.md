@@ -28,8 +28,14 @@ The 152-test focused suite passed at `4c041480d`. The full local run then passed
 
 After host recovery, the merged-tree purchase and locale suite passed all 118 tests at `7bdf461f6`. It includes the Spanish purchase-status regression with French followed by Spanish in the device preference list. The log is `/tmp/prism-es-purchase-recovered.log` on this host.
 
-Hosted Flutter verification at that commit passed 5,049 tests and failed three stale English text expectations. Those expectations are updated in `cb46d8613`. Review fixes also qualify both gift-pass benefits as premium in `e91a5fd2a` and guard onboarding navigation while localized prompt loading is pending.
+The hosted run at Spanish commit `095fbb57e` passed required CI run `39313155204`. It passed 5,055 Flutter tests with 191 existing skips, six release checks, Android APK and native unit and lint checks, and iOS build-for-testing. This run predates the AI prompt integration below and does not prove that integration.
 
 The delayed-localization regression failed with the guard disabled. It expected the interests step after Back but observed AI generation. With the guard restored, all 292 focused tests passed on the review-fix tree. The suite includes onboarding bloc and error widgets, Rewards, Following, Spanish runtime and native resources, purchases, and settings. Logs are `/tmp/prism-es-onboarding-locale-red.log` and `/tmp/prism-es-review-focused.log`.
 
-`make file-gen` passed after the constructor change. It formatted 1,438 files and left generated outputs unchanged. Full local CI is running serially in `/tmp/prism-es-review-ci.log`. The Android build remains pending while another language thread holds the shared Gradle build slot. The push hook is skipped to avoid duplicate analysis while the full gate runs. No hosted check is disabled. Hosted CI must pass on the latest PR commit separately.
+Hindi's AI prompt regression log `/tmp/prism-hi-ai-prompt-red.log` records two passes and four failures before the shared fix. The portable regression suite then passed all 11 tests on Hindi's tree in `/tmp/prism-hi-ai-prompt-portable.log`. These results do not replace a run on the integrated Spanish tree.
+
+`make file-gen` passed after the onboarding constructor change. It formatted 1,438 files and left generated outputs unchanged. Full local `make ci` passed format, catalog, audit, guards, analysis, and 64 Cloudflare Worker tests. It reached 1,249 passes and 190 skips with no reported failures, then stopped by design to integrate the reviewed AI prompt fix. This run is not a full pass for the final tree.
+
+The earlier hosted pass and APK session `24949` do not prove the final tree. The APK session was still live when the AI prompt change entered the shared tree. A fresh final-tree APK build and full CI run remain separate proof gates. Use the PR 597 Verification section for results tied to the exact PR commit: https://github.com/Hash-Studios/Prism/pull/597.
+
+The AI prompt fix adds no catalog entries. Coverage remains 2,502 messages, 58 Android resources, 50 iOS string-catalog records, and three iOS permission descriptions. The device and remote-paywall verification limits above still apply.
