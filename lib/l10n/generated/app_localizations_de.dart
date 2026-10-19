@@ -2788,7 +2788,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreThemeLocked => 'Gesperrt';
 
   @override
-  String get coreThemeMaterialDark => 'Material Dark';
+  String get coreThemeMaterialDark => 'Material Dunkel';
 
   @override
   String get coreThemeOlive => 'Olive';
@@ -3016,7 +3016,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get debugBoard => 'Board';
+  String get debugBoard => 'Hauptplatine';
 
   @override
   String get debugBrand => 'Marke';
@@ -3261,7 +3261,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get debugLogicalSize => 'Logische Größe';
 
   @override
-  String get debugLogs => 'Logs';
+  String get debugLogs => 'Protokolle';
 
   @override
   String get debugLogsAppearHere => 'Während die App läuft, erscheinen hier Log-Einträge.';
@@ -3400,7 +3400,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get debugRemoteConfigUnavailable => 'Remote Config nicht verfügbar';
 
   @override
-  String get debugRendering => 'Rendering';
+  String get debugRendering => 'Darstellung';
 
   @override
   String get debugRepaintRainbow => 'Neuzeichnungs-Regenbogen';
@@ -3519,7 +3519,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get debugTitle => 'Debug';
 
   @override
-  String get debugTools => 'Tools';
+  String get debugTools => 'Werkzeuge';
 
   @override
   String debugTypeName(String type) {
@@ -3726,11 +3726,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiHistoryFailed => 'Verlauf konnte nicht geladen werden. Zieh zum Aktualisieren nach unten.';
 
   @override
+  String get economyAiMatchingScreenSize => 'An deine Bildschirmgröße anpassen…';
+
+  @override
+  String get economyAiApplyingStyle => 'Dein Stil wird angewendet…';
+
+  @override
+  String get economyAiFinalizingWallpaper => 'Dein Hintergrundbild wird fertiggestellt…';
+
+  @override
+  String get economyAiRemixHint => 'Dunklerer Himmel, wärmere Farben, weichere Kanten…';
+
+  @override
   String economyAiNeedCoinsToGenerate(int cost) {
     final intl.NumberFormat costNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String costString = costNumberFormat.format(cost);
 
     return 'Zum Erstellen brauchst du $costString Coins.';
+  }
+
+  @override
+  String economyNeedMoreCoins(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Dir fehlen noch $countString Coins.',
+      one: 'Dir fehlt noch $countString Coin.',
+    );
+    return '$_temp0';
   }
 
   @override

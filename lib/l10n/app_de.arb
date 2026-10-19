@@ -2615,7 +2615,7 @@
   "coreThemeFrostWhite": "Frostweiß",
   "coreThemeJungle": "Dschungel",
   "coreThemeLocked": "Gesperrt",
-  "coreThemeMaterialDark": "Material Dark",
+  "coreThemeMaterialDark": "Material Dunkel",
   "coreThemeOlive": "Olive",
   "coreThemePepper": "Pfeffer",
   "coreThemeRose": "Rose",
@@ -2730,7 +2730,7 @@
       }
     }
   },
-  "debugBoard": "Board",
+  "debugBoard": "Hauptplatine",
   "debugBrand": "Marke",
   "debugBuildNumber": "Build-Nummer",
   "debugBuildSignature": "Build-Signatur",
@@ -2841,7 +2841,7 @@
   "debugLoggedIn": "Angemeldet",
   "debugLoggingAndNetwork": "Protokollierung und Netzwerk",
   "debugLogicalSize": "Logische Größe",
-  "debugLogs": "Logs",
+  "debugLogs": "Protokolle",
   "debugLogsAppearHere": "Während die App läuft, erscheinen hier Log-Einträge.",
   "debugMaintenance": "Wartung",
   "debugManufacturer": "Hersteller",
@@ -2887,7 +2887,7 @@
   "debugRefresh": "Aktualisieren",
   "debugRemoteConfig": "Remote Config",
   "debugRemoteConfigUnavailable": "Remote Config nicht verfügbar",
-  "debugRendering": "Rendering",
+  "debugRendering": "Darstellung",
   "debugRepaintRainbow": "Neuzeichnungs-Regenbogen",
   "debugRepaintRainbowDescription": "Neu gezeichnete Bereiche in wechselnden Farben hervorheben",
   "debugResetFlags": "Alle Debug-Schalter zurücksetzen",
@@ -2931,7 +2931,7 @@
   "debugSystemVersion": "Systemversion",
   "debugTime": "Zeit",
   "debugTitle": "Debug",
-  "debugTools": "Tools",
+  "debugTools": "Werkzeuge",
   "debugTypeName": "Typ: {type}",
   "@debugTypeName": {
     "placeholders": {
@@ -3073,10 +3073,36 @@
   "economyAiGenerationTime": "Dauert etwa 20 Sekunden",
   "economyAiHistoryEmpty": "Hier erscheint jedes Hintergrundbild, das du erstellst. So kannst du es vergleichen oder zurückwechseln.",
   "economyAiHistoryFailed": "Verlauf konnte nicht geladen werden. Zieh zum Aktualisieren nach unten.",
+  "economyAiMatchingScreenSize": "An deine Bildschirmgröße anpassen…",
+  "@economyAiMatchingScreenSize": {
+    "description": "AI wallpaper generation status shown while matching the output to the device screen."
+  },
+  "economyAiApplyingStyle": "Dein Stil wird angewendet…",
+  "@economyAiApplyingStyle": {
+    "description": "AI wallpaper generation status shown while applying the selected style."
+  },
+  "economyAiFinalizingWallpaper": "Dein Hintergrundbild wird fertiggestellt…",
+  "@economyAiFinalizingWallpaper": {
+    "description": "AI wallpaper generation status shown while completing the wallpaper."
+  },
+  "economyAiRemixHint": "Dunklerer Himmel, wärmere Farben, weichere Kanten…",
+  "@economyAiRemixHint": {
+    "description": "Example hint in the AI wallpaper remix text field."
+  },
   "economyAiNeedCoinsToGenerate": "Zum Erstellen brauchst du {cost} Coins.",
   "@economyAiNeedCoinsToGenerate": {
     "placeholders": {
       "cost": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyNeedMoreCoins": "{count, plural, one{Dir fehlt noch {count} Coin.} other{Dir fehlen noch {count} Coins.}}",
+  "@economyNeedMoreCoins": {
+    "description": "Toast shown when an action needs more coins than the user has.",
+    "placeholders": {
+      "count": {
         "type": "int",
         "format": "decimalPattern"
       }
