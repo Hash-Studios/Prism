@@ -1371,6 +1371,10 @@
   "@accountPurchasesRestored": {
     "description": "Success toast after restoring purchases."
   },
+  "accountPurchasesRestoredPending": "Pembelian dipulihkan. Pro mungkin perlu waktu satu menit untuk aktif.",
+  "@accountPurchasesRestoredPending": {
+    "description": "Toast after a restore when the store has the purchase but the server has not confirmed Pro yet."
+  },
   "accountQuickTiles": "Tile Cepat",
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
@@ -6169,6 +6173,14 @@
   "premiumPageViewPlans": "Lihat paket",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPurchasePending": "Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.",
+  "@premiumPurchasePending": {
+    "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPurchaseUnconfirmed": "Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.",
+  "@premiumPurchaseUnconfirmed": {
+    "description": "Toast after a purchase that neither the store nor the server could confirm."
   },
   "wallpaperAccentColor": "Warna aksen",
   "@wallpaperAccentColor": {

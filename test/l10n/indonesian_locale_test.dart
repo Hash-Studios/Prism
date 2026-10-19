@@ -19,6 +19,18 @@ void main() {
     expect(country.localeName.split('_').first, 'id');
     expect(language.actionRetry, 'Coba lagi');
     expect(country.actionRetry, 'Coba lagi');
+    expect(
+      language.accountPurchasesRestoredPending,
+      'Pembelian dipulihkan. Pro mungkin perlu waktu satu menit untuk aktif.',
+    );
+    expect(
+      language.premiumPurchasePending,
+      'Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.',
+    );
+    expect(
+      language.premiumPurchaseUnconfirmed,
+      'Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.',
+    );
   });
 
   test('unsupported preferred locales fall through to Indonesian', () async {

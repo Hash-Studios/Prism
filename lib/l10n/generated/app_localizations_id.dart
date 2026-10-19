@@ -960,6 +960,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountPurchasesRestored => 'Pembelian dipulihkan.';
 
   @override
+  String get accountPurchasesRestoredPending => 'Pembelian dipulihkan. Pro mungkin perlu waktu satu menit untuk aktif.';
+
+  @override
   String get accountQuickTiles => 'Tile Cepat';
 
   @override
@@ -7237,6 +7240,13 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Lihat paket';
+
+  @override
+  String get premiumPurchasePending => 'Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.';
+
+  @override
+  String get premiumPurchaseUnconfirmed =>
+      'Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.';
 
   @override
   String get wallpaperAccentColor => 'Warna aksen';

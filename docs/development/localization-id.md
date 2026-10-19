@@ -6,11 +6,13 @@ fallback. The generated delegate registers `id` and resolves `id_ID`.
 
 ## Coverage
 
-The Indonesian ARB covers all 2,499 canonical English messages, with source
+The Indonesian ARB covers all 2,502 canonical English messages, with source
 metadata, placeholder types, number formats and ICU selector values preserved.
 This includes onboarding, browsing, search, categories, wallpaper actions,
 creator accounts, authentication, settings, Premium, coins, streaks, referrals,
-AI, notifications, moderation, errors and accessibility labels.
+AI, notifications, moderation, errors and accessibility labels. Merged #594 adds
+translated pending and unconfirmed purchase labels, including the brief delay
+while Pro unlocks.
 
 Android has a matching resource for every English string in
 `android/app/src/main/res/values-in/strings.xml`. Android's native resource
