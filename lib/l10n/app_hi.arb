@@ -8758,6 +8758,10 @@
   "@wallpaperYourProfile": {
     "description": "Accessibility label for the profile button."
   },
+  "economyExportFailedLabel": "एक्सपोर्ट नहीं हो सका",
+  "@economyExportFailedLabel": {
+    "description": "Failed filter export action inserted before refund status."
+  },
   "coreSignInCreatorSearchFeature": "क्रिएटर खोज",
   "@coreSignInCreatorSearchFeature": {
     "description": "Feature name inserted into the sign-in title for creator search."

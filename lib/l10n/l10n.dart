@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
@@ -19,5 +21,14 @@ String formatLocalizedNumber(int value, AppLocalizations l10n) =>
 /// create a process-wide default locale.
 Future<AppLocalizations> loadAppLocalizations(Locale locale) {
   final Locale resolvedLocale = basicLocaleListResolution(<Locale>[locale], AppLocalizations.supportedLocales);
+  return AppLocalizations.delegate.load(resolvedLocale);
+}
+
+/// Loads messages for the device's preferred locale list using Flutter's locale resolution rules.
+Future<AppLocalizations> loadDeviceAppLocalizations() {
+  final Locale resolvedLocale = basicLocaleListResolution(
+    PlatformDispatcher.instance.locales,
+    AppLocalizations.supportedLocales,
+  );
   return AppLocalizations.delegate.load(resolvedLocale);
 }

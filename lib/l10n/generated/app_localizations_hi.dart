@@ -11,6 +11,9 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get economyExportFailedLabel => 'एक्सपोर्ट नहीं हो सका';
+
+  @override
   String get coreSignInCreatorSearchFeature => 'क्रिएटर खोज';
 
   @override

@@ -32,7 +32,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
-import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -736,7 +735,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
     const styles = OnboardingV2Config.aiOnboardingStyles;
     final style = matchedStyle ?? styles[_random.nextInt(styles.length)];
-    final AppLocalizations l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+    final AppLocalizations l10n = await loadDeviceAppLocalizations();
     final prompts = OnboardingV2Config.aiOnboardingPrompts(l10n, style);
     final prompt = prompts.isNotEmpty
         ? prompts[_random.nextInt(prompts.length)]

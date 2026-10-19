@@ -238,13 +238,13 @@ class DeepLinkDispatcher {
       if (route == null && resolution.isNetwork && action is ShortCodeIntent && !isRetry && onRetryNeeded != null) {
         _deferred.add((action, source));
         onRetryNeeded!(action, source);
-        final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        final l10n = await loadDeviceAppLocalizations();
         toasts.info(l10n.appLinkRetryWhenOnline);
         return DeepLinkDispatchResult.deferred;
       }
       if (route == null) {
         if (source == DeepLinkSourceValue.push && action.rawUri.trim().isNotEmpty) {
-          final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+          final l10n = await loadDeviceAppLocalizations();
           toasts.error(l10n.coreContentNotAvailable);
         }
         await _navigate(
