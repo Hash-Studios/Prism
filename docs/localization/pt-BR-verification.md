@@ -17,6 +17,13 @@ Further shared fixes are reused from `0b562d29b`, `b86755b35`, and
 upload number formatting, and collection-preview spend failures. The
 canonical catalogue now contains 2,502 messages.
 
+The shared prompt-persistence fix is reused from Spanish commits
+`8d0498874`, `1085c5ab5`, and `fef381070`, cherry-picked here as
+`39bd66f9e`, `1ba749c4a`, and `48b40cdba`. It preserves explicit generated-
+prompt choices through hydration, persistence, and locale changes. The
+catalogue remains unchanged, and this does not depend on the Spanish
+translation PR.
+
 The device-locale fixes are reused from `e6f66cd8d`, `b4dfe6bb3`,
 `305219fcc`, `4c041480d`, and `eb7b20343`. They resolve background
 messages against the framework's complete preferred-language list.
@@ -69,7 +76,7 @@ The hard-coded-string audit passed with zero probable UI literals.
 Indirect literals were reviewed separately, including native error callers.
 
 Focused locale and native tests live in `test/l10n/pt_br_localization_test.dart`
-and `test/l10n/pt_br_native_resources_test.dart`. The three native resource
+and `test/l10n/pt_br_native_resources_test.dart`. The four native resource
 tests passed. Locale behaviour tests cover region selection, English fallback,
 interpolation, number/date formatting, zero/one/many coin plurals, and real
 onboarding/button/sheet layouts at 320 pixels with enlarged text.
