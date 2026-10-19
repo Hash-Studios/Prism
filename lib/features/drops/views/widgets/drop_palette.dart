@@ -12,6 +12,11 @@ abstract final class DropPalette {
   static const Color ink = Color(0xFFF4F1EA);
   static const Color inkMuted = Color(0x99F4F1EA);
   static const Color urgent = Color(0xFFFF6B5B);
+  static const Color hairlineStrong = Color(0x66E9D7A8);
+  static const Color engraving = Color(0x40E9D7A8);
+  static const Color sheen = Color(0x26F6E7B8);
+  static const Color obsidianDeep = Color(0xFF050506);
+  static const Color goldOnLight = Color(0xFF7A5A1E);
 
   static const LinearGradient foil = LinearGradient(
     begin: Alignment.topLeft,

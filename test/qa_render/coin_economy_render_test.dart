@@ -327,11 +327,11 @@ void main() {
       await shot.save('drops_live');
     });
 
-    qaScreen('drop_unlock_sheet', setUpExtra: () => getIt.registerFactory<DropsBloc>(dropsBloc), (QaShot shot) async {
+    qaScreen('drop_preview_from_grid', setUpExtra: () => getIt.registerFactory<DropsBloc>(dropsBloc), (QaShot shot) async {
       await shot.pump(const DropsPage());
       await shot.tester.tap(find.byType(PrismWallTile).at(1));
       await shot.settle(frames: 8);
-      await shot.save('drop_unlock_sheet');
+      await shot.save('drop_preview_from_grid');
     });
 
     // 8. Public profile
