@@ -49,6 +49,26 @@ void main() {
     expect(coins.xpNotifier.value.weekXp, 10);
   });
 
+  test('an XP reply that stays inside the rank does not reconcile, crossing a rank reconciles once', () async {
+    final List<String> calls = <String>[];
+    backend.onCall = (name, _) async {
+      calls.add(name);
+      return <String, Object?>{'success': false};
+    };
+    apply(snapshot(10, 10));
+    apply(snapshot(20, 20));
+    await coins.reconcileRankRewards();
+    calls.clear();
+
+    apply(snapshot(120, 120));
+    await Future<void>.delayed(Duration.zero);
+    expect(calls, isEmpty);
+
+    apply(snapshot(520, 520));
+    await Future<void>.delayed(Duration.zero);
+    expect(calls, <String>['reconcileRankRewards']);
+  });
+
   test('award callers apply an unchanged server receipt without deriving XP from coins', () async {
     backend.onCall = (name, _) async => name == 'awardCoins'
         ? <String, Object?>{'success': true, 'changed': false, 'currentBalance': 120, ...snapshot(130, 30)}

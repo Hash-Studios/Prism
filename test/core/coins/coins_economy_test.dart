@@ -148,15 +148,24 @@ void main() {
       expect(service.adsRewardNow, 10);
     });
 
-    test("a credited ad ticks today's watch_ad bonus quest and reconciles rank rewards", () async {
+    test("a credited ad ticks today's watch_ad bonus quest without reconciling rank rewards", () async {
       final Map<String, Object?> today = <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())};
       reply((_, _) => <String, Object?>{'success': true, 'rev': 1, 'quests': today});
       await service.progressQuest(null);
       calls.clear();
-      reply((_, _) => _paid(after: 120));
+      reply(
+        (_, _) => _paid(
+          after: 120,
+          extra: <String, Object?>{
+            'xpPolicyVersion': 1,
+            'xp': 10,
+            'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': 10},
+          },
+        ),
+      );
       await service.award(CoinEarnAction.rewardedAd);
       expect(service.questsNotifier.value?.bonus?.claimed, isTrue);
-      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>['awardCoins', 'reconcileRankRewards']);
+      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>['awardCoins']);
     });
   });
 
@@ -215,7 +224,7 @@ void main() {
       expect(calls.first.$1, 'progressQuest');
       expect(calls.first.$2['event'], 'view_wotd');
       expect(calls.first.$2['eventId'], matches(idPattern));
-      expect(calls.last.$1, 'reconcileRankRewards');
+      expect(calls.map(((String, Map<String, dynamic>) c) => c.$1), <String>['progressQuest']);
       expect(state?.items.first.isDone, isTrue);
       expect(service.questAwardsNotifier.value.single.coins, 2);
       expect(service.xpNotifier.value.xp, 25);

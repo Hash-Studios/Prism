@@ -820,10 +820,7 @@ class CoinsService with WidgetsBindingObserver {
       await _invalidateEconomySnapshot(userId);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
-    if (userData == null) {
-      await reconcileRankRewards();
-      return app_state.prismUser.coins;
-    }
+    if (userData == null) return app_state.prismUser.coins;
     final int coins = parseIntOr(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
     if (_economyMutationGeneration == mutationGeneration) {
@@ -832,8 +829,6 @@ class CoinsService with WidgetsBindingObserver {
       await _persistRootEconomySnapshot(userId, userData, includeXp: syncXp, merge: !syncXp);
       if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     }
-    await reconcileRankRewards();
-    if (!_isCurrentOwner(userId, generation)) return app_state.prismUser.coins;
     return coins;
   }
 
@@ -947,7 +942,6 @@ class CoinsService with WidgetsBindingObserver {
         sourceTag: sourceTag,
         reason: reason,
       );
-      if (!isRefund) unawaited(reconcileRankRewards());
     }
     return result;
   }
@@ -2084,7 +2078,6 @@ class CoinsService with WidgetsBindingObserver {
         );
       }
       _logEarn(action: action, amount: result.delta, sourceTag: sourceTag, reason: logReason);
-      unawaited(reconcileRankRewards());
     }
     return result;
   }
@@ -2215,6 +2208,7 @@ class CoinsService with WidgetsBindingObserver {
       return;
     }
     _xpMutationGeneration++;
+    final int previousRankMin = xpNotifier.value.rank.min;
     _confirmXp(data, announce: _xpUserId == userId);
     _xpUserId = userId;
     final XpStatus xp = xpNotifier.value;
@@ -2224,7 +2218,7 @@ class CoinsService with WidgetsBindingObserver {
         'xpWeek': <String, Object?>{'weekKey': economyWeekKey(DateTime.now()), 'xp': xp.weekXp},
       }, merge: true),
     );
-    unawaited(reconcileRankRewards());
+    if (xp.rank.min != previousRankMin) unawaited(reconcileRankRewards());
   }
 
   bool _usableXpSnapshot(Map<String, dynamic> data) {
@@ -3282,7 +3276,6 @@ class CoinsService with WidgetsBindingObserver {
       return;
     }
     _applyLocalBalance(balance, delta: balance - app_state.prismUser.coins);
-    unawaited(reconcileRankRewards());
   }
 
   void _applyLocalBalance(int newBalance, {required int delta}) {
