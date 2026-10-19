@@ -9,6 +9,7 @@ class _ConfigFirestore extends Fake implements FirestoreClient {
   int serverReads = 0;
   bool cacheFails = false;
   bool serverFails = false;
+  bool serverMissing = false;
 
   @override
   Future<T?> getById<T>(
@@ -31,9 +32,11 @@ class _ConfigFirestore extends Fake implements FirestoreClient {
     serverReads++;
     if (serverFails) throw StateError('offline');
     yield (
-      items: <T>[
-        map(<String, dynamic>{'version': 4}, 'current'),
-      ],
+      items: serverMissing
+          ? <T>[]
+          : <T>[
+              map(<String, dynamic>{'version': 4}, 'current'),
+            ],
       isFromCache: false,
     );
   }
@@ -80,5 +83,17 @@ void main() {
 
     expect(EconomyConfig.current.version, 4);
     expect(firestore.serverReads, 1);
+  });
+
+  test('a missing server doc keeps the cached config and leaves it stale', () async {
+    firestore.serverMissing = true;
+    await EconomyConfig.load();
+    expect(EconomyConfig.current.version, 3);
+
+    firestore.serverMissing = false;
+    await EconomyConfig.refreshIfStale();
+
+    expect(EconomyConfig.current.version, 4);
+    expect(firestore.serverReads, 2);
   });
 }

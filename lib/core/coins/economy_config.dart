@@ -447,20 +447,20 @@ class EconomyConfig {
       logger.w('Economy config cache load failed; trying the server.', tag: 'Economy', error: error);
     }
     try {
-      current = EconomyConfig.fromMap(
-        await PerformanceProbe.measure(
-          'startup',
-          'economy_config.refresh',
-          () => firestoreClient
-              .getFromServer<Map<String, dynamic>>(
-                FirebaseCollections.economyConfig,
-                'current',
-                (data, _) => data,
-                sourceTag: 'economy.config.refresh',
-              )
-              .timeout(loadBudget),
-        ),
+      final Map<String, dynamic>? confirmed = await PerformanceProbe.measure(
+        'startup',
+        'economy_config.refresh',
+        () => firestoreClient
+            .getFromServer<Map<String, dynamic>>(
+              FirebaseCollections.economyConfig,
+              'current',
+              (data, _) => data,
+              sourceTag: 'economy.config.refresh',
+            )
+            .timeout(loadBudget),
       );
+      if (confirmed == null) return;
+      current = EconomyConfig.fromMap(confirmed);
       _loadedAt = DateTime.now();
     } catch (error) {
       logger.w('Economy config load failed; keeping the current values.', tag: 'Economy', error: error);
