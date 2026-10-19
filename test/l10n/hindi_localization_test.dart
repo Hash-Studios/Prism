@@ -32,6 +32,20 @@ void main() {
     expect(english.actionRetry, 'Try again');
   });
 
+  testWidgets('device localization resolves Hindi and falls back to English', (WidgetTester tester) async {
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('hi', 'IN')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+
+    final AppLocalizations hindi = await loadDeviceAppLocalizations();
+    expect(hindi.localeName, 'hi');
+    expect(hindi.economyExportFailedLabel, 'एक्सपोर्ट नहीं हो सका');
+
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('de')];
+    final AppLocalizations english = await loadDeviceAppLocalizations();
+    expect(english.localeName, 'en');
+    expect(english.economyExportFailedLabel, 'Export failed');
+  });
+
   test('Hindi messages cover key journeys and preserve placeholders', () async {
     await initializeDateFormatting('hi');
     final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
