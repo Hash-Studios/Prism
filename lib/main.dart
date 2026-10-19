@@ -632,7 +632,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   Future<void> _configureLocalNotificationChannels() async {
     try {
-      final AppLocalizations messages = await loadAppLocalizations(PlatformDispatcher.instance.locale);
+      final AppLocalizations messages = await loadDeviceAppLocalizations();
       await createNotificationChannels(localNotification.flutterLocalNotificationsPlugin, messages);
     } catch (e, st) {
       logger.w('Failed to configure local notification channels.', error: e, stackTrace: st);
@@ -681,9 +681,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     if (!firebaseReady) return;
 
     // Foreground messages and taps on background pushes. It calls the callbacks set in initState.
-    localNotification.listenForPushMessages(
-      localizations: () => loadAppLocalizations(PlatformDispatcher.instance.locale),
-    );
+    localNotification.listenForPushMessages(localizations: loadDeviceAppLocalizations);
 
     // Launched from terminated state by tapping a notification.
     FirebaseMessaging.instance

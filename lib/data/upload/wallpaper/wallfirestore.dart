@@ -108,11 +108,11 @@ Future<WallSubmissionResult> createRecord(
   );
 
   if (result == WallSubmissionResult.quotaExceeded) {
-    final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+    final l10n = await loadDeviceAppLocalizations();
     toasts.error(l10n.wallpaperUploadFreeQuotaMessage(UploadQuota.freeUploadsPerWeek));
     return result;
   }
-  final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+  final l10n = await loadDeviceAppLocalizations();
   toasts.success(l10n.coreUploadSubmittedSuccess);
   return result;
 }

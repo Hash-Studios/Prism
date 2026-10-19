@@ -1397,7 +1397,7 @@ class CoinsService with WidgetsBindingObserver {
       if (isReward) {
         result = await award(CoinEarnAction.rewardedAd, sourceTag: 'coins.reward.retry', requestId: key);
         if (result.changed) {
-          final AppLocalizations l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+          final AppLocalizations l10n = await loadDeviceAppLocalizations();
           toasts.success(l10n.coreWallpaperSavedToast);
         }
       } else {
@@ -1607,7 +1607,7 @@ class CoinsService with WidgetsBindingObserver {
         reason: 'download_failed_refund',
       );
       if (refund.changed) {
-        final AppLocalizations l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        final AppLocalizations l10n = await loadDeviceAppLocalizations();
         toasts.info(l10n.coreDownloadNotFinishedCoinsReturned);
       }
       if (app_state.prismUser.id != userId) break;
