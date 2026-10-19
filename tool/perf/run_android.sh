@@ -22,7 +22,15 @@ cleanup() {
 }
 trap cleanup EXIT
 if ( set -o noclobber; echo "perf-harness $TAG $(date)" > "$LOCK" ) 2>/dev/null; then OWN=1; fi
+if [ "${PRISM_PERF_REBOOT:-1}" = 1 ]; then
+  "${ADB[@]}" reboot
+  "${ADB[@]}" wait-for-device
+  until [ "$("${ADB[@]}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; do sleep 2; done
+  sleep 60
+fi
 "${ADB[@]}" install -r "$APK"
+"${ADB[@]}" shell am start -W -n com.hash.prism/.MainActivity > /dev/null
+sleep 15
 "${ADB[@]}" shell am force-stop com.hash.prism
 "${ADB[@]}" shell run-as com.hash.prism rm -f app_flutter/performance_probe.ndjson
 "${ADB[@]}" logcat -c
