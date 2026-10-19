@@ -12,6 +12,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class AppInfoPage extends StatefulWidget {
@@ -130,14 +131,14 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
   }
 
   Map<String, String> get _screenInfo {
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final view = View.of(context);
     final size = view.physicalSize;
     final dpr = view.devicePixelRatio;
     return {
       context.l10n.debugPhysicalSize: '${size.width.toInt()} × ${size.height.toInt()} px',
       context.l10n.debugLogicalSize:
           '${(size.width / dpr).toStringAsFixed(0)} × ${(size.height / dpr).toStringAsFixed(0)} dp',
-      context.l10n.debugDevicePixelRatio: dpr.toStringAsFixed(2),
+      context.l10n.debugDevicePixelRatio: NumberFormat('0.00', context.l10n.localeName).format(dpr),
     };
   }
 
