@@ -108,6 +108,20 @@ void main() {
     expect(messages.wallpaperAutoRotatePreparing(2), 'Preparando 2 fondos de pantalla');
   });
 
+  test('Spanish gift messages qualify both premium benefits', () async {
+    final AppLocalizations messages = await loadAppLocalizations(const Locale('es'));
+
+    expect(
+      messages.accountGiftPassMessage('Ana', 25),
+      'Ana tendrá acceso a las colecciones prémium y a los fondos de pantalla prémium hasta mañana. '
+      'Cuesta 25 monedas.',
+    );
+    expect(
+      messages.notifPushGiftReceivedBody,
+      'Tienes acceso a las colecciones prémium y a los fondos de pantalla prémium hasta mañana.',
+    );
+  });
+
   testWidgets('long Spanish confirmation keeps its actions reachable at 320px and 2x text scale', (
     WidgetTester tester,
   ) async {

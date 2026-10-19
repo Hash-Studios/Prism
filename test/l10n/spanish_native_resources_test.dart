@@ -11,6 +11,18 @@ const String _iosSpanishInfoPath = 'ios/Runner/es.lproj/InfoPlist.strings';
 const String _iosProjectPath = 'ios/Runner.xcodeproj/project.pbxproj';
 
 void main() {
+  test('gift notification limits the Spanish benefit to premium collections and wallpapers', () {
+    const String expected = 'Las colecciones prémium y los fondos prémium estarán disponibles hasta mañana.';
+    final Map<String, String> android = _readAndroidStrings(_androidSpanishPath);
+    final Map<String, Object?> catalog = jsonDecode(File(_iosCatalogPath).readAsStringSync()) as Map<String, Object?>;
+    final Map<String, Object?> strings = catalog['strings']! as Map<String, Object?>;
+    final Map<String, Object?> giftBody = strings['notif_push_gift_received_body']! as Map<String, Object?>;
+    final Map<String, Object?> localizations = giftBody['localizations']! as Map<String, Object?>;
+
+    expect(android['notif_push_gift_received_body'], expected);
+    expect(_xcstringsValue(localizations, 'es', 'notif_push_gift_received_body'), expected);
+  });
+
   test('Android Spanish resources cover the English keys and format arguments', () {
     final Map<String, String> english = _readAndroidStrings(_androidEnglishPath);
     final Map<String, String> spanish = _readAndroidStrings(_androidSpanishPath);

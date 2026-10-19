@@ -131,7 +131,7 @@
       "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ sent you a 24-hour Pro pass"}}, "es" : {"stringUnit" : {"state" : "translated", "value" : "%1$@ te envió un pase Pro de 24 horas"}}}
     },
     "notif_push_gift_received_body" : {
-      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Premium collections and premium walls are open until tomorrow."}}, "es" : {"stringUnit" : {"state" : "translated", "value" : "Las colecciones y los fondos prémium estarán disponibles hasta mañana."}}}
+      "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Premium collections and premium walls are open until tomorrow."}}, "es" : {"stringUnit" : {"state" : "translated", "value" : "Las colecciones prémium y los fondos prémium estarán disponibles hasta mañana."}}}
     },
     "notif_push_report_needs_review_title" : {
       "localizations" : {"en" : {"stringUnit" : {"state" : "translated", "value" : "Report waiting for review"}}, "es" : {"stringUnit" : {"state" : "translated", "value" : "Hay un reporte pendiente de revisión"}}}

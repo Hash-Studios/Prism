@@ -584,7 +584,7 @@ class AppLocalizationsEs extends AppLocalizations {
     final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String priceString = priceNumberFormat.format(price);
 
-    return '$recipientName tendrá acceso a las colecciones y fondos Premium hasta mañana. Cuesta $priceString monedas.';
+    return '$recipientName tendrá acceso a las colecciones prémium y a los fondos de pantalla prémium hasta mañana. Cuesta $priceString monedas.';
   }
 
   @override
@@ -6872,7 +6872,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notifPushGiftReceivedBody =>
-      'Puedes acceder a las colecciones y los fondos de pantalla prémium hasta mañana.';
+      'Tienes acceso a las colecciones prémium y a los fondos de pantalla prémium hasta mañana.';
 
   @override
   String notifPushGiftReceivedTitle(String senderName) {
