@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -11,6 +12,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
@@ -22,10 +25,13 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/fake_user_block_repository.dart';
+import '../../../drops/drop_fixtures.dart';
 
 class _MockFetchPersonalizedFeedUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
 
 class _MockPersonalizedFeedRepository extends Mock implements PersonalizedFeedRepository {}
+
+class _MockDropsRepository extends Mock implements DropsRepository {}
 
 FeedItemEntity _prismItem(String id, {required String authorEmail, String? fullUrl}) {
   return FeedItemEntity.prism(
@@ -57,18 +63,25 @@ void main() {
 
   late _MockFetchPersonalizedFeedUseCase fetchUseCase;
   late _MockPersonalizedFeedRepository repository;
+  late _MockDropsRepository dropsRepository;
 
   setUp(() {
     AnalyticsRuntime.reset();
     fetchUseCase = _MockFetchPersonalizedFeedUseCase();
     repository = _MockPersonalizedFeedRepository();
+    dropsRepository = _MockDropsRepository();
+    when(() => dropsRepository.fetchLive(any())).thenAnswer((_) async => Result.success<DropEntity?>(null));
+    EconomyConfig.current = EconomyConfig.defaults;
     when(() => repository.lessLikeThis(any())).thenAnswer((_) async {});
     when(() => repository.undoLessLikeThis(any())).thenAnswer((_) async {});
     when(() => repository.readCached()).thenAnswer((_) async => null);
     when(() => repository.recordShown(any())).thenAnswer((_) async {});
   });
 
-  tearDown(AnalyticsRuntime.reset);
+  tearDown(() {
+    AnalyticsRuntime.reset();
+    EconomyConfig.current = EconomyConfig.defaults;
+  });
 
   test('blocking a creator removes their items from the emitted state without a refetch', () async {
     when(() => fetchUseCase(any())).thenAnswer(
@@ -83,7 +96,7 @@ void main() {
       ),
     );
     final blockRepo = FakeUserBlockRepository.pending();
-    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, blockRepo);
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, blockRepo, dropsRepository);
     addTearDown(bloc.close);
 
     bloc.add(const PersonalizedFeedEvent.started());
@@ -112,7 +125,7 @@ void main() {
         ),
       ),
     );
-    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
     addTearDown(bloc.close);
 
     bloc.add(const PersonalizedFeedEvent.started());
@@ -138,7 +151,7 @@ void main() {
       when(() => fetchUseCase(any())).thenAnswer(
         (_) async => Result.success(PersonalizedFeedPage(items: <FeedItemEntity>[item, kept], hasMore: false)),
       );
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
 
       bloc.add(const PersonalizedFeedEvent.started());
@@ -156,7 +169,7 @@ void main() {
     final Completer<Result<PersonalizedFeedPage>> refreshed = Completer<Result<PersonalizedFeedPage>>();
     var calls = 0;
     when(() => fetchUseCase(any())).thenAnswer((_) => ++calls == 1 ? initial.future : refreshed.future);
-    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
     addTearDown(bloc.close);
 
     bloc.add(const PersonalizedFeedEvent.started());
@@ -199,7 +212,7 @@ void main() {
         ),
       );
     });
-    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
     addTearDown(bloc.close);
 
     bloc.add(const PersonalizedFeedEvent.started());
@@ -232,7 +245,7 @@ void main() {
         PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'kept@example.com')], hasMore: false),
       ),
     );
-    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
     addTearDown(bloc.close);
 
     bloc.add(const PersonalizedFeedEvent.started());
@@ -259,7 +272,7 @@ void main() {
         ),
       );
     });
-    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
     addTearDown(bloc.close);
 
     bloc.add(const PersonalizedFeedEvent.started());
@@ -281,7 +294,7 @@ void main() {
             )
           : Result.error(const NetworkFailure('offline')),
     );
-    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
     addTearDown(bloc.close);
     bloc.add(const PersonalizedFeedEvent.started());
     await Future<void>.delayed(Duration.zero);
@@ -309,7 +322,7 @@ void main() {
       when(() => repository.readCached()).thenAnswer((_) async => cachedPage());
       final Completer<Result<PersonalizedFeedPage>> fresh = Completer<Result<PersonalizedFeedPage>>();
       when(() => fetchUseCase(any())).thenAnswer((_) => fresh.future);
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
       final List<PersonalizedFeedState> states = <PersonalizedFeedState>[];
       final sub = bloc.stream.listen(states.add);
@@ -347,7 +360,7 @@ void main() {
       when(
         () => fetchUseCase(any()),
       ).thenAnswer((_) async => Result.success(const PersonalizedFeedPage(items: <FeedItemEntity>[], hasMore: false)));
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
 
       bloc.add(const PersonalizedFeedEvent.started());
@@ -363,7 +376,7 @@ void main() {
     test('keeps the cached page when the fresh load fails', () async {
       when(() => repository.readCached()).thenAnswer((_) async => cachedPage());
       when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
 
       bloc.add(const PersonalizedFeedEvent.started());
@@ -383,7 +396,7 @@ void main() {
           PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('fresh', authorEmail: 'f@x.com')], hasMore: false),
         ),
       );
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
 
       bloc.add(const PersonalizedFeedEvent.started());
@@ -406,7 +419,7 @@ void main() {
             )
           : fresh.future,
     );
-    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
     addTearDown(bloc.close);
     bloc.add(const PersonalizedFeedEvent.started());
     await Future<void>.delayed(Duration.zero);
@@ -432,7 +445,7 @@ void main() {
     test('selecting a chip keeps it in the state and reports the choice once', () async {
       final analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
       expect(bloc.state.chip, HomeFeedChip.forYou);
 
@@ -454,7 +467,7 @@ void main() {
           PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'a@x.com')], hasMore: false),
         ),
       );
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
       bloc.add(const PersonalizedFeedEvent.started());
       await Future<void>.delayed(Duration.zero);
@@ -483,7 +496,7 @@ void main() {
           ),
         ),
       );
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
       bloc.add(const PersonalizedFeedEvent.started());
       await Future<void>.delayed(Duration.zero);
@@ -505,7 +518,7 @@ void main() {
   group('tiles seen', () {
     test('are reported once, in one batch a second after the first tile', () {
       fakeAsync((async) {
-        final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+        final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
         bloc.add(const PersonalizedFeedEvent.tilesSeen(<String>['a']));
         async.flushMicrotasks();
         async.elapse(const Duration(milliseconds: 600));
@@ -530,7 +543,7 @@ void main() {
 
     test('left unreported when the bloc closes are reported then', () {
       fakeAsync((async) {
-        final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+        final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
         bloc.add(const PersonalizedFeedEvent.tilesSeen(<String>['x']));
         async.flushMicrotasks();
 
@@ -554,7 +567,7 @@ void main() {
       when(
         () => fetchUseCase(any()),
       ).thenAnswer((_) => ++calls == 1 ? Future.value(Result.success(page(<String>['1', '2']))) : refreshed.future);
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
       bloc.add(const PersonalizedFeedEvent.started());
       await Future<void>.delayed(Duration.zero);
@@ -577,7 +590,7 @@ void main() {
       when(() => fetchUseCase(any())).thenAnswer(
         (_) async => ++calls == 1 ? Result.success(page(<String>['1', '2'])) : Result.error(const NetworkFailure('x')),
       );
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
       bloc.add(const PersonalizedFeedEvent.started());
       await Future<void>.delayed(Duration.zero);
@@ -599,7 +612,7 @@ void main() {
         if (calls == 2) return Result.error(const NetworkFailure('x'));
         return Result.success(page(request.page == 1 ? <String>['1', '2'] : <String>['3']));
       });
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
       bloc.add(const PersonalizedFeedEvent.started());
       await Future<void>.delayed(Duration.zero);
@@ -618,7 +631,7 @@ void main() {
 
     test('a failed first load with nothing to show is a failure state', () async {
       when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(const NetworkFailure('x')));
-      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
       addTearDown(bloc.close);
 
       bloc.add(const PersonalizedFeedEvent.started());
@@ -627,6 +640,101 @@ void main() {
 
       expect(bloc.state.status, LoadStatus.failure);
       expect(bloc.state.items, isEmpty);
+    });
+  });
+  group('live Drop', () {
+    PersonalizedFeedBloc build() {
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending(), dropsRepository);
+      addTearDown(bloc.close);
+      return bloc;
+    }
+
+    setUp(() {
+      when(() => fetchUseCase(any())).thenAnswer(
+        (_) async => Result.success(
+          PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'a@example.com')], hasMore: false),
+        ),
+      );
+    });
+
+    test('start and refresh each fetch the live Drop into the state', () async {
+      final DropEntity first = dropEntity();
+      final DropEntity second = dropEntity(weekKey: '2026-W43');
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) async => Result.success<DropEntity?>(first));
+      final bloc = build();
+
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.liveDrop?.weekKey, '2026-W42');
+
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) async => Result.success<DropEntity?>(second));
+      bloc.add(const PersonalizedFeedEvent.refreshRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.liveDrop?.weekKey, '2026-W43');
+      verify(() => dropsRepository.fetchLive(any())).called(2);
+    });
+
+    test('the feed load does not wait for the Drop', () async {
+      final Completer<Result<DropEntity?>> slow = Completer<Result<DropEntity?>>();
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) => slow.future);
+      final bloc = build();
+
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.items.map((e) => e.id), <String>['1']);
+      expect(bloc.state.liveDrop, isNull);
+    });
+
+    test('with the Drops flag off nothing is fetched', () async {
+      EconomyConfig.current = const EconomyConfig(flags: EconomyFlags(dropsEnabled: false));
+      final bloc = build();
+
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      verifyNever(() => dropsRepository.fetchLive(any()));
+      expect(bloc.state.liveDrop, isNull);
+    });
+
+    test('turning the flag on fetches the Drop', () async {
+      EconomyConfig.current = const EconomyConfig(flags: EconomyFlags(dropsEnabled: false));
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) async => Result.success<DropEntity?>(dropEntity()));
+      final bloc = build();
+
+      EconomyConfig.current = EconomyConfig.defaults;
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.liveDrop?.weekKey, '2026-W42');
+    });
+
+    test('a failed or thrown fetch keeps the Drop already on screen', () async {
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) async => Result.success<DropEntity?>(dropEntity()));
+      final bloc = build();
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      when(() => dropsRepository.fetchLive(any())).thenAnswer((_) async => Result.error(const NetworkFailure('x')));
+      bloc.add(const PersonalizedFeedEvent.refreshRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.liveDrop?.weekKey, '2026-W42');
+
+      when(() => dropsRepository.fetchLive(any())).thenThrow(StateError('boom'));
+      bloc.add(const PersonalizedFeedEvent.refreshRequested());
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.liveDrop?.weekKey, '2026-W42');
     });
   });
 }

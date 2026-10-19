@@ -45,9 +45,11 @@ class DropSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final BorderRadius corners = BorderRadius.circular(radius);
-    Widget body = CustomPaint(
-      painter: const GuillochePainter(color: DropPalette.engraving),
-      child: child,
+    Widget body = RepaintBoundary(
+      child: CustomPaint(
+        painter: const GuillochePainter(color: DropPalette.engraving),
+        child: child,
+      ),
     );
     if (sheen) body = FoilSheen(color: DropPalette.sheen, child: body);
     return DecoratedBox(

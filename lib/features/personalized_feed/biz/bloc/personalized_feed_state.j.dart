@@ -17,6 +17,9 @@ abstract class PersonalizedFeedState with _$PersonalizedFeedState {
 
     /// The last refresh failed. Items from before it stay on screen.
     required bool refreshFailed,
+
+    /// The Drop that is on now. Null while none is live or before it loads.
+    DropEntity? liveDrop,
     Failure? failure,
   }) = _PersonalizedFeedState;
 

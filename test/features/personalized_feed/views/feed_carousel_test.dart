@@ -395,6 +395,20 @@ void main() {
     expect(find.byType(DropCarouselSlide), findsNothing);
   });
 
+  testWidgets('the Drop page goes when the Drop ends', (tester) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity(endsIn: const Duration(seconds: 1)));
+
+    expect(find.byType(DropCarouselSlide), findsOneWidget);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 3);
+
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1100)));
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+
+    expect(find.byType(DropCarouselSlide), findsNothing);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 2);
+  });
+
   testWidgets('the last day of a Drop shows Last call', (tester) async {
     await pumpCarousel(tester, const <PrismFeedItem>[], liveDrop: dropEntity(endsIn: const Duration(hours: 5)));
 

@@ -11,5 +11,6 @@ abstract class PersonalizedFeedEvent with _$PersonalizedFeedEvent {
   const factory PersonalizedFeedEvent.settingsChanged() = _SettingsChanged;
   const factory PersonalizedFeedEvent.chipSelected(HomeFeedChip chip) = _ChipSelected;
   const factory PersonalizedFeedEvent.tilesSeen(List<String> keys) = _TilesSeen;
+  const factory PersonalizedFeedEvent.liveDropRequested() = _LiveDropRequested;
   const factory PersonalizedFeedEvent.blockedCreatorsChanged({required Set<String> blocked}) = _BlockedCreatorsChanged;
 }

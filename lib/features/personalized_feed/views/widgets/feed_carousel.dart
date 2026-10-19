@@ -68,18 +68,53 @@ class _FeedCarouselState extends State<FeedCarousel> {
   bool _showsDrop(DropEntity? drop) =>
       drop != null && EconomyConfig.notifier.value.flags.dropsEnabled && drop.isLiveAt(DateTime.now());
 
+  Timer? _dropEndTimer;
+
   int get _dropIndex => context.read<WotdBloc>().state.entity != null ? 1 : 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleDropEnd();
+  }
 
   @override
   void didUpdateWidget(FeedCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_showsDrop(widget.liveDrop) && !_showsDrop(oldWidget.liveDrop)) {
-      // A new page shifts the ones after it. Keep the user on the page they are looking at.
-      final int target = _current >= _dropIndex ? _current + 1 : _current;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _controller.jumpToPage(target);
-      });
-    }
+    if (widget.liveDrop?.endsAt != oldWidget.liveDrop?.endsAt) _scheduleDropEnd();
+    final bool shows = _showsDrop(widget.liveDrop);
+    final bool showed = _showsDrop(oldWidget.liveDrop);
+    if (shows != showed) _keepPage(appeared: shows);
+  }
+
+  @override
+  void dispose() {
+    _dropEndTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleDropEnd() {
+    _dropEndTimer?.cancel();
+    final DropEntity? drop = widget.liveDrop;
+    if (drop == null) return;
+    final Duration left = drop.endsAt.difference(DateTime.now());
+    if (left <= Duration.zero) return;
+    _dropEndTimer = Timer(left, () {
+      if (!mounted) return;
+      setState(() {});
+      _keepPage(appeared: false);
+    });
+  }
+
+  /// A Drop page that appears or goes shifts the pages after it. Keep the user on the wall they are looking at.
+  void _keepPage({required bool appeared}) {
+    final int dropIndex = _dropIndex;
+    final int target = appeared
+        ? (_current >= dropIndex ? _current + 1 : _current)
+        : (_current > dropIndex ? _current - 1 : _current);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.jumpToPage(target);
+    });
   }
 
   void _openDrop() {
