@@ -40,6 +40,13 @@ permissions. Xcode locale-specific string identifiers were added in
 `22a48a1aa`.
 The tests cover Hindi locale resolution, English fallback, Indian digit grouping,
 dates, plural zero/one/many forms, nested selectors, and a real narrow sheet at 2x text.
+Final review reproduced 231 over-limit suggestions among 4,375 generated AI
+prompt combinations, with a maximum of 177 UTF-16 units against the existing
+160-unit submission limit. Shorter Hindi copy reduces the maximum to 154 units;
+all 35 onboarding suggestions are at most 91 units. An exhaustive production-pool
+regression test passed, bringing the localisation suite to 13 passing tests
+(`/tmp/prism-hi-prompt-limit-tests.log`). Subsequent following-label grammar
+changes are included in the final CI run rather than covered by that earlier log.
 
 ## Known verification limits
 

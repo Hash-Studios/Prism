@@ -548,15 +548,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountFollowersEmptyMessage => 'इस खाते को फ़ॉलो करने वाले लोग यहाँ दिखेंगे।';
 
   @override
-  String get accountFollowing => 'फ़ॉलो किए जा रहे हैं';
+  String get accountFollowing => 'फ़ॉलोइंग';
 
   @override
   String accountFollowingCountLabel(String compactCount) {
-    return '$compactCount फ़ॉलो किए जा रहे हैं';
+    return '$compactCount फ़ॉलोइंग';
   }
 
   @override
-  String get accountFollowingEmptyMessage => 'यहाँ से फ़ॉलो किए गए खाते यहाँ दिखेंगे।';
+  String get accountFollowingEmptyMessage => 'आप जिन खातों को फ़ॉलो करते हैं, वे यहाँ दिखेंगे।';
 
   @override
   String get accountForgetFeedLearned => 'आपकी फ़ीड ने आपके बारे में जो सीखा है, उसे भूलें';
@@ -2713,7 +2713,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String coreSignInFeatureTitle(String feature) {
-    return '$feature इस्तेमाल करने के लिए साइन इन करें';
+    return '$feature का इस्तेमाल करने के लिए साइन इन करें';
   }
 
   @override
@@ -9398,7 +9398,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyAiPromptSceneAnime3 => 'चेरी के फूलों और होलोग्राम वाला भविष्यवादी मंदिर';
 
   @override
-  String get economyAiPromptSceneAnime4 => 'लालटेनों की रोशनी से जगमगाता स्वप्निल ऐनिमे रात का बाज़ार';
+  String get economyAiPromptSceneAnime4 => 'लालटेनों से जगमगाता स्वप्निल ऐनिमे रात का बाज़ार';
 
   @override
   String get economyAiPromptSceneAnime5 => 'नीले धुंधलके में साइबर-ऐनिमे शहर का क्षितिज';
@@ -9473,7 +9473,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyAiPromptSceneAbstract3 => 'मुलायम किनारों वाली उभरी हुई अमूर्त आकृतियाँ';
 
   @override
-  String get economyAiPromptSceneAbstract4 => 'हवा में तैरती ज्यामितीय आकृतियों का अतियथार्थवादी अमूर्त संसार';
+  String get economyAiPromptSceneAbstract4 => 'तैरती ज्यामितीय आकृतियों का अतियथार्थवादी दृश्य';
 
   @override
   String get economyAiPromptSceneAbstract5 => 'सिनेमाई कंट्रास्ट वाली प्राकृतिक रूप की अमूर्त लहरें';
@@ -9518,7 +9518,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyAiPromptMoodEpic => 'भव्य';
 
   @override
-  String get economyAiPromptMoodMoody => 'गंभीर रंगत वाला';
+  String get economyAiPromptMoodMoody => 'गंभीर';
 
   @override
   String get economyAiPromptMoodUplifting => 'उमंगभरा';
@@ -9527,7 +9527,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyAiPromptQualityHighDetail => 'बारीक विवरण';
 
   @override
-  String get economyAiPromptQualityCleanComposition => 'बेहद साफ़-सुथरी संरचना';
+  String get economyAiPromptQualityCleanComposition => 'साफ़-सुथरी संरचना';
 
   @override
   String get economyAiPromptQualityCrispTextures => 'स्पष्ट बनावट';
@@ -9536,10 +9536,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyAiPromptQualityBalancedContrast => 'संतुलित कंट्रास्ट';
 
   @override
-  String get economyAiPromptQualityNaturalColors => 'चटख लेकिन प्राकृतिक रंग';
+  String get economyAiPromptQualityNaturalColors => 'चटख, प्राकृतिक रंग';
 
   @override
-  String get economyAiPromptSuffix => 'फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट';
+  String get economyAiPromptSuffix => 'मोबाइल पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट';
 
   @override
   String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -65,7 +66,7 @@ void main() {
     expect(hindi.economyAiPromptLightingGoldenHour, 'सुनहरी बेला की');
     expect(hindi.economyAiPromptMoodDreamy, 'स्वप्निल');
     expect(hindi.economyAiPromptQualityCrispTextures, 'स्पष्ट बनावट');
-    expect(hindi.economyAiPromptSuffix, 'फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट');
+    expect(hindi.economyAiPromptSuffix, 'मोबाइल पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट');
     expect(
       hindi.economyAiPromptComposition(
         hindi.economyAiPromptSceneNature1,
@@ -75,20 +76,58 @@ void main() {
         hindi.economyAiPromptSuffix,
       ),
       'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला, सुनहरी बेला की रोशनी, '
-      'स्वप्निल माहौल, स्पष्ट बनावट, फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट',
+      'स्वप्निल माहौल, स्पष्ट बनावट, मोबाइल पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट',
     );
     expect(hindi.onboardingAiPromptNature3, 'उफनती लहरों और गंभीर आसमान वाली नाटकीय समुद्री चट्टान');
     expect(hindi.coreSignInCreatorSearchFeature, 'क्रिएटर खोज');
+    expect(
+      hindi.coreSignInFeatureTitle(hindi.coreSignInCreatorSearchFeature),
+      'क्रिएटर खोज का इस्तेमाल करने के लिए साइन इन करें',
+    );
+    expect(hindi.coreSignInFeatureTitle(hindi.accountFollowing), 'फ़ॉलोइंग का इस्तेमाल करने के लिए साइन इन करें');
+    expect(hindi.accountFollowingCountLabel('20'), '20 फ़ॉलोइंग');
     expect(hindi.economyAiMadeWithPrism, 'Prism AI से बनाया गया');
     expect(hindi.debugLogExportSubject, 'Prism की डिबग लॉग फ़ाइलें');
     expect(
       AiPromptPools.sceneIdea(hindi, AiStylePreset.nature, 0),
-      'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला, फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट',
+      'सूर्योदय के समय धुंध से ढकी पर्वत-शृंखला, मोबाइल पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट',
     );
     expect(
       OnboardingV2Config.aiOnboardingPrompts(hindi, AiStylePreset.nature).first,
       'सूर्योदय की गर्म सुनहरी रोशनी में धुंध से ढकी पर्वत-शृंखला',
     );
+  });
+
+  test('Hindi production AI prompts stay within the 160 UTF-16 unit limit', () async {
+    final AppLocalizations hindi = await loadAppLocalizations(const Locale('hi', 'IN'));
+
+    for (final AiStylePreset style in AiStylePreset.values) {
+      for (int scene = 0; scene < 5; scene++) {
+        for (int lighting = 0; lighting < 5; lighting++) {
+          for (int mood = 0; mood < 5; mood++) {
+            for (int quality = 0; quality < 5; quality++) {
+              final _PromptIndicesRandom random = _PromptIndicesRandom(<int>[scene, lighting, mood, quality]);
+              final String prompt = AiPromptPools.randomPrompt(hindi, style, random);
+              expect(random.isExhausted, isTrue);
+              expect(
+                prompt.length,
+                lessThanOrEqualTo(160),
+                reason: '$style scene=$scene lighting=$lighting mood=$mood quality=$quality: $prompt',
+              );
+            }
+          }
+        }
+      }
+
+      for (int scene = 0; scene < 3; scene++) {
+        final String prompt = AiPromptPools.sceneIdea(hindi, style, scene);
+        expect(prompt.length, lessThanOrEqualTo(160), reason: '$style scene idea $scene: $prompt');
+      }
+
+      for (final String prompt in OnboardingV2Config.aiOnboardingPrompts(hindi, style)) {
+        expect(prompt.length, lessThanOrEqualTo(160), reason: '$style onboarding prompt: $prompt');
+      }
+    }
   });
 
   test('Hindi wallpaper plural has explicit zero, one, and many forms', () async {
@@ -147,4 +186,27 @@ void main() {
     expect(find.text('फिर कोशिश करें'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+class _PromptIndicesRandom implements Random {
+  _PromptIndicesRandom(this._indices);
+
+  final List<int> _indices;
+  int _offset = 0;
+
+  bool get isExhausted => _offset == _indices.length;
+
+  @override
+  int nextInt(int max) {
+    if (max != 5 || _offset >= _indices.length) {
+      throw StateError('Unexpected random prompt selection');
+    }
+    return _indices[_offset++];
+  }
+
+  @override
+  bool nextBool() => throw UnsupportedError('nextBool is not used by randomPrompt');
+
+  @override
+  double nextDouble() => throw UnsupportedError('nextDouble is not used by randomPrompt');
 }

@@ -698,11 +698,11 @@
   "@accountFollowersEmptyMessage": {
     "description": "Empty state message for the followers list."
   },
-  "accountFollowing": "फ़ॉलो किए जा रहे हैं",
+  "accountFollowing": "फ़ॉलोइंग",
   "@accountFollowing": {
     "description": "Following count label on a profile."
   },
-  "accountFollowingCountLabel": "{compactCount} फ़ॉलो किए जा रहे हैं",
+  "accountFollowingCountLabel": "{compactCount} फ़ॉलोइंग",
   "@accountFollowingCountLabel": {
     "description": "Accessible follower statistic for accounts the profile follows.",
     "placeholders": {
@@ -711,7 +711,7 @@
       }
     }
   },
-  "accountFollowingEmptyMessage": "यहाँ से फ़ॉलो किए गए खाते यहाँ दिखेंगे।",
+  "accountFollowingEmptyMessage": "आप जिन खातों को फ़ॉलो करते हैं, वे यहाँ दिखेंगे।",
   "@accountFollowingEmptyMessage": {
     "description": "Empty state message for the following list."
   },
@@ -2579,7 +2579,7 @@
   },
   "coreShareWallpaperGeneric": "यह बंडल किया हुआ वॉलपेपर Prism ऐप में उपलब्ध है।",
   "coreSignInFeatureBody": "आपका अकाउंट आपके कॉइन, पसंदीदा और अपलोड एक जगह रखता है।",
-  "coreSignInFeatureTitle": "{feature} इस्तेमाल करने के लिए साइन इन करें",
+  "coreSignInFeatureTitle": "{feature} का इस्तेमाल करने के लिए साइन इन करें",
   "@coreSignInFeatureTitle": {
     "placeholders": {
       "feature": {
@@ -8796,22 +8796,22 @@
   "economyAiPromptMoodCalm": "शांत",
   "economyAiPromptMoodDreamy": "स्वप्निल",
   "economyAiPromptMoodEpic": "भव्य",
-  "economyAiPromptMoodMoody": "गंभीर रंगत वाला",
+  "economyAiPromptMoodMoody": "गंभीर",
   "economyAiPromptMoodUplifting": "उमंगभरा",
   "economyAiPromptQualityBalancedContrast": "संतुलित कंट्रास्ट",
-  "economyAiPromptQualityCleanComposition": "बेहद साफ़-सुथरी संरचना",
+  "economyAiPromptQualityCleanComposition": "साफ़-सुथरी संरचना",
   "economyAiPromptQualityCrispTextures": "स्पष्ट बनावट",
   "economyAiPromptQualityHighDetail": "बारीक विवरण",
-  "economyAiPromptQualityNaturalColors": "चटख लेकिन प्राकृतिक रंग",
+  "economyAiPromptQualityNaturalColors": "चटख, प्राकृतिक रंग",
   "economyAiPromptSceneAbstract1": "गतिशील वक्रों वाली अमूर्त फ़्रैक्टल रचना",
   "economyAiPromptSceneAbstract2": "आधुनिक गहराई वाली परतदार तरल आकृतियाँ",
   "economyAiPromptSceneAbstract3": "मुलायम किनारों वाली उभरी हुई अमूर्त आकृतियाँ",
-  "economyAiPromptSceneAbstract4": "हवा में तैरती ज्यामितीय आकृतियों का अतियथार्थवादी अमूर्त संसार",
+  "economyAiPromptSceneAbstract4": "तैरती ज्यामितीय आकृतियों का अतियथार्थवादी दृश्य",
   "economyAiPromptSceneAbstract5": "सिनेमाई कंट्रास्ट वाली प्राकृतिक रूप की अमूर्त लहरें",
   "economyAiPromptSceneAnime1": "हवा में तैरते द्वीपों के ऊपर ऐनिमे शहर का क्षितिज",
   "economyAiPromptSceneAnime2": "नियॉन रोशनी वाली बरसाती सड़क पर अकेला समुराई",
   "economyAiPromptSceneAnime3": "चेरी के फूलों और होलोग्राम वाला भविष्यवादी मंदिर",
-  "economyAiPromptSceneAnime4": "लालटेनों की रोशनी से जगमगाता स्वप्निल ऐनिमे रात का बाज़ार",
+  "economyAiPromptSceneAnime4": "लालटेनों से जगमगाता स्वप्निल ऐनिमे रात का बाज़ार",
   "economyAiPromptSceneAnime5": "नीले धुंधलके में साइबर-ऐनिमे शहर का क्षितिज",
   "economyAiPromptSceneCyberpunk1": "गीली सड़क पर रोशनियों के प्रतिबिंबों वाला नियॉन महानगर",
   "economyAiPromptSceneCyberpunk2": "होलोग्राफ़िक बिलबोर्ड वाली भविष्यवादी गली",
@@ -8850,7 +8850,7 @@
   "economyAiPromptSceneWatercolor3": "लहराती पहाड़ियों के ऊपर मुलायम जलरंग के बादल",
   "economyAiPromptSceneWatercolor4": "पेस्टल रंगों वाला शांत नदी-तट",
   "economyAiPromptSceneWatercolor5": "सूर्यास्त के समय जलरंगों में चित्रित कलात्मक तटरेखा",
-  "economyAiPromptSuffix": "फ़ोन के लिए पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट",
+  "economyAiPromptSuffix": "मोबाइल पोर्ट्रेट वॉलपेपर, बिना टेक्स्ट",
   "onboardingAiPromptAbstract1": "गतिशील वक्रों और चटख रंगों वाली अमूर्त फ़्रैक्टल रचना",
   "onboardingAiPromptAbstract2": "आधुनिक गहराई और धातुई चमक वाली परतदार तरल आकृतियाँ",
   "onboardingAiPromptAbstract3": "मुलायम किनारों और सिनेमाई कंट्रास्ट वाली उभरी अमूर्त आकृतियाँ",
