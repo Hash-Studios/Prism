@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -16,6 +18,7 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
 
   final FirestoreClient _firestoreClient;
   final Map<(String, String), String> _viewsThisSession = <(String, String), String>{};
+  final Map<(String, String), Future<Result<String>>> _viewsInFlight = <(String, String), Future<Result<String>>>{};
 
   @override
   Future<Result<String>> recordWallpaperView(String wallId) async {
@@ -26,6 +29,18 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
     final (String, String) key = (app_state.prismUser.loggedIn ? app_state.prismUser.id : '', id);
     final String? known = _viewsThisSession[key];
     if (known != null) return Result.success(known);
+    final Future<Result<String>>? pending = _viewsInFlight[key];
+    if (pending != null) return pending;
+    final Future<Result<String>> request = _recordView(key, id);
+    _viewsInFlight[key] = request;
+    try {
+      return await request;
+    } finally {
+      unawaited(_viewsInFlight.remove(key));
+    }
+  }
+
+  Future<Result<String>> _recordView((String, String) key, String id) async {
     try {
       final cf.HttpsCallable callable = appFunctions.httpsCallable(
         'recordWallpaperView',

@@ -111,6 +111,15 @@ void main() {
       expect(calls.map((c) => (c.$2 as Map)['wallId']), ['ABC12', 'XYZ']);
     });
 
+    test('overlapping calls for one wall send one request and share the count', () async {
+      response = <String, Object?>{'views': 5};
+
+      final results = await Future.wait([repository.recordWallpaperView('abc'), repository.recordWallpaperView('abc')]);
+
+      expect(results.map((r) => r.data), ['5', '5']);
+      expect(calls, hasLength(1));
+    });
+
     test('a failed record is retried on the next open', () async {
       failure = StateError('offline');
       final failed = await repository.recordWallpaperView('abc');
