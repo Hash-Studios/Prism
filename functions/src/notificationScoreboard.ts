@@ -14,6 +14,7 @@ export const NOTIFICATION_KINDS = [
   "campaign",
   "rejection",
   "win_back",
+  "drop",
 ] as const;
 
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
@@ -63,6 +64,8 @@ export function scoreKindFor(input: {
     return "follower";
   case "wall_of_the_day":
     return "wotd";
+  case "drops":
+    return "drop";
   case "content_report":
     return "moderation";
   case "wall":

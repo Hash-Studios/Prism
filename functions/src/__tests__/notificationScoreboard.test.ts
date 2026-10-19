@@ -54,6 +54,8 @@ test("score kind prefers an explicit label, then the route", () => {
   assert.equal(scoreKindFor({data: {route: "streak_reminder"}}), "streak_reminder");
   assert.equal(scoreKindFor({data: {route: "follower"}}), "follower");
   assert.equal(scoreKindFor({data: {route: "wall_of_the_day"}}), "wotd");
+  assert.equal(scoreKindFor({data: {route: "drops"}}), "drop");
+  assert.equal(scoreKindFor({scoreKind: "drop", data: {route: "wall"}}), "drop");
   assert.equal(scoreKindFor({data: {route: "content_report"}}), "moderation");
   assert.equal(scoreKindFor({scoreKind: "campaign", data: {route: "announcement"}}), "campaign");
   assert.equal(scoreKindFor({data: {route: "announcement"}}), null);
