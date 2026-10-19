@@ -138,7 +138,10 @@ service cloud.firestore {
 
     // Public feeds; unreviewed docs are owner/admin only.
     match /walls/{docId} {
-      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      allow read: if (resource.data.review == true
+          && resource.data.get('originalProtected', false) == true
+          && resource.data.get('wallpaper_url', '') == '')
+          || isEmailOwner(resource.data.email) || isConfiguredAdmin();
       // Admins re-create a rejected wall when they undo the rejection.
       allow create: if isConfiguredAdmin()
           || (isSignedIn()

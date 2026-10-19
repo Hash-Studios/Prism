@@ -54,8 +54,33 @@ function asset(data: Data, prefix: "wallpaper" | "thumb"): Asset | null {
 }
 
 /** Also inspect conflicting records, including legacy SHA-keyed records, instead of trusting a copied UID. */
-async function uploadOwner(data: Data, tx?: admin.firestore.Transaction): Promise<string | null> {
-  const assets = [asset(data, "wallpaper"), asset(data, "thumb")];
+async function uploadOwner(data: Data, tx?: admin.firestore.Transaction, canonical?: Snapshot): Promise<string | null> {
+  let privateOriginal: Asset | undefined;
+  let boundOwner: string | undefined;
+  if (data.originalProtected === true) {
+    if (!validId(data.id) || !canonical?.createTime || data.wallpaper_url !== "") return null;
+    const ref = db.collection("ownedAssets").doc(data.id);
+    const manifest = (tx ? await tx.get(ref) : await ref.get()).data();
+    if (manifest?.status !== "ready" || !["github", "owned"].includes(manifest.provenance?.kind) ||
+      manifest.canonicalPath !== canonical.ref.path ||
+      manifest.incarnation !== canonical.createTime.toMillis() ||
+      manifest.incarnationNanos !== canonical.createTime.nanoseconds ||
+      manifest.original?.generation !== data.originalGeneration ||
+      manifest.original?.path !== data.wallpaper_path || manifest.original?.sha !== data.wallpaper_sha ||
+      manifest.thumb?.path !== data.thumb_path || manifest.thumb?.sha !== data.thumb_sha) return null;
+    if (!validUid(manifest.provenance.uid)) return null;
+    boundOwner = manifest.provenance.uid;
+    if (manifest.provenance.kind === "owned") {
+      const original = manifest.original;
+      if (manifest.originalUrl !== "" || original.repo !== text(process.env.GH_REPO_WALLS) ||
+        typeof original.path !== "string" || !original.path || original.path.startsWith("/") ||
+        original.path.includes("\\") || original.path.split("/").some((part: string) => !part || part === "." || part === "..") ||
+        typeof original.sha !== "string" || !/^[a-f0-9]{40}$/.test(original.sha)) return null;
+      privateOriginal = {repo: original.repo, path: original.path, sha: original.sha, url: ""};
+    }
+    data = {...data, wallpaper_url: manifest.originalUrl, wallpaper_thumb: manifest.thumbUrl};
+  }
+  const assets = [privateOriginal ?? asset(data, "wallpaper"), asset(data, "thumb")];
   if (assets.some((value) => value === null)) return null;
   let owner: string | null = null;
   for (const file of assets as Asset[]) {
@@ -72,9 +97,12 @@ async function uploadOwner(data: Data, tx?: admin.firestore.Transaction): Promis
     const content = intent?.response?.content;
     if (intent?.status !== "complete" || intent.uid !== uid || intent.repo !== file.repo || intent.path !== file.path ||
       intent.blobSha !== file.sha || content?.path !== file.path || content?.sha !== file.sha || content?.download_url !== file.url) return null;
+    if (file === privateOriginal && (exact?.data().sourceKind !== "owned" || intent.sourceKind !== "owned" ||
+      exact.data().retainedAsset?.generation !== data.originalGeneration ||
+      intent.retainedAsset?.generation !== data.originalGeneration)) return null;
     owner = uid;
   }
-  return owner;
+  return boundOwner !== undefined && boundOwner !== owner ? null : owner;
 }
 
 async function authUser(uid: string): Promise<admin.auth.UserRecord | null> {
@@ -114,7 +142,7 @@ async function recordCreator(source: Source): Promise<void> {
   if (canonical.size !== 1 || !approvedWall(canonical.docs[0].data())) return;
   const candidate = canonical.docs[0];
   if (!memberUid && (candidate.ref.path !== snapshot.ref.path || !sameIncarnation(candidate, snapshot))) return;
-  const owner = await uploadOwner(candidate.data());
+  const owner = await uploadOwner(candidate.data(), undefined, candidate);
   if (!owner || memberUid === owner) return;
   const [creatorAuth, memberAuth, binding] = await Promise.all([
     authUser(owner), memberUid ? authUser(memberUid) : Promise.resolve(null), receiptRef(logicalId).get(),
@@ -130,7 +158,7 @@ async function recordCreator(source: Source): Promise<void> {
     if (rows.size !== 1) return;
     const wall = rows.docs[0];
     if (!approvedWall(wall.data()) || wall.ref.path !== candidate.ref.path ||
-      !memberUid && !sameIncarnation(wall, snapshot) || await uploadOwner(wall.data(), tx) !== owner) return;
+      !memberUid && !sameIncarnation(wall, snapshot) || await uploadOwner(wall.data(), tx, wall) !== owner) return;
     const [receipt, creator, privateSnap, creatorBarrier] = await Promise.all([
       tx.get(receiptRef(logicalId)), tx.get(creatorRef), tx.get(privateRef), tx.get(barrierRef(owner)),
     ]);

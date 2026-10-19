@@ -670,7 +670,9 @@ function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
       return null;
     }
     const canonical = new URL(`https://${DOMAIN}/share`);
-    source.searchParams.forEach((value, key) => canonical.searchParams.append(key, value));
+    source.searchParams.forEach((value, key) => {
+      if (key !== 'url') canonical.searchParams.append(key, value);
+    });
     if (segments.length === 2 && !canonical.searchParams.has('id')) {
       const segmentId = decodeCanonicalSegment(segments[1]);
       if (segmentId.length === 0) {
@@ -908,7 +910,9 @@ function normalizePreview(
   const merged: PreviewSnapshot = {
     title: clipText(sanitizeText(input?.title ?? defaults.title), 90),
     description: clipText(sanitizeText(input?.description ?? defaults.description), 200),
-    image_source_url: sanitizeImageUrl(input?.image_source_url ?? defaults.image_source_url),
+    image_source_url: sanitizeImageUrl(
+      type === 'share' ? defaults.image_source_url : input?.image_source_url ?? defaults.image_source_url,
+    ),
     username: clipText(sanitizeText(input?.username ?? defaults.username), 60),
     provider: clipText(sanitizeText(input?.provider ?? defaults.provider), 60),
     wall_id: clipText(sanitizeText(input?.wall_id ?? defaults.wall_id), 60),
@@ -935,7 +939,7 @@ function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewD
     return {
       title: `${wallId} - Prism`,
       description: 'Check out this amazing wallpaper from Prism.',
-      image_source_url: canonical.searchParams.get('thumb') ?? canonical.searchParams.get('url') ?? '',
+      image_source_url: canonical.searchParams.get('thumb') ?? '',
       username: '',
       provider,
       wall_id: wallId,
@@ -1024,6 +1028,10 @@ function sanitizeImageUrl(value: string): string {
   }
   try {
     const parsed = new URL(value);
+    if (parsed.hostname === 'asia-south1-prism-wallpapers.cloudfunctions.net') {
+      return /^https:\/\/asia-south1-prism-wallpapers\.cloudfunctions\.net\/ownedThumbnail\/[A-Za-z0-9_-]{1,200}$/.test(value)
+        ? parsed.toString() : '';
+    }
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       return '';
     }

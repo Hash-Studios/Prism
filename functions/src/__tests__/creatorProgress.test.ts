@@ -120,6 +120,64 @@ test("approval credits a logical ID distinct from the document ID atomically, on
   assert.equal(store.get(privatePath)?.rev, 1);
 });
 
+function protectWall(store: Map<string, Doc>, data: Doc): void {
+  store.set("ownedAssets/logical", {
+    status: "ready", canonicalPath: "walls/wall_logical", incarnation: SOURCE,
+    incarnationNanos: timestamp(SOURCE).nanoseconds, provenance: {kind: "github", uid},
+    originalUrl: data.wallpaper_url, thumbUrl: data.wallpaper_thumb,
+    original: {generation: "123", path: data.wallpaper_path, sha: data.wallpaper_sha},
+    thumb: {path: data.thumb_path, sha: data.thumb_sha},
+  });
+  Object.assign(data, {wallpaper_url: "", wallpaper_thumb:
+    "https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/logical",
+  originalProtected: true, originalGeneration: "123"});
+}
+
+test("redacted owned walls preserve strict upload provenance for creator credit", async (t) => {
+  const {store, seedWall} = setup(t);
+  const data = seedWall();
+  protectWall(store, data);
+  await approve(data);
+  assert.equal(store.get("usersv2/creator")?.xp, 60);
+});
+
+test("private-only original receipts earn creator credit without inventing a raw original URL", async (t) => {
+  const {store, seedWall} = setup(t);
+  const data = seedWall();
+  protectWall(store, data);
+  const manifest = row(store, "ownedAssets/logical");
+  manifest.provenance = {kind: "owned", uid};
+  manifest.originalUrl = "";
+  (manifest.original as Doc).repo = "walls";
+  const upload = row(store, `githubUploads/${uploadId("logical.jpg", "a".repeat(40))}`);
+  upload.sourceKind = "owned";
+  upload.retainedAsset = {generation: "123"};
+  const intent = row(store, `githubUploadIntents/path_${createHash("sha256").update("walls\0logical.jpg").digest("hex")}`);
+  intent.sourceKind = "owned";
+  intent.retainedAsset = {generation: "123"};
+  intent.response = {content: {path: "logical.jpg", sha: "a".repeat(40), download_url: ""}};
+  await approve(data);
+  assert.equal(store.get("usersv2/creator")?.xp, 60);
+});
+
+for (const failure of ["legacy", "generation", "incarnation", "path", "deleted", "missing-receipts"]) {
+  test(`owned provenance rejects ${failure} without granting creator credit`, async (t) => {
+    const {store, seedWall} = setup(t);
+    const data = seedWall();
+    protectWall(store, data);
+    const manifest = row(store, "ownedAssets/logical");
+    if (failure === "legacy") manifest.provenance = {kind: "legacy"};
+    if (failure === "generation") data.originalGeneration = "456";
+    if (failure === "incarnation") manifest.incarnationNanos = 1;
+    if (failure === "path") data.wallpaper_path = "different.jpg";
+    if (failure === "deleted") manifest.status = "deleted";
+    if (failure === "missing-receipts") store.delete(`githubUploads/${uploadId("logical.jpg", "a".repeat(40))}`);
+    await approve(data);
+    assert.equal(store.get("usersv2/creator")?.xp, 10);
+    assert.equal(store.has(receiptPath()), false);
+  });
+}
+
 test("first favourite counts a member once across works and gives only milestone XP", async (t) => {
   const {store, seedWall} = setup(t);
   seedWall(); seedWall("second");

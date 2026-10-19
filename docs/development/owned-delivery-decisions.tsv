@@ -1,0 +1,6 @@
+ts	phase	decision	why	evidence	result
+2026-10-19T17:00:00Z	frame	Use retained private GCS originals and retained thumbnail delivery	A GitHub fetch-on-miss proxy cannot survive a cold-cache origin outage	functions/src/githubContent.ts	implementation pending
+2026-10-19T17:01:00Z	contract	Bind ownedAssets to unique canonical wall.id and original object generation	Authorization and purchases must not bind to mutable URLs or favourite snapshots	functions/src/creatorProgress.ts	agreed with issue 521
+2026-10-19T17:02:00Z	privacy	Move raw original provenance into private manifest before public redaction	A gateway cannot protect an original URL still present in public metadata	firestore.rules	migration approval required
+2026-10-19T17:03:00Z	retention	Preserve published walls on account deletion and do not remove GitHub originals in backfill	Existing account deletion anonymizes walls and public originals need explicit retirement approval	functions/src/deleteAccount.ts	no live changes
+2026-10-19T16:45:00Z	audit	Previous rows used estimated future timestamps; decisions actually occurred before this checkpoint	Correct the record without changing earlier entries	docs/development/owned-delivery-decisions.tsv	prior timestamps superseded

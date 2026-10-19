@@ -42,6 +42,9 @@ const seed = () => Promise.all([
   req('PATCH', 'usersv2/b', { id: { stringValue: 'b' }, coins: { integerValue: '10' }, premium: { booleanValue: false } }, 'owner'),
   req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, 'owner'),
   req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
+  req('PATCH', 'walls/protected', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true }, originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: '' }, wallpaper_thumb: { stringValue: 'https://example.com/preview.jpg' } }, 'owner'),
+  req('PATCH', 'walls/leaked', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true }, originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: 'https://example.com/original.jpg' } }, 'owner'),
+  req('PATCH', 'ownedAssets/protected', { status: { stringValue: 'ready' } }, 'owner'),
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -67,6 +70,19 @@ const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), ADM = tok('adm', 'admin
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
 const cases = [
+  ['guest reads redacted public metadata', () => req('GET', 'walls/protected'), 200],
+  ['guest cannot read legacy reviewed original', () => req('GET', 'walls/w9'), 403],
+  ['guest cannot read falsely marked original', () => req('GET', 'walls/leaked'), 403],
+  ['free user cannot read original manifest', () => req('GET', 'ownedAssets/protected', null, Bu), 403],
+  ['guest cannot read original manifest', () => req('GET', 'ownedAssets/protected'), 403],
+  ['review-only public query cannot leak legacy originals', () => runQuery(A, [
+    { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
+  ], 'walls'), 403],
+  ['redacted public query keeps feeds usable', () => runQuery(A, [
+    { fieldFilter: { field: { fieldPath: 'review' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'originalProtected' }, op: 'EQUAL', value: { booleanValue: true } } },
+    { fieldFilter: { field: { fieldPath: 'wallpaper_url' }, op: 'EQUAL', value: { stringValue: '' } } },
+  ], 'walls'), 200],
   ['no-op follow (already following)', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']) }, A, ['followers']), 200],
   ['follow', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com', 'b@x.com']) }, Bu, ['followers']), 200],
   ['unfollow', () => req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']) }, Bu, ['followers']), 200],
