@@ -1,6 +1,8 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_service.dart';
@@ -45,7 +47,25 @@ void main() {
     expect(vm?.thumbnailUrl, 'https://example.com/thumb.jpg');
   });
 
-  test('a missing thumbnail falls back to the full image', () async {
+  test('protected WOTD is recommended using canonical identity and thumbnail', () async {
+    stubWotd(
+      Result.success(
+        const WallOfTheDayEntity(
+          wallId: 'protected',
+          url: '',
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          photographer: 'Ana',
+        ),
+      ),
+    );
+    final vm = await service.recommendForOnboarding(const <String>[]);
+    expect(vm?.wallpaperId, 'protected');
+    expect(vm?.wallpaperSource, WallpaperSource.prism);
+    expect(vm?.fullUrl, isEmpty);
+    expect(vm?.thumbnailUrl, 'https://example.com/thumb.jpg');
+  });
+
+  test('a missing Prism thumbnail never falls back to the original', () async {
     stubWotd(
       Result.success(
         const WallOfTheDayEntity(wallId: 'w1', url: 'https://example.com/full.jpg', thumbnailUrl: '', photographer: ''),
@@ -54,7 +74,7 @@ void main() {
 
     final vm = await service.recommendForOnboarding(const <String>[]);
 
-    expect(vm?.thumbnailUrl, 'https://example.com/full.jpg');
+    expect(vm?.thumbnailUrl, isEmpty);
   });
 
   test('no pick, an empty url or a failed fetch all mean no recommendation', () async {
@@ -70,6 +90,7 @@ void main() {
 
   group('performAction', () {
     late List<WallpaperTarget> appliedTargets;
+    late List<String> appliedUrls;
     late List<SaveMediaRequest> savedRequests;
 
     FirstWallpaperService build({
@@ -78,11 +99,14 @@ void main() {
       OperationResult? saveResult,
       bool capabilitiesThrow = false,
       bool setThrows = false,
+      OriginalAccessService? originalAccess,
     }) => FirstWallpaperService(
       _MockCategoryFeedRepository(),
       wotdRepository,
+      originalAccess: originalAccess,
       getCapabilities: () async => capabilitiesThrow ? throw StateError('no channel') : capabilities,
       setWallpaper: (url, target) async {
+        appliedUrls.add(url);
         appliedTargets.add(target);
         if (setThrows) throw StateError('boom');
         return setResult ?? const WallpaperSetResult(WallpaperSetStatus.applied, WallpaperService.appliedMessage);
@@ -95,6 +119,7 @@ void main() {
 
     setUp(() {
       appliedTargets = <WallpaperTarget>[];
+      appliedUrls = <String>[];
       savedRequests = <SaveMediaRequest>[];
     });
 
@@ -107,10 +132,52 @@ void main() {
       supportsBothWallpapers: true,
     );
 
+    test('denied Prism access never invokes native set or save', () async {
+      for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+        debugDefaultTargetPlatformOverride = platform;
+        final result = await build(
+          capabilities: bothSupported,
+          originalAccess: OriginalAccessService(owner: () => 'user', call: (_) async => {'status': 'denied'}),
+        ).performAction('', wallpaperId: 'protected', wallpaperSource: WallpaperSource.prism);
+        expect(result.success, isFalse);
+        expect(appliedTargets, isEmpty);
+        expect(savedRequests, isEmpty);
+      }
+    });
+
+    test('granted canonical original, not the public URL, reaches the native operation', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final result = await build(
+        capabilities: bothSupported,
+        originalAccess: OriginalAccessService(
+          owner: () => 'user',
+          call: (request) async {
+            expect(request['assetId'], 'protected');
+            expect(request['action'], 'set');
+            return {
+              'status': 'granted',
+              'url': 'https://signed.example/original.jpg',
+              'expiresAt': DateTime.now().add(const Duration(minutes: 5)).millisecondsSinceEpoch,
+            };
+          },
+        ),
+      ).performAction('', wallpaperId: 'protected', wallpaperSource: WallpaperSource.prism);
+      expect(result.success, isTrue);
+      expect(appliedUrls, ['https://signed.example/original.jpg']);
+    });
+
+    test('unknown remote access never invokes native operations', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final result = await build(capabilities: bothSupported).performAction('https://example.com/full.jpg');
+      expect(result.success, isFalse);
+      expect(appliedTargets, isEmpty);
+      expect(savedRequests, isEmpty);
+    });
+
     test('Android sets the home and lock screens when the device supports both', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
-      final result = await build(capabilities: bothSupported).performAction('https://example.com/full.jpg');
+      final result = await build(capabilities: bothSupported).performAction('/tmp/full.jpg');
 
       expect(result.success, isTrue);
       expect(result.target, WallpaperTarget.both);
@@ -121,7 +188,7 @@ void main() {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       const homeOnly = aw.WallpaperCapabilities(supportsStaticWallpaper: true, supportsHomeWallpaper: true);
 
-      final result = await build(capabilities: homeOnly).performAction('https://example.com/full.jpg');
+      final result = await build(capabilities: homeOnly).performAction('/tmp/full.jpg');
 
       expect(result.success, isTrue);
       expect(result.target, WallpaperTarget.home);
@@ -132,7 +199,7 @@ void main() {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       const none = aw.WallpaperCapabilities(supportsStaticWallpaper: true);
 
-      final result = await build(capabilities: none).performAction('https://example.com/full.jpg');
+      final result = await build(capabilities: none).performAction('/tmp/full.jpg');
 
       expect(result.success, isFalse);
       expect(result.errorCode, 'unsupported');
@@ -142,10 +209,7 @@ void main() {
     test('Android still tries both when the capability check fails', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
-      final result = await build(
-        capabilities: bothSupported,
-        capabilitiesThrow: true,
-      ).performAction('https://example.com/full.jpg');
+      final result = await build(capabilities: bothSupported, capabilitiesThrow: true).performAction('/tmp/full.jpg');
 
       expect(result.success, isTrue);
       expect(appliedTargets, <WallpaperTarget>[WallpaperTarget.both]);
@@ -157,7 +221,7 @@ void main() {
       final result = await build(
         capabilities: bothSupported,
         setResult: const WallpaperSetResult(WallpaperSetStatus.failed, 'x', errorCode: 'image-too-large'),
-      ).performAction('https://example.com/full.jpg');
+      ).performAction('/tmp/full.jpg');
 
       expect(result.success, isFalse);
       expect(result.errorCode, 'image-too-large');
@@ -166,10 +230,7 @@ void main() {
     test('a thrown error becomes a failure instead of an exception', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
-      final result = await build(
-        capabilities: bothSupported,
-        setThrows: true,
-      ).performAction('https://example.com/full.jpg');
+      final result = await build(capabilities: bothSupported, setThrows: true).performAction('/tmp/full.jpg');
 
       expect(result.success, isFalse);
       expect(result.errorCode, 'exception');
@@ -178,11 +239,12 @@ void main() {
     test('iOS saves the wallpaper to Photos', () async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
 
-      final result = await build(capabilities: bothSupported).performAction('https://example.com/full.jpg');
+      final result = await build(capabilities: bothSupported).performAction('/tmp/full.jpg');
 
       expect(result.success, isTrue);
       expect(result.target, isNull);
-      expect(savedRequests.single.link, 'https://example.com/full.jpg');
+      expect(savedRequests.single.link, '/tmp/full.jpg');
+      expect(savedRequests.single.isLocalFile, isTrue);
       expect(savedRequests.single.kind, SaveMediaKind.wallpaper);
       expect(appliedTargets, isEmpty);
     });
@@ -193,7 +255,7 @@ void main() {
       final result = await build(
         capabilities: bothSupported,
         saveResult: OperationResult(success: false, errorCode: 'PHOTO_PERMISSION_DENIED'),
-      ).performAction('https://example.com/full.jpg');
+      ).performAction('/tmp/full.jpg');
 
       expect(result.success, isFalse);
       expect(result.errorCode, 'PHOTO_PERMISSION_DENIED');

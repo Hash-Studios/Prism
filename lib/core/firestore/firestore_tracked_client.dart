@@ -136,8 +136,9 @@ class FirestoreTrackedClient implements FirestoreClient {
       }
     }
     if (spec.collection == 'walls' &&
-        spec.filters.any((filter) =>
-            filter.field == 'review' && filter.op == FirestoreFilterOp.isEqualTo && filter.value == true)) {
+        spec.filters.any(
+          (filter) => filter.field == 'review' && filter.op == FirestoreFilterOp.isEqualTo && filter.value == true,
+        )) {
       query = query.where('originalProtected', isEqualTo: true).where('wallpaper_url', isEqualTo: '');
     }
     for (final FirestoreOrderBy order in spec.orderBy) {

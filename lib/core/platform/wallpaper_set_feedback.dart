@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -6,6 +7,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -186,8 +189,30 @@ Future<bool> undoWallpaperSet(
 }) async {
   bool restored = result.restore.isNotEmpty;
   for (final WallpaperRestore entry in result.restore) {
+    String source;
+    try {
+      final previous = entry.previous;
+      final uri = Uri.tryParse(previous.fullUrl);
+      final local = uri?.scheme == 'file' ? uri!.toFilePath() : previous.fullUrl;
+      if ((uri?.scheme == 'file' || previous.fullUrl.startsWith('/')) && await File(local).exists()) {
+        source = local;
+      } else {
+        if (uri?.scheme != 'https') throw StateError('Previous wallpaper file unavailable');
+        source = await OriginalAccessService.instance.resolve(
+          url: previous.fullUrl,
+          wallpaperId: previous.wallpaperId,
+          wallpaperSource: WallpaperSourceX.fromWire(previous.source),
+          action: OriginalAccessAction.set,
+          maxCoins: 0,
+        );
+      }
+    } catch (error) {
+      logger.w('Wallpaper undo: original access unavailable', error: error);
+      restored = false;
+      continue;
+    }
     final WallpaperSetResult back = await WallpaperService.setWallpaper(
-      entry.previous.fullUrl,
+      source,
       entry.target,
       thumbnailUrl: entry.previous.thumbnailUrl,
       recordHistory: false,

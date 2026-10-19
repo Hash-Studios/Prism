@@ -76,8 +76,8 @@ class _ShareButtonState extends State<ShareButton> {
     final String? id = widget.id;
     final WallpaperSource source = widget.source;
     final String? url = widget.url;
-    final String thumbUrl = widget.thumbUrl;
-    final String imageUrl = url?.trim().isNotEmpty == true ? url!.trim() : thumbUrl.trim();
+    final String thumbUrl = safeWallpaperShareThumbnail(id ?? '', source, widget.thumbUrl);
+    final String imageUrl = thumbUrl.trim();
     final String? contextLine = widget.contextLine;
     final createLink = widget.createLink;
     final shareCard = widget.shareCard;

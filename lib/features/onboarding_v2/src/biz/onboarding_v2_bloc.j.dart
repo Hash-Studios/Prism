@@ -53,7 +53,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     this._settingsLocal, {
     @ignoreParam FirebaseRemoteConfig? remoteConfig,
     @ignoreParam AiGenerationRepositoryImpl? aiRepository,
+    @ignoreParam Future<String> Function(String)? acquireGeneratedImage,
   }) : _aiRepositoryOverride = aiRepository,
+       _acquireGeneratedImage = acquireGeneratedImage ?? _acquireGeneratedFile,
        _remoteConfigOverride = remoteConfig,
        super(OnboardingV2State.initial()) {
     on<_Started>(_onStarted);
@@ -90,6 +92,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   final FirebaseRemoteConfig? _remoteConfigOverride;
   FirebaseRemoteConfig? get _remoteConfig => _remoteConfigOverride ?? FirebaseInit.remoteConfigIfInitialized;
   final AiGenerationRepositoryImpl? _aiRepositoryOverride;
+  final Future<String> Function(String) _acquireGeneratedImage;
+  static Future<String> _acquireGeneratedFile(String url) async =>
+      (await WallpaperService.resolveToLocalFile(url)).path;
 
   // Built on first use: the default impl touches FirebaseAuth.instance on construction.
   late final AiGenerationRepositoryImpl _aiRepository = _aiRepositoryOverride ?? getIt<AiGenerationRepositoryImpl>();
@@ -495,7 +500,11 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     );
 
     final actionStopwatch = Stopwatch()..start();
-    final result = await _firstWallpaperService.performAction(wallpaperVm.fullUrl);
+    final result = await _firstWallpaperService.performAction(
+      wallpaperVm.fullUrl,
+      wallpaperId: wallpaperVm.wallpaperId,
+      wallpaperSource: wallpaperVm.wallpaperSource,
+    );
     final elapsedMs = actionStopwatch.elapsedMilliseconds;
 
     if (!isClosed) {
@@ -665,10 +674,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         chargeMode: AiChargeMode.freeTrial,
         coinsSpent: 0,
       );
+      final generatedPath = await _acquireGeneratedImage(record.imageUrl);
       if (!isClosed) {
-        add(
-          OnboardingV2Event.aiGenerationCompleted(imageUrl: record.imageUrl, thumbnailUrl: record.watermarkedImageUrl),
-        );
+        add(OnboardingV2Event.aiGenerationCompleted(imageUrl: generatedPath, thumbnailUrl: record.watermarkedImageUrl));
       }
     } catch (error, stackTrace) {
       logger.e('AI onboarding generation failed.', tag: 'OnboardingV2Bloc', error: error, stackTrace: stackTrace);
@@ -708,7 +716,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     if (state.step == OnboardingV2Step.firstWallpaper) return;
     if (state.aiData.status == AiGenerateStatus.success) _trackStepCompleted(_stepAiGenerate);
     final wallpaper = state.wallpaperData.wallpaper;
-    if (wallpaper != null && wallpaper.fullUrl.trim().isNotEmpty) {
+    if (wallpaper != null && wallpaper.thumbnailUrl.trim().isNotEmpty) {
       unawaited(analytics.track(const OnboardingV2FirstWallpaperShownEvent()));
     }
     emit(state.copyWith(step: OnboardingV2Step.firstWallpaper, navRequest: null));

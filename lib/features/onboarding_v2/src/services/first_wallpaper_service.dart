@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
@@ -27,15 +29,18 @@ class FirstWallpaperService {
     @ignoreParam Future<aw.WallpaperCapabilities> Function()? getCapabilities,
     @ignoreParam Future<WallpaperSetResult> Function(String url, WallpaperTarget target)? setWallpaper,
     @ignoreParam Future<OperationResult> Function(SaveMediaRequest request)? saveMedia,
+    @ignoreParam OriginalAccessService? originalAccess,
   }) : _getCapabilities = getCapabilities ?? aw.AsyncWallpaper.getCapabilities,
-       _setWallpaper = setWallpaper ?? WallpaperService.setWallpaper,
-       _saveMedia = saveMedia ?? ((request) => PrismMediaHostApi().saveMedia(request));
+       _setWallpaper = setWallpaper,
+       _saveMedia = saveMedia ?? ((request) => PrismMediaHostApi().saveMedia(request)),
+       _originalAccess = originalAccess ?? OriginalAccessService.instance;
 
   final CategoryFeedRepository _categoryFeedRepository;
   final WallOfTheDayRepository _wallOfTheDayRepository;
   final Future<aw.WallpaperCapabilities> Function() _getCapabilities;
-  final Future<WallpaperSetResult> Function(String url, WallpaperTarget target) _setWallpaper;
+  final Future<WallpaperSetResult> Function(String url, WallpaperTarget target)? _setWallpaper;
   final Future<OperationResult> Function(SaveMediaRequest request) _saveMedia;
+  final OriginalAccessService _originalAccess;
   final Random _random = Random();
 
   Future<OnboardingWallpaperVm?> recommendForOnboarding(List<String> interests) async {
@@ -77,8 +82,16 @@ class FirstWallpaperService {
         wallhaven: (_, wall) => (wall.fullUrl, wall.thumbnailUrl),
         pexels: (_, wall) => (wall.fullUrl, wall.thumbnailUrl),
       );
-      if (fullUrl.isEmpty) continue;
-      valid.add(OnboardingWallpaperVm(fullUrl: fullUrl, thumbnailUrl: thumbnailUrl, sourceCategory: sourceCategory));
+      if (fullUrl.isEmpty && (item.source != WallpaperSource.prism || thumbnailUrl.isEmpty)) continue;
+      valid.add(
+        OnboardingWallpaperVm(
+          fullUrl: fullUrl,
+          thumbnailUrl: thumbnailUrl,
+          sourceCategory: sourceCategory,
+          wallpaperId: item.id,
+          wallpaperSource: item.source,
+        ),
+      );
     }
     if (valid.isEmpty) return null;
     return valid[_random.nextInt(valid.length)];
@@ -87,27 +100,66 @@ class FirstWallpaperService {
   Future<OnboardingWallpaperVm?> _fetchWotdVm() async {
     final result = await _wallOfTheDayRepository.fetchToday();
     final wotd = result.data;
-    if (!result.isSuccess || wotd == null || wotd.url.isEmpty) return null;
+    if (!result.isSuccess || wotd == null || (wotd.url.isEmpty && wotd.thumbnailUrl.isEmpty)) return null;
     return OnboardingWallpaperVm(
       fullUrl: wotd.url,
-      thumbnailUrl: wotd.thumbnailUrl.isNotEmpty ? wotd.thumbnailUrl : wotd.url,
+      thumbnailUrl: wotd.source == WallpaperSource.prism
+          ? wotd.thumbnailUrl
+          : (wotd.thumbnailUrl.isNotEmpty ? wotd.thumbnailUrl : wotd.url),
       sourceCategory: '',
+      wallpaperId: wotd.wallId,
+      wallpaperSource: wotd.source,
     );
   }
 
-  Future<FirstWallpaperResult> performAction(String fullUrl) async {
+  Future<FirstWallpaperResult> performAction(
+    String fullUrl, {
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
+  }) async {
+    final owner = _originalAccess.ownerId;
     try {
+      final androidTarget = defaultTargetPlatform == TargetPlatform.android ? await _androidTarget() : null;
+      if (defaultTargetPlatform == TargetPlatform.android && androidTarget == null) {
+        return const FirstWallpaperResult(success: false, errorCode: 'unsupported');
+      }
+      final authorizedUrl = await _originalAccess.resolve(
+        url: fullUrl,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+        action: defaultTargetPlatform == TargetPlatform.android
+            ? OriginalAccessAction.set
+            : OriginalAccessAction.download,
+        maxCoins: 0,
+      );
+      if (_originalAccess.ownerId != owner) {
+        return const FirstWallpaperResult(success: false, errorCode: 'account_changed');
+      }
       if (defaultTargetPlatform == TargetPlatform.android) {
-        final target = await _androidTarget();
-        if (target == null) {
-          return const FirstWallpaperResult(success: false, errorCode: 'unsupported');
+        final target = androidTarget!;
+        final result =
+            await (_setWallpaper?.call(authorizedUrl, target) ??
+                WallpaperService.setWallpaper(
+                  authorizedUrl,
+                  target,
+                  wallpaperId: wallpaperId,
+                  wallpaperSource: wallpaperSource,
+                ));
+        if (result.isSuccess && wallpaperId != null) {
+          await _originalAccess.complete(owner: owner, wallpaperId: wallpaperId, action: OriginalAccessAction.set);
         }
-        final result = await _setWallpaper(fullUrl, target);
         return FirstWallpaperResult(success: result.isSuccess, errorCode: result.errorCode, target: target);
       } else {
         final result = await _saveMedia(
-          SaveMediaRequest(link: fullUrl, isLocalFile: false, kind: SaveMediaKind.wallpaper),
+          SaveMediaRequest(
+            link: authorizedUrl,
+            isLocalFile: authorizedUrl.startsWith('/') || authorizedUrl.startsWith('file:'),
+            kind: SaveMediaKind.wallpaper,
+          ),
         );
+        if (result.success && wallpaperId != null) {
+          await _originalAccess.complete(owner: owner, wallpaperId: wallpaperId, action: OriginalAccessAction.download);
+        }
         return FirstWallpaperResult(success: result.success, errorCode: result.errorCode);
       }
     } catch (_) {

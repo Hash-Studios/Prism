@@ -1,5 +1,6 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
@@ -30,7 +31,14 @@ class _WallpaperHistoryView extends StatelessWidget {
 
   Future<void> _setAgain(BuildContext context, AppliedWallpaper item) async {
     PrismHaptics.tap();
-    await SetWallpaperFlow.run(context, url: item.fullUrl, thumbnailUrl: item.thumbnailUrl, forceSheet: true);
+    await SetWallpaperFlow.run(
+      context,
+      url: item.fullUrl,
+      thumbnailUrl: item.thumbnailUrl,
+      forceSheet: true,
+      wallpaperId: item.wallpaperId,
+      wallpaperSource: WallpaperSourceX.fromWire(item.source),
+    );
     if (context.mounted) context.read<WallpaperHistoryBloc>().add(const WallpaperHistoryEvent.started());
   }
 

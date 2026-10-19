@@ -57,6 +57,21 @@ void main() {
   setUp(() async {
     catalogDirectory = await Directory.systemTemp.createTemp('wallpaper-detail-catalog-');
     prism = _MockPrismRepository();
+    when(() => prism.fetchCanonicalByDocumentId(any())).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+    when(() => prism.fetchCanonicalById(any())).thenAnswer((invocation) async {
+      final id = invocation.positionalArguments.first as String;
+      if (id == 'abc') return Result.success(_wallpaper);
+      return Result.success(
+        PrismWallpaper(
+          core: WallpaperCore(
+            id: id,
+            source: WallpaperSource.prism,
+            fullUrl: _wallpaper.core.fullUrl,
+            thumbnailUrl: _wallpaper.core.thumbnailUrl,
+          ),
+        ),
+      );
+    });
     palette = _MockPaletteRepository();
     wallhaven = _MockWallhavenRepository();
     views = _MockRecordViews();
@@ -82,8 +97,50 @@ void main() {
     await bloc.stream.firstWhere(completed).timeout(const Duration(seconds: 10));
   }
 
+  test('a stale Prism entity cannot open detail when the canonical wall is unavailable', () async {
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+    bloc.add(
+      const LoadFromEntity(
+        entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+      ),
+    );
+    await waitForLookup();
+    expect(
+      bloc.state,
+      const WallpaperDetailError(
+        failure: WallpaperDetailLoadFailure.notFound,
+        thumbnailUrl: 'https://example.com/abc-thumb.jpg',
+      ),
+    );
+    verifyNever(() => palette.generatePalette(any()));
+    verifyNever(() => prism.fetchCanonicalByDocumentId(any()));
+  });
+
+  test('an explicit document-ID deep link resolves to a fresh canonical wallpaper', () async {
+    when(() => prism.fetchCanonicalById('document-id')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+    when(() => prism.fetchCanonicalByDocumentId('document-id')).thenAnswer((_) async => Result.success(_wallpaper));
+    bloc.add(const LoadFromId(wallId: 'document-id', source: WallpaperSource.prism));
+    await waitForLookup();
+    expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
+    verify(() => prism.fetchCanonicalByDocumentId('document-id')).called(1);
+  });
+
+  test('an arbitrary cached file does not bypass Prism canonical freshness', () async {
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+    bloc.add(
+      const LoadFromEntity(
+        entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+        localFilePath: '/cache/unproven.jpg',
+      ),
+    );
+    await waitForLookup();
+    expect(bloc.state, isA<WallpaperDetailError>());
+    verifyNever(() => palette.generatePalette(any()));
+    verifyNever(() => prism.fetchCanonicalByDocumentId(any()));
+  });
+
   test('a failed fetch never shows the raw failure text and keeps the thumbnail for the error screen', () async {
-    when(() => prism.fetchById('abc')).thenAnswer(
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer(
       (_) async =>
           Result.error(const ServerFailure('[cloud_firestore/unavailable] The service is currently unavailable')),
     );
@@ -98,7 +155,9 @@ void main() {
   });
 
   test('a network failure also reads as a connection problem', () async {
-    when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.error(const NetworkFailure('No connection')));
+    when(
+      () => prism.fetchCanonicalById('abc'),
+    ).thenAnswer((_) async => Result.error(const NetworkFailure('No connection')));
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await waitForLookup();
@@ -107,7 +166,7 @@ void main() {
   });
 
   test('a missing wallpaper keeps the not found message', () async {
-    when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await waitForLookup();
@@ -115,24 +174,24 @@ void main() {
     expect(bloc.state, const WallpaperDetailError(failure: WallpaperDetailLoadFailure.notFound));
   });
 
-  test('an ID lookup uses the local catalog after a transport failure', () async {
+  test('a Prism ID lookup never uses stale local catalog after a transport failure', () async {
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: catalogDirectory),
     );
     await catalog.remember(const <FeedItemEntity>[PrismFeedItem(id: 'abc', wallpaper: _wallpaper)]);
-    when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
     bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount, catalog);
     addTearDown(bloc.close);
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await waitForLookup();
 
-    expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
-    verify(() => prism.fetchById('abc')).called(1);
+    expect(bloc.state, const WallpaperDetailError(failure: WallpaperDetailLoadFailure.unavailable));
+    verify(() => prism.fetchCanonicalById('abc')).called(1);
   });
 
   test('a slow ID lookup succeeds when no saved fallback exists', () async {
-    when(() => prism.fetchById('abc')).thenAnswer((_) async {
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async {
       await Future<void>.delayed(const Duration(seconds: 3));
       return Result.success<PrismWallpaper?>(_wallpaper);
     });
@@ -141,17 +200,17 @@ void main() {
     await waitForLookup();
 
     expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
-    verify(() => prism.fetchById('abc')).called(1);
+    verify(() => prism.fetchCanonicalById('abc')).called(1);
   });
 
-  test('saved detail content returns after the short decision budget', () async {
+  test('saved Prism detail waits for the canonical server response', () async {
     final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
       store: DurableJsonStore('catalog', directory: catalogDirectory),
     );
     await catalog.remember(const <FeedItemEntity>[PrismFeedItem(id: 'abc', wallpaper: _wallpaper)]);
     bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount, catalog);
     addTearDown(bloc.close);
-    when(() => prism.fetchById('abc')).thenAnswer((_) async {
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async {
       await Future<void>.delayed(const Duration(seconds: 3));
       return Result.success<PrismWallpaper?>(_wallpaper);
     });
@@ -161,8 +220,8 @@ void main() {
     await waitForLookup();
 
     expect((bloc.state as WallpaperDetailLoaded).entity.id, 'abc');
-    expect(stopwatch.elapsed, lessThan(const Duration(seconds: 3)));
-    verify(() => prism.fetchById('abc')).called(1);
+    expect(stopwatch.elapsed, greaterThanOrEqualTo(const Duration(seconds: 3)));
+    verify(() => prism.fetchCanonicalById('abc')).called(1);
   });
 
   test('a successful not-found response does not show stale catalog content', () async {
@@ -172,13 +231,13 @@ void main() {
     await catalog.remember(const <FeedItemEntity>[PrismFeedItem(id: 'abc', wallpaper: _wallpaper)]);
     bloc = WallpaperDetailBloc(prism, wallhaven, _MockPexelsRepository(), views, palette, setCount, catalog);
     addTearDown(bloc.close);
-    when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.success<PrismWallpaper?>(null));
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await waitForLookup();
 
     expect(bloc.state, const WallpaperDetailError(failure: WallpaperDetailLoadFailure.notFound));
-    verify(() => prism.fetchById('abc')).called(1);
+    verify(() => prism.fetchCanonicalById('abc')).called(1);
   });
 
   test('the set count of a Prism wall lands in the loaded state', () async {
@@ -331,6 +390,7 @@ void main() {
       ),
     );
 
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.success(entity.wallpaper));
     bloc.add(const LoadFromEntity(entity: entity));
     await settle();
 
@@ -384,7 +444,7 @@ void main() {
   });
 
   test('LoadFromId uses the local image for palette generation', () async {
-    when(() => prism.fetchById('abc')).thenAnswer((_) async => Result.success(_wallpaper));
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) async => Result.success(_wallpaper));
     when(() => palette.generatePalette('/tmp/download.jpg')).thenAnswer(
       (_) async => Result.success(
         const PaletteEntity(
@@ -406,7 +466,7 @@ void main() {
 
   test('a fetch that completes after the bloc closes does not enqueue views', () async {
     final fetch = Completer<Result<PrismWallpaper?>>();
-    when(() => prism.fetchById('abc')).thenAnswer((_) => fetch.future);
+    when(() => prism.fetchCanonicalById('abc')).thenAnswer((_) => fetch.future);
 
     bloc.add(const LoadFromId(wallId: 'abc', source: WallpaperSource.prism));
     await settle();

@@ -21,6 +21,7 @@ import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -32,6 +33,7 @@ import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
+import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
@@ -1092,16 +1094,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     final Color? tint = state.tint;
     final double deviceLongSidePx = _screenPixels(context).longestSide;
     Future<String> Function()? prepareSource;
+    Future<String> Function(String)? prepareAuthorized;
     DownloadVariant? variant;
     if (tint != null) {
-      prepareSource = () => renderTintedWallpaper(
-        source: source,
+      prepareAuthorized = (authorized) => renderTintedWallpaper(
+        source: authorized,
         tint: tint,
         deviceLongSidePx: deviceLongSidePx,
         wallpaperId: entity.id,
         wallpaperSource: entity.source,
       );
-      variant = DownloadVariant(key: _tintKey(tint), prepare: prepareSource);
+      prepareSource = () => prepareAuthorized!(source);
+      variant = DownloadVariant(key: _tintKey(tint), prepare: prepareSource, prepareAuthorized: prepareAuthorized);
     } else if (localFile != null) {
       final String? savedKey = _savedTintKeyOf(localFile.path);
       if (savedKey != null) variant = DownloadVariant(key: savedKey, prepare: () async => localFile.path);
@@ -1110,11 +1114,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     Widget downloadButton({String? label}) {
       final Widget button = DownloadButton(
         label: label,
-        link: url,
+        link: source,
         variant: variant,
         isPremiumContent: isPremiumFeedItem(entity, app_state.premiumCollections),
         contentId: entity.id,
-        wallpaperSource: entity.source,
+        wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
         depthTier: depthTierOf(entity),
         sourceContext: _getSourceContext(state),
         requestId: widget.requestId,
@@ -1137,8 +1141,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 label: context.l10n.wallpaperSet,
                 url: source,
                 wallpaperId: entity.id,
-                wallpaperSource: entity.source,
+                wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
                 prepareSource: prepareSource,
+                prepareAuthorized: prepareAuthorized,
                 thumbnailUrl: entity.thumbnailUrl,
                 promptNotificationPermissionOnSuccess: true,
                 entryPoint: 'wallpaper_detail',
@@ -1185,10 +1190,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         WallpaperBarAction(
           label: context.l10n.wallpaperEdit,
           child: EditButton(
-            url: entity.fullUrl,
+            url: source,
             wallpaperId: entity.id,
-            wallpaperSource: entity.source,
+            wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
             prepareSource: prepareSource ?? localSource,
+            prepareAuthorized: prepareAuthorized,
           ),
         ),
       ],
@@ -1198,16 +1204,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   /// Opens Make it live. The first palette colour seeds its gradients, so they follow this wallpaper.
   Future<void> _openMakeItLive(BuildContext context, WallpaperDetailLoaded state) async {
     final entity = state.entity;
-    String imageUrl = entity.fullUrl;
+    String? imageUrl;
     try {
-      imageUrl = (await WallpaperService.resolveToLocalFile(
-        entity.fullUrl,
-        allowNetwork: false,
+      imageUrl = await resolveOriginalWithConsent(
+        context,
+        url: widget.localFile?.path ?? entity.fullUrl,
         wallpaperId: entity.id,
-        wallpaperSource: entity.source,
-      )).path;
-    } catch (_) {}
-    if (context.mounted) {
+        wallpaperSource: widget.localFile == null ? entity.source : WallpaperSource.downloaded,
+        action: OriginalAccessAction.live,
+        label: context.l10n.wallpaperMakeItLive,
+      );
+    } catch (_) {
+      if (context.mounted) toasts.error(context.l10n.coreCouldNotLoadWallpaperForEditing);
+      return;
+    }
+    if (context.mounted && imageUrl != null) {
       await context.router.push(LiveWallpaperRoute(imageUrl: imageUrl, accentSeed: state.colors?.firstOrNull));
     }
   }
@@ -1280,7 +1291,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         ),
       if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
       if (depthTier != null && showsDepthEffect(depthTier)) padded(DepthEffectRow(tier: depthTier)),
-      if (!hideSetWallpaperUi && entity.fullUrl.trim().isNotEmpty)
+      if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
         padded(
           Align(
             alignment: Alignment.centerLeft,
@@ -1414,7 +1425,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                 _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
                 pushClockPreview(
                   context,
-                  link: widget.localFile?.path ?? entity.fullUrl,
+                  link:
+                      widget.localFile?.path ??
+                      (entity.source == WallpaperSource.prism ? entity.thumbnailUrl : entity.fullUrl),
                   file: widget.localFile != null,
                   wallpaperId: entity.id,
                   wallpaperSource: entity.source,
@@ -1427,7 +1440,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
             ),
           ),
         ),
-        if (!hideSetWallpaperUi && entity.fullUrl.trim().isNotEmpty)
+        if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
           ValueListenableBuilder<double>(
             valueListenable: _panelPosition,
             child: MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)),
@@ -1456,7 +1469,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     required bool paletteLoading,
   }) {
     final String thumb = entity.thumbnailUrl.trim();
-    final String full = entity.fullUrl.trim();
+    final String full = entity.source == WallpaperSource.prism && !BundledWallpapers.isStarter(entity)
+        ? thumb
+        : entity.fullUrl.trim();
     final int cacheWidth = previewCacheWidth(MediaQuery.sizeOf(context).width, MediaQuery.devicePixelRatioOf(context));
     final bool fullIsNetwork = isValidNetworkUrl(full);
     final bool thumbIsNetwork = isValidNetworkUrl(thumb);
@@ -1580,6 +1595,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Future<File?> _offlinePreviewFor(FeedItemEntity entity) {
+    if (entity.source == WallpaperSource.prism && !BundledWallpapers.isStarter(entity)) {
+      return Future<File?>.value();
+    }
     final String url = entity.fullUrl.trim();
     final String key = '${entity.source.wireValue}\u0000${entity.id}\u0000$url';
     if (_offlinePreviewKey != key) {

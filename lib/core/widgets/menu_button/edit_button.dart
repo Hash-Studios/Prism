@@ -4,8 +4,11 @@ import 'dart:io';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -22,6 +25,7 @@ class EditButton extends StatefulWidget {
   /// Makes the image to edit, such as a colour variation, and returns its local path. The editor opens on that path
   /// and [url] is not fetched. If it throws, the user is told and the editor does not open.
   final Future<String> Function()? prepareSource;
+  final Future<String> Function(String source)? prepareAuthorized;
 
   /// Shows a caption under the round button.
   final bool labelled;
@@ -30,6 +34,7 @@ class EditButton extends StatefulWidget {
     this.wallpaperId,
     this.wallpaperSource,
     this.prepareSource,
+    this.prepareAuthorized,
     this.labelled = false,
     super.key,
   });
@@ -63,6 +68,7 @@ class _EditButtonState extends State<EditButton> {
   }
 
   Future<void> onEdit(String? url) async {
+    final String owner = app_state.prismUser.id;
     final AppLocalizations l10n = context.l10n;
     if (url == null) {
       toasts.error(l10n.coreNoWallpaperUrl);
@@ -73,14 +79,37 @@ class _EditButtonState extends State<EditButton> {
       isLoading = true;
     });
     toasts.success(l10n.coreLoadingWallpaper, haptic: false);
-    final Future<String> Function()? prepare = widget.prepareSource;
+    try {
+      url = await resolveOriginalWithConsent(
+        context,
+        url: url,
+        wallpaperId: widget.wallpaperId,
+        wallpaperSource: widget.wallpaperSource,
+        action: OriginalAccessAction.edit,
+        label: l10n.coreEdit,
+      );
+      if (url == null) {
+        if (mounted) setState(() => isLoading = false);
+        return;
+      }
+    } catch (_) {
+      if (mounted) setState(() => isLoading = false);
+      toasts.error(l10n.coreCouldNotLoadWallpaperForEditing);
+      return;
+    }
+    final String authorizedUrl = url;
+    final Future<String> Function()? prepare = widget.prepareAuthorized == null
+        ? widget.prepareSource
+        : () => widget.prepareAuthorized!(authorizedUrl);
     if (prepare != null) {
       final String? prepared = await runPrepareSource(prepare, l10n: l10n);
       if (!mounted) return;
       setState(() {
         isLoading = false;
       });
-      if (prepared != null) await context.router.push(WallpaperFilterRoute(filePath: prepared));
+      if (prepared != null && app_state.prismUser.id == owner) {
+        await context.router.push(WallpaperFilterRoute(filePath: prepared));
+      }
       return;
     }
     Directory? sessionDirectory;
@@ -110,7 +139,7 @@ class _EditButtonState extends State<EditButton> {
       setState(() {
         isLoading = false;
       });
-      await context.router.push(WallpaperFilterRoute(filePath: file.path));
+      if (app_state.prismUser.id == owner) await context.router.push(WallpaperFilterRoute(filePath: file.path));
     } on TimeoutException {
       if (mounted) {
         toasts.error(l10n.coreWallpaperLoadTimedOut);

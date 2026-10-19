@@ -156,7 +156,9 @@ void main() {
   testWidgets('a success with a previous wall shows an 8 second snackbar with Undo', (tester) async {
     await report(
       tester,
-      _success(restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', '/prev.png', 'home'))]),
+      _success(
+        restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', previousFilePath, 'home'))],
+      ),
     );
 
     expect(find.text('Wallpaper set'), findsOneWidget);
@@ -168,12 +170,12 @@ void main() {
   testWidgets('Undo sets the previous wall without a new history row and removes the new row', (tester) async {
     final _Client client = _Client();
     aw.AsyncWallpaper.debugSetClient(client);
-    await store.record(_row('1', '/prev.png', 'home'));
+    await store.record(_row('1', previousFilePath, 'home'));
     await store.record(_row('2', '/new.png', 'home'));
     await report(
       tester,
       _success(
-        restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', '/prev.png', 'home'))],
+        restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', previousFilePath, 'home'))],
         ids: <String>['2'],
       ),
     );
@@ -198,7 +200,7 @@ void main() {
     await report(
       tester,
       _success(
-        restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', '/prev.png', 'home'))],
+        restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', previousFilePath, 'home'))],
         ids: <String>['2'],
       ),
     );
@@ -212,11 +214,33 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
+  testWidgets('Undo rejects a legacy Prism original without canonical identity', (tester) async {
+    final client = _Client();
+    aw.AsyncWallpaper.debugSetClient(client);
+    await store.record(_row('2', '/new.png', 'home'));
+    final result = await undoWallpaperSet(
+      _success(
+        restore: <WallpaperRestore>[
+          WallpaperRestore(WallpaperTarget.home, _row('1', 'https://storage.googleapis.com/private.jpg', 'home')),
+        ],
+        ids: <String>['2'],
+      ),
+      target: WallpaperTarget.home,
+      l10n: _l10n,
+    );
+    expect(result, isFalse);
+    expect(client.requests, isEmpty);
+    expect(store.items().map((item) => item.id), ['2']);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
   testWidgets('Undo is hidden while auto-rotate is on', (tester) async {
     await settings.set(PersistenceKeys.autoRotateEnabled, true);
     await report(
       tester,
-      _success(restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', '/prev.png', 'home'))]),
+      _success(
+        restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', previousFilePath, 'home'))],
+      ),
     );
 
     expect(find.byType(SnackBar), findsNothing);
