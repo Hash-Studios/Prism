@@ -13,6 +13,8 @@ class _MockFirestore extends Mock implements FirebaseFirestore {}
 
 class _MockCollection extends Mock implements CollectionReference<Map<String, dynamic>> {}
 
+class _MockLimitedQuery extends Mock implements Query<Map<String, dynamic>> {}
+
 class _MockQuerySnapshot extends Mock implements QuerySnapshot<Map<String, dynamic>> {}
 
 class _MockQueryDoc extends Mock implements QueryDocumentSnapshot<Map<String, dynamic>> {}
@@ -161,5 +163,22 @@ void main() {
 
     expect(await client.query<String>(spec, (data, id) => id), <String>['a']);
     await Future<void>.delayed(Duration.zero);
+  });
+
+  test('diskFirst goes to the network when the cache holds fewer docs than the limit', () async {
+    const limited = FirestoreQuerySpec(
+      collection: 'walls',
+      sourceTag: 'test.disk_first_limit',
+      cachePolicy: FirestoreCachePolicy.diskFirst,
+      limit: 3,
+    );
+    final limitedQuery = _MockLimitedQuery();
+    when(() => collection.limit(3)).thenReturn(limitedQuery);
+    when(
+      () => limitedQuery.get(any(that: predicate<GetOptions?>(_isCache))),
+    ).thenAnswer((_) async => _snapshot(['a', 'b']));
+    when(() => limitedQuery.get()).thenAnswer((_) async => _snapshot(['x', 'y', 'z']));
+
+    expect(await client.query<String>(limited, (data, id) => id), <String>['x', 'y', 'z']);
   });
 }

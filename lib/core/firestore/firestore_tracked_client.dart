@@ -384,7 +384,8 @@ class FirestoreTrackedClient implements FirestoreClient {
         query = query.startAfterDocument(cursor);
       }
       final QuerySnapshot<Map<String, dynamic>> result = await query.get(const GetOptions(source: Source.cache));
-      if (result.docs.isEmpty) {
+      final int? limit = spec.limit;
+      if (result.docs.isEmpty || (limit != null && result.docs.length < limit)) {
         return null;
       }
       for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
