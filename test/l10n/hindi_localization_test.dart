@@ -5,8 +5,8 @@ import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   test('Hindi localization contract checker passes', () async {
