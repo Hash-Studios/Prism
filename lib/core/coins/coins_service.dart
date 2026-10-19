@@ -1751,6 +1751,13 @@ class CoinsService with WidgetsBindingObserver {
     final int generation = _economySessionGeneration;
     final int timezoneOffsetMinutes = _deviceTimezoneOffsetMinutes();
     final bool reminderEnabled = _preferredStreakReminderEnabled();
+    final StreakStatus known = streakNotifier.value;
+    // Same day rule as functions/src/streak.ts: local date at the locked offset, which equals the device offset here.
+    if (known.lastClaimDate.isNotEmpty &&
+        known.timezoneOffsetMinutes == timezoneOffsetMinutes &&
+        known.lastClaimDate == _offsetDayKey(DateTime.now().toUtc(), timezoneOffsetMinutes)) {
+      return CoinMutationResult.noChange(balance: previousBalance, reason: 'daily_already_claimed');
+    }
     try {
       final HttpsCallable callable = appFunctions.httpsCallable(
         'claimDailyStreak',
