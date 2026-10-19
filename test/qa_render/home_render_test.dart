@@ -22,6 +22,8 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
@@ -210,7 +212,12 @@ class _Home {
     _stubData();
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
-        () => PersonalizedFeedBloc(fetchUseCase, feedRepository, FakeUserBlockRepository.pending()),
+        () => PersonalizedFeedBloc(
+          fetchUseCase,
+          feedRepository,
+          FakeUserBlockRepository.pending(),
+          _FakeDropsRepository(),
+        ),
       )
       ..registerFactory<LatestFeedBloc>(() => LatestFeedBloc(prismRepository))
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
@@ -312,6 +319,14 @@ class _Home {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
   }
+}
+
+class _FakeDropsRepository implements DropsRepository {
+  @override
+  Future<Result<DropEntity?>> fetchLive(DateTime now) async => Result.success<DropEntity?>(null);
+
+  @override
+  Future<Result<DropEntity?>> fetchByWeekKey(String weekKey) async => Result.success<DropEntity?>(null);
 }
 
 void main() {

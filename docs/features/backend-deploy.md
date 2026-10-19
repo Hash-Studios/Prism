@@ -367,3 +367,12 @@ Spec: `docs/features/coin-economy-v2.md`. Each step needs the human owner's yes.
 6. Draw: `npm run economy:config -- --set flags.drawEnabled=true --apply`, only after the official rules text exists and the store review is done (Apple 5.3.2, Google Play contests policy). The draw ships off.
 
 How to test: run `npm run economy:config` and check that the printed JSON has `"version": 2`. Run `make rules-test` before step 2.
+
+## Weekly Drops redesign
+
+Spec: `docs/features/weekly-drops.md`. Each step needs the human owner's yes.
+
+1. Functions: `make functions-deploy`. This adds the hourly `sendDropPushes` job and the `collectors` count in `unlockDrop`. No index, rules or config change.
+2. Client release. Use the `prism-release` skill. Only clients with this release subscribe to the `drops` topic, so older clients get the inbox entry but no push.
+
+What breaks if the order is wrong: nothing. A new client on old functions shows no collector count and gets no Drop push.

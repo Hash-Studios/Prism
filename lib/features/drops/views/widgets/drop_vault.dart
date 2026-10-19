@@ -5,6 +5,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -25,15 +26,7 @@ class DropVault extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(
-          title: 'Your vault',
-          padding: EdgeInsetsDirectional.fromSTEB(
-            PrismWallGrid.margin + 4,
-            PrismSpace.xl,
-            PrismSpace.md,
-            PrismSpace.xs,
-          ),
-        ),
+        const _GoldHeader(title: 'YOUR VAULT'),
         for (final DropEntity drop in drops) ...<Widget>[
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(PrismWallGrid.margin + 4, PrismSpace.xxs, 0, PrismSpace.xxs),
@@ -54,6 +47,7 @@ class DropVault extends StatelessWidget {
                     url: wall.thumb,
                     semanticLabel: wall.by.isEmpty ? 'Unlocked wall' : 'Unlocked wall by ${wall.by}',
                     onTap: () => openDropWall(context, wall, unlocked[wall.id]!),
+                    overlay: DropSerialTag(serial: dropSerial(drop.walls.indexOf(wall), drop.count)),
                   ),
                 );
               },
@@ -78,15 +72,7 @@ class PastDropRows extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const PrismSectionHeader(
-          title: 'Past drops',
-          padding: EdgeInsetsDirectional.fromSTEB(
-            PrismWallGrid.margin + 4,
-            PrismSpace.xl,
-            PrismSpace.md,
-            PrismSpace.xs,
-          ),
-        ),
+        const _GoldHeader(title: 'PAST DROPS'),
         Padding(
           padding: PrismWallGrid.padding,
           child: PrismGroup(
@@ -104,6 +90,28 @@ class PastDropRows extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _GoldHeader extends StatelessWidget {
+  const _GoldHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          PrismWallGrid.margin + 4,
+          PrismSpace.xl,
+          PrismSpace.md,
+          PrismSpace.xs,
+        ),
+        child: Text(title, style: dropCapsStyle(color: dropEyebrowColor(context))),
+      ),
     );
   }
 }

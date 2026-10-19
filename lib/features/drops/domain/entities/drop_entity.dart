@@ -25,6 +25,9 @@ class DropWall extends Equatable {
   List<Object?> get props => [id, title, thumb, resolution, by, seriesId];
 }
 
+/// Where a Drop is in its week. [lastCall] is the final [DropEntity.lastCallWindow] before it ends.
+enum DropPhase { live, lastCall, ended }
+
 class DropEntity extends Equatable {
   const DropEntity({
     required this.weekKey,
@@ -35,7 +38,10 @@ class DropEntity extends Equatable {
     required this.pricePack,
     required this.count,
     required this.walls,
+    this.collectors = 0,
   });
+
+  static const Duration lastCallWindow = Duration(hours: 24);
 
   final String weekKey;
   final String title;
@@ -46,7 +52,15 @@ class DropEntity extends Equatable {
   final int count;
   final List<DropWall> walls;
 
+  /// Users who unlocked at least one wall of this Drop. The server counts each user once.
+  final int collectors;
+
   bool isLiveAt(DateTime now) => !now.isBefore(startsAt) && now.isBefore(endsAt);
+
+  DropPhase phaseAt(DateTime now) {
+    if (!isLiveAt(now)) return DropPhase.ended;
+    return endsAt.difference(now) <= lastCallWindow ? DropPhase.lastCall : DropPhase.live;
+  }
 
   int wallPrice({required bool isPro}) => proPrice(priceWall, isPro);
 
@@ -67,5 +81,5 @@ class DropEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [weekKey, title, startsAt, endsAt, priceWall, pricePack, count, walls];
+  List<Object?> get props => [weekKey, title, startsAt, endsAt, priceWall, pricePack, count, walls, collectors];
 }

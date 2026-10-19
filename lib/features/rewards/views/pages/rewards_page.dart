@@ -131,6 +131,7 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
               children: <Widget>[
                 const RewardsHero(),
                 gap,
+                const DropCard(),
                 RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
                 gap,
                 const CreatorProgressCard(),
@@ -139,7 +140,6 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
                 gap,
                 const SpinWheelCard(),
                 gap,
-                const DropCard(),
                 FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),
                 gap,
                 BalanceCard(onSeeUses: () => _scrollTo(_spendKey)),

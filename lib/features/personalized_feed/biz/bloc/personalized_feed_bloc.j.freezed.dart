@@ -55,7 +55,7 @@ extension PersonalizedFeedEventPatterns on PersonalizedFeedEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult Function( _LessLikeThisRequested value)?  lessLikeThisRequested,TResult Function( _LessLikeThisUndone value)?  lessLikeThisUndone,TResult Function( _SettingsChanged value)?  settingsChanged,TResult Function( _ChipSelected value)?  chipSelected,TResult Function( _TilesSeen value)?  tilesSeen,TResult Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult Function( _LessLikeThisRequested value)?  lessLikeThisRequested,TResult Function( _LessLikeThisUndone value)?  lessLikeThisUndone,TResult Function( _SettingsChanged value)?  settingsChanged,TResult Function( _ChipSelected value)?  chipSelected,TResult Function( _TilesSeen value)?  tilesSeen,TResult Function( _LiveDropRequested value)?  liveDropRequested,TResult Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -66,7 +66,8 @@ return lessLikeThisRequested(_that);case _LessLikeThisUndone() when lessLikeThis
 return lessLikeThisUndone(_that);case _SettingsChanged() when settingsChanged != null:
 return settingsChanged(_that);case _ChipSelected() when chipSelected != null:
 return chipSelected(_that);case _TilesSeen() when tilesSeen != null:
-return tilesSeen(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return tilesSeen(_that);case _LiveDropRequested() when liveDropRequested != null:
+return liveDropRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
 return blockedCreatorsChanged(_that);case _:
   return orElse();
 
@@ -85,7 +86,7 @@ return blockedCreatorsChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,required TResult Function( _LessLikeThisRequested value)  lessLikeThisRequested,required TResult Function( _LessLikeThisUndone value)  lessLikeThisUndone,required TResult Function( _SettingsChanged value)  settingsChanged,required TResult Function( _ChipSelected value)  chipSelected,required TResult Function( _TilesSeen value)  tilesSeen,required TResult Function( _BlockedCreatorsChanged value)  blockedCreatorsChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,required TResult Function( _LessLikeThisRequested value)  lessLikeThisRequested,required TResult Function( _LessLikeThisUndone value)  lessLikeThisUndone,required TResult Function( _SettingsChanged value)  settingsChanged,required TResult Function( _ChipSelected value)  chipSelected,required TResult Function( _TilesSeen value)  tilesSeen,required TResult Function( _LiveDropRequested value)  liveDropRequested,required TResult Function( _BlockedCreatorsChanged value)  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -96,7 +97,8 @@ return lessLikeThisRequested(_that);case _LessLikeThisUndone():
 return lessLikeThisUndone(_that);case _SettingsChanged():
 return settingsChanged(_that);case _ChipSelected():
 return chipSelected(_that);case _TilesSeen():
-return tilesSeen(_that);case _BlockedCreatorsChanged():
+return tilesSeen(_that);case _LiveDropRequested():
+return liveDropRequested(_that);case _BlockedCreatorsChanged():
 return blockedCreatorsChanged(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -114,7 +116,7 @@ return blockedCreatorsChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult? Function( _LessLikeThisRequested value)?  lessLikeThisRequested,TResult? Function( _LessLikeThisUndone value)?  lessLikeThisUndone,TResult? Function( _SettingsChanged value)?  settingsChanged,TResult? Function( _ChipSelected value)?  chipSelected,TResult? Function( _TilesSeen value)?  tilesSeen,TResult? Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult? Function( _LessLikeThisRequested value)?  lessLikeThisRequested,TResult? Function( _LessLikeThisUndone value)?  lessLikeThisUndone,TResult? Function( _SettingsChanged value)?  settingsChanged,TResult? Function( _ChipSelected value)?  chipSelected,TResult? Function( _TilesSeen value)?  tilesSeen,TResult? Function( _LiveDropRequested value)?  liveDropRequested,TResult? Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -125,7 +127,8 @@ return lessLikeThisRequested(_that);case _LessLikeThisUndone() when lessLikeThis
 return lessLikeThisUndone(_that);case _SettingsChanged() when settingsChanged != null:
 return settingsChanged(_that);case _ChipSelected() when chipSelected != null:
 return chipSelected(_that);case _TilesSeen() when tilesSeen != null:
-return tilesSeen(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return tilesSeen(_that);case _LiveDropRequested() when liveDropRequested != null:
+return liveDropRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
 return blockedCreatorsChanged(_that);case _:
   return null;
 
@@ -143,7 +146,7 @@ return blockedCreatorsChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,TResult Function( FeedItemEntity item)?  lessLikeThisRequested,TResult Function( FeedItemEntity item,  int index)?  lessLikeThisUndone,TResult Function()?  settingsChanged,TResult Function( HomeFeedChip chip)?  chipSelected,TResult Function( List<String> keys)?  tilesSeen,TResult Function( Set<String> blocked)?  blockedCreatorsChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,TResult Function( FeedItemEntity item)?  lessLikeThisRequested,TResult Function( FeedItemEntity item,  int index)?  lessLikeThisUndone,TResult Function()?  settingsChanged,TResult Function( HomeFeedChip chip)?  chipSelected,TResult Function( List<String> keys)?  tilesSeen,TResult Function()?  liveDropRequested,TResult Function( Set<String> blocked)?  blockedCreatorsChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
@@ -153,7 +156,8 @@ return lessLikeThisRequested(_that.item);case _LessLikeThisUndone() when lessLik
 return lessLikeThisUndone(_that.item,_that.index);case _SettingsChanged() when settingsChanged != null:
 return settingsChanged();case _ChipSelected() when chipSelected != null:
 return chipSelected(_that.chip);case _TilesSeen() when tilesSeen != null:
-return tilesSeen(_that.keys);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return tilesSeen(_that.keys);case _LiveDropRequested() when liveDropRequested != null:
+return liveDropRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
 return blockedCreatorsChanged(_that.blocked);case _:
   return orElse();
 
@@ -172,7 +176,7 @@ return blockedCreatorsChanged(_that.blocked);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,required TResult Function( FeedItemEntity item)  lessLikeThisRequested,required TResult Function( FeedItemEntity item,  int index)  lessLikeThisUndone,required TResult Function()  settingsChanged,required TResult Function( HomeFeedChip chip)  chipSelected,required TResult Function( List<String> keys)  tilesSeen,required TResult Function( Set<String> blocked)  blockedCreatorsChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,required TResult Function( FeedItemEntity item)  lessLikeThisRequested,required TResult Function( FeedItemEntity item,  int index)  lessLikeThisUndone,required TResult Function()  settingsChanged,required TResult Function( HomeFeedChip chip)  chipSelected,required TResult Function( List<String> keys)  tilesSeen,required TResult Function()  liveDropRequested,required TResult Function( Set<String> blocked)  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _RefreshRequested():
@@ -182,7 +186,8 @@ return lessLikeThisRequested(_that.item);case _LessLikeThisUndone():
 return lessLikeThisUndone(_that.item,_that.index);case _SettingsChanged():
 return settingsChanged();case _ChipSelected():
 return chipSelected(_that.chip);case _TilesSeen():
-return tilesSeen(_that.keys);case _BlockedCreatorsChanged():
+return tilesSeen(_that.keys);case _LiveDropRequested():
+return liveDropRequested();case _BlockedCreatorsChanged():
 return blockedCreatorsChanged(_that.blocked);case _:
   throw StateError('Unexpected subclass');
 
@@ -200,7 +205,7 @@ return blockedCreatorsChanged(_that.blocked);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,TResult? Function( FeedItemEntity item)?  lessLikeThisRequested,TResult? Function( FeedItemEntity item,  int index)?  lessLikeThisUndone,TResult? Function()?  settingsChanged,TResult? Function( HomeFeedChip chip)?  chipSelected,TResult? Function( List<String> keys)?  tilesSeen,TResult? Function( Set<String> blocked)?  blockedCreatorsChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,TResult? Function( FeedItemEntity item)?  lessLikeThisRequested,TResult? Function( FeedItemEntity item,  int index)?  lessLikeThisUndone,TResult? Function()?  settingsChanged,TResult? Function( HomeFeedChip chip)?  chipSelected,TResult? Function( List<String> keys)?  tilesSeen,TResult? Function()?  liveDropRequested,TResult? Function( Set<String> blocked)?  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
@@ -210,7 +215,8 @@ return lessLikeThisRequested(_that.item);case _LessLikeThisUndone() when lessLik
 return lessLikeThisUndone(_that.item,_that.index);case _SettingsChanged() when settingsChanged != null:
 return settingsChanged();case _ChipSelected() when chipSelected != null:
 return chipSelected(_that.chip);case _TilesSeen() when tilesSeen != null:
-return tilesSeen(_that.keys);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return tilesSeen(_that.keys);case _LiveDropRequested() when liveDropRequested != null:
+return liveDropRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
 return blockedCreatorsChanged(_that.blocked);case _:
   return null;
 
@@ -640,6 +646,38 @@ as List<String>,
 /// @nodoc
 
 
+class _LiveDropRequested implements PersonalizedFeedEvent {
+  const _LiveDropRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LiveDropRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'PersonalizedFeedEvent.liveDropRequested()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
 class _BlockedCreatorsChanged implements PersonalizedFeedEvent {
   const _BlockedCreatorsChanged({required final  Set<String> blocked}): _blocked = blocked;
   
@@ -714,7 +752,8 @@ mixin _$PersonalizedFeedState {
 
  LoadStatus get status; ActionStatus get actionStatus; List<FeedItemEntity> get items; bool get hasMore; bool get isFetchingMore; int get page; List<String> get seenKeys; HomeFeedChip get chip;/// Cached items are on screen while the fresh page loads.
  bool get isRefreshing;/// The last refresh failed. Items from before it stay on screen.
- bool get refreshFailed; Failure? get failure;
+ bool get refreshFailed;/// The Drop that is on now. Null while none is live or before it loads.
+ DropEntity? get liveDrop; Failure? get failure;
 /// Create a copy of PersonalizedFeedState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -725,16 +764,16 @@ $PersonalizedFeedStateCopyWith<PersonalizedFeedState> get copyWith => _$Personal
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PersonalizedFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.page, page) || other.page == page)&&const DeepCollectionEquality().equals(other.seenKeys, seenKeys)&&(identical(other.chip, chip) || other.chip == chip)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.refreshFailed, refreshFailed) || other.refreshFailed == refreshFailed)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PersonalizedFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.page, page) || other.page == page)&&const DeepCollectionEquality().equals(other.seenKeys, seenKeys)&&(identical(other.chip, chip) || other.chip == chip)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.refreshFailed, refreshFailed) || other.refreshFailed == refreshFailed)&&(identical(other.liveDrop, liveDrop) || other.liveDrop == liveDrop)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(items),hasMore,isFetchingMore,page,const DeepCollectionEquality().hash(seenKeys),chip,isRefreshing,refreshFailed,failure);
+int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(items),hasMore,isFetchingMore,page,const DeepCollectionEquality().hash(seenKeys),chip,isRefreshing,refreshFailed,liveDrop,failure);
 
 @override
 String toString() {
-  return 'PersonalizedFeedState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, page: $page, seenKeys: $seenKeys, chip: $chip, isRefreshing: $isRefreshing, refreshFailed: $refreshFailed, failure: $failure)';
+  return 'PersonalizedFeedState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, page: $page, seenKeys: $seenKeys, chip: $chip, isRefreshing: $isRefreshing, refreshFailed: $refreshFailed, liveDrop: $liveDrop, failure: $failure)';
 }
 
 
@@ -745,7 +784,7 @@ abstract mixin class $PersonalizedFeedStateCopyWith<$Res>  {
   factory $PersonalizedFeedStateCopyWith(PersonalizedFeedState value, $Res Function(PersonalizedFeedState) _then) = _$PersonalizedFeedStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, int page, List<String> seenKeys, HomeFeedChip chip, bool isRefreshing, bool refreshFailed, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, int page, List<String> seenKeys, HomeFeedChip chip, bool isRefreshing, bool refreshFailed, DropEntity? liveDrop, Failure? failure
 });
 
 
@@ -762,7 +801,7 @@ class _$PersonalizedFeedStateCopyWithImpl<$Res>
 
 /// Create a copy of PersonalizedFeedState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? page = null,Object? seenKeys = null,Object? chip = null,Object? isRefreshing = null,Object? refreshFailed = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? page = null,Object? seenKeys = null,Object? chip = null,Object? isRefreshing = null,Object? refreshFailed = null,Object? liveDrop = freezed,Object? failure = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
@@ -774,7 +813,8 @@ as int,seenKeys: null == seenKeys ? _self.seenKeys : seenKeys // ignore: cast_nu
 as List<String>,chip: null == chip ? _self.chip : chip // ignore: cast_nullable_to_non_nullable
 as HomeFeedChip,isRefreshing: null == isRefreshing ? _self.isRefreshing : isRefreshing // ignore: cast_nullable_to_non_nullable
 as bool,refreshFailed: null == refreshFailed ? _self.refreshFailed : refreshFailed // ignore: cast_nullable_to_non_nullable
-as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as bool,liveDrop: freezed == liveDrop ? _self.liveDrop : liveDrop // ignore: cast_nullable_to_non_nullable
+as DropEntity?,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
 }
@@ -860,10 +900,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  HomeFeedChip chip,  bool isRefreshing,  bool refreshFailed,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  HomeFeedChip chip,  bool isRefreshing,  bool refreshFailed,  DropEntity? liveDrop,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PersonalizedFeedState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.chip,_that.isRefreshing,_that.refreshFailed,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.chip,_that.isRefreshing,_that.refreshFailed,_that.liveDrop,_that.failure);case _:
   return orElse();
 
 }
@@ -881,10 +921,10 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  HomeFeedChip chip,  bool isRefreshing,  bool refreshFailed,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  HomeFeedChip chip,  bool isRefreshing,  bool refreshFailed,  DropEntity? liveDrop,  Failure? failure)  $default,) {final _that = this;
 switch (_that) {
 case _PersonalizedFeedState():
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.chip,_that.isRefreshing,_that.refreshFailed,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.chip,_that.isRefreshing,_that.refreshFailed,_that.liveDrop,_that.failure);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -901,10 +941,10 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  HomeFeedChip chip,  bool isRefreshing,  bool refreshFailed,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  int page,  List<String> seenKeys,  HomeFeedChip chip,  bool isRefreshing,  bool refreshFailed,  DropEntity? liveDrop,  Failure? failure)?  $default,) {final _that = this;
 switch (_that) {
 case _PersonalizedFeedState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.chip,_that.isRefreshing,_that.refreshFailed,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.isFetchingMore,_that.page,_that.seenKeys,_that.chip,_that.isRefreshing,_that.refreshFailed,_that.liveDrop,_that.failure);case _:
   return null;
 
 }
@@ -916,7 +956,7 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 
 
 class _PersonalizedFeedState implements PersonalizedFeedState {
-  const _PersonalizedFeedState({required this.status, required this.actionStatus, required final  List<FeedItemEntity> items, required this.hasMore, required this.isFetchingMore, required this.page, required final  List<String> seenKeys, required this.chip, required this.isRefreshing, required this.refreshFailed, this.failure}): _items = items,_seenKeys = seenKeys;
+  const _PersonalizedFeedState({required this.status, required this.actionStatus, required final  List<FeedItemEntity> items, required this.hasMore, required this.isFetchingMore, required this.page, required final  List<String> seenKeys, required this.chip, required this.isRefreshing, required this.refreshFailed, this.liveDrop, this.failure}): _items = items,_seenKeys = seenKeys;
   
 
 @override final  LoadStatus status;
@@ -943,6 +983,8 @@ class _PersonalizedFeedState implements PersonalizedFeedState {
 @override final  bool isRefreshing;
 /// The last refresh failed. Items from before it stay on screen.
 @override final  bool refreshFailed;
+/// The Drop that is on now. Null while none is live or before it loads.
+@override final  DropEntity? liveDrop;
 @override final  Failure? failure;
 
 /// Create a copy of PersonalizedFeedState
@@ -955,16 +997,16 @@ _$PersonalizedFeedStateCopyWith<_PersonalizedFeedState> get copyWith => __$Perso
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PersonalizedFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.page, page) || other.page == page)&&const DeepCollectionEquality().equals(other._seenKeys, _seenKeys)&&(identical(other.chip, chip) || other.chip == chip)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.refreshFailed, refreshFailed) || other.refreshFailed == refreshFailed)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PersonalizedFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.page, page) || other.page == page)&&const DeepCollectionEquality().equals(other._seenKeys, _seenKeys)&&(identical(other.chip, chip) || other.chip == chip)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.refreshFailed, refreshFailed) || other.refreshFailed == refreshFailed)&&(identical(other.liveDrop, liveDrop) || other.liveDrop == liveDrop)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(_items),hasMore,isFetchingMore,page,const DeepCollectionEquality().hash(_seenKeys),chip,isRefreshing,refreshFailed,failure);
+int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(_items),hasMore,isFetchingMore,page,const DeepCollectionEquality().hash(_seenKeys),chip,isRefreshing,refreshFailed,liveDrop,failure);
 
 @override
 String toString() {
-  return 'PersonalizedFeedState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, page: $page, seenKeys: $seenKeys, chip: $chip, isRefreshing: $isRefreshing, refreshFailed: $refreshFailed, failure: $failure)';
+  return 'PersonalizedFeedState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, page: $page, seenKeys: $seenKeys, chip: $chip, isRefreshing: $isRefreshing, refreshFailed: $refreshFailed, liveDrop: $liveDrop, failure: $failure)';
 }
 
 
@@ -975,7 +1017,7 @@ abstract mixin class _$PersonalizedFeedStateCopyWith<$Res> implements $Personali
   factory _$PersonalizedFeedStateCopyWith(_PersonalizedFeedState value, $Res Function(_PersonalizedFeedState) _then) = __$PersonalizedFeedStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, int page, List<String> seenKeys, HomeFeedChip chip, bool isRefreshing, bool refreshFailed, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, int page, List<String> seenKeys, HomeFeedChip chip, bool isRefreshing, bool refreshFailed, DropEntity? liveDrop, Failure? failure
 });
 
 
@@ -992,7 +1034,7 @@ class __$PersonalizedFeedStateCopyWithImpl<$Res>
 
 /// Create a copy of PersonalizedFeedState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? page = null,Object? seenKeys = null,Object? chip = null,Object? isRefreshing = null,Object? refreshFailed = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? page = null,Object? seenKeys = null,Object? chip = null,Object? isRefreshing = null,Object? refreshFailed = null,Object? liveDrop = freezed,Object? failure = freezed,}) {
   return _then(_PersonalizedFeedState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
@@ -1004,7 +1046,8 @@ as int,seenKeys: null == seenKeys ? _self._seenKeys : seenKeys // ignore: cast_n
 as List<String>,chip: null == chip ? _self.chip : chip // ignore: cast_nullable_to_non_nullable
 as HomeFeedChip,isRefreshing: null == isRefreshing ? _self.isRefreshing : isRefreshing // ignore: cast_nullable_to_non_nullable
 as bool,refreshFailed: null == refreshFailed ? _self.refreshFailed : refreshFailed // ignore: cast_nullable_to_non_nullable
-as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as bool,liveDrop: freezed == liveDrop ? _self.liveDrop : liveDrop // ignore: cast_nullable_to_non_nullable
+as DropEntity?,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
 }

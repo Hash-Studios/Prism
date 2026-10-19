@@ -7,6 +7,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_carousel.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
@@ -20,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
+import '../../drops/drop_fixtures.dart';
 
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
 
@@ -72,6 +75,7 @@ void main() {
     bool reduceMotion = true,
     List<PrismWallpaper> boosted = const <PrismWallpaper>[],
     WallOfTheDayEntity? wotdEntity,
+    DropEntity? liveDrop,
     StackRouter? router,
   }) async {
     tester.view.physicalSize = size;
@@ -96,11 +100,11 @@ void main() {
             child: Align(
               alignment: Alignment.topCenter,
               child: router == null
-                  ? FeedCarousel(previewWalls: walls, boostedWalls: boosted)
+                  ? FeedCarousel(previewWalls: walls, boostedWalls: boosted, liveDrop: liveDrop)
                   : StackRouterScope(
                       controller: router,
                       stateHash: 0,
-                      child: FeedCarousel(previewWalls: walls, boostedWalls: boosted),
+                      child: FeedCarousel(previewWalls: walls, boostedWalls: boosted, liveDrop: liveDrop),
                     ),
             ),
           ),
@@ -339,5 +343,102 @@ void main() {
     await pumpCarousel(tester, const <PrismFeedItem>[]);
 
     expect(find.byType(FeedCarouselDots), findsNothing);
+  });
+
+  const WallOfTheDayEntity wotd = WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana');
+
+  testWidgets('a live Drop gets the page right after the Wall of the Day, before the boosted walls', (tester) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a')],
+      boosted: <PrismWallpaper>[_boosted('hot1')],
+      wotdEntity: wotd,
+      liveDrop: dropEntity(),
+    );
+
+    expect(find.text('Wall of the day'), findsOneWidget);
+    expect(find.byType(DropCarouselSlide), findsNothing);
+
+    await swipeToNextPage(tester);
+
+    expect(find.text('THE DROP'), findsOneWidget);
+    expect(find.text('Weekly Drop 2026-W42'), findsOneWidget);
+    expect(find.text('4 walls · Ends in 5d 23h'), findsOneWidget);
+    expect(find.text('Preview'), findsOneWidget);
+    expect(find.text('Last call'), findsNothing);
+    expect(find.byType(WallpaperImpression), findsNothing);
+
+    await swipeToNextPage(tester);
+
+    expect(shownWallId(tester), 'hot1');
+  });
+
+  testWidgets('with no Wall of the Day the Drop is the first page', (tester) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity());
+
+    expect(find.byType(DropCarouselSlide), findsOneWidget);
+  });
+
+  testWidgets('with no live Drop the carousel has no Drop page', (tester) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], wotdEntity: wotd);
+
+    expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 3);
+    await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
+    expect(find.byType(DropCarouselSlide), findsNothing);
+  });
+
+  testWidgets('an ended Drop adds no page', (tester) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity(endsIn: const Duration(minutes: -5)));
+
+    expect(find.byType(DropCarouselSlide), findsNothing);
+  });
+
+  testWidgets('the Drop page goes when the Drop ends', (tester) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity(endsIn: const Duration(seconds: 1)));
+
+    expect(find.byType(DropCarouselSlide), findsOneWidget);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 3);
+
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1100)));
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+
+    expect(find.byType(DropCarouselSlide), findsNothing);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 2);
+  });
+
+  testWidgets('the last day of a Drop shows Last call', (tester) async {
+    await pumpCarousel(tester, const <PrismFeedItem>[], liveDrop: dropEntity(endsIn: const Duration(hours: 5)));
+
+    expect(find.text('Last call'), findsOneWidget);
+    expect(find.text('4 walls · Ends in 4h 59m'), findsOneWidget);
+  });
+
+  testWidgets('tapping the Drop page opens the Drops route', (tester) async {
+    registerFallbackValue(const DropsRoute());
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.push(any())).thenAnswer((_) async => null);
+    await pumpCarousel(tester, const <PrismFeedItem>[], liveDrop: dropEntity(), router: router);
+
+    await tester.tap(find.byType(DropCarouselSlide));
+    await tester.pump();
+
+    verify(() => router.push(any(that: isA<DropsRoute>()))).called(1);
+  });
+
+  testWidgets('a Drop that arrives later keeps the user on the page they were viewing', (tester) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')], wotdEntity: wotd);
+    await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
+    expect(shownWallId(tester), 'a');
+
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')], wotdEntity: wotd, liveDrop: dropEntity());
+    await tester.pumpAndSettle();
+
+    expect(shownWallId(tester), 'a');
+    expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 5);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 3);
   });
 }

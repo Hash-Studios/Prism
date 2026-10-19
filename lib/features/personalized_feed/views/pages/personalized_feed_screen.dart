@@ -271,7 +271,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
               prev.isFetchingMore != curr.isFetchingMore ||
               prev.hasMore != curr.hasMore ||
               prev.chip != curr.chip ||
-              prev.isRefreshing != curr.isRefreshing,
+              prev.isRefreshing != curr.isRefreshing ||
+              prev.liveDrop != curr.liveDrop,
           builder: (context, state) {
             // The scroll view starts under the status bar, so the floating header slides in right below the strip and
             // never under it.
@@ -433,6 +434,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                 ? const _CarouselSkeleton()
                 : FeedCarousel(
                     boostedWalls: boostedWalls,
+                    liveDrop: state.liveDrop,
                     previewWalls: previewWalls,
                     onWallShown: (wall) => _bloc.add(
                       PersonalizedFeedEvent.tilesSeen(<String>[PersonalizedRankingService.canonicalKey(wall)]),

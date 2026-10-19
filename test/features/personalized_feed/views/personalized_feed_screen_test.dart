@@ -20,6 +20,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
@@ -104,6 +106,14 @@ PersonalizedFeedPage _page(
   usedKeys: ids,
 );
 
+class _FakeDropsRepository implements DropsRepository {
+  @override
+  Future<Result<DropEntity?>> fetchLive(DateTime now) async => Result.success<DropEntity?>(null);
+
+  @override
+  Future<Result<DropEntity?>> fetchByWeekKey(String weekKey) async => Result.success<DropEntity?>(null);
+}
+
 void main() {
   List<String> recordHaptics(WidgetTester tester) {
     const MethodChannel channel = MethodChannel('prism/haptics');
@@ -175,7 +185,12 @@ void main() {
     app_state.prismUser = _user(loggedIn: true);
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
-        () => PersonalizedFeedBloc(fetchUseCase, feedRepository, FakeUserBlockRepository.pending()),
+        () => PersonalizedFeedBloc(
+          fetchUseCase,
+          feedRepository,
+          FakeUserBlockRepository.pending(),
+          _FakeDropsRepository(),
+        ),
       )
       ..registerFactory<LatestFeedBloc>(() => LatestFeedBloc(prismRepository))
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))

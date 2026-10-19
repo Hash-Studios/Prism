@@ -3,5 +3,6 @@ abstract final class NotificationPrefKeys {
   static const String followers = 'followersSubscriber';
   static const String posts = 'postsSubscriber';
   static const String recommendations = 'recommendationsSubscriber';
+  static const String drops = 'dropsSubscriber';
   static const String streakReminders = 'streakReminderSubscriber';
 }

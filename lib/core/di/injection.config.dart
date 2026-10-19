@@ -730,6 +730,7 @@ _i174.GetIt initGetIt(
       gh<_i212.FetchPersonalizedFeedUseCase>(),
       gh<_i567.PersonalizedFeedRepository>(),
       gh<_i112.UserBlockRepository>(),
+      gh<_i96.DropsRepository>(),
     ),
   );
   gh.factory<_i408.AutoRotateBloc>(

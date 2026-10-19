@@ -63,7 +63,7 @@ void main() {
 
     expect(
       messaging.subscribed,
-      unorderedEquals(<String>['recommendations', wotdBucketTopic(), 'free', 'u_uid1', 'ana', 'lee_posts']),
+      unorderedEquals(<String>['recommendations', 'drops', wotdBucketTopic(), 'free', 'u_uid1', 'ana', 'lee_posts']),
     );
     expect(messaging.unsubscribed, unorderedEquals(<String>['premium', 'wall_of_the_day']));
   });
@@ -88,6 +88,7 @@ void main() {
 
   test('respects switched-off preferences and signed-out state', () async {
     await settings.set(NotificationPrefKeys.recommendations, false);
+    await settings.set(NotificationPrefKeys.drops, false);
     await settings.set(PersistenceKeys.notifWotd, false);
     await settings.set(NotificationPrefKeys.posts, false);
 
