@@ -11,7 +11,7 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
-  String get economyExportFailedLabel => 'Export failed';
+  String get economyExportFailedLabel => 'Falha ao exportar';
 
   @override
   String get coreSignInCreatorSearchFeature => 'busca de criadores';
@@ -971,7 +971,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountPurchasesRestored => 'Compras restauradas.';
 
   @override
-  String get accountPurchasesRestoredPending => 'Purchases restored. Pro can take a minute to unlock.';
+  String get accountPurchasesRestoredPending => 'Compras restauradas. O Pro pode levar um minuto para ser ativado.';
 
   @override
   String get accountQuickTiles => 'Blocos rápidos';
@@ -7472,10 +7472,11 @@ class AppLocalizationsPt extends AppLocalizations {
   String get premiumPageViewPlans => 'Ver planos';
 
   @override
-  String get premiumPurchasePending => 'Your purchase is saved. Pro can take a minute to unlock.';
+  String get premiumPurchasePending => 'Sua compra foi salva. O Pro pode levar um minuto para ser ativado.';
 
   @override
-  String get premiumPurchaseUnconfirmed => 'Could not confirm your purchase. Try Restore purchases in Settings.';
+  String get premiumPurchaseUnconfirmed =>
+      'Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.';
 
   @override
   String get wallpaperAccentColor => 'Cor de destaque';
@@ -9895,6 +9896,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get economyExportFailedLabel => 'Falha ao exportar';
+
+  @override
   String get coreSignInCreatorSearchFeature => 'busca de criadores';
 
   @override
@@ -10850,6 +10854,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get accountPurchasesRestored => 'Compras restauradas.';
+
+  @override
+  String get accountPurchasesRestoredPending => 'Compras restauradas. O Pro pode levar um minuto para ser ativado.';
 
   @override
   String get accountQuickTiles => 'Blocos rápidos';
@@ -17348,6 +17355,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get premiumPageViewPlans => 'Ver planos';
+
+  @override
+  String get premiumPurchasePending => 'Sua compra foi salva. O Pro pode levar um minuto para ser ativado.';
+
+  @override
+  String get premiumPurchaseUnconfirmed =>
+      'Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.';
 
   @override
   String get wallpaperAccentColor => 'Cor de destaque';

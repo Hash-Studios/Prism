@@ -1,5 +1,6 @@
 {
   "@@locale": "pt",
+  "economyExportFailedLabel": "Falha ao exportar",
   "coreSignInCreatorSearchFeature": "busca de criadores",
   "debugLogExportSubject": "Logs de depuração do Prism",
   "accountAbout": "Sobre",
@@ -260,6 +261,7 @@
   "accountProfiles": "perfis",
   "accountPurchases": "Compras",
   "accountPurchasesRestored": "Compras restauradas.",
+  "accountPurchasesRestoredPending": "Compras restauradas. O Pro pode levar um minuto para ser ativado.",
   "accountQuickTiles": "Blocos rápidos",
   "accountRateApp": "AVALIAR",
   "accountRecentSearches": "Buscas recentes",
@@ -1838,6 +1840,8 @@
   "premiumPageTitle": "Prism Premium",
   "premiumPageTryAgain": "Tente novamente",
   "premiumPageViewPlans": "Ver planos",
+  "premiumPurchasePending": "Sua compra foi salva. O Pro pode levar um minuto para ser ativado.",
+  "premiumPurchaseUnconfirmed": "Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.",
   "wallpaperAccentColor": "Cor de destaque",
   "wallpaperAccentColorsOriginal": "Cores originais do papel de parede",
   "wallpaperAccentResetHint": "Pressione longamente para redefinir",

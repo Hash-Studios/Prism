@@ -15,7 +15,12 @@ the Spanish translation file or introduce another localisation system.
 Further shared fixes are reused from `0b562d29b`, `b86755b35`, and
 `133170f10`. They localise prompt suggestions, sign-in feature labels,
 upload number formatting, and collection-preview spend failures. The
-canonical catalogue now contains 2,498 messages.
+canonical catalogue now contains 2,502 messages.
+
+The device-locale fixes are reused from `e6f66cd8d`, `b4dfe6bb3`,
+`305219fcc`, `4c041480d`, and `eb7b20343`. They resolve background
+messages against the framework's complete preferred-language list.
+The latest master purchase-confirmation states are also translated.
 
 `app_pt_BR.arb` uses the canonical message keys and inherits placeholder
 metadata from the English template. Flutter generates locale registration.
@@ -29,7 +34,7 @@ Brand names, creator content, protocol values, paths, and identifiers remain
 unchanged. Existing persisted `Prism User` names are user data, not a label
 to rewrite. Portuguese also uses terms such as `Downloads` and `Anime`.
 
-All 2,498 canonical keys have nonempty translations. Generation validates
+All 2,502 canonical keys have nonempty translations. Generation validates
 ICU syntax and inherited placeholder types. Portuguese zero-count branches
 use explicit `=0` selectors because `intl` otherwise classifies zero as
 singular in pt-BR. Existing selectors and English messages are unchanged.
@@ -57,7 +62,7 @@ tests and APK builds are separate checks, not substitutes for device proof.
 
 ## Verification commands
 
-`python3 tool/check_l10n.py` passed with 2,498 messages in each of the three
+`python3 tool/check_l10n.py` checks all 2,502 messages in each of the three
 catalogues. `fvm flutter gen-l10n` passed with no missing pt-BR keys.
 `make file-gen` passed and left no unrelated generated-source changes.
 The hard-coded-string audit passed with zero probable UI literals.
