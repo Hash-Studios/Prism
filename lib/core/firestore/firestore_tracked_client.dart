@@ -192,6 +192,7 @@ class FirestoreTrackedClient implements FirestoreClient {
         return 0;
       case FirestoreCachePolicy.staleWhileRevalidate:
       case FirestoreCachePolicy.memoryFirst:
+      case FirestoreCachePolicy.diskFirst:
         return _defaultCacheWindowMs;
     }
   }
@@ -362,6 +363,58 @@ class FirestoreTrackedClient implements FirestoreClient {
     );
   }
 
+  /// Reads the SDK disk cache. Returns null when the cache has no usable answer (miss, error, or a cursor doc that is
+  /// not cached), so the caller falls back to the network.
+  Future<_QueryCacheEntry?> _readDiskCache(FirestoreQuerySpec spec) async {
+    await _ensureReady();
+    final Stopwatch sw = Stopwatch()..start();
+    try {
+      Query<Map<String, dynamic>> query = _applySpec(spec);
+      final String? startAfterDocId = spec.startAfterDocId;
+      if (startAfterDocId != null && startAfterDocId.isNotEmpty) {
+        DocumentSnapshot<Map<String, dynamic>>? cursor =
+            _cursorDocCache[_cursorDocKey(spec.collection, startAfterDocId)];
+        cursor ??= await _firestore
+            .collection(spec.collection)
+            .doc(startAfterDocId)
+            .get(const GetOptions(source: Source.cache));
+        if (!cursor.exists) {
+          return null;
+        }
+        query = query.startAfterDocument(cursor);
+      }
+      final QuerySnapshot<Map<String, dynamic>> result = await query.get(const GetOptions(source: Source.cache));
+      if (result.docs.isEmpty) {
+        return null;
+      }
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
+        _cacheCursorDoc(doc, spec.collection);
+      }
+      unawaited(
+        _telemetry.emit(
+          FirestoreTelemetryEvent(
+            timestamp: DateTime.now(),
+            sourceTag: spec.sourceTag,
+            operation: FirestoreOperation.queryGet,
+            collection: spec.collection,
+            filtersHash: spec.filtersHash,
+            orderBy: _orderByList(spec),
+            limit: spec.limit,
+            durationMs: sw.elapsedMilliseconds,
+            resultCount: result.docs.length,
+            success: true,
+          ),
+        ),
+      );
+      return _QueryCacheEntry(
+        result.docs.map((doc) => _RawQueryDoc(doc.id, Map<String, dynamic>.from(doc.data()))).toList(growable: false),
+        DateTime.now(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
     final String key = _queryKey(spec);
@@ -376,6 +429,13 @@ class FirestoreTrackedClient implements FirestoreClient {
     if (inflight != null) {
       final _QueryCacheEntry shared = await inflight;
       return _mapCachedDocs(shared, map);
+    }
+    if (spec.cachePolicy == FirestoreCachePolicy.diskFirst) {
+      final _QueryCacheEntry? fromDisk = await _readDiskCache(spec);
+      if (fromDisk != null) {
+        _refreshInBackground(spec);
+        return _mapCachedDocs(fromDisk, map);
+      }
     }
     final Future<_QueryCacheEntry> request = _executeNetworkQuery(spec);
     _inflightQueries[key] = request;
