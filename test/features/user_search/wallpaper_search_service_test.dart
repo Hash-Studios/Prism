@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/analytics/events/events.dart';
@@ -215,6 +216,36 @@ void main() {
     expect(page.isLocal, isTrue);
     expect(stopwatch.elapsed, lessThan(const Duration(seconds: 4)));
     expect(repository.calls, 1);
+  });
+
+  test('providers start while the local catalog scan is still waiting', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('wallpaper-search-slow-catalog-');
+    addTearDown(() => directory.delete(recursive: true));
+    final Completer<Set<String>> blocked = Completer<Set<String>>();
+    final OfflineWallpaperCatalog catalog = OfflineWallpaperCatalog(
+      store: DurableJsonStore('catalog', directory: directory),
+      blockedEmails: () => blocked.future,
+    );
+    await catalog.remember(<FeedItemEntity>[WallhavenFeedItem(id: 'saved', wallpaper: _wallhaven('saved'))]);
+    final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('remote')]));
+    final firestore = FakeFirestoreClient();
+    final service = WallpaperSearchService(
+      repository,
+      _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+      SettingsLocalDataSource(InMemoryLocalStore()),
+      PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+      catalog,
+    );
+
+    final Future<WallpaperSearchPage> search = service.search('saved');
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(repository.calls, 1);
+    expect(firestore.querySpecs, isNotEmpty);
+
+    blocked.complete(<String>{});
+    final page = await search;
+    expect(page.results.map((wall) => wall.id), <String>['remote']);
   });
 
   test('search returns Wallhaven results when Wallhaven answers', () async {

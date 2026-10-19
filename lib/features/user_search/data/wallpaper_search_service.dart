@@ -64,13 +64,19 @@ class WallpaperSearchService {
 
   Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {
     if (filters.depthOnly) return _depthSearch(query, filters);
+    final Future<List<FeedItemEntity>> wallhavenFetch = fetchPage(
+      SearchProviderValue.wallhaven,
+      query,
+      refresh: true,
+      filters: filters,
+    )..ignore();
+    final Future<List<FeedItemEntity>> prismSearch = _prismResults(query, filters);
     List<FeedItemEntity> cachedResults = const <FeedItemEntity>[];
     try {
       cachedResults = await _localResults(query, filters);
     } catch (error) {
       logger.w('Local wallpaper catalog search failed: $error');
     }
-    final Future<List<FeedItemEntity>> prismSearch = _prismResults(query, filters);
     final Future<List<FeedItemEntity>> prism = cachedResults.isEmpty
         ? prismSearch
         : prismSearch.timeout(_cachedSearchDecisionBudget, onTimeout: () => const <FeedItemEntity>[]);
@@ -79,8 +85,8 @@ class WallpaperSearchService {
       return (
         provider: SearchProviderValue.wallhaven,
         results: cachedResults.isEmpty
-            ? await fetchPage(SearchProviderValue.wallhaven, query, refresh: true, filters: filters)
-            : await fetchPage(SearchProviderValue.wallhaven, query, refresh: true, filters: filters).timeout(
+            ? await wallhavenFetch
+            : await wallhavenFetch.timeout(
                 _cachedSearchDecisionBudget,
                 onTimeout: () {
                   usedLocalFallback = true;
