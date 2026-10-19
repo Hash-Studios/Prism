@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
+import {createHash} from "node:crypto";
 import sharp from "sharp";
 import {downloadRawAsset, gitBlobSha, migrateOwnedAssets, MigrationDeps, MigrationOptions,
-  MigrationWall, parseRawAsset} from "../scripts/migrateOwnedAssets";
+  MigrationWall, parseRawAsset, proveMigrationAsset} from "../scripts/migrateOwnedAssets";
+import {installFakeDb} from "./fakeDb";
 
 const options: MigrationOptions = {apply: false, allowReviewedLegacy: false, owner: "hash", repo: "walls"};
 const bytes = Buffer.from("test bytes");
@@ -40,6 +42,55 @@ function fixture(owner: string | null = "u1") {
   };
   return {calls, deps};
 }
+
+test("modern migration ignores foreign private twins without changing private provenance", async (t) => {
+  const store = installFakeDb(t);
+  const digest = (value: string) => createHash("sha256").update(value).digest("hex");
+  const assets = [parseRawAsset(wall().data.wallpaper_url, "a.jpg", sha, options),
+    parseRawAsset(wall().data.wallpaper_thumb, "thumb_a.jpg", sha, options)];
+  for (const asset of assets) {
+    store.set(`githubUploads/file_${digest(`walls\0${asset.path}\0${sha}`)}`,
+      {repo: "walls", path: asset.path, sha, uid: "u1"});
+    store.set(`githubUploadIntents/path_${digest(`walls\0${asset.path}`)}`, {
+      repo: "walls", path: asset.path, uid: "u1", status: "complete", blobSha: sha,
+      response: {content: {sha, path: asset.path, download_url: asset.url}},
+    });
+    // Seven public rows are below the ambiguity cap. Private twins must not consume it.
+    for (let index = 0; index < 6; index++) {
+      store.set(`githubUploads/public_${asset.path}_${index}`, {repo: "walls", path: asset.path, uid: "u1"});
+    }
+    for (let index = 0; index < 10; index++) {
+      store.set(`githubUploads/owned_file_${asset.path}_${index}`,
+        {repo: "walls", path: asset.path, sha, uid: "attacker", sourceKind: "owned"});
+    }
+    store.set(`githubUploadIntents/owned_path_${digest(`walls\0${asset.path}`)}`,
+      {repo: "walls", path: asset.path, uid: "attacker", sourceKind: "owned", status: "complete"});
+  }
+  const privateBefore = [...store].filter(([key]) => key.includes("/owned_"));
+  const {deps, calls} = fixture();
+  deps.prove = async (original, thumb) => {
+    const uid = await proveMigrationAsset(original);
+    return uid && uid === await proveMigrationAsset(thumb) ? uid : null;
+  };
+  const retain = deps.retain;
+  deps.retain = async (input) => {
+    assert.equal(input.uid, "u1");
+    return retain(input);
+  };
+  const [result] = await migrateOwnedAssets([wall()], {...options, apply: true}, deps);
+  assert.equal(result.status, "migrated");
+  assert.deepEqual(calls, ["fetch", "fetch", "retain", "retain", "attach", "attach", "bind"]);
+  assert.deepEqual([...store].filter(([key]) => key.includes("/owned_")), privateBefore);
+  const asset = assets[0];
+  store.set("githubUploads/public_conflict", {repo: "walls", path: asset.path, uid: "other"});
+  assert.equal(await proveMigrationAsset(asset), null);
+  store.set("githubUploads/public_conflict", {repo: "walls", path: asset.path, uid: "u1"});
+  assert.equal(await proveMigrationAsset(asset), null, "eight public rows still fail the ambiguity cap");
+  store.delete("githubUploads/public_conflict");
+  store.set("githubUploads/public_ownership_conflict", {repo: "walls", path: asset.path, uid: "other"});
+  store.delete(`githubUploads/public_${asset.path}_0`);
+  assert.equal(await proveMigrationAsset(asset), null, "conflicting public owners still fail below the cap");
+});
 
 test("dry run uses logical id and reads proof only, no network or writes", async () => {
   const {calls, deps} = fixture();

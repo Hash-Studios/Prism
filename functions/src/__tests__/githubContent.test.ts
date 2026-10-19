@@ -19,6 +19,37 @@ const env = {GH_REPO_WALLS: "walls", GH_REPO_SETUPS: "setups"};
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const run = (fn: {run: (request: any) => Promise<any>}, request: Record<string, unknown>) => fn.run(request);
 
+test("private originals use a separate identity from legacy GitHub paths", async (t) => {
+  testGithubEnvironment(t);
+  const path = "a.jpg";
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const pathHash = createHash("sha256").update(`walls\0${path}`).digest("hex");
+  const fileHash = createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex");
+  const legacy = {uid: "victim", repo: "walls", path, sha, sourceKind: "github"};
+  const docs = uploadStore(t, {[`githubUploads/file_${fileHash}`]: legacy});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(ownedAssets, "retainUpload", async (input: {sourceKind?: string}) => {
+    assert.equal(input.sourceKind, "owned");
+    return {bucket: "owned", object: "private-originals/digest", generation: "1", sha256: "digest", uid: "u", repo: "walls", path, sha};
+  });
+  const fetch = t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("Path validation must not depend on GitHub");
+  });
+  const request = {auth: {uid: "u"}, data: {repo: "walls", path, message: "upload", contentBase64: "/9j/"}};
+  await run(githubPutFile, request);
+  await run(githubPutFile, request);
+  assert.equal(fetch.mock.callCount(), 0);
+  assert.deepEqual(docs.get(`githubUploads/file_${fileHash}`), legacy);
+  assert.equal(docs.has(`githubUploadIntents/path_${pathHash}`), false);
+  assert.equal(docs.get(`githubUploadIntents/owned_path_${pathHash}`)?.uid, "u");
+  assert.equal(docs.get(`githubUploads/owned_file_${fileHash}`)?.uid, "u");
+  const legacyIntent = {uid: "victim", repo: "walls", path, sha, blobSha: sha, sourceKind: "github", status: "complete"};
+  docs.set(`githubUploadIntents/path_${pathHash}`, legacyIntent);
+  await run(githubPutFile, request);
+  assert.deepEqual(docs.get(`githubUploadIntents/path_${pathHash}`), legacyIntent);
+});
+
 test("private original upload, completed retry and deletion never contact GitHub", async (t) => {
   testGithubEnvironment(t);
   const docs = uploadStore(t, {});
@@ -48,6 +79,71 @@ test("private original upload, completed retry and deletion never contact GitHub
   assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
 });
 
+for (const legacyUid of ["u", "victim"]) {
+  test(`private deletion cannot remove a colliding GitHub upload owned by ${legacyUid}`, async (t) => {
+    testGithubEnvironment(t);
+    const path = "a.jpg";
+    const sha = "abc";
+    const hash = createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex");
+    const pathHash = createHash("sha256").update(`walls\0${path}`).digest("hex");
+    const legacy = {uid: legacyUid, repo: "walls", path, sha, sourceKind: "github", generation: "legacy"};
+    const docs = uploadStore(t, {
+      [`githubUploads/file_${hash}`]: legacy,
+      [`githubUploads/owned_file_${hash}`]: {uid: "u", repo: "walls", path, sha, sourceKind: "owned", generation: "owned"},
+    });
+    t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+    const fetch = t.mock.method(globalThis, "fetch", async () => {
+      throw new Error("No GitHub delete allowed");
+    });
+    const retained = t.mock.method(ownedAssets, "deleteRetainedUpload", async (input: {sourceKind?: string}) => {
+      assert.equal(input.sourceKind, "owned");
+    });
+    const data = {repo: "walls", path, sha, message: "delete"};
+    if (legacyUid === "u") {
+      await assert.rejects(run(githubDeleteFile, {auth: {uid: "u"}, data}), {code: "failed-precondition"});
+      assert.equal(retained.mock.callCount(), 0);
+    }
+    await run(githubDeleteFile, {auth: {uid: "u"}, data: {...data, sourceKind: "owned"}});
+    if (legacyUid === "u") {
+      await assert.rejects(run(githubDeleteFile, {auth: {uid: "u"}, data}), {code: "failed-precondition"});
+    } else {
+      await run(githubDeleteFile, {auth: {uid: "u"}, data});
+    }
+    await run(githubDeleteFile, {auth: {uid: "u"}, data: {...data, sourceKind: "owned"}});
+    assert.equal(retained.mock.callCount(), 1);
+    assert.equal(fetch.mock.callCount(), 0);
+    assert.deepEqual(docs.get(`githubUploads/file_${hash}`), legacy);
+    assert.equal(docs.has(`githubUploads/owned_file_${hash}`), false);
+    assert.equal(docs.has(`githubUploadIntents/owned_path_${pathHash}`), false);
+    assert.equal(docs.get(`ownedUploadDeletions/owned_file_${hash}`)?.status, "deleted");
+  });
+}
+
+for (const privateDeleted of [false, true]) {
+  test(`another user's private ${privateDeleted ? "tombstone" : "receipt"} cannot block legacy deletion`, async (t) => {
+    testGithubEnvironment(t);
+    const path = "a.jpg";
+    const sha = "abc";
+    const hash = createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex");
+    const privateRecord = {uid: "attacker", repo: "walls", path, sha, sourceKind: "owned", generation: "owned"};
+    const privateKey = privateDeleted ? `ownedUploadDeletions/owned_file_${hash}` : `githubUploads/owned_file_${hash}`;
+    const privateState = privateDeleted ? {...privateRecord, status: "deleted"} : privateRecord;
+    const docs = uploadStore(t, {
+      [`githubUploads/file_${hash}`]: {uid: "victim", repo: "walls", path, sha, sourceKind: "github", generation: "legacy"},
+      [privateKey]: privateState,
+    });
+    const fetch = t.mock.method(globalThis, "fetch", async () => ({ok: true, json: async () => ({})}));
+    t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+    t.mock.method(ownedAssets, "deleteRetainedUpload", async (input: {sourceKind?: string}) => {
+      assert.equal(input.sourceKind, undefined);
+    });
+    await run(githubDeleteFile, {auth: {uid: "victim"}, data: {repo: "walls", path, sha, message: "delete"}});
+    assert.equal(fetch.mock.callCount(), 1);
+    assert.equal(docs.has(`githubUploads/file_${hash}`), false);
+    assert.deepEqual(docs.get(privateKey), privateState);
+  });
+}
+
 test("private rollout blocks legacy pending originals before any public GitHub write", async (t) => {
   testGithubEnvironment(t);
   const bytes = Buffer.from("/9j/", "base64");
@@ -65,6 +161,24 @@ test("private rollout blocks legacy pending originals before any public GitHub w
     repo: "walls", path: "pending.jpg", message: "retry", contentBase64: "/9j/",
   }}), /reconciliation/);
   assert.equal(fetches, 0);
+});
+
+test("private deletion tombstones permit same-path reuploads with same or different bytes", async (t) => {
+  testGithubEnvironment(t);
+  uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("No GitHub request allowed");
+  });
+  t.mock.method(ownedAssets, "retainUpload", async (input: {sha: string}) => ({
+    bucket: "owned", object: "private-originals/digest", generation: "1", sha256: "digest", uid: "u", repo: "walls", path: "a.jpg", sha: input.sha,
+  }));
+  t.mock.method(ownedAssets, "deleteRetainedUpload", async () => undefined);
+  for (const contentBase64 of ["/9j/", "/9j/", "/9j/AA=="]) {
+    const result = await run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "a.jpg", message: "upload", contentBase64}});
+    assert.equal(result.content.path, "a.jpg");
+    await run(githubDeleteFile, {auth: {uid: "u"}, data: {repo: "walls", path: "a.jpg", sha: result.content.sha, message: "delete"}});
+  }
 });
 
 test("retention failure retries without a second GitHub write and preserves exact upload bytes", async (t) => {

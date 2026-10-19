@@ -9,6 +9,7 @@ import {deleteRetainedUpload, ownedAssetStorageEnabled, retainUpload, type Store
 const UPLOADS = "githubUploads";
 const UPLOAD_STATS = "githubUploadStats";
 const UPLOAD_INTENTS = "githubUploadIntents";
+const OWNED_DELETIONS = "ownedUploadDeletions";
 const ISO_BMFF_IMAGE_BRANDS = new Set(["heic", "heix", "hevc", "heim", "heis", "mif1", "msf1", "avif"]);
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 const MAX_UPLOADS_PER_DAY = 30;
@@ -27,6 +28,7 @@ type GithubContentData = {
   contentBase64?: unknown;
   message?: unknown;
   sha?: unknown;
+  sourceKind?: unknown;
 };
 
 type GithubEnv = {
@@ -114,8 +116,8 @@ export async function reserveUploadSlot(callerUid: string, countsAsWall: boolean
   });
 }
 
-function uploadIntentId(repo: string, filePath: string): string {
-  return `path_${createHash("sha256").update(repo + "\0" + filePath).digest("hex")}`;
+function uploadIntentId(repo: string, filePath: string, sourceKind?: unknown): string {
+  return `${sourceKind === "owned" ? "owned_" : ""}path_${createHash("sha256").update(repo + "\0" + filePath).digest("hex")}`;
 }
 
 function gitBlobSha(contentBase64: string): string {
@@ -131,11 +133,12 @@ async function claimUploadIntent(
   filePath: string,
   blobSha: string,
   nowMs: number,
+  sourceKind: "owned" | "github",
 ): Promise<{intent: UploadIntent; attemptId: string; completedResponse?: Record<string, unknown>; newlyClaimed?: boolean}> {
   const week = weekStartUtc(nowMs);
   const statsRef = db.collection(UPLOAD_STATS).doc(callerUid);
   const userRef = db.collection("usersv2").doc(callerUid);
-  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath));
+  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath, sourceKind));
   const attemptId = randomUUID();
   return db.runTransaction(async (tx) => {
     const statsSnap = await tx.get(statsRef);
@@ -174,8 +177,7 @@ async function claimUploadIntent(
       repo,
       path: filePath,
       blobSha,
-      sourceKind: ownedAssetStorageEnabled() && repo === process.env.GH_REPO_WALLS?.trim() &&
-        !isWallSubmissionUpload(repo, filePath) ? "owned" : "github",
+      sourceKind,
       status: "pending",
       weeklyQuotaCharged: weekly,
       uploadWeek: week,
@@ -196,7 +198,7 @@ async function releaseUploadAttempt(
   nowMs: number,
   discard = false,
 ): Promise<void> {
-  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath));
+  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath, intent.sourceKind));
   const statsRef = db.collection(UPLOAD_STATS).doc(callerUid);
   await db.runTransaction(async (tx) => {
     const intentSnap = await tx.get(intentRef);
@@ -266,8 +268,8 @@ async function completeUploadIntent(
   ) {
     throw new HttpsError("internal", "GitHub upload returned incomplete file details.");
   }
-  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath));
-  const uploadRef = db.collection(UPLOADS).doc(uploadRecordId(repo, filePath, sha));
+  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath, intent.sourceKind));
+  const uploadRef = db.collection(UPLOADS).doc(uploadRecordId(repo, filePath, sha, intent.sourceKind));
   await db.runTransaction(async (tx) => {
     const currentSnap = await tx.get(intentRef);
     const current = currentSnap.data() as UploadIntent | undefined;
@@ -311,7 +313,7 @@ async function claimDeleteIntent(
   isAdmin: boolean,
   nowMs: number,
 ): Promise<{attemptId: string; generation: string}> {
-  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath));
+  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath, record?.sourceKind));
   const attemptId = randomUUID();
   return db.runTransaction(async (tx) => {
     const uploadSnap = await tx.get(uploadRef);
@@ -363,8 +365,9 @@ async function finishDeleteIntent(
   generation: string,
   nowMs: number,
   failed = false,
+  sourceKind?: unknown,
 ): Promise<void> {
-  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath));
+  const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath, sourceKind));
   const statsRef = db.collection(UPLOAD_STATS).doc(callerUid);
   await db.runTransaction(async (tx) => {
     const uploadSnap = await tx.get(uploadRef);
@@ -389,6 +392,10 @@ async function finishDeleteIntent(
     const statsSnap = shouldReleaseWeekly ? await tx.get(statsRef) : null;
     const stats = statsSnap?.data();
     if (record) tx.delete(uploadRef);
+    if (sourceKind === "owned") {
+      tx.set(db.collection(OWNED_DELETIONS).doc(uploadRecordId(repo, filePath, sha, "owned")),
+        {uid: record?.uid ?? callerUid, repo, path: filePath, sha, sourceKind, status: "deleted"});
+    }
     tx.delete(intentRef);
     if (shouldReleaseWeekly && record && stats && stats.week === record.uploadWeek && typeof stats.weekCount === "number" &&
       stats.weekCount > 0) {
@@ -444,8 +451,8 @@ function githubUrl(repo: string, filePath: string): string {
   return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodedPath}`;
 }
 
-function uploadRecordId(repo: string, filePath: string, sha: string): string {
-  return `file_${createHash("sha256").update(`${repo}\0${filePath}\0${sha}`).digest("hex")}`;
+function uploadRecordId(repo: string, filePath: string, sha: string, sourceKind?: unknown): string {
+  return `${sourceKind === "owned" ? "owned_" : ""}file_${createHash("sha256").update(`${repo}\0${filePath}\0${sha}`).digest("hex")}`;
 }
 
 async function githubRequest(url: string, init: RequestInit): Promise<Record<string, unknown>>;
@@ -501,19 +508,22 @@ export const githubPutFile = onCall(
     const nowMs = Date.now();
     await reserveUploadSlot(callerUid, false, nowMs);
     const blobSha = gitBlobSha(contentBase64);
-    const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, path));
-    const priorIntent = await intentRef.get();
     const privateOriginal = ownedAssetStorageEnabled() && repo === process.env.GH_REPO_WALLS?.trim() &&
       !isWallSubmissionUpload(repo, path);
-    if (privateOriginal && priorIntent.exists && priorIntent.data()?.status === "pending" &&
-      priorIntent.data()?.sourceKind !== "owned") {
-      throw new HttpsError("failed-precondition", "Legacy original upload requires reconciliation before retry.");
+    const sourceKind = privateOriginal ? "owned" : "github";
+    const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, path, sourceKind));
+    const priorIntent = await intentRef.get();
+    if (privateOriginal) {
+      const legacyIntent = await db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, path)).get();
+      if (legacyIntent.exists && (legacyIntent.data()?.status === "pending" || legacyIntent.data()?.sourceKind === "owned")) {
+        throw new HttpsError("failed-precondition", "Legacy original upload requires reconciliation before retry.");
+      }
     }
     if (!priorIntent.exists && !privateOriginal) {
       const existing = await githubRequest(githubUrl(repo, path), {method: "GET"}, true);
       if (existing) throw new HttpsError("already-exists", "File already exists.");
     }
-    const claim = await claimUploadIntent(callerUid, repo, path, blobSha, nowMs);
+    const claim = await claimUploadIntent(callerUid, repo, path, blobSha, nowMs, sourceKind);
     let intent = claim.intent;
     const complete = async (response: Record<string, unknown>) => {
       const content = response.content as Record<string, unknown> | undefined;
@@ -522,6 +532,7 @@ export const githubPutFile = onCall(
       }
       const retainedAsset = ownedAssetStorageEnabled() ? await retainUpload({
         repo, path, sha: blobSha, uid: callerUid, bytes: Buffer.from(contentBase64, "base64"),
+        ...(intent.sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
       }) : undefined;
       await completeUploadIntent(callerUid, repo, path, intent, claim.attemptId, response, retainedAsset);
     };
@@ -605,15 +616,42 @@ export const githubDeleteFile = onCall(
     const sha = requiredString(request.data?.sha, "sha");
     if (sha.includes("/") || sha === "." || sha === "..") throw new HttpsError("invalid-argument", "Invalid SHA.");
     const isAdmin = await isAdminCaller(request.auth);
+    const requestedKind = request.data?.sourceKind;
+    if (requestedKind !== undefined && requestedKind !== "owned" && requestedKind !== "github") {
+      throw new HttpsError("invalid-argument", "Invalid upload source kind.");
+    }
 
     const uploadCollection = db.collection(UPLOADS);
+    const ownedRef = uploadCollection.doc(uploadRecordId(repo, path, sha, "owned"));
+    const ownedSnap = await ownedRef.get();
+    const tombstone = (await db.collection(OWNED_DELETIONS).doc(uploadRecordId(repo, path, sha, "owned")).get()).data();
     let uploadRef = uploadCollection.doc(uploadRecordId(repo, path, sha));
     let uploadSnap = await uploadRef.get();
     if (!uploadSnap.exists) {
       uploadRef = uploadCollection.doc(sha);
       uploadSnap = await uploadRef.get();
     }
+    const canDeleteOwned = ownedSnap.exists && canDeleteUpload(ownedSnap.data() as GithubUploadRecord, callerUid, repo, path, isAdmin);
+    const canDeleteGithub = uploadSnap.exists && canDeleteUpload(uploadSnap.data() as GithubUploadRecord, callerUid, repo, path, isAdmin);
+    if (!ownedSnap.exists && requestedKind !== "github" && tombstone?.status === "deleted" && tombstone.sha === sha &&
+      (tombstone.uid === callerUid || isAdmin)) {
+      if (requestedKind === undefined && canDeleteGithub) {
+        throw new HttpsError("failed-precondition", "Upload source is ambiguous. Select a source kind.");
+      }
+      return {ok: true};
+    }
+    if (requestedKind === undefined && canDeleteOwned && canDeleteGithub) {
+      throw new HttpsError("failed-precondition", "Upload source is ambiguous. Select a source kind.");
+    }
+    if (requestedKind === "owned" || (requestedKind === undefined && canDeleteOwned)) {
+      if (!ownedSnap.exists) throw new HttpsError("permission-denied", "You cannot delete this file.");
+      uploadRef = ownedRef;
+      uploadSnap = ownedSnap;
+    }
     const record = uploadSnap.exists ? (uploadSnap.data() as GithubUploadRecord) : undefined;
+    if (record?.sourceKind === "owned" && uploadRef.path !== ownedRef.path) {
+      throw new HttpsError("failed-precondition", "Legacy original upload requires reconciliation before deletion.");
+    }
     if (!canDeleteUpload(record, callerUid, repo, path, isAdmin)) {
       throw new HttpsError("permission-denied", "You cannot delete this file.");
     }
@@ -632,18 +670,18 @@ export const githubDeleteFile = onCall(
       if (status !== 404) {
         if (typeof status === "number" && status < 500) {
           await finishDeleteIntent(callerUid, repo, path, sha, uploadRef, isAdmin, deletion.attemptId,
-            deletion.generation, nowMs, true);
+            deletion.generation, nowMs, true, record?.sourceKind);
         }
         throw error;
       }
     }
     if (ownedAssetStorageEnabled() || record?.retainedAsset) {
       try {
-        await deleteRetainedUpload({repo, path, sha});
+        await deleteRetainedUpload({repo, path, sha, ...(record?.sourceKind === "owned" ? {sourceKind: "owned" as const} : {})});
       } catch (error) {
         // Keep ownership and the deleting state so a retry can finish cleanup after GitHub's 404.
         await db.runTransaction(async (tx) => {
-          const ref = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, path));
+          const ref = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, path, record?.sourceKind));
           const intent = (await tx.get(ref)).data();
           if (intent?.deleteAttemptId === deletion.attemptId) tx.update(ref, {deleteExpiresAt: 0});
         });
@@ -651,7 +689,7 @@ export const githubDeleteFile = onCall(
       }
     }
     await finishDeleteIntent(callerUid, repo, path, sha, uploadRef, isAdmin, deletion.attemptId,
-      deletion.generation, nowMs);
+      deletion.generation, nowMs, false, record?.sourceKind);
     return {ok: true};
   },
 );
