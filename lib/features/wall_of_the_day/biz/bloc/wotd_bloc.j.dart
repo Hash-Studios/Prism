@@ -39,8 +39,12 @@ class WotdBloc extends Bloc<WotdEvent, WotdState> {
 
     result.fold(
       onSuccess: (entity) => emit(state.copyWith(status: LoadStatus.success, entity: entity)),
-      onFailure: (_) {
-        if (!paintedCached) emit(state.copyWith(status: LoadStatus.failure));
+      onFailure: (failure) {
+        if (const <String>{'permission-denied', 'unauthenticated', 'not-found'}.contains(failure.code)) {
+          emit(state.copyWith(status: LoadStatus.failure, entity: null));
+        } else if (!paintedCached) {
+          emit(state.copyWith(status: LoadStatus.failure));
+        }
       },
     );
   }

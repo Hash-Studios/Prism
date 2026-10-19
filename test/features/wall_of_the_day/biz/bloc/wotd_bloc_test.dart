@@ -50,6 +50,24 @@ void main() {
     expect(bloc.state.entity?.wallId, 'old');
   });
 
+  for (final code in <String>['permission-denied', 'not-found', 'unauthenticated']) {
+    test('$code removes the saved pick after it painted', () async {
+      final fetchUseCase = _MockFetchWallOfTheDayUseCase();
+      when(fetchUseCase.readCachedToday).thenAnswer((_) async => _oldWall);
+      when(
+        () => fetchUseCase(const NoParams()),
+      ).thenAnswer((_) async => Result.error(ServerFailure('pick unavailable', code: code)));
+      final bloc = WotdBloc(fetchUseCase);
+      addTearDown(bloc.close);
+
+      bloc.add(const WotdEvent.started());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.entity, isNull);
+      expect(bloc.state.status, LoadStatus.failure);
+    });
+  }
+
   test('a late earlier refresh cannot replace the latest wall', () async {
     final first = Completer<Result<WallOfTheDayEntity?>>();
     final second = Completer<Result<WallOfTheDayEntity?>>();

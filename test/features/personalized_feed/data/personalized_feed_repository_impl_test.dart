@@ -115,6 +115,21 @@ class _CountingWallsFirestore extends _OneWallFirestore {
   }
 }
 
+class _StaleProfileFirestore extends _OneWallFirestore {
+  String interest = 'Nature';
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic>, String) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async => map(<String, dynamic>{
+    'interestCategories': <String>[if (preferCacheFirst) 'Nature' else interest],
+  }, id);
+}
+
 class _SlowWallsFirestore extends _OneWallFirestore {
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
@@ -237,6 +252,22 @@ class _CountingFeedCache extends _MemoryFeedCache {
   }
 }
 
+class _DelayedFeedCache extends _MemoryFeedCache {
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    await release.future;
+    return super.read(source: source, scope: scope);
+  }
+}
+
+class _FailingFeedCache extends _MemoryFeedCache {
+  @override
+  Future<FeedSnapshot?> read({required String source, required String scope}) =>
+      Future<FeedSnapshot?>.error(StateError('unreadable cache'));
+}
+
 class _EmptyWallhaven extends Fake implements WallhavenWallpaperRepository {
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({
@@ -293,6 +324,7 @@ class _EmptyPexels extends Fake implements PexelsWallpaperRepository {
 
 class _ToggleWallhaven extends Fake implements WallhavenWallpaperRepository {
   bool fail = false;
+  final List<String> queries = <String>[];
 
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({
@@ -306,7 +338,10 @@ class _ToggleWallhaven extends Fake implements WallhavenWallpaperRepository {
     String? minResolution,
     String? sorting,
     String? colors,
-  }) async => fail ? Result.error(const UnknownFailure('offline')) : Result.success(<WallhavenWallpaper>[]);
+  }) async {
+    queries.add(categoryName);
+    return fail ? Result.error(const UnknownFailure('offline')) : Result.success(<WallhavenWallpaper>[]);
+  }
 }
 
 class _TogglePexels extends Fake implements PexelsWallpaperRepository {
@@ -374,8 +409,15 @@ class _EmptyBlocks extends Fake implements UserBlockRepository {
       failNext = false;
       throw StateError('offline');
     }
-    return <String>{};
+    return cached;
   }
+}
+
+class _PendingBlocks extends _EmptyBlocks {
+  final Completer<Set<String>> initial = Completer<Set<String>>();
+
+  @override
+  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) => initial.future;
 }
 
 class _FailingFavourites extends Fake implements FavouriteWallsRepository {
@@ -1016,6 +1058,28 @@ void main() {
     expect(_itemIds(result.data?.items ?? const <FeedItemEntity>[]), <String>['visible-doc', 'wall-doc']);
   });
 
+  test('refresh uses updated profile interests instead of an indefinitely cached profile', () async {
+    app_state.prismUser = _signedInUser();
+    final firestore = _StaleProfileFirestore();
+    final wallhaven = _ToggleWallhaven();
+    final repository = _repository(
+      firestore: firestore,
+      wallhaven: wallhaven,
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+      favourites: _CountingFavourites(),
+    );
+    await repository.fetch(_firstPage);
+    expect(wallhaven.queries, isNotEmpty);
+    expect(wallhaven.queries, everyElement('nature'));
+    wallhaven.queries.clear();
+    firestore.interest = 'Space';
+
+    await repository.fetch(_firstPage);
+
+    expect(wallhaven.queries, isNotEmpty);
+    expect(wallhaven.queries, everyElement('space'));
+  });
+
   test('a slow source cannot hold the feed past its timeout', () async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     await settings.set('onboarding_v2_interests', 'Photography');
@@ -1165,13 +1229,23 @@ void main() {
       expect(cache.scopes, <String>['feed-test-user', 'feed-test-user']);
     });
 
+    test('a failed warm read is handled before a screen consumes it', () async {
+      final repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _FailingFeedCache(),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      repository.warmCache();
+      await Future<void>.delayed(Duration.zero);
+
+      await expectLater(repository.readCached(), throwsStateError);
+    });
+
     test('a creator blocked after warmCache started is not in the page readCached returns', () async {
       app_state.prismUser = _signedInUser();
       final _CountingFeedCache cache = _CountingFeedCache()
-        ..snapshot = snapshot(<FeedItemEntity>[
-          _prismItem('a', email: 'blocked@example.com'),
-          _prismItem('b'),
-        ]);
+        ..snapshot = snapshot(<FeedItemEntity>[_prismItem('a', email: 'blocked@example.com'), _prismItem('b')]);
       final _EmptyBlocks blocks = _EmptyBlocks();
       final PersonalizedFeedRepository repository = _repository(
         firestore: _EmptyFirestore(),
@@ -1204,6 +1278,81 @@ void main() {
       await repository.readCached();
 
       expect(cache.scopes, <String>['feed-test-user', 'guest']);
+    });
+
+    test('a warm page cannot restore a wallpaper hidden since warming', () async {
+      final settings = SettingsLocalDataSource(InMemoryLocalStore());
+      final impressions = FeedImpressionStore(settings);
+      final item = _prismItem('hidden');
+      final repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()..snapshot = snapshot(<FeedItemEntity>[item, _prismItem('keep')]),
+        settings: settings,
+        impressions: impressions,
+        favourites: _CountingFavourites(),
+      );
+      repository.warmCache();
+      await Future<void>.delayed(Duration.zero);
+      await impressions.hide(PersonalizedRankingService.canonicalKey(item), DateTime.now().toUtc());
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['keep']);
+    });
+
+    test('a warm page waits for initial blocks before exposing cached creators', () async {
+      final blocks = _PendingBlocks();
+      final repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[_prismItem('blocked', email: 'blocked@example.com')]),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+        blocks: blocks,
+      );
+      repository.warmCache();
+      bool returned = false;
+      final pending = repository.readCached().then((page) {
+        returned = true;
+        return page;
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(returned, isFalse);
+      blocks.initial.complete(<String>{'blocked@example.com'});
+
+      final page = await pending;
+      expect(page!.items.any((item) => item.id == 'blocked'), isFalse);
+    });
+
+    test('a warm page observes content filters changed since warming', () async {
+      final settings = SettingsLocalDataSource(InMemoryLocalStore());
+      final repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: _MemoryFeedCache()
+          ..snapshot = snapshot(<FeedItemEntity>[_prismItem('prism'), _wallhavenItem('wh')], filters: '100.100'),
+        settings: settings,
+        favourites: _CountingFavourites(),
+      );
+      repository.warmCache();
+      await Future<void>.delayed(Duration.zero);
+      await settings.set('WHpurity', 110);
+
+      expect(_itemIds((await repository.readCached())!.items), <String>['prism']);
+    });
+
+    test('a warm page is discarded if the account changes while readCached waits', () async {
+      app_state.prismUser = _signedInUser();
+      final cache = _DelayedFeedCache()..snapshot = snapshot(<FeedItemEntity>[_prismItem('previous-user')]);
+      final repository = _repository(
+        firestore: _EmptyFirestore(),
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        favourites: _CountingFavourites(),
+      );
+      repository.warmCache();
+      final pending = repository.readCached();
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      cache.release.complete();
+
+      expect(await pending, isNull);
     });
 
     test('serves bundled starters when every remote feed source is offline', () async {
@@ -1254,9 +1403,9 @@ void main() {
       );
     });
 
-    test('returns at most 24 items with their keys, without waiting for the block list', () async {
+    test('returns at most 24 items with their keys after the block list loads', () async {
       app_state.prismUser = _signedInUser();
-      final _EmptyBlocks blocks = _EmptyBlocks()..hangOnWait = true;
+      final _EmptyBlocks blocks = _EmptyBlocks();
       final PersonalizedFeedRepository repository = _repository(
         firestore: _EmptyFirestore(),
         cache: _MemoryFeedCache()

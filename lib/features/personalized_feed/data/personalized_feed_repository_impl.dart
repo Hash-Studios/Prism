@@ -147,41 +147,33 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return userId.isEmpty ? 'guest' : userId.toLowerCase();
   }
 
-  ({String scope, Future<PersonalizedFeedPage?> page})? _warm;
+  ({String scope, Future<FeedSnapshot?> snapshot})? _warm;
 
   @override
   void warmCache() {
     final String scope = _cacheScope;
     if (_warm?.scope == scope) return;
-    _warm = (scope: scope, page: _readCachedPage(scope));
+    final snapshot = _feedCacheLocal.read(source: 'personalized', scope: scope);
+    snapshot.ignore();
+    _warm = (scope: scope, snapshot: snapshot);
   }
 
   @override
   Future<PersonalizedFeedPage?> readCached() async {
     final String scope = _cacheScope;
+    final int impressionRevision = _impressions.revision;
     final warm = _warm;
     _warm = null;
-    if (warm == null || warm.scope != scope) return _readCachedPage(scope);
-    final PersonalizedFeedPage? page = await warm.page;
-    if (page == null) return null;
-    // The warm read can start before the blocked list loads, so filter again with what is known now.
-    final List<FeedItemEntity> items = BlockedCreatorsFilter.filterFeedItems(
-      page.items,
-      _userBlockRepository.cachedBlockedCreatorEmails,
-    );
-    if (items.length == page.items.length) return page;
-    return PersonalizedFeedPage(
-      items: items,
-      hasMore: page.hasMore,
-      usedKeys: items.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
-      isStale: page.isStale,
-    );
+    final page = await _readCachedPage(scope, snapshot: warm?.scope == scope ? warm!.snapshot : null);
+    if (scope != _cacheScope || impressionRevision != _impressions.revision) return null;
+    return page;
   }
 
-  Future<PersonalizedFeedPage?> _readCachedPage(String scope) async {
+  Future<PersonalizedFeedPage?> _readCachedPage(String scope, {Future<FeedSnapshot?>? snapshot}) async {
     final _CachedFeed? cached = await _readCached(
       scope: scope,
-      blocked: () async => _userBlockRepository.cachedBlockedCreatorEmails,
+      blocked: () => _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true),
+      snapshot: snapshot,
     );
     if (cached == null || cached.items.isEmpty) {
       final List<FeedItemEntity> starters = await BundledWallpapers.load();
@@ -505,7 +497,6 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       userId,
       (data, _) => data,
       sourceTag: 'personalized.user_doc_by_id',
-      preferCacheFirst: true,
     );
     if (doc != null) {
       return doc;
@@ -856,16 +847,21 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       ))?.items ??
       const <FeedItemEntity>[];
 
-  Future<_CachedFeed?> _readCached({required String scope, required Future<Set<String>> Function() blocked}) async {
-    final snapshot = await _feedCacheLocal.read(source: 'personalized', scope: scope);
-    if (snapshot == null || snapshot.payload is! Map) {
+  Future<_CachedFeed?> _readCached({
+    required String scope,
+    required Future<Set<String>> Function() blocked,
+    Future<FeedSnapshot?>? snapshot,
+  }) async {
+    final saved = await (snapshot ?? _feedCacheLocal.read(source: 'personalized', scope: scope));
+    if (saved == null || saved.payload is! Map) {
       return null;
     }
-    final Map<String, dynamic> payload = toJsonMap(snapshot.payload);
+    final Map<String, dynamic> payload = toJsonMap(saved.payload);
     final Object? rawItems = payload['items'];
     if (rawItems is! List) {
       return null;
     }
+    final Set<String> blockedEmails = await blocked();
     // A cache written under other content filters may hold Wallhaven items the user now excludes.
     final bool sameFilters = (payload['filters'] ?? '100.100') == _contentFilters();
     final List<FeedItemEntity> items = rawItems
@@ -874,10 +870,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         .whereType<FeedItemEntity>()
         .where((item) => sameFilters || item is! WallhavenFeedItem)
         .toList(growable: false);
-    final Set<String> blockedEmails = await blocked();
     final Map<String, int> recentShows = _impressions.recentShows(DateTime.now().toUtc());
     return (
-      cachedAt: snapshot.cachedAtUtc,
+      cachedAt: saved.cachedAtUtc,
       items: BlockedCreatorsFilter.filterFeedItems(items, blockedEmails)
           .where(
             (item) =>
