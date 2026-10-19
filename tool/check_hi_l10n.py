@@ -87,6 +87,11 @@ UNCHANGED_ENGLISH = {
     'wallpaperPremium': 'Premium',
 }
 
+UNTRANSLATED_UI_TOKENS = (
+    'Rewards', 'Downloads', 'Shop', 'Settings', 'Share', 'Done', 'Automation',
+    'Unrestricted', 'Silver', 'Apps', 'Battery',
+)
+
 
 def require(condition, message):
     if not condition:
@@ -168,8 +173,17 @@ def check_arb(root):
     require(message_keys(en) == message_keys(hi),
             f'app_hi.arb keys differ: missing={sorted(message_keys(en) - message_keys(hi))}, '
             f'extra={sorted(message_keys(hi) - message_keys(en))}')
+    untranslated = re.compile(r'\b(?:' + '|'.join(UNTRANSLATED_UI_TOKENS) + r')\b')
+    placeholders = re.compile(r'\{\s*([A-Za-z_]\w*)\s*\}')
+    paths = re.compile(r'(?<![A-Za-z0-9])(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+')
     for key in sorted(message_keys(en)):
         require(isinstance(hi[key], str) and hi[key].strip(), f'app_hi.arb: {key} must be a non-empty string')
+        placeholder_names = en.get(f'@{key}', {}).get('placeholders', {})
+        visible_text = paths.sub('', placeholders.sub(
+            lambda match: '' if match.group(1) in placeholder_names else match.group(0), hi[key]))
+        match = untranslated.search(visible_text)
+        require(match is None,
+                f'app_hi.arb: {key} contains untranslated English UI text {match.group(0)!r}' if match else '')
         if hi[key] == en[key]:
             require(UNCHANGED_ENGLISH.get(key) == en[key],
                     f'app_hi.arb: {key} is unchanged English without an exact reviewed allowlist entry')

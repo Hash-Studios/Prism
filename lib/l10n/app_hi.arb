@@ -1086,7 +1086,7 @@
       }
     }
   },
-  "accountNotEnoughCoinsEarnInRewards": "पर्याप्त कॉइन नहीं हैं। Rewards में कॉइन कमाएँ।",
+  "accountNotEnoughCoinsEarnInRewards": "पर्याप्त कॉइन नहीं हैं। इनाम में कॉइन कमाएँ।",
   "@accountNotEnoughCoinsEarnInRewards": {
     "description": "Gift failure message when the user lacks coins."
   },
@@ -1264,6 +1264,10 @@
   "@accountPurchasesRestored": {
     "description": "Success toast after restoring purchases."
   },
+  "accountPurchasesRestoredPending": "खरीदारियाँ वापस पा ली गईं। Pro अनलॉक होने में एक मिनट लग सकता है।",
+  "@accountPurchasesRestoredPending": {
+    "description": "Toast after a restore when the store has the purchase but the server has not confirmed Pro yet."
+  },
   "accountQuickTiles": "क्विक टाइलें",
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
@@ -1288,7 +1292,7 @@
   "@accountRemoveCoverPhoto": {
     "description": "Cover photo removal tooltip."
   },
-  "accountRemoveFilesDownloadsOfflineStay": "Downloads से फ़ाइलें हटाएँ; ऑफ़लाइन सेव की गई कॉपियाँ बनी रहेंगी",
+  "accountRemoveFilesDownloadsOfflineStay": "डाउनलोड से फ़ाइलें हटाएँ; ऑफ़लाइन सेव की गई कॉपियाँ बनी रहेंगी",
   "@accountRemoveFilesDownloadsOfflineStay": {
     "description": "Subtitle for clearing downloads when file count is unavailable."
   },
@@ -1470,7 +1474,7 @@
   "@accountSendProfileLink": {
     "description": "Subtitle for the share profile settings row."
   },
-  "accountSetUpQuickTiles": "Quick Settings टाइलें सेट अप करें",
+  "accountSetUpQuickTiles": "त्वरित सेटिंग्स टाइलें सेट अप करें",
   "@accountSetUpQuickTiles": {
     "description": "Subtitle for the Quick Tiles guide."
   },
@@ -1510,7 +1514,7 @@
   "@accountShareYourProfile": {
     "description": "Settings row for sharing a profile link."
   },
-  "accountShop": "शॉप",
+  "accountShop": "दुकान",
   "@accountShop": {
     "description": "Settings row for the Prism shop."
   },
@@ -2052,7 +2056,7 @@
   "coreAdjustPositionPreview": "जगह समायोजित करें और पूर्वावलोकन देखें",
   "coreAdjustPositionPreviewBody": "सेट करने से पहले पैन करें, ज़ूम करें और धुँधला करें।",
   "coreAlwaysUseThis": "हमेशा यही इस्तेमाल करें",
-  "coreAlwaysUseThisBody": "अगली बार Set आपकी चुनी हुई स्क्रीन इस्तेमाल करेगा और यह शीट छोड़ देगा।",
+  "coreAlwaysUseThisBody": "अगली बार वॉलपेपर लगाने पर आपकी चुनी हुई स्क्रीन इस्तेमाल होगी और यह शीट नहीं दिखेगी।",
   "coreBack": "वापस",
   "coreBio": "बायो",
   "coreBlockCreatorAfterReport": "इस क्रिएटर को भी ब्लॉक करें",
@@ -2402,10 +2406,10 @@
   "corePairPickerNoHistory": "अभी तक कोई इतिहास नहीं।",
   "corePairPickerTitle": "लॉक स्क्रीन के लिए वॉलपेपर चुनें",
   "corePairPickerUseWallpaper": "लॉक स्क्रीन पर यह वॉलपेपर लगाएँ",
-  "corePhotosPermissionMessage": "वॉलपेपर सेव करने के लिए Prism को Settings में फ़ोटो जोड़ने की अनुमति दें।",
+  "corePhotosPermissionMessage": "वॉलपेपर सेव करने के लिए Prism को सेटिंग्स में फ़ोटो जोड़ने की अनुमति दें।",
   "corePhotosStepOpen": "Photos खोलें।",
-  "corePhotosStepShare": "Share पर टैप करें।",
-  "corePhotosStepUseAsWallpaper": "Use as Wallpaper पर टैप करें।",
+  "corePhotosStepShare": "शेयर करें पर टैप करें।",
+  "corePhotosStepUseAsWallpaper": "वॉलपेपर के रूप में इस्तेमाल करें पर टैप करें।",
   "corePopupAppVersion": "आप संस्करण {version} इस्तेमाल कर रहे हैं।",
   "@corePopupAppVersion": {
     "description": "Version message in the changelog sheet.",
@@ -3599,7 +3603,7 @@
       }
     }
   },
-  "economyCoinsSpendingDetails": "कॉइन से वॉलपेपर, टूल और Shop की चीज़ें खरीदी जा सकती हैं। XP आपकी प्रगति है, खर्च करने लायक बैलेंस नहीं। कॉइन खर्च करने से आपका XP कभी कम नहीं होता।",
+  "economyCoinsSpendingDetails": "कॉइन से वॉलपेपर, टूल और दुकान की चीज़ें खरीदी जा सकती हैं। XP आपकी प्रगति है, खर्च करने लायक बैलेंस नहीं। कॉइन खर्च करने से आपका XP कभी कम नहीं होता।",
   "economyCoinsWhatYouCanDo": "इनसे आप क्या कर सकते हैं",
   "economyCoinsWord": "कॉइन",
   "economyCollectionItemSemantics": "{category}, {status}। {caption}",
@@ -4637,9 +4641,9 @@
       }
     }
   },
-  "economyLeaderboardScoringIntro": "स्थान इस हफ़्ते कमाए गए XP के आधार पर तय होते हैं। Silver जैसे रैंक लेबल कुल XP पर आधारित हैं। साप्ताहिक XP सोमवार 00:00 UTC पर रीसेट होता है; कुल XP और रैंक बनी रहती है।",
+  "economyLeaderboardScoringIntro": "स्थान इस हफ़्ते कमाए गए XP के आधार पर तय होते हैं। रजत जैसे रैंक लेबल कुल XP पर आधारित हैं। साप्ताहिक XP सोमवार 00:00 UTC पर रीसेट होता है; कुल XP और रैंक बनी रहती है।",
   "economyLeaderboardTitle": "लीडरबोर्ड",
-  "economyLifetimePermanentDetails": "कुल XP आपकी रैंक तय करता है और कभी रीसेट नहीं होता। रैंक के कॉस्मेटिक आइटम अपने-आप आपकी इन्वेंट्री में आते हैं, इनमें कोई कॉइन नहीं लगता और ये हमेशा आपके रहते हैं। Shop में तय करें कि इन्हें कब इस्तेमाल करना है।",
+  "economyLifetimePermanentDetails": "कुल XP आपकी रैंक तय करता है और कभी रीसेट नहीं होता। रैंक के कॉस्मेटिक आइटम अपने-आप आपकी इन्वेंट्री में आते हैं, इनमें कोई कॉइन नहीं लगता और ये हमेशा आपके रहते हैं। दुकान में तय करें कि इन्हें कब इस्तेमाल करना है।",
   "economyLifetimePermanentRewards": "कुल प्रगति, स्थायी इनाम",
   "economyLifetimeXp": "कुल {xp} XP",
   "@economyLifetimeXp": {
@@ -4716,7 +4720,7 @@
     }
   },
   "economyOpenFree": "मुफ़्त खोलें",
-  "economyOpenShop": "Shop खोलें",
+  "economyOpenShop": "दुकान खोलें",
   "economyOpening": "खुल रहा है",
   "economyOwned": "आपका है",
   "economyPremiumCollection": "Premium कलेक्शन",
@@ -4980,7 +4984,7 @@
   "economySameActivityXpDetails": "विज्ञापन, Pro स्पिन, Pro के दैनिक बोनस, रेफ़रल और रिफ़ंड से XP नहीं मिलता। Pro और कॉइन मल्टीप्लायर से XP नहीं बढ़ता। कॉइन के इनाम अलग रहते हैं।",
   "economySeeAll": "सभी देखें",
   "economySeeBadges": "बैज देखें",
-  "economySeeItInShop": "इसे Shop में देखें",
+  "economySeeItInShop": "इसे दुकान में देखें",
   "economySeeOdds": "जीतने की संभावना देखें",
   "economySeePro": "Pro देखें",
   "economySeeRewards": "इनाम देखें",
@@ -6037,6 +6041,14 @@
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
   },
+  "premiumPurchasePending": "आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।",
+  "@premiumPurchasePending": {
+    "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPurchaseUnconfirmed": "आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।",
+  "@premiumPurchaseUnconfirmed": {
+    "description": "Toast after a purchase that neither the store nor the server could confirm."
+  },
   "wallpaperAccentColor": "ऐक्सेंट रंग",
   "@wallpaperAccentColor": {
     "description": "Wallpaper interface text: wallpaperAccentColor."
@@ -6065,11 +6077,11 @@
   "@wallpaperAutoRotateApplyTo": {
     "description": "Auto-rotate target setting section label."
   },
-  "wallpaperAutoRotateBatterySteps": "सेटिंग्स खोलें, फिर Apps, Prism, Battery पर जाएँ। बैटरी उपयोग को Unrestricted करें।",
+  "wallpaperAutoRotateBatterySteps": "सेटिंग्स खोलें, फिर ऐप्स > Prism > बैटरी पर जाएँ। बैटरी उपयोग पर प्रतिबंध न लगाएँ।",
   "@wallpaperAutoRotateBatterySteps": {
     "description": "Instructions copied to help keep auto-rotate running."
   },
-  "wallpaperAutoRotateBatteryTip": "अगर वॉलपेपर बदलना बंद हो जाएँ, तो Prism के बैटरी उपयोग को Unrestricted करें। Settings खोलें, फिर Apps, Prism, Battery पर जाएँ।",
+  "wallpaperAutoRotateBatteryTip": "अगर वॉलपेपर बदलना बंद हो जाएँ, तो Prism के बैटरी उपयोग पर प्रतिबंध न लगाएँ। सेटिंग्स खोलें, फिर ऐप्स > Prism > बैटरी पर जाएँ।",
   "@wallpaperAutoRotateBatteryTip": {
     "description": "Battery settings guidance for auto-rotate."
   },
@@ -6672,7 +6684,7 @@
   "@wallpaperDeleteOneDownloadTitle": {
     "description": "Confirmation title before deleting one downloaded wallpaper."
   },
-  "wallpaperDepthEditorSubtitle": "लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर Depth Effect चुनें।",
+  "wallpaperDepthEditorSubtitle": "लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
   "@wallpaperDepthEditorSubtitle": {
     "description": "Wallpaper interface text: wallpaperDepthEditorSubtitle."
   },
@@ -7319,7 +7331,7 @@
   "@wallpaperImageSemanticLabel": {
     "description": "Accessibility label for the wallpaper image."
   },
-  "wallpaperInsufficientCoins": "कॉइन कम हैं। Rewards में कॉइन कमाएँ।",
+  "wallpaperInsufficientCoins": "कॉइन कम हैं। इनाम में कॉइन कमाएँ।",
   "@wallpaperInsufficientCoins": {
     "description": "Message shown when the user lacks coins for an auto-rotate pass."
   },
@@ -7949,15 +7961,15 @@
   "@wallpaperQuickTargetLock": {
     "description": "Quick tile target option for the lock screen."
   },
-  "wallpaperQuickTileAddError": "टाइल नहीं जोड़ी जा सकी। इसे Quick Settings की संपादन स्क्रीन से खुद जोड़ें।",
+  "wallpaperQuickTileAddError": "टाइल नहीं जोड़ी जा सकी। इसे त्वरित सेटिंग्स की संपादन स्क्रीन से खुद जोड़ें।",
   "@wallpaperQuickTileAddError": {
     "description": "Instructions shown when Prism cannot add the wallpaper tile directly."
   },
-  "wallpaperQuickTileAdded": "टाइल Quick Settings में जोड़ दी गई।",
+  "wallpaperQuickTileAdded": "टाइल त्वरित सेटिंग्स में जोड़ दी गई।",
   "@wallpaperQuickTileAdded": {
     "description": "Confirmation after adding a wallpaper tile to Android Quick Settings."
   },
-  "wallpaperQuickTileAlreadyAdded": "यह टाइल पहले से Quick Settings में है।",
+  "wallpaperQuickTileAlreadyAdded": "यह टाइल पहले से त्वरित सेटिंग्स में है।",
   "@wallpaperQuickTileAlreadyAdded": {
     "description": "Notice shown when the wallpaper tile is already in Android Quick Settings."
   },
@@ -8088,7 +8100,7 @@
   "@wallpaperShortcutsChooseTriggerSteps": {
     "description": "Step to choose a trigger for an iOS Shortcuts wallpaper automation."
   },
-  "wallpaperShortcutsDisableConfirmationSteps": "\"चलाने से पहले पूछें\" बंद करें। Done पर टैप करें।",
+  "wallpaperShortcutsDisableConfirmationSteps": "\"चलाने से पहले पूछें\" बंद करें। हो गया पर टैप करें।",
   "@wallpaperShortcutsDisableConfirmationSteps": {
     "description": "Step to disable confirmation and save an iOS Shortcuts automation."
   },
@@ -8100,7 +8112,7 @@
   "@wallpaperShortcutsOpenAction": {
     "description": "Action to open Apple's Shortcuts app."
   },
-  "wallpaperShortcutsOpenAutomationSteps": "Shortcuts ऐप खोलें। Automation पर टैप करें, फिर New Automation पर।",
+  "wallpaperShortcutsOpenAutomationSteps": "Shortcuts ऐप खोलें। ऑटोमेशन पर टैप करें, फिर नया ऑटोमेशन पर।",
   "@wallpaperShortcutsOpenAutomationSteps": {
     "description": "First step in creating a wallpaper automation in iOS Shortcuts."
   },

@@ -53,6 +53,15 @@ void main() {
     expect(hindi.onboardingWelcomeHeadline, 'आपकी स्क्रीन, नए अंदाज़ में।');
     expect(hindi.premiumPageTitle, 'Prism Premium');
     expect(hindi.accountSignIn, 'साइन इन करें');
+    expect(hindi.accountSettings, 'सेटिंग्स');
+    expect(hindi.accountShop, 'दुकान');
+    expect(hindi.accountUseShortcutsAutomation, 'Shortcuts ऑटोमेशन का इस्तेमाल करें');
+    expect(hindi.accountPurchasesRestoredPending, 'खरीदारियाँ वापस पा ली गईं। Pro अनलॉक होने में एक मिनट लग सकता है।');
+    expect(hindi.premiumPurchasePending, 'आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।');
+    expect(
+      hindi.premiumPurchaseUnconfirmed,
+      'आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।',
+    );
     expect(hindi.coreProfileUpdated, 'प्रोफ़ाइल अपडेट की गई');
     expect(hindi.accountBlockThisUserTitle('Asha'), 'Asha को ब्लॉक करें?');
     expect(hindi.coreWallpaperBySemanticLabel('Asha'), 'Asha का वॉलपेपर');

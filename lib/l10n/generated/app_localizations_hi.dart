@@ -830,7 +830,7 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get accountNotEnoughCoinsEarnInRewards => 'पर्याप्त कॉइन नहीं हैं। Rewards में कॉइन कमाएँ।';
+  String get accountNotEnoughCoinsEarnInRewards => 'पर्याप्त कॉइन नहीं हैं। इनाम में कॉइन कमाएँ।';
 
   @override
   String get accountNotFollowingAnyoneYet => 'अभी आप किसी को फ़ॉलो नहीं कर रहे हैं';
@@ -957,6 +957,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountPurchasesRestored => 'खरीदारियाँ वापस पा ली गईं।';
 
   @override
+  String get accountPurchasesRestoredPending => 'खरीदारियाँ वापस पा ली गईं। Pro अनलॉक होने में एक मिनट लग सकता है।';
+
+  @override
   String get accountQuickTiles => 'क्विक टाइलें';
 
   @override
@@ -975,8 +978,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountRemoveCoverPhoto => 'कवर फ़ोटो हटाएँ';
 
   @override
-  String get accountRemoveFilesDownloadsOfflineStay =>
-      'Downloads से फ़ाइलें हटाएँ; ऑफ़लाइन सेव की गई कॉपियाँ बनी रहेंगी';
+  String get accountRemoveFilesDownloadsOfflineStay => 'डाउनलोड से फ़ाइलें हटाएँ; ऑफ़लाइन सेव की गई कॉपियाँ बनी रहेंगी';
 
   @override
   String get accountRemoveLink => 'लिंक हटाएँ';
@@ -1107,7 +1109,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountSendProfileLink => 'अपनी Prism प्रोफ़ाइल का लिंक भेजें';
 
   @override
-  String get accountSetUpQuickTiles => 'Quick Settings टाइलें सेट अप करें';
+  String get accountSetUpQuickTiles => 'त्वरित सेटिंग्स टाइलें सेट अप करें';
 
   @override
   String get accountSetUsername => 'यूज़रनेम सेट करें';
@@ -1137,7 +1139,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountShareYourProfile => 'अपनी प्रोफ़ाइल शेयर करें';
 
   @override
-  String get accountShop => 'शॉप';
+  String get accountShop => 'दुकान';
 
   @override
   String get accountShowAnimeWallpapers => 'ऐनिमे वॉलपेपर दिखाएँ';
@@ -1866,7 +1868,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreAlwaysUseThis => 'हमेशा यही इस्तेमाल करें';
 
   @override
-  String get coreAlwaysUseThisBody => 'अगली बार Set आपकी चुनी हुई स्क्रीन इस्तेमाल करेगा और यह शीट छोड़ देगा।';
+  String get coreAlwaysUseThisBody =>
+      'अगली बार वॉलपेपर लगाने पर आपकी चुनी हुई स्क्रीन इस्तेमाल होगी और यह शीट नहीं दिखेगी।';
 
   @override
   String get coreBack => 'वापस';
@@ -2474,16 +2477,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get corePairPickerUseWallpaper => 'लॉक स्क्रीन पर यह वॉलपेपर लगाएँ';
 
   @override
-  String get corePhotosPermissionMessage => 'वॉलपेपर सेव करने के लिए Prism को Settings में फ़ोटो जोड़ने की अनुमति दें।';
+  String get corePhotosPermissionMessage => 'वॉलपेपर सेव करने के लिए Prism को सेटिंग्स में फ़ोटो जोड़ने की अनुमति दें।';
 
   @override
   String get corePhotosStepOpen => 'Photos खोलें।';
 
   @override
-  String get corePhotosStepShare => 'Share पर टैप करें।';
+  String get corePhotosStepShare => 'शेयर करें पर टैप करें।';
 
   @override
-  String get corePhotosStepUseAsWallpaper => 'Use as Wallpaper पर टैप करें।';
+  String get corePhotosStepUseAsWallpaper => 'वॉलपेपर के रूप में इस्तेमाल करें पर टैप करें।';
 
   @override
   String corePopupAppVersion(String version) {
@@ -4415,7 +4418,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get economyCoinsSpendingDetails =>
-      'कॉइन से वॉलपेपर, टूल और Shop की चीज़ें खरीदी जा सकती हैं। XP आपकी प्रगति है, खर्च करने लायक बैलेंस नहीं। कॉइन खर्च करने से आपका XP कभी कम नहीं होता।';
+      'कॉइन से वॉलपेपर, टूल और दुकान की चीज़ें खरीदी जा सकती हैं। XP आपकी प्रगति है, खर्च करने लायक बैलेंस नहीं। कॉइन खर्च करने से आपका XP कभी कम नहीं होता।';
 
   @override
   String get economyCoinsWhatYouCanDo => 'इनसे आप क्या कर सकते हैं';
@@ -5562,14 +5565,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get economyLeaderboardScoringIntro =>
-      'स्थान इस हफ़्ते कमाए गए XP के आधार पर तय होते हैं। Silver जैसे रैंक लेबल कुल XP पर आधारित हैं। साप्ताहिक XP सोमवार 00:00 UTC पर रीसेट होता है; कुल XP और रैंक बनी रहती है।';
+      'स्थान इस हफ़्ते कमाए गए XP के आधार पर तय होते हैं। रजत जैसे रैंक लेबल कुल XP पर आधारित हैं। साप्ताहिक XP सोमवार 00:00 UTC पर रीसेट होता है; कुल XP और रैंक बनी रहती है।';
 
   @override
   String get economyLeaderboardTitle => 'लीडरबोर्ड';
 
   @override
   String get economyLifetimePermanentDetails =>
-      'कुल XP आपकी रैंक तय करता है और कभी रीसेट नहीं होता। रैंक के कॉस्मेटिक आइटम अपने-आप आपकी इन्वेंट्री में आते हैं, इनमें कोई कॉइन नहीं लगता और ये हमेशा आपके रहते हैं। Shop में तय करें कि इन्हें कब इस्तेमाल करना है।';
+      'कुल XP आपकी रैंक तय करता है और कभी रीसेट नहीं होता। रैंक के कॉस्मेटिक आइटम अपने-आप आपकी इन्वेंट्री में आते हैं, इनमें कोई कॉइन नहीं लगता और ये हमेशा आपके रहते हैं। दुकान में तय करें कि इन्हें कब इस्तेमाल करना है।';
 
   @override
   String get economyLifetimePermanentRewards => 'कुल प्रगति, स्थायी इनाम';
@@ -5668,7 +5671,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economyOpenFree => 'मुफ़्त खोलें';
 
   @override
-  String get economyOpenShop => 'Shop खोलें';
+  String get economyOpenShop => 'दुकान खोलें';
 
   @override
   String get economyOpening => 'खुल रहा है';
@@ -5962,7 +5965,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get economySeeBadges => 'बैज देखें';
 
   @override
-  String get economySeeItInShop => 'इसे Shop में देखें';
+  String get economySeeItInShop => 'इसे दुकान में देखें';
 
   @override
   String get economySeeOdds => 'जीतने की संभावना देखें';
@@ -7342,6 +7345,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get premiumPageViewPlans => 'प्लान देखें';
 
   @override
+  String get premiumPurchasePending => 'आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।';
+
+  @override
+  String get premiumPurchaseUnconfirmed =>
+      'आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।';
+
+  @override
   String get wallpaperAccentColor => 'ऐक्सेंट रंग';
 
   @override
@@ -7364,11 +7374,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperAutoRotateBatterySteps =>
-      'सेटिंग्स खोलें, फिर Apps, Prism, Battery पर जाएँ। बैटरी उपयोग को Unrestricted करें।';
+      'सेटिंग्स खोलें, फिर ऐप्स > Prism > बैटरी पर जाएँ। बैटरी उपयोग पर प्रतिबंध न लगाएँ।';
 
   @override
   String get wallpaperAutoRotateBatteryTip =>
-      'अगर वॉलपेपर बदलना बंद हो जाएँ, तो Prism के बैटरी उपयोग को Unrestricted करें। Settings खोलें, फिर Apps, Prism, Battery पर जाएँ।';
+      'अगर वॉलपेपर बदलना बंद हो जाएँ, तो Prism के बैटरी उपयोग पर प्रतिबंध न लगाएँ। सेटिंग्स खोलें, फिर ऐप्स > Prism > बैटरी पर जाएँ।';
 
   @override
   String get wallpaperAutoRotateBothScreens => 'दोनों';
@@ -7832,7 +7842,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperDeleteOneDownloadTitle => 'यह डाउनलोड हटाएँ?';
 
   @override
-  String get wallpaperDepthEditorSubtitle => 'लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर Depth Effect चुनें।';
+  String get wallpaperDepthEditorSubtitle => 'लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।';
 
   @override
   String get wallpaperDepthEffect => 'डेप्थ इफ़ेक्ट';
@@ -8349,7 +8359,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperImageSemanticLabel => 'वॉलपेपर';
 
   @override
-  String get wallpaperInsufficientCoins => 'कॉइन कम हैं। Rewards में कॉइन कमाएँ।';
+  String get wallpaperInsufficientCoins => 'कॉइन कम हैं। इनाम में कॉइन कमाएँ।';
 
   @override
   String wallpaperInterestLearnedLabel(String label, int percent) {
@@ -8797,13 +8807,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperQuickTileAddError =>
-      'टाइल नहीं जोड़ी जा सकी। इसे Quick Settings की संपादन स्क्रीन से खुद जोड़ें।';
+      'टाइल नहीं जोड़ी जा सकी। इसे त्वरित सेटिंग्स की संपादन स्क्रीन से खुद जोड़ें।';
 
   @override
-  String get wallpaperQuickTileAdded => 'टाइल Quick Settings में जोड़ दी गई।';
+  String get wallpaperQuickTileAdded => 'टाइल त्वरित सेटिंग्स में जोड़ दी गई।';
 
   @override
-  String get wallpaperQuickTileAlreadyAdded => 'यह टाइल पहले से Quick Settings में है।';
+  String get wallpaperQuickTileAlreadyAdded => 'यह टाइल पहले से त्वरित सेटिंग्स में है।';
 
   @override
   String get wallpaperQuickTileNotAdded => 'टाइल नहीं जोड़ी गई। आप इसे कभी भी जोड़ सकते हैं।';
@@ -8910,7 +8920,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'चुनें कि यह कब चले: दिन का समय, कोई ऐप खोलने पर या चार्जर लगाने पर।';
 
   @override
-  String get wallpaperShortcutsDisableConfirmationSteps => '\"चलाने से पहले पूछें\" बंद करें। Done पर टैप करें।';
+  String get wallpaperShortcutsDisableConfirmationSteps => '\"चलाने से पहले पूछें\" बंद करें। हो गया पर टैप करें।';
 
   @override
   String get wallpaperShortcutsHeadline => 'अपना वॉलपेपर अपने-आप बदलें';
@@ -8919,8 +8929,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperShortcutsOpenAction => 'Shortcuts खोलें';
 
   @override
-  String get wallpaperShortcutsOpenAutomationSteps =>
-      'Shortcuts ऐप खोलें। Automation पर टैप करें, फिर New Automation पर।';
+  String get wallpaperShortcutsOpenAutomationSteps => 'Shortcuts ऐप खोलें। ऑटोमेशन पर टैप करें, फिर नया ऑटोमेशन पर।';
 
   @override
   String get wallpaperShortcutsOpenError => 'Shortcuts नहीं खुल सका। ऐप खुद खोलें।';
