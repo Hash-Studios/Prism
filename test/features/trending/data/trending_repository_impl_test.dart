@@ -165,6 +165,22 @@ void main() {
     expect(offline.data!.map((wall) => wall.id), <String>['A']);
   });
 
+  test('readCached returns the saved walls without a network read and hides blocked creators', () async {
+    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
+    setList('trending', <Object?>['A', 'B']);
+    await repository.fetch();
+    client.queryError = Exception('offline');
+    blocks.completeInitial(<String>{'later@example.com'});
+
+    final saved = await repository.readCached();
+
+    expect(saved.map((wall) => wall.id), <String>['A']);
+  });
+
+  test('readCached is empty when nothing is saved', () async {
+    expect(await repository.readCached(), isEmpty);
+  });
+
   test('saves the walls unfiltered, so a creator unblocked since gets their walls back offline', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
     setList('trending', <Object?>['A', 'B']);

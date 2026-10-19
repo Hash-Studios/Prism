@@ -106,7 +106,11 @@ class TrendingRepositoryImpl implements TrendingRepository {
     }
   }
 
-  Future<List<PrismWallpaper>?> _readCached() async {
+  @override
+  Future<List<PrismWallpaper>> readCached() async =>
+      await _readCached(blocked: _userBlockRepository.cachedBlockedCreatorEmails) ?? const <PrismWallpaper>[];
+
+  Future<List<PrismWallpaper>?> _readCached({Set<String>? blocked}) async {
     try {
       final FeedSnapshot? snapshot = await _feedCacheLocal.read(source: _cacheSource, scope: _cacheScope);
       final Object? rawItems = toJsonMap(snapshot?.payload)['items'];
@@ -117,8 +121,7 @@ class TrendingRepositoryImpl implements TrendingRepository {
           .whereType<PrismFeedItem>()
           .map((item) => item.wallpaper)
           .toList(growable: false);
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-      return _visible(walls, blocked);
+      return _visible(walls, blocked ?? await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true));
     } catch (error) {
       logger.w('[TrendingRepository] cache read failed: $error');
       return null;

@@ -18,7 +18,7 @@ part 'trending_bloc.j.freezed.dart';
 @injectable
 class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
   TrendingBloc(this._fetchTrendingUseCase, this._userBlockRepository) : super(TrendingState.initial()) {
-    on<_Started>((event, emit) => _load(emit));
+    on<_Started>(_onStarted);
     on<_RefreshRequested>((event, emit) => _load(emit));
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
     _blockedCreatorsSub = _userBlockRepository.watchBlockedCreatorEmails().listen(
@@ -54,6 +54,22 @@ class TrendingBloc extends Bloc<TrendingEvent, TrendingState> {
   Future<void> close() {
     unawaited(_blockedCreatorsSub?.cancel());
     return super.close();
+  }
+
+  /// Paints the saved walls at once when none are on screen, then loads the fresh list behind them.
+  Future<void> _onStarted(_Started event, Emitter<TrendingState> emit) async {
+    final int requestId = _latestRequestId;
+    if (state.walls.isEmpty) {
+      List<PrismWallpaper> cached = const <PrismWallpaper>[];
+      try {
+        cached = _withoutBlocked(await _fetchTrendingUseCase.readCached());
+      } catch (_) {}
+      if (emit.isDone || requestId != _latestRequestId) return;
+      if (cached.isNotEmpty && state.walls.isEmpty) {
+        emit(state.copyWith(status: LoadStatus.success, walls: cached));
+      }
+    }
+    return _load(emit);
   }
 
   /// Keeps the walls on screen while a refresh runs, and when it fails.

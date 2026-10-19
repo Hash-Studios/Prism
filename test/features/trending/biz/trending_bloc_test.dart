@@ -54,6 +54,35 @@ void main() {
     verify(() => fetch(any())).called(1);
   });
 
+  test('started paints the saved walls before the network answers, then replaces them', () async {
+    final Completer<Result<List<PrismWallpaper>>> pending = Completer<Result<List<PrismWallpaper>>>();
+    when(() => fetch.readCached()).thenAnswer((_) async => <PrismWallpaper>[_wall('old')]);
+    when(() => fetch(any())).thenAnswer((_) => pending.future);
+
+    bloc.add(const TrendingEvent.started());
+    await settle();
+
+    expect(bloc.state.walls.map((wall) => wall.id), <String>['old']);
+    expect(bloc.state.status, LoadStatus.loading);
+
+    pending.complete(Result.success(<PrismWallpaper>[_wall('new')]));
+    await settle();
+
+    expect(bloc.state.status, LoadStatus.success);
+    expect(bloc.state.walls.map((wall) => wall.id), <String>['new']);
+  });
+
+  test('a network failure after the saved walls painted keeps them on screen', () async {
+    when(() => fetch.readCached()).thenAnswer((_) async => <PrismWallpaper>[_wall('old')]);
+    when(() => fetch(any())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+
+    bloc.add(const TrendingEvent.started());
+    await settle();
+
+    expect(bloc.state.status, LoadStatus.failure);
+    expect(bloc.state.walls.map((wall) => wall.id), <String>['old']);
+  });
+
   test('a failed first load keeps the failure, and a refresh retries', () async {
     when(() => fetch(any())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
 
