@@ -7925,7 +7925,7 @@
   "@wallpaperQuickShuffleTitle": {
     "description": "Title of the quick tile that applies a random wallpaper from a category."
   },
-  "wallpaperQuickStepEdit": "Ketuk ikon pensil atau edit.",
+  "wallpaperQuickStepEdit": "Ketuk ikon pensil atau ikon edit.",
   "@wallpaperQuickStepEdit": {
     "description": "Second step for manually adding a Quick Settings tile."
   },

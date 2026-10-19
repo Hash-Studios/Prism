@@ -8670,7 +8670,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperQuickShuffleTitle => 'Tile acak wallpaper';
 
   @override
-  String get wallpaperQuickStepEdit => 'Ketuk ikon pensil atau edit.';
+  String get wallpaperQuickStepEdit => 'Ketuk ikon pensil atau ikon edit.';
 
   @override
   String get wallpaperQuickStepFindPrism => 'Cari tile Prism, lalu seret ke tile aktif.';
