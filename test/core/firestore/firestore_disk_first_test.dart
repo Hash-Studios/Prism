@@ -92,6 +92,62 @@ void main() {
     expect(await client.query<String>(spec, (data, id) => id), <String>['net']);
   });
 
+  test('diskFirst reuses cached docs while the background refresh is pending', () async {
+    final server = Completer<QuerySnapshot<Map<String, dynamic>>>();
+    when(() => collection.get(any(that: predicate<GetOptions?>(_isCache)))).thenAnswer((_) async => snapA);
+    when(() => collection.get()).thenAnswer((_) => server.future);
+
+    expect(await client.query<String>(spec, (data, id) => id), <String>['a']);
+    final second = client.query<String>(spec, (data, id) => id);
+    var completed = false;
+    unawaited(second.then((_) => completed = true));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(completed, isTrue, reason: 'A cache hit must not wait for the background server request.');
+    expect(await second, <String>['a']);
+    server.complete(snapB);
+    await Future<void>.delayed(Duration.zero);
+  });
+
+  test('concurrent disk cache misses share one network request', () async {
+    final disk = Completer<QuerySnapshot<Map<String, dynamic>>>();
+    final server = Completer<QuerySnapshot<Map<String, dynamic>>>();
+    when(() => collection.get(any(that: predicate<GetOptions?>(_isCache)))).thenAnswer((_) => disk.future);
+    when(() => collection.get()).thenAnswer((_) => server.future);
+
+    final first = client.query<String>(spec, (data, id) => id);
+    final second = client.query<String>(spec, (data, id) => id);
+    disk.complete(empty);
+    await Future<void>.delayed(Duration.zero);
+
+    verify(() => collection.get()).called(1);
+    server.complete(snapNet);
+    expect(await first, <String>['net']);
+    expect(await second, <String>['net']);
+  });
+
+  test('a slow concurrent disk read does not overwrite a completed server refresh', () async {
+    final firstDisk = Completer<QuerySnapshot<Map<String, dynamic>>>();
+    final secondDisk = Completer<QuerySnapshot<Map<String, dynamic>>>();
+    final server = Completer<QuerySnapshot<Map<String, dynamic>>>();
+    var diskReads = 0;
+    when(() => collection.get(any(that: predicate<GetOptions?>(_isCache)))).thenAnswer(
+      (_) => diskReads++ == 0 ? firstDisk.future : secondDisk.future,
+    );
+    when(() => collection.get()).thenAnswer((_) => server.future);
+
+    final first = client.query<String>(spec, (data, id) => id);
+    final second = client.query<String>(spec, (data, id) => id);
+    firstDisk.complete(snapA);
+    expect(await first, <String>['a']);
+    server.complete(snapB);
+    await Future<void>.delayed(Duration.zero);
+    secondDisk.complete(snapA);
+
+    expect(await second, <String>['b']);
+    verify(() => collection.get()).called(1);
+  });
+
   test('diskFirst falls through to the network when the cache read throws', () async {
     when(() => collection.get(any(that: predicate<GetOptions?>(_isCache)))).thenThrow(StateError('no persistence'));
     when(() => collection.get()).thenAnswer((_) async => snapNet);

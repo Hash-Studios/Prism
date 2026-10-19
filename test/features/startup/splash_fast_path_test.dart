@@ -159,6 +159,27 @@ void main() {
     expect(find.text(DashboardRoute.name), findsNothing);
   });
 
+  testWidgets('an obsolete result before the scheduled fast-path navigation keeps the update screen', (tester) async {
+    await storeOnboarded();
+    await storeObsoleteVersion('1.0.0');
+    await tester.pumpWidget(
+      BlocProvider<StartupBloc>.value(
+        value: bloc,
+        child: MaterialApp.router(
+          routerConfig: router.config(),
+          builder: (context, child) => ObsoleteVersionGate(router: router, child: child!),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(router.topRoute.name, SplashWidgetRoute.name);
+
+    await finishBootstrap(tester, Result.success(_config('99.0.0')));
+
+    expect(find.byType(OldVersion), findsOneWidget);
+    expect(find.text(DashboardRoute.name), findsNothing);
+  });
+
   testWidgets('a failed bootstrap after the fast path leaves the user on the dashboard', (tester) async {
     await storeOnboarded();
     await storeObsoleteVersion('1.0.0');

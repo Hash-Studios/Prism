@@ -425,17 +425,22 @@ class FirestoreTrackedClient implements FirestoreClient {
       }
       return _mapCachedDocs(cached, map);
     }
+    if (spec.cachePolicy == FirestoreCachePolicy.diskFirst) {
+      final _QueryCacheEntry? fromDisk = await _readDiskCache(spec);
+      final _QueryCacheEntry? refreshed = _queryCache[key];
+      if (refreshed != null && _isCacheFresh(refreshed, spec)) {
+        return _mapCachedDocs(refreshed, map);
+      }
+      if (fromDisk != null) {
+        _saveQueryCache(key, fromDisk);
+        _refreshInBackground(spec);
+        return _mapCachedDocs(fromDisk, map);
+      }
+    }
     final Future<_QueryCacheEntry>? inflight = _inflightQueries[key];
     if (inflight != null) {
       final _QueryCacheEntry shared = await inflight;
       return _mapCachedDocs(shared, map);
-    }
-    if (spec.cachePolicy == FirestoreCachePolicy.diskFirst) {
-      final _QueryCacheEntry? fromDisk = await _readDiskCache(spec);
-      if (fromDisk != null) {
-        _refreshInBackground(spec);
-        return _mapCachedDocs(fromDisk, map);
-      }
     }
     final Future<_QueryCacheEntry> request = _executeNetworkQuery(spec);
     _inflightQueries[key] = request;

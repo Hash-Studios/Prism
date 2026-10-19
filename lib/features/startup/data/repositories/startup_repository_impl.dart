@@ -140,7 +140,14 @@ class StartupRepositoryImpl implements StartupRepository {
         fallback: defaultBannerTextOn,
       );
       final bannerUrl = remoteConfig?.getString('bannerURL') ?? defaultBannerUrl;
-      final obsoleteVersion = remoteConfig?.getString('obsoleteVersion') ?? defaultObsoleteAppVersion;
+      final SettingsLocalDataSource? settings = getIt.isRegistered<SettingsLocalDataSource>()
+          ? getIt<SettingsLocalDataSource>()
+          : null;
+      final String cachedObsolete =
+          settings?.get<String>(PersistenceKeys.obsoleteAppVersion, defaultValue: '').trim() ?? '';
+      final obsoleteVersion =
+          remoteConfig?.getString('obsoleteVersion') ??
+          (cachedObsolete.isEmpty ? defaultObsoleteAppVersion : cachedObsolete);
       final verifiedUsers = _parseStringList(
         remoteConfig?.getString('verifiedUsers') ?? defaultVerifiedUsers.toString(),
       );
@@ -171,8 +178,8 @@ class StartupRepositoryImpl implements StartupRepository {
       );
 
       _currentConfig = entity;
-      if (getIt.isRegistered<SettingsLocalDataSource>()) {
-        unawaited(getIt<SettingsLocalDataSource>().set(PersistenceKeys.obsoleteAppVersion, obsoleteVersion));
+      if (remoteConfig != null && settings != null) {
+        unawaited(settings.set(PersistenceKeys.obsoleteAppVersion, obsoleteVersion));
       }
 
       unawaited(syncInAppNotificationsFromRemote());

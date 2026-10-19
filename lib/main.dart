@@ -153,8 +153,10 @@ Future<void> main() async {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       PerformanceProbe.mark('startup.binding_ready');
-      HttpsCallable.perfSink = (String name, int ms, bool ok) =>
-          PerformanceProbe.emit(kind: 'callable', name: name, durationMs: ms, success: ok);
+      if (!kReleaseMode) {
+        HttpsCallable.perfSink = (String name, int ms, bool ok) =>
+            PerformanceProbe.emit(kind: 'callable', name: name, durationMs: ms, success: ok);
+      }
       unawaited(
         app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
           logger.w(
@@ -299,9 +301,11 @@ Future<void> main() async {
       applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: lightChrome ? Brightness.dark : Brightness.light);
 
       PerformanceProbe.mark('startup.run_app');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        PerformanceProbe.mark('startup.first_frame');
-      });
+      if (!kReleaseMode) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          PerformanceProbe.mark('startup.first_frame');
+        });
+      }
       runApp(
         LogToastOverlay(
           child: BlocProvider<AutoRotateBloc>(
@@ -721,7 +725,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     _orientationPolicyObserver = OrientationPolicyObserver();
     unawaited(_orientationPolicyObserver.start());
     _appRouter = AppRouter();
-    if (Env.perfAutodrive) PerfAutodrive.start(_appRouter);
+    if (!kReleaseMode && Env.perfAutodrive) PerfAutodrive.start(_appRouter);
     _authContinuation = AuthNavigationContinuation.of(_appRouter);
     _startupGate = DeepLinkStartupGate(router: _appRouter);
     _deepLinkDispatcher = DeepLinkDispatcher(

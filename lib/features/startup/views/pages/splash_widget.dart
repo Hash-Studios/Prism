@@ -15,6 +15,7 @@ import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -92,14 +93,19 @@ class _SplashWidgetState extends State<SplashWidget> {
       return;
     }
     _navigated = true;
-    final effectiveDebugForce = OnboardingV2Config.debugForceOnboarding && !_debugOnboardingShownThisSession;
-    final isOnboarded =
-        !effectiveDebugForce && _settingsLocal.get<bool>(OnboardingV2Keys.onboardedNew, defaultValue: false);
-    final v2Enabled = effectiveDebugForce || (context.read<StartupBloc>().state.config?.onboardingV2Enabled ?? false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
+      final startup = context.read<StartupBloc>().state;
+      if (startup.isObsoleteVersion) {
+        _navigated = false;
+        return;
+      }
+      final effectiveDebugForce = OnboardingV2Config.debugForceOnboarding && !_debugOnboardingShownThisSession;
+      final isOnboarded =
+          !effectiveDebugForce && _settingsLocal.get<bool>(OnboardingV2Keys.onboardedNew, defaultValue: false);
+      final v2Enabled = effectiveDebugForce || (startup.config?.onboardingV2Enabled ?? false);
       final bool showOnboarding = shouldShowOnboarding(
         isLoggedIn: app_state.prismUser.loggedIn,
         isOnboarded: isOnboarded,
@@ -108,18 +114,22 @@ class _SplashWidgetState extends State<SplashWidget> {
       );
       if (showOnboarding) {
         _debugOnboardingShownThisSession = true;
-        PerformanceProbe.emit(
-          kind: 'startup',
-          name: 'time_to_onboarding',
-          durationMs: PerformanceProbe.sinceProcess.elapsedMilliseconds,
-        );
+        if (!kReleaseMode) {
+          PerformanceProbe.emit(
+            kind: 'startup',
+            name: 'time_to_onboarding',
+            durationMs: PerformanceProbe.sinceProcess.elapsedMilliseconds,
+          );
+        }
         context.router.replaceAll([OnboardingV2ShellRoute()]);
       } else {
-        PerformanceProbe.emit(
-          kind: 'startup',
-          name: 'time_to_home',
-          durationMs: PerformanceProbe.sinceProcess.elapsedMilliseconds,
-        );
+        if (!kReleaseMode) {
+          PerformanceProbe.emit(
+            kind: 'startup',
+            name: 'time_to_home',
+            durationMs: PerformanceProbe.sinceProcess.elapsedMilliseconds,
+          );
+        }
         context.router.replaceAll([const DashboardRoute()]);
       }
     });
