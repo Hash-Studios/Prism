@@ -624,11 +624,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
 
   Future<void> _restorePurchases() async {
+    final String requestedUserId = app_state.prismUser.id.trim();
+    final bool requestedLoggedIn = app_state.prismUser.loggedIn;
+    bool isCurrentAccount() =>
+        requestedUserId == app_state.prismUser.id.trim() && requestedLoggedIn == app_state.prismUser.loggedIn;
     _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
     setState(() => _restoring = true);
     toasts.success('Restoring purchases…', haptic: false);
     try {
       final bool confirmed = await PurchasesService.instance.restore();
+      if (!mounted || !isCurrentAccount()) return;
       if (confirmed) {
         toasts.success('Purchases restored.');
       } else if (app_state.prismUser.premium) {
@@ -637,6 +642,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         toasts.error('No purchases to restore for this account.');
       }
     } catch (e) {
+      if (!mounted || !isCurrentAccount()) return;
       toasts.error('Could not restore purchases. Try again.');
     } finally {
       if (mounted) setState(() => _restoring = false);
