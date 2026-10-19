@@ -5,6 +5,8 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
@@ -63,6 +65,8 @@ class PurchasesService {
 
   /// Skip redundant Firestore subscription updates when state unchanged (co-ordinate with coin sync / reduce usersv2 writes).
   static const Duration _subscriptionPersistThrottle = Duration(minutes: 5);
+  static const Duration _subscriptionResyncAfter = Duration(hours: 24);
+  static const String _lastSyncedKeyPrefix = 'lastSyncedSubscription.';
   bool? _lastPersistedPremium;
   String? _lastPersistedTier;
   DateTime? _lastPersistSubscriptionTime;
@@ -209,13 +213,35 @@ class PurchasesService {
     return lifetime ? SubscriptionTier.lifetime : SubscriptionTier.pro;
   }
 
-  Future<void> _persistSubscriptionStateToFirestore({required bool isPremium, required SubscriptionTier tier}) async {
+  SettingsLocalDataSource? get _settings {
+    if (!getIt.isRegistered<SettingsLocalDataSource>()) return null;
+    final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+    return settings.isOpen ? settings : null;
+  }
+
+  /// The last tier the server accepted, with the time, kept across launches so an unchanged tier is not re-synced.
+  bool _syncedRecently(String userId, SubscriptionTier tier, DateTime now) {
+    final String saved = _settings?.get<String>('$_lastSyncedKeyPrefix$userId', defaultValue: '') ?? '';
+    final List<String> parts = saved.split('|');
+    final int? syncedAtMs = parts.length == 2 ? int.tryParse(parts[1]) : null;
+    if (parts.first != tier.name || syncedAtMs == null) return false;
+    final Duration age = now.difference(DateTime.fromMillisecondsSinceEpoch(syncedAtMs));
+    return !age.isNegative && age < _subscriptionResyncAfter;
+  }
+
+  Future<void> _persistSubscriptionStateToFirestore({
+    required bool isPremium,
+    required SubscriptionTier tier,
+    bool force = false,
+  }) async {
     final String userId = app_state.prismUser.id.trim();
     if (userId.isEmpty || !app_state.prismUser.loggedIn) {
       return;
     }
     final DateTime now = DateTime.now();
-    if (_lastPersistedPremium == isPremium &&
+    if (!force && _syncedRecently(userId, tier, now)) return;
+    if (!force &&
+        _lastPersistedPremium == isPremium &&
         _lastPersistedTier == tier.name &&
         _lastPersistSubscriptionTime != null &&
         now.difference(_lastPersistSubscriptionTime!) < _subscriptionPersistThrottle) {
@@ -227,6 +253,11 @@ class PurchasesService {
         _lastPersistedPremium = isPremium;
         _lastPersistedTier = tier.name;
         _lastPersistSubscriptionTime = now;
+        try {
+          await _settings?.set('$_lastSyncedKeyPrefix$userId', '${tier.name}|${now.millisecondsSinceEpoch}');
+        } catch (error, stackTrace) {
+          logger.w('Unable to remember the synced subscription.', error: error, stackTrace: stackTrace);
+        }
         return;
       } catch (error, stackTrace) {
         if (attempt == 0) {
@@ -261,7 +292,8 @@ class PurchasesService {
 
   /// Checks canonical + grandfathered paid entitlements; updates local user state in local persistence.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
-  Future<bool> checkAndPersistPremium() async {
+  /// [forceSync] syncs with the server even when the tier is unchanged, without making the caller wait for it.
+  Future<bool> checkAndPersistPremium({bool forceSync = false}) async {
     try {
       final String requestedUserId = app_state.prismUser.id.trim();
       await ensureConfigured(requestedUserId);
@@ -275,7 +307,7 @@ class PurchasesService {
           requestedUserId != app_state.prismUser.id.trim()) {
         return app_state.prismUser.premium;
       }
-      return await _applyCustomerInfo(info);
+      return await _applyCustomerInfo(info, forceSync: forceSync);
     } on PlatformException catch (e) {
       analytics.track(
         SubscriptionEntitlementRefreshEvent(
@@ -299,14 +331,23 @@ class PurchasesService {
     }
   }
 
-  Future<bool> _applyCustomerInfo(CustomerInfo info) async {
+  Future<bool> _applyCustomerInfo(CustomerInfo info, {bool forceSync = false}) async {
     final SubscriptionTier tier = tierFromCustomerInfo(info);
     final bool isPremium = tier.isPaid;
 
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
-    await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
+    final Future<void> persisted = _persistSubscriptionStateToFirestore(
+      isPremium: isPremium,
+      tier: tier,
+      force: forceSync,
+    );
+    if (forceSync) {
+      unawaited(persisted);
+    } else {
+      await persisted;
+    }
     await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
     analytics.track(
       SubscriptionEntitlementRefreshEvent(
@@ -335,7 +376,7 @@ class PurchasesService {
       logger.w('restorePurchases failed.', error: error, stackTrace: stackTrace);
       rethrow;
     }
-    return checkAndPersistPremium();
+    return checkAndPersistPremium(forceSync: true);
   }
 
   Future<Offerings?> getOfferings() async {

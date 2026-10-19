@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -10,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/in_memory_local_store.dart';
 import '../../support/profile_user_fixture.dart';
 
 const CustomerInfo _freeCustomer = CustomerInfo(
@@ -220,6 +223,76 @@ void main() {
 
     expect(syncCalls, 2);
     expect(app_state.prismUser.premium, isFalse);
+  });
+
+  group('subscription sync skip', () {
+    late SettingsLocalDataSource settings;
+
+    setUp(() async {
+      await getIt.reset();
+      settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    });
+    tearDown(() => getIt.reset());
+
+    Future<void> storeUpdate(PurchasesService service, CustomerInfo info) async {
+      await service.ensureConfigured('u1');
+      service.registerCustomerInfoListener();
+      listeners.single(info);
+      await pumpEventQueue();
+    }
+
+    test('an unchanged tier synced under 24 hours ago is not synced again', () async {
+      await settings.set('lastSyncedSubscription.u1', 'free|${DateTime.now().millisecondsSinceEpoch}');
+      await storeUpdate(buildService(), _freeCustomer);
+      expect(syncCalls, 0);
+    });
+
+    test('an unchanged tier synced over 24 hours ago is synced again and remembered', () async {
+      final int old = DateTime.now().subtract(const Duration(hours: 25)).millisecondsSinceEpoch;
+      await settings.set('lastSyncedSubscription.u1', 'free|$old');
+      await storeUpdate(buildService(), _freeCustomer);
+      expect(syncCalls, 1);
+      final String saved = settings.get<String>('lastSyncedSubscription.u1', defaultValue: '');
+      expect(saved.split('|').first, 'free');
+      expect(int.parse(saved.split('|').last), greaterThan(old));
+    });
+
+    test('a changed tier is synced even when the last sync was recent', () async {
+      await settings.set('lastSyncedSubscription.u1', 'pro|${DateTime.now().millisecondsSinceEpoch}');
+      await storeUpdate(buildService(), _freeCustomer);
+      expect(syncCalls, 1);
+    });
+
+    test('a failed sync is not remembered', () async {
+      failuresLeft = 5;
+      await storeUpdate(buildService(), _freeCustomer);
+      expect(settings.get<String>('lastSyncedSubscription.u1', defaultValue: ''), isEmpty);
+    });
+
+    test('a forced sync runs for an unchanged tier without holding up the result', () async {
+      await settings.set('lastSyncedSubscription.u1', 'free|${DateTime.now().millisecondsSinceEpoch}');
+      final Completer<void> release = Completer<void>();
+      int forcedCalls = 0;
+      final PurchasesService service = PurchasesService.forTesting(
+        addCustomerInfoListener: listeners.add,
+        syncSubscription: () {
+          forcedCalls++;
+          return release.future;
+        },
+        configurePurchases: (_) async {},
+        logIn: (_) async {},
+        getCustomerInfo: () async => _freeCustomer,
+      );
+
+      final bool premium = await service.checkAndPersistPremium(forceSync: true);
+
+      expect(premium, isFalse);
+      expect(forcedCalls, 1);
+      expect(release.isCompleted, isFalse);
+      release.complete();
+      await pumpEventQueue();
+    });
   });
 
   group('subscription conversion event', () {
