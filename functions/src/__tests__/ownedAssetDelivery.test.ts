@@ -14,6 +14,8 @@ test("owned storage is explicit and thumb URL never uses origin", (t) => {
   assert.equal(ownedAssetStorageEnabled(), false);
   process.env.OWNED_THUMBNAIL_BASE_URL = "https://example.com/ownedThumbnail";
   assert.equal(ownedThumbnailUrl("wall"), "https://example.com/ownedThumbnail/wall");
+  process.env.OWNED_THUMBNAIL_BASE_URL = "https://example.com:8443/ownedThumbnail";
+  assert.throws(() => ownedThumbnailUrl("wall"), /Invalid owned thumbnail endpoint/);
 });
 
 test("retention verifies Git SHA and retries create-only object with matching private metadata", async (t) => {
@@ -122,7 +124,8 @@ test("reviewed legacy binding serves retained PNG and signs pinned original duri
   assert.equal(fetches, 0);
   store.set("walls/doc", {...store.get("walls/doc"), review: false});
   await ownedThumbnail({path: "/wall"} as never, response as never);
-  assert.equal(status, 404);
+  assert.equal(status, 200);
+  assert.deepEqual(body, png);
   const before = await db.collection("walls").doc("doc").get();
   store.delete("walls/doc");
   await onOwnedWallWritten.run({data: {before, after: {exists: false}}} as never);

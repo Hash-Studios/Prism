@@ -206,7 +206,8 @@ test('share landing page renders on Android with an intent link and no instant r
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type'), /text\/html/);
   const body = await response.text();
-  assert.match(body, /raw\.githubusercontent\.com\/Hash-Studios\/x\.jpg/);
+  assert.match(body, /cloudfunctions\.net\/ownedThumbnail\/wall-1/);
+  assert.doesNotMatch(body, /raw\.githubusercontent\.com/);
   assert.match(body, /wall-1 - Prism/);
   assert.match(body, /Open in Prism/);
   assert.match(body, /intent:\/\/prismwalls\.com\/share\?[^"]*#Intent;scheme=https;package=com\.hash\.prism;S\.browser_fallback_url=/);
@@ -253,7 +254,7 @@ test('owned thumbnail previews allow only the exact public endpoint', async () =
     [`${endpoint}/extra`, false],
     [endpoint.replace('wall_1-test', 'a'.repeat(201)), false],
   ]) {
-    const body = await (await getShare(ANDROID_UA, `/share?id=wall&thumb=${encodeURIComponent(image)}`)).text();
+    const body = await (await getShare(ANDROID_UA, `/share?id=wall&source=wallhaven&thumb=${encodeURIComponent(image)}`)).text();
     assert.equal(/src="[^"]*asia-south1-prism-wallpapers\.cloudfunctions\.net/.test(body), allowed, image);
   }
 });
@@ -447,7 +448,7 @@ test('short link page for a stored share record renders the same landing', async
   const body = await (await getShare(ANDROID_UA, '/l/AbCdEfGh', env)).text();
   assert.match(body, /Sunset - Prism/);
   assert.match(body, /by @maya/);
-  assert.match(body, /raw\.githubusercontent\.com\/Hash-Studios\/x\.jpg/);
+  assert.match(body, /cloudfunctions\.net\/ownedThumbnail\/wall-1/);
   assert.doesNotMatch(body, /http-equiv="refresh"/);
 
   const queryAlias = await getShare(ANDROID_UA, '/l?code=AbCdEfGh&utm_source=campaign', env);
@@ -1079,13 +1080,16 @@ test('wallpaper shares discard original URLs from canonical and payload input', 
       preview: { image_source_url: original } },
     { type: 'share', payload: { id: 'premium', source: 'prism', url: original },
       preview: { image_source_url: original } },
+    { type: 'share', canonical_url: `https://prismwalls.com/share?id=premium&source=prism&thumb=${encodeURIComponent(original)}`,
+      preview: { image_source_url: original } },
   ]) {
     const env = workerEnv();
     const response = await postLink(env, body);
     assert.equal(response.status, 201);
     const record = JSON.parse(await env.LINKS_KV.get((await response.json()).code));
     assert.equal(new URL(record.canonical_url).searchParams.has('url'), false);
-    assert.equal(record.preview.image_source_url, '');
+    assert.equal(record.preview.image_source_url,
+      'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/premium');
     assert.ok(!JSON.stringify(record).includes('premium-original'));
   }
   const landing = await (await getShare(ANDROID_UA,
@@ -1097,11 +1101,16 @@ test('wallpaper shares discard original URLs from canonical and payload input', 
     LINKS_KV: new MemoryKv([['AbCdEfGh', JSON.stringify({
     code: 'AbCdEfGh',
     type: 'share',
-    canonical_url: `https://prismwalls.com/share?id=premium&url=${encodeURIComponent(original)}`,
+    canonical_url: `https://prismwalls.com/share?id=premium&url=${encodeURIComponent(original)}&thumb=${encodeURIComponent(original)}`,
     preview: { image_source_url: original },
   })]]) });
   const storedLanding = await (await getShare(ANDROID_UA, '/l/AbCdEfGh', env)).text();
   assert.ok(!storedLanding.includes('premium-original'));
+  assert.match(storedLanding, /ownedThumbnail\/premium/);
+  const invalid = await (await getShare(ANDROID_UA,
+    `/share?id=..%2Fpremium&source=prism&thumb=${encodeURIComponent(original)}`)).text();
+  assert.ok(!invalid.includes('premium-original'));
+  assert.doesNotMatch(invalid, /src="[^"]*ownedThumbnail/);
 });
 
 test('createLink refuses oversized bodies by header and by streamed size', async () => {
@@ -1235,7 +1244,7 @@ test('an old share link renders the new card once, as a JPEG with its public wal
     assert.doesNotMatch(html, /wall-1 - Prism/);
     assert.match(html, />3k<\/div><div class="lbl">Views</);
     assert.match(html, />1<\/div><div class="lbl">Favourite</);
-    assert.match(html, /raw\.githubusercontent\.com\/Hash-Studios\/x\.jpg/);
+    assert.match(html, /cloudfunctions\.net\/ownedThumbnail\/wall-1/);
 
     const record = JSON.parse(await env.LINKS_KV.get('OldWall1'));
     assert.equal(record.version, 2);

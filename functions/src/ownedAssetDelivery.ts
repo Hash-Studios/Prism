@@ -83,7 +83,7 @@ export function ownedThumbnailUrl(id: string): string {
     (project ? `https://${REGION}-${project}.cloudfunctions.net/ownedThumbnail` : undefined);
   if (!base) throw new Error("Owned thumbnail endpoint is not configured");
   const parsed = new URL(base);
-  if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.search || parsed.hash) {
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port || parsed.search || parsed.hash) {
     throw new Error("Invalid owned thumbnail endpoint");
   }
   return `${parsed.href.replace(/\/$/, "")}/${encodeURIComponent(id)}`;
@@ -226,8 +226,6 @@ export const ownedThumbnail = onRequest({region: REGION}, async (request, respon
   try {
     const id = request.path.split("/").filter(Boolean).pop() ?? "";
     const {thumb} = await delivery(id);
-    const walls = await db.collection("walls").where("id", "==", id).limit(2).get();
-    if (walls.size !== 1 || walls.docs[0].data().review !== true) throw new Error("Unpublished wall");
     const file = bucket().file(thumb.object, {generation: thumb.generation});
     const [[bytes], [metadata]] = await Promise.all([file.download(), file.getMetadata()]);
     const type = metadata.contentType;

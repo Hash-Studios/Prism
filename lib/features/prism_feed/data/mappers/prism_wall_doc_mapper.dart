@@ -25,7 +25,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
     return PrismWallpaper(
       core: WallpaperCore(
         id: resolvedId,
-        source: WallpaperSourceX.fromWire(wallpaperProvider),
+        source: WallpaperSource.prism,
         fullUrl: fullUrl,
         thumbnailUrl: thumbnailUrl,
         resolution: resolution.isEmpty ? null : resolution,

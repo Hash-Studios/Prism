@@ -28,6 +28,24 @@ void main() {
     expect(store.items(), isEmpty);
   });
 
+  test('canonical original identity survives persistence independently of the history row id', () async {
+    await store.record(
+      AppliedWallpaper(
+        id: 'row',
+        wallpaperId: 'canonical-wall',
+        source: 'prism',
+        thumbnailUrl: 'https://example.com/thumb.jpg',
+        fullUrl: 'https://signed.example/original.jpg',
+        target: 'home',
+        appliedAt: t0,
+      ),
+    );
+    final reloaded = WallpaperHistoryStore(SettingsLocalDataSource(backing)).items().single;
+    expect(reloaded.id, 'row');
+    expect(reloaded.wallpaperId, 'canonical-wall');
+    expect(reloaded.source, 'prism');
+  });
+
   test('keeps newest first', () async {
     await store.record(_item('a', at: t0));
     await store.record(_item('b', at: t0.add(const Duration(minutes: 5))));

@@ -444,7 +444,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                         RepaintBoundary(
                           child: OnboardingStepBackground(
                             step: state.step,
-                            wallpaperUrl: state.wallpaperData.wallpaper?.fullUrl,
+                            wallpaperUrl: state.wallpaperData.wallpaper?.thumbnailUrl,
                           ),
                         ),
 

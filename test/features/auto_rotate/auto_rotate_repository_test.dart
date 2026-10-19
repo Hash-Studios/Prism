@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -14,6 +16,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wotd_past_pick.dart';
 import 'package:Prism/features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
@@ -96,9 +99,14 @@ void main() {
     wotd = _MockWotd();
     history = WallpaperHistoryStore(settings);
     repository = AutoRotateRepositoryImpl(settings, walls, wotd, history);
+    messenger.setMockMessageHandler(
+      stopChannel,
+      (ByteData? _) async => const StandardMessageCodec().encodeMessage(<Object?>[true]),
+    );
   });
 
-  tearDown(() {
+  tearDown(() async {
+    await getIt.reset();
     debugDefaultTargetPlatformOverride = null;
     OfflineAssetStore.testOverride = null;
     messenger.setMockMessageHandler(stopChannel, null);
@@ -242,28 +250,83 @@ void main() {
     expect(await repository.consumeBatteryTip(), isFalse);
   });
   group('sources', () {
+    test('only acquired native files and precise public provider hosts enter native rotation', () async {
+      final directory = Directory.systemTemp.createTempSync('rotation-acquired');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final file = File('${directory.path}/owned.jpg')..writeAsBytesSync([1]);
+      const owned = 'https://storage.googleapis.com/private/owned.jpg';
+      final index = DownloadedWallIndex(settings, ownerId: () => 'alice');
+      getIt.registerSingleton<DownloadedWallIndex>(index);
+      await index.remember(link: owned, id: 'canonical', source: WallpaperSource.prism);
+      const downloadsChannel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+        PrismMediaHostApi.pigeonChannelCodec,
+      );
+      messenger.setMockDecodedMessageHandler<Object?>(
+        downloadsChannel,
+        (_) async => <Object?>[
+          DownloadItemsResult(success: true, items: [file.path]),
+        ],
+      );
+      addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(downloadsChannel, null));
+      api.WallpaperRotationConfigData? request;
+      messenger.setMockDecodedMessageHandler<Object?>(rotationChannel, (message) async {
+        request = (message! as List<Object?>).single! as api.WallpaperRotationConfigData;
+        return <Object?>[true];
+      });
+      expect(
+        await repository.start(const AutoRotateConfig(), [
+          owned,
+          'https://raw.githubusercontent.com/private/original.jpg',
+          'https://firebasestorage.googleapis.com/private.jpg',
+          'https://images.pexels.com.evil.test/1.jpg',
+          'http://images.pexels.com/1.jpg',
+          'https://images.pexels.com/1.jpg',
+        ]),
+        isTrue,
+      );
+      expect(request!.sources!.map((source) => source!.source), [file.path, 'https://images.pexels.com/1.jpg']);
+      expect(await repository.loadAppliedSources(), [file.path, 'https://images.pexels.com/1.jpg']);
+      expect(file.existsSync(), isTrue);
+    });
+
+    test('legacy applied originals stop before rotate-now and are not exposed for reuse', () async {
+      var stops = 0;
+      messenger.setMockMessageHandler(stopChannel, (ByteData? _) async {
+        stops++;
+        return const StandardMessageCodec().encodeMessage(<Object?>[true]);
+      });
+      await settings.set('autoRotate.appliedSources', jsonEncode(['https://storage.googleapis.com/private.jpg']));
+      expect(await repository.rotateNow(), isFalse);
+      expect(stops, 1);
+      expect(await repository.loadAppliedSources(), isNull);
+    });
+
     test('category asks for 40 reviewed walls of the chosen category and keeps the server order', () async {
       when(() => walls.fetchByCategory('Space', limit: 40, sourceTag: 'auto_rotate.category')).thenAnswer(
-        (_) async => Result.success(<PrismWallpaper>[_wall('https://a.test/2.jpg'), _wall('https://a.test/1.jpg')]),
+        (_) async => Result.success(<PrismWallpaper>[
+          _wall('https://images.pexels.com/2.jpg'),
+          _wall('https://images.pexels.com/1.jpg'),
+        ]),
       );
 
       final urls = await repository.loadRemoteUrls(AutoRotateSource.category, category: 'Space');
 
-      expect(urls, <String>['https://a.test/2.jpg', 'https://a.test/1.jpg']);
+      expect(urls, <String>['https://images.pexels.com/2.jpg', 'https://images.pexels.com/1.jpg']);
       verify(() => walls.fetchByCategory('Space', limit: 40, sourceTag: 'auto_rotate.category')).called(1);
     });
 
     test('category drops duplicates and urls that are not https', () async {
       when(() => walls.fetchByCategory('Neon', limit: 40, sourceTag: 'auto_rotate.category')).thenAnswer(
         (_) async => Result.success(<PrismWallpaper>[
-          _wall('https://a.test/1.jpg'),
-          _wall('https://a.test/1.jpg'),
+          _wall('https://images.pexels.com/1.jpg'),
+          _wall('https://images.pexels.com/1.jpg'),
           _wall('http://a.test/2.jpg'),
         ]),
       );
 
       expect(await repository.loadRemoteUrls(AutoRotateSource.category, category: 'Neon'), <String>[
-        'https://a.test/1.jpg',
+        'https://images.pexels.com/1.jpg',
       ]);
     });
 
@@ -282,14 +345,14 @@ void main() {
     test('Wall of the Day reads the last 30 picks in archive order', () async {
       when(() => wotd.fetchRecent()).thenAnswer(
         (_) async => Result.success(<WotdPastPick>[
-          WotdPastPick(date: DateTime.utc(2026, 5, 2), wallpaper: _wall('https://a.test/new.jpg')),
-          WotdPastPick(date: DateTime.utc(2026, 5), wallpaper: _wall('https://a.test/old.jpg')),
+          WotdPastPick(date: DateTime.utc(2026, 5, 2), wallpaper: _wall('https://images.pexels.com/new.jpg')),
+          WotdPastPick(date: DateTime.utc(2026, 5), wallpaper: _wall('https://images.pexels.com/old.jpg')),
         ]),
       );
 
       expect(await repository.loadRemoteUrls(AutoRotateSource.wallOfTheDay), <String>[
-        'https://a.test/new.jpg',
-        'https://a.test/old.jpg',
+        'https://images.pexels.com/new.jpg',
+        'https://images.pexels.com/old.jpg',
       ]);
       verify(() => wotd.fetchRecent()).called(1);
     });
@@ -302,21 +365,21 @@ void main() {
 
     test('history gives unique local paths and https urls in a stable order', () async {
       final DateTime now = DateTime.utc(2026, 5);
-      await history.record(_applied('1', 'https://a.test/b.jpg', now));
-      await history.record(_applied('2', 'https://a.test/a.jpg', now.add(const Duration(hours: 1))));
-      await history.record(_applied('3', 'https://a.test/b.jpg', now.add(const Duration(hours: 2))));
+      await history.record(_applied('1', 'https://images.pexels.com/b.jpg', now));
+      await history.record(_applied('2', 'https://images.pexels.com/a.jpg', now.add(const Duration(hours: 1))));
+      await history.record(_applied('3', 'https://images.pexels.com/b.jpg', now.add(const Duration(hours: 2))));
       await history.record(_applied('4', '/storage/local.jpg', now.add(const Duration(hours: 3))));
       await history.record(_applied('6', '/storage/another.jpg', now.add(const Duration(hours: 5))));
 
       final first = await repository.loadRemoteUrls(AutoRotateSource.history);
-      await history.record(_applied('5', 'https://a.test/a.jpg', now.add(const Duration(hours: 4))));
+      await history.record(_applied('5', 'https://images.pexels.com/a.jpg', now.add(const Duration(hours: 4))));
       final second = await repository.loadRemoteUrls(AutoRotateSource.history);
 
       expect(first, <String>[
         '/storage/another.jpg',
         '/storage/local.jpg',
-        'https://a.test/a.jpg',
-        'https://a.test/b.jpg',
+        'https://images.pexels.com/a.jpg',
+        'https://images.pexels.com/b.jpg',
       ]);
       expect(second, first);
     });
@@ -331,7 +394,7 @@ void main() {
       expect(
         await repository.start(const AutoRotateConfig(source: AutoRotateSource.history), <String>[
           '/storage/emulated/0/Prism/wall.jpg',
-          'https://img.test/remote.jpg',
+          'https://w.wallhaven.cc/remote.jpg',
         ]),
         isTrue,
       );
@@ -339,12 +402,12 @@ void main() {
         request!.sources!.map((source) => (source!.source, source.sourceType)).toList(),
         <(String?, api.RotationSourceTypeData?)>[
           ('/storage/emulated/0/Prism/wall.jpg', api.RotationSourceTypeData.file),
-          ('https://img.test/remote.jpg', api.RotationSourceTypeData.url),
+          ('https://w.wallhaven.cc/remote.jpg', api.RotationSourceTypeData.url),
         ],
       );
     });
 
-    test('temporary cache hits stay URLs while retained originals stay local after cache cleanup', () async {
+    test('temporary and retained cache entries cannot authorize background originals', () async {
       const String temporaryUrl = 'https://images.example/temporary.jpg';
       const String retainedUrl = 'https://images.example/retained.jpg';
       final Directory root = await Directory.systemTemp.createTemp('auto-rotate-retained-');
@@ -386,16 +449,11 @@ void main() {
           temporaryUrl,
           retainedUrl,
         ]),
-        isTrue,
+        isFalse,
       );
 
-      expect(
-        request!.sources!.map((source) => (source!.source, source.sourceType)).toList(),
-        <(String?, api.RotationSourceTypeData?)>[
-          (temporaryUrl, api.RotationSourceTypeData.url),
-          (retained.path, api.RotationSourceTypeData.file),
-        ],
-      );
+      expect(request, isNull);
+      expect(retained.existsSync(), isTrue);
 
       await cache.emptyCache();
       when(() => cache.getFileFromCache(temporaryUrl)).thenAnswer((_) async => null);
@@ -405,15 +463,10 @@ void main() {
           temporaryUrl,
           retainedUrl,
         ]),
-        isTrue,
+        isFalse,
       );
-      expect(
-        request!.sources!.map((source) => (source!.source, source.sourceType)).toList(),
-        <(String?, api.RotationSourceTypeData?)>[
-          (temporaryUrl, api.RotationSourceTypeData.url),
-          (retained.path, api.RotationSourceTypeData.file),
-        ],
-      );
+      expect(request, isNull);
+      expect(retained.existsSync(), isTrue);
     });
 
     test('favourites and downloads are not loaded by the repository', () async {

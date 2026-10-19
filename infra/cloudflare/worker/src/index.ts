@@ -680,6 +680,14 @@ function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
       }
       canonical.searchParams.set('id', segmentId);
     }
+    const provider = (canonical.searchParams.get('source') || canonical.searchParams.get('provider') || 'prism').toLowerCase();
+    if (provider === 'prism') {
+      const id = canonical.searchParams.get('id') ?? '';
+      canonical.searchParams.set('thumb', /^[A-Za-z0-9_-]{1,200}$/.test(id)
+        ? `https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/${id}` : '');
+    } else if (provider !== 'wallhaven' && provider !== 'pexels') {
+      canonical.searchParams.set('thumb', '');
+    }
     return {
       canonical,
       type: 'share',

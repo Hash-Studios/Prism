@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart' show i
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/domain/repositories/auto_rotate_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart';
 import 'package:Prism/features/wallpaper_history/data/wallpaper_history_store.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
@@ -137,21 +138,18 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
-    Map<String, String> retainedPaths = const <String, String>{};
-    try {
-      retainedPaths = await OfflineAssetStore.instance.localPaths();
-    } catch (_) {}
-    final List<aw.WallpaperRotationSource> sources = imageUrls
-        .map((source) {
-          if (_isLocalSource(source)) {
-            return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: _rotationSource(source));
-          }
-          final String? retainedPath = retainedPaths[source];
-          if (retainedPath != null) {
-            return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: retainedPath);
-          }
-          return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.url, source: source);
-        })
+    final List<String> safe = await _safeSources(imageUrls);
+    if (safe.isEmpty) {
+      await stop();
+      return false;
+    }
+    final List<aw.WallpaperRotationSource> sources = safe
+        .map(
+          (source) => aw.WallpaperRotationSource(
+            sourceType: _isLocalSource(source) ? aw.WallpaperSourceType.file : aw.WallpaperSourceType.url,
+            source: _rotationSource(source),
+          ),
+        )
         .toList(growable: false);
     final aw.WallpaperResult result = await aw.AsyncWallpaper.startWallpaperRotation(
       aw.WallpaperRotationRequest(
@@ -162,7 +160,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         triggers: triggersFor(config),
       ),
     );
-    if (result.isSuccess) await _settings.set(_appliedSourcesKey, jsonEncode(imageUrls));
+    if (result.isSuccess) await _settings.set(_appliedSourcesKey, jsonEncode(safe));
     return result.isSuccess;
   }
 
@@ -175,7 +173,10 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   @override
   Future<AutoRotateStatus> status() async {
-    final aw.WallpaperRotationStatus status = await aw.AsyncWallpaper.getWallpaperRotationStatus();
+    aw.WallpaperRotationStatus status = await aw.AsyncWallpaper.getWallpaperRotationStatus();
+    if (status.isRunning && await _stopUnsafeAppliedSources()) {
+      status = await aw.AsyncWallpaper.getWallpaperRotationStatus();
+    }
     return AutoRotateStatus(
       isRunning: status.isRunning,
       nextRunEpochMs: status.nextRunEpochMs,
@@ -187,6 +188,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
 
   @override
   Future<bool> rotateNow() async {
+    if (await _stopUnsafeAppliedSources()) return false;
     final aw.WallpaperResult result = await aw.AsyncWallpaper.rotateWallpaperNow();
     return result.isSuccess;
   }
@@ -196,7 +198,12 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     final String? raw = _settings.get<String?>(_appliedSourcesKey);
     if (raw == null) return null;
     try {
-      return (jsonDecode(raw) as List<Object?>).cast<String>().toList(growable: false);
+      final sources = (jsonDecode(raw) as List<Object?>).cast<String>().toList(growable: false);
+      if (sources.any((source) => !_isLocalSource(source) && !_isExternalSource(source))) {
+        await stop();
+        return null;
+      }
+      return sources;
     } catch (_) {
       return null;
     }
@@ -223,15 +230,15 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
           sourceTag: 'auto_rotate.category',
         );
         if (result.isFailure) return null;
-        return _uniqueHttps(result.data!.map((wallpaper) => wallpaper.fullUrl));
+        return _safeSources(result.data!.map((wallpaper) => wallpaper.fullUrl));
       case AutoRotateSource.wallOfTheDay:
         final result = await _wallOfTheDay.fetchRecent();
         if (result.isFailure) return null;
-        return _uniqueHttps(result.data!.map((pick) => pick.wallpaper.fullUrl));
+        return _safeSources(result.data!.map((pick) => pick.wallpaper.fullUrl));
       case AutoRotateSource.history:
         // The history order changes with every wallpaper Prism sets. Sorting keeps the list the same for the same
         // wallpapers, so a new entry for a wallpaper already in the list does not restart the rotation.
-        return _uniqueHistorySources(_history.items().map((item) => item.fullUrl)).toList()..sort();
+        return (await _safeSources(_history.items().map((item) => item.fullUrl)))..sort();
       case AutoRotateSource.favourites:
       case AutoRotateSource.downloads:
         return const <String>[];
@@ -248,20 +255,38 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     }
   }
 
-  List<String> _uniqueHttps(Iterable<String> urls) {
-    final Set<String> seen = <String>{};
-    return urls
-        .where((url) => Uri.tryParse(url)?.scheme.toLowerCase() == 'https')
-        .where(seen.add)
-        .toList(growable: false);
+  Future<List<String>> _safeSources(Iterable<String> sources) async {
+    final Set<String> safe = <String>{};
+    for (final source in sources) {
+      if (_isLocalSource(source) || _isExternalSource(source)) {
+        safe.add(source);
+      } else if (getIt.isRegistered<DownloadedWallIndex>()) {
+        final file = await getIt<DownloadedWallIndex>().localFileForLink(source);
+        if (file != null) safe.add(file.path);
+      }
+    }
+    return safe.toList(growable: false);
   }
 
-  List<String> _uniqueHistorySources(Iterable<String> sources) {
-    final Set<String> seen = <String>{};
-    return sources
-        .where((source) => _isLocalSource(source) || Uri.tryParse(source)?.scheme.toLowerCase() == 'https')
-        .where(seen.add)
-        .toList(growable: false);
+  bool _isExternalSource(String source) {
+    final uri = Uri.tryParse(source);
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.userInfo.isEmpty &&
+        (!uri.hasPort || uri.port == 443) &&
+        const <String>{'w.wallhaven.cc', 'images.pexels.com'}.contains(uri.host);
+  }
+
+  Future<bool> _stopUnsafeAppliedSources() async {
+    final String? raw = _settings.get<String?>(_appliedSourcesKey);
+    try {
+      final sources = (jsonDecode(raw ?? 'null') as List<Object?>).cast<String>();
+      if (sources.isNotEmpty && sources.every((source) => _isLocalSource(source) || _isExternalSource(source))) {
+        return false;
+      }
+    } catch (_) {}
+    await stop();
+    return true;
   }
 
   bool _isLocalSource(String source) {

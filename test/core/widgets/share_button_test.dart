@@ -17,7 +17,9 @@ void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
 
-  testWidgets('share calls the card share with the full image and context line, and tracks the format', (tester) async {
+  testWidgets('share calls the card share with only the thumbnail and context line, and tracks the format', (
+    tester,
+  ) async {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
@@ -37,7 +39,7 @@ void main() {
             id: 'wall-1',
             source: WallpaperSource.prism,
             url: 'https://img.test/full.jpg',
-            thumbUrl: 'https://img.test/thumb.jpg',
+            thumbUrl: 'https://img.test/full.jpg',
             contextLine: 'by Akshay',
             createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/share?id=$id',
             shareCard:
@@ -55,7 +57,10 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Share'));
     await tester.pumpAndSettle();
 
-    expect(calls, <String?>['https://img.test/full.jpg', 'by Akshay']);
+    expect(calls, <String?>[
+      'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1',
+      'by Akshay',
+    ]);
     final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
     expect(result.format, ShareFormatValue.card);
     expect(result.toWireParameters()['format'], 'card');
@@ -197,7 +202,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(secondShare, isEmpty);
-    expect(firstShare, <String?>['https://img.test/one.jpg', 'https://prismwalls.com/share?id=wall-1', 'by One']);
+    expect(firstShare, <String?>[
+      'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1',
+      'https://prismwalls.com/share?id=wall-1',
+      'by One',
+    ]);
     expect(analytics.events.whereType<InviteShareResultEvent>().single.format, ShareFormatValue.card);
   });
 
@@ -243,7 +252,7 @@ void main() {
     expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
   });
 
-  testWidgets('an empty full image URL falls back to the thumbnail', (tester) async {
+  testWidgets('a missing thumbnail never falls back to the original', (tester) async {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     final Completer<String> link = Completer<String>()..complete('https://prismwalls.com/share?id=wall-1');
@@ -258,8 +267,8 @@ void main() {
           body: ShareButton(
             id: 'wall-1',
             source: WallpaperSource.prism,
-            url: '',
-            thumbUrl: ' https://img.test/thumb.jpg ',
+            url: 'https://private.test/premium-original.jpg',
+            thumbUrl: '',
             createLink: (id, source, url, thumbUrl) => link.future,
             shareCard: (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
               sharedImageUrl = imageUrl;
@@ -273,7 +282,7 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(sharedImageUrl, 'https://img.test/thumb.jpg');
+    expect(sharedImageUrl, 'https://asia-south1-prism-wallpapers.cloudfunctions.net/ownedThumbnail/wall-1');
   });
 
   testWidgets('a failed short link shares the canonical wallpaper URL', (tester) async {

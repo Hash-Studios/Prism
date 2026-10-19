@@ -3,11 +3,14 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -23,6 +26,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/coins_test_backend.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/offline_asset_fixture.dart';
 
@@ -117,6 +121,9 @@ void main() {
     VoidCallback? onMatchAccent,
     Future<String> Function()? prepareSource,
     bool primary = false,
+    WallpaperSource? source,
+    String? wallpaperId,
+    String url = '/tmp/wall.png',
   }) async {
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
@@ -135,7 +142,9 @@ void main() {
         home: Scaffold(
           body: Center(
             child: SetWallpaperButton(
-              url: '/tmp/wall.png',
+              url: url,
+              wallpaperSource: source,
+              wallpaperId: wallpaperId,
               thumbnailUrl: thumbnailUrl,
               onSet: onSet,
               label: label,
@@ -150,6 +159,30 @@ void main() {
       ),
     );
   }
+
+  testWidgets('cancelling the target sheet never quotes, grants, charges, or applies a protected original', (
+    tester,
+  ) async {
+    final backend = CoinsTestBackend();
+    await backend.install();
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    var callableCount = 0;
+    backend.onCall = (_, _) async {
+      callableCount++;
+      throw StateError('No acquire expected');
+    };
+    final client = _Client();
+    aw.AsyncWallpaper.debugSetClient(client);
+    await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
+    await tester.pumpAndSettle();
+    expect(find.byType(SetOptionsPanel), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(callableCount, 0);
+    expect(client.requests, isEmpty);
+  });
 
   testWidgets('with the default ask, tapping Set opens the sheet and applies the chosen target', (tester) async {
     final _Client client = _Client();

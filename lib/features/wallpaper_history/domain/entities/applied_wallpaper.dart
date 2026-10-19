@@ -6,6 +6,7 @@ class AppliedWallpaper {
     required this.fullUrl,
     required this.target,
     required this.appliedAt,
+    this.wallpaperId,
   });
 
   final String id;
@@ -14,6 +15,7 @@ class AppliedWallpaper {
   final String fullUrl;
   final String target;
   final DateTime appliedAt;
+  final String? wallpaperId;
 
   Map<String, Object?> toJson() => <String, Object?>{
     'id': id,
@@ -22,6 +24,7 @@ class AppliedWallpaper {
     'fullUrl': fullUrl,
     'target': target,
     'appliedAt': appliedAt.toUtc().toIso8601String(),
+    if (wallpaperId != null) 'wallpaperId': wallpaperId,
   };
 
   static AppliedWallpaper? tryFromJson(Object? json) {
@@ -43,6 +46,7 @@ class AppliedWallpaper {
       fullUrl: fullUrl,
       target: target,
       appliedAt: parsed,
+      wallpaperId: json['wallpaperId'] is String ? json['wallpaperId'] as String : null,
     );
   }
 }

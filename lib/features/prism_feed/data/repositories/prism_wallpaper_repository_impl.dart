@@ -239,6 +239,40 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   }
 
   @override
+  Future<Result<PrismWallpaper?>> fetchCanonicalByDocumentId(String documentId) async {
+    if (documentId.trim().isEmpty) return Result.success(null);
+    try {
+      final List<Map<String, dynamic>> rows = await _firestoreClient
+          .query<Map<String, dynamic>>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.walls,
+              sourceTag: 'PrismWallpaperRepository.fetchCanonicalByDocumentId',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.isEqualTo, value: documentId),
+                const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+              ],
+              limit: 1,
+              cachePolicy: FirestoreCachePolicy.serverOnly,
+            ),
+            (data, _) => data,
+          )
+          .timeout(_queryTimeout);
+      if (rows.isEmpty) return Result.success(null);
+      final Map<String, dynamic> data = rows.single;
+      if (data['review'] != true || data['originalProtected'] != true || (data['wallpaper_url'] ?? '') != '') {
+        return Result.success(null);
+      }
+      final PrismWallpaper wall = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      if (BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) return Result.success(null);
+      return Result.success(wall);
+    } catch (error, stackTrace) {
+      logger.e('[PrismWallpaperRepository] canonical document lookup failed', error: error, stackTrace: stackTrace);
+      return Result.error(_lookupFailure(error));
+    }
+  }
+
+  @override
   Future<Result<PrismWallpaper?>> fetchById(String id) async {
     try {
       final List<_PrismRow> results = await _firestoreClient.query<_PrismRow>(

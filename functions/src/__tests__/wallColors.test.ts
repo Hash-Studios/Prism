@@ -139,7 +139,11 @@ test("only the GitHub raw and prismwalls.com hosts are allowed", () => {
   assert.deepEqual([...ALLOWED_IMAGE_HOSTS], ["raw.githubusercontent.com", "prismwalls.com"]);
 });
 
-test("owned thumbnail endpoint is allowed without allowing other functions or original URLs", async () => {
+test("owned thumbnail endpoint is allowed without allowing other functions or original URLs", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {process.env = previous;});
+  delete process.env.OWNED_THUMBNAIL_BASE_URL;
+  process.env.GCLOUD_PROJECT = "prism-wallpapers";
   const base = "https://asia-south1-prism-wallpapers.cloudfunctions.net";
   const ok: ColorFetch = async () => replyOf(new Uint8Array([1, 2, 3]));
   assert.deepEqual([...await fetchImageBuffer(`${base}/ownedThumbnail/wall-1`, ok)], [1, 2, 3]);
@@ -148,6 +152,31 @@ test("owned thumbnail endpoint is allowed without allowing other functions or or
     `${base}/ownedThumbnail/wall-1#secret`, `${base}/ownedThumbnail/a/b`,
     "https://evil.cloudfunctions.net/ownedThumbnail/wall-1",
   ]) await assert.rejects(fetchImageBuffer(url, ok), /not allowed/);
+});
+
+test("configured and staging thumbnail endpoints allow only an exact thumbnail path", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {process.env = previous;});
+  const ok: ColorFetch = async () => replyOf(new Uint8Array([1]));
+  delete process.env.OWNED_THUMBNAIL_BASE_URL;
+  process.env.GCLOUD_PROJECT = "prism-staging";
+  assert.deepEqual([...await fetchImageBuffer(
+    "https://asia-south1-prism-staging.cloudfunctions.net/ownedThumbnail/wall_1", ok)], [1]);
+  process.env.OWNED_THUMBNAIL_BASE_URL = "https://images.example.com/private/preview/";
+  assert.deepEqual([...await fetchImageBuffer("https://images.example.com/private/preview/wall-1", ok)], [1]);
+  for (const url of [
+    "https://images.example.com/private/preview/", "https://images.example.com/private/preview/a/b",
+    "https://images.example.com/private/preview/wall?url=secret", "https://images.example.com/private/preview/wall#secret",
+    "https://images.example.com/private/original/wall", "https://images.example.com/private/preview/%77all",
+    "https://images.example.com.evil/private/preview/wall",
+    "https://asia-south1-prism-staging.cloudfunctions.net/ownedThumbnail/wall",
+  ]) await assert.rejects(fetchImageBuffer(url, ok), /not allowed/);
+  for (const base of ["http://images.example.com/preview", "https://user:pass@images.example.com/preview",
+    "https://images.example.com:8443/preview", "https://images.example.com/preview?x=1",
+    "https://images.example.com/preview#fragment", "not-a-url"]) {
+    process.env.OWNED_THUMBNAIL_BASE_URL = base;
+    await assert.rejects(fetchImageBuffer("https://images.example.com/preview/wall", ok), /not allowed/);
+  }
 });
 
 test("fetchImageBuffer refuses a bad url before any request", async () => {

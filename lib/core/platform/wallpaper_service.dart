@@ -5,9 +5,9 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/wallpaper_error_messages.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:flutter/services.dart';
@@ -180,19 +180,25 @@ class WallpaperService {
       final String recordedSource = historySource ?? normalizedSource;
       final bool canRecord = recordHistory && await _canRecord(recordedSource);
       final List<AppliedWallpaper?> previous = canRecord ? _previousFor(target) : const <AppliedWallpaper?>[];
-      final aw.WallpaperSource wallpaperSource = useSystemCropper
+      final aw.WallpaperSource platformSource = useSystemCropper
           ? aw.WallpaperSource.contentUri((await _cropChannel.invokeMethod<String>('contentUri', filePath))!)
           : aw.WallpaperSource.filePath(filePath);
-      aw.WallpaperOperationResult result = await _apply(wallpaperSource, target, scaleMode, firstStrategy);
+      aw.WallpaperOperationResult result = await _apply(platformSource, target, scaleMode, firstStrategy);
       if (!useSystemCropper &&
           result.status == aw.WallpaperOperationStatus.failed &&
           canRetryWallpaperError(result.errorCode)) {
-        result = await _apply(wallpaperSource, target, scaleMode, aw.WallpaperApplyStrategy.automatic);
+        result = await _apply(platformSource, target, scaleMode, aw.WallpaperApplyStrategy.automatic);
       }
       final WallpaperSetResult mapped = mapStatus(result);
       final WallpaperTarget? recordTarget = mapped.isSuccess ? target : mapped.appliedTarget;
       if (!canRecord || recordTarget == null) return mapped;
-      final String? id = await _record(recordedSource, recordTarget, historyThumbnail ?? thumbnailUrl);
+      final String? id = await _record(
+        recordedSource,
+        recordTarget,
+        historyThumbnail ?? thumbnailUrl,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+      );
       if (id == null) return mapped;
       return mapped.withHistory(
         restore: _restoreEntries(target, recordTarget, previous, recordedSource),
@@ -331,13 +337,20 @@ class WallpaperService {
     ];
   }
 
-  static Future<String?> _record(String source, WallpaperTarget target, String? thumbnailUrl) async {
+  static Future<String?> _record(
+    String source,
+    WallpaperTarget target,
+    String? thumbnailUrl, {
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
+  }) async {
     try {
       final DateTime now = DateTime.now();
       return await WallpaperHistoryStore.instance.record(
         AppliedWallpaper(
           id: '${now.microsecondsSinceEpoch}',
-          source: _historySource(source),
+          source: wallpaperSource?.wireValue ?? _historySource(source),
+          wallpaperId: wallpaperId,
           thumbnailUrl: thumbnailUrl ?? source,
           fullUrl: source,
           target: target.name,
