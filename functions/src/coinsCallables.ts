@@ -8,7 +8,7 @@ import {
 import {applyQuestEvent, buildQuestState, type QuestState} from "./questCatalog";
 import {pickChestCosmetic} from "./shopCatalog";
 import {STREAK_RESCUE_MIN_COUNT, streakCycleDay} from "./streak";
-import {isStudioWall} from "./studio/process";
+import {isStudioWall} from "./studio/isStudioWall";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 
 const USERS = "usersv2";
