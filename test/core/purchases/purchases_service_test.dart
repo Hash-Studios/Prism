@@ -217,6 +217,25 @@ void main() {
     expect(syncCalls, 2);
   });
 
+  test('a malformed syncSubscription reply is retried once and then given up on', () async {
+    final PurchasesService service = PurchasesService.forTesting(
+      addCustomerInfoListener: listeners.add,
+      syncSubscription: () async {
+        syncCalls += 1;
+        return <String, dynamic>{'premium': 'yes'};
+      },
+      configurePurchases: (_) async {},
+      logIn: (_) async {},
+    );
+    await service.ensureConfigured('u1');
+    service.registerCustomerInfoListener();
+
+    listeners.single(_freeCustomer);
+    await pumpEventQueue();
+
+    expect(syncCalls, 2);
+  });
+
   test('a second failure is given up on without throwing', () async {
     failuresLeft = 5;
     final PurchasesService service = buildService();

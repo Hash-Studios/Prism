@@ -255,7 +255,9 @@ class PurchasesService {
         final Map<String, dynamic> confirmed = await _callSyncSubscription();
         final Object? confirmedPremium = confirmed['premium'];
         final Object? confirmedTier = confirmed['subscriptionTier'];
-        if (confirmedPremium is! bool || confirmedTier is! String) return;
+        if (confirmedPremium is! bool || confirmedTier is! String) {
+          throw const FormatException('syncSubscription returned a malformed reply.');
+        }
         _lastPersistedUserId = userId;
         _lastPersistedPremium = confirmedPremium;
         _lastPersistedTier = confirmedTier;
