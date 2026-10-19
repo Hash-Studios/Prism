@@ -129,7 +129,9 @@ export function checkedImageUrl(value: string): URL {
   if (url.username || url.password || url.port) {
     throw new Error("image url must not have credentials or a port");
   }
-  if (!ALLOWED_IMAGE_HOSTS.includes(url.hostname)) {
+  const ownedThumbnail = url.hostname === "asia-south1-prism-wallpapers.cloudfunctions.net" &&
+    /^\/ownedThumbnail\/[A-Za-z0-9_-]{1,200}$/.test(url.pathname) && !url.search && !url.hash;
+  if (!ALLOWED_IMAGE_HOSTS.includes(url.hostname) && !ownedThumbnail) {
     throw new Error("image host is not allowed");
   }
   return url;
