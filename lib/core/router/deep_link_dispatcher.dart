@@ -1,0 +1,345 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/auth_navigation_continuation.dart';
+import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_navigation.dart';
+import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/router/push_tap_startup.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/widgets.dart';
+
+enum DeepLinkDispatchResult { navigated, failure, blocked, cancelled, deferred }
+
+/// One entry point for platform links, push targets, and links tapped inside the app.
+class DeepLinkDispatcher {
+  DeepLinkDispatcher({
+    required StackRouter router,
+    required Future<bool> Function() whenReady,
+    Future<bool> Function()? whenBootstrapped,
+    this.navigation = const DeepLinkNavigation(),
+    this.onRetryNeeded,
+    Future<void> Function(AnalyticsEvent event)? track,
+  }) : _router = router.root,
+       _whenReady = whenReady,
+       _whenBootstrapped = whenBootstrapped ?? whenReady,
+       _track = track ?? analytics.track {
+    _instances[_router] = this;
+  }
+
+  static final Expando<DeepLinkDispatcher> _instances = Expando<DeepLinkDispatcher>();
+
+  static DeepLinkDispatcher? maybeOf(StackRouter router) => _instances[router.root];
+
+  final StackRouter _router;
+  final Future<bool> Function() _whenReady;
+  final Future<bool> Function() _whenBootstrapped;
+  final DeepLinkNavigation navigation;
+  final void Function(ShortCodeIntent action, DeepLinkSourceValue source)? onRetryNeeded;
+  final Future<void> Function(AnalyticsEvent event) _track;
+  final Completer<void> _disposed = Completer<void>();
+  Completer<void> _cancelled = Completer<void>();
+  final List<(ShortCodeIntent, DeepLinkSourceValue)> _deferred = <(ShortCodeIntent, DeepLinkSourceValue)>[];
+  Future<void> _tail = Future<void>.value();
+
+  Future<DeepLinkDispatchResult> openUri(Uri uri, {required DeepLinkSourceValue source}) {
+    final DeepLinkActionEntity action = navigation.isPrismDeepLink(uri) || !uri.hasScheme
+        ? navigation.parser.parse(uri)
+        : UnknownIntent(rawUri: uri.toString());
+    return openAction(action, source: source);
+  }
+
+  Future<DeepLinkDispatchResult> openAction(
+    DeepLinkActionEntity action, {
+    required DeepLinkSourceValue source,
+    bool isRetry = false,
+  }) => _enqueue(action, source: source, isRetry: isRetry);
+
+  Future<DeepLinkDispatchResult> openActionLoader(
+    Future<DeepLinkActionEntity?> Function() loadAction, {
+    required String rawUri,
+    required DeepLinkSourceValue source,
+    TargetTypeValue targetType = TargetTypeValue.unknown,
+    bool hasPayload = true,
+  }) => _enqueue(
+    UnknownIntent(rawUri: rawUri),
+    source: source,
+    loadAction: loadAction,
+    receivedTargetType: targetType,
+    hasPayload: hasPayload,
+  );
+
+  Future<DeepLinkDispatchResult> openPush(
+    Map<String, dynamic> data, {
+    NotificationRouteMapper mapper = const NotificationRouteMapper(),
+  }) {
+    mapper.trackPushOpened(data);
+    if (data['route']?.toString() == 'wall_of_the_day') {
+      _record(WotdOpenedFromPushEvent(wallId: (data['wall_id']?.toString() ?? '').trim()));
+    }
+    final String rawUrl = (data['url']?.toString() ?? '').trim();
+    final Uri? uri = Uri.tryParse(rawUrl);
+    if (uri != null && navigation.isPrismDeepLink(uri)) {
+      final action = navigation.parser.parse(uri);
+      if (action is! UnknownIntent) return openAction(action, source: DeepLinkSourceValue.push);
+    }
+    return openActionLoader(
+      () => mapper.actionFromPayload(data, sourceTag: 'push.route_mapper', fallbackToInbox: false),
+      rawUri: data['route']?.toString() ?? rawUrl,
+      source: DeepLinkSourceValue.push,
+      targetType: NotificationRouteMapper.targetTypeForRoute(data['route']?.toString() ?? ''),
+      hasPayload: data.isNotEmpty,
+    );
+  }
+
+  Future<DeepLinkDispatchResult> _enqueue(
+    DeepLinkActionEntity action, {
+    required DeepLinkSourceValue source,
+    bool isRetry = false,
+    Future<DeepLinkActionEntity?> Function()? loadAction,
+    TargetTypeValue? receivedTargetType,
+    bool? hasPayload,
+  }) {
+    final TargetTypeValue targetType = receivedTargetType ?? DeepLinkNavigation.targetType(action);
+    final Completer<void> cancellation = _cancelled;
+    if (isRetry) {
+      final int index = _deferred.indexWhere((request) => identical(request.$1, action) && request.$2 == source);
+      if (index >= 0) _deferred.removeAt(index);
+    }
+    if (!isRetry) {
+      _record(
+        DeepLinkReceivedEvent(
+          source: source,
+          targetType: targetType,
+          hasPayload: hasPayload ?? action is! UnknownIntent,
+        ),
+      );
+    }
+    // Save a referral before sign-in can claim it, even if another target is waiting on onboarding.
+    final Future<DeepLinkRouteResolution>? referral = action is ReferLinkIntent
+        ? _saveReferral(action, cancellation)
+        : null;
+    final Future<DeepLinkDispatchResult> result = _tail.then(
+      (_) => _dispatch(
+        action,
+        source: source,
+        isRetry: isRetry,
+        resolved: referral,
+        cancellation: cancellation,
+        loadAction: loadAction,
+        receivedTargetType: targetType,
+      ),
+    );
+    _tail = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return result;
+  }
+
+  Future<DeepLinkRouteResolution> _saveReferral(ReferLinkIntent action, Completer<void> cancellation) async {
+    if (await _untilDisposed(_whenBootstrapped(), cancelled: cancellation) != true) {
+      return const DeepLinkRouteResolution.failure(AnalyticsReasonValue.userCancelled);
+    }
+    try {
+      return await navigation.resolveAction(action);
+    } catch (_) {
+      return const DeepLinkRouteResolution.failure(AnalyticsReasonValue.error);
+    }
+  }
+
+  void cancel() {
+    for (final request in _deferred) {
+      _record(
+        DeepLinkNavigationResultEvent(
+          targetType: TargetTypeValue.shortCode,
+          source: request.$2,
+          result: EventResultValue.cancelled,
+          reason: AnalyticsReasonValue.userCancelled,
+        ),
+      );
+    }
+    _deferred.clear();
+    _cancelled.complete();
+    _cancelled = Completer<void>();
+  }
+
+  void dispose() {
+    if (_disposed.isCompleted) return;
+    cancel();
+    if (identical(_instances[_router], this)) _instances[_router] = null;
+    _disposed.complete();
+  }
+
+  Future<DeepLinkDispatchResult> _dispatch(
+    DeepLinkActionEntity action, {
+    required DeepLinkSourceValue source,
+    required bool isRetry,
+    required Completer<void> cancellation,
+    Future<DeepLinkRouteResolution>? resolved,
+    Future<DeepLinkActionEntity?> Function()? loadAction,
+    required TargetTypeValue receivedTargetType,
+  }) async {
+    TargetTypeValue targetType = receivedTargetType;
+    DeepLinkDispatchResult finish(DeepLinkDispatchResult result, {AnalyticsReasonValue? reason}) {
+      if (result != DeepLinkDispatchResult.deferred) {
+        _record(
+          DeepLinkNavigationResultEvent(
+            targetType: targetType,
+            source: source,
+            result: switch (result) {
+              DeepLinkDispatchResult.navigated => EventResultValue.navigated,
+              DeepLinkDispatchResult.blocked => EventResultValue.blocked,
+              DeepLinkDispatchResult.cancelled => EventResultValue.cancelled,
+              _ => EventResultValue.failure,
+            },
+            reason: reason,
+          ),
+        );
+      }
+      return result;
+    }
+
+    try {
+      if (_disposed.isCompleted || cancellation.isCompleted) return finish(DeepLinkDispatchResult.cancelled);
+      if (await _untilDisposed(_whenBootstrapped(), cancelled: cancellation) != true) {
+        return finish(DeepLinkDispatchResult.cancelled);
+      }
+      if (loadAction != null) {
+        final DeepLinkActionEntity? loaded = await _untilDisposed<DeepLinkActionEntity?>(
+          loadAction(),
+          cancelled: cancellation,
+        );
+        if (_disposed.isCompleted || cancellation.isCompleted) return finish(DeepLinkDispatchResult.cancelled);
+        if (loaded != null) action = loaded;
+        if (loaded != null) targetType = DeepLinkNavigation.targetType(action);
+      }
+      final bool opensOnboarding = action is PageLinkIntent && Uri.parse(action.path).path == '/onboarding/v2';
+      final bool? ready = await _untilDisposed(
+        opensOnboarding ? _whenOnboardingOrReady(cancellation) : _whenReady(),
+        cancelled: cancellation,
+      );
+      if (ready != true) return finish(DeepLinkDispatchResult.cancelled);
+      final DeepLinkRouteResolution? resolution = await _untilDisposed(
+        resolved ?? navigation.resolveAction(action),
+        cancelled: cancellation,
+      );
+      if (resolution == null) return finish(DeepLinkDispatchResult.cancelled);
+      final PageRouteInfo? route = resolution.route;
+      _record(
+        DeepLinkResolvedEvent(
+          targetType: targetType,
+          source: source,
+          result: route == null ? EventResultValue.failure : EventResultValue.success,
+          reason: resolution.reason,
+        ),
+      );
+      if (route == null && resolution.isNetwork && action is ShortCodeIntent && !isRetry && onRetryNeeded != null) {
+        _deferred.add((action, source));
+        onRetryNeeded!(action, source);
+        final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        toasts.info(l10n.appLinkRetryWhenOnline);
+        return DeepLinkDispatchResult.deferred;
+      }
+      if (route == null) {
+        if (source == DeepLinkSourceValue.push && action.rawUri.trim().isNotEmpty) {
+          final l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+          toasts.error(l10n.coreContentNotAvailable);
+        }
+        await _navigate(
+          source == DeepLinkSourceValue.push ? const NotificationRoute() : const NotFoundRoute(),
+          cancellation,
+        );
+        return finish(DeepLinkDispatchResult.failure, reason: resolution.reason);
+      }
+      if (opensOnboarding && _isVisible(route)) return finish(DeepLinkDispatchResult.navigated);
+      final DeepLinkDispatchResult result = await _navigate(route, cancellation);
+      return finish(
+        result,
+        reason: result == DeepLinkDispatchResult.blocked ? AnalyticsReasonValue.notAuthorized : null,
+      );
+    } catch (_) {
+      return finish(DeepLinkDispatchResult.failure, reason: AnalyticsReasonValue.error);
+    }
+  }
+
+  Future<bool> _whenOnboardingOrReady(Completer<void> cancellation) async {
+    bool ready() =>
+        _router.stackData.any((route) => route.name == OnboardingV2ShellRoute.name) || !isStartingUp(_router);
+    if (ready()) return true;
+    final Completer<bool> done = Completer<bool>();
+    void check() {
+      if (ready() && !done.isCompleted) done.complete(true);
+    }
+
+    _router.addListener(check);
+    try {
+      return await _untilDisposed(done.future, cancelled: cancellation) ?? false;
+    } finally {
+      _router.removeListener(check);
+    }
+  }
+
+  Future<DeepLinkDispatchResult> _navigate(PageRouteInfo route, Completer<void> cancellation) async {
+    if (_disposed.isCompleted || cancellation.isCompleted) return DeepLinkDispatchResult.cancelled;
+    NavigationFailure? failure;
+    Future<bool>? continuation;
+    // navigate completes after guard evaluation and insertion. push completes only when the page is popped.
+    final bool? completed = await _untilDisposed(
+      _router
+          .navigate(
+            route,
+            onFailure: (error) {
+              failure = error;
+              continuation = AuthNavigationContinuation.of(_router).pendingNavigation;
+            },
+          )
+          .then((_) => true),
+      cancelled: cancellation,
+    );
+    if (completed != true) return DeepLinkDispatchResult.cancelled;
+    if (continuation != null) {
+      if (await _untilDisposed(continuation!, cancelled: cancellation) != true) {
+        return AuthNavigationContinuation.of(_router).lastNavigationFailure is RejectedByGuardFailure
+            ? DeepLinkDispatchResult.blocked
+            : DeepLinkDispatchResult.cancelled;
+      }
+    } else if (failure != null) {
+      return failure is RejectedByGuardFailure ? DeepLinkDispatchResult.blocked : DeepLinkDispatchResult.failure;
+    }
+    return _isVisible(route) ? DeepLinkDispatchResult.navigated : DeepLinkDispatchResult.failure;
+  }
+
+  bool _isVisible(PageRouteInfo route) {
+    if (!_router.hasEntries) return false;
+    final RouteData top = _router.topRoute;
+    PageRouteInfo target = route;
+    while (target.initialChildren?.isNotEmpty == true) {
+      target = target.initialChildren!.last;
+    }
+    if (target.initialChildren == null &&
+        target.args == null &&
+        target.rawPathParams.isEmpty &&
+        target.rawQueryParams.isEmpty &&
+        _router.currentSegments.any((segment) => segment.name == target.routeName)) {
+      return true;
+    }
+    return top.name == target.routeName &&
+        (target.args == null || top.args == target.args) &&
+        target.rawPathParams.entries.every(
+          (entry) => top.params.rawMap[entry.key]?.toString() == entry.value.toString(),
+        ) &&
+        target.rawQueryParams.entries.every(
+          (entry) => top.queryParams.rawMap[entry.key]?.toString() == entry.value.toString(),
+        );
+  }
+
+  Future<T?> _untilDisposed<T>(Future<T> work, {Completer<void>? cancelled}) => Future.any<T?>(<Future<T?>>[
+    work,
+    _disposed.future.then<T?>((_) => null),
+    if (cancelled != null) cancelled.future.then<T?>((_) => null),
+  ]);
+
+  void _record(AnalyticsEvent event) => unawaited(_track(event).catchError((Object _) {}));
+}

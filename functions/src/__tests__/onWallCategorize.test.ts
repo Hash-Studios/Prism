@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
+import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db} from "../common";
 import {onWallCategorize} from "../onWallCategorize";
@@ -80,4 +81,15 @@ test("a failed depth write logs a warning and keeps the colours and category", a
     "onWallCategorize: could not save depth",
     {wallId: "w1", error: "contention"},
   ]);
+});
+
+test("a wall approved before its check ends is filed into the collection of its new category", async (t) => {
+  const wall = {wallpaper_url: WALL_URL, review: true, collections: ["community"]};
+  const {store} = setup(t, wall, async () => DETECTED);
+  t.mock.method(admin.remoteConfig(), "getTemplate", async () => {
+    throw new Error("no remote config in tests");
+  });
+  await onWallCategorize.run(created(wall));
+  assert.equal(store.get("walls/w1")?.category, "Nature");
+  assert.deepEqual(store.get("walls/w1")?.collections, ["community", "landscapes"]);
 });

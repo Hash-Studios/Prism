@@ -8,6 +8,7 @@ import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/widgets.dart';
@@ -33,13 +34,14 @@ class PaywallOrchestrator {
   static const String _adWatchCountKey = 'paywall_ad_watch_count';
   static const String _adWatchPromptedAtKey = 'paywall_ad_watch_prompted_at';
   static const Duration _adWatchPromptGap = Duration(hours: 24);
-  static const String plansUnavailableMessage =
-      'Plans are not available right now. Check your connection and try again.';
-
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
-  Future<PaywallResultValue> present({required String placement, required String source}) async {
+  Future<PaywallResultValue> present({
+    required String placement,
+    required String source,
+    AppLocalizations? messages,
+  }) async {
     final String normalizedPlacement = placement.trim().isEmpty ? PaywallPlacement.mainUpsell : placement.trim();
     _logPlacementTriggerContext(placement: normalizedPlacement, source: source);
     analytics.track(
@@ -54,7 +56,11 @@ class PaywallOrchestrator {
     final PaywallResultValue result = _rcPaywallsEnabled
         ? await _presentRevenueCatPaywall(placement: normalizedPlacement, source: source)
         : PaywallResultValue.notPresented;
-    if (_unavailableResults.contains(result)) toasts.error(plansUnavailableMessage);
+    if (_unavailableResults.contains(result)) {
+      final AppLocalizations localized =
+          messages ?? await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+      toasts.error(localized.premiumPagePlansUnavailable);
+    }
     return result;
   }
 
@@ -68,14 +74,18 @@ class PaywallOrchestrator {
   /// unless the platform allows guest browsing (iOS 5.1.1(v): purchases must
   /// not require an account). Android has no guest path, so signed-out users
   /// there always see the sign-in prompt.
-  Future<void> presentOrRequireSignIn(BuildContext context, {required String placement, required String source}) async {
+  Future<PaywallResultValue?> presentOrRequireSignIn(
+    BuildContext context, {
+    required String placement,
+    required String source,
+  }) async {
     if (app_state.prismUser.loggedIn || Platform.isIOS) {
-      await present(placement: placement, source: source);
-      return;
+      return present(placement: placement, source: source, messages: AppLocalizations.of(context));
     }
     googleSignInPopUp(context, () {
       present(placement: placement, source: source);
     });
+    return null;
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell({required String source}) async {

@@ -36,10 +36,6 @@
   "@accountAdminModeration": {
     "description": "Admin-only moderation settings item."
   },
-  "accountAnd": "and",
-  "@accountAnd": {
-    "description": "Conjunction in onboarding legal agreement text."
-  },
   "accountAndroidSharePitch": "Fall in love with Android customisation again! Check out Prism -\n{url}",
   "@accountAndroidSharePitch": {
     "description": "Share message for Prism on Android.",
@@ -76,10 +72,6 @@
   "accountAutoRotateWallpapers": "Auto-rotate wallpapers",
   "@accountAutoRotateWallpapers": {
     "description": "Settings item for automatic wallpaper rotation."
-  },
-  "accountBack": "Back",
-  "@accountBack": {
-    "description": "Back action tooltip."
   },
   "accountBlock": "Block",
   "@accountBlock": {
@@ -497,10 +489,6 @@
   "@accountDataSaverDescription": {
     "description": "Explanation of data saver behavior."
   },
-  "accountDataSaverSavedDescription": "Saves mobile data. Wallpapers open as thumbnails, feeds do not load ahead and carousels do not autoplay.",
-  "@accountDataSaverSavedDescription": {
-    "description": "Explanation of data saver behavior."
-  },
   "accountDatabaseUsageStats": "Database usage and stats",
   "@accountDatabaseUsageStats": {
     "description": "Subtitle for Firestore telemetry."
@@ -754,10 +742,6 @@
   "@accountHomeScreen": {
     "description": "Set action option for applying to the home screen."
   },
-  "accountHowPrismHandlesData": "How Prism handles your data",
-  "@accountHowPrismHandlesData": {
-    "description": "Subtitle for the privacy policy menu item."
-  },
   "accountInviteFriends": "Invite friends",
   "@accountInviteFriends": {
     "description": "Invite friends page title."
@@ -964,10 +948,6 @@
   "@accountLogoutFailed": {
     "description": "Error shown when signing out fails."
   },
-  "accountLogoutFailureTitle": "Could not log out",
-  "@accountLogoutFailureTitle": {
-    "description": "Error title after sign-out failure."
-  },
   "accountLogsNetworkToolsStorage": "Logs, network, tools and storage",
   "@accountLogsNetworkToolsStorage": {
     "description": "Subtitle for the debug panel settings item."
@@ -1024,10 +1004,6 @@
   "@accountNoDownloadsToRemove": {
     "description": "Info message when there are no downloads to delete."
   },
-  "accountNoFilesToRemove": "You have no downloads to remove.",
-  "@accountNoFilesToRemove": {
-    "description": "Notice when the download directory is empty."
-  },
   "accountNoFollowersYet": "No followers yet",
   "@accountNoFollowersYet": {
     "description": "Empty state title for a profile with no followers."
@@ -1070,10 +1046,6 @@
         "type": "String"
       }
     }
-  },
-  "accountNoWallpapersMatchFilters": "No wallpapers match the selected filters.",
-  "@accountNoWallpapersMatchFilters": {
-    "description": "Empty state when filters exclude every wallpaper."
   },
   "accountNoWallpapersYet": "No wallpapers yet",
   "@accountNoWallpapersYet": {
@@ -1468,10 +1440,6 @@
   "@accountSendGift": {
     "description": "Send gift action label."
   },
-  "accountSendLinkToFriend": "Send a link to a friend",
-  "@accountSendLinkToFriend": {
-    "description": "Subtitle for sharing the Prism app."
-  },
   "accountSendProfileLink": "Send a link to your Prism profile",
   "@accountSendProfileLink": {
     "description": "Subtitle for the share profile settings row."
@@ -1491,10 +1459,6 @@
   "accountShare": "Share",
   "@accountShare": {
     "description": "Share action label."
-  },
-  "accountShareAppLogs": "Share your app logs with the Prism team",
-  "@accountShareAppLogs": {
-    "description": "Subtitle for reporting an app problem."
   },
   "accountShareInvite": "Share invite",
   "@accountShareInvite": {
@@ -1644,10 +1608,6 @@
       }
     }
   },
-  "accountTermsAgreementStart": "By continuing you agree to the",
-  "@accountTermsAgreementStart": {
-    "description": "Start of onboarding legal agreement text."
-  },
   "accountTermsOfUse": "Terms of use",
   "@accountTermsOfUse": {
     "description": "Terms of use link label."
@@ -1789,10 +1749,6 @@
   "@accountWallpaperSources": {
     "description": "About page section title for wallpaper providers."
   },
-  "accountWallpaperSourcesListSubtitle": "Prism uses Wallhaven and Pexels for wallpapers",
-  "@accountWallpaperSourcesListSubtitle": {
-    "description": "Subtitle naming wallpaper catalog providers."
-  },
   "accountWallpaperSourcesMessage": "Prism uses these services to bring you wallpapers.",
   "@accountWallpaperSourcesMessage": {
     "description": "About page explanation of wallpaper providers."
@@ -1832,10 +1788,8 @@
   },
   "actionCancel": "Cancel",
   "actionClose": "Close",
-  "actionContinue": "Continue",
   "actionDone": "Done",
   "actionRetry": "Try again",
-  "actionSave": "Save",
   "adminAllCaughtUp": "All caught up",
   "adminAllUsers": "All users",
   "adminAnnouncementInbox": "Announcement (inbox)",
@@ -2028,7 +1982,6 @@
   "adminWallpaperAlreadyGone": "Wallpaper was already gone. Report closed.",
   "adminWallpaperApproved": "Wallpaper approved",
   "adminWallpaperFullScreen": "Wallpaper, full screen",
-  "adminWallpaperNotFound": "Wallpaper not found",
   "adminWallpaperRejected": "Wallpaper rejected",
   "adminWallpaperRemoved": "Wallpaper removed",
   "adminWallpaperReport": "Wallpaper report",
@@ -2053,21 +2006,11 @@
     }
   },
   "appLinkRetryWhenOnline": "No connection. We will open this link when you are back online.",
-  "appLinkUnavailable": "This link is no longer available.",
-  "appSetupUnavailable": "Home screen setups are no longer available.",
   "appTitle": "Prism",
-  "coreAccountBlockedAccounts": "Blocked accounts",
-  "coreAccountBlockedAccountsBody": "Manage people you have blocked",
-  "coreAccountReviewStatus": "Review status",
-  "coreAccountReviewStatusBody": "Track your submitted wallpapers",
-  "coreAccountShareProfile": "Share your profile",
-  "coreAccountShareProfileBody": "Send a link to your Prism profile",
   "coreAdjustPositionPreview": "Adjust position and preview",
   "coreAdjustPositionPreviewBody": "Pan, zoom and dim before you set it.",
   "coreAlwaysUseThis": "Always use this",
   "coreAlwaysUseThisBody": "Next time, Set uses the screen you pick and skips this sheet.",
-  "coreAuthGoogleSignInFailed": "Google sign-in failed. Check your connection and try again.",
-  "coreAuthUserFallback": "Prism User",
   "coreBack": "Back",
   "coreBio": "Bio",
   "coreBlockCreatorAfterReport": "Also block this creator",
@@ -2077,7 +2020,6 @@
   "coreCancel": "Cancel",
   "coreCancelSelection": "Cancel selection",
   "coreCancelSignIn": "Not now",
-  "coreCategory": "Category",
   "coreCategoryAbstract": "Abstract",
   "coreCategoryAerial": "Aerial",
   "coreCategoryAesthetic": "Aesthetic",
@@ -2169,7 +2111,6 @@
     },
     "description": "Daily reward row label in coin history."
   },
-  "coreCoinDailyStreakDay7": "Daily streak, day 7",
   "coreCoinDay7Chest": "Day 7 chest",
   "coreCoinDrawTicket": "Draw ticket",
   "coreCoinDropPack": "Drop pack",
@@ -2203,8 +2144,6 @@
   "coreCoinWeekBonus": "Week bonus",
   "coreConfirmWallpaperPreview": "Confirm the wallpaper in the system preview.",
   "coreContentNotAvailable": "That item is no longer available",
-  "coreContentReportCouldNotLoadProfile": "Could not load this profile",
-  "coreContentReportTitle": "Report",
   "coreContentReportUser": "user",
   "coreContentReportWallpaper": "wallpaper",
   "coreContentReportWhy": "Why are you reporting this {contentType}?",
@@ -2235,12 +2174,10 @@
   "coreContributorTwitter": "Twitter",
   "coreContributorWebsite": "Website",
   "coreCouldNotLoadChangelog": "Could not load the changelog",
-  "coreCouldNotLoadWallpaper": "Couldn't load this wallpaper. Check your connection and try again.",
   "coreCouldNotLoadWallpaperForEditing": "Could not load wallpaper for editing",
   "coreCouldNotUpdateFavourites": "Couldn't update favourites. Try again.",
   "coreCreatorPreviewDescription": "Check out this creator profile on Prism.",
   "coreCropAndPosition": "Crop and position...",
-  "coreDefaultBanner": "Join our Telegram",
   "coreDepthEffectAutoLongTip": "Depth Effect turns on by itself. On iOS 18 or older, keep widgets off the space under the clock.",
   "coreDepthEffectAutoTip": "Depth Effect turns on by itself.",
   "coreDepthEffectBadge": "Depth",
@@ -2323,7 +2260,6 @@
   "coreEditUsernameTaken": "That username is taken.",
   "coreEditUsernameTakenSemantic": "Username taken",
   "coreFavourite": "Favourite",
-  "coreFavouritesUpdated": "Favourites updated",
   "coreFileSizeMegabytes": "{size} MB",
   "@coreFileSizeMegabytes": {
     "placeholders": {
@@ -2336,9 +2272,7 @@
   "coreFillScreen": "Fill screen",
   "coreFitWholeImage": "Fit whole image",
   "coreGenericSignInError": "Something went wrong, please try again!",
-  "coreGithub": "GitHub",
   "coreGoHome": "Go home",
-  "coreGoHomeAction": "Go home",
   "coreGooglePlayServicesSignInError": "Google Play services on this device cannot sign in.",
   "coreGoogleSignInNetworkError": "Google sign-in failed. Check your connection and try again.",
   "coreHomeScreen": "home screen",
@@ -2356,15 +2290,12 @@
   "coreIosWallpaperGuideBody": "iOS does not let apps change your wallpaper. Finish in Photos:",
   "coreJoinPrismPreviewTitle": "Join Prism",
   "coreKeepPrismOpen": "Keep Prism open and try again.",
-  "coreLoadMoreRetry": "Couldn't load more. Tap to retry",
   "coreLoading": "Loading",
   "coreLoadingMoreFailed": "Couldn't load more. Tap to retry",
   "coreLoadingWallpaper": "Loading wallpaper",
   "coreLockScreen": "lock screen",
   "coreMatchAccent": "Match accent",
   "coreName": "Name",
-  "coreNoWallpaperAvailable": "No wallpaper URL available",
-  "coreNoWallpaperToEdit": "No wallpaper URL available",
   "coreNoWallpaperUrl": "No wallpaper URL available",
   "coreNotNow": "Not now",
   "coreOpenPhotos": "Open Photos",
@@ -2381,7 +2312,6 @@
   "corePhotosStepOpen": "Open Photos.",
   "corePhotosStepShare": "Tap Share.",
   "corePhotosStepUseAsWallpaper": "Tap Use as Wallpaper.",
-  "corePickLockScreenWallpaper": "Pick a lock screen wallpaper",
   "corePopupAppVersion": "You are on version {version}.",
   "@corePopupAppVersion": {
     "description": "Version message in the changelog sheet.",
@@ -2399,29 +2329,16 @@
   "@corePopupCoverPhoto": {
     "description": "Item name in the cover photo removal confirmation."
   },
-  "corePopupCustomLink": "Custom link",
-  "@corePopupCustomLink": {
-    "description": "Display name for a custom profile link."
-  },
   "corePopupDiscard": "Discard",
   "@corePopupDiscard": {
     "description": "Confirmation action for discarding profile edits."
-  },
-  "corePopupEmail": "Email",
-  "@corePopupEmail": {
-    "description": "Display name for an email profile link."
   },
   "corePopupWhatsNew": "What's new",
   "@corePopupWhatsNew": {
     "description": "Title for the app changelog sheet."
   },
   "corePreviousWallpaperRestored": "Previous wallpaper restored",
-  "coreProfileLinkGithub": "GitHub",
-  "coreProfileLinkTwitter": "Twitter",
-  "coreProfileLinkWebsite": "Website",
   "coreProfileSaveFailed": "Could not save your profile. Please try again.",
-  "coreProfileUnavailable": "Profile unavailable",
-  "coreProfileUpdateFailed": "Could not save your profile. Please try again.",
   "coreProfileUpdated": "Profile updated",
   "coreRatePromptNo": "Not really",
   "coreRatePromptQuestion": "Enjoying Prism?",
@@ -2514,9 +2431,7 @@
     },
     "description": "Retry action for one screen after a partial wallpaper set."
   },
-  "coreRetrySemantics": "Retry image",
   "coreSaveChanges": "Save changes",
-  "coreSavedWallpaperToast": "Wallpaper saved",
   "coreSeeFullChangelog": "See the full changelog",
   "coreSeeMore": "See more",
   "coreSelectCount": "{count} selected",
@@ -2572,8 +2487,6 @@
     "description": "Clipboard text for a wallpaper share link."
   },
   "coreShareWallpaperGeneric": "This bundled wallpaper is available in the Prism app.",
-  "coreSignIn": "Sign in",
-  "coreSignInAgainToContinue": "Your session ended. Sign in again.",
   "coreSignInFeatureBody": "Your account keeps your coins, favourites and uploads in one place.",
   "coreSignInFeatureTitle": "Sign in to use {feature}",
   "@coreSignInFeatureTitle": {
@@ -2584,11 +2497,9 @@
     },
     "description": "Sign-in requirement heading for a feature."
   },
-  "coreSignInKeepData": "Keep your favourites, uploads and coins on every device.",
   "coreSignInPopupBody": "Keep your favourites, uploads and coins on every device.",
   "coreSignInPopupTitle": "Sign in to Prism",
   "coreSignInPromptAction": "Sign in",
-  "coreSignInToPrism": "Sign in to Prism",
   "coreSignInToReportContent": "Sign in to report content",
   "coreSignInToSyncFavourites": "Sign in to keep your favourites on every device",
   "coreSigningIn": "Signing in",
@@ -2617,7 +2528,6 @@
     },
     "description": "Screen reader summary of streak and next reward."
   },
-  "coreTheme": "Theme",
   "coreThemeAccentSemanticLabel": "Accent colour {index} of {count}",
   "@coreThemeAccentSemanticLabel": {
     "placeholders": {
@@ -2649,7 +2559,6 @@
   "coreThisGoesOnHome": "This one goes on the home screen.",
   "coreThisPageDoesNotExist": "This page does not exist",
   "coreTryAgain": "Try again",
-  "coreTwitter": "Twitter",
   "coreUndo": "Undo",
   "coreUp": "up {coins}",
   "@coreUp": {
@@ -2685,7 +2594,6 @@
   },
   "coreWallpaperDownloadedPictures": "Wall downloaded in Pictures/Prism!",
   "coreWallpaperEditApplyColorFailed": "Couldn't apply the colour. Try again.",
-  "coreWallpaperEditingCouldNotLoad": "Could not load wallpaper for editing",
   "coreWallpaperErrorGeneric": "Couldn't set the wallpaper.",
   "coreWallpaperErrorImageTooLarge": "This image is too large for your device to set.",
   "coreWallpaperErrorInvalidVideo": "That video cannot be played as a wallpaper. Try another clip.",
@@ -2718,7 +2626,6 @@
     },
     "description": "Feedback when one screen was set but the second screen failed."
   },
-  "coreWallpaperPhotoSaved": "Saved to Photos.",
   "coreWallpaperPreviewDescription": "Check out this amazing wallpaper from Prism.",
   "coreWallpaperPreviewTitle": "Wallpaper on Prism",
   "coreWallpaperSaveFailed": "Couldn't set the wallpaper. Try again.",
@@ -2740,7 +2647,6 @@
   "coreWallpaperSet": "Wallpaper set",
   "coreWallpaperShareFailed": "Couldn't share this wallpaper right now.",
   "coreWallpaperShareRetryFailed": "Couldn't share this wallpaper. Try again.",
-  "coreWebsite": "Website",
   "debugAdminReviewDescription": "Content moderation and push notification tool",
   "debugAdminShortcuts": "Admin shortcuts",
   "debugAllTags": "All tags",
@@ -2896,7 +2802,6 @@
   "debugNotAvailable": "N/A",
   "debugNotSignedIn": "Not signed in",
   "debugNothingNew": "Nothing new",
-  "debugNotificationPanel": "Notifications",
   "debugOfflineStreakRisk": "Offline, streak at risk",
   "debugPackage": "Package",
   "debugPackageName": "Package Name",
@@ -2977,6 +2882,50 @@
   "debugVersion": "Version",
   "debugWallpaperSetSaved": "Wallpaper set or saved",
   "debugWotdNotification": "Wall of the Day, notification",
+  "deepLinkInputChooseImage": "Choose image",
+  "@deepLinkInputChooseImage": {
+    "description": "Action to choose a local image before opening a wallpaper tool."
+  },
+  "deepLinkInputChooseImageDescription": "Choose an image from your gallery to continue.",
+  "@deepLinkInputChooseImageDescription": {
+    "description": "Instructions on the image chooser page opened from a deep link."
+  },
+  "deepLinkInputClockPreviewTitle": "Clock preview",
+  "@deepLinkInputClockPreviewTitle": {
+    "description": "Page title while choosing an image for clock preview."
+  },
+  "deepLinkInputEditTitle": "Edit a wallpaper",
+  "@deepLinkInputEditTitle": {
+    "description": "Page title while choosing an image to edit."
+  },
+  "deepLinkInputFiltersTitle": "Wallpaper filters",
+  "@deepLinkInputFiltersTitle": {
+    "description": "Page title while choosing an image for wallpaper filters."
+  },
+  "deepLinkInputGalleryError": "Could not open your gallery. Please try again.",
+  "@deepLinkInputGalleryError": {
+    "description": "Recoverable error shown when the image picker fails or returns an unusable image."
+  },
+  "deepLinkInputLiveTitle": "Live wallpaper",
+  "@deepLinkInputLiveTitle": {
+    "description": "Page title while choosing an image for a live wallpaper."
+  },
+  "deepLinkInputPhotoPreviewTitle": "Photo preview",
+  "@deepLinkInputPhotoPreviewTitle": {
+    "description": "Page title while choosing an image for photo preview."
+  },
+  "deepLinkInputPositionTitle": "Position a wallpaper",
+  "@deepLinkInputPositionTitle": {
+    "description": "Page title while choosing an image to position as wallpaper."
+  },
+  "deepLinkInputUploadTitle": "Upload a wallpaper",
+  "@deepLinkInputUploadTitle": {
+    "description": "Page title while choosing an image to upload."
+  },
+  "deepLinkInputWallpaperPreviewTitle": "Wallpaper preview",
+  "@deepLinkInputWallpaperPreviewTitle": {
+    "description": "Page title while choosing an image to preview or download."
+  },
   "economyActivity": "Activity",
   "economyActivityEmptyMessage": "Watch a video or keep your streak to earn your first coins.",
   "economyActivityLoadFailed": "Couldn't load activity.",
@@ -3434,15 +3383,6 @@
       }
     }
   },
-  "economyChestXpPrize": " Plus {xp} XP.",
-  "@economyChestXpPrize": {
-    "placeholders": {
-      "xp": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "economyClaimedTodayDay7Chest": "Today is done. Come back tomorrow for your day 7 chest.",
   "economyClaimedTodayReward": "Today is done. Come back tomorrow for +{coins} coins.",
   "@economyClaimedTodayReward": {
@@ -3453,7 +3393,6 @@
       }
     }
   },
-  "economyClose": "Close",
   "economyClosePreview": "Close preview",
   "economyCloseXpExplanation": "Close XP explanation",
   "economyCoinActivitySemantics": "{label}, {date}, {amount} {coins, plural, one{coin} other{coins}}",
@@ -4252,6 +4191,7 @@
   "economyDropPack": "THE PACK",
   "economyDropPastDrops": "PAST DROPS",
   "economyDropPreview": "Preview",
+  "economyDropPreviewTitle": "Drop preview",
   "economyDropSave": "save {coins}",
   "@economyDropSave": {
     "placeholders": {
@@ -4371,6 +4311,7 @@
       }
     }
   },
+  "economyDropWallpaperUnavailable": "This wallpaper is unavailable",
   "economyDropWatermarkLabel": "PRISM DROP",
   "economyDropYourVault": "YOUR VAULT",
   "economyDrops": "Drops",
@@ -5681,7 +5622,6 @@
   },
   "notifHasUnread": "Has unread.",
   "notifInboxCleared": "Inbox cleared",
-  "notifLoadErrorBody": "Check your connection and try again.",
   "notifLoadErrorTitle": "We couldn't load your notifications",
   "notifMarkAllRead": "Mark all as read",
   "notifOfflineSaved": "Couldn't load new notifications. What you see below is saved on this device.",
@@ -5974,7 +5914,26 @@
   "onboardingWallpaperJustForYou": "we picked this wallpaper just for you",
   "onboardingWelcomeDescription": "Millions of premium wallpapers from top artists.",
   "onboardingWelcomeHeadline": "Your screen, reimagined.",
-  "statusLoading": "Loading…",
+  "premiumPageExplorePlans": "Explore Prism Premium plans.",
+  "@premiumPageExplorePlans": {
+    "description": "Introductory message on the Prism Premium plans page."
+  },
+  "premiumPagePlansUnavailable": "Plans are not available right now. Check your connection and try again.",
+  "@premiumPagePlansUnavailable": {
+    "description": "Message shown on the Prism Premium page when plans cannot be loaded."
+  },
+  "premiumPageTitle": "Prism Premium",
+  "@premiumPageTitle": {
+    "description": "Title of the Prism Premium page."
+  },
+  "premiumPageTryAgain": "Try again",
+  "@premiumPageTryAgain": {
+    "description": "Action to retry loading Prism Premium plans."
+  },
+  "premiumPageViewPlans": "View plans",
+  "@premiumPageViewPlans": {
+    "description": "Action to open the Prism Premium purchase plans."
+  },
   "wallpaperAccentColor": "Accent color",
   "@wallpaperAccentColor": {
     "description": "Wallpaper interface text: wallpaperAccentColor."
@@ -6061,10 +6020,6 @@
         "type": "String"
       }
     }
-  },
-  "wallpaperAutoRotateFirst100": "Using your first 100.",
-  "@wallpaperAutoRotateFirst100": {
-    "description": "Notice that auto-rotate uses only the first one hundred source wallpapers."
   },
   "wallpaperAutoRotateGotIt": "Got it",
   "@wallpaperAutoRotateGotIt": {
@@ -6998,10 +6953,6 @@
       }
     }
   },
-  "wallpaperFeedPremiumBadge": "Premium",
-  "@wallpaperFeedPremiumBadge": {
-    "description": "Accessibility label for the premium wallpaper badge."
-  },
   "wallpaperFeedRefreshError": "Couldn't refresh your feed.",
   "@wallpaperFeedRefreshError": {
     "description": "Error shown when refreshing the personalized feed fails."
@@ -7903,16 +7854,6 @@
   "@wallpaperRecentlySet": {
     "description": "Section heading for recently set wallpapers."
   },
-  "wallpaperReferralSaved": "Referral saved. Sign in to claim +{coins} coins.",
-  "@wallpaperReferralSaved": {
-    "description": "Confirmation shown when a referral link is saved for a signed-out user.",
-    "placeholders": {
-      "coins": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "wallpaperRefresh": "Refresh",
   "@wallpaperRefresh": {
     "description": "Wallpaper and feed interface text: wallpaperRefresh."
@@ -7928,10 +7869,6 @@
   "wallpaperReset": "Reset",
   "@wallpaperReset": {
     "description": "Action to reset wallpaper placement adjustments."
-  },
-  "wallpaperResetToDefaults": "Reset to defaults",
-  "@wallpaperResetToDefaults": {
-    "description": "Wallpaper and feed interface text: wallpaperResetToDefaults."
   },
   "wallpaperSave": "Save",
   "@wallpaperSave": {
@@ -8167,10 +8104,6 @@
   "wallpaperUploadAction": "Upload",
   "@wallpaperUploadAction": {
     "description": "Wallpaper upload interface text: wallpaperUploadAction."
-  },
-  "wallpaperUploadActionSemantics": "Upload",
-  "@wallpaperUploadActionSemantics": {
-    "description": "Accessibility label for the upload button."
   },
   "wallpaperUploadAddTag": "Add tag",
   "@wallpaperUploadAddTag": {

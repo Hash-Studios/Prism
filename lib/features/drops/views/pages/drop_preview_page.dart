@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/preview/phone_screen_overlay.dart';
@@ -11,6 +14,8 @@ import 'package:Prism/features/drops/views/preview/preview_wall_page.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -37,6 +42,72 @@ Future<void> openDropPreview(BuildContext context, {required DropWall wall}) asy
       },
     ),
   );
+}
+
+/// Resolves a preview independently when opened outside the Drops page.
+@RoutePage(name: 'DropPreviewRoute')
+class DropPreviewRoutePage extends StatelessWidget {
+  const DropPreviewRoutePage({
+    super.key,
+    @PathParam('weekKey') required this.weekKey,
+    @PathParam('wallId') required this.wallId,
+    this.bloc,
+  });
+
+  final String weekKey;
+  final String wallId;
+  final DropsBloc? bloc;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget child = _ResolvedDropPreview(weekKey: weekKey, wallId: wallId);
+    final DropsBloc? existing = bloc;
+    if (existing != null) return BlocProvider<DropsBloc>.value(value: existing, child: child);
+    return BlocProvider<DropsBloc>(
+      create: (_) => getIt<DropsBloc>()..add(DropsEvent.started(weekKey: weekKey)),
+      child: child,
+    );
+  }
+}
+
+class _ResolvedDropPreview extends StatelessWidget {
+  const _ResolvedDropPreview({required this.weekKey, required this.wallId});
+
+  final String weekKey;
+  final String wallId;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DropsBloc, DropsState>(
+      builder: (context, state) {
+        if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
+          return PrismPage(
+            title: context.l10n.economyDropPreviewTitle,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (state.status == LoadStatus.failure) {
+          return PrismPage(
+            title: context.l10n.economyDropPreviewTitle,
+            body: GlintState(
+              kind: GlintStateKind.error,
+              title: context.l10n.economyDropLoadFailed,
+              actionLabel: context.l10n.actionRetry,
+              onAction: () => context.read<DropsBloc>().add(const DropsEvent.refreshed()),
+            ),
+          );
+        }
+        final DropEntity? drop = state.drop;
+        if (drop == null || drop.weekKey != weekKey || !drop.walls.any((wall) => wall.id == wallId)) {
+          return PrismPage(
+            title: context.l10n.economyDropPreviewTitle,
+            body: GlintState(kind: GlintStateKind.empty, title: context.l10n.economyDropWallpaperUnavailable),
+          );
+        }
+        return DropPreviewPage(key: ValueKey<String>('$weekKey/$wallId'), wallId: wallId);
+      },
+    );
+  }
 }
 
 /// The pager over every wall of the live Drop, starting at [wallId].

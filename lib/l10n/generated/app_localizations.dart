@@ -146,12 +146,6 @@ abstract class AppLocalizations {
   /// **'Admin moderation'**
   String get accountAdminModeration;
 
-  /// Conjunction in onboarding legal agreement text.
-  ///
-  /// In en, this message translates to:
-  /// **'and'**
-  String get accountAnd;
-
   /// Share message for Prism on Android.
   ///
   /// In en, this message translates to:
@@ -199,12 +193,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Auto-rotate wallpapers'**
   String get accountAutoRotateWallpapers;
-
-  /// Back action tooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Back'**
-  String get accountBack;
 
   /// Confirmation action label for blocking an account.
   ///
@@ -722,12 +710,6 @@ abstract class AppLocalizations {
   /// **'Saves mobile data. Wallpapers open as thumbnails, feeds do not load ahead and carousels do not autoplay.'**
   String get accountDataSaverDescription;
 
-  /// Explanation of data saver behavior.
-  ///
-  /// In en, this message translates to:
-  /// **'Saves mobile data. Wallpapers open as thumbnails, feeds do not load ahead and carousels do not autoplay.'**
-  String get accountDataSaverSavedDescription;
-
   /// Subtitle for Firestore telemetry.
   ///
   /// In en, this message translates to:
@@ -1028,12 +1010,6 @@ abstract class AppLocalizations {
   /// **'Home screen'**
   String get accountHomeScreen;
 
-  /// Subtitle for the privacy policy menu item.
-  ///
-  /// In en, this message translates to:
-  /// **'How Prism handles your data'**
-  String get accountHowPrismHandlesData;
-
   /// Invite friends page title.
   ///
   /// In en, this message translates to:
@@ -1310,12 +1286,6 @@ abstract class AppLocalizations {
   /// **'Couldn\'t log out. Try again.'**
   String get accountLogoutFailed;
 
-  /// Error title after sign-out failure.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not log out'**
-  String get accountLogoutFailureTitle;
-
   /// Subtitle for the debug panel settings item.
   ///
   /// In en, this message translates to:
@@ -1400,12 +1370,6 @@ abstract class AppLocalizations {
   /// **'You have no downloads to remove.'**
   String get accountNoDownloadsToRemove;
 
-  /// Notice when the download directory is empty.
-  ///
-  /// In en, this message translates to:
-  /// **'You have no downloads to remove.'**
-  String get accountNoFilesToRemove;
-
   /// Empty state title for a profile with no followers.
   ///
   /// In en, this message translates to:
@@ -1447,12 +1411,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No wallpapers found for {query}'**
   String accountNoWallpapersFoundForQuery(String query);
-
-  /// Empty state when filters exclude every wallpaper.
-  ///
-  /// In en, this message translates to:
-  /// **'No wallpapers match the selected filters.'**
-  String get accountNoWallpapersMatchFilters;
 
   /// Empty state title when a creator has no wallpapers.
   ///
@@ -1940,12 +1898,6 @@ abstract class AppLocalizations {
   /// **'Send gift'**
   String get accountSendGift;
 
-  /// Subtitle for sharing the Prism app.
-  ///
-  /// In en, this message translates to:
-  /// **'Send a link to a friend'**
-  String get accountSendLinkToFriend;
-
   /// Subtitle for the share profile settings row.
   ///
   /// In en, this message translates to:
@@ -1975,12 +1927,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share'**
   String get accountShare;
-
-  /// Subtitle for reporting an app problem.
-  ///
-  /// In en, this message translates to:
-  /// **'Share your app logs with the Prism team'**
-  String get accountShareAppLogs;
 
   /// Share invite action label.
   ///
@@ -2162,12 +2108,6 @@ abstract class AppLocalizations {
   /// **'By continuing you agree to the {terms} and {privacy}'**
   String accountTermsAgreementSemanticLabel(String terms, String privacy);
 
-  /// Start of onboarding legal agreement text.
-  ///
-  /// In en, this message translates to:
-  /// **'By continuing you agree to the'**
-  String get accountTermsAgreementStart;
-
   /// Terms of use link label.
   ///
   /// In en, this message translates to:
@@ -2342,12 +2282,6 @@ abstract class AppLocalizations {
   /// **'Wallpaper sources'**
   String get accountWallpaperSources;
 
-  /// Subtitle naming wallpaper catalog providers.
-  ///
-  /// In en, this message translates to:
-  /// **'Prism uses Wallhaven and Pexels for wallpapers'**
-  String get accountWallpaperSourcesListSubtitle;
-
   /// About page explanation of wallpaper providers.
   ///
   /// In en, this message translates to:
@@ -2408,12 +2342,6 @@ abstract class AppLocalizations {
   /// **'Close'**
   String get actionClose;
 
-  /// No description provided for @actionContinue.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue'**
-  String get actionContinue;
-
   /// No description provided for @actionDone.
   ///
   /// In en, this message translates to:
@@ -2425,12 +2353,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get actionRetry;
-
-  /// No description provided for @actionSave.
-  ///
-  /// In en, this message translates to:
-  /// **'Save'**
-  String get actionSave;
 
   /// No description provided for @adminAllCaughtUp.
   ///
@@ -3230,12 +3152,6 @@ abstract class AppLocalizations {
   /// **'Wallpaper, full screen'**
   String get adminWallpaperFullScreen;
 
-  /// No description provided for @adminWallpaperNotFound.
-  ///
-  /// In en, this message translates to:
-  /// **'Wallpaper not found'**
-  String get adminWallpaperNotFound;
-
   /// No description provided for @adminWallpaperRejected.
   ///
   /// In en, this message translates to:
@@ -3284,59 +3200,11 @@ abstract class AppLocalizations {
   /// **'No connection. We will open this link when you are back online.'**
   String get appLinkRetryWhenOnline;
 
-  /// No description provided for @appLinkUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'This link is no longer available.'**
-  String get appLinkUnavailable;
-
-  /// No description provided for @appSetupUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Home screen setups are no longer available.'**
-  String get appSetupUnavailable;
-
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
   /// **'Prism'**
   String get appTitle;
-
-  /// No description provided for @coreAccountBlockedAccounts.
-  ///
-  /// In en, this message translates to:
-  /// **'Blocked accounts'**
-  String get coreAccountBlockedAccounts;
-
-  /// No description provided for @coreAccountBlockedAccountsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage people you have blocked'**
-  String get coreAccountBlockedAccountsBody;
-
-  /// No description provided for @coreAccountReviewStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'Review status'**
-  String get coreAccountReviewStatus;
-
-  /// No description provided for @coreAccountReviewStatusBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Track your submitted wallpapers'**
-  String get coreAccountReviewStatusBody;
-
-  /// No description provided for @coreAccountShareProfile.
-  ///
-  /// In en, this message translates to:
-  /// **'Share your profile'**
-  String get coreAccountShareProfile;
-
-  /// No description provided for @coreAccountShareProfileBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Send a link to your Prism profile'**
-  String get coreAccountShareProfileBody;
 
   /// No description provided for @coreAdjustPositionPreview.
   ///
@@ -3361,18 +3229,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next time, Set uses the screen you pick and skips this sheet.'**
   String get coreAlwaysUseThisBody;
-
-  /// No description provided for @coreAuthGoogleSignInFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Google sign-in failed. Check your connection and try again.'**
-  String get coreAuthGoogleSignInFailed;
-
-  /// No description provided for @coreAuthUserFallback.
-  ///
-  /// In en, this message translates to:
-  /// **'Prism User'**
-  String get coreAuthUserFallback;
 
   /// No description provided for @coreBack.
   ///
@@ -3427,12 +3283,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not now'**
   String get coreCancelSignIn;
-
-  /// No description provided for @coreCategory.
-  ///
-  /// In en, this message translates to:
-  /// **'Category'**
-  String get coreCategory;
 
   /// No description provided for @coreCategoryAbstract.
   ///
@@ -3812,12 +3662,6 @@ abstract class AppLocalizations {
   /// **'Daily streak, day {day}'**
   String coreCoinDailyStreakDay(String day);
 
-  /// No description provided for @coreCoinDailyStreakDay7.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily streak, day 7'**
-  String get coreCoinDailyStreakDay7;
-
   /// No description provided for @coreCoinDay7Chest.
   ///
   /// In en, this message translates to:
@@ -3968,18 +3812,6 @@ abstract class AppLocalizations {
   /// **'That item is no longer available'**
   String get coreContentNotAvailable;
 
-  /// No description provided for @coreContentReportCouldNotLoadProfile.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load this profile'**
-  String get coreContentReportCouldNotLoadProfile;
-
-  /// No description provided for @coreContentReportTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Report'**
-  String get coreContentReportTitle;
-
   /// No description provided for @coreContentReportUser.
   ///
   /// In en, this message translates to:
@@ -4046,12 +3878,6 @@ abstract class AppLocalizations {
   /// **'Could not load the changelog'**
   String get coreCouldNotLoadChangelog;
 
-  /// No description provided for @coreCouldNotLoadWallpaper.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t load this wallpaper. Check your connection and try again.'**
-  String get coreCouldNotLoadWallpaper;
-
   /// No description provided for @coreCouldNotLoadWallpaperForEditing.
   ///
   /// In en, this message translates to:
@@ -4075,12 +3901,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Crop and position...'**
   String get coreCropAndPosition;
-
-  /// No description provided for @coreDefaultBanner.
-  ///
-  /// In en, this message translates to:
-  /// **'Join our Telegram'**
-  String get coreDefaultBanner;
 
   /// No description provided for @coreDepthEffectAutoLongTip.
   ///
@@ -4268,12 +4088,6 @@ abstract class AppLocalizations {
   /// **'Favourite'**
   String get coreFavourite;
 
-  /// No description provided for @coreFavouritesUpdated.
-  ///
-  /// In en, this message translates to:
-  /// **'Favourites updated'**
-  String get coreFavouritesUpdated;
-
   /// Megabyte file size shown in wallpaper details.
   ///
   /// In en, this message translates to:
@@ -4298,23 +4112,11 @@ abstract class AppLocalizations {
   /// **'Something went wrong, please try again!'**
   String get coreGenericSignInError;
 
-  /// No description provided for @coreGithub.
-  ///
-  /// In en, this message translates to:
-  /// **'GitHub'**
-  String get coreGithub;
-
   /// No description provided for @coreGoHome.
   ///
   /// In en, this message translates to:
   /// **'Go home'**
   String get coreGoHome;
-
-  /// No description provided for @coreGoHomeAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Go home'**
-  String get coreGoHomeAction;
 
   /// No description provided for @coreGooglePlayServicesSignInError.
   ///
@@ -4370,12 +4172,6 @@ abstract class AppLocalizations {
   /// **'Keep Prism open and try again.'**
   String get coreKeepPrismOpen;
 
-  /// No description provided for @coreLoadMoreRetry.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t load more. Tap to retry'**
-  String get coreLoadMoreRetry;
-
   /// No description provided for @coreLoading.
   ///
   /// In en, this message translates to:
@@ -4411,18 +4207,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name'**
   String get coreName;
-
-  /// No description provided for @coreNoWallpaperAvailable.
-  ///
-  /// In en, this message translates to:
-  /// **'No wallpaper URL available'**
-  String get coreNoWallpaperAvailable;
-
-  /// No description provided for @coreNoWallpaperToEdit.
-  ///
-  /// In en, this message translates to:
-  /// **'No wallpaper URL available'**
-  String get coreNoWallpaperToEdit;
 
   /// No description provided for @coreNoWallpaperUrl.
   ///
@@ -4520,12 +4304,6 @@ abstract class AppLocalizations {
   /// **'Tap Use as Wallpaper.'**
   String get corePhotosStepUseAsWallpaper;
 
-  /// No description provided for @corePickLockScreenWallpaper.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick a lock screen wallpaper'**
-  String get corePickLockScreenWallpaper;
-
   /// Version message in the changelog sheet.
   ///
   /// In en, this message translates to:
@@ -4544,23 +4322,11 @@ abstract class AppLocalizations {
   /// **'cover photo'**
   String get corePopupCoverPhoto;
 
-  /// Display name for a custom profile link.
-  ///
-  /// In en, this message translates to:
-  /// **'Custom link'**
-  String get corePopupCustomLink;
-
   /// Confirmation action for discarding profile edits.
   ///
   /// In en, this message translates to:
   /// **'Discard'**
   String get corePopupDiscard;
-
-  /// Display name for an email profile link.
-  ///
-  /// In en, this message translates to:
-  /// **'Email'**
-  String get corePopupEmail;
 
   /// Title for the app changelog sheet.
   ///
@@ -4574,41 +4340,11 @@ abstract class AppLocalizations {
   /// **'Previous wallpaper restored'**
   String get corePreviousWallpaperRestored;
 
-  /// No description provided for @coreProfileLinkGithub.
-  ///
-  /// In en, this message translates to:
-  /// **'GitHub'**
-  String get coreProfileLinkGithub;
-
-  /// No description provided for @coreProfileLinkTwitter.
-  ///
-  /// In en, this message translates to:
-  /// **'Twitter'**
-  String get coreProfileLinkTwitter;
-
-  /// No description provided for @coreProfileLinkWebsite.
-  ///
-  /// In en, this message translates to:
-  /// **'Website'**
-  String get coreProfileLinkWebsite;
-
   /// No description provided for @coreProfileSaveFailed.
   ///
   /// In en, this message translates to:
   /// **'Could not save your profile. Please try again.'**
   String get coreProfileSaveFailed;
-
-  /// No description provided for @coreProfileUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile unavailable'**
-  String get coreProfileUnavailable;
-
-  /// No description provided for @coreProfileUpdateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not save your profile. Please try again.'**
-  String get coreProfileUpdateFailed;
 
   /// No description provided for @coreProfileUpdated.
   ///
@@ -4772,23 +4508,11 @@ abstract class AppLocalizations {
   /// **'Retry {screen}'**
   String coreRetryOnScreen(String screen);
 
-  /// No description provided for @coreRetrySemantics.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry image'**
-  String get coreRetrySemantics;
-
   /// No description provided for @coreSaveChanges.
   ///
   /// In en, this message translates to:
   /// **'Save changes'**
   String get coreSaveChanges;
-
-  /// No description provided for @coreSavedWallpaperToast.
-  ///
-  /// In en, this message translates to:
-  /// **'Wallpaper saved'**
-  String get coreSavedWallpaperToast;
 
   /// No description provided for @coreSeeFullChangelog.
   ///
@@ -4874,18 +4598,6 @@ abstract class AppLocalizations {
   /// **'This bundled wallpaper is available in the Prism app.'**
   String get coreShareWallpaperGeneric;
 
-  /// No description provided for @coreSignIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in'**
-  String get coreSignIn;
-
-  /// No description provided for @coreSignInAgainToContinue.
-  ///
-  /// In en, this message translates to:
-  /// **'Your session ended. Sign in again.'**
-  String get coreSignInAgainToContinue;
-
   /// No description provided for @coreSignInFeatureBody.
   ///
   /// In en, this message translates to:
@@ -4897,12 +4609,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in to use {feature}'**
   String coreSignInFeatureTitle(String feature);
-
-  /// No description provided for @coreSignInKeepData.
-  ///
-  /// In en, this message translates to:
-  /// **'Keep your favourites, uploads and coins on every device.'**
-  String get coreSignInKeepData;
 
   /// No description provided for @coreSignInPopupBody.
   ///
@@ -4921,12 +4627,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in'**
   String get coreSignInPromptAction;
-
-  /// No description provided for @coreSignInToPrism.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in to Prism'**
-  String get coreSignInToPrism;
 
   /// No description provided for @coreSignInToReportContent.
   ///
@@ -4963,12 +4663,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{days} day streak, next reward {coins} coins'**
   String coreStreakSemantics(int days, int coins);
-
-  /// No description provided for @coreTheme.
-  ///
-  /// In en, this message translates to:
-  /// **'Theme'**
-  String get coreTheme;
 
   /// Accessibility label for a selectable system accent colour.
   ///
@@ -5078,12 +4772,6 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get coreTryAgain;
 
-  /// No description provided for @coreTwitter.
-  ///
-  /// In en, this message translates to:
-  /// **'Twitter'**
-  String get coreTwitter;
-
   /// No description provided for @coreUndo.
   ///
   /// In en, this message translates to:
@@ -5191,12 +4879,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t apply the colour. Try again.'**
   String get coreWallpaperEditApplyColorFailed;
-
-  /// No description provided for @coreWallpaperEditingCouldNotLoad.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load wallpaper for editing'**
-  String get coreWallpaperEditingCouldNotLoad;
 
   /// No description provided for @coreWallpaperErrorGeneric.
   ///
@@ -5324,12 +5006,6 @@ abstract class AppLocalizations {
   /// **'{applied} set. {failed} failed.'**
   String coreWallpaperPartialSet(String applied, String failed);
 
-  /// No description provided for @coreWallpaperPhotoSaved.
-  ///
-  /// In en, this message translates to:
-  /// **'Saved to Photos.'**
-  String get coreWallpaperPhotoSaved;
-
   /// No description provided for @coreWallpaperPreviewDescription.
   ///
   /// In en, this message translates to:
@@ -5389,12 +5065,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t share this wallpaper. Try again.'**
   String get coreWallpaperShareRetryFailed;
-
-  /// No description provided for @coreWebsite.
-  ///
-  /// In en, this message translates to:
-  /// **'Website'**
-  String get coreWebsite;
 
   /// No description provided for @debugAdminReviewDescription.
   ///
@@ -6068,12 +5738,6 @@ abstract class AppLocalizations {
   /// **'Nothing new'**
   String get debugNothingNew;
 
-  /// No description provided for @debugNotificationPanel.
-  ///
-  /// In en, this message translates to:
-  /// **'Notifications'**
-  String get debugNotificationPanel;
-
   /// No description provided for @debugOfflineStreakRisk.
   ///
   /// In en, this message translates to:
@@ -6463,6 +6127,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wall of the Day, notification'**
   String get debugWotdNotification;
+
+  /// Action to choose a local image before opening a wallpaper tool.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose image'**
+  String get deepLinkInputChooseImage;
+
+  /// Instructions on the image chooser page opened from a deep link.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an image from your gallery to continue.'**
+  String get deepLinkInputChooseImageDescription;
+
+  /// Page title while choosing an image for clock preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Clock preview'**
+  String get deepLinkInputClockPreviewTitle;
+
+  /// Page title while choosing an image to edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit a wallpaper'**
+  String get deepLinkInputEditTitle;
+
+  /// Page title while choosing an image for wallpaper filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper filters'**
+  String get deepLinkInputFiltersTitle;
+
+  /// Recoverable error shown when the image picker fails or returns an unusable image.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open your gallery. Please try again.'**
+  String get deepLinkInputGalleryError;
+
+  /// Page title while choosing an image for a live wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Live wallpaper'**
+  String get deepLinkInputLiveTitle;
+
+  /// Page title while choosing an image for photo preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo preview'**
+  String get deepLinkInputPhotoPreviewTitle;
+
+  /// Page title while choosing an image to position as wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Position a wallpaper'**
+  String get deepLinkInputPositionTitle;
+
+  /// Page title while choosing an image to upload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload a wallpaper'**
+  String get deepLinkInputUploadTitle;
+
+  /// Page title while choosing an image to preview or download.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper preview'**
+  String get deepLinkInputWallpaperPreviewTitle;
 
   /// No description provided for @economyActivity.
   ///
@@ -7442,12 +7172,6 @@ abstract class AppLocalizations {
   /// **'Opening it gives {xp} XP.'**
   String economyChestXpLine(int xp);
 
-  /// No description provided for @economyChestXpPrize.
-  ///
-  /// In en, this message translates to:
-  /// **' Plus {xp} XP.'**
-  String economyChestXpPrize(int xp);
-
   /// No description provided for @economyClaimedTodayDay7Chest.
   ///
   /// In en, this message translates to:
@@ -7459,12 +7183,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today is done. Come back tomorrow for +{coins} coins.'**
   String economyClaimedTodayReward(int coins);
-
-  /// No description provided for @economyClose.
-  ///
-  /// In en, this message translates to:
-  /// **'Close'**
-  String get economyClose;
 
   /// No description provided for @economyClosePreview.
   ///
@@ -8344,6 +8062,12 @@ abstract class AppLocalizations {
   /// **'Preview'**
   String get economyDropPreview;
 
+  /// No description provided for @economyDropPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop preview'**
+  String get economyDropPreviewTitle;
+
   /// No description provided for @economyDropSave.
   ///
   /// In en, this message translates to:
@@ -8451,6 +8175,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{state} wall {serial}'**
   String economyDropWallSemantics(String state, String serial);
+
+  /// No description provided for @economyDropWallpaperUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper is unavailable'**
+  String get economyDropWallpaperUnavailable;
 
   /// No description provided for @economyDropWatermarkLabel.
   ///
@@ -10470,12 +10200,6 @@ abstract class AppLocalizations {
   /// **'Inbox cleared'**
   String get notifInboxCleared;
 
-  /// No description provided for @notifLoadErrorBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Check your connection and try again.'**
-  String get notifLoadErrorBody;
-
   /// No description provided for @notifLoadErrorTitle.
   ///
   /// In en, this message translates to:
@@ -11250,11 +10974,35 @@ abstract class AppLocalizations {
   /// **'Your screen, reimagined.'**
   String get onboardingWelcomeHeadline;
 
-  /// No description provided for @statusLoading.
+  /// Introductory message on the Prism Premium plans page.
   ///
   /// In en, this message translates to:
-  /// **'Loading…'**
-  String get statusLoading;
+  /// **'Explore Prism Premium plans.'**
+  String get premiumPageExplorePlans;
+
+  /// Message shown on the Prism Premium page when plans cannot be loaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans are not available right now. Check your connection and try again.'**
+  String get premiumPagePlansUnavailable;
+
+  /// Title of the Prism Premium page.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism Premium'**
+  String get premiumPageTitle;
+
+  /// Action to retry loading Prism Premium plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get premiumPageTryAgain;
+
+  /// Action to open the Prism Premium purchase plans.
+  ///
+  /// In en, this message translates to:
+  /// **'View plans'**
+  String get premiumPageViewPlans;
 
   /// Wallpaper interface text: wallpaperAccentColor.
   ///
@@ -11363,12 +11111,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pass active until {date}'**
   String wallpaperAutoRotateEnabledUntil(String date);
-
-  /// Notice that auto-rotate uses only the first one hundred source wallpapers.
-  ///
-  /// In en, this message translates to:
-  /// **'Using your first 100.'**
-  String get wallpaperAutoRotateFirst100;
 
   /// Action to dismiss the auto-rotate battery notice.
   ///
@@ -12522,12 +12264,6 @@ abstract class AppLocalizations {
   /// **'{count} picked'**
   String wallpaperFeedPickedCount(int count);
 
-  /// Accessibility label for the premium wallpaper badge.
-  ///
-  /// In en, this message translates to:
-  /// **'Premium'**
-  String get wallpaperFeedPremiumBadge;
-
   /// Error shown when refreshing the personalized feed fails.
   ///
   /// In en, this message translates to:
@@ -13680,12 +13416,6 @@ abstract class AppLocalizations {
   /// **'Recently set'**
   String get wallpaperRecentlySet;
 
-  /// Confirmation shown when a referral link is saved for a signed-out user.
-  ///
-  /// In en, this message translates to:
-  /// **'Referral saved. Sign in to claim +{coins} coins.'**
-  String wallpaperReferralSaved(int coins);
-
   /// Wallpaper and feed interface text: wallpaperRefresh.
   ///
   /// In en, this message translates to:
@@ -13709,12 +13439,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset'**
   String get wallpaperReset;
-
-  /// Wallpaper and feed interface text: wallpaperResetToDefaults.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset to defaults'**
-  String get wallpaperResetToDefaults;
 
   /// Wallpaper and feed interface text: wallpaperSave.
   ///
@@ -14051,12 +13775,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upload'**
   String get wallpaperUploadAction;
-
-  /// Accessibility label for the upload button.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload'**
-  String get wallpaperUploadActionSemantics;
 
   /// Wallpaper interface text: wallpaperUploadAddTag.
   ///

@@ -148,6 +148,7 @@ enums:
       - error
       - missing_data
       - not_signed_in
+      - not_authorized
       - empty_input
       - unknown
   - name: search_provider
@@ -225,6 +226,8 @@ enums:
     dart_type: DeepLinkSourceValue
     values:
       - app_links
+      - push
+      - in_app
   - name: share_type
     dart_type: ShareTypeValue
     values:
@@ -1273,6 +1276,11 @@ events:
         type: bool
   - id: deep_link_resolved
     fields:
+      - name: source
+        key: source
+        type: enum
+        enum: DeepLinkSourceValue
+        required: false
       - name: target_type
         key: target_type
         type: enum
@@ -1288,6 +1296,11 @@ events:
         required: false
   - id: deep_link_navigation_result
     fields:
+      - name: source
+        key: source
+        type: enum
+        enum: DeepLinkSourceValue
+        required: false
       - name: target_type
         key: target_type
         type: enum

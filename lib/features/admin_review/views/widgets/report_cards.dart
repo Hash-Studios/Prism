@@ -1,6 +1,8 @@
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/admin_review_localization.dart';
@@ -55,22 +57,17 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
   }
 
   Future<void> _openWallpaperDetail(BuildContext context) async {
-    final AppLocalizations l10n = context.l10n;
-    final PageRouteInfo? route = await const NotificationRouteMapper().fromRoute(
-      route: 'wall',
-      wallId: widget.targetDocId,
-      profileIdentifier: '',
-      sourceTag: 'admin.content_report',
-      fallbackToInbox: false,
+    await DeepLinkDispatcher.maybeOf(context.router)?.openActionLoader(
+      () => const NotificationRouteMapper().actionFromRoute(
+        route: 'wall',
+        wallId: widget.targetDocId,
+        sourceTag: 'admin.content_report',
+        fallbackToInbox: false,
+      ),
+      rawUri: '/share/${widget.targetDocId}',
+      source: DeepLinkSourceValue.inApp,
+      targetType: TargetTypeValue.share,
     );
-    if (!context.mounted) {
-      return;
-    }
-    if (route != null) {
-      await context.router.push(route);
-    } else {
-      toasts.error(l10n.adminWallpaperNotFound);
-    }
   }
 
   Future<void> _keepWallpaper() async {

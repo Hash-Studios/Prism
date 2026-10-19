@@ -1,5 +1,6 @@
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
+import 'package:Prism/core/router/deep_link_route_catalog.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,8 +23,8 @@ void main() {
   test('parses canonical user path link', () {
     final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/user/alice'));
 
-    expect(action, isA<UserLinkIntent>());
-    expect((action as UserLinkIntent).profileIdentifier, 'alice');
+    expect(action, isA<PageLinkIntent>());
+    expect((action as PageLinkIntent).path, '/user/alice');
   });
 
   test('parses legacy user alias link', () {
@@ -46,29 +47,48 @@ void main() {
   });
 
   test('parses the economy screen links', () {
-    const Map<String, DeepLinkScreen> expected = <String, DeepLinkScreen>{
-      'shop': DeepLinkScreen.shop,
-      'drops': DeepLinkScreen.drops,
-      'leaderboard': DeepLinkScreen.leaderboard,
-      'draw': DeepLinkScreen.draw,
-    };
-    expected.forEach((String root, DeepLinkScreen screen) {
+    const Set<String> expected = <String>{'shop', 'drops', 'leaderboard', 'draw'};
+    for (final String root in expected) {
       for (final String link in <String>[
         'https://prismwalls.com/$root',
         'prism://$root',
         'https://prismwalls.com/${root.toUpperCase()}',
       ]) {
         final DeepLinkActionEntity action = parser.parse(parser.transform(Uri.parse(link)));
-        expect(action, isA<ScreenLinkIntent>(), reason: link);
-        expect((action as ScreenLinkIntent).screen, screen, reason: link);
+        expect(action, isA<PageLinkIntent>(), reason: link);
+        expect((action as PageLinkIntent).path.toLowerCase(), '/$root', reason: link);
       }
-    });
+    }
   });
 
   test('returns unknown intent for unsupported path', () {
     final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/something-else'));
 
     expect(action, isA<UnknownIntent>());
+  });
+
+  test('all catalog examples become validated page intents', () {
+    for (final DeepLinkRouteExample example in DeepLinkRouteCatalog.examples) {
+      final DeepLinkActionEntity action = parser.parse(Uri.parse(example.uri));
+      expect(action, isA<PageLinkIntent>(), reason: example.uri);
+      final DeepLinkRouteMatch? match = DeepLinkRouteCatalog.match(Uri.parse((action as PageLinkIntent).path));
+      expect(match?.target, example.target, reason: example.uri);
+    }
+  });
+
+  test('invalid catalog routes cannot fall through to permissive legacy parsing', () {
+    for (final String link in <String>[
+      'https://prismwalls.com/drops/week-1?ignored=x',
+      'https://prismwalls.com/user/alice/followers?ignored=x',
+      'https://prismwalls.com/user/alice/unknown',
+      'https://prismwalls.com/shop?url=https%3A%2F%2Fevil.example',
+      'https://prismwalls.com/wallpaper-position?filePath=%2Fetc%2Fpasswd',
+      'https://prismwalls.com/wallpaper-detail?wallId=a&wallId=b',
+      'https://evil.example/user/alice',
+      'file:///etc/passwd',
+    ]) {
+      expect(parser.parse(Uri.parse(link)), isA<UnknownIntent>(), reason: link);
+    }
   });
 
   test('normalizes custom-scheme deep links for router', () {
@@ -96,27 +116,31 @@ void main() {
   });
 
   test('malformed percent encoding returns unknown without throwing', () {
-    expect(parser.parse(Uri.parse('https://prismwalls.com/l?code=%FF')), isA<UnknownIntent>());
-    expect(parser.parse(Uri.parse('https://prismwalls.com/user/%FF')), isA<UnknownIntent>());
+    for (final link in <String>['https://prismwalls.com/l?code=%FF', 'https://prismwalls.com/user/%FF']) {
+      expect(parser.parse(Uri.parse(link)), isA<UnknownIntent>().having((action) => action.rawUri, 'rawUri', link));
+    }
   });
 
-  test('the router transform sends malformed links to not-found before auto_route decodes them', () {
-    expect(parser.transform(Uri.parse('https://prismwalls.com/user/%FF')), Uri(path: '/not-found'));
-    expect(parser.transform(Uri.parse('https://prismwalls.com/l?code=%FF')), Uri(path: '/not-found'));
-  });
-
-  test('the router transform rejects a malformed custom-scheme host moved into the path', () {
-    final Uri transformed = parser.transform(Uri.parse('prism://%FF/alice'));
-
-    expect(transformed.pathSegments, <String>['not-found']);
-    expect(transformed.queryParameters, isEmpty);
-    expect(transformed, Uri(path: '/not-found'));
+  test('the router transform safely transports malformed links while preserving their invalid outcome', () {
+    for (final link in <String>[
+      'https://prismwalls.com/user/%FF',
+      'https://prismwalls.com/l?code=%FF',
+      'prism://%FF/alice',
+    ]) {
+      final Uri transformed = parser.transform(Uri.parse(link));
+      expect(parser.parse(Uri.parse(link)), isA<UnknownIntent>().having((action) => action.rawUri, 'rawUri', link));
+      expect(transformed.pathSegments, <String>['not-found']);
+      expect(transformed.queryParameters.values, <String>['1']);
+      expect(parser.parse(transformed), isA<UnknownIntent>());
+      expect(parser.transform(transformed), transformed);
+    }
+    expect(parser.parse(Uri.parse('/not-found')), isA<PageLinkIntent>());
   });
 
   group('roots that the Android manifest and the iOS association file claim', () {
     test('share, user, setup, refer and l each parse', () {
       expect(parser.parse(Uri.parse('https://prismwalls.com/share?id=a&thumb=t')), isA<ShareLinkIntent>());
-      expect(parser.parse(Uri.parse('https://prismwalls.com/user/alice')), isA<UserLinkIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/user/alice')), isA<PageLinkIntent>());
       expect(parser.parse(Uri.parse('https://prismwalls.com/setup/desk')), isA<SetupLinkIntent>());
       expect(parser.parse(Uri.parse('https://prismwalls.com/refer/u1')), isA<ReferLinkIntent>());
       expect(parser.parse(Uri.parse('https://prismwalls.com/l/abc')), isA<ShortCodeIntent>());
@@ -132,21 +156,22 @@ void main() {
     test('www.prismwalls.com parses like the bare domain', () {
       final DeepLinkActionEntity action = parser.parse(Uri.parse('https://www.prismwalls.com/user/alice'));
 
-      expect(action, isA<UserLinkIntent>());
-      expect((action as UserLinkIntent).profileIdentifier, 'alice');
+      expect(action, isA<PageLinkIntent>());
+      expect((action as PageLinkIntent).path, '/user/alice');
     });
 
     test('the prism scheme parses every root', () {
       expect(parser.parse(parser.transform(Uri.parse('prism://share/abc?thumb=t'))), isA<ShareLinkIntent>());
-      expect(parser.parse(parser.transform(Uri.parse('prism://user/alice'))), isA<UserLinkIntent>());
+      expect(parser.parse(parser.transform(Uri.parse('prism://user/alice'))), isA<PageLinkIntent>());
       expect(parser.parse(parser.transform(Uri.parse('prism://refer/u1'))), isA<ReferLinkIntent>());
       expect(parser.parse(parser.transform(Uri.parse('prism://l/abc'))), isA<ShortCodeIntent>());
     });
 
     test('web pages and look-alike paths stay unknown', () {
-      for (final String path in <String>['privacy', 'terms', 'legal', 'u/alice', 'shared', '']) {
+      for (final String path in <String>['privacy', 'terms', 'legal', 'u/alice', 'shared']) {
         expect(parser.parse(Uri.parse('https://prismwalls.com/$path')), isA<UnknownIntent>(), reason: path);
       }
+      expect(parser.parse(Uri.parse('https://prismwalls.com/')), isA<PageLinkIntent>());
       expect(parser.parse(Uri.parse('https://prismwalls.com/l')), isA<UnknownIntent>());
     });
   });

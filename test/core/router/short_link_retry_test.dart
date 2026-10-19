@@ -1,32 +1,9 @@
 import 'dart:async';
 
-import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/router/short_link_retry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('shortLinkFailureAction', () {
-    const network = ShortLinkFailed(AnalyticsReasonValue.error, isNetwork: true);
-    const gone = ShortLinkFailed(AnalyticsReasonValue.error);
-
-    test('a network failure waits for the connection once', () {
-      expect(shortLinkFailureAction(network, isRetry: false), ShortLinkFailureAction.retryWhenOnline);
-    });
-
-    test('a network failure on the retry shows not found', () {
-      expect(shortLinkFailureAction(network, isRetry: true), ShortLinkFailureAction.showNotFound);
-    });
-
-    test('any other failure shows not found and never reopens the link host', () {
-      expect(shortLinkFailureAction(gone, isRetry: false), ShortLinkFailureAction.showNotFound);
-      expect(
-        shortLinkFailureAction(const ShortLinkFailed(AnalyticsReasonValue.missingData), isRetry: false),
-        ShortLinkFailureAction.showNotFound,
-      );
-    });
-  });
-
   group('ShortLinkRetryScheduler', () {
     late StreamController<bool> online;
     late bool connected;
@@ -91,14 +68,14 @@ void main() {
       expect(checked, isFalse);
     });
 
-    test('a newer code replaces the older one', () async {
+    test('each queued code retries in arrival order', () async {
       scheduler.schedule('old');
       scheduler.schedule('new');
 
       online.add(true);
       await Future<void>.delayed(Duration.zero);
 
-      expect(retried, <String>['new']);
+      expect(retried, <String>['old', 'new']);
     });
 
     test('dispose drops the pending code', () async {

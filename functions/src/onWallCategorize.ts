@@ -4,6 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {DEFAULT_CATEGORY, DEFAULT_COLLECTION, detectLabels, mapLabelsToCategory} from "./wallCategory";
 import {db, REGION} from "./common";
 import {hasPaletteColors, wallColorsFor} from "./wallColors";
+import {fileWallInCollection} from "./wallCollections";
 import {falKey, type WallDepth, wallDepthFor} from "./wallDepth";
 
 export const onWallCategorize = onDocumentCreated(
@@ -112,4 +113,6 @@ async function updateWallpaperCategory(
   });
 
   logger.info("Wallpaper category updated", {wallId, category, collections});
+  // The wall can be approved before the check ends. onWallApproved then had no category to file it by.
+  await fileWallInCollection(db.collection("walls").doc(wallId));
 }

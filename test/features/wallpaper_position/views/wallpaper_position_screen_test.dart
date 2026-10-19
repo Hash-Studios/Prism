@@ -203,7 +203,9 @@ void main() {
 
       final Rect layer = tester.getRect(find.byType(LockPreviewLayer));
       final double scale = layer.width / 800;
-      final double dateTop = tester.getTopLeft(find.text(DateFormat('EEEE d MMMM').format(DateTime.now()))).dy;
+      final String locale = AppLocalizations.of(tester.element(find.byType(PlacementPreview))).localeName;
+      final String dateLabel = DateFormat.MMMMEEEEd(locale).format(DateTime.now());
+      final double dateTop = tester.getTopLeft(find.text(dateLabel)).dy;
       expect(dateTop - layer.top, closeTo((47 + 24) * scale, 0.01));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 

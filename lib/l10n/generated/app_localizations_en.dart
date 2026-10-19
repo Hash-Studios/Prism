@@ -39,9 +39,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountAdminModeration => 'Admin moderation';
 
   @override
-  String get accountAnd => 'and';
-
-  @override
   String accountAndroidSharePitch(String url) {
     return 'Fall in love with Android customisation again! Check out Prism -\n$url';
   }
@@ -66,9 +63,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountAutoRotateWallpapers => 'Auto-rotate wallpapers';
-
-  @override
-  String get accountBack => 'Back';
 
   @override
   String get accountBlock => 'Block';
@@ -397,10 +391,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Saves mobile data. Wallpapers open as thumbnails, feeds do not load ahead and carousels do not autoplay.';
 
   @override
-  String get accountDataSaverSavedDescription =>
-      'Saves mobile data. Wallpapers open as thumbnails, feeds do not load ahead and carousels do not autoplay.';
-
-  @override
   String get accountDatabaseUsageStats => 'Database usage and stats';
 
   @override
@@ -606,9 +596,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountHomeScreen => 'Home screen';
 
   @override
-  String get accountHowPrismHandlesData => 'How Prism handles your data';
-
-  @override
   String get accountInviteFriends => 'Invite friends';
 
   @override
@@ -762,9 +749,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountLogoutFailed => 'Couldn\'t log out. Try again.';
 
   @override
-  String get accountLogoutFailureTitle => 'Could not log out';
-
-  @override
   String get accountLogsNetworkToolsStorage => 'Logs, network, tools and storage';
 
   @override
@@ -807,9 +791,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountNoDownloadsToRemove => 'You have no downloads to remove.';
 
   @override
-  String get accountNoFilesToRemove => 'You have no downloads to remove.';
-
-  @override
   String get accountNoFollowersYet => 'No followers yet';
 
   @override
@@ -835,9 +816,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String accountNoWallpapersFoundForQuery(String query) {
     return 'No wallpapers found for $query';
   }
-
-  @override
-  String get accountNoWallpapersMatchFilters => 'No wallpapers match the selected filters.';
 
   @override
   String get accountNoWallpapersYet => 'No wallpapers yet';
@@ -1121,9 +1099,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSendGift => 'Send gift';
 
   @override
-  String get accountSendLinkToFriend => 'Send a link to a friend';
-
-  @override
   String get accountSendProfileLink => 'Send a link to your Prism profile';
 
   @override
@@ -1137,9 +1112,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountShare => 'Share';
-
-  @override
-  String get accountShareAppLogs => 'Share your app logs with the Prism team';
 
   @override
   String get accountShareInvite => 'Share invite';
@@ -1242,9 +1214,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get accountTermsAgreementStart => 'By continuing you agree to the';
-
-  @override
   String get accountTermsOfUse => 'Terms of use';
 
   @override
@@ -1342,9 +1311,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountWallpaperSources => 'Wallpaper sources';
 
   @override
-  String get accountWallpaperSourcesListSubtitle => 'Prism uses Wallhaven and Pexels for wallpapers';
-
-  @override
   String get accountWallpaperSourcesMessage => 'Prism uses these services to bring you wallpapers.';
 
   @override
@@ -1377,16 +1343,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionClose => 'Close';
 
   @override
-  String get actionContinue => 'Continue';
-
-  @override
   String get actionDone => 'Done';
 
   @override
   String get actionRetry => 'Try again';
-
-  @override
-  String get actionSave => 'Save';
 
   @override
   String get adminAllCaughtUp => 'All caught up';
@@ -1825,9 +1785,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminWallpaperFullScreen => 'Wallpaper, full screen';
 
   @override
-  String get adminWallpaperNotFound => 'Wallpaper not found';
-
-  @override
   String get adminWallpaperRejected => 'Wallpaper rejected';
 
   @override
@@ -1874,31 +1831,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLinkRetryWhenOnline => 'No connection. We will open this link when you are back online.';
 
   @override
-  String get appLinkUnavailable => 'This link is no longer available.';
-
-  @override
-  String get appSetupUnavailable => 'Home screen setups are no longer available.';
-
-  @override
   String get appTitle => 'Prism';
-
-  @override
-  String get coreAccountBlockedAccounts => 'Blocked accounts';
-
-  @override
-  String get coreAccountBlockedAccountsBody => 'Manage people you have blocked';
-
-  @override
-  String get coreAccountReviewStatus => 'Review status';
-
-  @override
-  String get coreAccountReviewStatusBody => 'Track your submitted wallpapers';
-
-  @override
-  String get coreAccountShareProfile => 'Share your profile';
-
-  @override
-  String get coreAccountShareProfileBody => 'Send a link to your Prism profile';
 
   @override
   String get coreAdjustPositionPreview => 'Adjust position and preview';
@@ -1911,12 +1844,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreAlwaysUseThisBody => 'Next time, Set uses the screen you pick and skips this sheet.';
-
-  @override
-  String get coreAuthGoogleSignInFailed => 'Google sign-in failed. Check your connection and try again.';
-
-  @override
-  String get coreAuthUserFallback => 'Prism User';
 
   @override
   String get coreBack => 'Back';
@@ -1944,9 +1871,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreCancelSignIn => 'Not now';
-
-  @override
-  String get coreCategory => 'Category';
 
   @override
   String get coreCategoryAbstract => 'Abstract';
@@ -2147,9 +2071,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get coreCoinDailyStreakDay7 => 'Daily streak, day 7';
-
-  @override
   String get coreCoinDay7Chest => 'Day 7 chest';
 
   @override
@@ -2227,12 +2148,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreContentNotAvailable => 'That item is no longer available';
 
   @override
-  String get coreContentReportCouldNotLoadProfile => 'Could not load this profile';
-
-  @override
-  String get coreContentReportTitle => 'Report';
-
-  @override
   String get coreContentReportUser => 'user';
 
   @override
@@ -2270,9 +2185,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreCouldNotLoadChangelog => 'Could not load the changelog';
 
   @override
-  String get coreCouldNotLoadWallpaper => 'Couldn\'t load this wallpaper. Check your connection and try again.';
-
-  @override
   String get coreCouldNotLoadWallpaperForEditing => 'Could not load wallpaper for editing';
 
   @override
@@ -2283,9 +2195,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreCropAndPosition => 'Crop and position...';
-
-  @override
-  String get coreDefaultBanner => 'Join our Telegram';
 
   @override
   String get coreDepthEffectAutoLongTip =>
@@ -2403,9 +2312,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreFavourite => 'Favourite';
 
   @override
-  String get coreFavouritesUpdated => 'Favourites updated';
-
-  @override
   String coreFileSizeMegabytes(String size) {
     return '$size MB';
   }
@@ -2420,13 +2326,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreGenericSignInError => 'Something went wrong, please try again!';
 
   @override
-  String get coreGithub => 'GitHub';
-
-  @override
   String get coreGoHome => 'Go home';
-
-  @override
-  String get coreGoHomeAction => 'Go home';
 
   @override
   String get coreGooglePlayServicesSignInError => 'Google Play services on this device cannot sign in.';
@@ -2458,9 +2358,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreKeepPrismOpen => 'Keep Prism open and try again.';
 
   @override
-  String get coreLoadMoreRetry => 'Couldn\'t load more. Tap to retry';
-
-  @override
   String get coreLoading => 'Loading';
 
   @override
@@ -2477,12 +2374,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreName => 'Name';
-
-  @override
-  String get coreNoWallpaperAvailable => 'No wallpaper URL available';
-
-  @override
-  String get coreNoWallpaperToEdit => 'No wallpaper URL available';
 
   @override
   String get coreNoWallpaperUrl => 'No wallpaper URL available';
@@ -2533,9 +2424,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get corePhotosStepUseAsWallpaper => 'Tap Use as Wallpaper.';
 
   @override
-  String get corePickLockScreenWallpaper => 'Pick a lock screen wallpaper';
-
-  @override
   String corePopupAppVersion(String version) {
     return 'You are on version $version.';
   }
@@ -2547,13 +2435,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get corePopupCoverPhoto => 'cover photo';
 
   @override
-  String get corePopupCustomLink => 'Custom link';
-
-  @override
   String get corePopupDiscard => 'Discard';
-
-  @override
-  String get corePopupEmail => 'Email';
 
   @override
   String get corePopupWhatsNew => 'What\'s new';
@@ -2562,22 +2444,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get corePreviousWallpaperRestored => 'Previous wallpaper restored';
 
   @override
-  String get coreProfileLinkGithub => 'GitHub';
-
-  @override
-  String get coreProfileLinkTwitter => 'Twitter';
-
-  @override
-  String get coreProfileLinkWebsite => 'Website';
-
-  @override
   String get coreProfileSaveFailed => 'Could not save your profile. Please try again.';
-
-  @override
-  String get coreProfileUnavailable => 'Profile unavailable';
-
-  @override
-  String get coreProfileUpdateFailed => 'Could not save your profile. Please try again.';
 
   @override
   String get coreProfileUpdated => 'Profile updated';
@@ -2715,13 +2582,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get coreRetrySemantics => 'Retry image';
-
-  @override
   String get coreSaveChanges => 'Save changes';
-
-  @override
-  String get coreSavedWallpaperToast => 'Wallpaper saved';
 
   @override
   String get coreSeeFullChangelog => 'See the full changelog';
@@ -2779,21 +2640,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreShareWallpaperGeneric => 'This bundled wallpaper is available in the Prism app.';
 
   @override
-  String get coreSignIn => 'Sign in';
-
-  @override
-  String get coreSignInAgainToContinue => 'Your session ended. Sign in again.';
-
-  @override
   String get coreSignInFeatureBody => 'Your account keeps your coins, favourites and uploads in one place.';
 
   @override
   String coreSignInFeatureTitle(String feature) {
     return 'Sign in to use $feature';
   }
-
-  @override
-  String get coreSignInKeepData => 'Keep your favourites, uploads and coins on every device.';
 
   @override
   String get coreSignInPopupBody => 'Keep your favourites, uploads and coins on every device.';
@@ -2803,9 +2655,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreSignInPromptAction => 'Sign in';
-
-  @override
-  String get coreSignInToPrism => 'Sign in to Prism';
 
   @override
   String get coreSignInToReportContent => 'Sign in to report content';
@@ -2836,9 +2685,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
     return '$daysString day streak, next reward $coinsString coins';
   }
-
-  @override
-  String get coreTheme => 'Theme';
 
   @override
   String coreThemeAccentSemanticLabel(int index, int count) {
@@ -2902,9 +2748,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreTryAgain => 'Try again';
 
   @override
-  String get coreTwitter => 'Twitter';
-
-  @override
   String get coreUndo => 'Undo';
 
   @override
@@ -2964,9 +2807,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreWallpaperEditApplyColorFailed => 'Couldn\'t apply the colour. Try again.';
-
-  @override
-  String get coreWallpaperEditingCouldNotLoad => 'Could not load wallpaper for editing';
 
   @override
   String get coreWallpaperErrorGeneric => 'Couldn\'t set the wallpaper.';
@@ -3035,9 +2875,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get coreWallpaperPhotoSaved => 'Saved to Photos.';
-
-  @override
   String get coreWallpaperPreviewDescription => 'Check out this amazing wallpaper from Prism.';
 
   @override
@@ -3068,9 +2905,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreWallpaperShareRetryFailed => 'Couldn\'t share this wallpaper. Try again.';
-
-  @override
-  String get coreWebsite => 'Website';
 
   @override
   String get debugAdminReviewDescription => 'Content moderation and push notification tool';
@@ -3431,9 +3265,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get debugNothingNew => 'Nothing new';
 
   @override
-  String get debugNotificationPanel => 'Notifications';
-
-  @override
   String get debugOfflineStreakRisk => 'Offline, streak at risk';
 
   @override
@@ -3641,6 +3472,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get debugWotdNotification => 'Wall of the Day, notification';
+
+  @override
+  String get deepLinkInputChooseImage => 'Choose image';
+
+  @override
+  String get deepLinkInputChooseImageDescription => 'Choose an image from your gallery to continue.';
+
+  @override
+  String get deepLinkInputClockPreviewTitle => 'Clock preview';
+
+  @override
+  String get deepLinkInputEditTitle => 'Edit a wallpaper';
+
+  @override
+  String get deepLinkInputFiltersTitle => 'Wallpaper filters';
+
+  @override
+  String get deepLinkInputGalleryError => 'Could not open your gallery. Please try again.';
+
+  @override
+  String get deepLinkInputLiveTitle => 'Live wallpaper';
+
+  @override
+  String get deepLinkInputPhotoPreviewTitle => 'Photo preview';
+
+  @override
+  String get deepLinkInputPositionTitle => 'Position a wallpaper';
+
+  @override
+  String get deepLinkInputUploadTitle => 'Upload a wallpaper';
+
+  @override
+  String get deepLinkInputWallpaperPreviewTitle => 'Wallpaper preview';
 
   @override
   String get economyActivity => 'Activity';
@@ -4305,14 +4169,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String economyChestXpPrize(int xp) {
-    final intl.NumberFormat xpNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String xpString = xpNumberFormat.format(xp);
-
-    return ' Plus $xpString XP.';
-  }
-
-  @override
   String get economyClaimedTodayDay7Chest => 'Today is done. Come back tomorrow for your day 7 chest.';
 
   @override
@@ -4322,9 +4178,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
     return 'Today is done. Come back tomorrow for +$coinsString coins.';
   }
-
-  @override
-  String get economyClose => 'Close';
 
   @override
   String get economyClosePreview => 'Close preview';
@@ -5112,6 +4965,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get economyDropPreview => 'Preview';
 
   @override
+  String get economyDropPreviewTitle => 'Drop preview';
+
+  @override
   String economyDropSave(int coins) {
     final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String coinsString = coinsNumberFormat.format(coins);
@@ -5225,6 +5081,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String economyDropWallSemantics(String state, String serial) {
     return '$state wall $serial';
   }
+
+  @override
+  String get economyDropWallpaperUnavailable => 'This wallpaper is unavailable';
 
   @override
   String get economyDropWatermarkLabel => 'PRISM DROP';
@@ -6793,9 +6652,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifInboxCleared => 'Inbox cleared';
 
   @override
-  String get notifLoadErrorBody => 'Check your connection and try again.';
-
-  @override
   String get notifLoadErrorTitle => 'We couldn\'t load your notifications';
 
   @override
@@ -7255,7 +7111,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingWelcomeHeadline => 'Your screen, reimagined.';
 
   @override
-  String get statusLoading => 'Loading…';
+  String get premiumPageExplorePlans => 'Explore Prism Premium plans.';
+
+  @override
+  String get premiumPagePlansUnavailable => 'Plans are not available right now. Check your connection and try again.';
+
+  @override
+  String get premiumPageTitle => 'Prism Premium';
+
+  @override
+  String get premiumPageTryAgain => 'Try again';
+
+  @override
+  String get premiumPageViewPlans => 'View plans';
 
   @override
   String get wallpaperAccentColor => 'Accent color';
@@ -7322,9 +7190,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String wallpaperAutoRotateEnabledUntil(String date) {
     return 'Pass active until $date';
   }
-
-  @override
-  String get wallpaperAutoRotateFirst100 => 'Using your first 100.';
 
   @override
   String get wallpaperAutoRotateGotIt => 'Got it';
@@ -8076,9 +7941,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wallpaperFeedPremiumBadge => 'Premium';
-
-  @override
   String get wallpaperFeedRefreshError => 'Couldn\'t refresh your feed.';
 
   @override
@@ -8725,14 +8587,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperRecentlySet => 'Recently set';
 
   @override
-  String wallpaperReferralSaved(int coins) {
-    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String coinsString = coinsNumberFormat.format(coins);
-
-    return 'Referral saved. Sign in to claim +$coinsString coins.';
-  }
-
-  @override
   String get wallpaperRefresh => 'Refresh';
 
   @override
@@ -8743,9 +8597,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperReset => 'Reset';
-
-  @override
-  String get wallpaperResetToDefaults => 'Reset to defaults';
 
   @override
   String get wallpaperSave => 'Save';
@@ -8926,9 +8777,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperUploadAction => 'Upload';
-
-  @override
-  String get wallpaperUploadActionSemantics => 'Upload';
 
   @override
   String get wallpaperUploadAddTag => 'Add tag';

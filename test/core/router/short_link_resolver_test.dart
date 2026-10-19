@@ -13,7 +13,13 @@ ShortLinkResolver _resolverFor(Future<http.Response> Function(http.Request reque
     ShortLinkResolver(client: MockClient(handler));
 
 void main() {
-  for (final canonical in <Object>['https://prismwalls.com/l/abc', 'https://prismwalls.com/l/other', 7]) {
+  for (final canonical in <Object>[
+    'https://prismwalls.com/l/abc',
+    'https://prismwalls.com/l/other',
+    'https://prismwalls.com/user/%FF',
+    'prism://user/%FF',
+    7,
+  ]) {
     test('rejects nested or malformed canonical URL $canonical after one request', () async {
       var calls = 0;
       final resolver = _resolverFor((_) async {
@@ -34,7 +40,10 @@ void main() {
     final result = await resolver.resolve('abc');
 
     expect(result, isA<ShortLinkResolved>());
-    expect((result as ShortLinkResolved).action, isA<UserLinkIntent>());
+    expect(
+      (result as ShortLinkResolved).action,
+      isA<PageLinkIntent>().having((action) => action.path, 'canonical target', '/user/akshay'),
+    );
   });
 
   test('a 2xx response without a canonical url fails with missing data', () async {

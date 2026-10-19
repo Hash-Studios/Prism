@@ -108,13 +108,7 @@ Helper commands (repo root), same shape on both platforms via `--platform`:
 
 **When `axe describe-ui` shows only `Application`** (iOS): the Flutter accessibility tree did not attach. Fall back to the Dart VM service, or `lldb` the `Runner` process for `FlutterView.accessibilityElements`, per prior QA notes. This has happened before with `Semantics(container)` gaps around sliders in a popped route.
 
-**Jumping to a route without tapping through the whole flow**: attach the Dart VM service (the debug run prints its URL) and push a route directly:
-
-```dart
-localNotification.router!.push(const SomeRoute());
-```
-
-`main.dart` sets `localNotification.router = _appRouter` in `initState`. This is a shortcut for reaching a deep screen fast, not a substitute for driving the real entry point at least once. For a type `main.dart` does not import (for example `File`), evaluate the object in another library and pass it with the VM service's `scope` parameter.
+**Jumping to a page**: use its documented URL through `simctl openurl` or Android's VIEW intent. The [deep-link recipe](features/deep-links.md) and [page catalog](../../../docs/features/deep-links.md) cover all page families, including picker continuations for local images. This exercises the same dispatcher as external links and push taps. Keep normal sign-in and admin guards in place.
 
 **Signed-in debug builds (Android).** Google sign-in fails on a debug build: the debug key is not registered in
 Firebase, and the failure looks like a cancel (`signInWithGoogle canceled by user`). For a signed-in debug run, sign
@@ -123,9 +117,7 @@ the debug build with the release key in a local, uncommitted change to `android/
 copied from the main checkout. Revert the Gradle change before you commit. Release builds strip app logs, so use
 this debug run whenever you need logs from a signed-in path.
 
-**Restart without tapping through Settings.** With a debug run attached, evaluate this in the `main.dart` library
-through the VM service: `RestartWidget.restartApp(localNotification.router!.navigatorKey.currentContext!)`. Log out,
-account deletion, and Settings, Restart App all go through this restart, so test it signed in and signed out.
+**Restarting the app.** Open `prism://settings` and use Restart App, or terminate and launch the QA app for a cold-start test. Logout and account deletion also restart the app; verify that they discard pending destinations.
 
 **Full route map**: `lib/core/router/app_router.dart` (`AppRouter.routes`). Routes with `guards: [_signedInGuard]` need a signed-in human first; `guards: [_adminGuard]` need an admin account, skip those unless the human says otherwise.
 

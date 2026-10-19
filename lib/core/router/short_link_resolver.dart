@@ -63,7 +63,7 @@ class ShortLinkResolver {
       final canonicalUri = canonical is String && canonical.isNotEmpty ? Uri.tryParse(canonical) : null;
       if (canonicalUri == null) return const ShortLinkFailed(AnalyticsReasonValue.missingData);
 
-      final action = _parser.parse(_parser.transform(canonicalUri));
+      final action = _parser.parse(canonicalUri);
       if (action is UnknownIntent || action is ShortCodeIntent) {
         return const ShortLinkFailed(AnalyticsReasonValue.missingData);
       }

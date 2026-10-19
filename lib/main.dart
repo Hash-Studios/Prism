@@ -29,12 +29,12 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/auth_navigation_continuation.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
-import 'package:Prism/core/router/deep_link_navigation.dart';
+import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
-import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/router/short_link_retry.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/startup/notification_channels.dart';
@@ -474,9 +474,11 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final OrientationPolicyObserver _orientationPolicyObserver;
   final AnalyticsIdentitySync _analyticsIdentitySync = AnalyticsIdentitySync();
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
-  final ShortLinkResolver _shortLinkResolver = ShortLinkResolver();
-  final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
-  final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
+  late final DeepLinkDispatcher _deepLinkDispatcher;
+  late final AuthNavigationContinuation _authContinuation;
+  final Map<String, (ShortCodeIntent, DeepLinkSourceValue)> _shortLinkRetries =
+      <String, (ShortCodeIntent, DeepLinkSourceValue)>{};
+  int _nextShortLinkRetry = 0;
   late final DeepLinkStartupGate _startupGate;
   late final ShortLinkRetryScheduler _shortLinkRetry;
   SessionEndWatcher? _sessionWatcher;
@@ -637,196 +639,20 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
   }
 
-  TargetTypeValue _deepLinkTargetType(DeepLinkActionEntity action) {
-    return switch (action) {
-      ShareLinkIntent() => TargetTypeValue.share,
-      UserLinkIntent() => TargetTypeValue.user,
-      SetupLinkIntent() => TargetTypeValue.setup,
-      ReferLinkIntent() => TargetTypeValue.refer,
-      ScreenLinkIntent() => TargetTypeValue.screen,
-      ShortCodeIntent() => TargetTypeValue.shortCode,
-      UnknownIntent() => TargetTypeValue.unknown,
-    };
-  }
-
-  void _onDeepLinkError(DeepLinkActionEntity action, Object error, StackTrace stackTrace) => logger.w(
-    'Deep link navigation failed.',
-    error: error,
-    stackTrace: stackTrace,
-    fields: <String, Object?>{'uri': action.rawUri},
-  );
-
-  Future<void> _handleDeepLinkIntent(DeepLinkActionEntity action) async {
-    switch (action) {
-      case ShareLinkIntent():
-        _appRouter.push(
-          WallpaperDetailRoute(
-            wallId: action.wallId,
-            source: action.source,
-            thumbnailUrl: action.thumbnailUrl,
-            analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
-          ),
-        );
-        unawaited(
-          analytics.track(
-            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
-          ),
-        );
-      case UserLinkIntent():
-        _appRouter.push(ProfileRoute(profileIdentifier: action.profileIdentifier));
-        unawaited(
-          analytics.track(
-            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
-          ),
-        );
-      case SetupLinkIntent():
-        // Setups were removed; old shared setup links open Home.
-        _appRouter.navigate(const HomeTabRoute());
-        toasts.error(
-          (await loadAppLocalizations(PlatformDispatcher.instance.locale)).appSetupUnavailable,
-          haptic: false,
-        );
-        unawaited(
-          analytics.track(
-            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
-          ),
-        );
-      case ReferLinkIntent():
-        if (action.inviterId.trim().isEmpty) {
-          unawaited(
-            analytics.track(
-              const DeepLinkNavigationResultEvent(
-                targetType: TargetTypeValue.refer,
-                result: EventResultValue.failure,
-                reason: AnalyticsReasonValue.missingData,
-              ),
-            ),
-          );
-          return;
-        }
-        unawaited(acceptReferralLink(action.inviterId));
-        unawaited(
-          analytics.track(
-            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
-          ),
-        );
-      case ScreenLinkIntent():
-        _appRouter.push(switch (action.screen) {
-          DeepLinkScreen.shop => const ShopRoute(),
-          DeepLinkScreen.drops => const DropsRoute(),
-          DeepLinkScreen.leaderboard => const LeaderboardRoute(),
-          DeepLinkScreen.draw => const DrawRoute(),
-        });
-        unawaited(
-          analytics.track(
-            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.screen, result: EventResultValue.navigated),
-          ),
-        );
-      case ShortCodeIntent():
-        await _resolveAndNavigateShortCode(action.code);
-      case UnknownIntent():
-        _appRouter.push(const NotFoundRoute());
-        unawaited(
-          analytics.track(
-            const DeepLinkNavigationResultEvent(
-              targetType: TargetTypeValue.unknown,
-              result: EventResultValue.failure,
-              reason: AnalyticsReasonValue.unknown,
-            ),
-          ),
-        );
-    }
-  }
-
   Future<DeepLink> _routerDeepLinkBuilder(PlatformDeepLink platformDeepLink) async {
-    // RestartWidget rebuilds the router after logout and account deletion, and the platform still reports the link
-    // the process was launched with. Replaying it would reopen that screen (or not-found) in the new session.
+    // Router rebuilds after logout must not replay the process launch link.
     if (platformDeepLink.initial) {
+      if (platformDeepLink.uri.path == '/' && platformDeepLink.uri.query.isEmpty) return DeepLink.defaultPath;
       if (_launchLinkHandled) return DeepLink.defaultPath;
       _launchLinkHandled = true;
     }
-    final DeepLinkActionEntity action = _deepLinkParser.parse(platformDeepLink.uri);
-    final TargetTypeValue targetType = _deepLinkTargetType(action);
-    final bool isKnown = action is! UnknownIntent;
-
-    unawaited(
-      analytics.track(
-        DeepLinkReceivedEvent(source: DeepLinkSourceValue.appLinks, targetType: targetType, hasPayload: isKnown),
-      ),
-    );
-    unawaited(
-      analytics.track(
-        DeepLinkResolvedEvent(
-          targetType: targetType,
-          result: isKnown ? EventResultValue.success : EventResultValue.failure,
-          reason: isKnown ? null : AnalyticsReasonValue.missingData,
-        ),
-      ),
-    );
-
-    if (isKnown) {
-      _startupGate.add(action);
-      return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
-    }
-
-    if (platformDeepLink.isValid) {
-      return platformDeepLink;
-    }
-
-    if (platformDeepLink.uri.path.isNotEmpty && platformDeepLink.uri.path != '/') {
-      _startupGate.add(action);
-    }
+    unawaited(_deepLinkDispatcher.openUri(platformDeepLink.uri, source: DeepLinkSourceValue.appLinks));
     return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
-  }
-
-  Future<void> _resolveAndNavigateShortCode(String code, {bool isRetry = false}) async {
-    if (code.trim().isEmpty) {
-      unawaited(
-        analytics.track(
-          const DeepLinkResolvedEvent(
-            targetType: TargetTypeValue.shortCode,
-            result: EventResultValue.failure,
-            reason: AnalyticsReasonValue.emptyInput,
-          ),
-        ),
-      );
-      return;
-    }
-
-    switch (await _shortLinkResolver.resolve(code)) {
-      case ShortLinkResolved(:final action):
-        unawaited(
-          analytics.track(
-            const DeepLinkResolvedEvent(targetType: TargetTypeValue.shortCode, result: EventResultValue.success),
-          ),
-        );
-        await _handleDeepLinkIntent(action);
-      case final ShortLinkFailed failure:
-        unawaited(
-          analytics.track(
-            DeepLinkResolvedEvent(
-              targetType: TargetTypeValue.shortCode,
-              result: EventResultValue.failure,
-              reason: failure.reason,
-            ),
-          ),
-        );
-        switch (shortLinkFailureAction(failure, isRetry: isRetry)) {
-          case ShortLinkFailureAction.retryWhenOnline:
-            toasts.info((await loadAppLocalizations(PlatformDispatcher.instance.locale)).appLinkRetryWhenOnline);
-            _shortLinkRetry.schedule(code);
-          case ShortLinkFailureAction.showNotFound:
-            toasts.error(
-              (await loadAppLocalizations(PlatformDispatcher.instance.locale)).appLinkUnavailable,
-              haptic: false,
-            );
-            _appRouter.push(const NotFoundRoute());
-        }
-    }
   }
 
   Future<void> _handleSessionEnded() async {
     try {
+      _authContinuation.cancel();
       await globalGoogleAuth.signOutGoogle();
       final BuildContext? context = _appRouter.navigatorKey.currentContext;
       if (!mounted || context == null || !context.mounted) return;
@@ -845,56 +671,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     )..start();
   }
 
-  /// Routes a tapped push notification to the correct screen based on
-  /// the `route` field in the notification's data payload.
   Future<void> _handlePushTap(Map<String, dynamic> data) async {
-    // A cold-launch tap arrives before startup ends, and the splash would replace its route. Wait, like deep links do.
-    final bool canRoute = await _startupGate.whenReady();
-    if (!canRoute || !mounted) return;
-
-    try {
-      await _routePushTap(data);
-    } catch (error, stackTrace) {
-      logger.w('Push tap routing failed; opening the inbox.', tag: 'Push', error: error, stackTrace: stackTrace);
-      if (!mounted) return;
-      try {
-        _appRouter.navigate(const NotificationRoute());
-      } catch (_) {
-        _appRouter.navigate(const HomeTabRoute());
-      }
-    }
-  }
-
-  Future<void> _routePushTap(Map<String, dynamic> data) async {
-    final String route = data['route']?.toString() ?? '';
-    final String wallId = (data['wall_id']?.toString() ?? '').trim();
-    final String rawUrl = (data['url']?.toString() ?? '').trim();
-
-    logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId, 'url': rawUrl});
-    if (route == 'wall_of_the_day') {
-      unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
-    }
-
-    if (rawUrl.isNotEmpty) {
-      final Uri? parsed = Uri.tryParse(rawUrl);
-      if (parsed != null && _deepLinkNavigation.isPrismDeepLink(parsed)) {
-        final PageRouteInfo? deepLinkRoute = await _deepLinkNavigation.mapUriToRoute(parsed);
-        if (!mounted) return;
-        if (deepLinkRoute != null) {
-          _notificationRouteMapper.trackPushOpened(data);
-          _appRouter.navigate(deepLinkRoute);
-          return;
-        }
-      }
-    }
-
-    final PageRouteInfo? mappedRoute = await _notificationRouteMapper.fromPayload(data, sourceTag: 'push.route_mapper');
-    if (!mounted) return;
-    if (mappedRoute != null) {
-      _appRouter.navigate(mappedRoute);
-      return;
-    }
-    _appRouter.navigate(const NotFoundRoute());
+    await _deepLinkDispatcher.openPush(data);
   }
 
   Future<void> _listenForPushMessages() async {
@@ -928,15 +706,29 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     _orientationPolicyObserver = OrientationPolicyObserver();
     unawaited(_orientationPolicyObserver.start());
     _appRouter = AppRouter();
-    _startupGate = DeepLinkStartupGate(router: _appRouter, handle: _handleDeepLinkIntent, onError: _onDeepLinkError);
+    _authContinuation = AuthNavigationContinuation.of(_appRouter);
+    _startupGate = DeepLinkStartupGate(router: _appRouter);
+    _deepLinkDispatcher = DeepLinkDispatcher(
+      router: _appRouter,
+      whenReady: _startupGate.whenReady,
+      whenBootstrapped: _startupGate.whenBootstrapped,
+      onRetryNeeded: (action, source) {
+        final String ticket = '${_nextShortLinkRetry++}';
+        _shortLinkRetries[ticket] = (action, source);
+        _shortLinkRetry.schedule(ticket);
+      },
+    );
     _shortLinkRetry = ShortLinkRetryScheduler(
       onlineChanges: () => getIt<ConnectivityService>().onConnectionChange,
       hasConnection: () => getIt<ConnectivityService>().hasConnection(),
-      retry: (String code) => unawaited(_resolveAndNavigateShortCode(code, isRetry: true)),
+      retry: (String ticket) {
+        final request = _shortLinkRetries.remove(ticket);
+        if (request == null) return;
+        unawaited(_deepLinkDispatcher.openAction(request.$1, source: request.$2, isRetry: true));
+      },
     );
     NotificationRouteMapper.onMeasuredTap = NotificationSignals.instance.onTap;
     localNotification
-      ..router = _appRouter
       ..onPushTap = _handlePushTap
       ..onForegroundPush = () =>
           unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
@@ -1004,6 +796,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     AnalyticsRuntime.changes.removeListener(_onAnalyticsRuntimeChanged);
+    _deepLinkDispatcher.dispose();
+    _authContinuation.dispose();
     _startupGate.dispose();
     _shortLinkRetry.dispose();
     _sessionWatcher?.dispose();
@@ -1025,6 +819,17 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
               previous.session.premium != current.session.premium,
           listener: (context, state) {
             unawaited(_syncAnalyticsIdentityFromSession(state.session, sourceTag: 'session_bloc'));
+          },
+        ),
+        BlocListener<SessionBloc, SessionState>(
+          listenWhen: (previous, current) =>
+              previous.session.loggedIn &&
+              (!current.session.loggedIn || previous.session.userId != current.session.userId),
+          listener: (context, state) {
+            _authContinuation.cancel();
+            _deepLinkDispatcher.cancel();
+            _shortLinkRetry.dispose();
+            _shortLinkRetries.clear();
           },
         ),
         BlocListener<SessionBloc, SessionState>(
@@ -1051,6 +856,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
               return;
             }
             _startupGate.markBootstrapCompleted();
+            _authContinuation.markBootstrapCompleted();
           },
         ),
       ],

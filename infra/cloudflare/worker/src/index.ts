@@ -12,7 +12,7 @@ export interface Env extends AiEnvBindings {
   BROWSER_RENDERING_API_TOKEN?: string;
 }
 
-type LinkType = 'share' | 'user' | 'setup' | 'refer';
+type LinkType = 'share' | 'user' | 'setup' | 'refer' | 'page';
 type OgStorageType = 'r2' | 'kv';
 
 interface CreateLinkPreviewInput {
@@ -85,7 +85,47 @@ interface CanonicalParseResult {
 }
 
 const DOMAIN = 'prismwalls.com';
-const APP_LINK_PATHS = ['/share', '/user', '/setup', '/refer', '/l'];
+// Keep in sync with AppRouter and DeepLinkParser. Root and website-only paths are intentionally excluded.
+const APP_PAGE_PATHS = [
+  '/onboarding/v2', '/dashboard', '/dashboard/home', '/dashboard/search', '/dashboard/search/users',
+  '/dashboard/rewards', '/dashboard/streak', '/dashboard/collection', '/ai', '/wallpaper-detail',
+  '/wotd-archive', '/download-wallpaper', '/wallpaper-filter', '/choose-wallpaper', '/edit-profile', '/share-prism', '/settings',
+  '/premium', '/paywall',
+  '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall', '/review',
+  '/coin-transactions', '/theme', '/notifications', '/collection-view', '/followers', '/following',
+  '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/debug-panel',
+  '/daily-chest', '/spin-wheel', '/photo-preview', '/clock-preview', '/quick-tile-settings',
+  '/auto-rotate', '/ios-shortcuts', '/wallpaper-history', '/wallpaper-position', '/live-wallpaper', '/rewards',
+  '/coin-history', '/shop', '/drops', '/leaderboard', '/draw', '/streak', '/not-found',
+];
+const APP_LINK_PATHS = [
+  '/share', '/user', '/fprofile', '/follower-profile', '/profile', '/setup', '/share-setup', '/refer', '/referral',
+  '/collection', '/category', '/wallpaper', '/l', ...APP_PAGE_PATHS,
+];
+const PAGE_PARAMETER_ROOTS = new Set(['drops']);
+const PAGE_IDENTIFIER_ROOTS = new Set(['user', 'fprofile', 'follower-profile', 'profile']);
+const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
+  ['/wallpaper-detail', new Set(['wallId', 'id', 'source', 'provider'])],
+  ['/wallpaper-position', new Set(['wallpaperId', 'source', 'provider', 'entryPoint'])],
+  ['/download-wallpaper', new Set(['wallpaperId', 'source', 'provider'])],
+  ['/live-wallpaper', new Set(['wallpaperId', 'source', 'provider'])],
+  ['/library', new Set(['tab'])],
+  ['/choose-wallpaper', new Set(['workflow'])],
+  ['/debug-panel', new Set(['tab'])],
+  ['/admin-review/image', new Set(['wallpaperId', 'source', 'provider'])],
+  ['/fprofile', new Set(['identifier', 'username', 'user', 'email'])],
+  ['/follower-profile', new Set(['identifier', 'username', 'user', 'email'])],
+  ['/profile', new Set(['identifier', 'username', 'user', 'email'])],
+  ['/share-setup', new Set(['name', 'setupName', 'setup_name'])],
+  ['/referral', new Set(['inviterId', 'userID', 'userId', 'userid', 'id'])],
+  ['/collection-view', new Set(['collectionName', 'name'])],
+  ['/followers', new Set(['user', 'identifier'])],
+  ['/following', new Set(['user', 'identifier'])],
+  ['/wallpaper', new Set(['wallpaperId', 'source', 'provider', 'entryPoint'])],
+  ['/photo-preview', new Set(['wallpaperId', 'source', 'provider'])],
+  ['/clock-preview', new Set(['wallpaperId', 'source', 'provider'])],
+]);
+const PAGE_UTM_KEYS = new Set(['utm_source', 'utm_medium', 'utm_campaign']);
 const ANDROID_PACKAGE = 'com.hash.prism';
 const PREVIEW_IMAGE_HOSTS = new Set([
   'raw.githubusercontent.com',
@@ -154,15 +194,27 @@ export default {
       return getOgImage(url.pathname, request.method, env);
     }
 
+    if (request.method === 'GET' && url.pathname === '/l') {
+      const code = shortCodeFromQuery(url);
+      if (code == null) return html(renderUnavailableHtml(request, env), 400);
+      return resolveShortLink(`/l/${code}`, request, env);
+    }
+
     if (request.method === 'GET' && url.pathname.startsWith('/l/')) {
       return resolveShortLink(url.pathname, request, env);
     }
 
-    if (request.method === 'GET' && APP_LINK_PATHS.some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`))) {
+    const isAppLinkPath = APP_LINK_PATHS.some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`));
+    if (request.method === 'GET' && isAppLinkPath) {
       return renderDirectLanding(url, request, env);
     }
 
-    return new Response('Not found', { status: 404 });
+    const workerOwnedPath = ['/api', '/og', '/l', '/.well-known'].some(
+      (path) => url.pathname === path || url.pathname.startsWith(`${path}/`),
+    ) || url.pathname === '/apple-app-site-association';
+    if (isAppLinkPath || workerOwnedPath) return new Response('Not found', { status: 404 });
+
+    return fetch(request);
   },
 };
 
@@ -315,8 +367,8 @@ async function getLinkDetails(pathname: string, env: Env): Promise<Response> {
     canonical_url: record.canonical_url,
     path: canonical.pathname,
     query,
-    route: mapRouteFromType(record.type),
-    route_v2: mapRouteV2FromType(parsedCanonical.type),
+    route: record.type === 'page' ? canonical.pathname : mapRouteFromType(record.type),
+    route_v2: parsedCanonical.type === 'page' ? canonical.pathname : mapRouteV2FromType(parsedCanonical.type),
     canonical_identifier: parsedCanonical.canonicalIdentifier,
     og_image_url: getOgImageUrl(record, env),
     preview: record.preview,
@@ -536,6 +588,28 @@ function buildCanonicalUrl(body: CreateLinkRequest): URL | null {
 }
 
 function buildCanonicalFromPayload(type: LinkType, payload: Record<string, unknown>): URL | null {
+  if (type === 'page') {
+    const path = payload.path;
+    if (!isNonEmptyString(path) || !path.startsWith('/') || path.startsWith('//')) {
+      return null;
+    }
+    let candidate: URL;
+    try {
+      candidate = new URL(path, `https://${DOMAIN}`);
+    } catch {
+      return null;
+    }
+    if (candidate.origin !== `https://${DOMAIN}` || candidate.hash) {
+      return null;
+    }
+    const canonical = parseCanonicalFromUrl(candidate);
+    if (canonical?.type !== 'page') {
+      return null;
+    }
+    appendPayloadQueryParams(payload, canonical.canonical, ['path']);
+    return parseCanonicalFromUrl(canonical.canonical)?.canonical ?? null;
+  }
+
   if (type === 'share') {
     const canonical = new URL(`https://${DOMAIN}/share`);
     appendPayloadQueryParams(payload, canonical);
@@ -580,7 +654,7 @@ function parseCanonicalUrl(value: string): CanonicalParseResult | null {
 }
 
 function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
-  if (source.protocol !== 'https:' || source.hostname !== DOMAIN) {
+  if (source.protocol !== 'https:' || (source.hostname !== DOMAIN && source.hostname !== `www.${DOMAIN}`)) {
     return null;
   }
 
@@ -612,21 +686,24 @@ function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
   }
 
   if (root === 'user') {
-    if (segments.length > 2) {
+    if (segments.length === 3 && ['followers', 'following'].includes(segments[2])) {
+      // Relationship routes are catalogued app pages, not profile-share links.
+    } else if (segments.length > 2) {
       return null;
+    } else {
+      const identifierFromSegment = segments.length === 2 ? decodeCanonicalSegment(segments[1]) : '';
+      const identifier = identifierFromSegment || firstNonEmptyQueryParam(source, USER_IDENTIFIER_QUERY_KEYS);
+      if (identifier.length === 0) {
+        return null;
+      }
+      const canonical = new URL(`https://${DOMAIN}/user/${encodeURIComponent(identifier)}`);
+      appendQueryParams(source, canonical, USER_IDENTIFIER_QUERY_KEYS);
+      return {
+        canonical,
+        type: 'user',
+        canonicalIdentifier: identifier,
+      };
     }
-    const identifierFromSegment = segments.length === 2 ? decodeCanonicalSegment(segments[1]) : '';
-    const identifier = identifierFromSegment || firstNonEmptyQueryParam(source, USER_IDENTIFIER_QUERY_KEYS);
-    if (identifier.length === 0) {
-      return null;
-    }
-    const canonical = new URL(`https://${DOMAIN}/user/${encodeURIComponent(identifier)}`);
-    appendQueryParams(source, canonical, USER_IDENTIFIER_QUERY_KEYS);
-    return {
-      canonical,
-      type: 'user',
-      canonicalIdentifier: identifier,
-    };
   }
 
   if (root === 'setup') {
@@ -636,7 +713,10 @@ function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
     const setupNameFromSegment = segments.length === 2 ? decodeCanonicalSegment(segments[1]) : '';
     const setupName = setupNameFromSegment || firstNonEmptyQueryParam(source, SETUP_NAME_QUERY_KEYS);
     if (setupName.length === 0) {
-      return null;
+      if (segments.length === 2) return null;
+      const canonical = new URL(`https://${DOMAIN}/setup`);
+      source.searchParams.forEach((value, key) => canonical.searchParams.append(key, value));
+      return { canonical, type: 'setup', canonicalIdentifier: '' };
     }
     const canonical = new URL(`https://${DOMAIN}/setup/${encodeURIComponent(setupName)}`);
     appendQueryParams(source, canonical, SETUP_NAME_QUERY_KEYS);
@@ -665,7 +745,103 @@ function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
     };
   }
 
+  if (isAllowedAppPage(segments, source)) {
+    if (!hasAllowedPageQuery(segments, source)) return null;
+    const canonical = new URL(`https://${DOMAIN}${source.pathname}`);
+    source.searchParams.forEach((value, key) => canonical.searchParams.append(key, value));
+    return { canonical, type: 'page', canonicalIdentifier: '' };
+  }
+
   return null;
+}
+
+function isAllowedAppPage(segments: string[], url: URL): boolean {
+  if (segments.length === 0) return false;
+  const path = `/${segments.join('/')}`;
+  if (APP_PAGE_PATHS.includes(path)) return true;
+  if (PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments.length === 2 && isSafePathSegment(segments[1])) return true;
+  if (PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments.length === 1 && url.searchParams.size > 0) return true;
+  if (PAGE_PARAMETER_ROOTS.has(segments[0]) && segments.length === 2 && isSafePathSegment(segments[1])) return true;
+  if (segments.length === 2 && ['collection', 'category', 'wallpaper'].includes(segments[0]) && isSafePathSegment(segments[1])) {
+    return true;
+  }
+  if (segments.length === 3 && segments[0] === 'user' && ['followers', 'following'].includes(segments[2])
+      && isSafePathSegment(segments[1])) return true;
+  if (segments.length === 3 && segments[0] === 'wallpaper'
+      && ['position', 'download', 'live'].includes(segments[2]) && isSafePathSegment(segments[1])) return true;
+  if (segments.length === 4 && segments[0] === 'drops' && segments[2] === 'preview'
+      && isSafePathSegment(segments[1]) && isSafePathSegment(segments[3])) return true;
+  // Preserve the legacy link aliases handled by DeepLinkParser.
+  if (['share-setup', 'setup', 'refer', 'referral'].includes(segments[0])) {
+    if (segments.length === 2 && isSafePathSegment(segments[1])) return true;
+    if (segments.length === 1 && segments[0] === 'share-setup') return true;
+    if (segments.length === 1 && url.searchParams.size > 0) return true;
+  }
+  if (segments[0] === 'l' && segments.length === 2 && SHORT_CODE_REGEX.test(segments[1])) return true;
+  return false;
+}
+
+function hasAllowedPageQuery(segments: string[], url: URL): boolean {
+  const routePath = `/${segments.join('/')}`;
+  const queryRoute = segments[0] === 'user' && segments.length === 3
+    ? `/${segments[2]}`
+    : PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments[0] !== 'user'
+      ? `/${segments[0]}`
+      : ['share-setup', 'referral'].includes(segments[0])
+        ? `/${segments[0]}`
+    : segments[0] === 'wallpaper'
+      ? '/wallpaper'
+      : routePath;
+  const allowed = PAGE_QUERY_KEYS.get(queryRoute) ?? new Set<string>();
+  for (const key of url.searchParams.keys()) {
+    if (url.searchParams.getAll(key).length !== 1) return false;
+    if (!allowed.has(key) && !PAGE_UTM_KEYS.has(key)) return false;
+  }
+  const queryValue = (...keys: string[]) => keys.map((key) => url.searchParams.get(key)).find(isNonEmptyString) ?? '';
+  if (queryRoute === '/library' && url.searchParams.has('tab')
+      && !['favourites', 'downloads', 'history'].includes(url.searchParams.get('tab')?.toLowerCase() ?? '')) return false;
+  if (queryRoute === '/choose-wallpaper' && ![
+    'uploadWall', 'editWall', 'wallpaperFilter', 'downloadWallpaper', 'wallpaperPosition', 'liveWallpaper',
+    'clockPreview', 'photoPreview',
+  ].includes(url.searchParams.get('workflow') ?? '')) return false;
+  if (queryRoute === '/debug-panel' && url.searchParams.has('tab')
+      && !['logs', 'tools', 'storage', 'app-info', 'mascot'].includes(url.searchParams.get('tab') ?? '')) return false;
+  if (queryRoute === '/wallpaper-detail' && !queryValue('wallId', 'id')) return false;
+  if (queryRoute === '/collection-view' && !queryValue('collectionName', 'name')) return false;
+  if ((queryRoute === '/followers' || queryRoute === '/following')
+      && segments.length === 1 && !queryValue('user', 'identifier')) return false;
+  if ([
+    '/wallpaper-detail', '/wallpaper', '/wallpaper-position', '/download-wallpaper', '/live-wallpaper',
+    '/photo-preview', '/clock-preview',
+  ].includes(queryRoute)) {
+    const source = queryValue('source', 'provider').toLowerCase();
+    if (source && !['prism', 'wallhaven', 'pexels'].includes(source)) return false;
+  }
+  return true;
+}
+
+function isSafePathSegment(segment: string): boolean {
+  if (!segment || segment === '.' || segment === '..' || /[\\/\\\\\u0000-\u001f\u007f]/.test(segment)) return false;
+  try {
+    const decoded = decodeURIComponent(segment);
+    return decoded !== '.' && decoded !== '..' && !/[\\/\\\\\u0000-\u001f\u007f]/.test(decoded);
+  } catch {
+    return false;
+  }
+}
+
+function shortCodeFromQuery(url: URL): string | null {
+  let code: string | null = null;
+  for (const key of url.searchParams.keys()) {
+    const values = url.searchParams.getAll(key);
+    if (values.length !== 1) return null;
+    if (key === 'code') {
+      code = values[0];
+    } else if (!PAGE_UTM_KEYS.has(key)) {
+      return null;
+    }
+  }
+  return code;
 }
 
 function appendPayloadQueryParams(
@@ -795,6 +971,21 @@ function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewD
       description: 'Check out this creator profile on Prism.',
       image_source_url: '',
       username,
+      provider: '',
+      wall_id: '',
+      setup_name: '',
+      app_store_url: env.APP_STORE_URL,
+      play_store_url: env.PLAY_STORE_URL,
+    };
+  }
+
+  if (type === 'page') {
+    const pageName = canonical.pathname.split('/').filter(Boolean).at(-1)?.replaceAll('-', ' ') ?? 'Prism';
+    return {
+      title: `${pageName.replace(/\b\w/g, (letter) => letter.toUpperCase())} - Prism`,
+      description: 'Open this page in Prism.',
+      image_source_url: '',
+      username: '',
       provider: '',
       wall_id: '',
       setup_name: '',
@@ -1298,6 +1489,9 @@ function mapRouteFromType(type: LinkType): string {
   if (type === 'user') {
     return '/follower-profile';
   }
+  if (type === 'page') {
+    return '';
+  }
   return '';
 }
 
@@ -1310,6 +1504,9 @@ function mapRouteV2FromType(type: LinkType): string {
   }
   if (type === 'user') {
     return '/user/:identifier';
+  }
+  if (type === 'page') {
+    return '/:allowlistedPage';
   }
   return '/refer/:inviterId';
 }
@@ -1331,7 +1528,7 @@ function getClientIp(request: Request): string {
 }
 
 function isValidType(type: unknown): type is LinkType {
-  return type === 'share' || type === 'user' || type === 'setup' || type === 'refer';
+  return type === 'share' || type === 'user' || type === 'setup' || type === 'refer' || type === 'page';
 }
 
 function isNonEmptyString(value: unknown): value is string {

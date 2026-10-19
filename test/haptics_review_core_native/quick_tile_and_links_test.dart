@@ -64,7 +64,10 @@ void main() {
 
   test('mapping a launch setup link keeps the notice but has no user-action haptic', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    final route = await const DeepLinkNavigation().mapUriToRoute(Uri.parse('prism://setup/minimal-desk'));
+    const navigation = DeepLinkNavigation();
+    final route = (await navigation.resolveAction(
+      navigation.parser.parse(Uri.parse('prism://setup/minimal-desk')),
+    )).route;
     await Future<void>.delayed(Duration.zero);
 
     expect(route, isA<HomeTabRoute>());

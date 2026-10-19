@@ -40,7 +40,7 @@ export function parseCollectionList(raw: string): string[] {
     .filter((e) => e.length > 0);
 }
 
-async function premiumCollections(): Promise<string[]> {
+export async function premiumCollections(): Promise<string[]> {
   try {
     const template = await admin.remoteConfig().getTemplate();
     const value = (

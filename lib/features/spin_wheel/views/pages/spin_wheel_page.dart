@@ -24,6 +24,7 @@ import 'package:Prism/features/spin_wheel/views/widgets/wheel_odds_sheet.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/wheel_palette.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -32,7 +33,6 @@ typedef SpinFunction = Future<SpinWheelResult> Function({required int maxCost});
 
 /// Opens the spin machine over everything, including the bottom bar. The route fades in and scales up from 0.96.
 Future<void> showSpinWheel(BuildContext context) {
-  CoinsService.instance.refreshSpinWheelStatus();
   final Duration duration = context.motion(PrismDurations.base);
   return Navigator.of(context, rootNavigator: true).push<void>(
     PageRouteBuilder<void>(
@@ -58,6 +58,7 @@ enum _Stage { idle, spinning, landed }
 /// The spin machine: a full-screen stage with the wheel, the plinth and the SPIN button.
 ///
 /// [spin], [status] and [balance] default to the live coins service. A test or a render passes its own.
+@RoutePage()
 class SpinWheelPage extends StatefulWidget {
   const SpinWheelPage({super.key, this.spin, this.status, this.balance});
 
@@ -101,6 +102,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
+    if (widget.status == null) CoinsService.instance.refreshSpinWheelStatus();
     _statusSource = widget.status ?? CoinsService.instance.spinWheelNotifier;
     _balanceSource = widget.balance ?? CoinsService.instance.balanceNotifier;
     _status = _statusSource.value;

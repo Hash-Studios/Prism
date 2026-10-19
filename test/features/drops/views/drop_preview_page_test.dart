@@ -82,6 +82,68 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  group('DropPreviewRoutePage', () {
+    Future<void> pumpRoute(WidgetTester tester, DropsState state, {String wallId = 'C'}) async {
+      tester.view.physicalSize = const Size(400, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      whenListen(bloc, const Stream<DropsState>.empty(), initialState: state);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: StackRouterScope(
+            controller: router,
+            stateHash: 0,
+            child: DropPreviewRoutePage(weekKey: '2026-W42', wallId: wallId),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('loads its requested week and shows the requested wall without an unlock', (tester) async {
+      await pumpRoute(tester, loaded(dropEntity()));
+
+      expect(find.text('03 / 04'), findsOneWidget);
+      expect(find.text('Wall C'), findsOneWidget);
+      final List<Object?> events = verify(() => bloc.add(captureAny())).captured;
+      expect(events, <DropsEvent>[const DropsEvent.started(weekKey: '2026-W42')]);
+      expect(CoinsService.instance.balanceNotifier.value, 100);
+    });
+
+    testWidgets('waits for the week before constructing the preview pager', (tester) async {
+      await pumpRoute(tester, DropsState.initial());
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(DropPreviewPage), findsNothing);
+    });
+
+    testWidgets('an unknown wall does not silently preview the first wall', (tester) async {
+      await pumpRoute(tester, loaded(dropEntity()), wallId: 'missing');
+
+      expect(find.text('This wallpaper is unavailable'), findsOneWidget);
+      expect(find.byType(DropPreviewPage), findsNothing);
+      verifyNever(() => bloc.add(const DropsEvent.unlockRequested(wallId: 'missing')));
+    });
+
+    testWidgets('a missing week gives an unavailable state', (tester) async {
+      await pumpRoute(tester, loaded(null));
+
+      expect(find.text('This wallpaper is unavailable'), findsOneWidget);
+      expect(find.byType(DropPreviewPage), findsNothing);
+    });
+
+    testWidgets('load failures expose a retry that only reloads the week', (tester) async {
+      await pumpRoute(tester, DropsState.initial().copyWith(status: LoadStatus.failure));
+
+      expect(find.text("Couldn't load the Drop"), findsOneWidget);
+      await tester.tap(find.text('Try again'));
+      verify(() => bloc.add(const DropsEvent.refreshed())).called(1);
+      verifyNever(() => bloc.add(const DropsEvent.unlockRequested()));
+    });
+  });
+
   group('DropPreviewPage', () {
     testWidgets('opens at the tapped wall with its serial and title', (tester) async {
       await openPreview(tester, loaded(dropEntity()), wallId: 'C');

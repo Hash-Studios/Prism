@@ -10,12 +10,17 @@ import 'package:flutter/material.dart';
 
 @RoutePage()
 class DebugPanelPage extends StatelessWidget {
-  const DebugPanelPage({super.key});
+  const DebugPanelPage({super.key, @QueryParam('tab') this.tab = 'logs'});
+
+  final String tab;
+
+  static const List<String> tabs = <String>['logs', 'tools', 'storage', 'app-info', 'mascot'];
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 5,
+      initialIndex: tabs.contains(tab) ? tabs.indexOf(tab) : 0,
       child: PrismPage(
         title: context.l10n.debugTitle,
         headerBottom: Padding(
