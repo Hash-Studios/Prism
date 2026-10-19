@@ -152,7 +152,7 @@ Future<void> showAiRefineSheet(
       child: PrismTextField(
         controller: controller,
         autofocus: true,
-        hint: 'Darker sky, warmer palette, softer edges…',
+        hint: l10n.economyAiRemixHint,
         minLines: 2,
         maxLines: 4,
         maxLength: maxChars,

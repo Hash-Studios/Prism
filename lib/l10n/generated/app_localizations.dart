@@ -6500,11 +6500,41 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load history. Pull to refresh.'**
   String get economyAiHistoryFailed;
 
+  /// AI wallpaper generation status shown while matching the output to the device screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Matching your screen size…'**
+  String get economyAiMatchingScreenSize;
+
+  /// AI wallpaper generation status shown while applying the selected style.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying your style…'**
+  String get economyAiApplyingStyle;
+
+  /// AI wallpaper generation status shown while completing the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Finalizing your wallpaper…'**
+  String get economyAiFinalizingWallpaper;
+
+  /// Example hint in the AI wallpaper remix text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Darker sky, warmer palette, softer edges…'**
+  String get economyAiRemixHint;
+
   /// No description provided for @economyAiNeedCoinsToGenerate.
   ///
   /// In en, this message translates to:
   /// **'Need {cost} coins to generate.'**
   String economyAiNeedCoinsToGenerate(int cost);
+
+  /// Toast shown when an action needs more coins than the user has.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Need {count} more coin.} other{Need {count} more coins.}}'**
+  String economyNeedMoreCoins(int count);
 
   /// No description provided for @economyAiNoConnection.
   ///
