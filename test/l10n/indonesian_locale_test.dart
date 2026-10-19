@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui' show PlatformDispatcher;
 
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -34,15 +33,20 @@ void main() {
     expect(messages.economyExportFailedLabel, 'Ekspor gagal');
   });
 
-  test('context-free messages resolve from the real platform dispatcher locales', () async {
+  testWidgets('context-free messages resolve from the platform locale list', (WidgetTester tester) async {
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr'), Locale('id', 'ID')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     final AppLocalizations messages = await loadDeviceAppLocalizations();
-    final Locale expectedLocale = basicLocaleListResolution(
-      PlatformDispatcher.instance.locales,
-      AppLocalizations.supportedLocales,
-    );
 
-    expect(messages.localeName, expectedLocale.toString());
-    expect(messages.actionRetry, (await AppLocalizations.delegate.load(expectedLocale)).actionRetry);
+    expect(messages.localeName, 'id');
+    expect(messages.actionRetry, 'Coba lagi');
+    expect(messages.economyExportFailedLabel, 'Ekspor gagal');
+
+    tester.platformDispatcher.localesTestValue = const <Locale>[Locale('fr')];
+    final AppLocalizations fallbackMessages = await loadDeviceAppLocalizations();
+
+    expect(fallbackMessages.localeName, 'en');
+    expect(fallbackMessages.actionRetry, 'Try again');
   });
 
   test('Indonesian plurals, number formatting, and interpolation use translated messages', () async {
