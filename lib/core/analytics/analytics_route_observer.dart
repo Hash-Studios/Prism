@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/debug/performance_probe.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 typedef AnalyticsScreenViewCallback =
@@ -40,10 +41,12 @@ class AnalyticsRouteObserver extends NavigatorObserver {
       return;
     }
     _lastTrackedRoute = route;
-    final Stopwatch sw = Stopwatch()..start();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      PerformanceProbe.emit(kind: 'route_first_frame', name: routeName, durationMs: sw.elapsedMilliseconds);
-    });
+    if (!kReleaseMode) {
+      final Stopwatch sw = Stopwatch()..start();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PerformanceProbe.emit(kind: 'route_first_frame', name: routeName, durationMs: sw.elapsedMilliseconds);
+      });
+    }
     unawaited(onScreenView(screenName: routeName, screenClass: route.runtimeType.toString()));
   }
 

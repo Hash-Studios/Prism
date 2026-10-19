@@ -245,9 +245,6 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({
 
     final DateTime nowUtc = DateTime.now().toUtc();
     final DateTime? lastFetchTime = await notificationsLocal.lastFetchAtUtc();
-    if (!force && lastFetchTime != null && nowUtc.difference(lastFetchTime) < _persistedSyncCooldown) {
-      return true;
-    }
     final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
     if (!isCurrentSession()) return false;
 
@@ -256,8 +253,15 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({
         (InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked),
       );
     }
+    if (!isCurrentSession()) return false;
+    if (!force &&
+        lastFetchTime != null &&
+        !lastFetchTime.isAfter(nowUtc) &&
+        nowUtc.difference(lastFetchTime) < _persistedSyncCooldown) {
+      return true;
+    }
 
-    if (force || lastFetchTime == null) {
+    if (force || lastFetchTime == null || lastFetchTime.isAfter(nowUtc)) {
       final DateTime fetchFloor = await tombstones.fetchFloor(nowUtc.subtract(const Duration(days: 30)));
       if (!isCurrentSession()) return false;
       final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(

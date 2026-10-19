@@ -52,13 +52,22 @@ class HttpsCallable {
     } else {
       updatedParameters = _updateRawDataToList(parameters);
     }
-    final Stopwatch sw = Stopwatch()..start();
+    final void Function(String, int, bool)? sink = kReleaseMode ? null : perfSink;
+    final Stopwatch? sw = sink == null ? null : (Stopwatch()..start());
+    void report(bool success) {
+      if (sink == null || sw == null) return;
+      try {
+        sink(name ?? 'unknown', sw.elapsedMilliseconds, success);
+      } catch (_) {
+        // Diagnostics cannot change the callable result.
+      }
+    }
     try {
       final HttpsCallableResult<T> result = HttpsCallableResult<T>._(await delegate.call(updatedParameters) as T);
-      perfSink?.call(name ?? 'unknown', sw.elapsedMilliseconds, true);
+      report(true);
       return result;
     } catch (error) {
-      perfSink?.call(name ?? 'unknown', sw.elapsedMilliseconds, false);
+      report(false);
       rethrow;
     }
   }

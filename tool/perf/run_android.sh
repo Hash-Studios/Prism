@@ -5,9 +5,9 @@ TAG=${1:?tag}; APK=${2:?apk}; N=${3:-20}
 export ANDROID_SERIAL=${ANDROID_SERIAL:-emulator-5580}
 export PRISM_PERF_DIR=${PRISM_PERF_DIR:-/tmp/prism-perf}
 HERE=$(cd "$(dirname "$0")" && pwd)
-LOCK=/tmp/prism-verify-android.lock
+LOCK=${PRISM_PERF_LOCK:-/tmp/prism-verify-android.lock}
 ADB=(adb -s "$ANDROID_SERIAL")
-if [ -e "$LOCK" ] && ! grep -q perf-harness "$LOCK"; then
+if [ -e "$LOCK" ]; then
   echo "Device lock held:"; cat "$LOCK"; exit 1
 fi
 mkdir -p "$PRISM_PERF_DIR"
@@ -21,7 +21,10 @@ cleanup() {
   [ "$OWN" = 1 ] && rm -f "$LOCK" || true
 }
 trap cleanup EXIT
-if ( set -o noclobber; echo "perf-harness $TAG $(date)" > "$LOCK" ) 2>/dev/null; then OWN=1; fi
+if ! ( set -o noclobber; echo "perf-harness $TAG $(date)" > "$LOCK" ) 2>/dev/null; then
+  echo "Device lock held:"; cat "$LOCK"; exit 1
+fi
+OWN=1
 if [ "${PRISM_PERF_REBOOT:-1}" = 1 ]; then
   "${ADB[@]}" reboot
   "${ADB[@]}" wait-for-device

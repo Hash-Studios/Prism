@@ -1,6 +1,7 @@
 // Firebase platform-interface packages are transitive, but these fakes need them.
 // ignore_for_file: depend_on_referenced_packages
 
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/data/view_stats/firebase_view_stats_repository.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
@@ -75,6 +76,28 @@ void main() {
   tearDownAll(() => FirebaseFunctionsPlatform.instance = previous);
 
   group('recordWallpaperView', () {
+    test('a different signed-in account records the same wall again', () async {
+      final String previousId = app_state.prismUser.id;
+      final bool previousLoggedIn = app_state.prismUser.loggedIn;
+      addTearDown(() {
+        app_state.prismUser
+          ..id = previousId
+          ..loggedIn = previousLoggedIn;
+      });
+      app_state.prismUser
+        ..loggedIn = true
+        ..id = 'user-a';
+      response = <String, Object?>{'views': 42};
+      await repository.recordWallpaperView('abc');
+      app_state.prismUser.id = 'user-b';
+      response = <String, Object?>{'views': 43};
+
+      final result = await repository.recordWallpaperView('abc');
+
+      expect(result.data, '43');
+      expect(calls, hasLength(2));
+    });
+
     test('counts a wall once per session and returns the known count for repeats', () async {
       response = <String, Object?>{'views': 42};
 

@@ -15,7 +15,7 @@ class PerformanceProbe {
   static const String logPrefix = 'PRISM_PERF';
   static const String fileName = 'performance_probe.ndjson';
 
-  static final Stopwatch sinceProcess = Stopwatch()..start();
+  static final Stopwatch sinceProcess = kReleaseMode ? Stopwatch() : (Stopwatch()..start());
 
   static File? _file;
   static Future<void> _writeTail = Future<void>.value();
@@ -70,6 +70,7 @@ class PerformanceProbe {
   }
 
   static void mark(String name, {Map<String, Object?> extra = const <String, Object?>{}}) {
+    if (kReleaseMode) return;
     emit(kind: 'mark', name: name, durationMs: sinceProcess.elapsedMilliseconds, extra: extra);
   }
 
