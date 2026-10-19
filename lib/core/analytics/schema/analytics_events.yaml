@@ -291,6 +291,7 @@ enums:
       - campaign
       - rejection
       - win_back
+      - drop
 
 events:
   - id: content_report_submit

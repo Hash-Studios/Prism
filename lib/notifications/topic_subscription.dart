@@ -305,6 +305,7 @@ Future<void> syncPushTopics(
       topic == null ? Future<bool>.value(true) : subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
   final List<bool> results = await Future.wait(<Future<bool>>[
     if (settings.get<bool>(NotificationPrefKeys.recommendations, defaultValue: true)) subscribe('recommendations'),
+    if (settings.get<bool>(NotificationPrefKeys.drops, defaultValue: true)) subscribe('drops'),
     if (settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true))
       setWotdTopics(messaging, settings, subscribed: true, sourceTag: sourceTag),
     // onCampaignNotificationRequested sends "premium" and "free" campaigns to these topics.

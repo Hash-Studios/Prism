@@ -325,7 +325,8 @@ enum PushKindValue {
   moderation,
   campaign,
   rejection,
-  winBack;
+  winBack,
+  drop;
 
   String get wireValue => _snakeCase(name);
 }

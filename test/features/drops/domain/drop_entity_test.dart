@@ -1,3 +1,4 @@
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../drop_fixtures.dart';
@@ -46,6 +47,18 @@ void main() {
     test('shows minutes in the last hour and Ended after', () {
       expect(drop.endsInLabel(drop.endsAt.subtract(const Duration(minutes: 9))), 'Ends in 9m');
       expect(drop.endsInLabel(drop.endsAt), 'Ended');
+    });
+  });
+
+  group('phaseAt', () {
+    final drop = dropEntity();
+
+    test('is live until the last day, then last call, then ended', () {
+      expect(drop.phaseAt(drop.endsAt.subtract(const Duration(hours: 25))), DropPhase.live);
+      expect(drop.phaseAt(drop.endsAt.subtract(const Duration(hours: 24))), DropPhase.lastCall);
+      expect(drop.phaseAt(drop.endsAt.subtract(const Duration(minutes: 1))), DropPhase.lastCall);
+      expect(drop.phaseAt(drop.endsAt), DropPhase.ended);
+      expect(drop.phaseAt(drop.startsAt.subtract(const Duration(minutes: 1))), DropPhase.ended);
     });
   });
 }

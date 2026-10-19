@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
@@ -23,8 +26,12 @@ part 'personalized_feed_bloc.j.freezed.dart';
 
 @injectable
 class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
-  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase, this._repository, this._userBlockRepository)
-    : super(PersonalizedFeedState.initial()) {
+  PersonalizedFeedBloc(
+    this._fetchPersonalizedFeedUseCase,
+    this._repository,
+    this._userBlockRepository,
+    this._dropsRepository,
+  ) : super(PersonalizedFeedState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
@@ -34,17 +41,23 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     on<_ChipSelected>(_onChipSelected);
     on<_TilesSeen>(_onTilesSeen);
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
+    on<_LiveDropRequested>(_onLiveDropRequested);
     // Blocking a creator removes their items from the on-screen feed instantly,
     // without waiting for the next fetch. skip(1) ignores the initial snapshot.
     _blockedCreatorsSub = _userBlockRepository
         .watchBlockedCreatorEmails()
         .skip(1)
         .listen((blocked) => add(PersonalizedFeedEvent.blockedCreatorsChanged(blocked: blocked)));
+    _dropsWereEnabled = EconomyConfig.notifier.value.flags.dropsEnabled;
+    EconomyConfig.notifier.addListener(_onEconomyConfigChanged);
   }
 
   final FetchPersonalizedFeedUseCase _fetchPersonalizedFeedUseCase;
   final PersonalizedFeedRepository _repository;
   final UserBlockRepository _userBlockRepository;
+  final DropsRepository _dropsRepository;
+  late bool _dropsWereEnabled;
+  int _liveDropRequest = 0;
   StreamSubscription<Set<String>>? _blockedCreatorsSub;
   int _loadVersion = 0;
   Future<void> _lessLikeThisInFlight = Future<void>.value();
@@ -62,8 +75,33 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     }
   }
 
+  void _onEconomyConfigChanged() {
+    final bool enabled = EconomyConfig.notifier.value.flags.dropsEnabled;
+    final bool changed = enabled != _dropsWereEnabled;
+    _dropsWereEnabled = enabled;
+    if (changed && !isClosed) add(const PersonalizedFeedEvent.liveDropRequested());
+  }
+
+  /// Runs beside the feed load, so the carousel paints first and gains the Drop page when it arrives. A failed
+  /// fetch keeps the Drop already on screen.
+  Future<void> _onLiveDropRequested(_LiveDropRequested event, Emitter<PersonalizedFeedState> emit) async {
+    final int request = ++_liveDropRequest;
+    if (!EconomyConfig.notifier.value.flags.dropsEnabled) {
+      if (state.liveDrop != null) emit(state.copyWith(liveDrop: null));
+      return;
+    }
+    try {
+      final result = await _dropsRepository.fetchLive(DateTime.now());
+      if (emit.isDone || request != _liveDropRequest || result.isFailure) return;
+      if (result.data != state.liveDrop) emit(state.copyWith(liveDrop: result.data));
+    } catch (e) {
+      logger.w('[PersonalizedFeed] live drop unavailable: $e');
+    }
+  }
+
   @override
   Future<void> close() {
+    EconomyConfig.notifier.removeListener(_onEconomyConfigChanged);
     unawaited(_blockedCreatorsSub?.cancel());
     _seenTimer?.cancel();
     _flushSeen();
@@ -72,6 +110,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
   /// Paints the cached first page at once, then loads the fresh one behind it.
   Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) async {
+    add(const PersonalizedFeedEvent.liveDropRequested());
     final int loadVersion = _loadVersion;
     PersonalizedFeedPage? cached;
     try {
@@ -103,8 +142,10 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     );
   }
 
-  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) =>
-      _load(emit, sourceContext: 'personalized_feed_refresh', keepItems: true);
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) {
+    add(const PersonalizedFeedEvent.liveDropRequested());
+    return _load(emit, sourceContext: 'personalized_feed_refresh', keepItems: true);
+  }
 
   /// A content filter changed. Items loaded under the old filter must not stay.
   Future<void> _onSettingsChanged(_SettingsChanged event, Emitter<PersonalizedFeedState> emit) =>

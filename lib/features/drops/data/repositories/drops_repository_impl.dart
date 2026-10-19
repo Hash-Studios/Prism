@@ -157,6 +157,7 @@ class DropsRepositoryImpl implements DropsRepository {
     'priceWall': drop.priceWall,
     'pricePack': drop.pricePack,
     'count': drop.count,
+    'collectors': drop.collectors,
     'walls': drop.walls
         .map(
           (DropWall wall) => <String, Object?>{

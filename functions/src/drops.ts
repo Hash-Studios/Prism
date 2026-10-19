@@ -5,6 +5,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {coinTransactionDoc, db, int, REGION, str} from "./common";
 import {isValidRequestId} from "./coinsCallables";
 import {loadEconomy, proPrice, weekBounds, weekKey} from "./economy";
+import {sendNotification} from "./notificationHelper";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -13,6 +14,7 @@ const MAX_DROP_WALLS = 10;
 const WEEK_KEY = /^\d{4}-W\d{2}$/;
 const RELEASE_AFTER_MS = 30 * 86_400_000;
 const WALL_ID = /^[A-Za-z0-9_-]{1,128}$/;
+const HOUR_MS = 3_600_000;
 
 export interface DropWall {
   id: string;
@@ -32,6 +34,8 @@ export interface DropDoc {
   pricePack: number;
   count: number;
   walls: DropWall[];
+  pushes?: Partial<Record<DropPushKind, number>>;
+  pushClaims?: Partial<Record<DropPushKind, number>>;
 }
 
 export interface UnlockedWall {
@@ -242,9 +246,11 @@ export const unlockDrop = onCall(
         return;
       }
 
+      const firstOfDrop = !Object.values(owned).some((entry) => (entry as {weekKey?: unknown}).weekKey === dropKey);
       const after = balance - price;
       const rev = int(privateData.rev, 0) + 1;
       tx.update(userRef, {coins: after});
+      if (firstOfDrop) tx.update(dropRef, {collectors: admin.firestore.FieldValue.increment(1)});
       if (privateSnap.exists) {
         const fields: Record<string, unknown> = {rev};
         for (const w of unlocked) fields[`drops.unlocked.${w.id}`] = {weekKey: dropKey, url: w.url};
@@ -280,5 +286,121 @@ export const unlockDrop = onCall(
       };
     });
     return response;
+  },
+);
+
+export type DropPushKind = "live" | "lastCall";
+
+interface DropPushSpec {
+  kind: DropPushKind;
+  isDue: (drop: DropDoc, nowMs: number) => boolean;
+  supersededBy?: DropPushKind;
+  title: string;
+  body: (drop: DropDoc, nowMs: number) => string;
+}
+
+export const DROP_PUSHES: readonly DropPushSpec[] = [
+  {
+    kind: "live",
+    isDue: (drop, nowMs) => nowMs >= drop.startsAt + 4 * HOUR_MS,
+    supersededBy: "lastCall",
+    title: "A new Drop is live",
+    body: (drop) => `${drop.count} walls, this week only. Preview them before they are gone.`,
+  },
+  {
+    kind: "lastCall",
+    isDue: (drop, nowMs) => drop.endsAt - nowMs <= 12 * HOUR_MS,
+    title: "Last call on this week's Drop",
+    body: (drop, nowMs) => {
+      const hours = Math.max(1, Math.floor((drop.endsAt - nowMs) / HOUR_MS));
+      return `${drop.title} ends in ${hours} ${hours === 1 ? "hour" : "hours"}. Then these walls are gone for a month.`;
+    },
+  },
+];
+
+/** Push kinds due now and not yet sent. A due kind hides the kind it supersedes, so a late run sends only the last call. */
+export function duePushKinds(drop: DropDoc, nowMs: number): DropPushKind[] {
+  const due = DROP_PUSHES.filter((spec) => spec.isDue(drop, nowMs));
+  return due
+    .filter((spec) => !due.some((other) => other.kind === spec.supersededBy))
+    .map((spec) => spec.kind)
+    .filter((kind) => drop.pushes?.[kind] === undefined);
+}
+
+const CLAIM_TTL_MS = 15 * 60 * 1000;
+
+async function claimPush(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, nowMs: number) {
+  return db.runTransaction(async (tx) => {
+    const data = (await tx.get(dropRef)).data();
+    if (data?.pushes?.[kind] !== undefined) return false;
+    const claimedAt = data?.pushClaims?.[kind];
+    if (typeof claimedAt === "number" && nowMs - claimedAt < CLAIM_TTL_MS) return false;
+    tx.update(dropRef, {[`pushClaims.${kind}`]: nowMs});
+    return true;
+  });
+}
+
+async function markPushSent(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, nowMs: number) {
+  await dropRef.update({
+    [`pushes.${kind}`]: nowMs,
+    [`pushClaims.${kind}`]: admin.firestore.FieldValue.delete(),
+  });
+}
+
+async function releasePush(dropRef: admin.firestore.DocumentReference, kind: DropPushKind, claimedAt: number) {
+  await db.runTransaction(async (tx) => {
+    const claims = (await tx.get(dropRef)).data()?.pushClaims as Record<string, unknown> | undefined;
+    if (claims?.[kind] !== claimedAt) return;
+    tx.update(dropRef, {[`pushClaims.${kind}`]: admin.firestore.FieldValue.delete()});
+  });
+}
+
+/**
+ * Sends each due push of the live drop. A failed send frees its claim and throws, so the scheduler retries.
+ * A run that dies mid-send leaves a stale claim that expires, so a later run resends. The fixed docId and
+ * collapseKey make that resend collapse on the device and overwrite one inbox doc.
+ */
+export async function sendDuePushes(nowMs: number): Promise<DropPushKind[]> {
+  const config = await loadEconomy(nowMs);
+  if (!config.flags.dropsEnabled) return [];
+  const found = await db.collection("drops").where("endsAt", ">", nowMs).orderBy("endsAt", "asc").limit(1).get();
+  const dropSnap = found.docs[0];
+  const drop = dropSnap?.data() as DropDoc | undefined;
+  if (!dropSnap || !drop || !isDropLive(drop, nowMs)) return [];
+
+  const weekKeyOfDrop = str(drop.weekKey) || dropSnap.id;
+  const sent: DropPushKind[] = [];
+  for (const kind of duePushKinds(drop, nowMs)) {
+    if (!await claimPush(dropSnap.ref, kind, nowMs)) continue;
+    const spec = DROP_PUSHES.find((s) => s.kind === kind) as DropPushSpec;
+    let delivered = false;
+    try {
+      delivered = await sendNotification({
+        title: spec.title,
+        body: spec.body(drop, nowMs),
+        data: {route: "drops", week_key: weekKeyOfDrop},
+        imageUrl: drop.walls?.[0]?.thumb || undefined,
+        modifier: "all",
+        channelId: "drops",
+        fcmTarget: {topic: "drops"},
+        collapseKey: `drop_${kind}_${weekKeyOfDrop}`,
+        docId: `drop_${kind}_${weekKeyOfDrop}`,
+        scoreKind: "drop",
+      });
+    } finally {
+      if (!delivered) await releasePush(dropSnap.ref, kind, nowMs);
+    }
+    if (!delivered) throw new Error(`Drop ${kind} push failed for ${weekKeyOfDrop}.`);
+    await markPushSent(dropSnap.ref, kind, nowMs);
+    sent.push(kind);
+    logger.info("drops: push sent", {weekKey: weekKeyOfDrop, kind});
+  }
+  return sent;
+}
+
+export const sendDropPushes = onSchedule(
+  {schedule: "30 * * * *", region: REGION, timeZone: "UTC", retryCount: 1},
+  async () => {
+    await sendDuePushes(Date.now());
   },
 );

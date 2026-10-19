@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -11,6 +12,8 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
@@ -32,13 +35,14 @@ double feedCarouselCardHeight(BuildContext context) {
   return (width / feedCarouselColumns(width) - 2 * PrismFeedLayout.gridSpacing) * 0.6;
 }
 
-/// The home carousel: Wall of the Day, boosted walls, the promo banner and the first wallpapers as rounded pages, with
-/// page dots over the bottom of the image.
+/// The home carousel: Wall of the Day, the live Drop, boosted walls, the promo banner and the first wallpapers as
+/// rounded pages, with page dots over the bottom of the image.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({
     super.key,
     required this.previewWalls,
     this.boostedWalls = const <PrismWallpaper>[],
+    this.liveDrop,
     this.onWallShown,
   });
 
@@ -46,6 +50,9 @@ class FeedCarousel extends StatefulWidget {
 
   /// Walls with a live boost. They follow the Wall of the Day, so a boost buys one of the first views of the home.
   final List<PrismWallpaper> boostedWalls;
+
+  /// The live Drop. It gets a page right after the Wall of the Day while the Drops flag is on.
+  final DropEntity? liveDrop;
 
   /// Called after a preview wallpaper meets the visibility and dwell threshold.
   final ValueChanged<PrismFeedItem>? onWallShown;
@@ -56,6 +63,64 @@ class FeedCarousel extends StatefulWidget {
 
 class _FeedCarouselState extends State<FeedCarousel> {
   int _current = 0;
+  final CarouselSliderController _controller = CarouselSliderController();
+
+  bool _showsDrop(DropEntity? drop) =>
+      drop != null && EconomyConfig.notifier.value.flags.dropsEnabled && drop.isLiveAt(DateTime.now());
+
+  Timer? _dropEndTimer;
+
+  int get _dropIndex => context.read<WotdBloc>().state.entity != null ? 1 : 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleDropEnd();
+  }
+
+  @override
+  void didUpdateWidget(FeedCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.liveDrop?.endsAt != oldWidget.liveDrop?.endsAt) _scheduleDropEnd();
+    final bool shows = _showsDrop(widget.liveDrop);
+    final bool showed = _showsDrop(oldWidget.liveDrop);
+    if (shows != showed) _keepPage(appeared: shows);
+  }
+
+  @override
+  void dispose() {
+    _dropEndTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleDropEnd() {
+    _dropEndTimer?.cancel();
+    final DropEntity? drop = widget.liveDrop;
+    if (drop == null) return;
+    final Duration left = drop.endsAt.difference(DateTime.now());
+    if (left <= Duration.zero) return;
+    _dropEndTimer = Timer(left, () {
+      if (!mounted) return;
+      setState(() {});
+      _keepPage(appeared: false);
+    });
+  }
+
+  /// A Drop page that appears or goes shifts the pages after it. Keep the user on the wall they are looking at.
+  void _keepPage({required bool appeared}) {
+    final int dropIndex = _dropIndex;
+    final int target = appeared
+        ? (_current >= dropIndex ? _current + 1 : _current)
+        : (_current > dropIndex ? _current - 1 : _current);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.jumpToPage(target);
+    });
+  }
+
+  void _openDrop() {
+    PrismHaptics.tap();
+    unawaited(context.router.push(const DropsRoute()));
+  }
 
   void _openBanner() {
     PrismHaptics.tap();
@@ -103,6 +168,13 @@ class _FeedCarouselState extends State<FeedCarousel> {
     final int memCacheHeight = (height * MediaQuery.devicePixelRatioOf(context)).round();
     final List<Widget> pages = <Widget>[
       if (hasWotd) const WallOfTheDayCard(),
+      if (_showsDrop(widget.liveDrop))
+        DropCarouselSlide(
+          drop: widget.liveDrop!,
+          now: DateTime.now(),
+          memCacheHeight: memCacheHeight,
+          onTap: _openDrop,
+        ),
       for (int i = 0; i < widget.boostedWalls.length; i++) _boostedCard(widget.boostedWalls[i], i, memCacheHeight),
       if (bannerImage.trim().isNotEmpty)
         FeedHeroCard(
@@ -121,6 +193,7 @@ class _FeedCarouselState extends State<FeedCarousel> {
     return Stack(
       children: <Widget>[
         CarouselSlider.builder(
+          carouselController: _controller,
           itemCount: pages.length,
           options: CarouselOptions(
             height: height,

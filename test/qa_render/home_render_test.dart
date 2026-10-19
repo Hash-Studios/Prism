@@ -14,6 +14,7 @@ import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -21,6 +22,8 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
@@ -36,7 +39,6 @@ import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_s
 import 'package:Prism/features/prism_feed/biz/bloc/latest_feed_bloc.j.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
-import 'package:Prism/features/trending/domain/entities/trending_range.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -195,11 +197,8 @@ class _Home {
       final int start = (request.page - 1) * _pageSize;
       return Result.success(_page(<int>[for (int i = start; i < start + _pageSize; i++) i]));
     });
-    when(() => fetchTrending(TrendingRange.week)).thenAnswer(
+    when(() => fetchTrending(any())).thenAnswer(
       (_) async => Result.success(<PrismWallpaper>[for (int i = 0; i < 18; i++) _wall(400 + i * 5, boosted: i < 2)]),
-    );
-    when(() => fetchTrending(TrendingRange.allTime)).thenAnswer(
-      (_) async => Result.success(<PrismWallpaper>[for (int i = 0; i < 18; i++) _wall(500 + i * 9, boosted: i == 3)]),
     );
     when(() => stackRouter.push(any())).thenAnswer((_) async => null);
     when(() => stackRouter.pushPath(any())).thenAnswer((_) async => null);
@@ -213,7 +212,12 @@ class _Home {
     _stubData();
     getIt
       ..registerFactory<PersonalizedFeedBloc>(
-        () => PersonalizedFeedBloc(fetchUseCase, feedRepository, FakeUserBlockRepository.pending()),
+        () => PersonalizedFeedBloc(
+          fetchUseCase,
+          feedRepository,
+          FakeUserBlockRepository.pending(),
+          _FakeDropsRepository(),
+        ),
       )
       ..registerFactory<LatestFeedBloc>(() => LatestFeedBloc(prismRepository))
       ..registerFactory<FollowingFeedBloc>(() => FollowingFeedBloc(feedRepository))
@@ -317,6 +321,14 @@ class _Home {
   }
 }
 
+class _FakeDropsRepository implements DropsRepository {
+  @override
+  Future<Result<DropEntity?>> fetchLive(DateTime now) async => Result.success<DropEntity?>(null);
+
+  @override
+  Future<Result<DropEntity?>> fetchByWeekKey(String weekKey) async => Result.success<DropEntity?>(null);
+}
+
 void main() {
   final List<String> results = <String>[];
 
@@ -330,7 +342,7 @@ void main() {
       ),
     );
     registerFallbackValue(_item(0));
-    registerFallbackValue(TrendingRange.week);
+    registerFallbackValue(const NoParams());
     registerFallbackValue(ProfileRoute());
     if (homeRender) await loadAppFonts();
   });

@@ -21,6 +21,12 @@ void main() {
     expect(byId.keys, containsAll(serverIds));
   });
 
+  test('the drops channel exists and allows a heads-up banner', () {
+    expect(byId['drops']?.name, 'Weekly Drops');
+    expect(byId['drops']?.description, 'When a new Drop is live and before it ends.');
+    expect(byId['drops']?.importance, Importance.high);
+  });
+
   test('the moderation channel exists', () {
     expect(byId['moderation']?.name, 'Moderation');
   });

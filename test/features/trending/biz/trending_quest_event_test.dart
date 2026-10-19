@@ -1,10 +1,10 @@
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
-import 'package:Prism/features/trending/domain/entities/trending_range.dart';
 import 'package:Prism/features/trending/domain/usecases/fetch_trending_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -19,7 +19,7 @@ void main() {
   final CoinsTestBackend backend = CoinsTestBackend();
   late List<String> events;
 
-  setUpAll(() => registerFallbackValue(TrendingRange.week));
+  setUpAll(() => registerFallbackValue(const NoParams()));
 
   setUp(() async {
     events = <String>[];
@@ -35,7 +35,7 @@ void main() {
     await getIt.reset();
   });
 
-  test('the bloc only loads data: starting it and switching range report no quest event', () async {
+  test('the bloc only loads data: starting and refreshing it report no quest event', () async {
     final _MockFetchTrending fetch = _MockFetchTrending();
     when(() => fetch(any())).thenAnswer((_) async => Result.success(<PrismWallpaper>[]));
     final TrendingBloc bloc = TrendingBloc(fetch, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
@@ -43,11 +43,10 @@ void main() {
 
     bloc.add(const TrendingEvent.started());
     await Future<void>.delayed(const Duration(milliseconds: 50));
-    bloc.add(const TrendingEvent.rangeSelected(TrendingRange.allTime));
+    bloc.add(const TrendingEvent.refreshRequested());
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    verify(() => fetch(TrendingRange.week)).called(1);
-    verify(() => fetch(TrendingRange.allTime)).called(1);
+    verify(() => fetch(any())).called(2);
     expect(events, isEmpty);
   });
 }

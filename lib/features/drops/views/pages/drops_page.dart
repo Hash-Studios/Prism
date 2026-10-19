@@ -3,6 +3,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_header.dart';
 import 'package:Prism/features/drops/views/widgets/drop_vault.dart';
@@ -82,12 +83,13 @@ class _DropsBody extends StatelessWidget {
           SliverToBoxAdapter(
             child: DropHeader(drop: drop, now: state.now, remaining: state.lockedWalls.length, live: true),
           ),
+          if (state.lockedWalls.isNotEmpty) const SliverToBoxAdapter(child: DropPreviewHint()),
           DropWallGrid(
             drop: drop,
             unlocked: state.unlocked,
             canBuy: true,
             busyKey: state.busyKey,
-            onLockedTap: (wall) => askToUnlock(context, state, wall),
+            onLockedTap: (wall) => openDropPreview(context, wall: wall),
           ),
         ],
         SliverToBoxAdapter(

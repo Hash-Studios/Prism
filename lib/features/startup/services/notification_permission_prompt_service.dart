@@ -9,6 +9,7 @@ import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/notifications/notification_signals.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -154,6 +155,10 @@ class NotificationPermissionPromptService {
     final bool wantsWotd = _settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
     if (wantsWotd) {
       subscribedToWotd = await setWotdTopics(messaging, _settings, subscribed: true, sourceTag: '$sourceTag.wotd');
+    }
+
+    if (_settings.get<bool>(NotificationPrefKeys.drops, defaultValue: true)) {
+      await subscribeToTopicSafely(messaging, 'drops', sourceTag: '$sourceTag.drops');
     }
 
     if (app_state.prismUser.loggedIn) {

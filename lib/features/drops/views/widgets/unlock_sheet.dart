@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:Prism/core/coins/coins_service.dart';
@@ -6,6 +7,8 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
+import 'package:Prism/features/drops/views/widgets/drop_palette.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -77,6 +80,10 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
   @override
   Widget build(BuildContext context) {
     final bool isPro = app_state.prismUser.premium;
+    final String serial = dropSerial(
+      math.max(0, widget.drop.walls.indexWhere((w) => w.id == widget.wall.id)),
+      widget.drop.walls.length,
+    );
     final int wallPrice = widget.drop.wallPrice(isPro: isPro);
     final int packPrice = widget.drop.packPrice(remaining: widget.remaining, isPro: isPro);
     return ValueListenableBuilder<int>(
@@ -124,11 +131,34 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(PrismRadius.md),
                 child: SizedBox(
-                  height: 180,
+                  height: 220,
                   width: double.infinity,
-                  child: ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: PrismImageTile(url: widget.wall.thumb),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      ImageFiltered(
+                        imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                        child: PrismImageTile(url: widget.wall.thumb),
+                      ),
+                      ColoredBox(color: DropPalette.obsidian.withValues(alpha: 0.3)),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(PrismRadius.md),
+                          border: Border.all(color: DropPalette.hairlineStrong, width: 0.8),
+                        ),
+                      ),
+                      const Center(child: DropSeal(size: 56)),
+                      Padding(
+                        padding: const EdgeInsets.all(PrismSpace.sm),
+                        child: Row(
+                          children: <Widget>[
+                            Text('THE DROP', style: dropCapsStyle(size: 10, spacing: 2)),
+                            const Spacer(),
+                            Text(serial, style: dropCapsStyle(size: 10, spacing: 1.2, color: DropPalette.goldLight)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -138,7 +168,7 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
                 children: <Widget>[
                   const PrismCoinIcon(size: 16),
                   const SizedBox(width: PrismSpace.xxs),
-                  Text('You have $balance', style: PrismTextStyles.caption(context)),
+                  Text('You have $balance coins', style: PrismTextStyles.caption(context)),
                   if (isPro) ...<Widget>[
                     const SizedBox(width: PrismSpace.xs),
                     const PrismTag(label: 'Pro price', tone: PrismTone.accent),

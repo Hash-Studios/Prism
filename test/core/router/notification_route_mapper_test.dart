@@ -218,6 +218,7 @@ void main() {
         PushKindValue.post,
       );
       expect(NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'wall_of_the_day'}), PushKindValue.wotd);
+      expect(NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'drops'}), PushKindValue.drop);
       expect(
         NotificationRouteMapper.pushKindFor(<String, dynamic>{'route': 'content_report'}),
         PushKindValue.moderation,

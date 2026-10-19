@@ -69,6 +69,7 @@ class NotificationSettingsSheet extends StatefulWidget {
 class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> with WidgetsBindingObserver {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   late bool _wotd = _settingsLocal.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
+  late bool _drops = _readPref(NotificationPrefKeys.drops);
   late bool _followers = _readPref(NotificationPrefKeys.followers);
   late bool _posts = _readPref(NotificationPrefKeys.posts);
   late bool _recommendations = _readPref(NotificationPrefKeys.recommendations);
@@ -200,6 +201,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
                 onChanged: (bool value) => _change(value, () => _setWotd(value)),
               ),
               _toggle(
+                icon: Icons.auto_awesome_rounded,
+                title: 'Weekly Drops',
+                subtitle: 'Alerts when a new Drop is live and before it ends.',
+                value: _drops,
+                onChanged: (bool value) => _change(value, () => _setDrops(value)),
+              ),
+              _toggle(
                 icon: Icons.person_add_rounded,
                 title: 'Followers',
                 subtitle: 'Alerts when someone new follows you.',
@@ -304,6 +312,24 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
           ? 'notification.settings.wall_of_the_day.enable'
           : 'notification.settings.wall_of_the_day.disable',
     );
+  }
+
+  Future<void> _setDrops(bool value) async {
+    await _settingsLocal.set(NotificationPrefKeys.drops, value);
+    setState(() => _drops = value);
+    if (value) {
+      await subscribeToTopicSafely(
+        widget.permissions.messaging,
+        'drops',
+        sourceTag: 'notification.settings.drops.enable',
+      );
+    } else {
+      await unsubscribeFromTopicSafely(
+        widget.permissions.messaging,
+        'drops',
+        sourceTag: 'notification.settings.drops.disable',
+      );
+    }
   }
 
   Future<void> _setRecommendations(bool value) async {

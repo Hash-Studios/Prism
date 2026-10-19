@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/features/trending/data/repositories/trending_repository_impl.dart';
-import 'package:Prism/features/trending/domain/entities/trending_range.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_feed_cache_local_data_source.dart';
@@ -53,7 +52,7 @@ void main() {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B'), 'C': _wall('C')};
     setList('trending', <Object?>['C', 'A', 'B']);
 
-    final result = await repository.fetch(TrendingRange.week);
+    final result = await repository.fetch();
 
     expect(result.data!.map((wall) => wall.id), <String>['C', 'A', 'B']);
   });
@@ -61,9 +60,9 @@ void main() {
   test('loads the walls in batches of at most 30 ids and keeps the order across batches', () async {
     final List<String> ids = List<String>.generate(65, (i) => 'W${i.toString().padLeft(2, '0')}');
     walls = <String, Map<String, dynamic>>{for (final String id in ids) id: _wall(id)};
-    setList('popular', ids);
+    setList('trending', ids);
 
-    final result = await repository.fetch(TrendingRange.allTime);
+    final result = await repository.fetch();
 
     final List<FirestoreQuerySpec> wallQueries = client.querySpecs;
     expect(wallQueries.map((spec) => _idsOf(spec).length), <int>[30, 30, 5]);
@@ -71,20 +70,19 @@ void main() {
     expect(result.data!.map((wall) => wall.id), ids);
   });
 
-  test('reads trending/current for the week and popular/current for all time', () async {
+  test('reads trending/current, not the all-time popular/current', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B')};
     setList('trending', <Object?>['A']);
     setList('popular', <Object?>['B']);
 
-    expect((await repository.fetch(TrendingRange.week)).data!.map((wall) => wall.id), <String>['A']);
-    expect((await repository.fetch(TrendingRange.allTime)).data!.map((wall) => wall.id), <String>['B']);
+    expect((await repository.fetch()).data!.map((wall) => wall.id), <String>['A']);
   });
 
   test('only asks for reviewed walls', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A')};
     setList('trending', <Object?>['A']);
 
-    await repository.fetch(TrendingRange.week);
+    await repository.fetch();
 
     final FirestoreFilter review = client.querySpecs.single.filters.firstWhere((filter) => filter.field == 'review');
     expect(review.value, true);
@@ -100,7 +98,7 @@ void main() {
     blocks.completeInitial(<String>{'blocked@example.com'});
     setList('trending', <Object?>['A', 'B', 'MISSING', 'D', 'E']);
 
-    final result = await repository.fetch(TrendingRange.week);
+    final result = await repository.fetch();
 
     expect(result.data!.map((wall) => wall.id), <String>['A', 'E']);
   });
@@ -109,16 +107,16 @@ void main() {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B')};
     setList('trending', <Object?>['a', 'A', ' ', null, 'b']);
 
-    final result = await repository.fetch(TrendingRange.week);
+    final result = await repository.fetch();
 
     expect(_idsOf(client.querySpecs.single), <String>['A', 'B']);
     expect(result.data!.map((wall) => wall.id), <String>['A', 'B']);
   });
 
   test('a missing or empty list gives an empty success without a wall query', () async {
-    final missing = await repository.fetch(TrendingRange.week);
+    final missing = await repository.fetch();
     setList('trending', <Object?>[]);
-    final empty = await repository.fetch(TrendingRange.week);
+    final empty = await repository.fetch();
 
     expect(missing.isSuccess, isTrue);
     expect(missing.data, isEmpty);
@@ -129,38 +127,39 @@ void main() {
   test('a good empty list replaces the saved one, so a later failure does not bring old walls back', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A')};
     setList('trending', <Object?>['A']);
-    expect((await repository.fetch(TrendingRange.week)).data, hasLength(1));
+    expect((await repository.fetch()).data, hasLength(1));
 
     setList('trending', <Object?>[]);
-    expect((await repository.fetch(TrendingRange.week)).data, isEmpty);
+    expect((await repository.fetch()).data, isEmpty);
     setList('trending', <Object?>['A']);
     client.queryError = Exception('offline');
-    final offline = await repository.fetch(TrendingRange.week);
+    final offline = await repository.fetch();
 
     expect(offline.isSuccess, isTrue);
     expect(offline.data, isEmpty);
   });
 
-  test('a saved empty list is a success, and a missing one is a failure', () async {
+  test('a saved empty list is a success when the network fails', () async {
     setList('trending', <Object?>[]);
-    await repository.fetch(TrendingRange.week);
+    await repository.fetch();
     setList('trending', <Object?>['A']);
-    setList('popular', <Object?>['A']);
     client.queryError = Exception('offline');
 
-    expect((await repository.fetch(TrendingRange.week)).isSuccess, isTrue);
-    expect((await repository.fetch(TrendingRange.allTime)).isFailure, isTrue);
+    final offline = await repository.fetch();
+
+    expect(offline.isSuccess, isTrue);
+    expect(offline.data, isEmpty);
   });
 
   test('returns the saved list when the network fails, and hides creators blocked since', () async {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
     setList('trending', <Object?>['A', 'B']);
-    expect((await repository.fetch(TrendingRange.week)).data, hasLength(2));
+    expect((await repository.fetch()).data, hasLength(2));
     expect(cache.scopes, <String>['trending/week']);
 
     client.queryError = Exception('offline');
     blocks.completeInitial(<String>{'later@example.com'});
-    final offline = await repository.fetch(TrendingRange.week);
+    final offline = await repository.fetch();
 
     expect(offline.isSuccess, isTrue);
     expect(offline.data!.map((wall) => wall.id), <String>['A']);
@@ -170,33 +169,20 @@ void main() {
     walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B', email: 'later@example.com')};
     setList('trending', <Object?>['A', 'B']);
     blocks.completeInitial(<String>{'later@example.com'});
-    expect((await repository.fetch(TrendingRange.week)).data!.map((wall) => wall.id), <String>['A']);
+    expect((await repository.fetch()).data!.map((wall) => wall.id), <String>['A']);
 
     client.queryError = Exception('offline');
     blocks.completeInitial(<String>{});
-    final offline = await repository.fetch(TrendingRange.week);
+    final offline = await repository.fetch();
 
     expect(offline.data!.map((wall) => wall.id), <String>['A', 'B']);
-  });
-
-  test('keeps a separate saved list for each range', () async {
-    walls = <String, Map<String, dynamic>>{'A': _wall('A'), 'B': _wall('B')};
-    setList('trending', <Object?>['A']);
-    setList('popular', <Object?>['B']);
-    await repository.fetch(TrendingRange.week);
-    await repository.fetch(TrendingRange.allTime);
-
-    client.queryError = Exception('offline');
-
-    expect((await repository.fetch(TrendingRange.week)).data!.single.id, 'A');
-    expect((await repository.fetch(TrendingRange.allTime)).data!.single.id, 'B');
   });
 
   test('fails when the network fails and nothing is saved', () async {
     setList('trending', <Object?>['A']);
     client.queryError = Exception('offline');
 
-    final result = await repository.fetch(TrendingRange.week);
+    final result = await repository.fetch();
 
     expect(result.isFailure, isTrue);
     expect(result.failure, isA<ServerFailure>());
