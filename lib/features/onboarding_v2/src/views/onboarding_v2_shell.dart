@@ -640,7 +640,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               errorText: onboardingSaveFailed(widget.state)
                   ? _saveErrorHelper(widget.state, context.l10n)
                   : onboardingStarterPackShort(widget.state)
-                  ? "couldn't load creators. check your connection and tap reload"
+                  ? context.l10n.onboardingRecoveryCreatorsFailed
                   : null,
               interestsRequired: widget.state.interestsData.requiredCount,
               creatorCount: widget.state.starterPackData.creators.length,

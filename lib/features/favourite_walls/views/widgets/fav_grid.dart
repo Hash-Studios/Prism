@@ -548,7 +548,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     final List<FavouriteWallEntity> walls = state.visibleItems;
     if (!loaded) {
       if (state.status == LoadStatus.initial && app_state.prismUser.id.isEmpty) {
-        return _pullable(const SignInPrompt(feature: 'favourites'));
+        return _pullable(SignInPrompt(feature: context.l10n.wallpaperAutoRotateNounFavourites));
       }
       return const LoadingCards();
     }
