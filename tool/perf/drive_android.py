@@ -35,9 +35,13 @@ W,H=[int(v) for v in re.search(r'(\d+)x(\d+)',sh('wm','size')).groups()]
 SHOTS=A.shots
 (OUT/'shots').mkdir(parents=True,exist_ok=True)
 NAV=None if A.no_flows else json.load(open(Path(__file__).parent/'android_nav.json'))
+MAX_LOAD1=float(os.environ.get('PRISM_PERF_MAX_LOAD1','10'))
 res=[]
 for i in range(N):
     sh('am','force-stop',PKG); time.sleep(2)
+    for _ in range(60):
+        if os.getloadavg()[0] <= MAX_LOAD1: break
+        time.sleep(10)
     out=sh('am','start','-W','-n',ACT)
     tt=re.search(r'TotalTime:\s*(\d+)',out); ws=re.search(r'WaitTime:\s*(\d+)',out)
     r={'i':i,'am_total':int(tt.group(1)) if tt else None,'am_wait':int(ws.group(1)) if ws else None}
