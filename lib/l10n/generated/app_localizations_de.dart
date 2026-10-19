@@ -9418,7 +9418,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptSceneMinimal4 => 'Abstrakte Linien mit ausgewogenen Abständen';
 
   @override
-  String get economyAiPromptSceneMinimal5 => 'Sanfter Himmelsverlauf über flachen Hügeln';
+  String get economyAiPromptSceneMinimal5 => 'Sanfter Himmelsfarbverlauf über flachen Hügeln';
 
   @override
   String get economyAiPromptSceneCyberpunk1 => 'Neon-Megacity-Straße mit nassen Spiegelungen';
