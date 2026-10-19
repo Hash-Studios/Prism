@@ -4,6 +4,9 @@ const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const tok = (uid, email, verified = true) => `${b64({ alg: 'none', typ: 'JWT' })}.${b64({ sub: uid, user_id: uid, email, email_verified: verified, iat: 1, exp: 9999999999, aud: P, iss: `https://securetoken.google.com/${P}` })}.`;
 const arr = (xs) => ({ arrayValue: { values: xs.map((s) => ({ stringValue: s })) } });
 const coinState = (fields) => ({ coinState: { mapValue: { fields } } });
+const depth = (tier) => ({ mapValue: { fields: {
+  tier: { stringValue: tier }, kind: { stringValue: 'person' }, top: { doubleValue: 0.2 }, v: { integerValue: '1' }, by: { stringValue: 'detector' },
+} } });
 async function req(method, path, fields, auth, mask) {
   const q = mask ? '?' + mask.map((m) => `updateMask.fieldPaths=${m}`).join('&') : '';
   const r = await fetch(`${B}/${path}${q}`, { method, headers: { ...(auth ? { Authorization: `Bearer ${auth}` } : {}), 'Content-Type': 'application/json' }, body: fields ? JSON.stringify({ fields }) : undefined });
@@ -39,6 +42,7 @@ const seed = () => Promise.all([
   req('PATCH', 'usersv2/b', { id: { stringValue: 'b' }, coins: { integerValue: '10' }, premium: { booleanValue: false } }, 'owner'),
   req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, 'owner'),
   req('PATCH', 'walls/w9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
+  req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw2', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -218,6 +222,12 @@ const cases = [
   ['owner sets dropWeek on own wall', () => req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, dropWeek: { stringValue: '2026-W42' } }, Bu), 403],
   ['owner creates a wall with dropReserved', () => req('PATCH', 'walls/w11', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, dropReserved: { booleanValue: true } }, Bu), 403],
   ['admin sets dropReserved on a wall', () => req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, dropReserved: { booleanValue: true } }, ADM), 200],
+  ['owner creates a wall with depth', () => req('PATCH', 'walls/w13', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, Bu), 403],
+  ['owner sets depth on own unreviewed wall', () => req('PATCH', 'walls/w3', { depth: depth('auto') }, Bu, ['depth']), 403],
+  ['owner changes an existing depth', () => req('PATCH', 'walls/w12', { depth: depth('menu') }, Bu, ['depth']), 403],
+  ['owner removes an existing depth', () => req('PATCH', 'walls/w12', {}, Bu, ['depth']), 403],
+  ['owner updates another field and leaves depth untouched', () => req('PATCH', 'walls/w12', { by: { stringValue: 'B' } }, Bu, ['by']), 200],
+  ['admin sets depth on a wall', () => req('PATCH', 'walls/w12', { depth: depth('menu') }, ADM, ['depth']), 200],
 ];
 await seed();
 let bad = 0;

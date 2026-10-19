@@ -103,13 +103,13 @@ service cloud.firestore {
       return timestampOk && offsetOk;
     }
 
-    // Drop and boost fields on walls are server and admin owned.
+    // Drop, boost and depth fields on walls are server and admin owned.
     function wallDropKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil']);
+      return !request.resource.data.keys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth']);
     }
 
     function wallDropKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['dropReserved', 'dropWeek', 'boostedUntil', 'depth']);
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
