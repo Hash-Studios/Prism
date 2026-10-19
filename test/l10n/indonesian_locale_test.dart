@@ -23,10 +23,10 @@ void main() {
   });
 
   test('unsupported preferred locales fall through to Indonesian', () async {
-    final Locale resolvedLocale = basicLocaleListResolution(
-      const <Locale>[Locale('fr'), Locale('id', 'ID')],
-      AppLocalizations.supportedLocales,
-    );
+    final Locale resolvedLocale = basicLocaleListResolution(const <Locale>[
+      Locale('fr'),
+      Locale('id', 'ID'),
+    ], AppLocalizations.supportedLocales);
     final AppLocalizations messages = await loadAppLocalizations(resolvedLocale);
 
     expect(messages.localeName, 'id');
