@@ -14,6 +14,7 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
   static const String _statsCollection = 'wallpaper_stats';
 
   final FirestoreClient _firestoreClient;
+  final Map<String, String> _viewsThisSession = <String, String>{};
 
   @override
   Future<Result<String>> recordWallpaperView(String wallId) async {
@@ -21,13 +22,17 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
     if (id.isEmpty) {
       return Result.error(const ServerFailure('Invalid wall id'));
     }
+    final String? known = _viewsThisSession[id];
+    if (known != null) return Result.success(known);
     try {
       final cf.HttpsCallable callable = appFunctions.httpsCallable(
         'recordWallpaperView',
         options: cf.HttpsCallableOptions(timeout: _callableTimeout),
       );
       final cf.HttpsCallableResult result = await callable.call(<String, dynamic>{'wallId': id});
-      return Result.success(_viewsString(result.data));
+      final String views = _viewsString(result.data);
+      _viewsThisSession[id] = views;
+      return Result.success(views);
     } on cf.FirebaseFunctionsException catch (e) {
       return Result.error(ServerFailure('Failed to record wallpaper view: ${e.message ?? e.code}'));
     } catch (e) {
