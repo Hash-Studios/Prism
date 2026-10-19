@@ -188,7 +188,7 @@ void main() {
 
     expect(
       AiPromptPools.sceneIdea(de, AiStylePreset.nature, 0),
-      'Eine neblige Bergkette im Morgenlicht, Hintergrundbild im Hochformat fürs Smartphone, ohne Text',
+      'Eine neblige Bergkette im Morgenlicht, Smartphone-Hintergrund hochkant, ohne Text',
     );
     for (final AiStylePreset style in AiStylePreset.values) {
       final List<String> scenes = AiPromptPools.scenesByStyle(de, style);
@@ -198,7 +198,7 @@ void main() {
       expect(scenes.toSet().intersection(AiPromptPools.scenesByStyle(en, style).toSet()), isEmpty);
       expect(onboarding.toSet().intersection(OnboardingV2Config.aiOnboardingPrompts(en, style).toSet()), isEmpty);
       final String prompt = AiPromptPools.randomPrompt(de, style, Random(0));
-      expect(prompt, contains('Hintergrundbild im Hochformat fürs Smartphone, ohne Text'));
+      expect(prompt, contains('Smartphone-Hintergrund hochkant, ohne Text'));
       expect(prompt, isNot(contains('lighting')));
       expect(prompt, isNot(contains('mood')));
     }

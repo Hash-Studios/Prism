@@ -11,6 +11,8 @@ The continuation reuses `0b562d29b` as `61e48d276`, `b86755b35` as `a6a06cf00`, 
 
 The final shared unit `e6f66cd8d`, reused as `92c3b8a3a`, resolves background messages from the full device language preference list and adds the export-failure label. The German translation and generated output are in `b8297ae6d`. English remains first in the generated supported-locale list.
 
+The shared AI prompt-persistence fixes `8d0498874`, `1085c5ab5`, and `fef381070` are reused as `c1e0113ca`, `1d53123da`, and `50e905b87`. Explicit prompt choices survive hydration and locale changes. Automatically seeded prompts do not become saved user input. Shared debug pixel-ratio units `c1f4cf622` and `db38de7d5` are reused as `b4895c0b1` and `2bbba2b05`, with German decimal and live-locale-switch assertions.
+
 The locale covers the app catalogue, including admin and debug UI, Android widgets and Quick Settings, native push notifications, iOS App Shortcuts, and photo and camera permission descriptions. User names, authored wallpaper titles, backend identifiers, routes, and external campaign content are not translated.
 
 ## Checks
@@ -25,6 +27,8 @@ The 2,502-message catalogue passes `python3 tool/check_german_localization.py`, 
 
 `fvm flutter test test/l10n` passed all 12 tests after the five shared messages were added. The tests cover German regional locale resolution, English fallback, live locale changes, plurals, grouped numbers, dates, categories, and stable wire values. Three real components run at 320px and 2× text scale with bundled fonts. This sample does not prove every screen is free from overflow.
 
+`test/l10n/german_ai_prompt_limits_test.dart` enumerates all 4,375 random-prompt combinations through the production prompt builder. It also checks scene ideas, onboarding suggestions, and the fallback against the unchanged 160 UTF-16-code-unit limit. German scene and modifier fragments are shortened without changing catalogue keys, metadata, placeholders, or backend limits.
+
 ## Device limits
 
 The T3 device inventory reports no devices. This Linux host cannot run an iOS Simulator because macOS and Xcode are absent. The Android SDK exists at `/home/ubuntu/android-sdk`, but it has no emulator package or AVD, and `/dev/kvm` is absent.
@@ -38,3 +42,5 @@ The early `make native-android-check CI=true` build was cancelled with exit 143 
 The pre-reconciliation local gate passed formatting, catalogue generation, the source audit, audit tests, repository guards, and analytics contract tests. It was stopped at static analysis before applying the second shared source unit. That partial run is not final-tree proof.
 
 Final local and hosted outcomes belong to the PR verification section and must identify the checked head commit. Hosted native builds do not replace simulator or emulator screenshots. Live RevenueCat marketing copy and store-provided purchase text require a configured service and signed-in device, so they are outside the proof available on this host.
+
+The full serial local `make ci CI=true TEST_FLAGS=--concurrency=1` passed on `50e905b87`. The main suite passed 5,058 tests with 191 skipped, and the release suite passed six tests. Its log is `/tmp/prism-de-final-prompt-ci.log`. Hosted run [39328131911](https://github.com/Hash-Studios/Prism/actions/runs/39328131911) passed on that same commit, including Flutter, Android native, iOS native, and the required aggregate. These results predate the final pixel-ratio and German prompt-length changes. Latest-head proof is recorded separately in the PR.

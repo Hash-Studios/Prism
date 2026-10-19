@@ -17,7 +17,7 @@ void main() {
     );
   });
 
-  for (final locale in <Locale>[const Locale('es'), const Locale('en')]) {
+  for (final locale in <Locale>[const Locale('de'), const Locale('en')]) {
     testWidgets('formats device pixel ratio with ${locale.languageCode} decimal separator', (tester) async {
       tester.view.devicePixelRatio = 2.75;
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -32,12 +32,12 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(
-        find.text(locale.languageCode == 'es' ? 'Relación de píxeles del dispositivo' : 'Device Pixel Ratio'),
+        find.text(locale.languageCode == 'de' ? 'Geräte-Pixelverhältnis' : 'Device Pixel Ratio'),
         250,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      expect(find.text(locale.languageCode == 'es' ? '2,75' : '2.75'), findsOneWidget);
+      expect(find.text(locale.languageCode == 'de' ? '2,75' : '2.75'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
@@ -45,7 +45,7 @@ void main() {
   testWidgets('updates decimal separator when locale changes on the same page', (tester) async {
     tester.view.devicePixelRatio = 2.75;
     addTearDown(tester.view.resetDevicePixelRatio);
-    var locale = const Locale('es');
+    var locale = const Locale('de');
     await tester.pumpWidget(
       StatefulBuilder(
         builder: (context, setState) => MaterialApp(
@@ -65,9 +65,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     final State<AppInfoPage> pageState = tester.state(find.byType(AppInfoPage));
-    expect(Localizations.localeOf(tester.element(find.byType(AppInfoPage))), const Locale('es'));
+    expect(Localizations.localeOf(tester.element(find.byType(AppInfoPage))), const Locale('de'));
     await tester.scrollUntilVisible(
-      find.text('Relación de píxeles del dispositivo'),
+      find.text('Geräte-Pixelverhältnis'),
       250,
       scrollable: find.byType(Scrollable).first,
     );

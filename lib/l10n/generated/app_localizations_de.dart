@@ -9391,16 +9391,16 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get economyAiPromptSceneAnime1 => 'Eine Stadtsilhouette im Anime-Stil über schwebenden Inseln';
+  String get economyAiPromptSceneAnime1 => 'Anime-Stadtsilhouette über schwebenden Inseln';
 
   @override
-  String get economyAiPromptSceneAnime2 => 'Ein einsamer Samurai auf einer regennassen Straße im Neonlicht';
+  String get economyAiPromptSceneAnime2 => 'Einsamer Samurai auf regennasser Neonstraße';
 
   @override
-  String get economyAiPromptSceneAnime3 => 'Ein futuristischer Schrein mit Kirschblüten und Hologrammen';
+  String get economyAiPromptSceneAnime3 => 'Futuristischer Schrein, Kirschblüten, Hologramme';
 
   @override
-  String get economyAiPromptSceneAnime4 => 'Ein verträumter Anime-Nachtmarkt im Schein der Laternen';
+  String get economyAiPromptSceneAnime4 => 'Verträumter Anime-Nachtmarkt im Laternenlicht';
 
   @override
   String get economyAiPromptSceneAnime5 => 'Eine Cyber-Anime-Stadtsilhouette zur blauen Stunde';
@@ -9415,16 +9415,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptSceneMinimal3 => 'Ein ruhiger, monochromer Horizont über dem Meer';
 
   @override
-  String get economyAiPromptSceneMinimal4 => 'Einfache abstrakte Linien mit ausgewogenen Abständen';
+  String get economyAiPromptSceneMinimal4 => 'Abstrakte Linien mit ausgewogenen Abständen';
 
   @override
-  String get economyAiPromptSceneMinimal5 => 'Ein sanfter Farbverlauf am Himmel über flachen Hügeln';
+  String get economyAiPromptSceneMinimal5 => 'Sanfter Himmelsverlauf über flachen Hügeln';
 
   @override
-  String get economyAiPromptSceneCyberpunk1 => 'Eine Straße in einer Neon-Megacity mit nassen Spiegelungen';
+  String get economyAiPromptSceneCyberpunk1 => 'Neon-Megacity-Straße mit nassen Spiegelungen';
 
   @override
-  String get economyAiPromptSceneCyberpunk2 => 'Eine futuristische Gasse mit holografischen Werbetafeln';
+  String get economyAiPromptSceneCyberpunk2 => 'Futuristische Gasse mit Hologramm-Werbetafeln';
 
   @override
   String get economyAiPromptSceneCyberpunk3 => 'Eine Hightech-Silhouette mit Flugverkehrsschneisen';
@@ -9433,7 +9433,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptSceneCyberpunk4 => 'Ein Cyberpunk-Dach mit Blick auf leuchtende Türme';
 
   @override
-  String get economyAiPromptSceneCyberpunk5 => 'Eine nächtliche Straßenkreuzung in Türkis und Magenta';
+  String get economyAiPromptSceneCyberpunk5 => 'Nächtliche Straßenkreuzung in Türkis und Magenta';
 
   @override
   String get economyAiPromptSceneWatercolor1 => 'Ein Waldtal im Aquarellstil bei Tagesanbruch';
@@ -9448,10 +9448,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptSceneWatercolor4 => 'Ein friedliches Flussufer in Pastelltönen';
 
   @override
-  String get economyAiPromptSceneWatercolor5 => 'Eine kunstvolle Küste im Aquarellstil bei Sonnenuntergang';
+  String get economyAiPromptSceneWatercolor5 => 'Kunstvolle Aquarellküste bei Sonnenuntergang';
 
   @override
-  String get economyAiPromptSceneMeshGradient1 => 'Ein fließender Mesh-Farbverlauf mit übereinanderliegenden Formen';
+  String get economyAiPromptSceneMeshGradient1 => 'Fließender Mesh-Verlauf mit überlagerten Formen';
 
   @override
   String get economyAiPromptSceneMeshGradient2 => 'Lebendige, fließende Farbverlauf-Wellen mit Tiefe';
@@ -9463,22 +9463,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptSceneMeshGradient4 => 'Kontrastreiche Bänder in einem Mesh-Farbverlauf';
 
   @override
-  String get economyAiPromptSceneMeshGradient5 => 'Ein blühender Mesh-Farbverlauf in Pastelltönen mit feiner Textur';
+  String get economyAiPromptSceneMeshGradient5 => 'Blühender Mesh-Verlauf, Pastell und feine Textur';
 
   @override
-  String get economyAiPromptSceneAbstract1 => 'Eine abstrakte Fraktalkomposition mit dynamischen Kurven';
+  String get economyAiPromptSceneAbstract1 => 'Abstrakte Fraktalkunst mit dynamischen Kurven';
 
   @override
-  String get economyAiPromptSceneAbstract2 => 'Geschichtete, fließende Formen mit moderner Tiefenwirkung';
+  String get economyAiPromptSceneAbstract2 => 'Geschichtete, fließende Formen mit moderner Tiefe';
 
   @override
   String get economyAiPromptSceneAbstract3 => 'Markante abstrakte Formen mit weichen Kanten';
 
   @override
-  String get economyAiPromptSceneAbstract4 => 'Eine surreale abstrakte Landschaft aus schwebenden geometrischen Formen';
+  String get economyAiPromptSceneAbstract4 => 'Surreale Landschaft aus schwebender Geometrie';
 
   @override
-  String get economyAiPromptSceneAbstract5 => 'Organische abstrakte Wellen mit filmischem Kontrast';
+  String get economyAiPromptSceneAbstract5 => 'Organische abstrakte Wellen, filmischer Kontrast';
 
   @override
   String get economyAiPromptSceneNature1 => 'Eine neblige Bergkette im Morgenlicht';
@@ -9487,7 +9487,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptSceneNature2 => 'Ein dichter Nadelwald mit Sonnenstrahlen';
 
   @override
-  String get economyAiPromptSceneNature3 => 'Eine dramatische Küstenklippe mit brechenden Wellen';
+  String get economyAiPromptSceneNature3 => 'Dramatische Küstenklippe mit Brandung';
 
   @override
   String get economyAiPromptSceneNature4 => 'Ein ruhiger Bergsee unter dem Abendhimmel';
@@ -9496,10 +9496,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptSceneNature5 => 'Eine Wüstenschlucht im warmen, goldenen Licht';
 
   @override
-  String get economyAiPromptLightingSoftAmbient => 'sanftes Umgebungslicht';
+  String get economyAiPromptLightingSoftAmbient => 'sanftes Ambientlicht';
 
   @override
-  String get economyAiPromptLightingCinematicRim => 'filmisches Konturlicht';
+  String get economyAiPromptLightingCinematicRim => 'filmisches Randlicht';
 
   @override
   String get economyAiPromptLightingGoldenHour => 'goldene Stunde';
@@ -9529,7 +9529,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptQualityHighDetail => 'detailreich';
 
   @override
-  String get economyAiPromptQualityCleanComposition => 'besonders klare Komposition';
+  String get economyAiPromptQualityCleanComposition => 'klare Komposition';
 
   @override
   String get economyAiPromptQualityCrispTextures => 'scharfe Texturen';
@@ -9538,10 +9538,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyAiPromptQualityBalancedContrast => 'ausgewogener Kontrast';
 
   @override
-  String get economyAiPromptQualityNaturalColors => 'leuchtende, aber natürliche Farben';
+  String get economyAiPromptQualityNaturalColors => 'kräftige, natürliche Farben';
 
   @override
-  String get economyAiPromptSuffix => 'Hintergrundbild im Hochformat fürs Smartphone, ohne Text';
+  String get economyAiPromptSuffix => 'Smartphone-Hintergrund hochkant, ohne Text';
 
   @override
   String economyAiPromptComposition(String scene, String lighting, String mood, String quality, String suffix) {
