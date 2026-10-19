@@ -3,7 +3,8 @@ import test from "node:test";
 import {createHash} from "node:crypto";
 import * as admin from "firebase-admin";
 import {retainUpload, deleteRetainedUpload, signOriginalDelivery, ownedAssetStorageEnabled, ownedThumbnailUrl, ownedThumbnail,
-  bindLegacyOwnedWall, bindOwnedWall, onOwnedWallWritten} from "../ownedAssetDelivery";
+  bindLegacyOwnedWall, bindOwnedWall, getOwnedWallDelivery, onOwnedWallWritten} from "../ownedAssetDelivery";
+import {migrateOwnedAssets, MigrationDeps} from "../scripts/migrateOwnedAssets";
 import {db} from "../common";
 import {installFakeDb} from "./fakeDb";
 
@@ -138,8 +139,27 @@ test("reviewed legacy binding serves retained PNG and signs pinned original duri
   t.mock.method(file, "delete", async (options: {ifGenerationMatch?: string}) => {
     assert.equal(options.ifGenerationMatch, "42"); deletes++;
   });
-  await bindLegacyOwnedWall({wallId: "wall", canonicalPath: "walls/doc", incarnation: 1000, incarnationNanos: time.nanoseconds,
-    originalUrl, thumbUrl, original: asset("photo.png"), thumb: asset("thumb_photo.png")});
+  const migrationWall = () => ({docPath: "walls/doc", incarnation: 1000, incarnationNanos: time.nanoseconds,
+    data: {...store.get("walls/doc")}});
+  const migrationOptions = {apply: true, allowReviewedLegacy: true, owner: "hash", repo: "walls"};
+  const migrationDeps: MigrationDeps = {
+    prove: async () => null,
+    fetchBytes: async () => png,
+    retain: async (input) => asset(input.path),
+    attach: async () => assert.fail("legacy migration must not fabricate receipts"),
+    bind: bindOwnedWall,
+    bindLegacy: bindLegacyOwnedWall,
+    ready: async () => getOwnedWallDelivery("wall").then(() => true, () => false),
+  };
+  assert.equal((await migrateOwnedAssets([migrationWall()], migrationOptions, migrationDeps))[0].status, "migrated");
+  for (const field of ["wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]) {
+    assert.equal(store.get("walls/doc")?.[field], "", `legacy binding redacts ${field}`);
+  }
+  assert.deepEqual(store.get("ownedAssets/wall")?.original, asset("photo.png"));
+  assert.deepEqual(store.get("ownedAssets/wall")?.thumb, asset("thumb_photo.png"));
+  assert.equal(store.get("ownedAssets/wall")?.originalUrl, originalUrl);
+  assert.equal(store.get("ownedAssets/wall")?.thumbUrl, thumbUrl);
+  assert.equal((await migrateOwnedAssets([migrationWall()], migrationOptions, migrationDeps))[0].status, "already-owned");
   const signed = await signOriginalDelivery("wall");
   assert.equal(signed.generation, "42");
   assert.equal(signed.url, "https://storage.example/pinned");
@@ -208,7 +228,24 @@ test("reviewed legacy binding serves retained PNG and signs pinned original duri
   store.set("githubUploads/private_twin", {repo: "walls", path: "photo.png", uid: "attacker", sourceKind: "owned"});
   await bindOwnedWall("modern");
   assert.equal(store.get("ownedAssets/modern")?.status, "ready");
+  for (const field of ["wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]) {
+    assert.equal(store.get("walls/modern")?.[field], "", `modern binding redacts ${field}`);
+  }
+  assert.deepEqual(store.get("ownedAssets/modern")?.original, asset("photo.png"));
+  assert.deepEqual(store.get("ownedAssets/modern")?.thumb, asset("thumb_photo.png"));
   assert.equal((await signOriginalDelivery("modern")).generation, "42");
+  const boundModern = {...store.get("walls/modern")};
+  await bindOwnedWall("modern");
+  assert.deepEqual(store.get("walls/modern"), boundModern, "repeat binding preserves redaction");
+  for (const [field, value] of Object.entries({wallpaper_path: "photo.png", wallpaper_sha: sha,
+    thumb_path: "thumb_photo.png", thumb_sha: sha})) {
+    store.set("walls/modern", {...boundModern, [field]: value});
+    await assert.rejects(signOriginalDelivery("modern"), /unavailable/, `reject public ${field}`);
+    status = 200;
+    await ownedThumbnail({path: "/modern"} as never, response as never);
+    assert.equal(status, 404, `thumbnail rejects public ${field}`);
+  }
+  store.set("walls/modern", boundModern);
   for (let index = 0; index < 6; index++) store.delete(`githubUploads/history_${index}`);
   store.delete("githubUploads/private_twin");
   const originalKey = `githubUploads/owned_file_${createHash("sha256").update(`walls\0photo.png\0${sha}`).digest("hex")}`;
@@ -220,14 +257,22 @@ test("reviewed legacy binding serves retained PNG and signs pinned original duri
   store.set(intentKey, {repo: "walls", path: "photo.png", blobSha: sha, status: "complete", uid: "legacy-migration",
     sourceKind: "owned", retainedAsset: privateAsset,
     response: {content: {path: "photo.png", sha, download_url: ""}}});
-  store.set("walls/private", {...store.get("walls/modern"), id: "private", wallpaper_url: "", wallpaper_thumb: thumbUrl});
+  store.set("walls/private", {...store.get("walls/modern"), id: "private", wallpaper_url: "", wallpaper_thumb: thumbUrl,
+    wallpaper_path: "photo.png", wallpaper_sha: sha, thumb_path: "thumb_photo.png", thumb_sha: sha});
   await bindOwnedWall("private");
   assert.deepEqual(store.get("ownedAssets/private")?.provenance, {kind: "owned", uid: "legacy-migration"});
-  store.set("walls/spoof", {...store.get("walls/private"), id: "spoof", email: "attacker@example.com", wallpaper_thumb: thumbUrl});
+  assert.deepEqual(store.get("ownedAssets/private")?.original, privateAsset);
+  for (const field of ["wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]) {
+    assert.equal(store.get("walls/private")?.[field], "", `private binding redacts ${field}`);
+  }
+  assert.equal((await signOriginalDelivery("private")).generation, "42");
+  store.set("walls/spoof", {...store.get("walls/private"), id: "spoof", email: "attacker@example.com", wallpaper_thumb: thumbUrl,
+    wallpaper_path: "photo.png", wallpaper_sha: sha, thumb_path: "thumb_photo.png", thumb_sha: sha});
   await bindOwnedWall("spoof");
   assert.equal(store.has("ownedAssets/spoof"), false);
   store.set(intentKey, {...store.get(intentKey), sourceKind: "github"});
-  store.set("walls/forged", {...store.get("walls/private"), id: "forged", wallpaper_thumb: thumbUrl});
+  store.set("walls/forged", {...store.get("walls/private"), id: "forged", wallpaper_thumb: thumbUrl,
+    wallpaper_path: "photo.png", wallpaper_sha: sha, thumb_path: "thumb_photo.png", thumb_sha: sha});
   await bindOwnedWall("forged");
   assert.equal(store.has("ownedAssets/forged"), false);
   t.mock.method(file, "getMetadata", async () => {

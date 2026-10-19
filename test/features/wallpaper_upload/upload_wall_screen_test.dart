@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -11,7 +12,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
-import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -22,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/wait_for_real_io.dart';
 
@@ -540,6 +541,51 @@ void main() {
       expect(_contrastRatio(titleColor, scaffoldBackground), greaterThanOrEqualTo(4.5));
       expect(titleColor, effectiveTheme.colorScheme.onSurface);
     }
+  });
+
+  testWidgets('cancel sends exact server source kinds independently of download URLs', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final backend = CoinsTestBackend();
+    final oldUser = app_state.prismUser;
+    await backend.install();
+    addTearDown(() async {
+      app_state.prismUser = oldUser;
+      await getIt.reset();
+    });
+    final deletedFiles = <Map<String, dynamic>>[];
+    final deletedFunctions = <String>[];
+    backend.onCall = (name, parameters) async {
+      deletedFunctions.add(name);
+      deletedFiles.add(parameters);
+      return <String, dynamic>{'ok': true};
+    };
+    await pumpRoutedUpload(
+      tester,
+      () => UploadWallRoute(
+        image: image,
+        prepareImageForTesting: () async {},
+        uploadFileForTesting: ({required isThumbnail}) async => GitHubContent.fromData(<String, dynamic>{
+          'sourceKind': isThumbnail ? 'github' : 'owned',
+          'content': <String, dynamic>{
+            'path': isThumbnail ? 'thumb.png' : 'private.png',
+            'sha': isThumbnail ? 'thumb-sha' : 'private-sha',
+            'download_url': isThumbnail ? null : '',
+          },
+        }),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.tap(find.text('Upload'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+    expect(deletedFiles.map((file) => file['sourceKind']), <String>['owned', 'github']);
+    expect(deletedFiles.map((file) => file['path']), <String>['private.png', 'thumb.png']);
+    expect(deletedFunctions, <String>['githubDeleteFile', 'githubDeleteFile']);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('shows a weekly quota result without retrying a save', (tester) async {

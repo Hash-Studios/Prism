@@ -6,6 +6,8 @@ GitHub source and gain an independently retained copy. The private
 `ownedAssets/{wall.id}` manifest binds exact object generations to a unique canonical
 wall and its creation time. Public wall records expose an owned thumbnail URL,
 `originalProtected: true`, `originalGeneration: <string>`, and `wallpaper_url: ''`.
+Binding also clears `wallpaper_path`, `wallpaper_sha`, `thumb_path` and `thumb_sha`.
+Delivery requires those fields to stay empty. Exact paths and SHAs remain server-only.
 Original delivery goes through server entitlement checks in #521 and a 120-second signed URL.
 An owned marker alone is not proof: delivery also checks the private manifest and wall incarnation.
 Thumbnails remain public, including pending submission thumbnails, as they already are
@@ -20,6 +22,18 @@ or `github`; an ambiguous request fails without deleting either. Private deletio
 a server-only `ownedUploadDeletions` tombstone outside the upload intent. Path reuse remains
 possible, but a deletion retry cannot fall through to public-source deletion. Pre-fix staging
 owned records in the GitHub namespace require explicit reconciliation, not automatic adoption.
+
+Upload responses include a server-selected `sourceKind` of `owned` or `github`.
+Clients keep each file's selector for staged cleanup. Legacy responses without a
+selector remain unspecified, so ambiguous deletions still fail closed.
+
+For a bound pending wall, cleanup sends `wallId`, `originalGeneration` and
+`assetRole` (`wallpaper` or `thumb`) to `githubDeleteFile`, not private paths.
+The server resolves the manifest and checks receipt ownership, the retained generation
+and the canonical wall incarnation before deletion. A deleted manifest remains usable
+for partial-cleanup retries. The client keeps the pending wall record until file
+cleanup succeeds, so a transient failure leaves a retry available. Existing per-file
+delete leases and thumbnail quota accounting remain authoritative.
 
 ## Operator prerequisites
 
