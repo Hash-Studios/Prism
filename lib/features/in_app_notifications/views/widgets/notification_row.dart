@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
-import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -74,14 +74,19 @@ class NotificationRow extends StatelessWidget {
       return;
     }
     final String route = (notification.route ?? notification.pageName).trim();
-    final PageRouteInfo? mappedRoute = await _routeMapper.fromRoute(
-      route: route,
-      wallId: notification.wallId,
-      profileIdentifier: notification.followerEmail,
-      sourceTag: 'notification.route_mapper',
+    await DeepLinkDispatcher.maybeOf(context.router)?.openActionLoader(
+      () => _routeMapper.actionFromRoute(
+        route: route,
+        wallId: notification.wallId,
+        profileIdentifier: notification.followerEmail,
+        sourceTag: 'notification.route_mapper',
+        fallbackToInbox: false,
+      ),
+      rawUri: route,
+      source: DeepLinkSourceValue.inApp,
+      targetType: NotificationRouteMapper.targetTypeForRoute(route),
+      hasPayload: route.isNotEmpty,
     );
-    if (!context.mounted) return;
-    context.router.navigate(mappedRoute ?? const NotificationRoute());
   }
 
   @override

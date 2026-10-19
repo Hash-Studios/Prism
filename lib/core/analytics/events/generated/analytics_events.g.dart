@@ -1497,8 +1497,9 @@ class DeepLinkReceivedEvent extends AnalyticsEvent {
 }
 
 class DeepLinkResolvedEvent extends AnalyticsEvent {
-  const DeepLinkResolvedEvent({required this.targetType, required this.result, this.reason});
+  const DeepLinkResolvedEvent({this.source, required this.targetType, required this.result, this.reason});
 
+  final DeepLinkSourceValue? source;
   final TargetTypeValue targetType;
   final EventResultValue result;
   final AnalyticsReasonValue? reason;
@@ -1509,6 +1510,7 @@ class DeepLinkResolvedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{
+      if (source != null) 'source': source!.wireValue,
       'target_type': targetType.wireValue,
       'result': result.wireValue,
       if (reason != null) 'reason': reason!.wireValue,
@@ -1517,8 +1519,9 @@ class DeepLinkResolvedEvent extends AnalyticsEvent {
 }
 
 class DeepLinkNavigationResultEvent extends AnalyticsEvent {
-  const DeepLinkNavigationResultEvent({required this.targetType, required this.result, this.reason});
+  const DeepLinkNavigationResultEvent({this.source, required this.targetType, required this.result, this.reason});
 
+  final DeepLinkSourceValue? source;
   final TargetTypeValue targetType;
   final EventResultValue result;
   final AnalyticsReasonValue? reason;
@@ -1529,6 +1532,7 @@ class DeepLinkNavigationResultEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{
+      if (source != null) 'source': source!.wireValue,
       'target_type': targetType.wireValue,
       'result': result.wireValue,
       if (reason != null) 'reason': reason!.wireValue,

@@ -168,6 +168,14 @@ void main() {
   }
 
   group('what the page says', () {
+    testWidgets('opening the page leaves the chest and coin balance untouched', (tester) async {
+      await pumpPage(tester);
+
+      expect(maxCosts, isEmpty);
+      expect(balance.value, 340);
+      expect(replies, isEmpty);
+    });
+
     testWidgets('a paid chest shows the price, what it costs and the way to open it free', (tester) async {
       await pumpPage(tester);
 

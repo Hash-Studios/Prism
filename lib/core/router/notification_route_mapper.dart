@@ -4,19 +4,37 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:auto_route/auto_route.dart';
 
 class NotificationRouteMapper {
   const NotificationRouteMapper();
 
   /// Set from app startup. Push taps record a scoreboard signal through this hook.
   static Future<void> Function(String kindWire)? onMeasuredTap;
+
+  /// Classifies metadata before asynchronous lookups, without claiming that resolution succeeded.
+  static TargetTypeValue targetTypeForRoute(String route) {
+    final String target = route.trim();
+    if (target.isEmpty) return TargetTypeValue.unknown;
+    final Uri? uri = Uri.tryParse(target);
+    return switch (target) {
+      'wall' || 'wall_of_the_day' => TargetTypeValue.share,
+      'follower' => TargetTypeValue.user,
+      'home' ||
+      'ai' ||
+      'streak_reminder' ||
+      'rewards' ||
+      'drops' ||
+      'announcement' ||
+      'content_report' => TargetTypeValue.screen,
+      _ => uri == null ? TargetTypeValue.unknown : DeepLinkNavigation.targetType(const DeepLinkParser().parse(uri)),
+    };
+  }
 
   /// The kind of a push payload, or null for pushes that the app does not measure.
   static PushKindValue? pushKindFor(Map<String, dynamic> data) {
@@ -48,16 +66,19 @@ class NotificationRouteMapper {
     if (onTap != null) unawaited(onTap(kind.wireValue));
   }
 
-  /// Maps a push payload to a route and records the tap. Inbox rows use [fromRoute], which does not record it.
-  ///
-  /// With [fallbackToInbox] (the default) the result is never null: a missing or unknown target opens the inbox and
-  /// shows a toast. Pass `false` to get null instead.
-  Future<PageRouteInfo?> fromPayload(
+  /// Adapts legacy push metadata to the same typed destinations used by URLs.
+  Future<DeepLinkActionEntity?> actionFromPayload(
     Map<String, dynamic> data, {
     required String sourceTag,
     bool fallbackToInbox = true,
   }) {
-    trackPushOpened(data);
+    final String rawUrl = data['url']?.toString().trim() ?? '';
+    final Uri? uri = Uri.tryParse(rawUrl);
+    if (uri != null && const DeepLinkNavigation().isPrismDeepLink(uri)) {
+      const DeepLinkParser parser = DeepLinkParser();
+      final DeepLinkActionEntity action = parser.parse(uri);
+      if (action is! UnknownIntent) return Future<DeepLinkActionEntity?>.value(action);
+    }
     final String route = data['route']?.toString().trim() ?? '';
     final String wallId = data['wall_id']?.toString().trim() ?? '';
     final String profileIdentifier = _firstPresent(data, const <String>[
@@ -68,7 +89,7 @@ class NotificationRouteMapper {
       'username',
       'user',
     ]);
-    return _map(
+    return _mapAction(
       route: route,
       wallId: wallId,
       profileIdentifier: profileIdentifier,
@@ -77,14 +98,14 @@ class NotificationRouteMapper {
     );
   }
 
-  Future<PageRouteInfo?> fromRoute({
+  Future<DeepLinkActionEntity?> actionFromRoute({
     required String route,
     String? wallId,
     String? profileIdentifier,
     required String sourceTag,
     bool fallbackToInbox = true,
   }) {
-    return _map(
+    return _mapAction(
       route: route.trim(),
       wallId: wallId?.trim() ?? '',
       profileIdentifier: profileIdentifier?.trim() ?? '',
@@ -93,16 +114,21 @@ class NotificationRouteMapper {
     );
   }
 
-  Future<PageRouteInfo?> _map({
+  Future<DeepLinkActionEntity?> _mapAction({
     required String route,
     required String wallId,
     required String profileIdentifier,
     required String sourceTag,
     required bool fallbackToInbox,
   }) async {
-    PageRouteInfo? mapped;
+    DeepLinkActionEntity? mapped;
     try {
-      mapped = await _resolve(route: route, wallId: wallId, profileIdentifier: profileIdentifier, sourceTag: sourceTag);
+      mapped = await _resolveAction(
+        route: route,
+        wallId: wallId,
+        profileIdentifier: profileIdentifier,
+        sourceTag: sourceTag,
+      );
     } catch (_) {
       mapped = null;
     }
@@ -112,56 +138,55 @@ class NotificationRouteMapper {
     if (route.isNotEmpty) {
       toasts.error('That item is no longer available');
     }
-    return const NotificationRoute();
+    return const PageLinkIntent(path: '/notifications', rawUri: '/notifications');
   }
 
-  Future<PageRouteInfo?> _resolve({
+  Future<DeepLinkActionEntity?> _resolveAction({
     required String route,
     required String wallId,
     required String profileIdentifier,
     required String sourceTag,
   }) async {
+    if (route.isEmpty) return null;
     final Uri? routeUri = Uri.tryParse(route);
-    if (routeUri != null && const DeepLinkParser().parse(routeUri) is SetupLinkIntent) {
-      toasts.error('Home screen setups are no longer available.');
-      return const HomeTabRoute();
-    }
+    final DeepLinkActionEntity? parsedAction = routeUri == null ? null : const DeepLinkParser().parse(routeUri);
+    if (parsedAction is SetupLinkIntent) return parsedAction;
 
     switch (route) {
       case 'wall':
-        return _mapWallRoute(wallId: wallId, sourceTag: sourceTag);
+        return _mapWallAction(wallId: wallId, sourceTag: sourceTag);
       case 'wall_of_the_day':
         if (wallId.isNotEmpty) {
-          final PageRouteInfo? wallRoute = await _mapWallRoute(wallId: wallId, sourceTag: '$sourceTag.wotd');
-          if (wallRoute != null) {
-            return wallRoute;
+          final DeepLinkActionEntity? wallAction = await _mapWallAction(wallId: wallId, sourceTag: '$sourceTag.wotd');
+          if (wallAction != null) {
+            return wallAction;
           }
         }
-        return const HomeTabRoute();
+        return const PageLinkIntent(path: '/dashboard/home', rawUri: '/dashboard/home');
       case 'home':
-        return const HomeTabRoute();
+        return const PageLinkIntent(path: '/dashboard/home', rawUri: '/dashboard/home');
       case 'ai':
-        return AiTabRoute();
+        return const PageLinkIntent(path: '/ai', rawUri: '/ai');
       case 'streak_reminder':
       case 'rewards':
-        return const RewardsTabRoute();
+        return const PageLinkIntent(path: '/dashboard/rewards', rawUri: '/dashboard/rewards');
       case 'drops':
-        return const DropsRoute();
+        return const ScreenLinkIntent(screen: DeepLinkScreen.drops, rawUri: '/drops');
       case 'follower':
         if (profileIdentifier.isNotEmpty) {
-          return ProfileRoute(profileIdentifier: profileIdentifier);
+          return UserLinkIntent(profileIdentifier: profileIdentifier, rawUri: route);
         }
-        return const NotificationRoute();
-      case 'announcement':
-        return const NotificationRoute();
-      case 'content_report':
-        return app_state.isAdminUser() ? AdminReviewRoute() : null;
-      default:
         return null;
+      case 'announcement':
+        return const PageLinkIntent(path: '/notifications', rawUri: '/notifications');
+      case 'content_report':
+        return app_state.isAdminUser() ? const PageLinkIntent(path: '/admin-review', rawUri: '/admin-review') : null;
+      default:
+        return parsedAction is UnknownIntent ? null : parsedAction;
     }
   }
 
-  Future<PageRouteInfo?> _mapWallRoute({required String wallId, required String sourceTag}) async {
+  Future<DeepLinkActionEntity?> _mapWallAction({required String wallId, required String sourceTag}) async {
     if (wallId.isEmpty) {
       return null;
     }
@@ -183,11 +208,12 @@ class NotificationRouteMapper {
     if (wallpaperUrl.isEmpty && thumbnailUrl.isEmpty) {
       return null;
     }
-    return WallpaperDetailRoute(
+    return ShareLinkIntent(
       wallId: id,
       source: source,
       thumbnailUrl: thumbnailUrl,
-      analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+      wallpaperUrl: wallpaperUrl,
+      rawUri: '/share/$id',
     );
   }
 }

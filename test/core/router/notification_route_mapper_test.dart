@@ -5,8 +5,10 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -46,29 +48,53 @@ void main() {
   });
 
   test('maps legacy setup notification routes to home and shows a toast', () async {
-    final route = await mapper.fromRoute(route: '/setup/legacy-id', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: '/setup/legacy-id', sourceTag: 'test');
     expect(route, isA<HomeTabRoute>());
     await Future<void>.delayed(Duration.zero);
     expect(toastMessages, <String>['Home screen setups are no longer available.']);
   });
 
   test('maps wall_of_the_day to home tab route', () async {
-    final route = await mapper.fromRoute(route: 'wall_of_the_day', sourceTag: 'test');
-    expect(route, isA<HomeTabRoute>());
+    final route = await mapper.routeForMetadata(route: 'wall_of_the_day', sourceTag: 'test');
+    expect(route, isA<DashboardRoute>().having((route) => route.initialChildren?.single, 'tab', isA<HomeTabRoute>()));
   });
 
   test('maps streak_reminder to streak tab route', () async {
-    final route = await mapper.fromRoute(route: 'streak_reminder', sourceTag: 'test');
-    expect(route, isA<RewardsTabRoute>());
+    final route = await mapper.routeForMetadata(route: 'streak_reminder', sourceTag: 'test');
+    expect(
+      route,
+      isA<DashboardRoute>().having((route) => route.initialChildren?.single, 'tab', isA<RewardsTabRoute>()),
+    );
   });
 
   test('maps rewards to the rewards tab and drops to the drops page', () async {
-    expect(await mapper.fromRoute(route: 'rewards', sourceTag: 'test'), isA<RewardsTabRoute>());
-    expect(await mapper.fromPayload(<String, dynamic>{'route': 'drops'}, sourceTag: 'test'), isA<DropsRoute>());
+    expect(
+      await mapper.routeForMetadata(route: 'rewards', sourceTag: 'test'),
+      isA<DashboardRoute>().having((route) => route.initialChildren?.single, 'tab', isA<RewardsTabRoute>()),
+    );
+    expect(await mapper.routeForPayload(<String, dynamic>{'route': 'drops'}, sourceTag: 'test'), isA<DropsRoute>());
+  });
+
+  test('a malformed push URL falls back to legacy route metadata', () async {
+    final route = await mapper.routeForPayload(<String, dynamic>{
+      'url': 'https://prismwalls.com/user/%FF',
+      'route': 'rewards',
+    }, sourceTag: 'test');
+    expect(
+      route,
+      isA<DashboardRoute>().having((route) => route.initialChildren?.single, 'tab', isA<RewardsTabRoute>()),
+    );
+  });
+
+  test('a malformed metadata route remains unresolved rather than resolving to not-found', () async {
+    expect(
+      await mapper.actionFromRoute(route: 'https://prismwalls.com/user/%FF', sourceTag: 'test', fallbackToInbox: false),
+      isNull,
+    );
   });
 
   test('maps follower to profile route when identifier is present', () async {
-    final route = await mapper.fromRoute(
+    final route = await mapper.routeForMetadata(
       route: 'follower',
       profileIdentifier: 'creator@example.com',
       sourceTag: 'test',
@@ -77,12 +103,12 @@ void main() {
   });
 
   test('maps follower to notification route when identifier is absent', () async {
-    final route = await mapper.fromRoute(route: 'follower', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'follower', sourceTag: 'test');
     expect(route, isA<NotificationRoute>());
   });
 
   test('maps follower payload to profile route using follower_email', () async {
-    final route = await mapper.fromPayload(<String, dynamic>{
+    final route = await mapper.routeForPayload(<String, dynamic>{
       'route': 'follower',
       'follower_email': 'user@example.com',
     }, sourceTag: 'test');
@@ -101,7 +127,7 @@ void main() {
   test('maps an approved wall to the wallpaper detail route', () async {
     firestore.docs[FirebaseCollections.walls] = <String, Map<String, dynamic>>{'w1': wall(review: true)};
 
-    final route = await mapper.fromRoute(route: 'wall', wallId: 'w1', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'wall', wallId: 'w1', sourceTag: 'test');
 
     expect(route, isA<WallpaperDetailRoute>());
     await Future<void>.delayed(Duration.zero);
@@ -111,7 +137,7 @@ void main() {
   test('an unapproved wall falls back to the inbox with a toast', () async {
     firestore.docs[FirebaseCollections.walls] = <String, Map<String, dynamic>>{'w1': wall(review: false)};
 
-    final route = await mapper.fromRoute(route: 'wall', wallId: 'w1', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'wall', wallId: 'w1', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
     await Future<void>.delayed(Duration.zero);
@@ -122,13 +148,16 @@ void main() {
     app_state.prismUser.email = adminEmails.first;
     firestore.docs[FirebaseCollections.walls] = <String, Map<String, dynamic>>{'w1': wall(review: false)};
 
-    final route = await mapper.fromRoute(route: 'wall', wallId: 'w1', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'wall', wallId: 'w1', sourceTag: 'test');
 
     expect(route, isA<WallpaperDetailRoute>());
   });
 
   test('a missing or deleted wall falls back to the inbox with a toast', () async {
-    final route = await mapper.fromPayload(<String, dynamic>{'route': 'wall', 'wall_id': 'gone'}, sourceTag: 'test');
+    final route = await mapper.routeForPayload(<String, dynamic>{
+      'route': 'wall',
+      'wall_id': 'gone',
+    }, sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
     await Future<void>.delayed(Duration.zero);
@@ -136,7 +165,7 @@ void main() {
   });
 
   test('a wall route without a wall id falls back to the inbox', () async {
-    final route = await mapper.fromRoute(route: 'wall', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'wall', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
     await Future<void>.delayed(Duration.zero);
@@ -147,7 +176,7 @@ void main() {
     getIt.unregister<FirestoreClient>();
     getIt.registerSingleton<FirestoreClient>(_ThrowingFirestoreClient());
 
-    final route = await mapper.fromRoute(route: 'wall', wallId: 'w1', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'wall', wallId: 'w1', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
     await Future<void>.delayed(Duration.zero);
@@ -157,13 +186,13 @@ void main() {
   test('maps content_report to the admin review route for an admin', () async {
     app_state.prismUser.email = adminEmails.first;
 
-    final route = await mapper.fromRoute(route: 'content_report', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'content_report', sourceTag: 'test');
 
     expect(route, isA<AdminReviewRoute>());
   });
 
   test('content_report falls back to the inbox for a non-admin', () async {
-    final route = await mapper.fromRoute(route: 'content_report', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'content_report', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
     await Future<void>.delayed(Duration.zero);
@@ -171,7 +200,7 @@ void main() {
   });
 
   test('an unknown route falls back to the inbox with a toast', () async {
-    final route = await mapper.fromRoute(route: 'totally_unknown', sourceTag: 'test');
+    final route = await mapper.routeForMetadata(route: 'totally_unknown', sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
     await Future<void>.delayed(Duration.zero);
@@ -179,7 +208,7 @@ void main() {
   });
 
   test('an empty route opens the inbox without a toast', () async {
-    final route = await mapper.fromPayload(const <String, dynamic>{}, sourceTag: 'test');
+    final route = await mapper.routeForPayload(const <String, dynamic>{}, sourceTag: 'test');
 
     expect(route, isA<NotificationRoute>());
     await Future<void>.delayed(Duration.zero);
@@ -187,8 +216,8 @@ void main() {
   });
 
   test('fallbackToInbox false keeps returning null for callers that handle it', () async {
-    final unknown = await mapper.fromRoute(route: 'totally_unknown', sourceTag: 'test', fallbackToInbox: false);
-    final missingWall = await mapper.fromRoute(
+    final unknown = await mapper.routeForMetadata(route: 'totally_unknown', sourceTag: 'test', fallbackToInbox: false);
+    final missingWall = await mapper.routeForMetadata(
       route: 'wall',
       wallId: 'gone',
       sourceTag: 'test',
@@ -248,32 +277,38 @@ void main() {
     });
 
     test('win-back opens the feed, AI, or Wall of the Day', () async {
-      final home = await mapper.fromPayload(<String, dynamic>{
+      final home = await mapper.routeForPayload(<String, dynamic>{
         'route': 'home',
         'push_kind': 'win_back',
       }, sourceTag: 'test');
-      final ai = await mapper.fromPayload(<String, dynamic>{'route': 'ai', 'push_kind': 'win_back'}, sourceTag: 'test');
-      final wall = await mapper.fromPayload(<String, dynamic>{
+      final ai = await mapper.routeForPayload(<String, dynamic>{
+        'route': 'ai',
+        'push_kind': 'win_back',
+      }, sourceTag: 'test');
+      final wall = await mapper.routeForPayload(<String, dynamic>{
         'route': 'wall_of_the_day',
         'push_kind': 'win_back',
       }, sourceTag: 'test');
 
-      expect(home, isA<HomeTabRoute>());
+      expect(home, isA<DashboardRoute>().having((route) => route.initialChildren?.single, 'tab', isA<HomeTabRoute>()));
       expect(ai, isA<AiTabRoute>());
-      expect(wall, isA<HomeTabRoute>());
+      expect(wall, isA<DashboardRoute>().having((route) => route.initialChildren?.single, 'tab', isA<HomeTabRoute>()));
       expect(openedKinds(), <PushKindValue?>[PushKindValue.winBack, PushKindValue.winBack, PushKindValue.winBack]);
     });
 
     test('a push tap records push_opened once with its kind', () async {
-      await mapper.fromPayload(<String, dynamic>{'route': 'streak_reminder'}, sourceTag: 'test');
-      await mapper.fromPayload(<String, dynamic>{'route': 'follower', 'profile_identifier': 'ana'}, sourceTag: 'test');
-      await mapper.fromPayload(<String, dynamic>{'route': 'wall_of_the_day'}, sourceTag: 'test');
+      await mapper.routeForPayload(<String, dynamic>{'route': 'streak_reminder'}, sourceTag: 'test');
+      await mapper.routeForPayload(<String, dynamic>{
+        'route': 'follower',
+        'profile_identifier': 'ana',
+      }, sourceTag: 'test');
+      await mapper.routeForPayload(<String, dynamic>{'route': 'wall_of_the_day'}, sourceTag: 'test');
 
       expect(openedKinds(), <PushKindValue?>[PushKindValue.streakReminder, PushKindValue.follower, PushKindValue.wotd]);
     });
 
     test('an inbox row does not count as a push tap', () async {
-      await mapper.fromRoute(route: 'streak_reminder', sourceTag: 'test');
+      await mapper.routeForMetadata(route: 'streak_reminder', sourceTag: 'test');
 
       expect(openedKinds(), isEmpty);
     });
@@ -309,5 +344,34 @@ class _ThrowingFirestoreClient extends FakeFirestoreClient {
     bool preferCacheFirst = false,
   }) {
     throw StateError('offline');
+  }
+}
+
+extension on NotificationRouteMapper {
+  Future<PageRouteInfo?> routeForMetadata({
+    required String route,
+    String? wallId,
+    String? profileIdentifier,
+    required String sourceTag,
+    bool fallbackToInbox = true,
+  }) async {
+    final action = await actionFromRoute(
+      route: route,
+      wallId: wallId,
+      profileIdentifier: profileIdentifier,
+      sourceTag: sourceTag,
+      fallbackToInbox: fallbackToInbox,
+    );
+    return action == null ? null : (await const DeepLinkNavigation().resolveAction(action)).route;
+  }
+
+  Future<PageRouteInfo?> routeForPayload(
+    Map<String, dynamic> data, {
+    required String sourceTag,
+    bool fallbackToInbox = true,
+  }) async {
+    trackPushOpened(data);
+    final action = await actionFromPayload(data, sourceTag: sourceTag, fallbackToInbox: fallbackToInbox);
+    return action == null ? null : (await const DeepLinkNavigation().resolveAction(action)).route;
   }
 }

@@ -22,6 +22,9 @@ class _RecordingMessaging extends FakeFirebaseMessaging {
   final List<String> unsubscribed = <String>[];
 
   @override
+  Future<String?> getAPNSToken() async => 'apns';
+
+  @override
   Future<void> subscribeToTopic(String topic) async => subscribed.add(topic);
 
   @override

@@ -13,6 +13,7 @@ import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -32,8 +33,10 @@ const int _sampleWidth = 32;
 
 /// Full-screen preview of the wallpaper under a lock screen clock or a home screen dock.
 /// The image is shown as it will be set. The clock text is black or white, whichever reads on the top third.
+@RoutePage(name: 'ClockPreviewRoute')
 class ClockOverlay extends StatefulWidget {
   const ClockOverlay({
+    super.key,
     required this.link,
     required this.file,
     this.wallpaperId,

@@ -226,6 +226,105 @@ class BlockedAccountsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [ClockOverlay]
+class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
+  ClockPreviewRoute({
+    Key? key,
+    required String link,
+    required bool file,
+    String? wallpaperId,
+    WallpaperSource? wallpaperSource,
+    String? thumbnailUrl,
+    Color? tint,
+    List<PageRouteInfo>? children,
+  }) : super(
+         ClockPreviewRoute.name,
+         args: ClockPreviewRouteArgs(
+           key: key,
+           link: link,
+           file: file,
+           wallpaperId: wallpaperId,
+           wallpaperSource: wallpaperSource,
+           thumbnailUrl: thumbnailUrl,
+           tint: tint,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'ClockPreviewRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<ClockPreviewRouteArgs>();
+      return ClockOverlay(
+        key: args.key,
+        link: args.link,
+        file: args.file,
+        wallpaperId: args.wallpaperId,
+        wallpaperSource: args.wallpaperSource,
+        thumbnailUrl: args.thumbnailUrl,
+        tint: args.tint,
+      );
+    },
+  );
+}
+
+class ClockPreviewRouteArgs {
+  const ClockPreviewRouteArgs({
+    this.key,
+    required this.link,
+    required this.file,
+    this.wallpaperId,
+    this.wallpaperSource,
+    this.thumbnailUrl,
+    this.tint,
+  });
+
+  final Key? key;
+
+  final String link;
+
+  final bool file;
+
+  final String? wallpaperId;
+
+  final WallpaperSource? wallpaperSource;
+
+  final String? thumbnailUrl;
+
+  final Color? tint;
+
+  @override
+  String toString() {
+    return 'ClockPreviewRouteArgs{key: $key, link: $link, file: $file, wallpaperId: $wallpaperId, wallpaperSource: $wallpaperSource, thumbnailUrl: $thumbnailUrl, tint: $tint}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ClockPreviewRouteArgs) return false;
+    return key == other.key &&
+        link == other.link &&
+        file == other.file &&
+        wallpaperId == other.wallpaperId &&
+        wallpaperSource == other.wallpaperSource &&
+        thumbnailUrl == other.thumbnailUrl &&
+        tint == other.tint;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      link.hashCode ^
+      file.hashCode ^
+      wallpaperId.hashCode ^
+      wallpaperSource.hashCode ^
+      thumbnailUrl.hashCode ^
+      tint.hashCode;
+}
+
+/// generated route for
 /// [CoinHistoryPage]
 class CoinHistoryRoute extends PageRouteInfo<void> {
   const CoinHistoryRoute({List<PageRouteInfo>? children})
@@ -311,6 +410,103 @@ class CollectionViewRouteArgs {
 }
 
 /// generated route for
+/// [DailyChestPage]
+class DailyChestRoute extends PageRouteInfo<DailyChestRouteArgs> {
+  DailyChestRoute({
+    Key? key,
+    OpenChestFunction? open,
+    ValueListenable<QuestState?>? quests,
+    ValueListenable<int>? balance,
+    Future<void> Function()? refresh,
+    DateTime Function()? now,
+    VoidCallback? onOpenShop,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DailyChestRoute.name,
+         args: DailyChestRouteArgs(
+           key: key,
+           open: open,
+           quests: quests,
+           balance: balance,
+           refresh: refresh,
+           now: now,
+           onOpenShop: onOpenShop,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'DailyChestRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DailyChestRouteArgs>(
+        orElse: () => const DailyChestRouteArgs(),
+      );
+      return DailyChestPage(
+        key: args.key,
+        open: args.open,
+        quests: args.quests,
+        balance: args.balance,
+        refresh: args.refresh,
+        now: args.now,
+        onOpenShop: args.onOpenShop,
+      );
+    },
+  );
+}
+
+class DailyChestRouteArgs {
+  const DailyChestRouteArgs({
+    this.key,
+    this.open,
+    this.quests,
+    this.balance,
+    this.refresh,
+    this.now,
+    this.onOpenShop,
+  });
+
+  final Key? key;
+
+  final OpenChestFunction? open;
+
+  final ValueListenable<QuestState?>? quests;
+
+  final ValueListenable<int>? balance;
+
+  final Future<void> Function()? refresh;
+
+  final DateTime Function()? now;
+
+  final VoidCallback? onOpenShop;
+
+  @override
+  String toString() {
+    return 'DailyChestRouteArgs{key: $key, open: $open, quests: $quests, balance: $balance, refresh: $refresh, now: $now, onOpenShop: $onOpenShop}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DailyChestRouteArgs) return false;
+    return key == other.key &&
+        open == other.open &&
+        quests == other.quests &&
+        balance == other.balance &&
+        onOpenShop == other.onOpenShop;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      open.hashCode ^
+      quests.hashCode ^
+      balance.hashCode ^
+      onOpenShop.hashCode;
+}
+
+/// generated route for
 /// [DashboardPage]
 class DashboardRoute extends PageRouteInfo<void> {
   const DashboardRoute({List<PageRouteInfo>? children})
@@ -328,18 +524,101 @@ class DashboardRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [DebugPanelPage]
-class DebugPanelRoute extends PageRouteInfo<void> {
-  const DebugPanelRoute({List<PageRouteInfo>? children})
-    : super(DebugPanelRoute.name, initialChildren: children);
+class DebugPanelRoute extends PageRouteInfo<DebugPanelRouteArgs> {
+  DebugPanelRoute({
+    Key? key,
+    String tab = 'logs',
+    List<PageRouteInfo>? children,
+  }) : super(
+         DebugPanelRoute.name,
+         args: DebugPanelRouteArgs(key: key, tab: tab),
+         rawQueryParams: {'tab': tab},
+         initialChildren: children,
+       );
 
   static const String name = 'DebugPanelRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const DebugPanelPage();
+      final queryParams = data.queryParams;
+      final args = data.argsAs<DebugPanelRouteArgs>(
+        orElse: () =>
+            DebugPanelRouteArgs(tab: queryParams.getString('tab', 'logs')),
+      );
+      return DebugPanelPage(key: args.key, tab: args.tab);
     },
   );
+}
+
+class DebugPanelRouteArgs {
+  const DebugPanelRouteArgs({this.key, this.tab = 'logs'});
+
+  final Key? key;
+
+  final String tab;
+
+  @override
+  String toString() {
+    return 'DebugPanelRouteArgs{key: $key, tab: $tab}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DebugPanelRouteArgs) return false;
+    return key == other.key && tab == other.tab;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ tab.hashCode;
+}
+
+/// generated route for
+/// [DeepLinkInputPage]
+class DeepLinkInputRoute extends PageRouteInfo<DeepLinkInputRouteArgs> {
+  DeepLinkInputRoute({
+    Key? key,
+    required DeepLinkInputWorkflow workflow,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DeepLinkInputRoute.name,
+         args: DeepLinkInputRouteArgs(key: key, workflow: workflow),
+         initialChildren: children,
+       );
+
+  static const String name = 'DeepLinkInputRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DeepLinkInputRouteArgs>();
+      return DeepLinkInputPage(key: args.key, workflow: args.workflow);
+    },
+  );
+}
+
+class DeepLinkInputRouteArgs {
+  const DeepLinkInputRouteArgs({this.key, required this.workflow});
+
+  final Key? key;
+
+  final DeepLinkInputWorkflow workflow;
+
+  @override
+  String toString() {
+    return 'DeepLinkInputRouteArgs{key: $key, workflow: $workflow}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DeepLinkInputRouteArgs) return false;
+    return key == other.key && workflow == other.workflow;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ workflow.hashCode;
 }
 
 /// generated route for
@@ -482,6 +761,85 @@ class DropDetailRouteArgs {
 
   @override
   int get hashCode => key.hashCode ^ weekKey.hashCode;
+}
+
+/// generated route for
+/// [DropPreviewRoutePage]
+class DropPreviewRoute extends PageRouteInfo<DropPreviewRouteArgs> {
+  DropPreviewRoute({
+    Key? key,
+    required String weekKey,
+    required String wallId,
+    DropsBloc? bloc,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DropPreviewRoute.name,
+         args: DropPreviewRouteArgs(
+           key: key,
+           weekKey: weekKey,
+           wallId: wallId,
+           bloc: bloc,
+         ),
+         rawPathParams: {'weekKey': weekKey, 'wallId': wallId},
+         initialChildren: children,
+       );
+
+  static const String name = 'DropPreviewRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<DropPreviewRouteArgs>(
+        orElse: () => DropPreviewRouteArgs(
+          weekKey: pathParams.getString('weekKey'),
+          wallId: pathParams.getString('wallId'),
+        ),
+      );
+      return DropPreviewRoutePage(
+        key: args.key,
+        weekKey: args.weekKey,
+        wallId: args.wallId,
+        bloc: args.bloc,
+      );
+    },
+  );
+}
+
+class DropPreviewRouteArgs {
+  const DropPreviewRouteArgs({
+    this.key,
+    required this.weekKey,
+    required this.wallId,
+    this.bloc,
+  });
+
+  final Key? key;
+
+  final String weekKey;
+
+  final String wallId;
+
+  final DropsBloc? bloc;
+
+  @override
+  String toString() {
+    return 'DropPreviewRouteArgs{key: $key, weekKey: $weekKey, wallId: $wallId, bloc: $bloc}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DropPreviewRouteArgs) return false;
+    return key == other.key &&
+        weekKey == other.weekKey &&
+        wallId == other.wallId &&
+        bloc == other.bloc;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ weekKey.hashCode ^ wallId.hashCode ^ bloc.hashCode;
 }
 
 /// generated route for
@@ -698,6 +1056,53 @@ class FollowingListRouteArgs {
   @override
   int get hashCode =>
       key.hashCode ^ const ListEquality<String>().hash(following);
+}
+
+/// generated route for
+/// [FullScreenImageView]
+class FullScreenImageRoute extends PageRouteInfo<FullScreenImageRouteArgs> {
+  FullScreenImageRoute({
+    Key? key,
+    required String imageUrl,
+    List<PageRouteInfo>? children,
+  }) : super(
+         FullScreenImageRoute.name,
+         args: FullScreenImageRouteArgs(key: key, imageUrl: imageUrl),
+         initialChildren: children,
+       );
+
+  static const String name = 'FullScreenImageRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<FullScreenImageRouteArgs>();
+      return FullScreenImageView(key: args.key, imageUrl: args.imageUrl);
+    },
+  );
+}
+
+class FullScreenImageRouteArgs {
+  const FullScreenImageRouteArgs({this.key, required this.imageUrl});
+
+  final Key? key;
+
+  final String imageUrl;
+
+  @override
+  String toString() {
+    return 'FullScreenImageRouteArgs{key: $key, imageUrl: $imageUrl}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! FullScreenImageRouteArgs) return false;
+    return key == other.key && imageUrl == other.imageUrl;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ imageUrl.hashCode;
 }
 
 /// generated route for
@@ -947,6 +1352,22 @@ class OnboardingV2ShellRouteArgs {
 }
 
 /// generated route for
+/// [PremiumPage]
+class PremiumRoute extends PageRouteInfo<void> {
+  const PremiumRoute({List<PageRouteInfo>? children})
+    : super(PremiumRoute.name, initialChildren: children);
+
+  static const String name = 'PremiumRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const PremiumPage();
+    },
+  );
+}
+
+/// generated route for
 /// [ProfileScreen]
 class ProfileRoute extends PageRouteInfo<ProfileRouteArgs> {
   ProfileRoute({
@@ -1016,6 +1437,79 @@ class QuickTileSettingsRoute extends PageRouteInfo<void> {
       return const QuickTileSettingsScreen();
     },
   );
+}
+
+/// generated route for
+/// [ReviewPhotoPreview]
+class ReviewPhotoPreviewRoute
+    extends PageRouteInfo<ReviewPhotoPreviewRouteArgs> {
+  ReviewPhotoPreviewRoute({
+    Key? key,
+    required String url,
+    required String thumbUrl,
+    bool file = false,
+    List<PageRouteInfo>? children,
+  }) : super(
+         ReviewPhotoPreviewRoute.name,
+         args: ReviewPhotoPreviewRouteArgs(
+           key: key,
+           url: url,
+           thumbUrl: thumbUrl,
+           file: file,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'ReviewPhotoPreviewRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<ReviewPhotoPreviewRouteArgs>();
+      return ReviewPhotoPreview(
+        key: args.key,
+        url: args.url,
+        thumbUrl: args.thumbUrl,
+        file: args.file,
+      );
+    },
+  );
+}
+
+class ReviewPhotoPreviewRouteArgs {
+  const ReviewPhotoPreviewRouteArgs({
+    this.key,
+    required this.url,
+    required this.thumbUrl,
+    this.file = false,
+  });
+
+  final Key? key;
+
+  final String url;
+
+  final String thumbUrl;
+
+  final bool file;
+
+  @override
+  String toString() {
+    return 'ReviewPhotoPreviewRouteArgs{key: $key, url: $url, thumbUrl: $thumbUrl, file: $file}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ReviewPhotoPreviewRouteArgs) return false;
+    return key == other.key &&
+        url == other.url &&
+        thumbUrl == other.thumbUrl &&
+        file == other.file;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ url.hashCode ^ thumbUrl.hashCode ^ file.hashCode;
 }
 
 /// generated route for
@@ -1194,6 +1688,75 @@ class ShopRoute extends PageRouteInfo<void> {
       return const ShopPage();
     },
   );
+}
+
+/// generated route for
+/// [SpinWheelPage]
+class SpinWheelRoute extends PageRouteInfo<SpinWheelRouteArgs> {
+  SpinWheelRoute({
+    Key? key,
+    SpinFunction? spin,
+    ValueListenable<SpinWheelStatus>? status,
+    ValueListenable<int>? balance,
+    List<PageRouteInfo>? children,
+  }) : super(
+         SpinWheelRoute.name,
+         args: SpinWheelRouteArgs(
+           key: key,
+           spin: spin,
+           status: status,
+           balance: balance,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'SpinWheelRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<SpinWheelRouteArgs>(
+        orElse: () => const SpinWheelRouteArgs(),
+      );
+      return SpinWheelPage(
+        key: args.key,
+        spin: args.spin,
+        status: args.status,
+        balance: args.balance,
+      );
+    },
+  );
+}
+
+class SpinWheelRouteArgs {
+  const SpinWheelRouteArgs({this.key, this.spin, this.status, this.balance});
+
+  final Key? key;
+
+  final SpinFunction? spin;
+
+  final ValueListenable<SpinWheelStatus>? status;
+
+  final ValueListenable<int>? balance;
+
+  @override
+  String toString() {
+    return 'SpinWheelRouteArgs{key: $key, spin: $spin, status: $status, balance: $balance}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! SpinWheelRouteArgs) return false;
+    return key == other.key &&
+        spin == other.spin &&
+        status == other.status &&
+        balance == other.balance;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ spin.hashCode ^ status.hashCode ^ balance.hashCode;
 }
 
 /// generated route for

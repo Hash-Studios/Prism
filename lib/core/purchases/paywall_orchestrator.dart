@@ -68,14 +68,18 @@ class PaywallOrchestrator {
   /// unless the platform allows guest browsing (iOS 5.1.1(v): purchases must
   /// not require an account). Android has no guest path, so signed-out users
   /// there always see the sign-in prompt.
-  Future<void> presentOrRequireSignIn(BuildContext context, {required String placement, required String source}) async {
+  Future<PaywallResultValue?> presentOrRequireSignIn(
+    BuildContext context, {
+    required String placement,
+    required String source,
+  }) async {
     if (app_state.prismUser.loggedIn || Platform.isIOS) {
-      await present(placement: placement, source: source);
-      return;
+      return present(placement: placement, source: source);
     }
     googleSignInPopUp(context, () {
       present(placement: placement, source: source);
     });
+    return null;
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell({required String source}) async {

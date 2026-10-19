@@ -555,6 +555,14 @@ void main() {
   });
 
   group('the page', () {
+    testWidgets('opening the page does not spin or spend coins', (tester) async {
+      await pumpPage(tester);
+
+      expect(maxCosts, isEmpty);
+      expect(balance.value, _startBalance);
+      expect(replies, isEmpty);
+    });
+
     testWidgets('has a close button with a tooltip that leaves the route', (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3;
