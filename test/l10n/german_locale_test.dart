@@ -1,8 +1,14 @@
+import 'dart:math';
+
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/data/categories/category_definition.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
+import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/upload_preview_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -141,6 +147,30 @@ void main() {
     expect(WallpaperSourceX.fromWire('wall_of_the_day'), WallpaperSource.prism);
     expect(WallpaperSourceX.fromWire('downloads'), WallpaperSource.downloaded);
     expect(WallpaperSource.prism.wireValue, 'prism');
+  });
+
+  test('AI examples and upload sizes use German at their presentation boundaries', () async {
+    final AppLocalizations de = await loadAppLocalizations(const Locale('de'));
+    final AppLocalizations en = await loadAppLocalizations(const Locale('en'));
+
+    expect(
+      AiPromptPools.sceneIdea(de, AiStylePreset.nature, 0),
+      'Eine neblige Bergkette im Morgenlicht, Hintergrundbild im Hochformat fürs Smartphone, ohne Text',
+    );
+    for (final AiStylePreset style in AiStylePreset.values) {
+      final List<String> scenes = AiPromptPools.scenesByStyle(de, style);
+      final List<String> onboarding = OnboardingV2Config.aiOnboardingPrompts(de, style);
+      expect(scenes, hasLength(5));
+      expect(onboarding, hasLength(5));
+      expect(scenes.toSet().intersection(AiPromptPools.scenesByStyle(en, style).toSet()), isEmpty);
+      expect(onboarding.toSet().intersection(OnboardingV2Config.aiOnboardingPrompts(en, style).toSet()), isEmpty);
+      final String prompt = AiPromptPools.randomPrompt(de, style, Random(0));
+      expect(prompt, contains('Hintergrundbild im Hochformat fürs Smartphone, ohne Text'));
+      expect(prompt, isNot(contains('lighting')));
+      expect(prompt, isNot(contains('mood')));
+    }
+    expect(formatFileSize('12.50MB', de.localeName), '12,50 MB');
+    expect(de.coreSignInFeatureTitle(de.coreSignInCreatorSearchFeature), 'Melde dich für „Suche nach Kreativen“ an');
   });
 
   testWidgets('PrismButton keeps a long German action reachable at 320px and 2x text', (WidgetTester tester) async {

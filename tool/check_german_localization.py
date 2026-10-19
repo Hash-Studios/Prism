@@ -147,6 +147,7 @@ UNCHANGED_ENGLISH_ALLOWLIST = {
     'economyCreatorMilestoneProgress': '{label}: {current} / {target}',
     'economyCreatorWeekRange': '{start} – {end} UTC',
     'economyDownloadCost': '{label} · {cost}',
+    'economyAiPromptSceneOnly': '{scene}, {suffix}',
     'economyOddsTierSemantics': '{tier}, {odds}',
     'economyRankRewardMilestone': '{rank} · {xp} XP\n{reward}',
     'economyShopItemSemantics': '{name}, {status}',
