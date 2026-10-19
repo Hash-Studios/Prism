@@ -350,11 +350,13 @@ class _DownloadButtonState extends State<DownloadButton> {
           logger.w('Could not resolve bundled starter wallpaper', error: error, stackTrace: stackTrace);
           _track(const DownloadResultEvent(result: 'failed', reason: 'starter_source_failed', stage: 'prepare'));
           toasts.error("Couldn't download! Please retry.");
+          unawaited(RatePromptService.instance.recordFailure());
           return;
         }
         if (starter == null) {
           _track(const DownloadResultEvent(result: 'failed', reason: 'starter_source_unavailable', stage: 'prepare'));
           toasts.error("Couldn't download! Please retry.");
+          unawaited(RatePromptService.instance.recordFailure());
           return;
         }
         if (!_ownerStillMatches(tap)) {
@@ -717,6 +719,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           if (mounted) showPhotosPermissionDenied(context);
         } else {
           toasts.error(result.message ?? "Couldn't download! Please retry.");
+          unawaited(RatePromptService.instance.recordFailure());
         }
         return false;
       }
@@ -729,11 +732,13 @@ class _DownloadButtonState extends State<DownloadButton> {
         logger.e('Download failed', error: e);
       }
       toasts.error("Couldn't download! Please retry.");
+      unawaited(RatePromptService.instance.recordFailure());
       return false;
     } catch (e, stackTrace) {
       _failureReason = 'unexpected';
       logger.e('Unexpected download failure', error: e, stackTrace: stackTrace);
       toasts.error('Something went wrong!');
+      unawaited(RatePromptService.instance.recordFailure());
       return false;
     }
 
@@ -811,7 +816,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
     if (mounted) {
       try {
-        unawaited(RatePromptService.instance.maybePrompt(context, RatePromptTrigger.download));
+        unawaited(RatePromptService.instance.maybePrompt(RatePromptTrigger.download));
       } catch (e, stackTrace) {
         logger.w('Rate prompt after download failed', error: e, stackTrace: stackTrace);
       }
