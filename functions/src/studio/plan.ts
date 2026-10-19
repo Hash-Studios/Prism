@@ -1,5 +1,7 @@
 import type {Rng} from "./ids";
-import {STUDIO_COMPOSITION, type StudioPalette, type StudioSeries, type StudioSubject} from "./series";
+import {
+  STUDIO_COMPOSITION, STUDIO_DEPTH_COMPOSITION, type StudioPalette, type StudioSeries, type StudioSubject,
+} from "./series";
 
 export const STUDIO_TITLE_MAX_LENGTH = 60;
 export const STUDIO_TAG_MAX_LENGTH = 24;
@@ -69,7 +71,7 @@ export function studioTitle(subject: StudioSubject, palette: StudioPalette): str
 }
 
 export function studioPrompt(series: StudioSeries, subject: StudioSubject, palette: StudioPalette): string {
-  return `${subject.prompt}, ${palette.prompt}. ${series.style} ${STUDIO_COMPOSITION}`;
+  return `${subject.prompt}, ${palette.prompt}. ${series.style} ${series.depth ? STUDIO_DEPTH_COMPOSITION : STUDIO_COMPOSITION}`;
 }
 
 /**

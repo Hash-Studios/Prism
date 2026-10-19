@@ -42,11 +42,11 @@ test("the catalog fills ten candidates every day under the cooldown, for 120 day
   }
 });
 
-test("equal weights spread ten candidates 4/3/3, with no subject twice and at most two per category", () => {
+test("equal weights spread ten candidates 3/3/2/2, with no subject twice and at most two per category", () => {
   for (let seed = 1; seed <= 50; seed++) {
     const items = plan({rng: seededRng(seed)});
     assert.equal(items.length, 10);
-    assert.deepEqual([...countBy(items, (i) => i.seriesId).values()].sort(), [3, 3, 4]);
+    assert.deepEqual([...countBy(items, (i) => i.seriesId).values()].sort(), [2, 2, 3, 3]);
     assert.equal(new Set(items.map((i) => i.subjectId)).size, 10);
     for (const n of countBy(items, (i) => i.category).values()) assert.ok(n <= 2, `seed ${seed}`);
   }
@@ -55,7 +55,7 @@ test("equal weights spread ten candidates 4/3/3, with no subject twice and at mo
 test("weights move the slots and weight 0 leaves a series out", () => {
   const weighted = plan({weights: {"after-dark": 3}});
   assert.deepEqual(Object.fromEntries(countBy(weighted, (i) => i.seriesId)),
-    {"after-dark": 6, "quiet-architecture": 2, "paper-worlds": 2});
+    {"after-dark": 5, "quiet-architecture": 2, "paper-worlds": 1, "depth-effect": 2});
   const without = plan({weights: {"after-dark": 0}});
   assert.equal(without.length, 10);
   assert.ok(without.every((i) => i.seriesId !== "after-dark"));

@@ -31,16 +31,31 @@ export interface StudioSeries {
   style: string;
   subjects: StudioSubject[];
   palettes: StudioPalette[];
+  /**
+   * Made for the iOS Lock Screen Depth Effect: prompts use STUDIO_DEPTH_COMPOSITION, and a candidate passes only when
+   * the depth check gives tier "auto" or "menu".
+   */
+  depth?: boolean;
 }
 
 export const STUDIO_SUBJECT_COOLDOWN_DAYS = 21;
 
-/** Sent with every prompt. Keeps the clock area and the dock calm and keeps text and people out. */
+/** Sent with every prompt of a series without `depth`. Keeps the clock area and the dock calm and keeps text and people out. */
 export const STUDIO_COMPOSITION =
   "Vertical phone wallpaper, full bleed. The main subject sits in the middle third of the frame. " +
   "The top quarter and the bottom sixth are calm and low in detail, so a lock screen clock and app icons stay " +
   "readable. Crisp, clean detail, no clutter. The image contains no text, no letters, no numbers, no signature, " +
   "no watermark, no logo and no people.";
+
+/**
+ * Sent instead of STUDIO_COMPOSITION with a depth series. The iOS clock spans about 22% to 31% down the screen, and the
+ * Depth Effect needs the subject to touch it from below while the clock top stays clear.
+ */
+export const STUDIO_DEPTH_COMPOSITION =
+  "Vertical phone wallpaper, full bleed. The top of the subject (the top of the head, or the peak) sits between 24% " +
+  "and 30% down from the top of the frame, centred. The subject fills the frame below that line to the bottom edge. The area above it " +
+  "is calm open sky with low detail and nothing else in it. Crisp, clean detail, no clutter. The image contains no " +
+  "text, no letters, no numbers, no signature, no watermark and no logo.";
 
 export const STUDIO_SERIES: StudioSeries[] = [
   {
@@ -338,6 +353,32 @@ export const STUDIO_SERIES: StudioSeries[] = [
       {id: "lilac", name: "Lilac", prompt: "lilac, lavender and soft pink palette", tags: ["purple"]},
       {id: "midnight", name: "Midnight", prompt: "midnight blue and indigo with tiny warm lights", tags: ["blue", "night"]},
       {id: "autumn", name: "Autumn", prompt: "rust, mustard and burnt orange autumn palette", tags: ["autumn"]},
+    ],
+  },
+  {
+    id: "depth-effect",
+    name: "Depth Effect",
+    category: "AI Art",
+    tags: ["depth effect", "lock screen"],
+    depth: true,
+    style:
+      "Cinematic photograph look. One large subject with a crisp, clean outline stands out against a wide open sky, " +
+      "soft natural light, smooth sky gradient, calm and bold.",
+    subjects: [
+      {id: "sky-astronaut", title: "Astronaut", prompt: "an astronaut in a plain white suit with no patches or flags, seen from the chest up, helmet off, looking slightly to the side", tags: ["astronaut", "portrait"]},
+      {id: "sky-hiker", title: "Summit Hiker", prompt: "a hiker in a plain hooded jacket, seen from the chest up, looking out over the view", tags: ["hiker", "portrait"]},
+      {id: "sky-cat", title: "Sky Cat", prompt: "a fluffy cat seen from the chest up, sitting tall with its ears up, looking ahead", tags: ["cat", "pet"], category: "Nature"},
+      {id: "sky-dog", title: "Good Dog", prompt: "a golden retriever seen from the chest up, ears soft, looking ahead", tags: ["dog", "pet"], category: "Nature"},
+      {id: "sky-peak", title: "Lone Peak", prompt: "a single sharp snow-capped mountain peak rising from the bottom of the frame", tags: ["mountain", "peak"], category: "Landscape"},
+      {id: "sky-tower", title: "Sky Tower", prompt: "a slender plain stone tower rising from the bottom of the frame, its rounded top against the sky", tags: ["tower", "sky"], category: "Architecture"},
+    ],
+    palettes: [
+      {id: "golden-hour", name: "Golden Hour", prompt: "warm golden hour light under a clear amber sky", tags: ["warm"]},
+      {id: "clear-blue", name: "Clear Blue", prompt: "bright daylight under a deep clear blue sky", tags: ["blue"]},
+      {id: "pastel-dawn", name: "Pastel Dawn", prompt: "soft dawn light under a pale peach and lilac sky", tags: ["pastel"]},
+      {id: "violet-dusk", name: "Violet Dusk", prompt: "dusk light under a smooth violet and rose sky", tags: ["purple"]},
+      {id: "silver-haze", name: "Silver Haze", prompt: "soft diffuse light under a pale silver haze sky", tags: ["grey"]},
+      {id: "teal-evening", name: "Teal Evening", prompt: "cool evening light under a smooth teal sky", tags: ["teal"]},
     ],
   },
 ];

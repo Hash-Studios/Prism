@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import sharp from "sharp";
 import {
+  depthCheck,
   duplicateCheck,
   imageSignature,
   likelihoodRank,
@@ -177,4 +178,38 @@ test("runGates rejects bytes that do not decode without calling Vision", async (
   const truncated = (await flatPng(1440, 3200)).subarray(0, 200);
   assert.deepEqual((await runGates(truncated, {annotate: async () => clean, knownSignatures: async () => []})).reasons,
     ["undecodable"]);
+});
+
+test("depthCheck passes auto and menu and rejects none as depth", () => {
+  const depth = (tier: "auto" | "menu" | "none") => ({tier, kind: "person" as const, top: 0.2, v: 1, by: "detector" as const});
+  assert.deepEqual(depthCheck(depth("auto")), {reasons: [], details: {tier: "auto", kind: "person", top: 0.2}});
+  assert.deepEqual(depthCheck(depth("menu")).reasons, []);
+  assert.deepEqual(depthCheck(depth("none")).reasons, ["depth"]);
+});
+
+test("runGates sends the depth check the same JPEG as Vision and adds its reason", async () => {
+  const sent: Buffer[] = [];
+  const checked: Buffer[] = [];
+  const none = {tier: "none" as const, kind: "sky" as const, top: 0.5, v: 1, by: "detector" as const};
+  const result = await runGates(await flatPng(1440, 3200), {
+    annotate: async (jpeg) => {
+      sent.push(jpeg);
+      return clean;
+    },
+    knownSignatures: async () => [],
+    depth: async (jpeg) => {
+      checked.push(jpeg);
+      return none;
+    },
+  });
+  assert.equal(result.passed, false);
+  assert.deepEqual(result.reasons, ["depth"]);
+  assert.deepEqual(result.details.depth, {tier: "none", kind: "sky", top: 0.5});
+  assert.deepEqual(result.depth, none);
+  assert.ok(checked[0].equals(sent[0]));
+
+  const plain = await runGates(await flatPng(1440, 3200), {annotate: async () => clean, knownSignatures: async () => []});
+  assert.equal(plain.passed, true);
+  assert.equal("depth" in plain.details, false);
+  assert.equal(plain.depth, undefined);
 });

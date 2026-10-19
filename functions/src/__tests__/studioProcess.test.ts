@@ -8,6 +8,7 @@ import {onWallSubmitted} from "../onWallSubmitted";
 import {imageSignature, type VisionResult} from "../studio/gates";
 import {randomWallId} from "../studio/ids";
 import {humanSize, isStudioWall, processCandidate, type StudioProcessDeps, thumbSize} from "../studio/process";
+import type {WallDepth} from "../wallDepth";
 import {type Doc, installFakeDb} from "./fakeDb";
 import {flatPng, gradientPng, seededRng} from "./studioTestUtil";
 
@@ -48,6 +49,7 @@ function setup(t: TestContext, opts: {
   deleteAsset?: () => Response;
   putAsset?: (key: string) => Response;
   beforePut?: (store: Map<string, Doc>, key: string) => void;
+  depth?: WallDepth;
 } = {}) {
   const store = installFakeDb(t, {
     "studioConfig/current": {generationEnabled: true, identity: IDENTITY},
@@ -76,14 +78,20 @@ function setup(t: TestContext, opts: {
     if (method === "DELETE") return opts.deleteAsset?.() ?? Response.json({deleted: true});
     throw new Error(`unexpected fetch ${method} ${url}`);
   });
+  const depthCalls: Array<{candidateId: string; jpeg: Buffer}> = [];
   const deps: StudioProcessDeps = {
     worker: {base: BASE, secret: "test-secret"},
     annotate: async () => typeof opts.vision === "function" ? opts.vision() : opts.vision ?? CLEAN,
+    depth: async (candidateId, jpeg) => {
+      depthCalls.push({candidateId, jpeg});
+      if (!opts.depth) throw new Error("depth check down");
+      return opts.depth;
+    },
     rng: opts.rng ?? seededRng(1),
     nowMs: opts.nowMs ?? Date.now,
   };
   const run = () => processCandidate(RUN, CAND, deps);
-  return {store, calls, run, cand: () => store.get(CAND_PATH) as Doc};
+  return {store, calls, depthCalls, run, cand: () => store.get(CAND_PATH) as Doc};
 }
 
 const walls = (store: Map<string, Doc>) => [...store.entries()].filter(([path]) => path.startsWith("walls/"));
@@ -143,6 +151,52 @@ test("a clean candidate becomes a pending wall with the app's fields, a signatur
   await run();
   assert.equal(calls.length, 0, "a terminal candidate does nothing");
   assert.equal(walls(store).length, 1);
+});
+
+const depthCandidate = candidate({seriesId: "depth-effect", subjectId: "sky-cat", paletteId: "clear-blue",
+  prompt: "a fluffy cat, clear blue sky", title: "Sky Cat · Clear Blue", category: "Nature", tags: ["cat"]});
+const AUTO_DEPTH: WallDepth = {tier: "auto", kind: "pet", top: 0.012, v: 1, by: "detector"};
+
+test("a depth series candidate that passes the depth check writes depth on the new wall", async (t) => {
+  const {store, depthCalls, run, cand} = setup(t, {seed: {[CAND_PATH]: depthCandidate}, depth: AUTO_DEPTH});
+  await run();
+  assert.equal(cand().status, "pending_review");
+  assert.deepEqual(((cand().gates as Doc).details as Doc).depth, {tier: "auto", kind: "pet", top: 0.012});
+  const [[, wall]] = walls(store);
+  assert.deepEqual(wall.depth, AUTO_DEPTH);
+  assert.equal(wall.desc, "Depth Effect by Prism Studio");
+  assert.equal(depthCalls.length, 1);
+  assert.equal(depthCalls[0].candidateId, CAND);
+  const meta = await sharp(depthCalls[0].jpeg).metadata();
+  assert.deepEqual([meta.format, meta.width, meta.height], ["jpeg", 720, 1600]);
+});
+
+test("a depth series candidate with tier none is rejected for depth and makes no wall", async (t) => {
+  const {store, calls, run, cand} = setup(t, {seed: {[CAND_PATH]: depthCandidate},
+    depth: {tier: "none", kind: "pet", top: 0.6, v: 1, by: "detector"}});
+  await run();
+  assert.equal(cand().status, "rejected");
+  assert.deepEqual(cand().reasons, ["depth"]);
+  assert.deepEqual(((cand().gates as Doc).details as Doc).depth, {tier: "none", kind: "pet", top: 0.6});
+  assert.deepEqual(calls.filter((c) => c.method === "DELETE").map((c) => c.url),
+    [`${BASE}/api/ai/studio/assets/${RAW_KEY}`]);
+  assert.equal(walls(store).length, 0);
+});
+
+test("a depth series candidate whose depth check cannot run goes back to the queue and the event retries", async (t) => {
+  const {store, run, cand} = setup(t, {seed: {[CAND_PATH]: depthCandidate}});
+  await assert.rejects(run(), /depth check down/);
+  assert.equal(cand().status, "queued");
+  assert.match(String(cand().lastError), /depth check down/);
+  assert.equal(walls(store).length, 0);
+});
+
+test("a candidate of a series without depth never runs the depth check", async (t) => {
+  const {store, depthCalls, run} = setup(t, {depth: AUTO_DEPTH});
+  await run();
+  assert.equal(depthCalls.length, 0);
+  const [[, wall]] = walls(store);
+  assert.equal("depth" in wall, false);
 });
 
 test("a wall id that exists already is not overwritten; the next id is used", async (t) => {

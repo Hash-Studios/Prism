@@ -34,7 +34,7 @@ Backend only. The walls work on Android and iOS, for free and Pro users, like ot
 6. The publish transaction checks the current attempt and all Studio signatures again. It updates `studioState/signatureIndex` to serialize concurrent publishers, creates `walls/{id}` with `review: false` and `studioSignatures/{candidateId}`, and sets the candidate to `pending_review`.
 7. An admin approves or rejects in the swipe review screen.
 
-Subjects stay on cooldown while `lastUsedAt >= now - 21 days`; the exact 21-day cutoff is still blocked, and a subject becomes eligible just after it. When no eligible subjects remain, the plan is shorter or empty. The catalog has 240 subjects (80 per series) over 12 categories. At the same daily run time, 10 candidates need at least 220 subjects because the cutoff includes the exact timestamp 21 days later. Mixed-series plans of 10 or fewer candidates take at most 2 per category. A test runs 120 days with default equal series weights and checks that every day gets all 10 candidates. Add subjects before you raise `dailyCandidates`. An invalid stored daily count closes that day's cap instead of resetting it.
+Subjects stay on cooldown while `lastUsedAt >= now - 21 days`; the exact 21-day cutoff is still blocked, and a subject becomes eligible just after it. When no eligible subjects remain, the plan is shorter or empty. The catalog has 246 subjects over 13 categories: 80 in each of After Dark, Quiet Architecture and Paper Worlds, and 6 in Depth Effect. At the same daily run time, 10 candidates need at least 220 subjects because the cutoff includes the exact timestamp 21 days later. Mixed-series plans of 10 or fewer candidates take at most 2 per category. A test runs 120 days with default equal series weights and checks that every day gets all 10 candidates. Add subjects before you raise `dailyCandidates`. An invalid stored daily count closes that day's cap instead of resetting it.
 
 The `runStudioBatch` callable accepts an `admin: true` custom claim. Email-list admin access also requires `email_verified: true`. Manual callable runs use unique ids even when requests arrive in the same millisecond.
 
@@ -47,8 +47,17 @@ The `runStudioBatch` callable accepts an `admin: true` custom claim. Email-list 
 | Text | Vision finds a word with 3 or more letters or digits |
 | Logo | Vision finds a logo with score 0.5 or higher |
 | Duplicate | Correlation 0.93 or higher with any Studio wall, including an exact flat-image copy. A corrupt signature also rejects. The signature is a 16x36 grey thumbnail. |
+| Depth | Depth Effect series only. The depth check gives tier `none` (reason `depth`). A check that cannot run puts the candidate back in the queue, like a Vision error. See [depth-effect.md](depth-effect.md). |
 
 All values go into the candidate doc (`gates.details`), so the limits can be tuned.
+
+### Depth Effect series
+
+The series `depth-effect` has `depth: true`. Its prompts use `STUDIO_DEPTH_COMPOSITION` instead of `STUDIO_COMPOSITION`: the top of the subject sits 24% to 30% down the frame, the subject fills the frame below, and the area above is calm open sky. People are allowed in this series. The text rules stay.
+
+`processStudioCandidate` sends the 1600 px Vision JPEG to `wallDepthFor`. A candidate passes only with tier `auto` or `menu`. The new wall gets the `depth` field, so `onWallCategorize` does not check it again.
+
+The daily plan still makes `dailyCandidates` (10) candidates. With equal weights the series gets 2 or 3 slots, but its 6 subjects have the 21-day cooldown. So it makes about 6 candidates every 21 days, and the other series take the free slots. Each depth candidate adds 2 Vision units and one fal BiRefNet call.
 
 A 64-bit dHash was tried first. It called different After Dark walls the same, because their black areas give the same bits. Correlation looks only at how each image varies, and the small thumbnail averages away the dark grain. On test images, near copies (JPEG, tint, 2% crop) scored 0.97 or higher. Different scenes scored 0.84 or lower.
 
@@ -98,7 +107,7 @@ No visual test of the models was run yet. Compare the first week of candidates b
 
 The quota Durable Object stores Studio generation claims and response bodies separately from consumer charge records.
 
-New wall fields: `origin`, `seriesId`, `studioCandidateId`, `studioRunId`. The usual AI fields are also set: `isAiGenerated`, `aiProvider`, `aiModel`, `aiPrompt`.
+New wall fields: `origin`, `seriesId`, `studioCandidateId`, `studioRunId`, and `depth` for the Depth Effect series. The usual AI fields are also set: `isAiGenerated`, `aiProvider`, `aiModel`, `aiPrompt`.
 
 Clients cannot read or write the Studio collections. The last rule in `firestore.rules` denies them.
 
@@ -106,7 +115,7 @@ Clients cannot read or write the Studio collections. The last rule in `firestore
 
 1. Sign in for the scripts: `gcloud auth application-default login` as the Prism owner.
 2. In `functions/`, run `GOOGLE_CLOUD_PROJECT=prism-wallpapers npm run studio:account`. It is a dry run and prints the plan. Then run it again with `-- --apply`. It creates the profile `usersv2/prism-studio` (`studio@prismwalls.com`) if no profile has that email. It creates `studioConfig/current` with the identity and `generationEnabled: false`. If that doc exists, it fills only the empty identity fields and keeps all other fields.
-3. Make one random secret. Set it as `STUDIO_SECRET` in the worker (`wrangler secret put STUDIO_SECRET`) and in Firebase (`make functions-secrets-sync` after you add it to Doppler `prd`).
+3. Make one random secret. Set it as `STUDIO_SECRET` in the worker (`wrangler secret put STUDIO_SECRET`) and in Firebase (`make functions-secrets-sync` after you add it to Doppler `prd`). `processStudioCandidate` also needs `FAL_KEY` in Doppler `prd` for the depth check.
 4. Deploy the worker.
 5. Deploy the functions: `processStudioCandidate`, `planStudioBatch`, `runStudioBatch`, `onWallApproved`, `onWallSubmitted`.
 6. Set `generationEnabled: true`. Test with `cd functions && npm run studio:run -- --count 1`.
