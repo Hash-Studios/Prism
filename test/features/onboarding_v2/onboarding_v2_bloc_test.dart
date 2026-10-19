@@ -31,6 +31,7 @@ import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wal
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -1096,6 +1097,12 @@ void main() {
   });
 
   group('AI prompt for the interests', () {
+    setUp(() {
+      final platformDispatcher = TestWidgetsFlutterBinding.ensureInitialized().platformDispatcher;
+      platformDispatcher.localesTestValue = const <Locale>[Locale('en')];
+      addTearDown(platformDispatcher.clearLocalesTestValue);
+    });
+
     Future<OnboardingV2State> confirmStarterPackWith(OnboardingV2Bloc bloc, List<String> interests) async {
       app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
       bloc.add(const OnboardingV2Event.started());

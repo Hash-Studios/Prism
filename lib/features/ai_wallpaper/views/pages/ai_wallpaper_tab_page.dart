@@ -229,6 +229,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   void _setGeneratedPrompt(String prompt) {
+    _promptRestored = false;
     _seededPrompt = prompt;
     _promptController.text = prompt;
     _promptController.selection = TextSelection.fromPosition(TextPosition(offset: prompt.length));
