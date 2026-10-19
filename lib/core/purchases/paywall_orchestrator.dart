@@ -239,7 +239,7 @@ class PaywallOrchestrator {
       );
       if (!isCurrentAccount()) return PaywallResultValue.error;
       if (completed && !confirmedForCurrentAccount) {
-        final AppLocalizations l10n = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
+        final AppLocalizations l10n = await loadDeviceAppLocalizations();
         if (app_state.prismUser.premium) {
           toasts.info(l10n.premiumPurchasePending);
         } else {
