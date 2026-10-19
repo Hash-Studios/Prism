@@ -152,6 +152,8 @@ export function refundableDelta(
 ): number | null {
   const notRefundable = () => new HttpsError("failed-precondition", "No refundable spend.");
   if (!debit) throw notRefundable();
+  // Issued original URLs are short-lived bearer grants and cannot be recalled by a refund.
+  if (debit.originalAccess === true) throw notRefundable();
   if (debit.userId !== callerUid) throw notRefundable();
   if (debit.type !== "debit") throw notRefundable();
   if (debit.status !== "completed") throw notRefundable();

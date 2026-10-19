@@ -1,0 +1,6 @@
+ts	phase	decision	why	evidence	result
+2026-10-19T16:40:00Z	frame	Use canonical wall.id and original generation for acquisition	A URL or favourite snapshot cannot prove current access	functions/src/originalAccess.ts	implementation in progress
+2026-10-19T16:43:00Z	design	Use one server resolver rather than separate payment and access calls	Keep payment bound to the asset without a client-controlled gap	functions/src/originalAccess.ts	focused server tests passed by worker; parent verification pending
+2026-10-19T16:47:00Z	metadata	Require protected marker and empty original field on public walls	Firestore rules cannot redact individual fields	firestore.rules	migration and deployment approval required
+2026-10-19T17:20:00Z	ingest	Require private-origin ingest with sibling delivery implementation	A public GitHub original would bypass the new callable	functions/src/ownedAssetDelivery.ts	waiting for sibling checkpoint
+2026-10-19T17:22:00Z	compatibility	Keep already acquired local files usable	This task does not authorize a retention policy change	lib/core/wallpaper/original_access_service.dart	device proof unavailable

@@ -569,6 +569,342 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "colors",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "depth.tier",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "collections",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "email",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "collections",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "collections",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tags",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dropReserved",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -582,7 +918,10 @@
       "collectionGroup": "creatorMembers",
       "fieldPath": "memberUid",
       "indexes": [
-        {"order": "ASCENDING", "queryScope": "COLLECTION_GROUP"}
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
       ]
     },
     {
